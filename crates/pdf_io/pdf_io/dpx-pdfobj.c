@@ -1839,139 +1839,19 @@ filter_PNG15_apply_filter (unsigned char *raster,
     return dst;
 }
 
-/* This modifies "raster" itself! */
-static void
-apply_filter_TIFF2_1_2_4 (unsigned char *raster,
-                          int32_t width, int32_t height,
-                          int8_t bpc, int8_t num_comp)
-{
-    int32_t   rowbytes = (bpc * num_comp * width + 7) / 8;
-    uint8_t   mask     = (1 << bpc) - 1;
-    uint16_t *prev;
-    int32_t   i, j;
-
-    assert(raster);
-    assert(bpc > 0 && bpc <= 8);
-
-    prev = NEW(num_comp, uint16_t);
-
-    /* Generic routine for 1 to 16 bit.
-     * It supports, e.g., 7 bpc images too.
-     * Actually, it is not necessary to have 16 bit inbuf and outbuf
-     * since we only need 1, 2, and 4 bit support here. 8 bit is enough.
-     */
-    for (j = 0; j < height; j++) {
-        int32_t  k, l, inbits, outbits;
-        uint16_t inbuf, outbuf;
-        int      c;
-
-        memset(prev, 0, sizeof(uint16_t) * num_comp);
-        inbuf = outbuf = 0;
-        inbits = outbits = 0;
-        l = k = j * rowbytes;
-
-        for (i = 0; i < width; i++) {
-            for (c = 0; c < num_comp; c++) {
-                uint8_t cur;
-                int8_t  sub;
-
-                if (inbits < bpc) { /* need more byte */
-                    inbuf = (inbuf << 8) | raster[l];
-                    l++;
-                    inbits += 8;
-                }
-
-                cur     = (inbuf >> (inbits - bpc)) & mask;
-                inbits -= bpc; /* consumed bpc bits */
-                sub     = cur - prev[c];
-                prev[c] = cur;
-
-                if (sub < 0)
-                    sub += (1 << bpc);
-
-                /* Append newly filtered component value */
-                outbuf   = (outbuf << bpc) | sub;
-                outbits += bpc;
-
-                /* flush */
-                if (outbits >= 8) {
-                    raster[k] = (outbuf >> (outbits - 8));
-                    k++;
-                    outbits  -= 8;
-                }
-            }
-        }
-
-        if (outbits > 0) {
-            raster[k] = outbuf << (8 - outbits);
-            k++;
-        }
-    }
-
-    free(prev);
-}
-
-
 static unsigned char *
 filter_TIFF2_apply_filter (unsigned char *raster,
                            int32_t columns, int32_t rows,
                            int8_t bpc, int8_t colors, int32_t *length)
 {
     unsigned char *dst;
-    uint16_t      *prev;
     int32_t        rowbytes = (bpc * colors * columns + 7) / 8;
-    int32_t        i, j;
 
     assert(raster && length);
 
     dst = NEW(rowbytes*rows, unsigned char);
-    memcpy(dst, raster, rowbytes*rows);
     *length = rowbytes * rows;
-
-    switch (bpc) {
-    case 1: case 2: case 4:
-        apply_filter_TIFF2_1_2_4(dst, columns, rows, bpc, colors);
-        break;
-
-    case 8:
-        prev = NEW(colors, uint16_t);
-        for (j = 0; j < rows; j++) {
-            memset(prev, 0, sizeof(uint16_t)*colors);
-            for (i = 0; i < columns; i++) {
-                int     c;
-                int32_t pos = colors * (columns * j + i);
-                for (c = 0; c < colors; c++) {
-                    uint8_t cur = raster[pos+c];
-                    int32_t sub = cur - prev[c];
-                    prev[c]     = cur;
-                    dst[pos+c]  = sub;
-                }
-            }
-        }
-        free(prev);
-        break;
-
-    case 16:
-        prev = NEW(colors, uint16_t);
-        for (j = 0; j < rows; j++) {
-            memset(prev, 0, sizeof(uint16_t)*colors);
-            for (i = 0; i < columns; i++) {
-                int     c;
-                int32_t pos = 2 * colors * (columns * j + i);
-                for (c = 0; c < colors; c++) {
-                    uint16_t cur   = ((uint8_t)raster[pos+2*c])*256 +
-                        (uint8_t)raster[pos+2*c+1];
-                    uint16_t sub   = cur - prev[c];
-                    prev[c]        = cur;
-                    dst[pos+2*c  ] = (sub >> 8) & 0xff;
-                    dst[pos+2*c+1] = sub & 0xff;
-                }
-            }
-        }
-        free(prev);
-        break;
-
-    }
+    tt_pdf_filter_tiff_parallel(raster, dst, columns, rows, bpc, colors);
 
     return  dst;
 }

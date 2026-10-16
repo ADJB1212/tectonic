@@ -27,7 +27,7 @@ tectonic_errors = { path = "../errors", version = "0.0.0-dev.0" }
 tectonic_pdf_io = { path = "../pdf_io", version = "0.0.0-dev.0" }
 
 [build-dependencies]
-cc = "^1.0.66"
+cc = { version = "^1.0.66", features = ["parallel"] }
 
 [package.metadata.internal_dep_versions]
 tectonic_bridge_core = "thiscommit:2021-01-17:fohCh1sh"

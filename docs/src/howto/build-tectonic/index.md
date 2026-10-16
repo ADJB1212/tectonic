@@ -17,6 +17,9 @@ binary will save you time and, possibly, headaches.
 
 ## Basic Prerequisites
 
+Native C/C++ sources compile in parallel using Cargo's shared job budget.
+Use `cargo build --jobs N` to limit concurrency across Rust and native builds.
+
 To build Tectonic you will need Rust, C, and C++ compilers installed. It is
 beyond the scope of this document to give instructions on this topic, besides
 pointing you to the [Rust installation

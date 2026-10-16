@@ -110,9 +110,184 @@ unsafe extern "C" fn tt_pdf_filter_png_parallel(
     );
 }
 
+fn filter_tiff_row(source: &[u8], destination: &mut [u8], columns: usize, bpc: usize, colors: usize) {
+    match bpc {
+        8 => {
+            for (index, byte) in destination.iter_mut().enumerate() {
+                let previous = if index >= colors { source[index - colors] } else { 0 };
+                *byte = source[index].wrapping_sub(previous);
+            }
+        }
+        16 => {
+            for (index, bytes) in destination.as_chunks_mut::<2>().0.iter_mut().enumerate() {
+                let offset = index * 2;
+                let current = u16::from_be_bytes([source[offset], source[offset + 1]]);
+                let previous = if index >= colors {
+                    let offset = offset - colors * 2;
+                    u16::from_be_bytes([source[offset], source[offset + 1]])
+                } else {
+                    0
+                };
+                bytes.copy_from_slice(&current.wrapping_sub(previous).to_be_bytes());
+            }
+        }
+        1 | 2 | 4 => {
+            destination.fill(0);
+            let mask = (1u8 << bpc) - 1;
+            let sample = |index: usize| (source[index * bpc / 8] >> (8 - bpc - index * bpc % 8)) & mask;
+            for index in 0..columns * colors {
+                let previous = if index >= colors { sample(index - colors) } else { 0 };
+                let difference = sample(index).wrapping_sub(previous) & mask;
+                destination[index * bpc / 8] |= difference << (8 - bpc - index * bpc % 8);
+            }
+        }
+        _ => destination.copy_from_slice(source),
+    }
+}
+
+fn filter_tiff(
+    source: &[u8],
+    destination: &mut [u8],
+    columns: usize,
+    bpc: usize,
+    colors: usize,
+    pool: Option<&rayon::ThreadPool>,
+) {
+    let row_bytes = (columns * bpc * colors).div_ceil(8);
+    if let Some(pool) = pool {
+        let rows_per_chunk = (source.len() / row_bytes).div_ceil(pool.current_num_threads() * 4);
+        pool.install(|| {
+            destination.par_chunks_mut(rows_per_chunk * row_bytes)
+                .zip(source.par_chunks(rows_per_chunk * row_bytes))
+                .for_each(|(destination, source)| {
+                    for (source, destination) in source.chunks_exact(row_bytes)
+                        .zip(destination.chunks_exact_mut(row_bytes)) {
+                        filter_tiff_row(source, destination, columns, bpc, colors);
+                    }
+                });
+        });
+    } else {
+        for (source, destination) in source.chunks_exact(row_bytes)
+            .zip(destination.chunks_exact_mut(row_bytes)) {
+            filter_tiff_row(source, destination, columns, bpc, colors);
+        }
+    }
+}
+
+/// Apply horizontal differencing to independent image rows.
+///
+/// # Safety
+/// Buffers must be valid and nonoverlapping for `ceil(columns * bpc * colors / 8)
+/// * rows` bytes. Dimensions must be nonnegative with products fitting i32;
+/// `bpc` and `colors` must be positive.
+#[no_mangle]
+unsafe extern "C" fn tt_pdf_filter_tiff_parallel(
+    raster: *const u8,
+    destination: *mut u8,
+    columns: i32,
+    rows: i32,
+    bpc: i32,
+    colors: i32,
+) {
+    let length = (columns as usize * bpc as usize * colors as usize).div_ceil(8) * rows as usize;
+    if length == 0 {
+        return;
+    }
+    let source = slice::from_raw_parts(raster, length);
+    let destination = slice::from_raw_parts_mut(destination, length);
+    let pool = if length >= PARALLEL_THRESHOLD { pool() } else { None };
+    filter_tiff(source, destination, columns as usize, bpc as usize, colors as usize, pool);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn pack_samples(samples: &[u16], bpc: usize) -> Vec<u8> {
+        let mut bytes = vec![0; (samples.len() * bpc).div_ceil(8)];
+        for (index, &sample) in samples.iter().enumerate() {
+            for bit in 0..bpc {
+                let offset = index * bpc + bit;
+                bytes[offset / 8] |= (((sample >> (bpc - 1 - bit)) & 1) as u8) << (7 - offset % 8);
+            }
+        }
+        bytes
+    }
+
+    #[test]
+    fn tiff_predictors_preserve_samples_and_row_boundaries() {
+        let pool = rayon::ThreadPoolBuilder::new().num_threads(3).build().unwrap();
+        for bpc in [1, 2, 4, 8, 16] {
+            for colors in [1, 3, 4] {
+                for columns in [1, 7, 257] {
+                    for rows in [1, 2, 13, 1025] {
+                        let mut source = Vec::new();
+                        let mut expected = Vec::new();
+                        let mask = ((1u32 << bpc) - 1) as u16;
+                        for row in 0..rows {
+                            let samples: Vec<u16> = (0..columns * colors)
+                                .map(|index| ((index * 4093 + row * 8191 + index / colors * 17) as u16) & mask)
+                                .collect();
+                            let differences: Vec<u16> = samples.iter().enumerate()
+                                .map(|(index, &sample)| {
+                                    let previous = if index >= colors { samples[index - colors] } else { 0 };
+                                    sample.wrapping_sub(previous) & mask
+                                })
+                                .collect();
+                            let mut packed = pack_samples(&samples, bpc);
+                            let padding = (8 - samples.len() * bpc % 8) % 8;
+                            *packed.last_mut().unwrap() |= ((1u16 << padding) - 1) as u8;
+                            source.extend(packed);
+                            expected.extend(pack_samples(&differences, bpc));
+                        }
+                        let mut actual = vec![0xff; expected.len()];
+                        for pool in [None, Some(&pool)] {
+                            filter_tiff(&source, &mut actual, columns, bpc, colors, pool);
+                            assert_eq!(actual, expected, "bpc={bpc}, colors={colors}, columns={columns}, rows={rows}");
+                        }
+                        // SAFETY: Buffers are nonoverlapping and match the raster dimensions.
+                        unsafe {
+                            tt_pdf_filter_tiff_parallel(source.as_ptr(), actual.as_mut_ptr(), columns as i32,
+                                rows as i32, bpc as i32, colors as i32);
+                        }
+                        assert_eq!(actual, expected);
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn empty_tiff_rasters_do_not_access_buffers() {
+        let pointer = std::ptr::null_mut();
+        // SAFETY: Empty rasters do not require valid buffer pointers.
+        unsafe {
+            tt_pdf_filter_tiff_parallel(pointer, pointer, 0, 10, 8, 3);
+            tt_pdf_filter_tiff_parallel(pointer, pointer, 10, 0, 8, 3);
+        }
+    }
+
+    #[test]
+    #[ignore = "manual TIFF image predictor benchmark"]
+    fn benchmark_pdf_tiff_predictor() {
+        let pool = pool().expect("benchmark requires multiple CPUs");
+        let (columns, rows, colors, bpc) = (1024, 4096, 3, 16);
+        let source: Vec<_> = (0..columns * rows * colors * 2).map(|i| (i % 251) as u8).collect();
+        let mut output = vec![0; source.len()];
+        filter_tiff(&source, &mut output, columns, bpc, colors, Some(pool));
+        let measure = |output: &mut [u8], pool| {
+            let start = std::time::Instant::now();
+            for _ in 0..10 {
+                filter_tiff(&source, output, columns, bpc, colors, pool);
+                std::hint::black_box(&output);
+            }
+            start.elapsed()
+        };
+        let serial = measure(&mut output, None);
+        let parallel = measure(&mut output, Some(pool));
+        eprintln!("24 MiB TIFF predictor, 10 iterations, {} workers: serial={serial:?}, parallel={parallel:?}, speedup={:.2}x",
+            pool.current_num_threads(), serial.as_secs_f64() / parallel.as_secs_f64());
+    }
 
     #[test]
     fn parallel_png_predictors_match_serial_rows() {

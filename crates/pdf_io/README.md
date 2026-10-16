@@ -36,12 +36,22 @@ suffice:
 use tectonic_pdf_io;
 ```
 
-PNG-style image predictors process rasters of at least 256 KiB in independent
+PNG and TIFF image predictors process rasters of at least 256 KiB in independent
 row groups, using the available CPU count up to 16 workers. Workers read the
 original raster and write separate output rows, preserving the serial predictor
 bytes, including at group boundaries. Small rasters and systems where workers
 cannot be created use the serial path. PDF object handling and output stay on
 the engine thread.
+
+TIFF horizontal differencing supports 1, 2, 4, 8, and 16 bits per component.
+This includes PNG transparency masks. Packed rows retain their byte alignment
+and clear unused trailing bits.
+
+Run the TIFF predictor benchmark with:
+
+```sh
+cargo test -p tectonic_pdf_io --release benchmark_pdf_tiff_predictor -- --ignored --nocapture
+```
 
 
 ## Cargo features

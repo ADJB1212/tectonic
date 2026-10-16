@@ -8,5 +8,8 @@ void tt_pdf_filter_png_rows(const unsigned char *raster, unsigned char *destinat
                            int32_t first_row, int32_t last_row);
 void tt_pdf_filter_png_parallel(const unsigned char *raster, unsigned char *destination,
                                int32_t row_bytes, int32_t rows, int bytes_per_pixel);
+void tt_pdf_filter_tiff_parallel(const unsigned char *raster, unsigned char *destination,
+                                int32_t columns, int32_t rows, int bits_per_component,
+                                int colors);
 
 #endif

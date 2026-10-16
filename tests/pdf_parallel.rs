@@ -1,5 +1,8 @@
-use flate2::read::ZlibDecoder;
-use std::{collections::HashSet, io::Read};
+use flate2::{Compression, Crc, read::ZlibDecoder, write::ZlibEncoder};
+use std::{
+    collections::HashSet,
+    io::{Read, Write},
+};
 use tectonic::{
     TexEngine, XdvipdfmxEngine,
     io::{FilesystemIo, IoStack, MemoryIo, testing::SingleInputFileIo},
@@ -62,6 +65,37 @@ fn bmp_image(width: usize, height: usize) -> Vec<u8> {
     bmp
 }
 
+fn png_alpha_image(width: usize, height: usize) -> Vec<u8> {
+    fn chunk(png: &mut Vec<u8>, kind: [u8; 4], data: &[u8]) {
+        png.extend_from_slice(&(data.len() as u32).to_be_bytes());
+        png.extend_from_slice(&kind);
+        png.extend_from_slice(data);
+        let mut crc = Crc::new();
+        crc.update(&kind);
+        crc.update(data);
+        png.extend_from_slice(&crc.sum().to_be_bytes());
+    }
+
+    let mut png = b"\x89PNG\r\n\x1a\n".to_vec();
+    let mut header = Vec::new();
+    header.extend_from_slice(&(width as u32).to_be_bytes());
+    header.extend_from_slice(&(height as u32).to_be_bytes());
+    header.extend_from_slice(&[16, 6, 0, 0, 0]);
+    chunk(&mut png, *b"IHDR", &header);
+    let mut encoder = ZlibEncoder::new(Vec::new(), Compression::fast());
+    for y in 0..height {
+        encoder.write_all(&[0]).unwrap();
+        for x in 0..width {
+            for sample in [x as u16, y as u16, 0, (x * 4093 + y * 8191) as u16] {
+                encoder.write_all(&sample.to_be_bytes()).unwrap();
+            }
+        }
+    }
+    chunk(&mut png, *b"IDAT", &encoder.finish().unwrap());
+    chunk(&mut png, *b"IEND", &[]);
+    png
+}
+
 fn decode_png_predictor(filtered: &[u8], width: usize, height: usize) -> Vec<u8> {
     let row_bytes = width * 3;
     assert_eq!(filtered.len(), (row_bytes + 1) * height);
@@ -107,7 +141,7 @@ fn decode_png_predictor(filtered: &[u8], width: usize, height: usize) -> Vec<u8>
 }
 
 #[test]
-fn compiled_pdf_preserves_large_compressed_attachments_and_images() {
+fn compiled_pdf_preserves_large_compressed_attachments_images_and_transparency() {
     util::set_test_root();
     let mut format = SingleInputFileIo::new(&util::ensure_plain_format().unwrap());
     let mut assets = FilesystemIo::new(&util::test_path(&["assets"]), false, false, HashSet::new());
@@ -116,11 +150,14 @@ fn compiled_pdf_preserves_large_compressed_attachments_and_images() {
     memory.create_entry("payload.bin", payload.clone());
     let (width, height) = (512, 1024);
     memory.create_entry("large.bmp", bmp_image(width, height));
+    let (alpha_width, alpha_height) = (257, 1025);
+    memory.create_entry("alpha.png", png_alpha_image(alpha_width, alpha_height));
     let mut primary = BufferedPrimaryIo::from_text(
         r"\nopagenumbers
 \special{pdf:fstream @payload (payload.bin) << /TectonicParallelTest true >>}
 \special{pdf:put @catalog << /Payload @payload >>}
 \XeTeXpicfile large.bmp width 10pt
+\XeTeXpicfile alpha.png width 10pt
 \bye
 ",
     );
@@ -167,5 +204,19 @@ fn compiled_pdf_preserves_large_compressed_attachments_and_images() {
             pixel,
             &[(y % 251) as u8, (x % 251) as u8, ((x + y) % 251) as u8]
         );
+    }
+
+    let (dictionary, stream) = stream_data(pdf, b"/Predictor 2");
+    assert!(dictionary.contains("/BitsPerComponent 16"));
+    assert!(dictionary.contains("/ColorSpace/DeviceGray"));
+    decoded.clear();
+    ZlibDecoder::new(stream).read_to_end(&mut decoded).unwrap();
+    assert_eq!(decoded.len(), alpha_width * alpha_height * 2);
+    for (y, row) in decoded.chunks_exact(alpha_width * 2).enumerate() {
+        let mut previous = 0u16;
+        for (x, sample) in row.as_chunks::<2>().0.iter().enumerate() {
+            previous = previous.wrapping_add(u16::from_be_bytes(*sample));
+            assert_eq!(previous, (x * 4093 + y * 8191) as u16);
+        }
     }
 }
