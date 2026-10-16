@@ -3,11 +3,14 @@
 use crate::font::Font;
 use crate::manager::{Engine, FontManager};
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::ffi::CStr;
 use std::ops::{Deref, DerefMut};
 use std::ptr;
 use tectonic_bridge_graphite2 as gr;
 use tectonic_bridge_harfbuzz as hb;
+
+mod parallel;
 
 /// Item that may be borrowed or owned. Similar to `Cow`, but with mutable references.
 pub enum MaybeBorrow<'a, T> {
@@ -75,6 +78,7 @@ pub struct LayoutEngine {
     slant: f32,
     embolden: f32,
     hb_buffer: hb::Buffer,
+    prepared_layouts: HashMap<Vec<u16>, parallel::PreparedBuffer>,
     pub(crate) gr_breaking: Option<GrBreak>,
 }
 
@@ -116,6 +120,7 @@ impl LayoutEngine {
             slant,
             embolden,
             hb_buffer: hb::Buffer::new(),
+            prepared_layouts: HashMap::new(),
             gr_breaking: None,
         }
     }
@@ -185,6 +190,13 @@ impl LayoutEngine {
 
     /// Get the number of characters in the given slice
     pub fn layout_chars(&mut self, chars: &[u16], rtl: bool) -> usize {
+        if !rtl {
+            if let Some(prepared) = self.prepared_layouts.remove(chars) {
+                self.hb_buffer = prepared.0;
+                self.shaper = Shaper::OpenType;
+                return self.hb_buffer.as_ref().len();
+            }
+        }
         let hb_font = self.font.hb_font();
         let hb_face = hb_font.face();
 

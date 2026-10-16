@@ -10,6 +10,10 @@ output, to HTML.
 - [API documentation](https://docs.rs/tectonic_engine_spx2html/).
 - [Main Git repository](https://github.com/tectonic-typesetting/tectonic/).
 
+HTML templates use Tera 2 syntax. Existing Tera 1 templates may need changes,
+including replacing macros with components and renaming the `escape` filter to
+`escape_html`; see the [Tera migration guide](https://github.com/Keats/tera/blob/master/MIGRATION.md).
+
 
 ## Cargo features
 

@@ -43,6 +43,7 @@
 
 #include "tectonic_bridge_flate.h"
 #include "tectonic-predictor.h"
+#include "tectonic-compress.h"
 
 #define STREAM_ALLOC_SIZE      4096u
 #define ARRAY_ALLOC_SIZE       256
@@ -176,6 +177,8 @@ struct pdf_file
 
 #define OBJSTM_MAX_OBJS  200
 /* the limit is only 100 for linearized PDF */
+#define COMPRESSION_BATCH_SIZE 64
+#define COMPRESSION_BATCH_BYTES (8 * 1024 * 1024)
 
 struct pdf_out {
   struct {
@@ -221,6 +224,11 @@ struct pdf_out {
   pdf_obj      *xref_stream;
   pdf_obj      *output_stream;
   pdf_obj      *current_objstm;
+  pdf_obj      *compression_batch[COMPRESSION_BATCH_SIZE];
+  size_t        compression_batch_count;
+  size_t        compression_batch_bytes;
+  int           flushing_compression_batch;
+  int           defer_compression;
   /* The following flag bits are (8,338,607+1)/8 bytes data
    * each bit represenging if the object is freed.
    * Where the value 8,338,607 is taken from PDF ref. manual, v.1.7,
@@ -282,6 +290,10 @@ init_pdf_out_struct (pdf_out *p)
   p->xref_stream    = NULL;
   p->output_stream  = NULL;
   p->current_objstm = NULL;
+  p->compression_batch_count = 0;
+  p->compression_batch_bytes = 0;
+  p->flushing_compression_batch = 0;
+  p->defer_compression = 1;
 
   p->free_list = NEW((PDF_NUM_INDIRECT_MAX+1)/8, char);
   memset(p->free_list, 0, (PDF_NUM_INDIRECT_MAX+1)/8);
@@ -303,6 +315,7 @@ static int check_for_pdf_version (rust_input_handle_t handle);
 static void pdf_flush_obj (pdf_out *p, pdf_obj *object);
 static void pdf_label_obj (pdf_out *p, pdf_obj *object);
 static void pdf_write_obj (pdf_out *p, pdf_obj *object);
+static void flush_compression_batch (pdf_out *p);
 
 static void  set_objstm_data (pdf_obj *objstm, int *data);
 static int  *get_objstm_data (pdf_obj *objstm);
@@ -638,11 +651,15 @@ pdf_out_flush (void)
     if (p->output.handle) {
         int length;
 
+        p->defer_compression = 0;
+
         /* Flush current object stream */
         if (p->current_objstm) {
             release_objstm(p->current_objstm);
             p->current_objstm =NULL;
         }
+
+        flush_compression_batch(p);
 
         /*
          * Label xref stream - we need the number of correct objects
@@ -707,6 +724,13 @@ pdf_error_cleanup (void)
         ttstub_output_close(p->output.handle);
         p->output.handle = INVALID_HANDLE;
     }
+    p->defer_compression = 0;
+    while (p->compression_batch_count) {
+        pdf_obj *object = p->compression_batch[--p->compression_batch_count];
+        object->label = 0;
+        pdf_release_obj(object);
+    }
+    p->compression_batch_bytes = 0;
 }
 
 
@@ -2835,6 +2859,100 @@ release_objstm (pdf_obj *objstm)
 
 #define is_free(b,c) (((b)[(c)/8]) & (1 << (7-((c)%8))))
 
+static void
+flush_compression_batch (pdf_out *p)
+{
+    tt_pdf_compression_job jobs[COMPRESSION_BATCH_SIZE];
+    size_t i, count = p->compression_batch_count;
+
+    if (!count)
+        return;
+
+    p->flushing_compression_batch = 1;
+    for (i = 0; i < count; i++) {
+        pdf_stream *stream = p->compression_batch[i]->data;
+        size_t capacity = stream->stream_length + stream->stream_length / 1000 + 14;
+        jobs[i].input = stream->stream;
+        jobs[i].input_len = stream->stream_length;
+        jobs[i].output = NEW(capacity, unsigned char);
+        jobs[i].output_len = capacity;
+        jobs[i].result = -2;
+    }
+
+    tt_pdf_compress_streams(jobs, count, p->options.compression.level);
+
+    for (i = 0; i < count; i++) {
+        if (jobs[i].result < 0) {
+            size_t j;
+            for (j = 0; j < count; j++)
+                free(jobs[j].output);
+            _tt_abort("Zlib error");
+        }
+    }
+
+    for (i = 0; i < count; i++) {
+        pdf_stream *stream = p->compression_batch[i]->data;
+        pdf_obj *filters = pdf_lookup_dict(stream->dict, "Filter");
+        pdf_obj *filter_name = pdf_new_name("FlateDecode");
+        if (filters)
+            pdf_unshift_array(filters, filter_name);
+        else
+            pdf_add_dict(stream->dict, pdf_new_name("Filter"), filter_name);
+        p->output.compression_saved += stream->stream_length - jobs[i].output_len
+            - (filters ? strlen("/FlateDecode ") : strlen("/Filter/FlateDecode\n"));
+        free(stream->stream);
+        stream->stream = jobs[i].output;
+        stream->stream_length = jobs[i].output_len;
+        stream->max_length = jobs[i].output_len;
+        stream->_flags &= ~STREAM_COMPRESS;
+    }
+
+    while (p->compression_batch_count) {
+        pdf_obj *object = p->compression_batch[0];
+        p->compression_batch_count--;
+        memmove(p->compression_batch, p->compression_batch + 1,
+                p->compression_batch_count * sizeof(pdf_obj *));
+        pdf_release_obj(object);
+    }
+    p->compression_batch_bytes = 0;
+    p->flushing_compression_batch = 0;
+}
+
+static int
+defer_stream_compression (pdf_out *p, pdf_obj *object)
+{
+    pdf_stream *stream;
+    pdf_obj *type;
+
+    if (!p->defer_compression || p->flushing_compression_batch ||
+        object->type != PDF_STREAM || !object->label ||
+        p->output.handle == INVALID_HANDLE || p->options.compression.level <= 0)
+        return 0;
+
+    stream = object->data;
+    if (!(stream->_flags & STREAM_COMPRESS) ||
+        stream->stream_length < ((stream->_flags & STREAM_PAGE_CONTENT) ? 1024 : 16 * 1024) ||
+        stream->stream_length >= 1024 * 1024 ||
+        (p->options.compression.use_predictor && (stream->_flags & STREAM_USE_PREDICTOR) &&
+         !pdf_lookup_dict(stream->dict, "DecodeParms")))
+        return 0;
+
+    type = pdf_lookup_dict(stream->dict, "Type");
+    if (type && streq_ptr("Metadata", pdf_name_value(type)))
+        return 0;
+
+    if (p->compression_batch_bytes + stream->stream_length > COMPRESSION_BATCH_BYTES)
+        flush_compression_batch(p);
+
+    object->refcount = 1;
+    p->compression_batch[p->compression_batch_count++] = object;
+    p->compression_batch_bytes += stream->stream_length;
+    if (p->compression_batch_count == COMPRESSION_BATCH_SIZE ||
+        p->compression_batch_bytes >= COMPRESSION_BATCH_BYTES)
+        flush_compression_batch(p);
+    return 1;
+}
+
 void
 pdf_release_obj (pdf_obj *object)
 {
@@ -2851,6 +2969,8 @@ pdf_release_obj (pdf_obj *object)
     object->refcount -= 1;
 
     if (object->refcount == 0) {
+        if (defer_stream_compression(p, object))
+            return;
         /*
          * Nothing is using this object so it's okay to remove it.
          * Nonzero "label" means object needs to be written before it's destroyed.
@@ -4276,10 +4396,7 @@ pdf_obj_reset_global_state(void)
 {
     pdf_out *p = current_output();
 
-    if (p->output.handle != INVALID_HANDLE) {
-        ttstub_output_close(p->output.handle);
-    }
-    p->output.handle = INVALID_HANDLE;
+    pdf_error_cleanup();
     p->output.file_position = 0;
     p->output.line_position = 0;
     p->output.compression_saved = 0;

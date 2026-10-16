@@ -35,7 +35,7 @@ fn get_glyph_advance(face: &ft::Face, gid: libc::c_uint, vertical: bool) -> ft::
     out as ft::Fixed
 }
 
-fn get_font_funcs() -> hb::FontFuncsRef<'static, Arc<Mutex<ft::Face>>> {
+pub(crate) fn get_font_funcs() -> hb::FontFuncsRef<'static, Arc<Mutex<ft::Face>>> {
     static FONTS: OnceLock<hb::ImmutFontFuncs<Arc<Mutex<ft::Face>>>> = OnceLock::new();
 
     FONTS

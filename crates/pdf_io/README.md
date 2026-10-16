@@ -43,6 +43,15 @@ bytes, including at group boundaries. Small rasters and systems where workers
 cannot be created use the serial path. PDF object handling and output stay on
 the engine thread.
 
+Page content streams of at least 1 KiB and other streams of at least 16 KiB
+are compressed concurrently in batches of up to 64 streams or 8 MiB of input.
+Streams of at least 1 MiB retain the existing parallel chunk compression path.
+Image streams requiring predictors retain their existing row-parallel path,
+and metadata remains uncompressed. Batches finish before cross-reference offsets
+are finalized. Object order can change, while decoded contents remain the same.
+Compression and image filtering share a worker pool, with a serial fallback.
+TeX layout and its dependent passes still run sequentially.
+
 TIFF horizontal differencing supports 1, 2, 4, 8, and 16 bits per component.
 This includes PNG transparency masks. Packed rows retain their byte alignment
 and clear unused trailing bits.
@@ -51,6 +60,12 @@ Run the TIFF predictor benchmark with:
 
 ```sh
 cargo test -p tectonic_pdf_io --release benchmark_pdf_tiff_predictor -- --ignored --nocapture
+```
+
+Compare TeX and PDF-generation time for complete documents with:
+
+```sh
+cargo test --test pdf_parallel benchmark_single_pdf_compilation -- --ignored --nocapture
 ```
 
 

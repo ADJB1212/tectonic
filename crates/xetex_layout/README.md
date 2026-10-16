@@ -28,6 +28,23 @@ use tectonic_xetex_layout;
 ```
 
 
+## Parallel paragraph shaping
+
+Final paragraph lines are prepared before packing so that independent native
+OpenType text runs can be shaped concurrently. Workers use separate HarfBuzz
+buffers and immutable font configuration; FreeType access remains protected by
+the font's mutex. TeX node changes, box packing, math, and page building stay on
+the engine thread.
+
+The parallel path currently handles printable ASCII runs containing letters,
+with at least four runs and 256 UTF-16 units per paragraph. Other text, Graphite,
+AAT, and small batches retain serial shaping. Prepared buffers are consumed
+during line packing and unused buffers are released after the paragraph.
+
+The persistent pool uses the available CPU count up to eight workers.
+`TECTONIC_LAYOUT_THREADS` can lower this limit; set it to `1` to use serial
+shaping. The setting is read when the pool is first needed in a process.
+
 ## Cargo features
 
 This crate provides the following [Cargo features][features]:

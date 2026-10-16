@@ -12130,6 +12130,72 @@ int32_t new_margin_kern(scaled_t w, int32_t p, small_number side)
     return k;
 }
 
+PreparedLayouts *
+prepare_native_line_layouts(const int32_t *lines, size_t count)
+{
+    NativeLayoutRequest *requests = NULL;
+    size_t request_count = 0, capacity = 0, line;
+    PreparedLayouts *prepared;
+
+    for (line = 0; line < count; line++) {
+        int32_t p = lines[line];
+        int32_t remaining = 0;
+        while (p != TEX_NULL) {
+            if (!is_char_node(p) && NODE_type(p) == WHATSIT_NODE &&
+                (NODE_subtype(p) == NATIVE_WORD_NODE || NODE_subtype(p) == NATIVE_WORD_NODE_AT) &&
+                font_area[NATIVE_NODE_font(p)] == OTGR_FONT_FLAG && remaining <= 0) {
+                int32_t end = LLIST_link(p), cursor, length = 0;
+                uint16_t *text;
+                for (;;) {
+                    if (end == TEX_NULL || is_char_node(end))
+                        break;
+                    cursor = end;
+                    if (NODE_type(cursor) == DISC_NODE)
+                        cursor = LLIST_link(cursor);
+                    if (cursor == TEX_NULL || is_char_node(cursor) || NODE_type(cursor) != WHATSIT_NODE ||
+                        (NODE_subtype(cursor) != NATIVE_WORD_NODE && NODE_subtype(cursor) != NATIVE_WORD_NODE_AT) ||
+                        NATIVE_NODE_font(cursor) != NATIVE_NODE_font(p))
+                        break;
+                    end = LLIST_link(cursor);
+                }
+                if (end != LLIST_link(p)) {
+                    for (cursor = p; cursor != end; cursor = LLIST_link(cursor))
+                        if (NODE_type(cursor) == WHATSIT_NODE)
+                            length += NATIVE_NODE_length(cursor);
+                    text = xmalloc(length * sizeof(uint16_t));
+                    length = 0;
+                    for (cursor = p; cursor != end; cursor = LLIST_link(cursor)) {
+                        if (NODE_type(cursor) == WHATSIT_NODE) {
+                            memcpy(text + length, NATIVE_NODE_text(cursor), NATIVE_NODE_length(cursor) * sizeof(uint16_t));
+                            length += NATIVE_NODE_length(cursor);
+                        }
+                    }
+                    if (request_count == capacity) {
+                        capacity = capacity ? 2 * capacity : 16;
+                        requests = xrealloc(requests, capacity * sizeof(NativeLayoutRequest));
+                    }
+                    requests[request_count].engine = font_layout_engine[NATIVE_NODE_font(p)];
+                    requests[request_count].text = text;
+                    requests[request_count++].length = length;
+                }
+                p = end;
+                continue;
+            }
+            if (!is_char_node(p) && NODE_type(p) == DISC_NODE)
+                remaining = DISCRETIONARY_NODE_replace_count(p);
+            else
+                remaining--;
+            p = LLIST_link(p);
+        }
+    }
+
+    prepared = ttxl_prepare_layouts(requests, request_count);
+    for (line = 0; line < request_count; line++)
+        free((void *) requests[line].text);
+    free(requests);
+    return prepared;
+}
+
 int32_t hpack(int32_t p, scaled_t w, small_number m)
 {
     int32_t r;

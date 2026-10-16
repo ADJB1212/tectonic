@@ -2150,10 +2150,7 @@ impl ProcessingSession {
 
             match (state, event) {
                 (State::Searching, Event::Start(ref e)) => {
-                    let name = reader
-                        .decoder()
-                        .decode(e.local_name().into_inner())
-                        .map_err(quick_xml::Error::from)?;
+                    let name = e.local_name().into_inner();
 
                     if name == "binary" {
                         state = State::InBinaryName;
@@ -2161,9 +2158,7 @@ impl ProcessingSession {
                 }
 
                 (State::InBinaryName, Event::Text(ref e)) => {
-                    let text = e.decode()?;
-
-                    state = if &text == "biber" {
+                    state = if e.as_ref() == "biber" {
                         State::InBiberCmdline
                     } else {
                         State::Searching
@@ -2175,24 +2170,18 @@ impl ProcessingSession {
                 }
 
                 (State::InBiberCmdline, Event::Start(ref e)) => {
-                    let name = reader
-                        .decoder()
-                        .decode(e.local_name().into_inner())
-                        .map_err(quick_xml::Error::from)?;
+                    let name = e.local_name().into_inner();
 
                     // Note that the "infile" might be `foo` without the `.bcf`
                     // extension, so we can't use it for file-finding.
-                    state = match &*name {
+                    state = match name {
                         "infile" | "outfile" | "option" => State::InBiberArgument,
                         _ => State::InBiberRemainder,
                     }
                 }
 
                 (State::InBiberCmdline, Event::End(ref e)) => {
-                    let name = reader
-                        .decoder()
-                        .decode(e.local_name().into_inner())
-                        .map_err(quick_xml::Error::from)?;
+                    let name = e.local_name().into_inner();
 
                     if name == "cmdline" {
                         state = State::InBiberRemainder;
@@ -2200,27 +2189,21 @@ impl ProcessingSession {
                 }
 
                 (State::InBiberArgument, Event::Text(ref e)) => {
-                    argv.push(e.decode()?.to_string());
+                    argv.push(e.to_string());
                     state = State::InBiberCmdline;
                 }
 
                 (State::InBiberRemainder, Event::Start(ref e)) => {
-                    let name = reader
-                        .decoder()
-                        .decode(e.local_name().into_inner())
-                        .map_err(quick_xml::Error::from)?;
+                    let name = e.local_name().into_inner();
 
-                    state = match &*name {
+                    state = match name {
                         "input" | "requires" => State::InBiberRequirementSection,
                         _ => State::InBiberRemainder,
                     }
                 }
 
                 (State::InBiberRemainder, Event::End(ref e)) => {
-                    let name = reader
-                        .decoder()
-                        .decode(e.local_name().into_inner())
-                        .map_err(quick_xml::Error::from)?;
+                    let name = e.local_name().into_inner();
 
                     if name == "external" {
                         break;
@@ -2228,22 +2211,16 @@ impl ProcessingSession {
                 }
 
                 (State::InBiberRequirementSection, Event::Start(ref e)) => {
-                    let name = reader
-                        .decoder()
-                        .decode(e.local_name().into_inner())
-                        .map_err(quick_xml::Error::from)?;
+                    let name = e.local_name().into_inner();
 
-                    state = match &*name {
+                    state = match name {
                         "file" => State::InBiberFileRequirement,
                         _ => State::InBiberRemainder,
                     }
                 }
 
                 (State::InBiberRequirementSection, Event::End(ref e)) => {
-                    let name = reader
-                        .decoder()
-                        .decode(e.local_name().into_inner())
-                        .map_err(quick_xml::Error::from)?;
+                    let name = e.local_name().into_inner();
 
                     if name == "input" || name == "requires" {
                         state = State::InBiberRemainder;
@@ -2251,7 +2228,7 @@ impl ProcessingSession {
                 }
 
                 (State::InBiberFileRequirement, Event::Text(ref e)) => {
-                    extra_requires.insert(e.decode()?.to_string());
+                    extra_requires.insert(e.to_string());
                     state = State::InBiberRequirementSection;
                 }
 

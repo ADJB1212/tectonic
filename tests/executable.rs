@@ -1051,3 +1051,39 @@ fn v2_watch_succeeds() {
 
     assert!(stdout.matches("Running TeX").count() >= 2);
 }
+
+#[test]
+fn parallel_native_layout_preserves_paragraphs_adjustments_and_synctex() {
+    let format = get_plain_format_arg();
+    let tempdir = setup_and_copy_files(&[]);
+    let paragraph = "office affinity final line kerning AVATAR To Wa ffi. Paragraph breaking preserves glyph positions, spaces, ligatures and discretionary hyphenation. ";
+    let text = format!(r#"\font\native="[lmroman12-regular]/OT" at 12pt
+\native \hsize=160pt \pretolerance=-1 \tolerance=10000
+\emergencystretch=10pt \nopagenumbers
+{}\discretionary{{pre}}{{post}}{{replacement}}{}\vadjust{{\penalty73}}{}\par
+{{\hangindent=20pt \hangafter=2 {}\par}}
+{{\parshape=3 0pt 140pt 10pt 120pt 0pt 160pt {}\par}}
+{{\lastlinefit=1000 {}\par}}
+Unicode quoted text: “office affinity”. {}\par
+\bye
+"#, paragraph.repeat(4), paragraph.repeat(4), paragraph.repeat(4),
+        paragraph.repeat(12), paragraph.repeat(12), paragraph.repeat(12), paragraph.repeat(12));
+    fs::write(tempdir.path().join("layout.tex"), text).unwrap();
+    let args = [format.as_str(), "--outfmt=xdv", "--synctex", "-Zdeterministic-mode", "layout.tex"];
+    let mut expected = None;
+    for workers in ["1", "3", "1"] {
+        let output = prep_tectonic(tempdir.path(), &args).env("TECTONIC_LAYOUT_THREADS", workers)
+            .output().expect("tectonic failed to start");
+        success_or_panic(&output);
+        let xdv = fs::read(tempdir.path().join("layout.xdv")).unwrap();
+        let synctex = fs::read(tempdir.path().join("layout.synctex.gz")).unwrap();
+        let mut decoded = Vec::new();
+        flate2::read::GzDecoder::new(synctex.as_slice()).read_to_end(&mut decoded).unwrap();
+        let result = (xdv, decoded);
+        if let Some(expected) = &expected {
+            assert_eq!(&result, expected);
+        } else {
+            expected = Some(result);
+        }
+    }
+}

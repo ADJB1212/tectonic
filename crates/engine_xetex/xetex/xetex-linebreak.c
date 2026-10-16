@@ -977,6 +977,11 @@ done:
 static void
 post_line_break(bool d)
 {
+    struct pending_line {
+        int32_t list;
+        scaled_t width, indent;
+        int32_t penalty;
+    };
     int32_t q, r, s;
     int32_t p, k;
     scaled_t w;
@@ -990,6 +995,10 @@ post_line_break(bool d)
     int32_t pen;
     int32_t cur_line;
     int32_t LR_ptr;
+    struct pending_line *lines;
+    int32_t line_count = 0, line_index;
+    int32_t *line_heads;
+    PreparedLayouts *prepared;
 
     LR_ptr = cur_list.eTeX_aux;
 
@@ -1006,6 +1015,7 @@ post_line_break(bool d)
     } while (q != TEX_NULL); /*:907*/
 
     cur_line = cur_list.prev_graf + 1;
+    lines = xcalloc(best_line - cur_line, sizeof(struct pending_line));
 
     do {
         /* 909: justify the line ending at breakpoint cur_p and append it to
@@ -1236,37 +1246,9 @@ post_line_break(bool d)
             cur_indent = mem[LOCAL(par_shape) + 2 * cur_line - 1].b32.s1;
         }
 
-        adjust_tail = ADJUST_HEAD;
-        pre_adjust_tail = PRE_ADJUST_HEAD;
-
-        /* Tectonic: in semantic pagination mode, set each "line" (really the
-         * whole paragraph) at its natural width. */
-
-        if (semantic_pagination_enabled) {
-            just_box = hpack(q, 0, ADDITIONAL);
-        } else {
-            just_box = hpack(q, cur_width, EXACTLY);
-        }
-
-        BOX_shift_amount(just_box) = cur_indent; /*:918*/
-
-        /* 917: append the new box to the current vertical list, followed
-         * by any of its special nodes that were taken out */
-
-        if (PRE_ADJUST_HEAD != pre_adjust_tail) {
-            LLIST_link(cur_list.tail) = LLIST_link(PRE_ADJUST_HEAD);
-            cur_list.tail = pre_adjust_tail;
-        }
-
-        pre_adjust_tail = TEX_NULL;
-        append_to_vlist(just_box);
-
-        if (ADJUST_HEAD != adjust_tail) {
-            LLIST_link(cur_list.tail) = LLIST_link(ADJUST_HEAD);
-            cur_list.tail = adjust_tail;
-        }
-
-        adjust_tail = TEX_NULL; /*:917*/
+        lines[line_count].list = q;
+        lines[line_count].width = cur_width;
+        lines[line_count].indent = cur_indent;
 
         /* 919: Set `pen` to all of the penalties relevant to this line. */
 
@@ -1313,15 +1295,12 @@ post_line_break(bool d)
             if (disc_break)
                 pen += INTPAR(broken_penalty);
 
-            if (pen != 0) {
-                r = new_penalty(pen);
-                LLIST_link(cur_list.tail) = r;
-                cur_list.tail = r;
-            }
+            lines[line_count].penalty = pen;
         }
 
         /* Done justifying this line. */
 
+        line_count++;
         cur_line++;
         cur_p = PASSIVE_NODE_next_break(cur_p);
 
@@ -1375,6 +1354,41 @@ post_line_break(bool d)
 
     if (cur_line != best_line || LLIST_link(TEMP_HEAD) != TEX_NULL)
         confusion("line breaking");
+
+    line_heads = xmalloc(line_count * sizeof(int32_t));
+    for (line_index = 0; line_index < line_count; line_index++)
+        line_heads[line_index] = lines[line_index].list;
+    prepared = prepare_native_line_layouts(line_heads, line_count);
+    free(line_heads);
+
+    for (line_index = 0; line_index < line_count; line_index++) {
+        adjust_tail = ADJUST_HEAD;
+        pre_adjust_tail = PRE_ADJUST_HEAD;
+        if (semantic_pagination_enabled)
+            just_box = hpack(lines[line_index].list, 0, ADDITIONAL);
+        else
+            just_box = hpack(lines[line_index].list, lines[line_index].width, EXACTLY);
+        BOX_shift_amount(just_box) = lines[line_index].indent;
+
+        if (PRE_ADJUST_HEAD != pre_adjust_tail) {
+            LLIST_link(cur_list.tail) = LLIST_link(PRE_ADJUST_HEAD);
+            cur_list.tail = pre_adjust_tail;
+        }
+        pre_adjust_tail = TEX_NULL;
+        append_to_vlist(just_box);
+        if (ADJUST_HEAD != adjust_tail) {
+            LLIST_link(cur_list.tail) = LLIST_link(ADJUST_HEAD);
+            cur_list.tail = adjust_tail;
+        }
+        adjust_tail = TEX_NULL;
+        if (lines[line_index].penalty != 0) {
+            r = new_penalty(lines[line_index].penalty);
+            LLIST_link(cur_list.tail) = r;
+            cur_list.tail = r;
+        }
+    }
+    ttxl_release_prepared_layouts(prepared);
+    free(lines);
 
     cur_list.prev_graf = best_line - 1;
     cur_list.eTeX_aux = LR_ptr;

@@ -17,7 +17,7 @@ extern "C" {
     );
 }
 
-fn pool() -> Option<&'static rayon::ThreadPool> {
+pub(crate) fn pool() -> Option<&'static rayon::ThreadPool> {
     static POOL: OnceLock<Option<rayon::ThreadPool>> = OnceLock::new();
     POOL.get_or_init(|| {
         let threads = thread::available_parallelism().map_or(1, usize::from);
@@ -26,7 +26,7 @@ fn pool() -> Option<&'static rayon::ThreadPool> {
         }
         rayon::ThreadPoolBuilder::new()
             .num_threads(threads.min(16))
-            .thread_name(|i| format!("tectonic-image-{i}"))
+            .thread_name(|i| format!("tectonic-pdf-io-{i}"))
             .build()
             .ok()
     })

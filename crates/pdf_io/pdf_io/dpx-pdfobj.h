@@ -52,6 +52,7 @@ typedef struct pdf_out pdf_out;
 
 #define STREAM_COMPRESS (1 << 0)
 #define STREAM_USE_PREDICTOR   (1 << 1)
+#define STREAM_PAGE_CONTENT (1 << 2)
 
 /* A deeper object hierarchy will be considered as (illegal) loop. */
 #define PDF_OBJ_MAX_DEPTH  30

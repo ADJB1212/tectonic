@@ -3,7 +3,7 @@
 
 //! The initialization stage of SPX processing.
 
-use std::{collections::HashMap, io::Read, path::PathBuf};
+use std::{collections::HashMap, io::Read};
 use tectonic_errors::prelude::*;
 use tectonic_status_base::tt_warning;
 
@@ -277,27 +277,7 @@ impl InitializationState {
 
         let mut context = tera::Context::default();
 
-        // Tera requires that we give it a filesystem path to look for
-        // templates, even if we're going to be adding all of our templates
-        // later. So I guess we have to create an empty tempdir.
-
-        let tempdir = atry!(
-            tempfile::Builder::new().prefix("tectonic_tera_workaround").tempdir();
-            ["couldn't create empty temporary directory for Tera"]
-        );
-
-        let mut p = PathBuf::from(tempdir.path());
-        p.push("*");
-
-        let p = a_ok_or!(
-            p.to_str();
-            ["couldn't convert Tera temporary directory name to UTF8 as required"]
-        );
-
-        let mut tera = atry!(
-            tera::Tera::parse(p);
-            ["couldn't initialize Tera templating engine in temporary directory `{}`", p]
-        );
+        let mut tera = tera::Tera::default();
 
         atry!(
             tera.add_raw_templates(self.templates.iter());

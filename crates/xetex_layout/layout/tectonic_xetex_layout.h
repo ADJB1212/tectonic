@@ -52,6 +52,14 @@ typedef struct {
   float y;
 } FloatPoint;
 
+typedef struct {
+  XeTeXLayoutEngine engine;
+  const uint16_t *text;
+  size_t length;
+} NativeLayoutRequest;
+
+typedef struct PreparedLayouts PreparedLayouts;
+
 typedef uint32_t OTTag;
 
 #if !defined(XETEX_MAC)
@@ -150,6 +158,10 @@ int layoutChars(XeTeXLayoutEngine engine,
                 int32_t count,
                 int32_t max,
                 bool rtl);
+
+PreparedLayouts *ttxl_prepare_layouts(const NativeLayoutRequest *requests, size_t count);
+
+void ttxl_release_prepared_layouts(PreparedLayouts *prepared);
 
 const char *getFontFilename(XeTeXLayoutEngine engine, uint32_t *index);
 

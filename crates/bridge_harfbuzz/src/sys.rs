@@ -299,6 +299,7 @@ extern "C" {
     pub fn hb_face_set_upem(face: *mut hb_face_t, upem: libc::c_uint);
     pub fn hb_face_destroy(face: *mut hb_face_t);
     pub fn hb_font_create(face: *mut hb_face_t) -> *mut hb_font_t;
+    pub fn hb_font_make_immutable(font: *mut hb_font_t);
     pub fn hb_font_set_funcs(
         font: *mut hb_font_t,
         klass: *mut hb_font_funcs_t,

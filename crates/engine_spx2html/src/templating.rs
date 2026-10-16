@@ -64,7 +64,7 @@ impl Templating {
     pub(crate) fn set_variable<S: AsRef<str>>(&mut self, name: &str, value: S) {
         // Unfortunately tera doesn't seem to give us a way to move an owned
         // value directly into the context object.
-        self.context.insert(name, value.as_ref());
+        self.context.insert(name.to_owned(), value.as_ref());
     }
 
     pub(crate) fn ready_to_output(&self) -> bool {
@@ -118,8 +118,14 @@ impl Templating {
 
         // Ready to render!
 
+        const TEMPLATE_NAME: &str = "__tera_one_off";
+        atry!(
+            self.tera.add_raw_template(TEMPLATE_NAME, &template);
+            ["failed to compile HTML template `{}`", &self.next_template_path]
+        );
+
         let rendered = atry!(
-            self.tera.render_str(&template, &self.context);
+            self.tera.render(TEMPLATE_NAME, &self.context);
             ["failed to render HTML template `{}` while creating `{}`", &self.next_template_path, &self.next_output_path]
         );
 

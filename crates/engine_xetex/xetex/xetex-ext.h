@@ -139,6 +139,7 @@ int make_font_def(int32_t f);
 int apply_mapping(void* cnv, uint16_t* txtPtr, int txtLen);
 void store_justified_native_glyphs(void* node);
 void measure_native_node(void* node, int use_glyph_metrics);
+PreparedLayouts *prepare_native_line_layouts(const int32_t *lines, size_t count);
 Fixed real_get_native_italic_correction(void* node);
 Fixed real_get_native_glyph_italic_correction(void* node);
 int32_t real_get_native_word_cp(void* node, int side);

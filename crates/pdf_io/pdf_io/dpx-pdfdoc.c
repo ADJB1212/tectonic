@@ -2235,7 +2235,7 @@ pdf_doc_new_page (pdf_doc *p)
   }
 
   currentpage->background = NULL;
-  currentpage->contents   = pdf_new_stream(STREAM_COMPRESS);
+    currentpage->contents   = pdf_new_stream(STREAM_COMPRESS | STREAM_PAGE_CONTENT);
   currentpage->resources  = pdf_new_dict();
 
   currentpage->annots = NULL;

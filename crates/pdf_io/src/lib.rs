@@ -7,6 +7,7 @@
 //!
 //! [Tectonic]: https://tectonic-typesetting.github.io/
 
+mod compress;
 mod predictor;
 
 /// Import things from our bridge crates to ensure that we actually link with
