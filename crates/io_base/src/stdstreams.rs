@@ -93,18 +93,8 @@ impl BufferedPrimaryIo {
     /// large it is. This approach is required because Tectonic will generally
     /// need to make multiple passes over the input file.
     pub fn from_stream<T: Read>(stream: &mut T) -> Result<Self> {
-        let mut buf = [0u8; 8192];
-        let mut alldata = Vec::<u8>::new();
-
-        loop {
-            let nbytes = stream.read(&mut buf)?;
-
-            if nbytes == 0 {
-                break;
-            }
-
-            alldata.extend_from_slice(&buf[..nbytes]);
-        }
+        let mut alldata = Vec::new();
+        stream.read_to_end(&mut alldata)?;
 
         Ok(BufferedPrimaryIo {
             buffer: SharedByteBuffer::new(alldata),

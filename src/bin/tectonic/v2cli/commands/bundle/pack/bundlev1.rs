@@ -3,7 +3,7 @@ use flate2::{write::GzEncoder, Compression};
 use std::{
     fmt::Display,
     fs::{self, File},
-    io::{stdout, BufRead, BufReader, Read, Seek, Write},
+    io::{BufRead, BufReader, Read, Seek, Write},
     num::ParseIntError,
     path::PathBuf,
 };
@@ -95,20 +95,36 @@ impl BundleV1 {
         info!("Building ttbv1 bundle...");
 
         for line in reader.lines() {
-            stdout().flush()?;
-
             let line = line?;
             let mut bits = line.split_whitespace();
 
             if let Some(hash) = bits.next() {
-                let path = bits.collect::<Vec<&str>>().join(" ");
+                let path = match bits.next() {
+                    Some(first) => match bits.next() {
+                        None => first.to_owned(),
+                        Some(second) => {
+                            let mut p = String::with_capacity(first.len() + 1 + second.len());
+                            p.push_str(first);
+                            p.push(' ');
+                            p.push_str(second);
+                            for rest in bits {
+                                p.push(' ');
+                                p.push_str(rest);
+                            }
+                            p
+                        }
+                    },
+                    None => bail!("malformed filelist line: missing path"),
+                };
 
                 let mut file = fs::File::open(self.content_dir.join(&path))?;
 
                 // Compress and write bytes
                 let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
                 let real_len = std::io::copy(&mut file, &mut encoder)?;
-                let gzip_len = self.target.write(&encoder.finish()?)?;
+                let compressed = encoder.finish()?;
+                let gzip_len = compressed.len();
+                self.target.write_all(&compressed)?;
                 assert!(real_len < u32::MAX as u64);
                 assert!(gzip_len < u32::MAX as usize);
 

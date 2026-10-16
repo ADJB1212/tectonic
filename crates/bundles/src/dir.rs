@@ -59,12 +59,22 @@ impl IoProvider for DirBundle {
 
 impl Bundle for DirBundle {
     fn all_files(&self) -> Vec<String> {
-        fs::read_dir(self.0.root())
-            .unwrap()
+        let entries = match fs::read_dir(self.0.root()) {
+            Ok(e) => e,
+            Err(_) => return Vec::new(),
+        };
+
+        entries
             .filter_map(|x| x.ok())
             .filter(|x| !x.file_type().map(|x| x.is_dir()).unwrap_or(false))
-            .map(|x| x.file_name().to_str().unwrap_or("").to_owned())
-            .filter(|x| !x.is_empty())
+            .filter_map(|x| {
+                let name = x.file_name().into_string().ok()?;
+                if !name.is_empty() {
+                    Some(name)
+                } else {
+                    None
+                }
+            })
             .collect()
     }
 

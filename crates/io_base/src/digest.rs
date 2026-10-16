@@ -28,11 +28,13 @@ pub struct BadLengthError {
 /// Convert a byte slice to its hexadecimal textual representation. Letters will
 /// be in lower case.
 pub fn bytes_to_hex(bytes: &[u8]) -> String {
-    bytes
-        .iter()
-        .map(|b| format!("{b:02x}"))
-        .collect::<Vec<_>>()
-        .concat()
+    const HEX_CHARS: &[u8; 16] = b"0123456789abcdef";
+    let mut s = String::with_capacity(bytes.len() * 2);
+    for &b in bytes {
+        s.push(HEX_CHARS[(b >> 4) as usize] as char);
+        s.push(HEX_CHARS[(b & 0xf) as usize] as char);
+    }
+    s
 }
 
 /// Convert a hexadecimal string to bytes.
@@ -105,7 +107,10 @@ impl DigestData {
 
 impl fmt::Display for DigestData {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", bytes_to_hex(&self.0))
+        for b in &self.0 {
+            write!(f, "{b:02x}")?;
+        }
+        Ok(())
     }
 }
 

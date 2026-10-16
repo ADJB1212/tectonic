@@ -443,17 +443,18 @@ impl FontFileData {
         let mut buffer = self.buffer;
         let orig_len = buffer.len();
 
-        for cur_map_index in 0.. {
-            let mut mappings = Vec::new();
-
-            for (glyph, altmap) in &self.variant_map_allocations {
-                if altmap.variant_map_index == cur_map_index {
-                    mappings.push((altmap.usv, *glyph));
-                }
+        let mut grouped_mappings: Vec<Vec<(char, GlyphId)>> = Vec::new();
+        for (glyph, altmap) in &self.variant_map_allocations {
+            let idx = altmap.variant_map_index;
+            if idx >= grouped_mappings.len() {
+                grouped_mappings.resize_with(idx + 1, Vec::new);
             }
+            grouped_mappings[idx].push((altmap.usv, *glyph));
+        }
 
+        for (cur_map_index, mut mappings) in grouped_mappings.into_iter().enumerate() {
             if mappings.is_empty() {
-                break;
+                continue;
             }
 
             // We have some variants to emit! If we're not actually writing
@@ -553,20 +554,22 @@ fn load_ssty_mappings(
 ) -> Result<()> {
     for look in feat.lookups() {
         for st in look.subtables() {
+            // Implement more subtable kinds as needed ...
+            let SubtableKind::AlternateSubst1(t) = st.kind() else {
+                continue;
+            };
+
             for glyph in dglyphs {
                 let c = map.get(glyph).unwrap().get_char();
 
                 if let Some(cov) = st.covered(*glyph) {
-                    // Implement more subtable kinds as needed ...
-                    if let SubtableKind::AlternateSubst1(t) = st.kind() {
-                        if let Some(sl) = t.get(cov) {
-                            if let Some(g) = sl.get(0) {
-                                map.insert(g, MapEntry::SubSuperScript(c, false));
-                            }
+                    if let Some(sl) = t.get(cov) {
+                        if let Some(g) = sl.get(0) {
+                            map.insert(g, MapEntry::SubSuperScript(c, false));
+                        }
 
-                            if let Some(g) = sl.get(1) {
-                                map.insert(g, MapEntry::SubSuperScript(c, true));
-                            }
+                        if let Some(g) = sl.get(1) {
+                            map.insert(g, MapEntry::SubSuperScript(c, true));
                         }
                     }
                 }

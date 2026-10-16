@@ -72,7 +72,7 @@ impl StringTable {
             count(parseutils::ranged_be_i32(0, pool_ptr), n_strings as usize).parse(input)?;
 
         let (input, str_pool) = count(be_u16, pool_ptr as usize).parse(input)?;
-        let mut strings = Vec::new();
+        let mut strings = Vec::with_capacity(n_strings as usize);
 
         for i in 0..(n_strings as usize) {
             let idx0 = str_starts[i] as usize;

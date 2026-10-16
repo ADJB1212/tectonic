@@ -32,7 +32,7 @@ use quick_xml::{events::Event, NsReader};
 use std::{
     collections::{HashMap, HashSet},
     fs::File,
-    io::{Cursor, Read, Write},
+    io::{BufWriter, Cursor, Read, Write},
     path::{Path, PathBuf},
     process::Command,
     rc::Rc,
@@ -1517,14 +1517,18 @@ impl ProcessingSession {
                     );
                     None
                 } else {
-                    Some(File::create(p)?)
+                    Some(BufWriter::new(File::create(p)?))
                 }
             }
 
             None => None,
         };
 
-        let n_skipped_intermediates = self.write_files(mf_dest_maybe.as_mut(), status, false)?;
+        let n_skipped_intermediates = self.write_files(
+            mf_dest_maybe.as_mut().map(|w| w as &mut dyn Write),
+            status,
+            false,
+        )?;
 
         if n_skipped_intermediates > 0 {
             status.note_highlighted(
@@ -1570,6 +1574,7 @@ impl ProcessingSession {
             }
 
             ctry!(writeln!(mf_dest, ""); "couldn't write to Makefile-rules file");
+            ctry!(mf_dest.flush(); "couldn't flush Makefile-rules file");
         }
 
         // All done.
@@ -1579,7 +1584,7 @@ impl ProcessingSession {
 
     fn write_files(
         &mut self,
-        mut mf_dest_maybe: Option<&mut File>,
+        mut mf_dest_maybe: Option<&mut dyn Write>,
         status: &mut dyn StatusBackend,
         only_logs: bool,
     ) -> Result<u32> {
@@ -2133,6 +2138,7 @@ impl ProcessingSession {
         let mut state = State::Searching;
 
         loop {
+            buf.clear();
             let event = ctry!(
                 reader.read_event_into(&mut buf);
                 "error parsing run.xml file"

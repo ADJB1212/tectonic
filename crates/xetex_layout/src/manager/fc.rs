@@ -156,11 +156,16 @@ impl FontManagerBackend for FcBackend {
                     }
                     let mut j = 0;
                     while let Ok(style) = pat.as_ref().get::<fc::pat::Style>(j) {
-                        let mut full = str.to_bytes().to_owned();
-                        full.push(b' ');
-                        full.extend(style.to_bytes());
+                        let name_bytes = name.to_bytes();
+                        let str_bytes = str.to_bytes();
+                        let style_bytes = style.to_bytes();
 
-                        if name.to_bytes() == full {
+                        let matches = name_bytes.len() == str_bytes.len() + 1 + style_bytes.len()
+                            && name_bytes.starts_with(str_bytes)
+                            && name_bytes[str_bytes.len()] == b' '
+                            && &name_bytes[str_bytes.len() + 1..] == style_bytes;
+
+                        if matches {
                             let names = self.read_names(pat.clone());
                             maps.add_to_maps(self, pat.clone(), &names);
                             self.cache_family_members(maps, &names.family_names);

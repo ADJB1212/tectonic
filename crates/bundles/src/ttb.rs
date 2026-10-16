@@ -81,17 +81,42 @@ pub struct TTBFileIndex {
 
     // Remember previous searches so we don't have to iterate over content again.
     search_cache: HashMap<String, Option<TTBFileInfo>>,
+    by_name: HashMap<String, Vec<usize>>,
 }
 
 impl TTBFileIndex {
+    fn ensure_by_name(&mut self) {
+        if self.by_name.is_empty() && !self.content.is_empty() {
+            for (idx, info) in self.content.iter().enumerate() {
+                self.by_name.entry(info.name.clone()).or_default().push(idx);
+            }
+        }
+    }
+
     fn read_filelist_line(&mut self, line: &str) -> Result<()> {
         let mut bits = line.split_whitespace();
 
         if let (Some(start), Some(gzip_len), Some(real_len), Some(hash)) =
             (bits.next(), bits.next(), bits.next(), bits.next())
         {
-            let path = bits.collect::<Vec<&str>>().join(" ");
-            let (_, name) = path.rsplit_once('/').unwrap_or(("", &path));
+            let path = match bits.next() {
+                Some(first) => match bits.next() {
+                    None => first.to_owned(),
+                    Some(second) => {
+                        let mut p = String::with_capacity(first.len() + 1 + second.len());
+                        p.push_str(first);
+                        p.push(' ');
+                        p.push_str(second);
+                        for rest in bits {
+                            p.push(' ');
+                            p.push_str(rest);
+                        }
+                        p
+                    }
+                },
+                None => bail!("malformed FILELIST line: missing path"),
+            };
+            let name = path.rsplit_once('/').map(|(_, n)| n).unwrap_or(&path).to_owned();
 
             // Basic path validation.
             // TODO: more robust checks
@@ -102,12 +127,15 @@ impl TTBFileIndex {
                 bail!("bad bundle file path `{path}`");
             }
 
+            let idx = self.content.len();
+            self.by_name.entry(name.clone()).or_default().push(idx);
+
             self.content.push(TTBFileInfo {
                 start: start.parse::<u64>()?,
                 gzip_len: gzip_len.parse::<u32>()?,
                 real_len: real_len.parse::<u32>()?,
-                path: path.clone(),
-                name: name.to_owned(),
+                path,
+                name,
                 hash: match hash {
                     "nohash" => None,
                     _ => Some(hash.to_owned()),
@@ -149,6 +177,7 @@ impl<'this> FileIndex<'this> for TTBFileIndex {
         self.search_orders.clear();
         self.search_cache.clear();
         self.default_search_order.clear();
+        self.by_name.clear();
 
         let mut mode: String = String::new();
         for line in BufReader::new(reader).lines() {
@@ -182,7 +211,15 @@ impl<'this> FileIndex<'this> for TTBFileIndex {
             Some(r) => return r.clone(),
         }
 
-        let search = self.search_orders.get(&self.default_search_order).unwrap();
+        self.ensure_by_name();
+
+        let search = match self.search_orders.get(&self.default_search_order) {
+            Some(s) => s,
+            None => {
+                self.search_cache.insert(name.to_owned(), None);
+                return None;
+            }
+        };
 
         // Edge case: absolute paths
         if name.starts_with('/') {
@@ -205,30 +242,27 @@ impl<'this> FileIndex<'this> for TTBFileIndex {
             }
         };
 
-        // If we don't have this path in the index, this file doesn't exist.
-        // The code below will clone these strings iff it has to.
-        let mut infos: Vec<&TTBFileInfo> = Vec::new();
-        for i in self.iter() {
-            if i.name() == n {
-                infos.push(i);
-            } else if !infos.is_empty() {
-                // infos is sorted, so we can stop searching now.
-                break;
+        let matching_indices = match self.by_name.get(n) {
+            Some(indices) => indices,
+            None => {
+                self.search_cache.insert(name.to_owned(), None);
+                return None;
             }
-        }
+        };
 
         if relative_parent {
             // TODO: REWORK
             let mut matching: Option<&TTBFileInfo> = None;
-            for info in &infos {
-                if info.path().ends_with(&name) {
+            for &idx in matching_indices {
+                let info = &self.content[idx];
+                if info.path().ends_with(name) {
                     match matching {
                         Some(_) => return None, // TODO: warning. This shouldn't happen.
                         None => matching = Some(info),
                     }
                 }
             }
-            let matching = Some(matching?.clone());
+            let matching = matching.cloned();
             self.search_cache.insert(name.to_owned(), matching.clone());
             matching
         } else {
@@ -242,7 +276,8 @@ impl<'this> FileIndex<'this> for TTBFileIndex {
                 // (search patterns start with slashes, but paths do not)
                 let rule = &rule[1..];
 
-                for info in &infos {
+                for &idx in matching_indices {
+                    let info = &self.content[idx];
                     if rule.ends_with("//") {
                         // Match start of patent path
                         // (cutting off the last slash)
@@ -251,7 +286,8 @@ impl<'this> FileIndex<'this> for TTBFileIndex {
                         }
                     } else {
                         // Match full parent path
-                        if &info.path()[0..info.path().len() - name.len()] == rule {
+                        let prefix_len = info.path().len().saturating_sub(name.len());
+                        if &info.path()[0..prefix_len] == rule {
                             picked.push(info);
                         }
                     }

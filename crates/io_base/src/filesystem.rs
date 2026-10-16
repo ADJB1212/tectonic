@@ -277,6 +277,10 @@ impl InputFeatures for BufReader<File> {
 /// path. `std::fs::canonicalize` is a bit overkill and prefixes all of
 /// our paths with `\\?\` on Windows.
 fn make_abspath<P: AsRef<Path>>(path: P) -> Result<PathBuf> {
+    let p = path.as_ref();
+    if p.is_absolute() {
+        return Ok(p.to_path_buf());
+    }
     let cwd = env::current_dir()?;
-    Ok(cwd.join(path.as_ref()))
+    Ok(cwd.join(p))
 }

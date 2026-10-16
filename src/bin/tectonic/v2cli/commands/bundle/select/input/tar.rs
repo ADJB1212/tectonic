@@ -7,6 +7,7 @@ use std::{
     path::{Path, PathBuf},
 };
 use tar::Archive;
+use tectonic_io_base::digest::bytes_to_hex;
 use tracing::info;
 
 use super::BundleInput;
@@ -27,13 +28,7 @@ impl TarBundleInput {
         let hash = {
             let mut hasher = IoWrapper(Sha256::new());
             let _ = std::io::copy(&mut file, &mut hasher)?;
-            hasher
-                .0
-                .finalize()
-                .iter()
-                .map(|b| format!("{b:02x}"))
-                .collect::<Vec<_>>()
-                .concat()
+            bytes_to_hex(&hasher.0.finalize())
         };
 
         file.seek(std::io::SeekFrom::Start(0))?;

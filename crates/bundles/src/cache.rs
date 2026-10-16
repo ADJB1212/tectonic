@@ -94,6 +94,9 @@ pub struct BundleCache<'this, T> {
     /// All other paths are subdirectories of this path.
     cache_root: PathBuf,
 
+    /// Subdirectory for this bundle's cached data: <cache_root>/data/<bundle_hash>
+    data_dir: PathBuf,
+
     // The hash of the bundle we're caching.
     bundle_hash: DigestData,
 
@@ -224,10 +227,13 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
             HashSet::new()
         };
 
+        let data_dir = cache_root.join(format!("data/{bundle_hash}"));
+
         let bundle = BundleCache {
             only_cached,
             bundle,
             cache_root,
+            data_dir,
             bundle_hash,
             manifest_path,
             touched,
@@ -243,29 +249,22 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
         // which is true for network TTB and fs TTB.
         // Adding support for multiple formats of a single bundle hash
         // shouldn't be too hard, but isn't necessary yet.
-        ensure_dir!(&bundle
-            .cache_root
-            .join(format!("data/{}", bundle.bundle_hash)));
+        ensure_dir!(&bundle.data_dir);
 
         Ok(bundle)
     }
 
     /// Build a cache path for the given bundle file
     fn get_file_path(&self, info: &T::InfoType) -> PathBuf {
-        let mut out = self.cache_root.clone();
-        out.push(format!("data/{}", self.bundle_hash));
-        out.push(info.path());
-        out
+        self.data_dir.join(info.path())
     }
 
     /// Build a temporary path for the given bundle file
     /// To ensure safety with multiple instances of tectonic,
     /// files are first downloaded to a known-unique location, then renamed.
     fn get_file_path_tmp(&self, info: &T::InfoType) -> PathBuf {
-        let mut out = self.cache_root.clone();
-        out.push(format!("data/{}", self.bundle_hash));
-        out.push(format!("{}-tmp-pid{}", info.path(), process::id()));
-        out
+        self.data_dir
+            .join(format!("{}-tmp-pid{}", info.path(), process::id()))
     }
 
     fn ensure_index(&mut self) -> Result<()> {

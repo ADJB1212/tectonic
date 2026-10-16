@@ -1,17 +1,18 @@
 use anyhow::{bail, Context, Result};
 use digest_io::IoWrapper;
-use regex::Regex;
+use regex::RegexSet;
 use sha2::{Digest, Sha256};
 use std::{
     cmp::Ordering,
     collections::HashMap,
     fmt::Display,
     fs::{self, File},
-    io::{self, Cursor, Read, Write},
+    io::{self, BufWriter, Cursor, Read, Write},
     iter::FromIterator,
     path::{Path, PathBuf},
     process::{Command, Stdio},
 };
+use tectonic_io_base::digest::bytes_to_hex;
 use tracing::{debug, error, info, trace, warn};
 use walkdir::WalkDir;
 
@@ -214,15 +215,7 @@ impl FilePicker {
                                 .with_context(|| format!("while computing hash of {path:?}"))?,
                             &mut hasher,
                         )?;
-                        Some(
-                            hasher
-                                .0
-                                .finalize()
-                                .iter()
-                                .map(|b| format!("{b:02x}"))
-                                .collect::<Vec<_>>()
-                                .concat(),
-                        )
+                        Some(bytes_to_hex(&hasher.0.finalize()))
                     }
                 },
                 path,
@@ -368,33 +361,18 @@ impl FilePicker {
 
         // Load and compile ignore patterns
         let ignore_patterns = {
-            // Global patterns
-            let mut ignore = self
-                .bundle_spec
-                .bundle
-                .ignore
-                .as_ref()
-                .map(|v| {
-                    v.iter()
-                        .map(|x| Regex::new(&format!("^{x}$")))
-                        .collect::<Result<Vec<Regex>, regex::Error>>()
-                })
-                .unwrap_or(Ok(Vec::new()))?;
-
-            // Input patterns
-            ignore.extend(
-                input
-                    .ignore
-                    .as_ref()
-                    .map(|v| {
-                        v.iter()
-                            .map(|x| Regex::new(&format!("^/{source}/{x}$")))
-                            .collect::<Result<Vec<Regex>, regex::Error>>()
-                    })
-                    .unwrap_or(Ok(Vec::new()))?,
-            );
-
-            ignore
+            let mut patterns = Vec::new();
+            if let Some(ignore) = &self.bundle_spec.bundle.ignore {
+                for x in ignore {
+                    patterns.push(format!("^{x}$"));
+                }
+            }
+            if let Some(ignore) = &input.ignore {
+                for x in ignore {
+                    patterns.push(format!("^/{source}/{x}$"));
+                }
+            }
+            RegexSet::new(patterns)?
         };
 
         let mut source_backend = match &input.source {
@@ -442,16 +420,11 @@ impl FilePicker {
         for x in source_backend.iter_files() {
             let (rel_file_path, mut read) = x?;
 
-            let ignore = {
+            let ignore = if ignore_patterns.is_empty() {
+                false
+            } else {
                 let f = format!("/{source}/{rel_file_path}");
-                let mut ignore = false;
-                for pattern in &ignore_patterns {
-                    if pattern.is_match(&f) {
-                        ignore = true;
-                        break;
-                    }
-                }
-                ignore
+                ignore_patterns.is_match(&f)
             };
 
             // Skip ignored files
@@ -512,10 +485,11 @@ impl FilePicker {
                 }
             }
 
-            let mut file = File::create(&path).context("while writing SEARCH")?;
+            let mut file = BufWriter::new(File::create(&path).context("while writing SEARCH")?);
             for s in &search {
                 writeln!(file, "{s}")?;
             }
+            file.flush()?;
 
             self.add_to_filelist(PathBuf::from("SEARCH"), Some(&path))?;
 
@@ -534,10 +508,11 @@ impl FilePicker {
             let filelist_path = self.build_dir.join("content/FILELIST");
 
             // Save FILELIST.
-            let mut file = File::create(&filelist_path).context("while writing FILELIST")?;
+            let mut file = BufWriter::new(File::create(&filelist_path).context("while writing FILELIST")?);
             for entry in filelist_vec {
                 writeln!(file, "{entry}")?;
             }
+            file.flush()?;
 
             // Compute and save hash
             let mut file = File::create(self.build_dir.join("content/SHA256SUM"))
@@ -545,13 +520,7 @@ impl FilePicker {
 
             let mut hasher = IoWrapper(Sha256::new());
             let _ = std::io::copy(&mut fs::File::open(&filelist_path)?, &mut hasher)?;
-            let hash = hasher
-                .0
-                .finalize()
-                .iter()
-                .map(|b| format!("{b:02x}"))
-                .collect::<Vec<_>>()
-                .concat();
+            let hash = bytes_to_hex(&hasher.0.finalize());
 
             writeln!(file, "{hash}")?;
         }
@@ -559,8 +528,10 @@ impl FilePicker {
         if save_debug_files {
             // Generate search-report
             {
-                let mut file = File::create(self.build_dir.join("search-report"))
-                    .context("while writing search-report")?;
+                let mut file = BufWriter::new(
+                    File::create(self.build_dir.join("search-report"))
+                        .context("while writing search-report")?,
+                );
                 for entry in WalkDir::new(self.build_dir.join("content")) {
                     let entry = entry?;
                     if !entry.file_type().is_dir() {
@@ -598,6 +569,7 @@ impl FilePicker {
                         writeln!(file, "{}{s}", "\t".repeat(t - 1))?;
                     }
                 }
+                file.flush()?;
             }
         }
         Ok(())

@@ -65,10 +65,10 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
             return;
         }
 
-        let mut names: Vec<String> = self.touched.iter().cloned().collect();
-        names.sort();
+        let mut names: Vec<&str> = self.touched.iter().map(String::as_str).collect();
+        names.sort_unstable();
         let mut infos = Vec::new();
-        for name in &names {
+        for name in names {
             if let Some(info) = self.bundle.search(name) {
                 if !self.get_file_path(&info).exists() {
                     infos.push(info);
