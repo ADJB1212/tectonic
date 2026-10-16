@@ -46,7 +46,7 @@ impl MacBackend {
         MacBackend {}
     }
 
-    fn add_fonts_to_caches(&self, maps: &mut FontMaps, members: CFArray<CTFontDescriptor>) {
+    fn add_fonts_to_caches(&self, maps: &mut FontMaps, members: &CFArray<CTFontDescriptor>) {
         for i in 0..members.len() {
             let font = members.get(i);
             let names = self.read_names(font.clone());
@@ -60,17 +60,17 @@ impl MacBackend {
         // SAFETY: CFString has no generic parameters
         let family = unsafe { attr.downcast::<CFString>() }.unwrap();
         let matched = find_fonts_with_name(family, FontAttribute::FamilyName);
-        self.add_fonts_to_caches(maps, matched);
+        self.add_fonts_to_caches(maps, &matched);
     }
 
-    fn add_family_to_caches(&self, maps: &mut FontMaps, family: CTFontDescriptor) {
+    fn add_family_to_caches(&self, maps: &mut FontMaps, family: &CTFontDescriptor) {
         let name_str = family
             .attr(FontAttribute::FamilyName)
             // SAFETY: CFString has no generic parameters
             .and_then(|ty| unsafe { ty.downcast::<CFString>() }.ok());
         if let Some(name_str) = name_str {
             let members = find_fonts_with_name(name_str, FontAttribute::FamilyName);
-            self.add_fonts_to_caches(maps, members);
+            self.add_fonts_to_caches(maps, &members);
         }
     }
 }
@@ -113,13 +113,13 @@ impl FontManagerBackend for MacBackend {
             let family_members =
                 find_fonts_with_name(family_str.clone(), FontAttribute::FamilyName);
             if !family_members.is_empty() {
-                self.add_fonts_to_caches(maps, family_members);
+                self.add_fonts_to_caches(maps, &family_members);
                 return;
             }
 
             let matched = find_font_with_name(family_str, FontAttribute::FamilyName);
             if let Some(matched) = matched {
-                self.add_family_to_caches(maps, matched);
+                self.add_family_to_caches(maps, &matched);
                 return;
             }
         }
@@ -132,13 +132,13 @@ impl FontManagerBackend for MacBackend {
 
         let family_members = find_fonts_with_name(name_str.clone(), FontAttribute::FamilyName);
         if !family_members.is_empty() {
-            self.add_fonts_to_caches(maps, family_members);
+            self.add_fonts_to_caches(maps, &family_members);
             return;
         }
 
         let matched = find_font_with_name(name_str, FontAttribute::FamilyName);
         if let Some(matched) = matched {
-            self.add_family_to_caches(maps, matched);
+            self.add_family_to_caches(maps, &matched);
         }
     }
 

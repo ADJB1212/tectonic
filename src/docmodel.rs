@@ -213,7 +213,7 @@ impl WorkspaceCreatorExt for WorkspaceCreator {
         let bundle_loc = if config::is_test_bundle_wanted(bundle.clone()) {
             "test-bundle://".to_owned()
         } else {
-            let loc = bundle.unwrap_or(config.default_bundle_loc().to_owned());
+            let loc = bundle.unwrap_or_else(|| config.default_bundle_loc().to_owned());
             let mut gub = DefaultBackend::default();
             gub.resolve_url(&loc)?
         };

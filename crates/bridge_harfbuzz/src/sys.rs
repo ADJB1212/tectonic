@@ -2,13 +2,13 @@
 
 use std::ptr;
 
-const fn hb_tag(text: &[u8; 4]) -> u32 {
-    u32::from_be_bytes(*text)
+const fn hb_tag(text: [u8; 4]) -> u32 {
+    u32::from_be_bytes(text)
 }
 
-pub const HB_TAG_NONE: u32 = hb_tag(b"\0\0\0\0");
-pub const HB_OT_TAG_GSUB: u32 = hb_tag(b"GSUB");
-pub const HB_OT_TAG_GPOS: u32 = hb_tag(b"GPOS");
+pub const HB_TAG_NONE: u32 = hb_tag(*b"\0\0\0\0");
+pub const HB_OT_TAG_GSUB: u32 = hb_tag(*b"GSUB");
+pub const HB_OT_TAG_GPOS: u32 = hb_tag(*b"GPOS");
 
 pub type hb_script_t = u32;
 

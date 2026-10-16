@@ -191,6 +191,14 @@ pub struct FontFuncsRef<'a, T>(
     PhantomData<(&'a sys::hb_font_funcs_t, T)>,
 );
 
+impl<T> Copy for FontFuncsRef<'_, T> {}
+
+impl<T> Clone for FontFuncsRef<'_, T> {
+    fn clone(&self) -> Self {
+        *self
+    }
+}
+
 impl<T> FontFuncsRef<'_, T> {
     pub(crate) fn as_ptr(&self) -> *mut sys::hb_font_funcs_t {
         self.0.as_ptr()

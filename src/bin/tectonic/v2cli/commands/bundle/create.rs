@@ -36,11 +36,11 @@ impl Display for BundleJob {
 }
 
 impl BundleJob {
-    pub fn do_select(&self) -> bool {
+    pub fn do_select(self) -> bool {
         matches!(self, Self::All | Self::Select)
     }
 
-    pub fn do_pack(&self) -> bool {
+    pub fn do_pack(self) -> bool {
         matches!(self, Self::All | Self::Pack)
     }
 }

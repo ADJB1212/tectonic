@@ -82,11 +82,11 @@ impl FontEnsemble {
         extend: Option<u32>,
         slant: Option<u32>,
         embolden: Option<u32>,
-        texpath: String,
+        texpath: &str,
         ih: InputHandle,
         common: &mut Common,
     ) -> Result<()> {
-        let fid = self.ensure_font_file(&texpath, face_index, ih, common)?;
+        let fid = self.ensure_font_file(texpath, face_index, ih, common)?;
 
         let info = TexFontInfo {
             fid,

@@ -174,7 +174,7 @@ impl CachableBundle<'_, TTBFileIndex> for TTBNetBundle<TTBFileIndex> {
         // (these cause errors on some web hosts)
         if info.gzip_len == 0 {
             return OpenResult::Ok(InputHandle::new_read_only(
-                info.name.to_owned(),
+                info.name.clone(),
                 Cursor::new(v),
                 InputOrigin::Other,
             ));
@@ -207,7 +207,7 @@ impl CachableBundle<'_, TTBFileIndex> for TTBNetBundle<TTBFileIndex> {
             };
 
             return OpenResult::Ok(InputHandle::new_read_only(
-                info.name.to_owned(),
+                info.name.clone(),
                 Cursor::new(v),
                 InputOrigin::Other,
             ));

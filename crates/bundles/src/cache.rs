@@ -352,10 +352,10 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
     /// Returns a path to the file that was created.
     fn fetch_file(
         &mut self,
-        info: T::InfoType,
+        info: &T::InfoType,
         status: &mut dyn StatusBackend,
     ) -> OpenResult<PathBuf> {
-        let target = self.get_file_path(&info);
+        let target = self.get_file_path(info);
         match fs::create_dir_all(target.parent().unwrap()) {
             Ok(()) => {}
             Err(e) => return OpenResult::Err(e.into()),
@@ -372,7 +372,7 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
         }
 
         // Get the file.
-        let mut handle = match self.bundle.open_fileinfo(&info, status) {
+        let mut handle = match self.bundle.open_fileinfo(info, status) {
             OpenResult::Ok(c) => c,
             OpenResult::Err(e) => return OpenResult::Err(e),
             OpenResult::NotAvailable => return OpenResult::NotAvailable,
@@ -380,7 +380,7 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
 
         // Download to a known-unique temporary location, then move.
         // This prevents issues when running multiple processes.
-        let tmp_path = self.get_file_path_tmp(&info);
+        let tmp_path = self.get_file_path_tmp(info);
         if let Err(e) = file_create_write(&tmp_path, |f| io::copy(&mut handle, f).map(|_| ())) {
             return OpenResult::Err(e);
         }
@@ -416,7 +416,7 @@ impl<'this, T: FileIndex<'this>> IoProvider for BundleCache<'this, T> {
             self.record_resolved_name(name);
             self.get_file_path(&info)
         } else {
-            match self.fetch_file(info, status) {
+            match self.fetch_file(&info, status) {
                 OpenResult::Ok(p) => {
                     // Failed downloads stay out of the learned set. They will
                     // be retried normally if the engine requests them again.

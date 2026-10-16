@@ -71,11 +71,12 @@ impl BundleV1 {
         Ok(())
     }
 
-    fn new(target: Box<dyn WriteSeek>, build_dir: PathBuf) -> Result<BundleV1> {
+    fn new(target: Box<dyn WriteSeek>, mut build_dir: PathBuf) -> Result<BundleV1> {
+        build_dir.push("content");
         Ok(BundleV1 {
             filelist: Vec::new(),
             target,
-            content_dir: build_dir.join("content"),
+            content_dir: build_dir,
             index_start: 0,
             index_gzip_len: 0,
             index_real_len: 0,

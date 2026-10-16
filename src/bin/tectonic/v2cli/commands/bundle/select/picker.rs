@@ -63,7 +63,7 @@ impl PickStatistics {
         }
         output_string.push_str(&format!("    total files:          {sum}\n\n"));
 
-        output_string.push_str(&"=".repeat(39).to_string());
+        output_string.push_str(&"=".repeat(39));
         output_string
     }
 
@@ -205,7 +205,6 @@ impl FilePicker {
         self.filelist.insert(
             path.clone(),
             FileListEntry {
-                path: path.clone(),
                 hash: match file {
                     None => None,
                     Some(f) => {
@@ -226,6 +225,7 @@ impl FilePicker {
                         )
                     }
                 },
+                path,
             },
         );
 

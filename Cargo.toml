@@ -7,7 +7,7 @@ lints.workspace = true
 [package]
 name = "tectonic"
 version = "0.0.0-dev.0" # assigned with cranko (see README)
-authors = ["Peter Williams <peter@newton.cx>"]
+authors = ["Peter Williams <peter@newton.cx>", "Andrew Jaffe <adjaffeb@gmail.com>"]
 description = """
 A modernized, complete, embeddable TeX/LaTeX engine. Tectonic is forked from the XeTeX
 extension to the classic "Web2C" implementation of TeX and uses the TeXLive distribution
@@ -15,7 +15,7 @@ of support files.
 """
 homepage = "https://tectonic-typesetting.github.io/"
 documentation = "https://docs.rs/tectonic"
-repository = "https://github.com/tectonic-typesetting/tectonic/"
+repository = "https://github.com/ADJB1212/tectonic"
 readme = "CARGO_README.md"
 keywords = ["tex", "latex", "typesetting", "font"]
 categories = [
@@ -26,8 +26,9 @@ categories = [
     "text-processing",
 ]
 license = "MIT"
-edition = "2021"
+edition = "2024"
 exclude = ["/dist/", "/reference_sources/", "/release-bundle/"]
+publish = false
 
 [badges]
 travis-ci = { repository = "tectonic-typesetting/tectonic" }
@@ -62,10 +63,28 @@ members = [
 ]
 
 [workspace.lints.rust]
-missing_docs = "deny"
+unused_mut = "deny"
+dead_code = "allow"
 
 [workspace.lints.clippy]
-undocumented_unsafe_blocks = "deny"
+needless_return = "allow"
+perf = { level = "deny", priority = -1 }
+redundant_clone = "deny"
+unnecessary_to_owned = "deny"
+needless_collect = "deny"
+or_fun_call = "deny"
+assigning_clones = "deny"
+implicit_clone = "deny"
+iter_overeager_cloned = "deny"
+map_clone = "deny"
+trivially_copy_pass_by_ref = "deny"
+large_types_passed_by_value = "deny"
+large_enum_variant = "deny"
+large_stack_frames = "deny"
+vec_init_then_push = "deny"
+format_collect = "deny"
+manual_memcpy = "deny"
+needless_pass_by_value = "deny"
 
 [lib]
 name = "tectonic"
@@ -102,9 +121,9 @@ toml = { version = "1.0", optional = true }
 watchexec = "8.0"
 watchexec-filterer-globset = "8.0"
 watchexec-signals = "5.0"
-watchexec-supervisor = "5.0"
+watchexec-supervisor = "6.0"
 which = "8.0"
-zip = { version = "8.0", default-features = false, features = ["deflate"] }
+zip = { version = "9", default-features = false, features = ["deflate"] }
 clap_complete = "4.5.1"
 walkdir = "2"
 regex = "1.10.2"
@@ -135,7 +154,27 @@ native-tls-vendored = [
 ]
 
 # developer feature to compile with the necessary flags for profiling tectonic.
-profile = []
+[profile.release]
+opt-level = 3
+debug = false
+lto = "fat"
+panic = "abort"
+strip = true
+codegen-units = 1
+
+[profile.dev]
+incremental = true
+opt-level = 1
+debug = "line-directives-only"
+split-debuginfo = "unpacked"
+lto = "off"
+
+[profile.test]
+incremental = true
+opt-level = 1
+debug = "line-directives-only"
+split-debuginfo = "unpacked"
+lto = "off"
 
 [profile.bench]
 debug = true

@@ -698,11 +698,11 @@ impl FontManager {
     }
 
     /// Get the full name of a font as a C-string
-    pub fn get_full_name(&self, font: PlatformFontRef) -> &CStr {
+    pub fn get_full_name(&self, font: &PlatformFontRef) -> &CStr {
         let font_pos = *self
             .maps
             .platform_ref_to_font
-            .get(&font)
+            .get(font)
             .unwrap_or_else(|| panic!("internal error {} in FontManager", 2));
         let font = &self.maps.fonts[font_pos];
         font.full_name.as_ref().unwrap_or(&font.ps_name)

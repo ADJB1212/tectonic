@@ -19,6 +19,7 @@ use crate::{
     ASCIICode, Bibtex, BibtexError, BufPointer, GlobalItems, HashPointer,
 };
 
+#[derive(Clone, Copy)]
 pub(crate) enum ScanRes {
     IdNull,
     SpecifiedCharAdjacent,

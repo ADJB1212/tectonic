@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use std::ptr::NonNull;
 
 /// A borrowed reference to an [`ObjectSet`]
+#[derive(Clone, Copy)]
 pub struct ObjectSetRef<'a>(NonNull<sys::FcObjectSet>, PhantomData<&'a sys::FcObjectSet>);
 
 impl ObjectSetRef<'_> {

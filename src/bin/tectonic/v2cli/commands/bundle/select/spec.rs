@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -15,7 +15,7 @@ impl BundleSpec {
     pub fn validate(&self) -> Result<()> {
         for i in &self.bundle.search_order {
             match i {
-                BundleSearchOrder::Input { ref input } => {
+                BundleSearchOrder::Input { input } => {
                     if !self.inputs.contains_key(input) {
                         bail!("root search order contains unknown input `{input}`");
                     }

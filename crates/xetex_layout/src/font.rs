@@ -265,7 +265,7 @@ impl Font {
                 let afm = Path::new(pathname)
                     .file_name()
                     .map(Path::new)
-                    .unwrap_or(Path::new(pathname));
+                    .unwrap_or_else(|| Path::new(pathname));
                 let afm = afm.with_extension("afm");
 
                 let afm_handle = engine.input_open(afm.to_str().unwrap(), FileFormat::Afm, false);

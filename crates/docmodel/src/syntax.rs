@@ -135,19 +135,19 @@ impl From<&TomlOutputProfile> for OutputProfile {
                     TomlInputFile::Path(
                         val.preamble_file
                             .clone()
-                            .unwrap_or(DEFAULT_PREAMBLE_FILE.to_string()),
+                            .unwrap_or_else(|| DEFAULT_PREAMBLE_FILE.to_string()),
                     )
                     .into(),
                     TomlInputFile::Path(
                         val.index_file
                             .clone()
-                            .unwrap_or(DEFAULT_INDEX_FILE.to_string()),
+                            .unwrap_or_else(|| DEFAULT_INDEX_FILE.to_string()),
                     )
                     .into(),
                     TomlInputFile::Path(
                         val.postamble_file
                             .clone()
-                            .unwrap_or(DEFAULT_POSTAMBLE_FILE.to_string()),
+                            .unwrap_or_else(|| DEFAULT_POSTAMBLE_FILE.to_string()),
                     )
                     .into(),
                 ]

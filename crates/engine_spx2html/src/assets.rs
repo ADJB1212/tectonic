@@ -77,14 +77,14 @@ impl Assets {
         }
     }
 
-    fn copy_file<S1: ToString, S2: ToString>(&mut self, src_path: S1, dest_path: S2) {
+    fn copy_file(&mut self, src_path: &str, dest_path: &str) {
         self.paths.insert(
             dest_path.to_string(),
             AssetOrigin::Copy(src_path.to_string()),
         );
     }
 
-    fn emit_font_css<S: ToString>(&mut self, dest_path: S) {
+    fn emit_font_css(&mut self, dest_path: &str) {
         self.paths
             .insert(dest_path.to_string(), AssetOrigin::FontCss);
     }

@@ -35,12 +35,12 @@ impl Templating {
         }
     }
 
-    pub(crate) fn handle_set_template<S: ToString>(&mut self, arg: S) {
-        self.next_template_path = arg.to_string();
+    pub(crate) fn handle_set_template<S: Into<String>>(&mut self, arg: S) {
+        self.next_template_path = arg.into();
     }
 
-    pub(crate) fn handle_set_output_path<S: ToString>(&mut self, arg: S) {
-        self.next_output_path = arg.to_string();
+    pub(crate) fn handle_set_output_path<S: Into<String>>(&mut self, arg: S) {
+        self.next_output_path = arg.into();
     }
 
     pub(crate) fn handle_set_template_variable(

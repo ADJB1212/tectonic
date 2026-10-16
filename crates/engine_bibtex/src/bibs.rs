@@ -507,8 +507,8 @@ pub(crate) fn get_bib_command_or_entry_and_process(
         globals
             .hash
             .lookup_str::<hash::LcCite>(globals.pool, lc_cite)
-            .map_or(
-                LookupRes {
+            .map_or_else(
+                || LookupRes {
                     loc: HashPointer::default(),
                     exists: false,
                 },
@@ -562,8 +562,8 @@ pub(crate) fn get_bib_command_or_entry_and_process(
                 let lc_res2 = globals
                     .hash
                     .lookup_str::<hash::LcCite>(globals.pool, lc_cite)
-                    .map_or(
-                        LookupRes {
+                    .map_or_else(
+                        || LookupRes {
                             loc: HashPointer::default(),
                             exists: false,
                         },

@@ -77,7 +77,11 @@ impl<R: Read + Seek> IoProvider for ZipBundle<R> {
 
 impl<R: Read + Seek> Bundle for ZipBundle<R> {
     fn all_files(&self) -> Vec<String> {
-        self.zip.file_names().map(|x| x.to_owned()).collect()
+        self.zip
+            .file_names()
+            .filter_map(|name| name.ok())
+            .map(|name| name.into_owned())
+            .collect()
     }
 
     fn get_digest(&mut self) -> Result<tectonic_io_base::digest::DigestData> {
@@ -99,5 +103,58 @@ impl<R: Read + Seek> Bundle for ZipBundle<R> {
         };
 
         Ok(atry!(digest::DigestData::from_str(&digest_text); ["corrupted SHA256 digest data"]))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    use zip::{write::SimpleFileOptions, CompressionMethod, ZipWriter};
+
+    #[test]
+    fn lists_and_reads_bundle_files() {
+        let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
+        let files = [
+            ("plain.tex", "plain text", CompressionMethod::Stored),
+            ("caf\u{e9}.tex", "compressed text", CompressionMethod::Deflated),
+            (
+                digest::DIGEST_NAME,
+                "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+                CompressionMethod::Stored,
+            ),
+        ];
+
+        for (name, contents, compression) in files {
+            writer
+                .start_file(
+                    name,
+                    SimpleFileOptions::default().compression_method(compression),
+                )
+                .unwrap();
+            writer.write_all(contents.as_bytes()).unwrap();
+        }
+
+        let mut bundle = ZipBundle::new(writer.finish().unwrap()).unwrap();
+        let mut names = bundle.all_files();
+        names.sort();
+        let mut expected_names: Vec<_> = files.iter().map(|(name, _, _)| *name).collect();
+        expected_names.sort();
+        assert_eq!(names, expected_names);
+
+        for (name, contents, _) in files {
+            let mut handle = bundle
+                .input_open_name(name, &mut NoopStatusBackend {})
+                .unwrap();
+            let mut text = String::new();
+            handle.read_to_string(&mut text).unwrap();
+            assert_eq!(text, contents);
+        }
+
+        assert_eq!(bundle.get_digest().unwrap().to_string(), files[2].1);
+        assert!(matches!(
+            bundle.input_open_name("missing.tex", &mut NoopStatusBackend {}),
+            OpenResult::NotAvailable
+        ));
     }
 }

@@ -112,7 +112,7 @@ impl InitializationState {
         // Now that we have that, we can pass off to the font manager.
 
         self.fonts.register_tex_font(
-            font_num, size, face_index, color_rgba, extend, slant, embolden, texpath, ih, common,
+            font_num, size, face_index, color_rgba, extend, slant, embolden, &texpath, ih, common,
         )
     }
 

@@ -387,8 +387,8 @@ impl BridgeState {
                 continue;
             }
 
-            if let Some(basename) = entry.file_name().to_str() {
-                if !self.mem.files.borrow().contains_key(basename) {
+            if let Some(basename) = entry.file_name().to_str()
+                && !self.mem.files.borrow().contains_key(basename) {
                     let path = entry.path();
                     let mut data = Vec::new();
 
@@ -407,7 +407,6 @@ impl BridgeState {
                         FileSummary::new(AccessPattern::Written, InputOrigin::NotInput),
                     );
                 }
-            }
         }
 
         // Mark the input files as having been read, and we're done.
@@ -1062,8 +1061,8 @@ impl ProcessingSessionBuilder {
     /// compilations to be synthesized into one HTML output tree.
     ///
     /// If the build does not use HTML mode, this setting has no effect.
-    pub fn html_assets_spec_path<S: ToString>(&mut self, path: S) -> &mut Self {
-        self.html_assets_spec_path = Some(path.to_string());
+    pub fn html_assets_spec_path<S: Into<String>>(&mut self, path: S) -> &mut Self {
+        self.html_assets_spec_path = Some(path.into());
         self
     }
 
@@ -2082,11 +2081,10 @@ impl ProcessingSession {
         // in issue #893. Since PR #1103, the `tectonic-biber` override can
         // also be invoked with `tectonic -X biber`.
         let find_by = |binary_name: &str| -> Option<String> {
-            if let Ok(pathbuf) = which(binary_name) {
-                if let Some(biber_path) = pathbuf.to_str() {
+            if let Ok(pathbuf) = which(binary_name)
+                && let Some(biber_path) = pathbuf.to_str() {
                     return Some(biber_path.to_owned());
                 }
-            }
             None
         };
 

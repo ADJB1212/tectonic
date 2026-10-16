@@ -91,7 +91,7 @@ pub struct CompileOptions {
 
 //impl TectonicCommand for CompileOptions {
 impl CompileOptions {
-    pub fn execute(self, config: PersistentConfig, status: &mut dyn StatusBackend) -> Result<i32> {
+    pub fn execute(self, config: &PersistentConfig, status: &mut dyn StatusBackend) -> Result<i32> {
         let unstable = UnstableOptions::from_unstable_args(self.unstable.into_iter());
 
         // Default to allowing insecure since it would be super duper annoying
@@ -216,8 +216,8 @@ pub(crate) fn run_and_report(
     let mut sess = sess_builder.create(status)?;
     let result = sess.run(status);
 
-    if let Err(e) = &result {
-        if let Some(err) = e.downcast_ref::<EngineError>() {
+    if let Err(e) = &result
+        && let Some(err) = e.downcast_ref::<EngineError>() {
             let output = sess.get_stdout_content();
 
             if output.is_empty() {
@@ -235,7 +235,6 @@ pub(crate) fn run_and_report(
                 status.dump_error_logs(&output);
             }
         }
-    }
 
     result.map(|_| sess)
 }

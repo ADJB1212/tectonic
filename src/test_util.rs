@@ -36,7 +36,7 @@
 //! and also activates the test mode.
 
 use std::{env, ffi::OsStr, path::PathBuf};
-use tectonic_bundles::{dir::DirBundle, Bundle};
+use tectonic_bundles::{Bundle, dir::DirBundle};
 use tectonic_errors::Result;
 
 use crate::{
@@ -59,7 +59,9 @@ pub const TEST_ROOT_ENV_VAR: &str = "TECTONIC_INTERNAL_TEST_ROOT";
 pub fn set_test_root_augmented<V: AsRef<OsStr>>(root: V) {
     let mut root = PathBuf::from(root.as_ref());
     root.push("tests");
-    env::set_var(TEST_ROOT_ENV_VAR, root);
+    unsafe {
+        env::set_var(TEST_ROOT_ENV_VAR, root);
+    }
 }
 
 /// Activate this crate's "test mode", if-and-only-if the magic testing

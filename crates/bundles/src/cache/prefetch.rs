@@ -32,7 +32,7 @@ fn parse_manifest(reader: impl BufRead) -> HashSet<String> {
             continue;
         }
 
-        if out.insert(line.to_owned()) && out.len() == MAX_MANIFEST_ENTRIES {
+        if out.insert(line.clone()) && out.len() == MAX_MANIFEST_ENTRIES {
             break;
         }
     }

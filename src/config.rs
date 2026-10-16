@@ -150,7 +150,7 @@ impl PersistentConfig {
         }
 
         Ok(
-            detect_bundle(self.default_bundles[0].url.to_owned(), only_cached, None)
+            detect_bundle(self.default_bundles[0].url.clone(), only_cached, None)
                 .unwrap()
                 .unwrap(),
         )

@@ -132,13 +132,13 @@ pub fn v2_main(effective_args: &[OsString]) {
     let r = match args.command {
         Commands::Build(o) => o.execute(config, &mut *status),
         Commands::Bundle(o) => o.execute(config, &mut *status),
-        Commands::Compile(o) => o.execute(config, &mut *status),
+        Commands::Compile(o) => o.execute(&config, &mut *status),
         Commands::Dump(o) => o.execute(config, &mut *status),
         Commands::New(o) => o.execute(config, &mut *status),
         Commands::Init(o) => o.execute(config, &mut *status),
         Commands::Show(o) => o.execute(config, &mut *status),
         Commands::Watch(o) => o.execute(config, &mut *status),
-        Commands::External(all_args) => do_external(all_args),
+        Commands::External(all_args) => do_external(&all_args),
     };
 
     process::exit(match r {
@@ -241,7 +241,7 @@ fn search_directories() -> Vec<PathBuf> {
 }
 
 /// Run an external command by executing a subprocess.
-fn do_external(all_args: Vec<String>) -> Result<i32> {
+fn do_external(all_args: &[String]) -> Result<i32> {
     let (cmd, args) = all_args.split_first().unwrap();
 
     let command_exe = format!("tectonic-{}{}", cmd, env::consts::EXE_SUFFIX);

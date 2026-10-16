@@ -84,7 +84,7 @@ pub struct TTBFileIndex {
 }
 
 impl TTBFileIndex {
-    fn read_filelist_line(&mut self, line: String) -> Result<()> {
+    fn read_filelist_line(&mut self, line: &str) -> Result<()> {
         let mut bits = line.split_whitespace();
 
         if let (Some(start), Some(gzip_len), Some(real_len), Some(hash)) =
@@ -106,7 +106,7 @@ impl TTBFileIndex {
                 start: start.parse::<u64>()?,
                 gzip_len: gzip_len.parse::<u32>()?,
                 real_len: real_len.parse::<u32>()?,
-                path: path.to_owned(),
+                path: path.clone(),
                 name: name.to_owned(),
                 hash: match hash {
                     "nohash" => None,
@@ -155,7 +155,7 @@ impl<'this> FileIndex<'this> for TTBFileIndex {
             let line = line?;
 
             if line.starts_with('[') {
-                mode = line[1..line.len() - 1].to_owned();
+                line[1..line.len() - 1].clone_into(&mut mode);
                 continue;
             }
 
@@ -167,7 +167,7 @@ impl<'this> FileIndex<'this> for TTBFileIndex {
 
             match cmd {
                 "DEFAULTSEARCH" => self.read_defaultsearch_line(line)?,
-                "FILELIST" => self.read_filelist_line(line)?,
+                "FILELIST" => self.read_filelist_line(&line)?,
                 "SEARCH" => self.read_search_line(arg.to_owned(), line)?,
                 _ => continue,
             }

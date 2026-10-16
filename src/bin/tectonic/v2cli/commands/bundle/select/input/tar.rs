@@ -4,7 +4,7 @@ use sha2::{Digest, Sha256};
 use std::{
     fs::File,
     io::{Read, Seek},
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 use tar::Archive;
 use tracing::info;
@@ -18,8 +18,8 @@ pub struct TarBundleInput {
 }
 
 impl TarBundleInput {
-    pub fn new(path: PathBuf, root: Option<PathBuf>) -> Result<Self> {
-        let path = path.canonicalize()?;
+    pub fn new(path: impl AsRef<Path>, root: Option<PathBuf>) -> Result<Self> {
+        let path = path.as_ref().canonicalize()?;
         let mut file = File::open(&path)?;
 
         info!("computing hash of {}", path.to_str().unwrap());
@@ -39,7 +39,7 @@ impl TarBundleInput {
         file.seek(std::io::SeekFrom::Start(0))?;
         Ok(Self {
             archive: Archive::new(file),
-            root: root.unwrap_or(PathBuf::from("")),
+            root: root.unwrap_or_default(),
             hash,
         })
     }

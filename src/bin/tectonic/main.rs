@@ -113,8 +113,7 @@ fn main() {
 
     if !os_args.is_empty() && os_args[0].to_str().map(|s| s.contains("nextonic")) == Some(true) {
         v2cli_enabled = true;
-    } else if let Some(index) = v2cli_args
-        .to_vec()
+    } else if let Some(index) = v2cli_args.clone()
         .iter()
         .position(|s| s.to_str().unwrap_or_default() == "-X")
     {
@@ -180,7 +179,7 @@ fn main() {
     // all so that we can print out the word "error:" in red. This code
     // parallels various bits of the `error_chain` crate.
 
-    if let Err(e) = args.compile.execute(config, &mut *status) {
+    if let Err(e) = args.compile.execute(&config, &mut *status) {
         status.report_error(&e);
         process::exit(1)
     }

@@ -41,7 +41,7 @@ pub unsafe extern "C" fn setFontLayoutDir(font: XeTeXFont, vertical: libc::c_int
 pub unsafe extern "C" fn getIndScript(font: XeTeXFont, index: libc::c_uint) -> hb::Tag {
     get_larger_script_list_table_ot(&*font)
         .script(index as usize)
-        .map_or(hb::Tag::new(0), |s| s.tag())
+        .map_or_else(|| hb::Tag::new(0), |s| s.tag())
 }
 
 #[no_mangle]

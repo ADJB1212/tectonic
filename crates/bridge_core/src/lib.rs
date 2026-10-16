@@ -776,7 +776,7 @@ pub struct SecuritySettings {
 
 /// Different high-level security stances that can be adopted when creating
 /// [`SecuritySettings`].
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub enum SecurityStance {
     /// Ensure that all known-insecure features are disabled.
     ///

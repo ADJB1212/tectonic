@@ -58,10 +58,10 @@ pub(super) fn select(cli: &BundleCreateCommand) -> Result<()> {
     }
     fs::create_dir_all(&build_dir).context("while creating build dir")?;
 
-    let mut picker = FilePicker::new(bundle_config.clone(), build_dir.clone(), bundle_dir.clone())?;
+    let mut picker = FilePicker::new(bundle_config.clone(), build_dir.clone(), bundle_dir)?;
 
     // Run selector
-    let sources: Vec<String> = picker.iter_sources().map(|x| x.to_string()).collect();
+    let sources: Vec<String> = picker.iter_sources().cloned().collect();
     for source in sources {
         picker.add_source(cli, &source)?;
     }
@@ -129,7 +129,7 @@ pub(super) fn pack(cli: &BundleCreateCommand) -> Result<()> {
 
     match cli.format {
         BundleFormat::BundleV1 => {
-            BundleV1::make(Box::new(File::create(target)?), build_dir.clone())?
+            BundleV1::make(Box::new(File::create(target)?), build_dir)?
         }
     }
 

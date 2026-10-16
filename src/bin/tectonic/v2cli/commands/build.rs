@@ -76,11 +76,10 @@ impl TectonicCommand for BuildCommand {
         setup_options.only_cached(self.only_cached);
 
         for output_name in doc.output_names() {
-            if let Some(out) = self.target.as_ref() {
-                if out != output_name {
+            if let Some(out) = self.target.as_ref()
+                && out != output_name {
                     continue;
                 }
-            }
 
             let mut builder = doc.setup_session(output_name, &setup_options, status)?;
 

@@ -16,7 +16,7 @@ fn main() {
 
     // Copy the generated header file for exported functions.
 
-    let mut main_header_src = manifest_dir.clone();
+    let mut main_header_src = manifest_dir;
     main_header_src.push("layout");
     main_header_src.push("tectonic_xetex_layout.h");
 

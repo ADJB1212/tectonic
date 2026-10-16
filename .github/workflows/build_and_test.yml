@@ -1,6 +1,6 @@
 name: "Build and Test"
 
-on: [ workflow_call ]
+on: [workflow_call]
 
 jobs:
   clippy:
@@ -16,7 +16,7 @@ jobs:
       - name: "Install pkg-config dependencies"
         uses: ./.github/actions/pkgconfig-deps
         with:
-          install-all-deps: 'true'
+          install-all-deps: "true"
       - name: "Install clippy"
         run: |
           rustup component add clippy
@@ -39,10 +39,10 @@ jobs:
         run: |
           wget https://apt.llvm.org/llvm.sh
           chmod +x llvm.sh
-          sudo ./llvm.sh 20
-          
-          echo "CC=clang-20" >> "$GITHUB_ENV"
-          echo "CXX=clang++-20" >> "$GITHUB_ENV"
+          sudo ./llvm.sh 23
+
+          echo "CC=clang-23" >> "$GITHUB_ENV"
+          echo "CXX=clang++-23" >> "$GITHUB_ENV"
           cargo install cargo-llvm-cov
       - name: "cargo llvm-cov"
         run: cargo llvm-cov --workspace --include-ffi --ignore-filename-regex '/harfbuzz/' --codecov --output-path coverage.json
@@ -72,12 +72,12 @@ jobs:
         run: |
           artifact_dir="appimage"
           mkdir -p "$artifact_dir"
-          
+
           if [[ $SOURCE_BRANCH == master ]] ; then
             export TECTONIC_APPIMAGE_TAG=continuous
             export UPDATE_INFORMATION="gh-releases-zsync|tectonic-typesetting|tectonic|continuous|tectonic-*.AppImage.zsync"
           fi
-          
+
           ./dist/appimage/build.sh
           cp dist/appimage/tectonic-*.AppImage* "$artifact_dir"
         env:
@@ -145,7 +145,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        toolchain: [ "beta", "nightly" ]
+        toolchain: ["beta", "nightly"]
       fail-fast: false
     steps:
       - name: Checkout repository
@@ -170,7 +170,7 @@ jobs:
   linux-feature-tests:
     strategy:
       matrix:
-        features: [ "_all_", "_none_", "geturl-curl serialization" ]
+        features: ["_all_", "_none_", "geturl-curl serialization"]
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -197,8 +197,8 @@ jobs:
   pkg-config:
     strategy:
       matrix:
-        image: [ ubuntu-latest, windows-latest, macos-latest ]
-        install-all-deps: [ true, false ]
+        image: [ubuntu-latest, windows-latest, macos-latest]
+        install-all-deps: [true, false]
         include:
           # By default, all items have toolchain: stable, and don't publish
           - toolchain: stable
@@ -332,12 +332,10 @@ jobs:
         uses: ./.github/actions/build-setup
       - name: "Set up QEMU"
         shell: bash
-        run:
-          docker run --rm --privileged multiarch/qemu-user-static:register --reset --credential yes
+        run: docker run --rm --privileged multiarch/qemu-user-static:register --reset --credential yes
       - name: "cargo install cross"
         shell: bash
-        run:
-          cargo install cross
+        run: cargo install cross
       - name: "Setup build variables"
         shell: bash
         run: |
@@ -351,7 +349,7 @@ jobs:
         uses: ./.github/actions/build-and-test
         with:
           target: ${{ matrix.target }}
-          publish: 'true'
-          executable: 'cross'
-          test-flags: '--all-targets --exclude tectonic_bridge_fontconfig'
-          package-flags: '--command-name=cross --reroot=.'
+          publish: "true"
+          executable: "cross"
+          test-flags: "--all-targets --exclude tectonic_bridge_fontconfig"
+          package-flags: "--command-name=cross --reroot=."

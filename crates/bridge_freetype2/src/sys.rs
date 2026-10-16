@@ -190,36 +190,36 @@ pub struct FT_Bitmap_Size {
 #[repr(C)]
 pub enum FT_Encoding {
     None = 0,
-    MsSymbol = as_variant(b"symb"),
-    Unicode = as_variant(b"unic"),
+    MsSymbol = as_variant(*b"symb"),
+    Unicode = as_variant(*b"unic"),
 
-    Sjis = as_variant(b"sjis"),
-    Prc = as_variant(b"gb  "),
-    Big5 = as_variant(b"big5"),
-    Wansung = as_variant(b"wans"),
-    Johab = as_variant(b"joha"),
+    Sjis = as_variant(*b"sjis"),
+    Prc = as_variant(*b"gb  "),
+    Big5 = as_variant(*b"big5"),
+    Wansung = as_variant(*b"wans"),
+    Johab = as_variant(*b"joha"),
 
-    AdobeStandard = as_variant(b"ADOB"),
-    AdobeExpert = as_variant(b"ADBE"),
-    AdobeCustom = as_variant(b"ADBC"),
-    AdobeLatin1 = as_variant(b"lat1"),
-    OldLatin2 = as_variant(b"lat2"),
-    AppleRoman = as_variant(b"armn"),
+    AdobeStandard = as_variant(*b"ADOB"),
+    AdobeExpert = as_variant(*b"ADBE"),
+    AdobeCustom = as_variant(*b"ADBC"),
+    AdobeLatin1 = as_variant(*b"lat1"),
+    OldLatin2 = as_variant(*b"lat2"),
+    AppleRoman = as_variant(*b"armn"),
 }
 
-const fn as_variant(text: &[u8; 4]) -> isize {
-    i32::from_be_bytes(*text) as isize
+const fn as_variant(text: [u8; 4]) -> isize {
+    i32::from_be_bytes(text) as isize
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 #[repr(C)]
 pub enum FT_Glyph_Format {
     None = 0,
-    Composite = as_variant(b"comp"),
-    Bitmap = as_variant(b"bits"),
-    Outline = as_variant(b"outl"),
-    Plotter = as_variant(b"plot"),
-    Svg = as_variant(b"SVG "),
+    Composite = as_variant(*b"comp"),
+    Bitmap = as_variant(*b"bits"),
+    Outline = as_variant(*b"outl"),
+    Plotter = as_variant(*b"plot"),
+    Svg = as_variant(*b"SVG "),
 }
 
 /// Enumeration of 'well known' sfnt tables, recognized by freetype natively.

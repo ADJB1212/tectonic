@@ -47,6 +47,7 @@ unsafe extern "C" fn dealloc<T: 'static>(user_data: *mut ()) {
 }
 
 /// Data type representing different script values
+#[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct Script(sys::hb_script_t);
 

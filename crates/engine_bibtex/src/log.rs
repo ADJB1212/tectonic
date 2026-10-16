@@ -184,6 +184,7 @@ pub(crate) fn aux_err_print(
     Ok(())
 }
 
+#[derive(Clone, Copy)]
 pub(crate) enum AuxTy {
     Data,
     Style,

@@ -61,8 +61,8 @@ impl Spx2HtmlEngine {
     /// Currently, the asset specification is written in JSON format, although
     /// it is not guaranteed that this will always be the case. It will always
     /// be a UTF8-encoded, line-oriented textual format, though.
-    pub fn assets_spec_path<S: ToString>(&mut self, path: S) -> &mut Self {
-        self.assets_spec_path = Some(path.to_string());
+    pub fn assets_spec_path<S: Into<String>>(&mut self, path: S) -> &mut Self {
+        self.assets_spec_path = Some(path.into());
         self
     }
 

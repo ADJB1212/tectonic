@@ -25,49 +25,20 @@ pub(crate) const HASH_PRIME: usize = compute_hash_prime();
 const fn compute_hash_prime() -> usize {
     const HASH_WANT: usize = HASH_SIZE / 20 * 17;
 
-    let mut primes = [0; HASH_SIZE];
-    let mut sieve = [0; HASH_SIZE];
-
-    let mut j = 1;
-    let mut k = 1;
-    let mut hash_prime = 2;
-    primes[k] = hash_prime;
-    let mut o = 2;
-    let mut square = 9;
-
-    while hash_prime < HASH_WANT {
-        loop {
-            j += 2;
-            if j == square {
-                sieve[o] = j;
-                j += 2;
-                o += 1;
-                square = primes[o] * primes[o];
-            }
-
-            let mut n = 2;
-            let mut j_prime = true;
-            while n < o && j_prime {
-                while sieve[n] < j {
-                    sieve[n] += 2 * primes[n];
-                }
-                if sieve[n] == j {
-                    j_prime = false;
-                }
-                n += 1;
-            }
-
-            if j_prime {
+    let mut candidate = HASH_WANT | 1;
+    loop {
+        let mut divisor = 3;
+        while divisor <= candidate / divisor {
+            if candidate.is_multiple_of(divisor) {
                 break;
             }
+            divisor += 2;
         }
-
-        k += 1;
-        hash_prime = j;
-        primes[k] = hash_prime;
+        if divisor > candidate / divisor {
+            return candidate;
+        }
+        candidate += 2;
     }
-
-    hash_prime
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -583,6 +554,15 @@ impl HashData {
 mod tests {
     use super::*;
     use crate::pool::StringPool;
+
+    #[test]
+    fn hash_prime_is_smallest_prime_at_or_above_target() {
+        let target = HASH_SIZE / 20 * 17;
+        let expected = (target..HASH_SIZE)
+            .find(|&candidate| (2..candidate).all(|divisor| candidate % divisor != 0))
+            .unwrap();
+        assert_eq!(HASH_PRIME, expected);
+    }
 
     #[test]
     fn test_lookup_str() {

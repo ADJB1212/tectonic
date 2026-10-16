@@ -3,7 +3,7 @@ use anyhow::Result;
 use std::{
     fs::{self},
     io::Read,
-    path::PathBuf,
+    path::{Path, PathBuf},
 };
 use walkdir::WalkDir;
 
@@ -12,9 +12,9 @@ pub struct DirBundleInput {
 }
 
 impl DirBundleInput {
-    pub fn new(dir: PathBuf) -> Self {
+    pub fn new(dir: impl AsRef<Path>) -> Self {
         Self {
-            dir: dir.canonicalize().unwrap(),
+            dir: dir.as_ref().canonicalize().unwrap(),
         }
     }
 }

@@ -289,7 +289,7 @@ impl CachableBundle<'_, ItarFileIndex> for ItarBundle {
 
         match read_file_with_retries(self.reader.as_mut().unwrap(), info, status) {
             OpenResult::Ok(v) => OpenResult::Ok(InputHandle::new_read_only(
-                info.name.to_owned(),
+                info.name.clone(),
                 Cursor::new(v),
                 InputOrigin::Other,
             )),
