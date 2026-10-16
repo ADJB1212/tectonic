@@ -15,7 +15,9 @@
 //! resource, the index file merely contains a byte offset and length that are
 //! then used to construct an HTTP Range request to obtain the file as needed.
 
-use crate::{Bundle, CachableBundle, FileIndex, FileInfo, NET_RETRY_ATTEMPTS, NET_RETRY_SLEEP_MS};
+use crate::{
+    batch, Bundle, CachableBundle, FileIndex, FileInfo, NET_RETRY_ATTEMPTS, NET_RETRY_SLEEP_MS,
+};
 use flate2::read::GzDecoder;
 use std::{
     collections::HashMap,
@@ -28,8 +30,6 @@ use tectonic_errors::prelude::*;
 use tectonic_geturl::{DefaultBackend, DefaultRangeReader, GetUrlBackend, RangeReader};
 use tectonic_io_base::{digest, InputHandle, InputOrigin, IoProvider, OpenResult};
 use tectonic_status_base::{tt_note, tt_warning, NoopStatusBackend, StatusBackend};
-
-mod batch;
 
 /// Read a single file's bytes through `reader`, retrying on transient failures.
 ///
@@ -314,7 +314,23 @@ impl CachableBundle<'_, ItarFileIndex> for ItarBundle {
         infos: &[ItarFileInfo],
         status: &mut dyn StatusBackend,
     ) -> Vec<OpenResult<Vec<u8>>> {
-        batch::open(self, infos, status)
+        if infos.is_empty() {
+            return Vec::new();
+        }
+        if let Err(e) = self.ensure_index() {
+            return infos
+                .iter()
+                .map(|_| OpenResult::Err(anyhow!("failed to load bundle index: {e}")))
+                .collect();
+        }
+
+        batch::open(
+            &self.url,
+            infos,
+            |info| info.length,
+            read_file_with_retries,
+            status,
+        )
     }
 }
 

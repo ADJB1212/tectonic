@@ -42,6 +42,7 @@
 #include "dpx-pdfdev.h"
 
 #include "tectonic_bridge_flate.h"
+#include "tectonic-predictor.h"
 
 #define STREAM_ALLOC_SIZE      4096u
 #define ARRAY_ALLOC_SIZE       256
@@ -1717,27 +1718,17 @@ pdf_stream_set_predictor (pdf_obj *stream,
  *   absolute differences heuristic and was first proposed by Lee Daniel
  *   Crocker in February 1995.
  */
-static unsigned char *
-filter_PNG15_apply_filter (unsigned char *raster,
-                           int32_t columns, int32_t rows,
-                           int8_t bpc, int8_t colors, int32_t *length)
+void
+tt_pdf_filter_png_rows (const unsigned char *raster, unsigned char *dst,
+                       int32_t rowbytes, int bytes_per_pixel,
+                       int32_t first_row, int32_t last_row)
 {
-    unsigned char *dst;
-    int      bits_per_pixel  = colors * bpc;
-    int      bytes_per_pixel = (bits_per_pixel + 7) / 8;
-    int32_t  rowbytes = columns * bytes_per_pixel;
     int32_t  i, j;
 
-    assert(raster && length);
-
-    /* Result */
-    dst = NEW((rowbytes+1)*rows, unsigned char);
-    *length = (rowbytes + 1) * rows;
-
-    for (j = 0; j < rows; j++) {
+    for (j = first_row; j < last_row; j++) {
         int type = 0;
-        unsigned char *pp = dst + j * (rowbytes + 1);
-        unsigned char *p  = raster + j * rowbytes;
+        unsigned char *pp = dst + (j - first_row) * (rowbytes + 1);
+        const unsigned char *p = raster + j * rowbytes;
         uint32_t sum[5]   = {0, 0, 0, 0, 0};
         /* First calculated sum of values to make a heuristic guess
          * of optimal predictor function.
@@ -1830,7 +1821,22 @@ filter_PNG15_apply_filter (unsigned char *raster,
         }
     }
 
-    return  dst;
+}
+
+static unsigned char *
+filter_PNG15_apply_filter (unsigned char *raster,
+                           int32_t columns, int32_t rows,
+                           int8_t bpc, int8_t colors, int32_t *length)
+{
+    int bytes_per_pixel = (colors * bpc + 7) / 8;
+    int32_t rowbytes = columns * bytes_per_pixel;
+    unsigned char *dst;
+
+    assert(raster && length);
+    dst = NEW((rowbytes + 1) * rows, unsigned char);
+    *length = (rowbytes + 1) * rows;
+    tt_pdf_filter_png_parallel(raster, dst, rowbytes, rows, bytes_per_pixel);
+    return dst;
 }
 
 /* This modifies "raster" itself! */

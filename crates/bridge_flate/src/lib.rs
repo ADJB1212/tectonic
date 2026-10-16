@@ -7,14 +7,17 @@
 //!
 //! If you change the interfaces here, rerun cbindgen as described in the README!
 
-use flate2::{Compress, Compression, Decompress, FlushCompress, FlushDecompress, Status};
+use flate2::{Decompress, FlushDecompress, Status};
 use std::{io::Error, slice};
+
+mod compress;
 
 /// Re-export of the flate2 crate linked by this crate.
 pub use flate2;
 
 /// Outcomes of (de)flate operations.
 #[repr(C)]
+#[derive(Debug)]
 pub enum FlateResult {
     /// The operation succeeded.
     Success = 0,
@@ -40,14 +43,16 @@ impl From<Status> for FlateResult {
     }
 }
 
-/// Compress a block of data. This function maps fairly directly onto the
-/// `Compress::compress` function provided by `flate2`.
+/// Compress a block of data into one zlib stream, using parallel chunks for
+/// large inputs when the output buffer has sufficient capacity.
 ///
 /// Returns nonzero on error.
 ///
 /// # Safety
 ///
-/// This is a C API function, so it is unsafe.
+/// The input and output pointers must describe valid, nonoverlapping buffers.
+/// `output_len` must point to the output capacity, and receives the written
+/// length on success or zero on error.
 #[no_mangle]
 pub unsafe extern "C" fn tectonic_flate_compress(
     output_ptr: *mut u8,
@@ -56,15 +61,12 @@ pub unsafe extern "C" fn tectonic_flate_compress(
     input_len: u64,
     compression_level: u32,
 ) -> FlateResult {
-    let mut c = Compress::new(Compression::new(compression_level), true);
-
     let input = slice::from_raw_parts(input_ptr, input_len as usize);
     let output = slice::from_raw_parts_mut(output_ptr, *output_len as usize);
 
-    let (size, result) = if c.compress(input, output, FlushCompress::Finish).is_err() {
-        (0, FlateResult::OtherError)
-    } else {
-        (c.total_out(), FlateResult::Success)
+    let (size, result) = match compress::compress(input, output, compression_level) {
+        Ok(size) => (size as u64, FlateResult::Success),
+        Err(error) => (0, error),
     };
 
     *output_len = size;

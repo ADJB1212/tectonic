@@ -38,6 +38,25 @@ possible to allow for more flexibility in this area.
 
 [features]: https://doc.rust-lang.org/cargo/reference/features.html
 
+## Parallel PDF compression
+
+Inputs of at least 1 MiB are compressed in 256 KiB chunks on a persistent worker
+pool, using the available CPU count up to 16 workers. Chunks share the preceding
+32 KiB as compression history and are assembled in input order into one zlib
+stream with a combined Adler-32 checksum. This keeps PDF FlateDecode streams
+compatible with existing readers. Compressed bytes can differ from serial zlib
+output; the decoded data is unchanged.
+
+Small inputs, tight output buffers, and systems where workers cannot be created
+use serial compression. No additional copy of the complete input or compressed
+stream is retained. Insufficient output buffers return `FlateResult_BufError`.
+
+Run the isolated compression benchmark with:
+
+```sh
+cargo test -p tectonic_bridge_flate benchmark_pdf_stream_compression -- --ignored --nocapture
+```
+
 
 ## Updating the generated header
 

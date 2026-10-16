@@ -7,6 +7,7 @@ use std::{env, path::PathBuf};
 use tectonic_cfg_support::*;
 
 fn main() {
+    println!("cargo:rerun-if-changed=pdf_io/tectonic-predictor.h");
     let manifest_dir: PathBuf = env::var("CARGO_MANIFEST_DIR").unwrap().into();
 
     // Include paths and settings exported by our internal dependencies.

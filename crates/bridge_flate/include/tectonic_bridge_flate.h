@@ -34,14 +34,16 @@ extern "C" {
 #endif // __cplusplus
 
 /**
- * Compress a block of data. This function maps fairly directly onto the
- * `Compress::compress` function provided by `flate2`.
+ * Compress a block of data into one zlib stream, using parallel chunks for
+ * large inputs when the output buffer has sufficient capacity.
  *
  * Returns nonzero on error.
  *
  * # Safety
  *
- * This is a C API function, so it is unsafe.
+ * The input and output pointers must describe valid, nonoverlapping buffers.
+ * `output_len` must point to the output capacity, and receives the written
+ * length on success or zero on error.
  */
 FlateResult tectonic_flate_compress(uint8_t *output_ptr,
                                     uint64_t *output_len,

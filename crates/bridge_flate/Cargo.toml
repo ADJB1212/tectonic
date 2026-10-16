@@ -23,4 +23,6 @@ links = "tectonic_bridge_flate"
 [dependencies]
 flate2 = { version = "^1.0", default-features = false, features = ["zlib"] }
 libc = "^0.2"
+libz-sys = "1"
+rayon = "1.11"
 

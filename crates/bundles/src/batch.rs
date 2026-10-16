@@ -1,9 +1,8 @@
 // Copyright 2017-2021 the Tectonic Project
 // Licensed under the MIT License.
 
-//! Concurrent byte-range reads for indexed-tar bundles.
+//! Bounded concurrent byte-range reads for network bundles.
 
-use super::{read_file_with_retries, ItarBundle, ItarFileInfo};
 use std::{
     sync::{
         atomic::{AtomicBool, AtomicUsize, Ordering},
@@ -11,8 +10,7 @@ use std::{
     },
     thread,
 };
-use tectonic_errors::prelude::*;
-use tectonic_geturl::{DefaultBackend, GetUrlBackend};
+use tectonic_geturl::{DefaultBackend, DefaultRangeReader, GetUrlBackend};
 use tectonic_io_base::OpenResult;
 use tectonic_status_base::{tt_note, NoopStatusBackend, StatusBackend};
 
@@ -33,12 +31,12 @@ fn prefetch_concurrency(value: Option<&str>, file_count: usize) -> usize {
         .min(file_count)
 }
 
-fn prefetch_indices(infos: &[ItarFileInfo]) -> Vec<usize> {
+fn prefetch_indices(lengths: impl Iterator<Item = usize>) -> Vec<usize> {
     let mut bytes = 0usize;
     let mut selected = Vec::new();
 
-    for (index, info) in infos.iter().enumerate() {
-        if let Some(next_bytes) = bytes.checked_add(info.length) {
+    for (index, length) in lengths.enumerate() {
+        if let Some(next_bytes) = bytes.checked_add(length) {
             if next_bytes <= MAX_PREFETCH_BYTES {
                 bytes = next_bytes;
                 selected.push(index);
@@ -49,25 +47,20 @@ fn prefetch_indices(infos: &[ItarFileInfo]) -> Vec<usize> {
     selected
 }
 
-pub(super) fn open(
-    bundle: &mut ItarBundle,
-    infos: &[ItarFileInfo],
+pub(crate) fn open<I: Sync>(
+    url: &str,
+    infos: &[I],
+    size: fn(&I) -> usize,
+    read_file: fn(&mut DefaultRangeReader, &I, &mut dyn StatusBackend) -> OpenResult<Vec<u8>>,
     status: &mut dyn StatusBackend,
 ) -> Vec<OpenResult<Vec<u8>>> {
     if infos.is_empty() {
         return Vec::new();
     }
 
-    let selected = prefetch_indices(infos);
+    let selected = prefetch_indices(infos.iter().map(size));
     if selected.is_empty() {
         return infos.iter().map(|_| OpenResult::NotAvailable).collect();
-    }
-
-    if let Err(e) = bundle.ensure_index() {
-        return infos
-            .iter()
-            .map(|_| OpenResult::Err(anyhow!("failed to load bundle index: {e}")))
-            .collect();
     }
 
     let configured = std::env::var("TECTONIC_PREFETCH_CONCURRENCY").ok();
@@ -80,7 +73,6 @@ pub(super) fn open(
         concurrency
     );
 
-    let url = &bundle.url;
     let next = AtomicUsize::new(0);
     let abort = AtomicBool::new(false);
     let result_slots: Vec<Mutex<OpenResult<Vec<u8>>>> = (0..infos.len())
@@ -105,7 +97,7 @@ pub(super) fn open(
                     }
                     let i = selected[selected_index];
 
-                    let result = read_file_with_retries(&mut reader, &infos[i], &mut status);
+                    let result = read_file(&mut reader, &infos[i], &mut status);
                     if !matches!(result, OpenResult::Ok(_)) {
                         abort.store(true, Ordering::Relaxed);
                     }
@@ -137,6 +129,73 @@ pub(super) fn open(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::{sync::mpsc, time::Duration};
+
+    #[test]
+    fn downloads_overlap_with_bounded_workers_and_ordered_results() {
+        struct Info {
+            index: u8,
+            started: mpsc::Sender<u8>,
+            release: Mutex<mpsc::Receiver<()>>,
+        }
+
+        let (started, received) = mpsc::channel();
+        let mut releases = Vec::new();
+        let infos: Vec<_> = (0..4)
+            .map(|index| {
+                let (release, wait) = mpsc::channel();
+                releases.push(release);
+                Info {
+                    index,
+                    started: started.clone(),
+                    release: Mutex::new(wait),
+                }
+            })
+            .collect();
+        let configured = std::env::var("TECTONIC_PREFETCH_CONCURRENCY").ok();
+        let concurrency = prefetch_concurrency(configured.as_deref(), 3);
+
+        thread::scope(|scope| {
+            let controller = scope.spawn(move || {
+                for _ in 0..concurrency {
+                    received.recv_timeout(Duration::from_secs(5)).unwrap();
+                }
+                assert!(matches!(
+                    received.try_recv(),
+                    Err(mpsc::TryRecvError::Empty)
+                ));
+                for release in releases.into_iter().rev() {
+                    release.send(()).unwrap();
+                }
+            });
+
+            let results = open(
+                "https://example.invalid/bundle",
+                &infos,
+                |info| if info.index == 2 { usize::MAX } else { 1 },
+                |_, info, _| {
+                    info.started.send(info.index).unwrap();
+                    info.release
+                        .lock()
+                        .unwrap()
+                        .recv_timeout(Duration::from_secs(5))
+                        .unwrap();
+                    OpenResult::Ok(vec![info.index])
+                },
+                &mut NoopStatusBackend {},
+            );
+
+            controller.join().unwrap();
+            assert_eq!(results.len(), infos.len());
+            for (index, result) in results.into_iter().enumerate() {
+                if index == 2 {
+                    assert!(matches!(result, OpenResult::NotAvailable));
+                } else {
+                    assert_eq!(result.unwrap(), vec![index as u8]);
+                }
+            }
+        });
+    }
 
     #[test]
     fn prefetch_concurrency_is_bounded() {
@@ -152,24 +211,7 @@ mod tests {
     #[test]
     fn prefetch_selection_caps_total_bytes() {
         let mib = 1024 * 1024;
-        let infos = [
-            ItarFileInfo {
-                name: "first".into(),
-                offset: 0,
-                length: 40 * mib,
-            },
-            ItarFileInfo {
-                name: "too-large-for-remainder".into(),
-                offset: 0,
-                length: 30 * mib,
-            },
-            ItarFileInfo {
-                name: "fits".into(),
-                offset: 0,
-                length: 20 * mib,
-            },
-        ];
-
-        assert_eq!(prefetch_indices(&infos), vec![0, 2]);
+        let lengths = [40 * mib, 30 * mib, 20 * mib, usize::MAX];
+        assert_eq!(prefetch_indices(lengths.into_iter()), vec![0, 2]);
     }
 }

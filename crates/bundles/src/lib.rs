@@ -20,6 +20,7 @@ use tectonic_errors::{prelude::bail, Result};
 use tectonic_io_base::{digest::DigestData, InputHandle, IoProvider, OpenResult};
 use tectonic_status_base::StatusBackend;
 
+mod batch;
 pub mod cache;
 pub mod dir;
 pub mod itar;
