@@ -45,7 +45,12 @@ fn read_file_with_retries(
         return OpenResult::Ok(Vec::new());
     }
 
+    let mut v = Vec::with_capacity(info.length);
     for i in 0..NET_RETRY_ATTEMPTS {
+        if i > 0 {
+            thread::sleep(Duration::from_millis(NET_RETRY_SLEEP_MS));
+        }
+        v.clear();
         let mut stream = match reader.read_range(info.offset, info.length) {
             Ok(r) => r,
             Err(e) => {
@@ -53,12 +58,10 @@ fn read_file_with_retries(
                     "failure fetching \"{}\" from network ({}/{NET_RETRY_ATTEMPTS})",
                     info.name, i+1; e
                 );
-                thread::sleep(Duration::from_millis(NET_RETRY_SLEEP_MS));
                 continue;
             }
         };
 
-        let mut v = Vec::with_capacity(info.length);
         match stream.read_to_end(&mut v) {
             Ok(_) => return OpenResult::Ok(v),
             Err(e) => {
@@ -66,7 +69,6 @@ fn read_file_with_retries(
                     "failure downloading \"{}\" from network ({}/{NET_RETRY_ATTEMPTS})",
                     info.name, i+1; e.into()
                 );
-                thread::sleep(Duration::from_millis(NET_RETRY_SLEEP_MS));
                 continue;
             }
         };

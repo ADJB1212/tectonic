@@ -1,5 +1,5 @@
-use anyhow::{bail, Context, Result};
-use digest_io::IoWrapper;
+use anyhow::{Context, Result, bail};
+use digest_io::{HashReader, IoWrapper};
 use regex::RegexSet;
 use sha2::{Digest, Sha256};
 use std::{
@@ -82,7 +82,8 @@ struct FileListEntry {
 
 impl Display for FileListEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        format!(
+        write!(
+            f,
             "{} {}",
             match &self.hash {
                 Some(s) => &s,
@@ -90,7 +91,6 @@ impl Display for FileListEntry {
             },
             self.path.to_str().unwrap(),
         )
-        .fmt(f)
     }
 }
 
@@ -200,29 +200,20 @@ impl FilePicker {
     }
 
     /// Add a file into the file list.
-    fn add_to_filelist(&mut self, path: PathBuf, file: Option<&Path>) -> Result<()> {
+    fn add_to_filelist(&mut self, path: PathBuf, hash: Option<String>) {
         trace!("adding `{path:?}` to file list");
 
-        self.filelist.insert(
-            path.clone(),
-            FileListEntry {
-                hash: match file {
-                    None => None,
-                    Some(f) => {
-                        let mut hasher = IoWrapper(Sha256::new());
-                        let _ = std::io::copy(
-                            &mut fs::File::open(f)
-                                .with_context(|| format!("while computing hash of {path:?}"))?,
-                            &mut hasher,
-                        )?;
-                        Some(bytes_to_hex(&hasher.0.finalize()))
-                    }
-                },
-                path,
-            },
-        );
+        self.filelist
+            .insert(path.clone(), FileListEntry { hash, path });
+    }
 
-        Ok(())
+    fn hash_file(path: &Path) -> Result<String> {
+        let mut hasher = IoWrapper(Sha256::new());
+        io::copy(
+            &mut File::open(path).with_context(|| format!("while computing hash of {path:?}"))?,
+            &mut hasher,
+        )?;
+        Ok(bytes_to_hex(&hasher.0.finalize()))
     }
 
     /// Add a file to this picker's content directory
@@ -262,20 +253,25 @@ impl FilePicker {
 
         // Copy to content dir.
         let mut file = fs::File::create(&target_path)?;
-        io::copy(file_content, &mut file).with_context(|| {
+        let mut hashed_content = HashReader::<Sha256, _>::new(file_content);
+        io::copy(&mut hashed_content, &mut file).with_context(|| {
             format!("while writing file `{path_in_source:?}` from source `{source}`")
         })?;
+        drop(file);
 
         // Apply patch if one exists
-        self.apply_patch(&target_path, path_in_source, diffs)
+        let patched = self
+            .apply_patch(&target_path, path_in_source, diffs)
             .with_context(|| {
                 format!("while patching `{path_in_source:?}` from source `{source}`")
             })?;
 
-        self.add_to_filelist(rel, Some(&target_path))
-            .with_context(|| {
-                format!("while adding file `{path_in_source:?}` from source `{source}`")
-            })?;
+        let hash = if patched {
+            Self::hash_file(&target_path)?
+        } else {
+            bytes_to_hex(&hashed_content.finalize())
+        };
+        self.add_to_filelist(rel, Some(hash));
 
         Ok(())
     }
@@ -491,7 +487,8 @@ impl FilePicker {
             }
             file.flush()?;
 
-            self.add_to_filelist(PathBuf::from("SEARCH"), Some(&path))?;
+            let hash = Self::hash_file(&path)?;
+            self.add_to_filelist(PathBuf::from("SEARCH"), Some(hash));
 
             search
         };
@@ -499,8 +496,8 @@ impl FilePicker {
         {
             // These aren't hashed, but must be listed anyway.
             // The hash is generated from the filelist, so we must add these before hashing.
-            self.add_to_filelist(PathBuf::from("SHA256SUM"), None)?;
-            self.add_to_filelist(PathBuf::from("FILELIST"), None)?;
+            self.add_to_filelist(PathBuf::from("SHA256SUM"), None);
+            self.add_to_filelist(PathBuf::from("FILELIST"), None);
 
             let mut filelist_vec = Vec::from_iter(self.filelist.values());
             filelist_vec.sort_by(|a, b| a.path.cmp(&b.path));
@@ -508,7 +505,8 @@ impl FilePicker {
             let filelist_path = self.build_dir.join("content/FILELIST");
 
             // Save FILELIST.
-            let mut file = BufWriter::new(File::create(&filelist_path).context("while writing FILELIST")?);
+            let mut file =
+                BufWriter::new(File::create(&filelist_path).context("while writing FILELIST")?);
             for entry in filelist_vec {
                 writeln!(file, "{entry}")?;
             }
@@ -573,5 +571,91 @@ impl FilePicker {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::spec::BundleConfig;
+    use super::*;
+
+    fn picker(build_dir: &Path) -> FilePicker {
+        let spec = BundleSpec {
+            bundle: BundleConfig {
+                name: "test".into(),
+                expected_hash: String::new(),
+                search_order: Vec::new(),
+                ignore: None,
+            },
+            inputs: HashMap::new(),
+        };
+        FilePicker::new(spec, build_dir.to_owned(), build_dir.to_owned()).unwrap()
+    }
+
+    #[test]
+    fn copied_file_hashes_match_contents_and_conflicts_preserve_original() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut picker = picker(dir.path());
+        for (name, contents) in [("empty", &[][..]), ("binary", &[0, 255, 1, 2][..])] {
+            picker
+                .add_file(
+                    Path::new(name),
+                    "source",
+                    &mut Cursor::new(contents),
+                    &HashMap::new(),
+                )
+                .unwrap();
+            let relative = PathBuf::from("source").join(name);
+            assert_eq!(
+                picker.filelist[&relative].hash.as_deref(),
+                Some(bytes_to_hex(&Sha256::digest(contents)).as_str())
+            );
+            picker
+                .add_file(
+                    Path::new(name),
+                    "source",
+                    &mut Cursor::new(b"replacement"),
+                    &HashMap::new(),
+                )
+                .unwrap();
+            assert_eq!(
+                fs::read(dir.path().join("content").join(relative)).unwrap(),
+                contents
+            );
+        }
+        assert_eq!(picker.stats.conflicts, 2);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn patched_file_hash_uses_modified_contents() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut picker = picker(dir.path());
+        let patch = dir.path().join("change.diff");
+        fs::write(
+            &patch,
+            "file.txt\n--- file.txt\n+++ file.txt\n@@ -1 +1 @@\n-before\n+after\n",
+        )
+        .unwrap();
+        let diffs = HashMap::from([(PathBuf::from("file.txt"), patch)]);
+        picker
+            .add_file(
+                Path::new("file.txt"),
+                "source",
+                &mut Cursor::new(b"before\n"),
+                &diffs,
+            )
+            .unwrap();
+        assert_eq!(
+            fs::read(dir.path().join("content/source/file.txt")).unwrap(),
+            b"after\n"
+        );
+        assert_eq!(
+            picker.filelist[Path::new("source/file.txt")]
+                .hash
+                .as_deref(),
+            Some(bytes_to_hex(&Sha256::digest(b"after\n")).as_str())
+        );
+        assert_eq!(picker.stats.patch_applied, 1);
     }
 }

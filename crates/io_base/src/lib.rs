@@ -182,6 +182,10 @@ impl InputHandle {
     /// only part of the file is read, not the entire thing. This seems
     /// to happen with biblatex XML state files.
     pub fn scan_remainder(&mut self) -> Result<()> {
+        if self.read_only || !self.ever_read || self.did_unhandled_seek {
+            return Ok(());
+        }
+
         const BUFSIZE: usize = 1024;
         let mut buf: [u8; BUFSIZE] = [0; BUFSIZE];
 
@@ -265,7 +269,7 @@ impl Read for InputHandle {
 
         self.ever_read = true;
         let n = self.inner.read(buf)?;
-        if !self.read_only {
+        if !self.read_only && !self.did_unhandled_seek {
             self.digest.update(&buf[..n]);
         }
         Ok(n)
@@ -692,6 +696,14 @@ fn try_normalize_tex_path(path: &str) -> Option<String> {
 /// for separators, etc.), must be Unicode-able, no symlinks allowed such that
 /// `..` can be stripped lexically.
 pub fn normalize_tex_path(path: &str) -> Cow<'_, str> {
+    let needs_normalization = path
+        .split('/')
+        .enumerate()
+        .any(|(i, component)| matches!(component, "." | "..") || (component.is_empty() && i != 0));
+    if !needs_normalization {
+        return Cow::Borrowed(path);
+    }
+
     if let Some(t) = try_normalize_tex_path(path) {
         Cow::Owned(t)
     } else {
@@ -702,6 +714,78 @@ pub fn normalize_tex_path(path: &str) -> Cow<'_, str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn normalized_tex_paths_are_borrowed() {
+        for path in [
+            "",
+            "file.tex",
+            "path/to/file.tex",
+            "/absolute/file.tex",
+            "file with spaces.tex",
+        ] {
+            assert!(matches!(normalize_tex_path(path), Cow::Borrowed(p) if p == path));
+        }
+        for (path, normalized) in [
+            ("./file.tex", "file.tex"),
+            ("path//file.tex", "path/file.tex"),
+            ("path/../file.tex", "file.tex"),
+        ] {
+            assert_eq!(normalize_tex_path(path), normalized);
+        }
+    }
+
+    struct FailingReader;
+
+    impl Read for FailingReader {
+        fn read(&mut self, _: &mut [u8]) -> io::Result<usize> {
+            panic!("input should not be read when no digest is needed");
+        }
+    }
+
+    impl InputFeatures for FailingReader {
+        fn get_size(&mut self) -> Result<usize> {
+            Ok(0)
+        }
+
+        fn try_seek(&mut self, _: SeekFrom) -> Result<u64> {
+            Ok(0)
+        }
+    }
+
+    #[test]
+    fn closing_inputs_without_digests_skips_remaining_bytes() {
+        let mut unread = InputHandle::new("unread", FailingReader, InputOrigin::Other);
+        unread.scan_remainder().unwrap();
+        assert!(unread.into_name_digest().1.is_none());
+
+        let mut read_only = InputHandle::new_read_only("bundle", FailingReader, InputOrigin::Other);
+        read_only.ever_read = true;
+        read_only.scan_remainder().unwrap();
+        assert!(read_only.into_name_digest().1.is_none());
+
+        let mut sought = InputHandle::new("sought", FailingReader, InputOrigin::Other);
+        sought.ever_read = true;
+        sought.did_unhandled_seek = true;
+        sought.scan_remainder().unwrap();
+        assert!(sought.into_name_digest().1.is_none());
+    }
+
+    #[test]
+    fn closing_partial_input_hashes_the_remaining_bytes() {
+        let contents = b"file contents";
+        let mut input = InputHandle::new(
+            "file",
+            io::Cursor::new(contents.to_vec()),
+            InputOrigin::Other,
+        );
+        input.read_exact(&mut [0; 4]).unwrap();
+        input.scan_remainder().unwrap();
+
+        let mut expected = digest::create();
+        expected.update(contents);
+        assert_eq!(input.into_name_digest().1, Some(DigestData::from(expected)));
+    }
 
     #[test]
     fn test_try_normalize_tex_path() {

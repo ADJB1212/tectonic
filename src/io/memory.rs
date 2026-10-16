@@ -134,14 +134,11 @@ impl Drop for MemoryIoItem {
             self.unix_mtime
         };
 
-        // I think split_off() is an efficient way to move our data vector
-        // back into the hashmap? Ideally we could "consume" self but I don't
-        // believe that's possible in a Drop implementation.
         let mut mfiles = self.files.borrow_mut();
         mfiles.insert(
-            self.name.clone(),
+            std::mem::take(&mut self.name),
             MemoryFileInfo {
-                data: self.state.get_mut().split_off(0),
+                data: std::mem::take(self.state.get_mut()),
                 unix_mtime,
             },
         );
@@ -245,6 +242,30 @@ mod tests {
     use super::*;
     use crate::status::NoopStatusBackend;
     use std::io::{BufRead, BufReader};
+
+    #[test]
+    fn closing_file_preserves_buffer_allocation_and_mtime() {
+        let mut mem = MemoryIo::new(false);
+        let mut data = Vec::with_capacity(4096);
+        data.extend_from_slice(b"contents");
+        let allocation = data.as_ptr();
+        let capacity = data.capacity();
+        mem.create_entry("test.tex", data);
+        let mtime = mem.files.borrow()["test.tex"].unix_mtime;
+
+        let mut status = NoopStatusBackend::default();
+        let mut handle = mem.input_open_name("test.tex", &mut status).unwrap();
+        let mut contents = String::new();
+        handle.read_to_string(&mut contents).unwrap();
+        drop(handle);
+
+        let files = mem.files.borrow();
+        let info = &files["test.tex"];
+        assert_eq!(contents, "contents");
+        assert_eq!(info.data.as_ptr(), allocation);
+        assert_eq!(info.data.capacity(), capacity);
+        assert_eq!(info.unix_mtime, mtime);
+    }
 
     /// Early versions had a bug where files were not truncated when opened
     /// for writing, which led to junk after the intended EOF when the engine

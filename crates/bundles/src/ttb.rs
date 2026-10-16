@@ -14,6 +14,7 @@ use std::{
 use tectonic_errors::prelude::*;
 use tectonic_io_base::digest::{self, DigestData};
 
+#[derive(Clone, Copy)]
 pub struct TTBv1Header {
     pub index_start: u64,
     pub index_real_len: u32,
@@ -73,14 +74,13 @@ impl FileInfo for TTBFileInfo {
 #[derive(Default, Debug)]
 pub struct TTBFileIndex {
     // Vector of fileinfos.
-    // This MUST be sorted by path for search() to work properly!
     pub content: Vec<TTBFileInfo>,
 
     search_orders: HashMap<String, Vec<String>>,
     default_search_order: String,
 
     // Remember previous searches so we don't have to iterate over content again.
-    search_cache: HashMap<String, Option<TTBFileInfo>>,
+    search_cache: HashMap<String, Option<usize>>,
     by_name: HashMap<String, Vec<usize>>,
 }
 
@@ -116,7 +116,11 @@ impl TTBFileIndex {
                 },
                 None => bail!("malformed FILELIST line: missing path"),
             };
-            let name = path.rsplit_once('/').map(|(_, n)| n).unwrap_or(&path).to_owned();
+            let name = path
+                .rsplit_once('/')
+                .map(|(_, n)| n)
+                .unwrap_or(&path)
+                .to_owned();
 
             // Basic path validation.
             // TODO: more robust checks
@@ -208,7 +212,7 @@ impl<'this> FileIndex<'this> for TTBFileIndex {
     fn search(&'this mut self, name: &str) -> Option<TTBFileInfo> {
         match self.search_cache.get(name) {
             None => {}
-            Some(r) => return r.clone(),
+            Some(r) => return r.map(|idx| self.content[idx].clone()),
         }
 
         self.ensure_by_name();
@@ -252,25 +256,27 @@ impl<'this> FileIndex<'this> for TTBFileIndex {
 
         if relative_parent {
             // TODO: REWORK
-            let mut matching: Option<&TTBFileInfo> = None;
+            let mut matching = None;
             for &idx in matching_indices {
                 let info = &self.content[idx];
                 if info.path().ends_with(name) {
                     match matching {
-                        Some(_) => return None, // TODO: warning. This shouldn't happen.
-                        None => matching = Some(info),
+                        Some(_) => {
+                            self.search_cache.insert(name.to_owned(), None);
+                            return None;
+                        }
+                        None => matching = Some(idx),
                     }
                 }
             }
-            let matching = matching.cloned();
-            self.search_cache.insert(name.to_owned(), matching.clone());
-            matching
+            self.search_cache.insert(name.to_owned(), matching);
+            matching.map(|idx| self.content[idx].clone())
         } else {
             // Even if paths.len() is 1, we don't return here.
             // We need to make sure this file matches a search path:
             // if it's in a directory we don't search, we shouldn't find it!
 
-            let mut picked: Vec<&TTBFileInfo> = Vec::new();
+            let mut picked: Option<usize> = None;
             for rule in search {
                 // Remove leading slash from rule
                 // (search patterns start with slashes, but paths do not)
@@ -278,47 +284,86 @@ impl<'this> FileIndex<'this> for TTBFileIndex {
 
                 for &idx in matching_indices {
                     let info = &self.content[idx];
-                    if rule.ends_with("//") {
-                        // Match start of patent path
+                    let matches = if rule.ends_with("//") {
+                        // Match start of parent path
                         // (cutting off the last slash)
-                        if info.path().starts_with(&rule[0..rule.len() - 1]) {
-                            picked.push(info);
-                        }
+                        info.path().starts_with(&rule[0..rule.len() - 1])
                     } else {
                         // Match full parent path
                         let prefix_len = info.path().len().saturating_sub(name.len());
-                        if &info.path()[0..prefix_len] == rule {
-                            picked.push(info);
-                        }
+                        &info.path()[0..prefix_len] == rule
+                    };
+                    if matches
+                        && picked.is_none_or(|previous| info.path < self.content[previous].path)
+                    {
+                        picked = Some(idx);
                     }
                 }
-                if !picked.is_empty() {
+                if picked.is_some() {
                     break;
                 }
             }
 
-            let r = {
-                if picked.is_empty() {
-                    // No file in our search dirs had this name.
-                    None
-                } else if picked.len() == 1 {
-                    // We found exactly one file with this name.
-                    //
-                    // This chain of functions is essentially picked[0],
-                    // but takes ownership of the string without requiring
-                    // a .clone().
-                    Some(picked[0].clone())
-                } else {
-                    // We found multiple files with this name, all of which
-                    // have the same priority. Pick alphabetically to emulate
-                    // an "alphabetic DFS" search order.
-                    picked.sort_by(|a, b| a.path().cmp(b.path()));
-                    Some(picked[0].clone())
-                }
-            };
-
-            self.search_cache.insert(name.to_owned(), r.clone());
-            r
+            self.search_cache.insert(name.to_owned(), picked);
+            picked.map(|idx| self.content[idx].clone())
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+
+    fn index() -> TTBFileIndex {
+        let mut index = TTBFileIndex::default();
+        index
+            .initialize(&mut Cursor::new(
+                b"[DEFAULTSEARCH]\nmain\n[SEARCH:main]\n/first//\n/second//\n[FILELIST]\n\
+                  0 0 0 nohash second/a/file.tex\n\
+                  0 0 0 nohash first/z/file.tex\n\
+                  0 0 0 nohash first/a/file.tex\n\
+                  0 0 0 nohash hidden/hidden.tex\n\
+                  0 0 0 nohash first/exact.tex\n",
+            ))
+            .unwrap();
+        index
+    }
+
+    #[test]
+    fn search_preserves_rule_priority_and_alphabetical_order() {
+        let mut index = index();
+        for _ in 0..2 {
+            assert_eq!(index.search("file.tex").unwrap().path, "first/a/file.tex");
+            assert!(index.search("hidden.tex").is_none());
+            assert!(index.search("missing.tex").is_none());
+            assert_eq!(index.search("z/file.tex").unwrap().path, "first/z/file.tex");
+            assert!(index.search("a/file.tex").is_none());
+            assert!(index.search("/first/exact.tex").is_none());
+        }
+    }
+
+    #[test]
+    fn exact_search_does_not_match_subdirectories() {
+        let mut index = index();
+        index
+            .search_orders
+            .insert("main".into(), vec!["/first/".into()]);
+        assert!(index.search("file.tex").is_none());
+        assert_eq!(index.search("exact.tex").unwrap().path, "first/exact.tex");
+    }
+
+    #[test]
+    fn reinitializing_clears_cached_hits_and_misses() {
+        let mut index = index();
+        assert!(index.search("file.tex").is_some());
+        assert!(index.search("new.tex").is_none());
+        index
+            .initialize(&mut Cursor::new(
+                b"[DEFAULTSEARCH]\nmain\n[SEARCH:main]\n/new/\n[FILELIST]\n0 0 0 nohash new/new.tex\n",
+            ))
+            .unwrap();
+        assert!(index.search("file.tex").is_none());
+        assert_eq!(index.search("new.tex").unwrap().path, "new/new.tex");
     }
 }

@@ -206,6 +206,10 @@ pub struct XdvParser<T: XdvEvents> {
     cur_font_num: i32,
     offset: u64,
     cur_char_run: Vec<i32>,
+    glyphs: Vec<u16>,
+    glyph_x: Vec<i32>,
+    glyph_y: Vec<i32>,
+    text: String,
 }
 
 /// Which type of file is being parsed.
@@ -273,6 +277,10 @@ impl<T: XdvEvents> XdvParser<T> {
             cur_font_num: 0,
             offset: 0,
             cur_char_run: Vec::new(),
+            glyphs: Vec::new(),
+            glyph_x: Vec::new(),
+            glyph_y: Vec::new(),
+            text: String::new(),
         }
     }
 
@@ -959,25 +967,15 @@ impl<T: XdvEvents> XdvParser<T> {
 
         let width = cursor.get_i32()?;
         let n_glyphs = cursor.get_u16()?;
-        let mut xs = Vec::with_capacity(n_glyphs as usize);
-        let mut ys = Vec::with_capacity(n_glyphs as usize);
-        let state = self.stack.last_mut().unwrap();
+        self.read_glyphs(cursor, n_glyphs)?;
 
-        for _ in 0..n_glyphs {
-            xs.push(state.h + cursor.get_i32()?);
-            ys.push(state.v + cursor.get_i32()?);
-        }
-
-        let mut glyphs = Vec::with_capacity(n_glyphs as usize);
-
-        for _ in 0..n_glyphs {
-            let glyph_id = cursor.get_u16()?;
-            glyphs.push(glyph_id);
-        }
-
-        state.h += width;
-        self.events
-            .handle_glyph_run(self.cur_font_num, &glyphs[..], &xs[..], &ys[..])?;
+        self.stack.last_mut().unwrap().h += width;
+        self.events.handle_glyph_run(
+            self.cur_font_num,
+            &self.glyphs,
+            &self.glyph_x,
+            &self.glyph_y,
+        )?;
         Ok(())
     }
 
@@ -991,41 +989,61 @@ impl<T: XdvEvents> XdvParser<T> {
         }
 
         let n_chars = cursor.get_u16()?;
-        let mut chars = Vec::with_capacity(n_chars as usize);
         let offset = cursor.global_offset();
-
-        for _ in 0..n_chars {
-            chars.push(cursor.get_u16()?);
+        let chars = cursor.get_slice(usize::from(n_chars) * 2)?;
+        self.text.clear();
+        for ch in char::decode_utf16(
+            chars
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .copied()
+                .map(u16::from_be_bytes),
+        ) {
+            self.text
+                .push(ch.map_err(|_| XdvError::FromUTF16(offset).into_internal())?);
         }
-
-        let text = String::from_utf16(&chars[..])
-            .map_err(|_| XdvError::FromUTF16(offset).into_internal())?;
 
         let width = cursor.get_i32()?;
         let n_glyphs = cursor.get_u16()?;
-        let mut glyphs = Vec::with_capacity(n_glyphs as usize);
-        let mut x = Vec::with_capacity(n_glyphs as usize);
-        let mut y = Vec::with_capacity(n_glyphs as usize);
-        let state = self.stack.last_mut().unwrap();
+        self.read_glyphs(cursor, n_glyphs)?;
 
-        for _ in 0..n_glyphs {
-            x.push(state.h + cursor.get_i32()?);
-            y.push(state.v + cursor.get_i32()?);
-        }
-
-        for _ in 0..n_glyphs {
-            glyphs.push(cursor.get_u16()?);
-        }
-
-        state.h += width;
+        self.stack.last_mut().unwrap().h += width;
         self.events.handle_text_and_glyphs(
             self.cur_font_num,
-            &text,
+            &self.text,
             width,
-            &glyphs[..],
-            &x[..],
-            &y[..],
+            &self.glyphs,
+            &self.glyph_x,
+            &self.glyph_y,
         )?;
+        Ok(())
+    }
+
+    fn read_glyphs(
+        &mut self,
+        cursor: &mut Cursor<T>,
+        n_glyphs: u16,
+    ) -> InternalResult<(), T::Error> {
+        let bytes = cursor.get_slice(usize::from(n_glyphs) * 10)?;
+        let (positions, glyphs) = bytes.split_at(usize::from(n_glyphs) * 8);
+        let state = self.stack.last().unwrap();
+        self.glyph_x.clear();
+        self.glyph_y.clear();
+        self.glyphs.clear();
+
+        for pos in positions.as_chunks::<8>().0 {
+            self.glyph_x.push(state.h + BigEndian::read_i32(pos));
+            self.glyph_y.push(state.v + BigEndian::read_i32(&pos[4..]));
+        }
+        self.glyphs.extend(
+            glyphs
+                .as_chunks::<2>()
+                .0
+                .iter()
+                .copied()
+                .map(u16::from_be_bytes),
+        );
         Ok(())
     }
 
@@ -1421,6 +1439,136 @@ mod tests {
     use std::ffi::OsStr;
     use std::fs;
     use std::path::{Path, PathBuf};
+
+    #[derive(Debug, PartialEq)]
+    struct GlyphRun {
+        text: Option<String>,
+        glyphs: Vec<u16>,
+        x: Vec<i32>,
+        y: Vec<i32>,
+    }
+
+    #[derive(Default)]
+    struct GlyphEvents(Vec<GlyphRun>);
+
+    impl XdvEvents for GlyphEvents {
+        type Error = XdvError;
+
+        fn handle_glyph_run(
+            &mut self,
+            font_num: i32,
+            glyphs: &[u16],
+            x: &[i32],
+            y: &[i32],
+        ) -> Result<(), Self::Error> {
+            assert_eq!(font_num, 42);
+            self.0.push(GlyphRun {
+                text: None,
+                glyphs: glyphs.to_vec(),
+                x: x.to_vec(),
+                y: y.to_vec(),
+            });
+            Ok(())
+        }
+
+        fn handle_text_and_glyphs(
+            &mut self,
+            font_num: i32,
+            text: &str,
+            _: i32,
+            glyphs: &[u16],
+            x: &[i32],
+            y: &[i32],
+        ) -> Result<(), Self::Error> {
+            self.handle_glyph_run(font_num, glyphs, x, y)?;
+            self.0.last_mut().unwrap().text = Some(text.to_owned());
+            Ok(())
+        }
+    }
+
+    fn glyph_parser() -> XdvParser<GlyphEvents> {
+        let mut parser = XdvParser::new(GlyphEvents::default());
+        parser.state = ParserState::InPage;
+        parser.stack.push(State::new());
+        parser.cur_font_num = 42;
+        parser
+    }
+
+    fn glyph_packet(text: Option<&[u16]>, width: i32, glyphs: &[(u16, i32, i32)]) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        if let Some(text) = text {
+            bytes.push(Opcode::SetTextAndGlyphs as u8);
+            bytes.extend_from_slice(&(text.len() as u16).to_be_bytes());
+            for ch in text {
+                bytes.extend_from_slice(&ch.to_be_bytes());
+            }
+        } else {
+            bytes.push(Opcode::SetGlyphs as u8);
+        }
+        bytes.extend_from_slice(&width.to_be_bytes());
+        bytes.extend_from_slice(&(glyphs.len() as u16).to_be_bytes());
+        for (_, x, y) in glyphs {
+            bytes.extend_from_slice(&x.to_be_bytes());
+            bytes.extend_from_slice(&y.to_be_bytes());
+        }
+        for (glyph, _, _) in glyphs {
+            bytes.extend_from_slice(&glyph.to_be_bytes());
+        }
+        bytes
+    }
+
+    #[test]
+    fn glyph_runs_survive_every_input_split() {
+        let mut bytes = glyph_packet(None, 10, &[(1, 2, -3), (4, 5, 6)]);
+        bytes.extend(glyph_packet(
+            Some(&[0x41, 0xD83D, 0xDE00]),
+            20,
+            &[(7, 8, 9)],
+        ));
+        bytes.extend(glyph_packet(None, 0, &[]));
+        bytes.extend(glyph_packet(Some(&[]), 0, &[]));
+        let expected = vec![
+            GlyphRun {
+                text: None,
+                glyphs: vec![1, 4],
+                x: vec![2, 5],
+                y: vec![-3, 6],
+            },
+            GlyphRun {
+                text: Some("A\u{1F600}".into()),
+                glyphs: vec![7],
+                x: vec![18],
+                y: vec![9],
+            },
+            GlyphRun {
+                text: None,
+                glyphs: vec![],
+                x: vec![],
+                y: vec![],
+            },
+            GlyphRun {
+                text: Some(String::new()),
+                glyphs: vec![],
+                x: vec![],
+                y: vec![],
+            },
+        ];
+
+        for split in 0..=bytes.len() {
+            let mut parser = glyph_parser();
+            let (consumed, _) = parser.parse(&bytes[..split]).unwrap();
+            let (rest, _) = parser.parse(&bytes[consumed..]).unwrap();
+            assert_eq!(consumed + rest, bytes.len());
+            assert_eq!(parser.events.0, expected, "split at {split}");
+            assert_eq!(parser.stack.last().unwrap().h, 30);
+        }
+    }
+
+    #[test]
+    fn glyph_text_rejects_unpaired_surrogates() {
+        let bytes = glyph_packet(Some(&[0xD800]), 10, &[]);
+        assert_eq!(glyph_parser().parse(&bytes), Err(XdvError::FromUTF16(3)));
+    }
 
     fn tex_outputs() -> PathBuf {
         Path::new(env!("CARGO_MANIFEST_DIR"))

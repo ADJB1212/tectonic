@@ -113,7 +113,7 @@ fn main() {
 
     if !os_args.is_empty() && os_args[0].to_str().map(|s| s.contains("nextonic")) == Some(true) {
         v2cli_enabled = true;
-    } else if let Some(index) = v2cli_args.clone()
+    } else if let Some(index) = v2cli_args
         .iter()
         .position(|s| s.to_str().unwrap_or_default() == "-X")
     {

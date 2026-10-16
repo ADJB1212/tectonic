@@ -4,7 +4,7 @@
 //! Learned working-set prefetching for cached bundles.
 
 use super::{file_create_write, BundleCache};
-use crate::FileIndex;
+use crate::{FileIndex, FileInfo};
 use std::{
     collections::HashSet,
     fs::{self, File},
@@ -32,7 +32,7 @@ fn parse_manifest(reader: impl BufRead) -> HashSet<String> {
             continue;
         }
 
-        if out.insert(line.clone()) && out.len() == MAX_MANIFEST_ENTRIES {
+        if out.insert(line) && out.len() == MAX_MANIFEST_ENTRIES {
             break;
         }
     }
@@ -68,9 +68,10 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
         let mut names: Vec<&str> = self.touched.iter().map(String::as_str).collect();
         names.sort_unstable();
         let mut infos = Vec::new();
+        let mut paths = HashSet::new();
         for name in names {
             if let Some(info) = self.bundle.search(name) {
-                if !self.get_file_path(&info).exists() {
+                if !self.get_file_path(&info).exists() && paths.insert(info.path().to_owned()) {
                     infos.push(info);
                 }
             }
@@ -122,6 +123,7 @@ impl<T> BundleCache<'_, T> {
         if !self.prefetch_supported
             || !manifest_name_is_valid(name)
             || self.touched.len() >= MAX_MANIFEST_ENTRIES
+            || self.touched.contains(name)
             || !self.touched.insert(name.to_owned())
         {
             return;

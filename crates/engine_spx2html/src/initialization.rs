@@ -5,7 +5,6 @@
 
 use std::{collections::HashMap, io::Read, path::PathBuf};
 use tectonic_errors::prelude::*;
-use tectonic_io_base::OpenResult;
 use tectonic_status_base::tt_warning;
 
 use crate::{
@@ -82,37 +81,8 @@ impl InitializationState {
             return Ok(());
         }
 
-        // Figure out the TeX path of the font source. At the moment, this is
-        // just the name or something similar, but in principle we might do a
-        // lookup based on something like symbolic name.
-
-        let io = common.hooks.io();
-        let mut texpath = String::default();
-        let mut ih = None;
-
-        for ext in &["", ".otf"] {
-            texpath = format!("{name}{ext}");
-
-            match io.input_open_name(&texpath, common.status) {
-                OpenResult::Ok(h) => {
-                    ih = Some(h);
-                    break;
-                }
-
-                OpenResult::NotAvailable => continue,
-
-                OpenResult::Err(e) => return Err(e),
-            };
-        }
-
-        let ih = a_ok_or!(ih;
-            ["failed to find a font file associated with the name `{}`", name]
-        );
-
-        // Now that we have that, we can pass off to the font manager.
-
         self.fonts.register_tex_font(
-            font_num, size, face_index, color_rgba, extend, slant, embolden, &texpath, ih, common,
+            font_num, size, face_index, color_rgba, extend, slant, embolden, name, common,
         )
     }
 

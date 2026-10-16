@@ -197,30 +197,12 @@ impl FontFileData {
         // the space character, so that we can know how wide spaces are, so that
         // we can guess when to insert spaces into our HTML content.
 
-        let cmap = a_ok_or!(
-            font.cmap();
+        let cmap_data = a_ok_or!(
+            font.table_data(pinot::cmap::CMAP);
             ["unable to parse OpenType font: missing/invalid CMAP table"]
         );
 
-        let mut gmap = HashMap::new();
-        let mut space_glyph = 0;
-
-        for usv in valid_usvs() {
-            let c = char::from_u32(usv).unwrap();
-
-            let gidx = match cmap.map(usv) {
-                Some(g) if g != 0 => g,
-                _ => {
-                    continue;
-                }
-            };
-
-            if c == ' ' {
-                space_glyph = gidx;
-            }
-
-            gmap.insert(gidx, MapEntry::Direct(c));
-        }
+        let (mut gmap, space_glyph) = load_direct_mappings(cmap_data);
 
         // Check for additional substitution-based mappings.
 
@@ -547,6 +529,41 @@ impl FontFileData {
     }
 }
 
+fn load_direct_mappings(cmap_data: &[u8]) -> (HashMap<GlyphId, MapEntry>, GlyphId) {
+    let subtables: Vec<_> = pinot::cmap::Cmap::new(cmap_data)
+        .subtables()
+        .map(|subtable| (subtable.encoding.offset, subtable.format()))
+        .filter(|(_, format)| matches!(format, 4 | 12 | 13))
+        .collect();
+    if subtables.is_empty() {
+        return (HashMap::new(), 0);
+    }
+    let usv_limit = if subtables.iter().any(|(_, format)| *format != 4) {
+        0x11_0000
+    } else {
+        0xFFFF
+    };
+    let mut gmap = HashMap::new();
+    let mut space_glyph = 0;
+
+    for usv in valid_usvs().take_while(|usv| *usv < usv_limit) {
+        let glyph = match subtables
+            .iter()
+            .find_map(|(offset, format)| pinot::cmap::map(cmap_data, *offset, *format, usv))
+        {
+            Some(glyph) if glyph != 0 => glyph,
+            _ => continue,
+        };
+        let c = char::from_u32(usv).unwrap();
+        if c == ' ' {
+            space_glyph = glyph;
+        }
+        gmap.insert(glyph, MapEntry::Direct(c));
+    }
+
+    (gmap, space_glyph)
+}
+
 fn load_ssty_mappings(
     map: &mut HashMap<GlyphId, MapEntry>,
     feat: &Feature,
@@ -673,6 +690,109 @@ impl From<crate::assets::syntax::GlyphVariantMapping> for GlyphVariantMapping {
             usv: m.usv,
             variant_map_index: m.index,
         }
+    }
+}
+
+#[cfg(test)]
+mod cmap_tests {
+    use super::*;
+
+    fn cmap(subtables: &[Vec<u8>]) -> Vec<u8> {
+        let mut data = Vec::new();
+        data.write_u16::<BigEndian>(0).unwrap();
+        data.write_u16::<BigEndian>(subtables.len() as u16).unwrap();
+        let mut offset = 4 + 8 * subtables.len();
+        for subtable in subtables {
+            data.write_u16::<BigEndian>(0).unwrap();
+            data.write_u16::<BigEndian>(4).unwrap();
+            data.write_u32::<BigEndian>(offset as u32).unwrap();
+            offset += subtable.len();
+        }
+        for subtable in subtables {
+            data.extend_from_slice(subtable);
+        }
+        data
+    }
+
+    fn format4(glyph: GlyphId) -> Vec<u8> {
+        let mut data = Vec::new();
+        for word in [
+            4,
+            32,
+            0,
+            4,
+            4,
+            1,
+            0,
+            32,
+            0xFFFF,
+            0,
+            32,
+            0xFFFF,
+            glyph.wrapping_sub(32),
+            1,
+            0,
+            0,
+        ] {
+            data.write_u16::<BigEndian>(word).unwrap();
+        }
+        data
+    }
+
+    fn grouped_format(format: u16) -> Vec<u8> {
+        let mut data = Vec::new();
+        data.write_u16::<BigEndian>(format).unwrap();
+        data.write_u16::<BigEndian>(0).unwrap();
+        data.write_u32::<BigEndian>(16 + 12 * 4).unwrap();
+        data.write_u32::<BigEndian>(0).unwrap();
+        data.write_u32::<BigEndian>(4).unwrap();
+        for group in [
+            [32, 32, 5],
+            [65, 67, 6],
+            [0xD800, 0xD801, 9],
+            [0x1F600, 0x1F601, 10],
+        ] {
+            for value in group {
+                data.write_u32::<BigEndian>(value).unwrap();
+            }
+        }
+        data
+    }
+
+    fn assert_matches_full_scan(data: &[u8]) {
+        let cmap = pinot::cmap::Cmap::new(data);
+        let mut expected = HashMap::new();
+        let mut space_glyph = 0;
+        for usv in valid_usvs() {
+            if let Some(glyph) = cmap.map(usv).filter(|glyph| *glyph != 0) {
+                let c = char::from_u32(usv).unwrap();
+                expected.insert(glyph, MapEntry::Direct(c));
+                if c == ' ' {
+                    space_glyph = glyph;
+                }
+            }
+        }
+        assert_eq!(load_direct_mappings(data), (expected, space_glyph));
+    }
+
+    #[test]
+    fn direct_mappings_match_full_scan_for_supported_formats() {
+        assert_matches_full_scan(&cmap(&[format4(5)]));
+        assert_matches_full_scan(&cmap(&[grouped_format(12)]));
+        assert_matches_full_scan(&cmap(&[grouped_format(13)]));
+    }
+
+    #[test]
+    fn direct_mappings_preserve_subtable_priority_including_missing_glyph() {
+        for glyph in [0, 3] {
+            assert_matches_full_scan(&cmap(&[format4(glyph), grouped_format(12)]));
+        }
+    }
+
+    #[test]
+    fn direct_mappings_ignore_unsupported_subtables() {
+        assert_matches_full_scan(&cmap(&[vec![0, 14]]));
+        assert_matches_full_scan(&[]);
     }
 }
 

@@ -14,6 +14,7 @@ use crate::{
     scan::{scan_and_store_the_field_value_and_eat_white, scan_identifier, Scan, ScanRes},
     Bibtex, BibtexError, File, GlobalItems, HashPointer, LookupRes,
 };
+use std::collections::VecDeque;
 
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub(crate) enum BibCommand {
@@ -23,32 +24,32 @@ pub(crate) enum BibCommand {
 }
 
 pub(crate) struct BibData {
-    bibs: Vec<File>,
+    bibs: VecDeque<File>,
     preamble: Vec<StrNumber>,
 }
 
 impl BibData {
     pub fn new() -> BibData {
         BibData {
-            bibs: Vec::new(),
+            bibs: VecDeque::new(),
             preamble: Vec::new(),
         }
     }
 
     pub fn top_file(&self) -> &File {
-        self.bibs.first().unwrap()
+        self.bibs.front().unwrap()
     }
 
     pub fn top_file_mut(&mut self) -> &mut File {
-        self.bibs.first_mut().unwrap()
+        self.bibs.front_mut().unwrap()
     }
 
     pub fn push_file(&mut self, file: File) {
-        self.bibs.push(file);
+        self.bibs.push_back(file);
     }
 
     pub fn pop_file(&mut self) -> File {
-        self.bibs.remove(0)
+        self.bibs.pop_front().unwrap()
     }
 
     pub fn add_preamble(&mut self, s: StrNumber) {

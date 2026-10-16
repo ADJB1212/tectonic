@@ -1,7 +1,6 @@
 use crate::engine::LayoutEngine;
 use crate::font::Font;
-use std::collections::BTreeMap;
-use std::sync::Mutex;
+use std::{cell::RefCell, collections::HashMap};
 #[cfg(not(target_os = "macos"))]
 use tectonic_bridge_fontconfig as fc;
 
@@ -48,9 +47,17 @@ pub(crate) type PlatformFontRef = fc::Pattern;
 #[cfg(target_os = "macos")]
 pub(crate) type PlatformFontRef = tectonic_mac_core::CTFontDescriptor;
 
-/// key is combined value representing `(font_id, glyph)`
-/// value is glyph bounding box in TeX points
-static GLYPH_BOXES: Mutex<BTreeMap<(u16, u16), GlyphBBox>> = Mutex::new(BTreeMap::new());
+thread_local! {
+    static GLYPH_BOXES: RefCell<HashMap<(u16, u16), GlyphBBox>> = RefCell::new(HashMap::new());
+    static LEFT_PROT: RefCell<HashMap<(i32, u32), i32>> = RefCell::new(HashMap::new());
+    static RIGHT_PROT: RefCell<HashMap<(i32, u32), i32>> = RefCell::new(HashMap::new());
+}
+
+pub(crate) fn clear_font_caches() {
+    GLYPH_BOXES.set(HashMap::new());
+    LEFT_PROT.set(HashMap::new());
+    RIGHT_PROT.set(HashMap::new());
+}
 
 #[no_mangle]
 pub unsafe extern "C" fn getCachedGlyphBBox(
@@ -58,21 +65,18 @@ pub unsafe extern "C" fn getCachedGlyphBBox(
     glyph_id: u16,
     bbox: *mut GlyphBBox,
 ) -> i32 {
-    match GLYPH_BOXES.lock().unwrap().get(&(font_id, glyph_id)) {
+    GLYPH_BOXES.with_borrow(|cache| match cache.get(&(font_id, glyph_id)) {
         Some(val) => {
             *bbox = *val;
             1
         }
         None => 0,
-    }
+    })
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn cacheGlyphBBox(font_id: u16, glyph_id: u16, bbox: *const GlyphBBox) {
-    GLYPH_BOXES
-        .lock()
-        .unwrap()
-        .insert((font_id, glyph_id), *bbox);
+    GLYPH_BOXES.with_borrow_mut(|cache| cache.insert((font_id, glyph_id), *bbox));
 }
 
 /* The following code used to be in a file called "hz.cpp" and there's no
@@ -83,14 +87,11 @@ pub unsafe extern "C" fn cacheGlyphBBox(font_id: u16, glyph_id: u16, bbox: *cons
 pub const LEFT_SIDE: i32 = 0;
 pub const RIGHT_SIDE: i32 = 1;
 
-static LEFT_PROT: Mutex<BTreeMap<(i32, u32), i32>> = Mutex::new(BTreeMap::new());
-static RIGHT_PROT: Mutex<BTreeMap<(i32, u32), i32>> = Mutex::new(BTreeMap::new());
-
 #[no_mangle]
 pub extern "C" fn set_cp_code(font_num: i32, code: u32, side: i32, value: i32) {
     match side {
-        LEFT_SIDE => LEFT_PROT.lock().unwrap().insert((font_num, code), value),
-        RIGHT_SIDE => RIGHT_PROT.lock().unwrap().insert((font_num, code), value),
+        LEFT_SIDE => LEFT_PROT.with_borrow_mut(|cache| cache.insert((font_num, code), value)),
+        RIGHT_SIDE => RIGHT_PROT.with_borrow_mut(|cache| cache.insert((font_num, code), value)),
         _ => unreachable!(),
     };
 }
@@ -98,9 +99,39 @@ pub extern "C" fn set_cp_code(font_num: i32, code: u32, side: i32, value: i32) {
 #[no_mangle]
 pub extern "C" fn get_cp_code(font_num: i32, code: u32, side: i32) -> i32 {
     match side {
-        LEFT_SIDE => LEFT_PROT.lock().unwrap().get(&(font_num, code)).copied(),
-        RIGHT_SIDE => RIGHT_PROT.lock().unwrap().get(&(font_num, code)).copied(),
+        LEFT_SIDE => LEFT_PROT.with_borrow(|cache| cache.get(&(font_num, code)).copied()),
+        RIGHT_SIDE => RIGHT_PROT.with_borrow(|cache| cache.get(&(font_num, code)).copied()),
         _ => unreachable!(),
     }
     .unwrap_or(0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn font_teardown_discards_cached_metrics_and_protrusion_codes() {
+        let bounds = GlyphBBox {
+            x_min: -1.0,
+            y_min: -2.0,
+            x_max: 3.0,
+            y_max: 4.0,
+        };
+        let mut actual = GlyphBBox::default();
+        unsafe {
+            cacheGlyphBBox(7, 42, &bounds);
+            assert_eq!(getCachedGlyphBBox(7, 42, &mut actual), 1);
+        }
+        assert_eq!(actual, bounds);
+        set_cp_code(7, 42, LEFT_SIDE, 100);
+        set_cp_code(7, 42, RIGHT_SIDE, 200);
+        assert_eq!(get_cp_code(7, 42, LEFT_SIDE), 100);
+        assert_eq!(get_cp_code(7, 42, RIGHT_SIDE), 200);
+
+        crate::manager::FontManager::destroy();
+        assert_eq!(unsafe { getCachedGlyphBBox(7, 42, &mut actual) }, 0);
+        assert_eq!(get_cp_code(7, 42, LEFT_SIDE), 0);
+        assert_eq!(get_cp_code(7, 42, RIGHT_SIDE), 0);
+    }
 }

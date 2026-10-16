@@ -47,6 +47,7 @@ where
     // We need the network to load these.
     // They're None until absolutely necessary.
     reader: Option<DefaultRangeReader>,
+    header: Option<TTBv1Header>,
 }
 
 /// The internal file-information struct used by the [`TTBNetBundle`].
@@ -57,6 +58,7 @@ impl TTBNetBundle<TTBFileIndex> {
     pub fn new(url: String) -> Result<Self> {
         Ok(TTBNetBundle {
             reader: None,
+            header: None,
             index: TTBFileIndex::default(),
             url,
         })
@@ -72,6 +74,9 @@ impl TTBNetBundle<TTBFileIndex> {
     }
 
     fn get_header(&mut self) -> Result<TTBv1Header> {
+        if let Some(header) = self.header {
+            return Ok(header);
+        }
         self.connect_reader()?;
         let mut header: [u8; 70] = [0u8; 70];
         self.reader
@@ -80,6 +85,7 @@ impl TTBNetBundle<TTBFileIndex> {
             .read_range(0, 70)?
             .read_exact(&mut header)?;
         let header = TTBv1Header::try_from(header)?;
+        self.header = Some(header);
         Ok(header)
     }
 
@@ -181,7 +187,14 @@ impl CachableBundle<'_, TTBFileIndex> for TTBNetBundle<TTBFileIndex> {
         }
 
         // Get file with retries
+        if let Err(e) = self.connect_reader() {
+            return OpenResult::Err(e);
+        }
         for i in 0..NET_RETRY_ATTEMPTS {
+            if i > 0 {
+                thread::sleep(Duration::from_millis(NET_RETRY_SLEEP_MS));
+            }
+            v.clear();
             let mut reader = match read_fileinfo(info, self.reader.as_mut().unwrap()) {
                 Ok(r) => r,
                 Err(e) => {
@@ -189,7 +202,6 @@ impl CachableBundle<'_, TTBFileIndex> for TTBNetBundle<TTBFileIndex> {
                         "failure fetching \"{}\" from network ({}/{NET_RETRY_ATTEMPTS})",
                         info.name, i+1; e
                     );
-                    thread::sleep(Duration::from_millis(NET_RETRY_SLEEP_MS));
                     continue;
                 }
             };
@@ -201,7 +213,6 @@ impl CachableBundle<'_, TTBFileIndex> for TTBNetBundle<TTBFileIndex> {
                         "failure downloading \"{}\" from network ({}/{NET_RETRY_ATTEMPTS})",
                         info.name, i+1; e.into()
                     );
-                    thread::sleep(Duration::from_millis(NET_RETRY_SLEEP_MS));
                     continue;
                 }
             };
@@ -217,5 +228,97 @@ impl CachableBundle<'_, TTBFileIndex> for TTBNetBundle<TTBFileIndex> {
             "failed to download \"{}\"; please check your network connection.",
             info.name
         ))
+    }
+}
+
+#[cfg(all(test, any(feature = "geturl-reqwest", feature = "geturl-curl")))]
+mod tests {
+    use super::*;
+    use flate2::{write::GzEncoder, Compression};
+    use std::{
+        io::{BufRead, BufReader, Write},
+        net::TcpListener,
+        time::Instant,
+    };
+    use tectonic_status_base::NoopStatusBackend;
+
+    #[test]
+    fn reuses_header_and_discards_partial_download_before_retry() {
+        let contents = b"bundle file contents";
+        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+        encoder.write_all(contents).unwrap();
+        let compressed = encoder.finish().unwrap();
+        let mut header = vec![0; 70];
+        header[..14].copy_from_slice(b"tectonicbundle");
+        header[14..18].copy_from_slice(&1u32.to_le_bytes());
+
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let url = format!("http://{}/bundle.ttb", listener.local_addr().unwrap());
+        let responses = [
+            header,
+            compressed[..compressed.len() - 4].to_vec(),
+            compressed.clone(),
+        ];
+        let server = thread::spawn(move || {
+            let deadline = Instant::now() + Duration::from_secs(10);
+            let mut ranges = Vec::new();
+            for body in responses {
+                let mut stream = loop {
+                    match listener.accept() {
+                        Ok((stream, _)) => break stream,
+                        Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => {
+                            assert!(Instant::now() < deadline, "timed out waiting for request");
+                            thread::sleep(Duration::from_millis(10));
+                        }
+                        Err(e) => panic!("accept failed: {e}"),
+                    }
+                };
+                stream.set_nonblocking(false).unwrap();
+                stream
+                    .set_read_timeout(Some(Duration::from_secs(5)))
+                    .unwrap();
+                let mut reader = BufReader::new(&stream);
+                loop {
+                    let mut line = String::new();
+                    assert_ne!(reader.read_line(&mut line).unwrap(), 0);
+                    if line == "\r\n" {
+                        break;
+                    }
+                    if line.to_ascii_lowercase().starts_with("range:") {
+                        ranges.push(line.trim().to_owned());
+                    }
+                }
+                write!(
+                    stream,
+                    "HTTP/1.1 206 Partial Content\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                    body.len()
+                )
+                .unwrap();
+                stream.write_all(&body).unwrap();
+            }
+            ranges
+        });
+
+        let mut bundle = TTBNetBundle::new(url).unwrap();
+        assert_eq!(bundle.get_digest().unwrap(), bundle.get_digest().unwrap());
+        let info = TTBFileInfo {
+            start: 70,
+            real_len: contents.len() as u32,
+            gzip_len: compressed.len() as u32,
+            name: "file.tex".into(),
+            path: "file.tex".into(),
+            hash: None,
+        };
+        let mut handle = bundle
+            .open_fileinfo(&info, &mut NoopStatusBackend {})
+            .unwrap();
+        let mut actual = Vec::new();
+        handle.read_to_end(&mut actual).unwrap();
+        assert_eq!(actual, contents);
+        let ranges = server.join().unwrap();
+        assert_eq!(ranges.len(), 3);
+        assert_eq!(ranges[0].to_ascii_lowercase(), "range: bytes=0-69");
+        assert_eq!(ranges[1], ranges[2]);
     }
 }

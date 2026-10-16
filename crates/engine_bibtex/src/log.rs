@@ -590,28 +590,28 @@ pub(crate) fn nonexistent_cross_reference_error(
 }
 
 pub(crate) fn output_bbl_line(ctx: &mut Bibtex<'_, '_>, buffers: &mut GlobalBuffer) {
-    if buffers.init(BufTy::Out) != 0 {
-        let mut init = buffers.init(BufTy::Out);
-        while init > 0 {
-            if LexClass::of(buffers.at(BufTy::Out, init - 1)) == LexClass::Whitespace {
-                init -= 1;
-            } else {
-                break;
-            }
+    output_bbl_slice(ctx, &buffers.buffer(BufTy::Out)[..buffers.init(BufTy::Out)]);
+    buffers.set_init(BufTy::Out, 0);
+}
+
+pub(crate) fn output_bbl_slice(ctx: &mut Bibtex<'_, '_>, mut line: &[u8]) {
+    if !line.is_empty() {
+        while line
+            .last()
+            .is_some_and(|c| LexClass::of(*c) == LexClass::Whitespace)
+        {
+            line = &line[..line.len() - 1];
         }
-        buffers.set_init(BufTy::Out, init);
-        if init == 0 {
+        if line.is_empty() {
             return;
         }
-        let slice = &buffers.buffer(BufTy::Out)[..init];
         ctx.engine
             .get_output(ctx.bbl_file.unwrap())
-            .write_all(slice)
+            .write_all(line)
             .unwrap();
     }
     writeln!(ctx.engine.get_output(ctx.bbl_file.unwrap())).unwrap();
     ctx.bbl_line_num += 1;
-    buffers.set_init(BufTy::Out, 0);
 }
 
 pub(crate) fn skip_token_print(

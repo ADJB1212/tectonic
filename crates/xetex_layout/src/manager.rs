@@ -343,6 +343,7 @@ impl FontManager {
 
     /// Destroy the global font manager
     pub fn destroy() {
+        crate::c_api::clear_font_caches();
         FONT_MGR.with_borrow_mut(|mgr| {
             *mgr = None;
         })
@@ -780,7 +781,7 @@ impl FontManager {
 
     #[cfg_attr(target_os = "macos", allow(unused))]
     fn prepend_to_list<T: Into<CString> + AsRef<CStr>>(list: &mut Vec<CString>, str: T) {
-        *list = list.drain(..).filter(|s| **s != *str.as_ref()).collect();
+        list.retain(|s| **s != *str.as_ref());
         list.insert(0, str.into());
     }
 
@@ -831,5 +832,29 @@ impl FontManager {
     /// platform-specific list of other options.
     pub fn set_req_engine(&mut self, engine: Engine) {
         self.req_engine = engine;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn prepending_name_preserves_other_names_and_list_allocation() {
+        let mut names = Vec::with_capacity(8);
+        names.extend([
+            c"First".to_owned(),
+            c"Other".to_owned(),
+            c"First".to_owned(),
+        ]);
+        let allocation = names.as_ptr();
+
+        FontManager::prepend_to_list(&mut names, c"First");
+        assert_eq!(names, [c"First", c"Other"]);
+        assert_eq!(names.as_ptr(), allocation);
+
+        FontManager::prepend_to_list(&mut names, c"New");
+        assert_eq!(names, [c"New", c"First", c"Other"]);
+        assert_eq!(names.as_ptr(), allocation);
     }
 }

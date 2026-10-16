@@ -1,9 +1,9 @@
-use anyhow::{bail, Result};
-use flate2::{write::GzEncoder, Compression};
+use anyhow::{Result, bail};
+use flate2::{Compression, write::GzEncoder};
 use std::{
     fmt::Display,
     fs::{self, File},
-    io::{BufRead, BufReader, Read, Seek, Write},
+    io::{self, BufRead, BufReader, Read, Seek, Write},
     num::ParseIntError,
     path::PathBuf,
 };
@@ -11,6 +11,29 @@ use tracing::info;
 
 pub trait WriteSeek: std::io::Write + Seek {}
 impl<T: Write + Seek> WriteSeek for T {}
+
+struct CountingWriter<W> {
+    inner: W,
+    written: u64,
+}
+
+impl<W> CountingWriter<W> {
+    fn new(inner: W) -> Self {
+        Self { inner, written: 0 }
+    }
+}
+
+impl<W: Write> Write for CountingWriter<W> {
+    fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+        let written = self.inner.write(bytes)?;
+        self.written += written as u64;
+        Ok(written)
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.inner.flush()
+    }
+}
 
 pub fn decode_hex(s: &str) -> Result<Vec<u8>, ParseIntError> {
     (0..s.len())
@@ -38,7 +61,8 @@ struct FileListEntry {
 
 impl Display for FileListEntry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        format!(
+        write!(
+            f,
             "{} {} {} {} {}",
             self.start,
             self.gzip_len,
@@ -46,7 +70,6 @@ impl Display for FileListEntry {
             self.hash,
             self.path.to_str().unwrap()
         )
-        .fmt(f)
     }
 }
 
@@ -120,13 +143,14 @@ impl BundleV1 {
                 let mut file = fs::File::open(self.content_dir.join(&path))?;
 
                 // Compress and write bytes
-                let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+                let mut encoder = GzEncoder::new(
+                    CountingWriter::new(&mut self.target),
+                    Compression::default(),
+                );
                 let real_len = std::io::copy(&mut file, &mut encoder)?;
-                let compressed = encoder.finish()?;
-                let gzip_len = compressed.len();
-                self.target.write_all(&compressed)?;
+                let gzip_len = encoder.finish()?.written;
                 assert!(real_len < u32::MAX as u64);
-                assert!(gzip_len < u32::MAX as usize);
+                assert!(gzip_len < u32::MAX as u64);
 
                 // Add to index
                 self.filelist.push(FileListEntry {
@@ -136,7 +160,7 @@ impl BundleV1 {
                     path: PathBuf::from(path),
                     hash: hash.to_owned(),
                 });
-                byte_count += gzip_len as u64;
+                byte_count += gzip_len;
                 real_len_sum += real_len;
             } else {
                 bail!("malformed filelist line");
@@ -164,26 +188,25 @@ impl BundleV1 {
 
         info!("Writing index");
 
-        let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
-        let mut real_len = 0usize;
+        let mut encoder = CountingWriter::new(GzEncoder::new(
+            CountingWriter::new(&mut self.target),
+            Compression::default(),
+        ));
 
-        real_len += encoder.write("[DEFAULTSEARCH]\n".as_bytes())?;
-        real_len += encoder.write("MAIN\n".as_bytes())?;
+        encoder.write_all(b"[DEFAULTSEARCH]\nMAIN\n[SEARCH:MAIN]\n")?;
 
-        real_len += encoder.write("[SEARCH:MAIN]\n".as_bytes())?;
         for l in fs::read_to_string(self.content_dir.join("SEARCH"))?.lines() {
-            real_len += encoder.write(l.as_bytes())?;
-            real_len += encoder.write(b"\n")?;
+            writeln!(encoder, "{l}")?;
         }
 
-        real_len += encoder.write("[FILELIST]\n".as_bytes())?;
+        encoder.write_all(b"[FILELIST]\n")?;
         for i in &self.filelist {
-            let s = format!("{i}\n");
-            real_len += encoder.write(s.as_bytes())?;
+            writeln!(encoder, "{i}")?;
         }
-        let gzip_len = self.target.write(&encoder.finish()?)?;
-        assert!(gzip_len < u32::MAX as usize);
-        assert!(real_len < u32::MAX as usize);
+        let real_len = encoder.written;
+        let gzip_len = encoder.inner.finish()?.written;
+        assert!(gzip_len < u32::MAX as u64);
+        assert!(real_len < u32::MAX as u64);
         self.index_gzip_len = gzip_len as u32;
         self.index_real_len = real_len as u32;
 
@@ -206,30 +229,149 @@ impl BundleV1 {
         hash_file.read_to_string(&mut hash_text)?;
         let digest = decode_hex(hash_text.trim())?;
 
-        let mut byte_count = 0u64;
-
         // 14 bytes: signature
         // Always "tectonicbundle", in any bundle version.
         //
         // This "magic sequence" lets us more easily distinguish between
         // random binary files and proper tectonic bundles.
-        byte_count += self.target.write(b"tectonicbundle")? as u64;
+        self.target.write_all(b"tectonicbundle")?;
 
         // 4 bytes: bundle version
-        byte_count += self.target.write(&1u32.to_le_bytes())? as u64;
+        self.target.write_all(&1u32.to_le_bytes())?;
 
         // 8 + 4 + 4 = 12 bytes: location and real length of index
-        byte_count += self.target.write(&self.index_start.to_le_bytes())? as u64;
-        byte_count += self.target.write(&self.index_gzip_len.to_le_bytes())? as u64;
-        byte_count += self.target.write(&self.index_real_len.to_le_bytes())? as u64;
+        self.target.write_all(&self.index_start.to_le_bytes())?;
+        self.target.write_all(&self.index_gzip_len.to_le_bytes())?;
+        self.target.write_all(&self.index_real_len.to_le_bytes())?;
 
         // 32 bytes: bundle hash
         // We include this in the header so we don't need to load the index to get the hash.
-        byte_count += self.target.write(&digest)? as u64;
+        self.target.write_all(&digest)?;
 
         // Make sure we wrote the expected number of bytes
-        assert!(byte_count == HEADER_SIZE);
+        let byte_count = self.target.stream_position()?;
+        assert_eq!(byte_count, HEADER_SIZE);
 
         Ok(byte_count)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use flate2::read::GzDecoder;
+    use std::{cell::RefCell, io::Cursor, rc::Rc};
+
+    struct ChunkedWriter {
+        data: Rc<RefCell<Cursor<Vec<u8>>>>,
+        max_write: usize,
+    }
+
+    impl Write for ChunkedWriter {
+        fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+            let len = bytes.len().min(self.max_write);
+            self.data.borrow_mut().write(&bytes[..len])
+        }
+
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
+    impl Seek for ChunkedWriter {
+        fn seek(&mut self, position: io::SeekFrom) -> io::Result<u64> {
+            self.data.borrow_mut().seek(position)
+        }
+    }
+
+    fn check_bundle(max_write: usize) {
+        let dir = tempfile::tempdir().unwrap();
+        let content = dir.path().join("content");
+        fs::create_dir(&content).unwrap();
+        fs::write(content.join("SEARCH"), "/source//\n").unwrap();
+        fs::write(content.join("SHA256SUM"), "00".repeat(32)).unwrap();
+        fs::write(
+            content.join("FILELIST"),
+            "nohash file with spaces\nnohash empty\n",
+        )
+        .unwrap();
+        let mut state = 1u32;
+        let contents: Vec<u8> = (0..200_000)
+            .map(|_| {
+                state ^= state << 13;
+                state ^= state >> 17;
+                state ^= state << 5;
+                state as u8
+            })
+            .collect();
+        fs::write(content.join("file with spaces"), &contents).unwrap();
+        fs::write(content.join("empty"), []).unwrap();
+
+        let data = Rc::new(RefCell::new(Cursor::new(Vec::new())));
+        BundleV1::make(
+            Box::new(ChunkedWriter {
+                data: Rc::clone(&data),
+                max_write,
+            }),
+            dir.path().to_owned(),
+        )
+        .unwrap();
+
+        let data = data.borrow();
+        let bytes = data.get_ref();
+        assert_eq!(&bytes[..14], b"tectonicbundle");
+        assert_eq!(u32::from_le_bytes(bytes[14..18].try_into().unwrap()), 1);
+        assert_eq!(&bytes[34..66], &[0; 32]);
+        let index_start = u64::from_le_bytes(bytes[18..26].try_into().unwrap()) as usize;
+        let index_gzip_len = u32::from_le_bytes(bytes[26..30].try_into().unwrap()) as usize;
+        let index_real_len = u32::from_le_bytes(bytes[30..34].try_into().unwrap()) as usize;
+        assert_eq!(bytes.len(), index_start + index_gzip_len);
+        let mut index = String::new();
+        GzDecoder::new(&bytes[index_start..])
+            .read_to_string(&mut index)
+            .unwrap();
+        assert_eq!(index.len(), index_real_len);
+        let mut lines = index.lines();
+        assert_eq!(
+            lines.by_ref().take(5).collect::<Vec<_>>(),
+            [
+                "[DEFAULTSEARCH]",
+                "MAIN",
+                "[SEARCH:MAIN]",
+                "/source//",
+                "[FILELIST]",
+            ]
+        );
+        let mut offset = HEADER_SIZE as usize;
+        for (line, (path, expected)) in lines.zip([
+            ("file with spaces", contents.as_slice()),
+            ("empty", &[][..]),
+        ]) {
+            let mut fields = line.splitn(5, ' ');
+            let start = fields.next().unwrap().parse::<usize>().unwrap();
+            let gzip_len = fields.next().unwrap().parse::<usize>().unwrap();
+            let real_len = fields.next().unwrap().parse::<usize>().unwrap();
+            assert_eq!(start, offset);
+            assert_eq!(real_len, expected.len());
+            assert_eq!(fields.next(), Some("nohash"));
+            assert_eq!(fields.next(), Some(path));
+            let mut actual = Vec::new();
+            GzDecoder::new(&bytes[start..start + gzip_len])
+                .read_to_end(&mut actual)
+                .unwrap();
+            assert_eq!(actual, expected);
+            offset += gzip_len;
+        }
+        assert_eq!(offset, index_start);
+    }
+
+    #[test]
+    fn streamed_bundle_has_correct_offsets_lengths_and_contents() {
+        check_bundle(usize::MAX);
+    }
+
+    #[test]
+    fn streamed_bundle_handles_short_writes() {
+        check_bundle(3);
     }
 }

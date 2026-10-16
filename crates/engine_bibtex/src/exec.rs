@@ -10,8 +10,8 @@ use crate::{
     log::{
         brace_lvl_one_letters_complaint, braces_unbalanced_complaint,
         bst_1print_string_size_exceeded, bst_2print_string_size_exceeded,
-        bst_cant_mess_with_entries_print, output_bbl_line, print_a_pool_str, print_confusion,
-        print_fn_class,
+        bst_cant_mess_with_entries_print, output_bbl_line, output_bbl_slice, print_a_pool_str,
+        print_confusion, print_fn_class,
     },
     other::WizOp,
     pool::{Checkpoint, StrNumber, StringPool, MAX_PRINT_LINE, MIN_PRINT_LINE},
@@ -660,20 +660,21 @@ pub(crate) fn add_out_pool(
     buffers.copy_from(BufTy::Out, out_offset, str);
     buffers.set_init(BufTy::Out, out_offset + str.len());
 
+    let end_ptr = buffers.init(BufTy::Out);
+    let mut start = 0;
     let mut unbreakable_tail = false;
-    while buffers.init(BufTy::Out) > MAX_PRINT_LINE && !unbreakable_tail {
-        let end_ptr = buffers.init(BufTy::Out);
-        let mut out_offset = MAX_PRINT_LINE;
+    while end_ptr - start > MAX_PRINT_LINE && !unbreakable_tail {
+        let mut out_offset = start + MAX_PRINT_LINE;
         let mut break_pt_found = false;
 
         while LexClass::of(buffers.at(BufTy::Out, out_offset)) != LexClass::Whitespace
-            && out_offset >= MIN_PRINT_LINE
+            && out_offset >= start + MIN_PRINT_LINE
         {
             out_offset -= 1;
         }
 
-        if out_offset == MIN_PRINT_LINE - 1 {
-            out_offset = MAX_PRINT_LINE + 1;
+        if out_offset == start + MIN_PRINT_LINE - 1 {
+            out_offset = start + MAX_PRINT_LINE + 1;
             while out_offset < end_ptr {
                 if LexClass::of(buffers.at(BufTy::Out, out_offset)) != LexClass::Whitespace {
                     out_offset += 1;
@@ -700,15 +701,17 @@ pub(crate) fn add_out_pool(
         }
 
         if break_pt_found {
-            buffers.set_init(BufTy::Out, out_offset);
-            let break_ptr = buffers.init(BufTy::Out) + 1;
-            output_bbl_line(ctx, buffers);
-            buffers.set_at(BufTy::Out, 0, b' ');
-            buffers.set_at(BufTy::Out, 1, b' ');
-            let len = end_ptr - break_ptr;
-            buffers.copy_within(BufTy::Out, BufTy::Out, break_ptr, 2, len);
-            buffers.set_init(BufTy::Out, len + 2);
+            output_bbl_slice(ctx, &buffers.buffer(BufTy::Out)[start..out_offset]);
+            start = out_offset - 1;
+            buffers.set_at(BufTy::Out, start, b' ');
+            buffers.set_at(BufTy::Out, start + 1, b' ');
         }
+    }
+
+    if start != 0 {
+        let len = end_ptr - start;
+        buffers.copy_within(BufTy::Out, BufTy::Out, start, 0, len);
+        buffers.set_init(BufTy::Out, len);
     }
 }
 

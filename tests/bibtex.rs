@@ -264,3 +264,40 @@ fn test_missing_bst() {
         .test_bbl(false)
         .go();
 }
+
+#[test]
+fn long_output_wraps_with_continuation_indentation() {
+    let text = "word ".repeat(16 + 15 * 1000 + 7);
+    let mut expected = format!("{}\n", ["word"; 16].join(" "));
+    expected.push_str(&format!("  {}\n", ["word"; 15].join(" ")).repeat(1000));
+    expected.push_str(&format!("  {}\n", ["word"; 7].join(" ")));
+    expected.push_str(&format!("{}\n  tail\n", "x".repeat(100)));
+    expected.push_str("done\n");
+
+    let style = format!(
+        "ENTRY {{}} {{}} {{}}\nREAD\nFUNCTION {{output}}\n\
+         {{ \"{text}\" write$ newline$\n\
+         \"{}   tail\" write$ newline$\n\
+         \"   \" write$ newline$\n\
+         \"done\" write$ newline$ }}\nEXECUTE {{output}}\n",
+        "x".repeat(100)
+    );
+    let mut mem = MemoryIo::new(true);
+    mem.create_entry(
+        "wrap.aux",
+        b"\\citation{*}\n\\bibdata{wrap}\n\\bibstyle{wrap}\n".to_vec(),
+    );
+    mem.create_entry("wrap.bib", b"@misc{entry}\n".to_vec());
+    mem.create_entry("wrap.bst", style.into_bytes());
+
+    {
+        let mut hooks = MinimalDriver::new(IoStack::new(vec![&mut mem]));
+        let mut status = NoopStatusBackend::default();
+        let mut launcher = CoreBridgeLauncher::new(&mut hooks, &mut status);
+        BibtexEngine::new()
+            .process(&mut launcher, "wrap.aux", &Default::default())
+            .unwrap();
+    }
+
+    assert_eq!(mem.files.borrow()["wrap.bbl"].data, expected.as_bytes());
+}

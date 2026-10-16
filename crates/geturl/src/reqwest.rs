@@ -5,10 +5,11 @@
 
 use reqwest::{
     blocking::{Client, Response},
-    header::{HeaderMap, RANGE},
+    header::RANGE,
     redirect::Policy,
     StatusCode, Url,
 };
+use std::sync::OnceLock;
 use tectonic_errors::{anyhow::bail, Result};
 
 use crate::{GetUrlBackend, RangeReader};
@@ -17,14 +18,16 @@ const MAX_HTTP_REDIRECTS_ALLOWED: usize = 10;
 
 /// URL-get backend implemented using the `reqwest` crate.
 #[derive(Debug, Default)]
-pub struct ReqwestBackend {}
+pub struct ReqwestBackend {
+    client: OnceLock<Client>,
+}
 
 impl GetUrlBackend for ReqwestBackend {
     type Response = Response;
     type RangeReader = ReqwestRangeReader;
 
     fn get_url(&mut self, url: &str) -> Result<Response> {
-        let res = Client::new().get(url).send()?;
+        let res = self.client.get_or_init(Client::new).get(url).send()?;
         if !res.status().is_success() {
             bail!(
                 "unexpected HTTP response code {} for URL {}",
@@ -60,7 +63,7 @@ impl GetUrlBackend for ReqwestBackend {
             // match the original filename.
             if attempt.previous().len() >= MAX_HTTP_REDIRECTS_ALLOWED {
                 attempt.error("too many redirections")
-            } else if let Some(mut segments) = attempt.url().clone().path_segments() {
+            } else if let Some(mut segments) = attempt.url().path_segments() {
                 let follow = segments
                     .next_back()
                     .map(|file| file.contains('.') || file == original_filename)
@@ -97,7 +100,7 @@ impl GetUrlBackend for ReqwestBackend {
     }
 
     fn open_range_reader(&self, url: &str) -> Self::RangeReader {
-        ReqwestRangeReader::new(url)
+        ReqwestRangeReader::new(url, self.client.get_or_init(Client::new).clone())
     }
 }
 
@@ -111,10 +114,10 @@ pub struct ReqwestRangeReader {
 }
 
 impl ReqwestRangeReader {
-    fn new(url: &str) -> ReqwestRangeReader {
+    fn new(url: &str, client: Client) -> ReqwestRangeReader {
         ReqwestRangeReader {
             url: url.to_owned(),
-            client: Client::new(),
+            client,
         }
     }
 }
@@ -124,12 +127,11 @@ impl RangeReader for ReqwestRangeReader {
 
     fn read_range(&mut self, offset: u64, length: usize) -> Result<Response> {
         let end_inclusive = offset + length as u64 - 1;
-        let header_val = format!("bytes={offset}-{end_inclusive}").parse()?;
-
-        let mut headers = HeaderMap::new();
-        headers.insert(RANGE, header_val);
-
-        let res = self.client.get(&self.url).headers(headers).send()?;
+        let res = self
+            .client
+            .get(&self.url)
+            .header(RANGE, format!("bytes={offset}-{end_inclusive}"))
+            .send()?;
 
         if res.status() != StatusCode::PARTIAL_CONTENT {
             bail!(
@@ -140,5 +142,79 @@ impl RangeReader for ReqwestRangeReader {
         }
 
         Ok(res)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::{
+        io::{BufRead, BufReader, Read, Write},
+        net::TcpListener,
+        thread,
+        time::Duration,
+    };
+
+    #[test]
+    fn get_and_range_requests_share_a_connection() {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/file", listener.local_addr().unwrap());
+        let server = thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(5)))
+                .unwrap();
+            let mut reader = BufReader::new(stream.try_clone().unwrap());
+
+            for ranged in [false, false, true] {
+                let mut request = String::new();
+                loop {
+                    let mut line = String::new();
+                    assert_ne!(reader.read_line(&mut line).unwrap(), 0);
+                    request.push_str(&line);
+                    if line == "\r\n" {
+                        break;
+                    }
+                }
+                assert!(request.starts_with("GET /file HTTP/1.1\r\n"));
+                assert_eq!(
+                    request
+                        .to_ascii_lowercase()
+                        .contains("range: bytes=2-5\r\n"),
+                    ranged
+                );
+                let status = if ranged {
+                    "206 Partial Content"
+                } else {
+                    "200 OK"
+                };
+                write!(stream, "HTTP/1.1 {status}\r\nContent-Length: 4\r\n\r\ndata").unwrap();
+            }
+        });
+
+        let mut backend = ReqwestBackend {
+            client: Client::builder()
+                .no_proxy()
+                .timeout(Duration::from_secs(5))
+                .build()
+                .unwrap()
+                .into(),
+        };
+        let mut contents = String::new();
+        for _ in 0..2 {
+            backend
+                .get_url(&url)
+                .unwrap()
+                .read_to_string(&mut contents)
+                .unwrap();
+        }
+        backend
+            .open_range_reader(&url)
+            .read_range(2, 4)
+            .unwrap()
+            .read_to_string(&mut contents)
+            .unwrap();
+        assert_eq!(contents, "datadatadata");
+        server.join().unwrap();
     }
 }

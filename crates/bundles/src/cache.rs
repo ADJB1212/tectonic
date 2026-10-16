@@ -114,6 +114,8 @@ pub struct BundleCache<'this, T> {
 
     /// Whether we've already attempted the concurrent prefetch this session.
     prefetched: bool,
+
+    index_ready: bool,
 }
 
 impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
@@ -170,16 +172,20 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
         };
 
         let now = Utc::now();
-        let live_hash = if saved_hash.is_none_or(|(_, time)| now - time > Duration::days(7)) {
-            bundle.get_digest()
-        } else {
-            Err(Error::msg(
-                "You should never see this message. Please report a bug.",
-            ))
-        };
+        let live_hash =
+            if !only_cached && saved_hash.is_none_or(|(_, time)| now - time > Duration::days(7)) {
+                bundle.get_digest()
+            } else {
+                Err(Error::msg(
+                    "You should never see this message. Please report a bug.",
+                ))
+            };
 
         // Check remote bundle digest
         let bundle_hash: DigestData = match (saved_hash, live_hash) {
+            (None, _) if only_cached => {
+                bail!("this bundle isn't cached, and network access is disabled");
+            }
             (None, Err(e)) => {
                 bail!("this bundle isn't cached, and we couldn't get it from the internet. Error: {e}");
             }
@@ -239,6 +245,7 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
             touched,
             prefetch_supported,
             prefetched: false,
+            index_ready: false,
         };
 
         // Right now, files are stored in
@@ -268,6 +275,10 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
     }
 
     fn ensure_index(&mut self) -> Result<()> {
+        if self.index_ready {
+            return Ok(());
+        }
+
         let target = self
             .cache_root
             .join(format!("data/{}.index", self.bundle_hash));
@@ -281,6 +292,7 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
         // itar bundles cannot retrieve the bundle hash without loading the index.
         if target.exists() {
             if self.bundle.index().is_initialized() {
+                self.index_ready = true;
                 return Ok(());
             }
 
@@ -291,6 +303,10 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
                 .initialize_index(&mut file)
                 .with_context(|| format!("while inititalizing index using cached {target:?}"))?;
         } else {
+            if self.only_cached {
+                bail!("bundle index is not cached, and network access is disabled");
+            }
+
             // Download index
 
             // We first download to a temporary file, rename to target
@@ -316,6 +332,7 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
             })?;
 
             if self.bundle.index().is_initialized() {
+                self.index_ready = true;
                 return Ok(());
             }
 
@@ -326,25 +343,20 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
                 .with_context(|| format!("while initializing index {target:?} in cache"))?;
         }
 
+        self.index_ready = true;
         Ok(())
     }
 
     /// Get a FileInfo from a name.
-    /// This returns (in_cache, info), where in_cache is true
-    /// if this file is already in our cache and can be retrieved
-    /// without touching the backing bundle.
-    fn get_fileinfo(&mut self, name: &str) -> OpenResult<(bool, T::InfoType)> {
+    fn get_fileinfo(&mut self, name: &str) -> OpenResult<T::InfoType> {
         if let Err(e) = self.ensure_index() {
             return OpenResult::Err(e);
         };
 
-        let info = match self.bundle.search(name) {
-            Some(i) => i,
-            None => return OpenResult::NotAvailable,
-        };
-
-        let target = self.get_file_path(&info);
-        OpenResult::Ok((target.exists(), info))
+        match self.bundle.search(name) {
+            Some(info) => OpenResult::Ok(info),
+            None => OpenResult::NotAvailable,
+        }
     }
 
     /// Fetch a file from the bundle backing this cache.
@@ -355,11 +367,6 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
         status: &mut dyn StatusBackend,
     ) -> OpenResult<PathBuf> {
         let target = self.get_file_path(info);
-        match fs::create_dir_all(target.parent().unwrap()) {
-            Ok(()) => {}
-            Err(e) => return OpenResult::Err(e.into()),
-        };
-
         // Already in the cache?
         if target.exists() {
             return OpenResult::Ok(target);
@@ -368,6 +375,10 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
         // No, it's not. Are we in cache-only mode?
         if self.only_cached {
             return OpenResult::NotAvailable;
+        }
+
+        if let Err(e) = fs::create_dir_all(target.parent().unwrap()) {
+            return OpenResult::Err(e.into());
         }
 
         // Get the file.
@@ -401,36 +412,31 @@ impl<'this, T: FileIndex<'this>> IoProvider for BundleCache<'this, T> {
         // concurrently so the engine's subsequent serial requests hit cache.
         self.prefetch(status);
 
-        let (in_cache, info) = match self.get_fileinfo(name) {
+        let info = match self.get_fileinfo(name) {
             OpenResult::NotAvailable => return OpenResult::NotAvailable,
             OpenResult::Err(e) => return OpenResult::Err(e),
             OpenResult::Ok(resolved) => resolved,
         };
 
-        let path = if in_cache {
-            // Record the original lookup rather than the resolved file name:
-            // the index may apply search rules, and replaying the lookup
-            // preserves those semantics. Warm hits count too, allowing an
-            // existing cache to learn a working set without redownloading it.
-            self.record_resolved_name(name);
-            self.get_file_path(&info)
-        } else {
-            match self.fetch_file(&info, status) {
-                OpenResult::Ok(p) => {
-                    // Failed downloads stay out of the learned set. They will
-                    // be retried normally if the engine requests them again.
-                    self.record_resolved_name(name);
-                    p
-                }
-                OpenResult::NotAvailable => return OpenResult::NotAvailable,
-                OpenResult::Err(e) => return OpenResult::Err(e),
-            }
-        };
-
-        let f = match File::open(path) {
+        let target = self.get_file_path(&info);
+        let f = match File::open(&target) {
             Ok(f) => f,
+            Err(e) if e.kind() == io::ErrorKind::NotFound => {
+                let path = match self.fetch_file(&info, status) {
+                    OpenResult::Ok(path) => path,
+                    OpenResult::NotAvailable => return OpenResult::NotAvailable,
+                    OpenResult::Err(e) => return OpenResult::Err(e),
+                };
+                match File::open(path) {
+                    Ok(f) => f,
+                    Err(e) => return OpenResult::Err(e.into()),
+                }
+            }
             Err(e) => return OpenResult::Err(e.into()),
         };
+
+        // Preserve search rules by recording the lookup, including warm hits.
+        self.record_resolved_name(name);
 
         OpenResult::Ok(InputHandle::new_read_only(
             name,

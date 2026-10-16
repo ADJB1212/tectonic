@@ -3,7 +3,7 @@
 use crate::font::Font;
 use crate::manager::{Engine, FontManager};
 use std::borrow::Cow;
-use std::ffi::{CStr, CString};
+use std::ffi::CStr;
 use std::ops::{Deref, DerefMut};
 use std::ptr;
 use tectonic_bridge_graphite2 as gr;
@@ -43,6 +43,22 @@ pub(crate) struct GrBreak {
     pub(crate) text_len: libc::c_uint,
 }
 
+enum Shaper {
+    OpenType,
+    Graphite,
+    Other,
+}
+
+impl Shaper {
+    fn from_name(name: Option<&CStr>) -> Self {
+        match name.map(CStr::to_bytes) {
+            Some(b"ot") => Self::OpenType,
+            Some(b"graphite2") => Self::Graphite,
+            _ => Self::Other,
+        }
+    }
+}
+
 /// Base layout engine. Combines all the information needed to shape a font for TeX.
 #[repr(C)]
 pub struct LayoutEngine {
@@ -53,7 +69,7 @@ pub struct LayoutEngine {
     /// the requested shapers
     shaper_list: Vec<*const libc::c_char>,
     /// the actually used shaper
-    shaper: Option<CString>,
+    shaper: Shaper,
     rgb_value: u32,
     extend: f32,
     slant: f32,
@@ -94,7 +110,7 @@ impl LayoutEngine {
             },
             features,
             shaper_list,
-            shaper: None,
+            shaper: Shaper::Other,
             rgb_value,
             extend,
             slant,
@@ -154,14 +170,12 @@ impl LayoutEngine {
 
     /// Check whether we're using the graphite shaper
     pub fn used_graphite(&self) -> bool {
-        self.shaper
-            .as_ref()
-            .is_some_and(|s| s.to_bytes() == b"graphite2")
+        matches!(self.shaper, Shaper::Graphite)
     }
 
     /// Check whether we're using the OpenType shaper
     pub fn used_ot(&self) -> bool {
-        self.shaper.as_ref().is_some_and(|s| s.to_bytes() == b"ot")
+        matches!(self.shaper, Shaper::OpenType)
     }
 
     /// Get the harfbuzz buffer
@@ -248,10 +262,8 @@ impl LayoutEngine {
             .as_mut()
             .execute(hb_font, self.hb_buffer.as_mut(), &self.features);
 
-        self.shaper = None;
-
         if res {
-            self.shaper = shape_plan.as_ref().get_shaper().map(CStr::to_owned);
+            self.shaper = Shaper::from_name(shape_plan.as_ref().get_shaper());
         } else {
             // all selected shapers failed, retrying with default
             // we don't use _cached here as the cached plan will always fail.
@@ -261,7 +273,7 @@ impl LayoutEngine {
                 .execute(hb_font, self.hb_buffer.as_mut(), &self.features);
 
             if res {
-                self.shaper = shape_plan.as_ref().get_shaper().map(CStr::to_owned);
+                self.shaper = Shaper::from_name(shape_plan.as_ref().get_shaper());
             } else {
                 panic!("all shapers failed");
             }

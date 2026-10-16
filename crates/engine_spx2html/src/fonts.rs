@@ -8,7 +8,7 @@
 
 use std::{collections::HashMap, fmt::Write, io::Read, path::Path};
 use tectonic_errors::prelude::*;
-use tectonic_io_base::InputHandle;
+use tectonic_io_base::{InputHandle, OpenResult};
 use tectonic_status_base::{tt_warning, StatusBackend};
 
 use crate::{
@@ -44,6 +44,7 @@ pub struct FontEnsemble {
     /// Mapping font source TeX-paths and face indices to font IDs. This tuple
     /// of info uniquely identifies a "font file", in our terminology.
     src_index_map: HashMap<(String, u32), FontId>,
+    tex_name_map: HashMap<(String, u32), FontId>,
 }
 
 impl FontEnsemble {
@@ -82,11 +83,43 @@ impl FontEnsemble {
         extend: Option<u32>,
         slant: Option<u32>,
         embolden: Option<u32>,
-        texpath: &str,
-        ih: InputHandle,
+        name: &str,
         common: &mut Common,
     ) -> Result<()> {
-        let fid = self.ensure_font_file(texpath, face_index, ih, common)?;
+        let key = (name.to_owned(), face_index);
+        let fid = if let Some(&fid) = self
+            .tex_name_map
+            .get(&key)
+            .or_else(|| self.src_index_map.get(&key))
+        {
+            fid
+        } else {
+            let mut loaded = None;
+            for ext in ["", ".otf"] {
+                let path_key = (format!("{name}{ext}"), face_index);
+                if let Some(&fid) = self.src_index_map.get(&path_key) {
+                    loaded = Some(fid);
+                    break;
+                }
+                match common
+                    .hooks
+                    .io()
+                    .input_open_name(&path_key.0, common.status)
+                {
+                    OpenResult::Ok(ih) => {
+                        loaded = Some(self.load_font_file(path_key, ih, common)?);
+                        break;
+                    }
+                    OpenResult::NotAvailable => {}
+                    OpenResult::Err(e) => return Err(e),
+                }
+            }
+            let fid = a_ok_or!(loaded;
+                ["failed to find a font file associated with the name `{}`", name]
+            );
+            self.tex_name_map.insert(key, fid);
+            fid
+        };
 
         let info = TexFontInfo {
             fid,
@@ -101,80 +134,59 @@ impl FontEnsemble {
         Ok(())
     }
 
-    /// Make sure that a font file is loaded. Font files are uniquely identified
-    /// by their source TeX paths and face indices.
-    fn ensure_font_file(
+    fn load_font_file(
         &mut self,
-        texpath: &str,
-        face_index: u32,
+        key: (String, u32),
         mut ih: InputHandle,
         common: &mut Common,
     ) -> Result<FontId> {
-        // Figure out if we've already loaded the appropriate font file.
+        let (texpath, face_index) = (&key.0, key.1);
+        let fid = self.font_files.len();
 
-        let si_key = (texpath.to_string(), face_index);
-        let next_id = self.font_files.len();
-        let fid = *self.src_index_map.entry(si_key).or_insert(next_id);
+        let mut contents = Vec::new();
+        atry!(
+            ih.read_to_end(&mut contents);
+            ["unable to read input font file `{}`", texpath]
+        );
 
-        if fid == next_id {
-            // No, we haven't. Load it up.
+        let (name, digest_opt) = ih.into_name_digest();
+        common
+            .hooks
+            .event_input_closed(name, digest_opt, common.status);
 
-            let mut contents = Vec::new();
-            atry!(
-                ih.read_to_end(&mut contents);
-                ["unable to read input font file `{}`", texpath]
-            );
+        let ffd = atry!(
+            FontFileData::from_opentype(contents, face_index);
+            ["unable to load glyph data for font `{}`", texpath]
+        );
 
-            let (name, digest_opt) = ih.into_name_digest();
-            common
-                .hooks
-                .event_input_closed(name, digest_opt, common.status);
+        let out_rel_path = texpath.rsplit('/').next().unwrap();
+        self.font_files
+            .push(Font::new(texpath.as_str(), face_index, out_rel_path, ffd));
 
-            let ffd = atry!(
-                FontFileData::from_opentype(contents, face_index);
-                ["unable to load glyph data for font `{}`", texpath]
-            );
-
-            // Figure out the output path that we'll use for this font. For now,
-            // that's just the basename. TODO: make sure that we don't have
-            // basename clashes! This will happen trivially if we ever actually
-            // use font collections that contain more than one face.
-
-            let out_rel_path = texpath.rsplit('/').next().unwrap();
-
-            // That's all we need.
-
-            self.font_files
-                .push(Font::new(texpath, face_index, out_rel_path, ffd));
-        }
+        self.src_index_map.insert(key, fid);
 
         Ok(fid)
     }
 
-    /// Load a font that is *not* defined in the input SPX tile.
-    ///
-    /// This should only be called for fonts that are definitely not loaded by
-    /// TeX, because we don't do any checks to prevent creating duplicate fonts
-    /// outputs.
+    /// Load a font that is *not* defined in the input SPX file.
     fn load_external_font(
         &mut self,
         texpath: impl Into<String>,
         face_index: u32,
         common: &mut Common,
     ) -> Result<FontId> {
-        let texpath = texpath.into();
-
-        // All we have to do is open up the file and pass off to the shared
-        // implementation.
-
+        let key = (texpath.into(), face_index);
+        if let Some(&fid) = self.src_index_map.get(&key) {
+            return Ok(fid);
+        }
         let io = common.hooks.io();
 
         let ih = atry!(
-            io.input_open_name(&texpath, common.status).must_exist();
-            ["failed to find a font file `{}`", texpath]
+            io.input_open_name(&key.0, common.status).must_exist();
+            ["failed to find a font file `{}`", key.0]
         );
 
-        self.ensure_font_file(&texpath, face_index, ih, common)
+        self.load_font_file(key, ih, common)
     }
 
     /// Register a font-family relation.
@@ -970,4 +982,132 @@ pub enum FamilyRelativeFontId {
     /// This font is some other font with no known relation to the current
     /// family.
     Other(FontId),
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Cursor;
+    use tectonic_bridge_core::DriverHooks;
+    use tectonic_io_base::{digest::DigestData, InputOrigin, IoProvider};
+    use tectonic_status_base::NoopStatusBackend;
+
+    const FONT: &[u8] = include_bytes!("../../../tests/assets/lmroman12-regular.otf");
+
+    struct TestHooks {
+        contents: &'static [u8],
+        opens: Vec<String>,
+        closes: usize,
+    }
+
+    impl IoProvider for TestHooks {
+        fn input_open_name(
+            &mut self,
+            name: &str,
+            _: &mut dyn StatusBackend,
+        ) -> OpenResult<InputHandle> {
+            self.opens.push(name.to_owned());
+            if name != "font.otf" {
+                return OpenResult::NotAvailable;
+            }
+            OpenResult::Ok(InputHandle::new(
+                name,
+                Cursor::new(self.contents.to_vec()),
+                InputOrigin::Other,
+            ))
+        }
+    }
+
+    impl DriverHooks for TestHooks {
+        fn io(&mut self) -> &mut dyn IoProvider {
+            self
+        }
+
+        fn event_input_closed(
+            &mut self,
+            _: String,
+            _: Option<DigestData>,
+            _: &mut dyn StatusBackend,
+        ) {
+            self.closes += 1;
+        }
+    }
+
+    #[test]
+    fn font_sizes_and_names_share_loaded_font_data() {
+        let mut fonts = FontEnsemble::default();
+        let mut hooks = TestHooks {
+            contents: FONT,
+            opens: Vec::new(),
+            closes: 0,
+        };
+        let mut status = NoopStatusBackend {};
+        {
+            let mut common = Common {
+                hooks: &mut hooks,
+                status: &mut status,
+                out_base: None,
+                precomputed_assets: None,
+            };
+            for (num, name, size) in [
+                (1, "font", 655360),
+                (2, "font", 786432),
+                (3, "font.otf", 917504),
+            ] {
+                fonts
+                    .register_tex_font(num, size, 0, None, None, None, None, name, &mut common)
+                    .unwrap();
+            }
+            assert_eq!(
+                fonts
+                    .load_external_font("font.otf", 0, &mut common)
+                    .unwrap(),
+                0
+            );
+        }
+        assert_eq!(hooks.opens, ["font", "font.otf"]);
+        assert_eq!(hooks.closes, 1);
+        assert_eq!(fonts.font_files.len(), 1);
+        assert_eq!(fonts.get_font_size(2), 786432);
+        assert!(fonts.tex_fonts.values().all(|font| font.fid == 0));
+    }
+
+    #[test]
+    fn failed_font_load_does_not_cache_a_missing_font() {
+        let mut fonts = FontEnsemble::default();
+        let mut hooks = TestHooks {
+            contents: b"invalid font",
+            opens: Vec::new(),
+            closes: 0,
+        };
+        let mut status = NoopStatusBackend {};
+        {
+            let mut common = Common {
+                hooks: &mut hooks,
+                status: &mut status,
+                out_base: None,
+                precomputed_assets: None,
+            };
+            assert!(fonts
+                .load_external_font("font.otf", 0, &mut common)
+                .is_err());
+        }
+        hooks.contents = FONT;
+        {
+            let mut common = Common {
+                hooks: &mut hooks,
+                status: &mut status,
+                out_base: None,
+                precomputed_assets: None,
+            };
+            assert_eq!(
+                fonts
+                    .load_external_font("font.otf", 0, &mut common)
+                    .unwrap(),
+                0
+            );
+        }
+        assert_eq!(hooks.opens, ["font.otf", "font.otf"]);
+        assert_eq!(fonts.font_files.len(), 1);
+    }
 }
