@@ -144,7 +144,10 @@ impl PageScanner {
     fn scan(&mut self, xdv: bool) -> Result<(), ()> {
         self.definitions.clear();
         self.specials.clear();
-        let mut page = Page { bytes: &self.bytes, position: 0 };
+        let mut page = Page {
+            bytes: &self.bytes,
+            position: 0,
+        };
         page.begin()?;
         let mut removed = 0;
         loop {
@@ -184,29 +187,38 @@ pub(crate) fn clear_page_scanner() {
     PAGE_SCANNER.with(|scanner| *scanner.borrow_mut() = PageScanner::default());
 }
 
-#[no_mangle]
-unsafe extern "C" fn tt_pdf_scan_page(handle: Option<InputId>, start: u32, end: u32,
-                                      xdv: i32, output: *mut ScannedPage) -> i32 {
-    let Some(length) = end.checked_sub(start).filter(|&length| length > 0) else {
-        return 0;
-    };
-    PAGE_SCANNER.with(|scanner| {
-        let mut scanner = scanner.borrow_mut();
-        scanner.bytes.resize(length as usize, 0);
-        let result = CoreBridgeState::with_global_state(|state| {
-            let input = state.get_input(handle.expect("open DVI handle"));
-            input.seek(SeekFrom::Start(u64::from(start)))?;
-            input.read_exact(&mut scanner.bytes)
-        });
-        if result.is_err() || scanner.scan(xdv != 0).is_err() {
+#[unsafe(no_mangle)]
+unsafe extern "C" fn tt_pdf_scan_page(
+    handle: Option<InputId>,
+    start: u32,
+    end: u32,
+    xdv: i32,
+    output: *mut ScannedPage,
+) -> i32 {
+    unsafe {
+        let Some(length) = end.checked_sub(start).filter(|&length| length > 0) else {
             return 0;
-        }
-        *output = ScannedPage {
-            data: scanner.bytes.as_ptr(), length: scanner.bytes.len(),
-            specials: scanner.specials.as_ptr(), special_count: scanner.specials.len(),
         };
-        1
-    })
+        PAGE_SCANNER.with(|scanner| {
+            let mut scanner = scanner.borrow_mut();
+            scanner.bytes.resize(length as usize, 0);
+            let result = CoreBridgeState::with_global_state(|state| {
+                let input = state.get_input(handle.expect("open DVI handle"));
+                input.seek(SeekFrom::Start(u64::from(start)))?;
+                input.read_exact(&mut scanner.bytes)
+            });
+            if result.is_err() || scanner.scan(xdv != 0).is_err() {
+                return 0;
+            }
+            *output = ScannedPage {
+                data: scanner.bytes.as_ptr(),
+                length: scanner.bytes.len(),
+                specials: scanner.specials.as_ptr(),
+                special_count: scanner.specials.len(),
+            };
+            1
+        })
+    }
 }
 
 fn preflight(
@@ -239,7 +251,7 @@ fn preflight(
     Ok(true)
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn tt_pdf_preflight_pages(
     handle: Option<InputId>,
     offsets: *const u32,
@@ -247,21 +259,23 @@ unsafe extern "C" fn tt_pdf_preflight_pages(
     file_size: u32,
     xdv: i32,
 ) -> i32 {
-    if count == 0 {
-        return 1;
-    }
-    let offsets = slice::from_raw_parts(offsets, count);
-    CoreBridgeState::with_global_state(|state| {
-        match preflight(
-            state.get_input(handle.expect("open DVI handle")),
-            offsets,
-            file_size,
-            xdv != 0,
-        ) {
-            Ok(eligible) => i32::from(eligible),
-            Err(()) => -1,
+    unsafe {
+        if count == 0 {
+            return 1;
         }
-    })
+        let offsets = slice::from_raw_parts(offsets, count);
+        CoreBridgeState::with_global_state(|state| {
+            match preflight(
+                state.get_input(handle.expect("open DVI handle")),
+                offsets,
+                file_size,
+                xdv != 0,
+            ) {
+                Ok(eligible) => i32::from(eligible),
+                Err(()) => -1,
+            }
+        })
+    }
 }
 
 #[cfg(test)]
@@ -300,13 +314,19 @@ mod tests {
         commands.extend_from_slice(&[239, 0, 66]);
         expected.extend_from_slice(&[239, 0, 66]);
         payloads.push(Vec::new());
-        let mut scanner = PageScanner { bytes: page(&commands), ..Default::default() };
+        let mut scanner = PageScanner {
+            bytes: page(&commands),
+            ..Default::default()
+        };
         scanner.bytes.extend_from_slice(b"ignored postamble bytes");
         scanner.scan(true).unwrap();
         assert_eq!(scanner.bytes, page(&expected));
         assert_eq!(scanner.specials.len(), payloads.len());
         for (span, payload) in scanner.specials.iter().zip(payloads) {
-            assert_eq!(&scanner.bytes[span.offset..span.offset + span.length], payload);
+            assert_eq!(
+                &scanner.bytes[span.offset..span.offset + span.length],
+                payload
+            );
         }
     }
 

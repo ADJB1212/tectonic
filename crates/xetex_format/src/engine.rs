@@ -7,10 +7,10 @@ use std::{cmp::Ordering, io::Write};
 use tectonic_errors::prelude::*;
 
 use crate::{
+    FormatVersion, LATEST_VERSION,
     commands::{self, Commands},
     cshash, dimenpars, enums, eqtb, etexpenalties, gluepars, intpars, locals,
     symbols::{SymbolCategory, SymbolTable},
-    FormatVersion, LATEST_VERSION,
 };
 
 /// Information about the engine implementation.

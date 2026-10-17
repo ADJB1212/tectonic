@@ -4,7 +4,7 @@
 //! TeX `\special` items recognized by the spx2html emitter.
 
 use std::fmt::{Display, Error, Formatter};
-use tectonic_status_base::{tt_warning, StatusBackend};
+use tectonic_status_base::{StatusBackend, tt_warning};
 
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]

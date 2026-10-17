@@ -52,7 +52,7 @@ impl FcResult {
     }
 }
 
-extern "C" {
+unsafe extern "C" {
     pub fn FcPatternGetString(
         p: *mut FcPattern,
         object: *const libc::c_char,

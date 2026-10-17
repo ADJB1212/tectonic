@@ -1,4 +1,4 @@
-use super::{sys, CoreType};
+use super::{CoreType, sys};
 use std::ffi::{CStr, CString};
 
 cfty! {

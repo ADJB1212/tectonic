@@ -8,7 +8,7 @@ use tectonic_errors::prelude::*;
 use super::{
     ArgKind, Command, CommandArgument, CommandBehavior, CommandPrimitive, PrimitiveExtraInit,
 };
-use crate::{symbols::SymbolTable, FormatVersion};
+use crate::{FormatVersion, symbols::SymbolTable};
 
 /// Relax!
 #[derive(Debug)]

@@ -1,4 +1,4 @@
-use crate::{cite::CiteInfo, ASCIICode};
+use crate::{ASCIICode, cite::CiteInfo};
 
 pub(crate) const ENT_STR_SIZE: usize = 250;
 

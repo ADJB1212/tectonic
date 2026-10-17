@@ -5,14 +5,14 @@
 
 use std::{
     sync::{
-        atomic::{AtomicBool, AtomicUsize, Ordering},
         Mutex,
+        atomic::{AtomicBool, AtomicUsize, Ordering},
     },
     thread,
 };
 use tectonic_geturl::{DefaultBackend, DefaultRangeReader, GetUrlBackend};
 use tectonic_io_base::OpenResult;
-use tectonic_status_base::{tt_note, NoopStatusBackend, StatusBackend};
+use tectonic_status_base::{NoopStatusBackend, StatusBackend, tt_note};
 
 const DEFAULT_PREFETCH_CONCURRENCY: usize = 16;
 const MAX_PREFETCH_CONCURRENCY: usize = 64;
@@ -36,11 +36,11 @@ fn prefetch_indices(lengths: impl Iterator<Item = usize>) -> Vec<usize> {
     let mut selected = Vec::new();
 
     for (index, length) in lengths.enumerate() {
-        if let Some(next_bytes) = bytes.checked_add(length) {
-            if next_bytes <= MAX_PREFETCH_BYTES {
-                bytes = next_bytes;
-                selected.push(index);
-            }
+        if let Some(next_bytes) = bytes.checked_add(length)
+            && next_bytes <= MAX_PREFETCH_BYTES
+        {
+            bytes = next_bytes;
+            selected.push(index);
         }
     }
 

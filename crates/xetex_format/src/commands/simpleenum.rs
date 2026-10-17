@@ -10,9 +10,9 @@ use super::{
     ArgKind, Command, CommandArgument, CommandBehavior, CommandPrimitive, PrimitiveExtraInit,
 };
 use crate::{
+    FormatVersion,
     enums::simple::*,
     symbols::{HasSymbol, SymbolTable},
-    FormatVersion,
 };
 
 macro_rules! declare {

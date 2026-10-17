@@ -1,4 +1,4 @@
-use super::{sys, CFString, CFType, CTFontDescriptor, CoreType};
+use super::{CFString, CFType, CTFontDescriptor, CoreType, sys};
 use std::ptr;
 use std::ptr::NonNull;
 

@@ -39,8 +39,8 @@ pub use sys::FT_Vector as Vector;
 /// Recognized tables that can be safely loaded by Rust code
 pub mod tables {
     pub use crate::sys::TT_Header as Header;
-    pub use crate::sys::TT_Postscript as Postscript;
     pub use crate::sys::TT_OS2 as Os2;
+    pub use crate::sys::TT_Postscript as Postscript;
 }
 
 pub(crate) struct SyncPtr<T>(*mut T);
@@ -161,11 +161,7 @@ pub struct Error(sys::FT_Error);
 
 impl Error {
     fn or_else<T>(err: sys::FT_Error, f: impl FnOnce() -> T) -> Result<T, Error> {
-        if err == 0 {
-            Ok(f())
-        } else {
-            Err(Error(err))
-        }
+        if err == 0 { Ok(f()) } else { Err(Error(err)) }
     }
 
     /// Convert this error into a descriptive message, if available.

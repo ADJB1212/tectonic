@@ -1,9 +1,10 @@
 use crate::{
+    Bibtex, BibtexError, GlobalItems, HashPointer,
     bibs::get_bib_command_or_entry_and_process,
     buffer::{BufTy, GlobalBuffer},
     char_info::LexClass,
     cite::find_cite_locs_for_this_cite_key,
-    exec::{check_command_execution, execute_fn, ExecCtx},
+    exec::{ExecCtx, check_command_execution, execute_fn},
     hash,
     hash::{BstFn, HashData},
     log::{
@@ -14,8 +15,7 @@ use crate::{
         print_bib_name, print_confusion, print_fn_class, print_missing_entry,
     },
     pool::{StrNumber, StringPool},
-    scan::{eat_bst_white_space, scan_fn_def, scan_identifier, Scan, ScanRes},
-    Bibtex, BibtexError, GlobalItems, HashPointer,
+    scan::{Scan, ScanRes, eat_bst_white_space, scan_fn_def, scan_identifier},
 };
 
 macro_rules! eat_bst_white {

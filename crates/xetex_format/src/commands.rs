@@ -9,9 +9,9 @@ use std::{collections::BTreeMap, io::Write};
 use tectonic_errors::prelude::*;
 
 use crate::{
+    FormatVersion,
     format::Format,
     symbols::{HasSymbol, SymbolCategory, SymbolTable},
-    FormatVersion,
 };
 
 pub type CommandCode = i16;

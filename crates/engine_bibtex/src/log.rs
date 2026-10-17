@@ -1,16 +1,16 @@
 use crate::{
+    ASCIICode, Bibtex, BibtexError, CiteNumber, FieldLoc, HashPointer,
     auxi::AuxData,
     bibs::{BibCommand, BibData},
     buffer::{BufTy, GlobalBuffer},
     char_info::LexClass,
     cite::CiteInfo,
-    exec::{bst_ex_warn_print, bst_ln_num_print, ExecCtx},
+    exec::{ExecCtx, bst_ex_warn_print, bst_ln_num_print},
     hash::{BstFn, HashData},
     other::OtherData,
     peekable::input_ln,
     pool::{StrNumber, StringPool},
     scan::{Scan, ScanRes},
-    ASCIICode, Bibtex, BibtexError, CiteNumber, FieldLoc, HashPointer,
 };
 use std::{ffi::CStr, io::Write, slice};
 use tectonic_io_base::OutputHandle;

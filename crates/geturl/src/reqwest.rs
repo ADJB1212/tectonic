@@ -4,13 +4,13 @@
 //! A URL-get backend based on the `reqwest` crate.
 
 use reqwest::{
+    StatusCode, Url,
     blocking::{Client, Response},
     header::RANGE,
     redirect::Policy,
-    StatusCode, Url,
 };
 use std::sync::OnceLock;
-use tectonic_errors::{anyhow::bail, Result};
+use tectonic_errors::{Result, anyhow::bail};
 
 use crate::{GetUrlBackend, RangeReader};
 

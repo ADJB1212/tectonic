@@ -103,11 +103,7 @@ impl FeatureRef<'_> {
         //         Feat pointer guaranteed valid
         let res =
             unsafe { sys::gr_fref_set_feature_value(self.as_ptr(), value, feat.as_ptr_mut()) };
-        if res != 0 {
-            Ok(())
-        } else {
-            Err(FeatErr(()))
-        }
+        if res != 0 { Ok(()) } else { Err(FeatErr(())) }
     }
 
     /// Get the label for this feature for a given language

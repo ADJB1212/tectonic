@@ -9,9 +9,8 @@
 //! Instead, wrap it in a [`crate::BundleCache`] for filesystem-backed caching.
 
 use crate::{
-    batch,
+    Bundle, CachableBundle, FileIndex, FileInfo, NET_RETRY_ATTEMPTS, NET_RETRY_SLEEP_MS, batch,
     ttb::{TTBFileIndex, TTBFileInfo, TTBv1Header},
-    Bundle, CachableBundle, FileIndex, FileInfo, NET_RETRY_ATTEMPTS, NET_RETRY_SLEEP_MS,
 };
 use flate2::read::GzDecoder;
 use std::{
@@ -23,7 +22,7 @@ use std::{
 use tectonic_errors::prelude::*;
 use tectonic_geturl::{DefaultBackend, DefaultRangeReader, GetUrlBackend, RangeReader};
 use tectonic_io_base::{InputHandle, InputOrigin, IoProvider, OpenResult};
-use tectonic_status_base::{tt_note, tt_warning, StatusBackend};
+use tectonic_status_base::{StatusBackend, tt_note, tt_warning};
 
 /// Read a [`TTBFileInfo`] from this bundle.
 /// We assume that `fileinfo` points to a valid file in this bundle.
@@ -262,7 +261,7 @@ impl CachableBundle<'_, TTBFileIndex> for TTBNetBundle<TTBFileIndex> {
 #[cfg(all(test, any(feature = "geturl-reqwest", feature = "geturl-curl")))]
 mod tests {
     use super::*;
-    use flate2::{write::GzEncoder, Compression};
+    use flate2::{Compression, write::GzEncoder};
     use std::{
         io::{BufRead, BufReader, Write},
         net::TcpListener,

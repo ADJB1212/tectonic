@@ -72,16 +72,16 @@
 //! `eqtb_top` is `eqtb_size + hash_extra` and the total addressed size of the
 //! array is `eqtb_top + 1`.
 
-use nom::{multi::count, number::complete::be_u8, IResult, Parser};
+use nom::{IResult, Parser, multi::count, number::complete::be_u8};
 use tectonic_errors::prelude::*;
 
 use crate::{
+    FormatVersion,
     base::{self, SIZEOF_MEMORY_WORD, TEX_NULL},
     commands::CommandCode,
     engine::Engine,
     parseutils,
     symbols::{SymbolCategory, SymbolTable},
-    FormatVersion,
 };
 
 #[derive(Debug)]

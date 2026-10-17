@@ -81,7 +81,7 @@ pub const kCFStringEncodingUTF8: CFStringEncoding = 0x08000100;
 pub const kCFStringEncodingInvalidId: CFStringEncoding = 0xFFFFFFFF;
 
 #[link(name = "CoreFoundation", kind = "framework")]
-extern "C" {
+unsafe extern "C" {
     pub fn CFSetCreate(
         allocator: CFAllocatorRef,
         values: *mut *const (),
@@ -156,9 +156,9 @@ extern "C" {
 }
 
 #[link(name = "CoreText", kind = "framework")]
-extern "C" {
+unsafe extern "C" {
     pub fn CTFontDescriptorCreateWithAttributes(attributes: CFDictionaryRef)
-        -> CTFontDescriptorRef;
+    -> CTFontDescriptorRef;
     pub fn CTFontDescriptorCreateMatchingFontDescriptors(
         descriptor: CTFontDescriptorRef,
         mandatory_attributes: CFSetRef,

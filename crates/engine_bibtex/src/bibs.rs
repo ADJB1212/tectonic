@@ -1,4 +1,5 @@
 use crate::{
+    Bibtex, BibtexError, File, GlobalItems, HashPointer, LookupRes,
     buffer::{BufTy, GlobalBuffer},
     char_info::LexClass,
     cite::add_database_cite,
@@ -11,8 +12,7 @@ use crate::{
     },
     peekable::input_ln,
     pool::{StrNumber, StringPool},
-    scan::{scan_and_store_the_field_value_and_eat_white, scan_identifier, Scan, ScanRes},
-    Bibtex, BibtexError, File, GlobalItems, HashPointer, LookupRes,
+    scan::{Scan, ScanRes, scan_and_store_the_field_value_and_eat_white, scan_identifier},
 };
 use std::collections::VecDeque;
 

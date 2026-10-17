@@ -21,11 +21,11 @@ macro_rules! cfty {
                 Self(ptr, $($(PhantomData::<$phantom>),*)*)
             }
 
-            unsafe fn new_borrowed(ptr: std::ptr::NonNull<Self::SysTy>) -> Self {
+            unsafe fn new_borrowed(ptr: std::ptr::NonNull<Self::SysTy>) -> Self { unsafe {
                 // SAFETY: Provided pointer is required a valid pointer for this type
-                unsafe { $crate::sys::CFRetain(ptr.as_ptr().cast()) };
+                $crate::sys::CFRetain(ptr.as_ptr().cast());
                 Self::new_owned(ptr)
-            }
+            }}
 
             fn as_type_ref(&self) -> *const Self::SysTy {
                 self.0.as_ptr().cast_const()

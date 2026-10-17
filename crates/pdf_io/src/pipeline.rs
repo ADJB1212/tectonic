@@ -1,14 +1,15 @@
-use crate::compress::StreamOptions;
 use crate::PdfBuildOptions;
+use crate::compress::StreamOptions;
 use std::{
     cell::Cell,
     collections::{HashMap, VecDeque},
     ffi::{c_char, c_void},
-    panic::{catch_unwind, AssertUnwindSafe},
+    panic::{AssertUnwindSafe, catch_unwind},
     ptr, slice,
     sync::{
+        Arc, Mutex, OnceLock,
         atomic::{AtomicU64, Ordering},
-        mpsc, Arc, Mutex, OnceLock,
+        mpsc,
     },
     time::{Duration, Instant},
 };
@@ -211,10 +212,10 @@ fn shared_pool(workers: usize) -> Option<Arc<rayon::ThreadPool>> {
     type CachedPool = Mutex<Option<(usize, Arc<rayon::ThreadPool>)>>;
     static POOL: OnceLock<CachedPool> = OnceLock::new();
     let mut cached = POOL.get_or_init(|| Mutex::new(None)).lock().ok()?;
-    if let Some((count, pool)) = &*cached {
-        if *count == workers {
-            return Some(Arc::clone(pool));
-        }
+    if let Some((count, pool)) = &*cached
+        && *count == workers
+    {
+        return Some(Arc::clone(pool));
     }
     let pool = Arc::new(
         rayon::ThreadPoolBuilder::new()
@@ -290,7 +291,9 @@ impl Drop for PdfRuntime {
             let _ = pending.receiver.recv();
         }
         // SAFETY: Native execution has returned and all worker jobs have finished.
-        unsafe { crate::clear_input_state(); }
+        unsafe {
+            crate::clear_input_state();
+        }
     }
 }
 
@@ -310,17 +313,17 @@ pub(crate) fn configured() -> bool {
     CURRENT.with(|current| !current.get().is_null())
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn tt_pdf_pipeline_active() -> i32 {
     i32::from(configured())
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn tt_pdf_phase_start(phase: i32) {
     with_runtime((), |runtime| runtime.phase = Some((phase, Instant::now())));
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn tt_pdf_phase_end() {
     with_runtime((), |runtime| {
         if let Some((phase, start)) = runtime.phase.take() {
@@ -337,9 +340,9 @@ extern "C" fn tt_pdf_phase_end() {
     });
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn tt_pdf_special_supported(data: *const u8, length: usize) -> i32 {
-    i32::from(special_supported(slice::from_raw_parts(data, length)))
+    unsafe { i32::from(special_supported(slice::from_raw_parts(data, length))) }
 }
 
 pub(crate) fn special_supported(bytes: &[u8]) -> bool {
@@ -415,7 +418,7 @@ pub(crate) fn special_supported(bytes: &[u8]) -> bool {
     )
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn tt_pdf_pipeline_enable_pages(enabled: i32) {
     with_runtime((), |runtime| {
         runtime.pages_enabled = enabled != 0;
@@ -423,7 +426,7 @@ extern "C" fn tt_pdf_pipeline_enable_pages(enabled: i32) {
     });
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn tt_pdf_page_begin(unit: f64, precision: i32, autorotate: i32, direction: i32) -> i32 {
     with_runtime(0, |runtime| {
         if !runtime.pages_enabled {
@@ -445,12 +448,12 @@ extern "C" fn tt_pdf_page_begin(unit: f64, precision: i32, autorotate: i32, dire
     })
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn tt_pdf_page_recording() -> i32 {
     with_runtime(0, |runtime| i32::from(runtime.page.is_some()))
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn tt_pdf_page_text(
     font: *const RenderFont,
     id: i32,
@@ -460,51 +463,50 @@ unsafe extern "C" fn tt_pdf_page_text(
     data: *const u8,
     length: usize,
 ) {
-    with_runtime((), |runtime| {
-        if let Some(page) = &mut runtime.page {
-            let font = match page.last_font {
-                Some((previous, font)) if previous == id => font,
-                _ => {
-                    let index = *page.font_ids.entry(id).or_insert_with(|| {
-                        page.fonts.push(*font);
-                        (page.fonts.len() - 1) as i32
-                    });
-                    page.last_font = Some((id, index));
-                    index
-                }
-            };
-            let start = page.data.len();
-            page.data
-                .extend_from_slice(slice::from_raw_parts(data, length));
-            if page.current_direction == 0 {
-                if let Some(last) = page.commands.last_mut() {
-                    if last.kind == TEXT
-                        && last.font == font
-                        && last.coordinates[1] == y
-                        && last.coordinates[0].checked_add(last.coordinates[2]) == Some(x)
-                        && last.start + last.length == start
-                        && last.length + length <= 1024
-                    {
-                        if let Some(combined) = last.coordinates[2].checked_add(width) {
-                            last.coordinates[2] = combined;
-                            last.length += length;
-                            return;
-                        }
+    unsafe {
+        with_runtime((), |runtime| {
+            if let Some(page) = &mut runtime.page {
+                let font = match page.last_font {
+                    Some((previous, font)) if previous == id => font,
+                    _ => {
+                        let index = *page.font_ids.entry(id).or_insert_with(|| {
+                            page.fonts.push(*font);
+                            (page.fonts.len() - 1) as i32
+                        });
+                        page.last_font = Some((id, index));
+                        index
                     }
+                };
+                let start = page.data.len();
+                page.data
+                    .extend_from_slice(slice::from_raw_parts(data, length));
+                if page.current_direction == 0
+                    && let Some(last) = page.commands.last_mut()
+                    && last.kind == TEXT
+                    && last.font == font
+                    && last.coordinates[1] == y
+                    && last.coordinates[0].checked_add(last.coordinates[2]) == Some(x)
+                    && last.start + last.length == start
+                    && last.length + length <= 1024
+                    && let Some(combined) = last.coordinates[2].checked_add(width)
+                {
+                    last.coordinates[2] = combined;
+                    last.length += length;
+                    return;
                 }
+                page.commands.push(Command {
+                    kind: TEXT,
+                    font,
+                    coordinates: [x, y, width, 0],
+                    start,
+                    length,
+                });
             }
-            page.commands.push(Command {
-                kind: TEXT,
-                font,
-                coordinates: [x, y, width, 0],
-                start,
-                length,
-            });
-        }
-    });
+        });
+    }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn tt_pdf_page_command(kind: i32, x: i32, y: i32, width: i32, height: i32) {
     with_runtime((), |runtime| {
         if let Some(page) = &mut runtime.page {
@@ -522,45 +524,48 @@ extern "C" fn tt_pdf_page_command(kind: i32, x: i32, y: i32, width: i32, height:
     });
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn tt_pdf_page_bytes(data: *const c_char, length: usize) -> i32 {
-    with_runtime(0, |runtime| {
-        let Some(page) = &mut runtime.page else {
-            return 0;
-        };
-        let start = page.data.len();
-        page.data
-            .extend_from_slice(slice::from_raw_parts(data.cast(), length));
-        if let Some(last) = page.commands.last_mut() {
-            if last.kind == RAW_BYTES && last.start + last.length == start {
+    unsafe {
+        with_runtime(0, |runtime| {
+            let Some(page) = &mut runtime.page else {
+                return 0;
+            };
+            let start = page.data.len();
+            page.data
+                .extend_from_slice(slice::from_raw_parts(data.cast(), length));
+            if let Some(last) = page.commands.last_mut()
+                && last.kind == RAW_BYTES
+                && last.start + last.length == start
+            {
                 last.length += length;
                 return 1;
             }
-        }
-        page.commands.push(Command {
-            kind: RAW_BYTES,
-            font: 0,
-            coordinates: [0; 4],
-            start,
-            length,
-        });
-        1
-    })
+            page.commands.push(Command {
+                kind: RAW_BYTES,
+                font: 0,
+                coordinates: [0; 4],
+                start,
+                length,
+            });
+            1
+        })
+    }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn tt_pdf_page_size() -> usize {
     with_runtime(0, |runtime| {
         runtime.page.as_ref().map_or(0, PagePlan::bytes)
     })
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn tt_pdf_pipeline_has_capacity(bytes: usize) -> i32 {
     with_runtime(1, |runtime| i32::from(runtime.has_capacity(bytes)))
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn tt_pdf_page_submit(target: *mut c_void, compression_level: u32) -> i32 {
     with_runtime(0, |runtime| {
         let Some(page) = runtime.page.take() else {
@@ -600,7 +605,7 @@ extern "C" fn tt_pdf_page_submit(target: *mut c_void, compression_level: u32) ->
     })
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn tt_pdf_stream_submit(
     target: *mut c_void,
     data: *const u8,
@@ -611,27 +616,29 @@ unsafe extern "C" fn tt_pdf_stream_submit(
     bpc: i32,
     colors: i32,
 ) -> i32 {
-    with_runtime(0, |runtime| {
-        let input = slice::from_raw_parts(data, length).to_vec();
-        let pool = runtime.pool.clone();
-        let timings = Arc::clone(&runtime.timings);
-        runtime.statistics.compressed_streams += 1;
-        runtime.submit(target, 1, length, move || {
-            crate::compress::compress_owned(
-                input,
-                StreamOptions {
-                    level,
-                    predictor,
-                    columns,
-                    bpc,
-                    colors,
-                },
-                pool.as_deref(),
-                &timings,
-            )
-        });
-        1
-    })
+    unsafe {
+        with_runtime(0, |runtime| {
+            let input = slice::from_raw_parts(data, length).to_vec();
+            let pool = runtime.pool.clone();
+            let timings = Arc::clone(&runtime.timings);
+            runtime.statistics.compressed_streams += 1;
+            runtime.submit(target, 1, length, move || {
+                crate::compress::compress_owned(
+                    input,
+                    StreamOptions {
+                        level,
+                        predictor,
+                        columns,
+                        bpc,
+                        colors,
+                    },
+                    pool.as_deref(),
+                    &timings,
+                )
+            });
+            1
+        })
+    }
 }
 
 struct TaskResult {
@@ -648,46 +655,52 @@ struct NativeResult {
     handle: *mut c_void,
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn tt_pdf_pipeline_take(result: *mut NativeResult) -> i32 {
-    with_runtime(0, |runtime| {
-        let Some(pending) = runtime.pending.pop_front() else {
-            return 0;
-        };
-        let start = Instant::now();
-        let completed = Box::new(TaskResult {
-            data: pending.receiver.recv().unwrap_or(Err(())),
-        });
-        runtime.statistics.queue_wait += start.elapsed();
-        runtime.queued_bytes -= pending.bytes;
-        let (data, length, status) = match &completed.data {
-            Ok(data) => (data.as_ptr(), data.len(), 0),
-            Err(()) => (ptr::null(), 0, -1),
-        };
-        *result = NativeResult {
-            target: pending.target,
-            data,
-            length,
-            kind: pending.kind,
-            status,
-            handle: Box::into_raw(completed).cast(),
-        };
-        1
-    })
+    unsafe {
+        with_runtime(0, |runtime| {
+            let Some(pending) = runtime.pending.pop_front() else {
+                return 0;
+            };
+            let start = Instant::now();
+            let completed = Box::new(TaskResult {
+                data: pending.receiver.recv().unwrap_or(Err(())),
+            });
+            runtime.statistics.queue_wait += start.elapsed();
+            runtime.queued_bytes -= pending.bytes;
+            let (data, length, status) = match &completed.data {
+                Ok(data) => (data.as_ptr(), data.len(), 0),
+                Err(()) => (ptr::null(), 0, -1),
+            };
+            *result = NativeResult {
+                target: pending.target,
+                data,
+                length,
+                kind: pending.kind,
+                status,
+                handle: Box::into_raw(completed).cast(),
+            };
+            1
+        })
+    }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn tt_pdf_pipeline_release(result: *mut c_void) {
-    drop(Box::from_raw(result.cast::<TaskResult>()));
+    unsafe {
+        drop(Box::from_raw(result.cast::<TaskResult>()));
+    }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn tt_pdf_render_output(output: *mut c_void, data: *const c_char, length: usize) {
-    let output = &mut *output.cast::<Vec<u8>>();
-    output.extend_from_slice(slice::from_raw_parts(data.cast(), length));
+    unsafe {
+        let output = &mut *output.cast::<Vec<u8>>();
+        output.extend_from_slice(slice::from_raw_parts(data.cast(), length));
+    }
 }
 
-extern "C" {
+unsafe extern "C" {
     fn tt_pdf_render_page(
         commands: *const RenderCommand,
         count: usize,

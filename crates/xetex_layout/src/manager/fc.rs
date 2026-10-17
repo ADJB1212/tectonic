@@ -1,10 +1,10 @@
 use super::{
-    base_get_op_size_rec_and_style_flags, FontInfo, FontManager, FontManagerBackend, FontMaps,
-    NameCollection,
+    FontInfo, FontManager, FontManagerBackend, FontMaps, NameCollection,
+    base_get_op_size_rec_and_style_flags,
 };
 use crate::c_api::PlatformFontRef;
-use enrede::encoding::{MacRoman, Utf16BE, Utf8};
 use enrede::Str;
+use enrede::encoding::{MacRoman, Utf8, Utf16BE};
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
 use tectonic_bridge_fontconfig as fc;

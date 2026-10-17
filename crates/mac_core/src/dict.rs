@@ -1,4 +1,4 @@
-use super::{sys, CoreType};
+use super::{CoreType, sys};
 use std::marker::PhantomData;
 use std::mem::MaybeUninit;
 use std::ptr::NonNull;

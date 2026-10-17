@@ -19,23 +19,23 @@
 
 use crate::{
     auxi::{
-        get_aux_command_and_process, last_check_for_aux_errors, pop_the_aux_stack, AuxCommand,
-        AuxData,
+        AuxCommand, AuxData, get_aux_command_and_process, last_check_for_aux_errors,
+        pop_the_aux_stack,
     },
     bibs::{BibCommand, BibData},
-    bst::{get_bst_command_and_process, BstCommand},
+    bst::{BstCommand, get_bst_command_and_process},
     buffer::{BufTy, GlobalBuffer},
     cite::CiteInfo,
-    entries::{EntryData, ENT_STR_SIZE},
+    entries::{ENT_STR_SIZE, EntryData},
     exec::{ControlSeq, ExecCtx},
-    global::{GlobalData, GLOB_STR_SIZE},
+    global::{GLOB_STR_SIZE, GlobalData},
     hash::{BstBuiltin, BstFn, HashData, HashPointer},
     log::{
-        bib_close_log, log_pr_aux_name, print_aux_name, print_confusion, sam_wrong_file_name_print,
-        AsBytes,
+        AsBytes, bib_close_log, log_pr_aux_name, print_aux_name, print_confusion,
+        sam_wrong_file_name_print,
     },
     other::OtherData,
-    peekable::{input_ln, PeekableInput},
+    peekable::{PeekableInput, input_ln},
     pool::{StrNumber, StringPool},
     scan::eat_bst_white_space,
 };

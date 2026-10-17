@@ -34,7 +34,7 @@ macro_rules! emit_element_data {
             pub fn name(&self) -> &str {
                 match self {
                     $(Element::$vname => $tagname,)+
-                    Element::Other(ref name) => name,
+                    Element::Other(name) => name,
                 }
             }
 

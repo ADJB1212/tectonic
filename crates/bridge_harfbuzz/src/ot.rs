@@ -1,6 +1,6 @@
 //! OpenType layout support for Harfbuzz
 
-use crate::{sys, FaceRef, GTag, OtNameId, Tag};
+use crate::{FaceRef, GTag, OtNameId, Tag, sys};
 use std::ptr;
 
 /// Optical size data for a face
@@ -192,11 +192,7 @@ impl<'a> Script<'a> {
             script: self.script,
             lang: out_idx as usize,
         };
-        if found != 0 {
-            Ok(lang)
-        } else {
-            Err(lang)
-        }
+        if found != 0 { Ok(lang) } else { Err(lang) }
     }
 
     /// Get the language information for a given index
@@ -290,11 +286,7 @@ impl Language<'_> {
                 &mut out,
             )
         };
-        if len != 1 {
-            None
-        } else {
-            Some(Tag::new(out))
-        }
+        if len != 1 { None } else { Some(Tag::new(out)) }
     }
 }
 

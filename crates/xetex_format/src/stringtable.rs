@@ -6,9 +6,9 @@
 //! Dealing with the TeX string table.
 
 use nom::{
+    Err as NomErr, IResult, Parser,
     multi::count,
     number::complete::{be_i32, be_u16},
-    Err as NomErr, IResult, Parser,
 };
 
 use crate::parseutils;

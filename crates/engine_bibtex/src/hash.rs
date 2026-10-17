@@ -1,13 +1,13 @@
 use crate::{
+    CiteNumber, LookupRes,
     auxi::AuxCommand,
     bibs::BibCommand,
     bst::BstCommand,
     exec::ControlSeq,
     pool,
     pool::{StrNumber, StringPool},
-    CiteNumber, LookupRes,
 };
-use indexmap::{set::MutableValues, Equivalent, IndexSet};
+use indexmap::{Equivalent, IndexSet, set::MutableValues};
 use std::{
     fmt,
     hash::{BuildHasher, Hash, Hasher},

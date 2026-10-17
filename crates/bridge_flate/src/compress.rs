@@ -85,10 +85,10 @@ pub(super) fn compress(input: &[u8], output: &mut [u8], level: u32) -> Result<us
             }
             return compress_serial(input, output, level);
         }
-        if let Some(pool) = pool() {
-            if required.is_some_and(|size| size <= output.len()) {
-                return compress_parallel(input, output, level, pool);
-            }
+        if let Some(pool) = pool()
+            && required.is_some_and(|size| size <= output.len())
+        {
+            return compress_parallel(input, output, level, pool);
         }
     }
     compress_serial(input, output, level)
@@ -214,7 +214,7 @@ fn compress_chunks(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use flate2::{read::ZlibDecoder, Decompress, FlushDecompress};
+    use flate2::{Decompress, FlushDecompress, read::ZlibDecoder};
     use std::io::Read;
 
     fn input_data(length: usize) -> Vec<u8> {
@@ -380,6 +380,10 @@ mod tests {
             std::hint::black_box(compress_parallel(&input, &mut output, 9, pool).unwrap());
         }
         let parallel = start.elapsed();
-        eprintln!("16 MiB PDF stream, 3 iterations, {} workers: serial={serial:?}, parallel={parallel:?}, speedup={:.2}x", pool.current_num_threads(), serial.as_secs_f64() / parallel.as_secs_f64());
+        eprintln!(
+            "16 MiB PDF stream, 3 iterations, {} workers: serial={serial:?}, parallel={parallel:?}, speedup={:.2}x",
+            pool.current_num_threads(),
+            serial.as_secs_f64() / parallel.as_secs_f64()
+        );
     }
 }

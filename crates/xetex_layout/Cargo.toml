@@ -17,7 +17,7 @@ documentation = "https://docs.rs/tectonic_xetex_layout"
 repository = "https://github.com/tectonic-typesetting/tectonic/"
 readme = "README.md"
 license = "MIT"
-edition = "2021"
+edition = "2024"
 links = "tectonic_xetex_layout"
 
 [dependencies]

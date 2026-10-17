@@ -1,4 +1,5 @@
 use crate::{
+    Bibtex, BibtexError, File, GlobalItems,
     bibs::BibData,
     buffer::{BufTy, GlobalBuffer},
     char_info::LexClass,
@@ -7,16 +8,15 @@ use crate::{
     hash,
     hash::{HashData, HashPointer},
     log::{
-        aux_end1_err_print, aux_end2_err_print, aux_err_illegal_another_print,
+        AuxTy, aux_end1_err_print, aux_end2_err_print, aux_err_illegal_another_print,
         aux_err_no_right_brace_print, aux_err_print, aux_err_stuff_after_right_brace_print,
         aux_err_white_space_in_argument_print, hash_cite_confusion, log_pr_aux_name,
         log_pr_bst_name, print_a_pool_str, print_a_token, print_aux_name, print_bib_name,
-        print_confusion, print_overflow, AuxTy,
+        print_confusion, print_overflow,
     },
     peekable::PeekableInput,
     pool::{StrNumber, StringPool},
     scan::Scan,
-    Bibtex, BibtexError, File, GlobalItems,
 };
 use std::ffi::CString;
 use tectonic_bridge_core::FileFormat;
@@ -460,11 +460,7 @@ pub(crate) fn get_aux_command_and_process(
 pub(crate) fn pop_the_aux_stack(ctx: &mut Bibtex<'_, '_>, aux: &mut AuxData) -> Option<StrNumber> {
     let (file, last) = aux.pop_file();
     file.file.close(ctx).unwrap();
-    if last {
-        Some(file.name)
-    } else {
-        None
-    }
+    if last { Some(file.name) } else { None }
 }
 
 pub(crate) fn last_check_for_aux_errors(

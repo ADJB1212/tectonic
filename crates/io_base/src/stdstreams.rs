@@ -4,7 +4,7 @@
 //! Tectonic I/O trait implementations for the standard I/O streams.
 
 use std::{
-    io::{stdin, stdout, Cursor, Read, Seek, SeekFrom},
+    io::{Cursor, Read, Seek, SeekFrom, stdin, stdout},
     rc::Rc,
 };
 use tectonic_errors::Result;

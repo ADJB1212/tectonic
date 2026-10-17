@@ -11,18 +11,20 @@ unsafe extern "C" fn nominal_glyph_func<
     gid: *mut Codepoint,
     user_data: *mut (),
 ) -> sys::hb_bool_t {
-    let font = FontRef::from_raw(NonNull::new(font).unwrap());
-    let data = &*font_data.cast::<T>();
-    let func = &*user_data.cast::<F>();
+    unsafe {
+        let font = FontRef::from_raw(NonNull::new(font).unwrap());
+        let data = &*font_data.cast::<T>();
+        let func = &*user_data.cast::<F>();
 
-    match func(font, data, ch) {
-        Some(val) => {
-            *gid = val;
-            true as sys::hb_bool_t
-        }
-        None => {
-            *gid = 0;
-            false as sys::hb_bool_t
+        match func(font, data, ch) {
+            Some(val) => {
+                *gid = val;
+                true as sys::hb_bool_t
+            }
+            None => {
+                *gid = 0;
+                false as sys::hb_bool_t
+            }
         }
     }
 }
@@ -38,18 +40,20 @@ unsafe extern "C" fn variation_glyph_func<
     gid: *mut Codepoint,
     user_data: *mut (),
 ) -> sys::hb_bool_t {
-    let font = FontRef::from_raw(NonNull::new(font).unwrap());
-    let data = &*font_data.cast::<T>();
-    let func = &*user_data.cast::<F>();
+    unsafe {
+        let font = FontRef::from_raw(NonNull::new(font).unwrap());
+        let data = &*font_data.cast::<T>();
+        let func = &*user_data.cast::<F>();
 
-    match func(font, data, ch, vs) {
-        Some(val) => {
-            *gid = val;
-            true as sys::hb_bool_t
-        }
-        None => {
-            *gid = 0;
-            false as sys::hb_bool_t
+        match func(font, data, ch, vs) {
+            Some(val) => {
+                *gid = val;
+                true as sys::hb_bool_t
+            }
+            None => {
+                *gid = 0;
+                false as sys::hb_bool_t
+            }
         }
     }
 }
@@ -60,10 +64,12 @@ unsafe extern "C" fn glyph_advance<T, F: Fn(FontRef<'_>, &T, Codepoint) -> Posit
     gid: Codepoint,
     user_data: *mut (),
 ) -> Position {
-    let font = FontRef::from_raw(NonNull::new(font).unwrap());
-    let data = &*font_data.cast::<T>();
-    let func = &*user_data.cast::<F>();
-    func(font, data, gid)
+    unsafe {
+        let font = FontRef::from_raw(NonNull::new(font).unwrap());
+        let data = &*font_data.cast::<T>();
+        let func = &*user_data.cast::<F>();
+        func(font, data, gid)
+    }
 }
 
 unsafe extern "C" fn glyph_origin<
@@ -77,20 +83,22 @@ unsafe extern "C" fn glyph_origin<
     y: *mut Position,
     user_data: *mut (),
 ) -> sys::hb_bool_t {
-    let font = FontRef::from_raw(NonNull::new(font).unwrap());
-    let data = &*font_data.cast::<T>();
-    let func = &*user_data.cast::<F>();
+    unsafe {
+        let font = FontRef::from_raw(NonNull::new(font).unwrap());
+        let data = &*font_data.cast::<T>();
+        let func = &*user_data.cast::<F>();
 
-    match func(font, data, gid) {
-        Some(val) => {
-            *x = val.0;
-            *y = val.1;
-            true as sys::hb_bool_t
-        }
-        None => {
-            *x = 0;
-            *y = 0;
-            false as sys::hb_bool_t
+        match func(font, data, gid) {
+            Some(val) => {
+                *x = val.0;
+                *y = val.1;
+                true as sys::hb_bool_t
+            }
+            None => {
+                *x = 0;
+                *y = 0;
+                false as sys::hb_bool_t
+            }
         }
     }
 }
@@ -102,10 +110,12 @@ unsafe extern "C" fn glyph_kerning<T, F: Fn(FontRef<'_>, &T, Codepoint, Codepoin
     gid2: Codepoint,
     user_data: *mut (),
 ) -> Position {
-    let font = FontRef::from_raw(NonNull::new(font).unwrap());
-    let data = &*font_data.cast::<T>();
-    let func = &*user_data.cast::<F>();
-    func(font, data, gid1, gid2)
+    unsafe {
+        let font = FontRef::from_raw(NonNull::new(font).unwrap());
+        let data = &*font_data.cast::<T>();
+        let func = &*user_data.cast::<F>();
+        func(font, data, gid1, gid2)
+    }
 }
 
 unsafe extern "C" fn glyph_extents<T, F: Fn(FontRef<'_>, &T, Codepoint) -> Option<GlyphExtents>>(
@@ -115,17 +125,19 @@ unsafe extern "C" fn glyph_extents<T, F: Fn(FontRef<'_>, &T, Codepoint) -> Optio
     extents: *mut GlyphExtents,
     user_data: *mut (),
 ) -> sys::hb_bool_t {
-    let font = FontRef::from_raw(NonNull::new(font).unwrap());
-    let data = &*font_data.cast::<T>();
-    let func = &*user_data.cast::<F>();
-    match func(font, data, gid) {
-        Some(out) => {
-            *extents = out;
-            true as sys::hb_bool_t
-        }
-        None => {
-            *extents = GlyphExtents::default();
-            false as sys::hb_bool_t
+    unsafe {
+        let font = FontRef::from_raw(NonNull::new(font).unwrap());
+        let data = &*font_data.cast::<T>();
+        let func = &*user_data.cast::<F>();
+        match func(font, data, gid) {
+            Some(out) => {
+                *extents = out;
+                true as sys::hb_bool_t
+            }
+            None => {
+                *extents = GlyphExtents::default();
+                false as sys::hb_bool_t
+            }
         }
     }
 }
@@ -142,20 +154,22 @@ unsafe extern "C" fn glyph_contour_point<
     y: *mut Position,
     user_data: *mut (),
 ) -> sys::hb_bool_t {
-    let font = FontRef::from_raw(NonNull::new(font).unwrap());
-    let data = &*font_data.cast::<T>();
-    let func = &*user_data.cast::<F>();
-    #[allow(clippy::useless_conversion)]
-    match func(font, data, gid, index.into()) {
-        Some(val) => {
-            *x = val.0;
-            *y = val.1;
-            true as sys::hb_bool_t
-        }
-        None => {
-            *x = 0;
-            *y = 0;
-            false as sys::hb_bool_t
+    unsafe {
+        let font = FontRef::from_raw(NonNull::new(font).unwrap());
+        let data = &*font_data.cast::<T>();
+        let func = &*user_data.cast::<F>();
+        #[allow(clippy::useless_conversion)]
+        match func(font, data, gid, index.into()) {
+            Some(val) => {
+                *x = val.0;
+                *y = val.1;
+                true as sys::hb_bool_t
+            }
+            None => {
+                *x = 0;
+                *y = 0;
+                false as sys::hb_bool_t
+            }
         }
     }
 }
@@ -168,20 +182,22 @@ unsafe extern "C" fn glyph_name<T, F: Fn(FontRef<'_>, &T, Codepoint, &mut [u8]) 
     size: libc::c_uint,
     user_data: *mut (),
 ) -> sys::hb_bool_t {
-    let font = FontRef::from_raw(NonNull::new(font).unwrap());
-    let data = &*font_data.cast::<T>();
-    let func = &*user_data.cast::<F>();
+    unsafe {
+        let font = FontRef::from_raw(NonNull::new(font).unwrap());
+        let data = &*font_data.cast::<T>();
+        let func = &*user_data.cast::<F>();
 
-    let name = if name.is_null() {
-        &mut []
-    } else {
-        ptr::write_bytes(name, 0, size as usize);
-        slice::from_raw_parts_mut(name.cast::<u8>(), size as usize)
-    };
+        let name = if name.is_null() {
+            &mut []
+        } else {
+            ptr::write_bytes(name, 0, size as usize);
+            slice::from_raw_parts_mut(name.cast::<u8>(), size as usize)
+        };
 
-    match func(font, data, gid, name) {
-        0 => false as sys::hb_bool_t,
-        _ => true as sys::hb_bool_t,
+        match func(font, data, gid, name) {
+            0 => false as sys::hb_bool_t,
+            _ => true as sys::hb_bool_t,
+        }
     }
 }
 

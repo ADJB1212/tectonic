@@ -19,9 +19,8 @@ use std::{
 };
 use tectonic_errors::{anyhow::Context, prelude::*};
 use tectonic_io_base::{
-    app_dirs,
+    InputHandle, InputOrigin, IoProvider, OpenResult, app_dirs,
     digest::{self, DigestData},
-    InputHandle, InputOrigin, IoProvider, OpenResult,
 };
 use tectonic_status_base::StatusBackend;
 
@@ -187,7 +186,9 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
                 bail!("this bundle isn't cached, and network access is disabled");
             }
             (None, Err(e)) => {
-                bail!("this bundle isn't cached, and we couldn't get it from the internet. Error: {e}");
+                bail!(
+                    "this bundle isn't cached, and we couldn't get it from the internet. Error: {e}"
+                );
             }
             (Some((s, t)), Ok(l)) => {
                 if now - t > Duration::days(7) {

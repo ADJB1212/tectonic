@@ -15,7 +15,7 @@ documentation = "https://docs.rs/tectonic_errors"
 repository = "https://github.com/tectonic-typesetting/tectonic/"
 readme = "README.md"
 license = "MIT"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 anyhow = "^1"

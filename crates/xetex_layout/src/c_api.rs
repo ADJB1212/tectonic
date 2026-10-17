@@ -59,24 +59,28 @@ pub(crate) fn clear_font_caches() {
     RIGHT_PROT.set(HashMap::new());
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn getCachedGlyphBBox(
     font_id: u16,
     glyph_id: u16,
     bbox: *mut GlyphBBox,
 ) -> i32 {
-    GLYPH_BOXES.with_borrow(|cache| match cache.get(&(font_id, glyph_id)) {
-        Some(val) => {
-            *bbox = *val;
-            1
-        }
-        None => 0,
-    })
+    unsafe {
+        GLYPH_BOXES.with_borrow(|cache| match cache.get(&(font_id, glyph_id)) {
+            Some(val) => {
+                *bbox = *val;
+                1
+            }
+            None => 0,
+        })
+    }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn cacheGlyphBBox(font_id: u16, glyph_id: u16, bbox: *const GlyphBBox) {
-    GLYPH_BOXES.with_borrow_mut(|cache| cache.insert((font_id, glyph_id), *bbox));
+    unsafe {
+        GLYPH_BOXES.with_borrow_mut(|cache| cache.insert((font_id, glyph_id), *bbox));
+    }
 }
 
 /* The following code used to be in a file called "hz.cpp" and there's no
@@ -87,7 +91,7 @@ pub unsafe extern "C" fn cacheGlyphBBox(font_id: u16, glyph_id: u16, bbox: *cons
 pub const LEFT_SIDE: i32 = 0;
 pub const RIGHT_SIDE: i32 = 1;
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn set_cp_code(font_num: i32, code: u32, side: i32, value: i32) {
     match side {
         LEFT_SIDE => LEFT_PROT.with_borrow_mut(|cache| cache.insert((font_num, code), value)),
@@ -96,7 +100,7 @@ pub extern "C" fn set_cp_code(font_num: i32, code: u32, side: i32, value: i32) {
     };
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub extern "C" fn get_cp_code(font_num: i32, code: u32, side: i32) -> i32 {
     match side {
         LEFT_SIDE => LEFT_PROT.with_borrow(|cache| cache.get(&(font_num, code)).copied()),

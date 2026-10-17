@@ -1,4 +1,4 @@
-use crate::{sys, ObjectSet, ObjectSetRef, Pattern, PatternRef};
+use crate::{ObjectSet, ObjectSetRef, Pattern, PatternRef, sys};
 use std::marker::PhantomData;
 use std::ptr::NonNull;
 use std::slice;

@@ -9,9 +9,9 @@ use super::{
     ArgKind, Command, CommandArgument, CommandBehavior, CommandPrimitive, PrimitiveExtraInit,
 };
 use crate::{
-    enums::{dynamic::*, HasPrimitive},
-    symbols::{HasSymbol, SymbolTable},
     FormatVersion,
+    enums::{HasPrimitive, dynamic::*},
+    symbols::{HasSymbol, SymbolTable},
 };
 
 macro_rules! declare_exhaustive {

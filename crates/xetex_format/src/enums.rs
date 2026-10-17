@@ -19,8 +19,8 @@
 use tectonic_errors::prelude::*;
 
 use crate::{
-    symbols::{DeclaresSymbols, SymbolTable},
     FormatVersion,
+    symbols::{DeclaresSymbols, SymbolTable},
 };
 
 /// A trait for a type whose values may correspond to named TeX engine

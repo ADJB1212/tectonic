@@ -18,9 +18,24 @@
 
 use lazy_static::lazy_static;
 
+#[cfg(not(test))]
 lazy_static! {
     /// Singleton initialized instance of the compilation target info
     pub static ref TARGET_CONFIG: TargetConfiguration = TargetConfiguration::default();
+}
+
+#[cfg(test)]
+lazy_static! {
+    pub static ref TARGET_CONFIG: TargetConfiguration = TargetConfiguration {
+        arch: "TESTARCH".into(),
+        feature: "TESTFEAT1,TESTFEAT2".into(),
+        os: "TESTOS".into(),
+        family: "TESTFAMILY".into(),
+        env: "TESTENV".into(),
+        endian: "LITTLE".into(),
+        pointer_width: "32".into(),
+        vendor: "TESTVENDOR".into(),
+    };
 }
 
 #[derive(Clone, Debug)]
@@ -308,26 +323,9 @@ macro_rules! target_cfg {
 
 #[cfg(test)]
 mod tests {
-    /// Set up the environment variables for testing. We intentionally choose
-    /// values that don't occur in the real world, except for parameters that
-    /// have heavily constrained options, to avoid accidentally passing
-    /// if/when running the test suite on familiar hardware.
-    fn setup_test_env() {
-        std::env::set_var("CARGO_CFG_TARGET_ARCH", "testarch");
-        std::env::set_var("CARGO_CFG_TARGET_FEATURE", "testfeat1,testfeat2");
-        std::env::set_var("CARGO_CFG_TARGET_OS", "testos");
-        std::env::set_var("CARGO_CFG_TARGET_FAMILY", "testfamily");
-        std::env::set_var("CARGO_CFG_TARGET_ENV", "testenv");
-        std::env::set_var("CARGO_CFG_TARGET_ENDIAN", "little");
-        std::env::set_var("CARGO_CFG_TARGET_POINTER_WIDTH", "32");
-        std::env::set_var("CARGO_CFG_TARGET_VENDOR", "testvendor");
-    }
-
     /// No recursion. Check all of the supported tests.
     #[test]
     fn test_level0() {
-        setup_test_env();
-
         assert!(target_cfg!(target_arch = "testarch"));
         assert!(!target_cfg!(target_arch = "wrong"));
 
@@ -342,8 +340,6 @@ mod tests {
     /// Basic recursion.
     #[test]
     fn test_level1() {
-        setup_test_env();
-
         assert!(target_cfg!(not(target_arch = "wrong")));
         assert!(!target_cfg!(not(target_arch = "testarch")));
 
@@ -377,8 +373,6 @@ mod tests {
     /// Even deeper recursion.
     #[test]
     fn test_level2() {
-        setup_test_env();
-
         assert!(target_cfg!(all(not(target_arch = "wrong"))));
         assert!(!target_cfg!(all(not(target_arch = "testarch"))));
 

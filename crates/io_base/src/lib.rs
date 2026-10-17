@@ -18,8 +18,8 @@ use std::{
     path::{Path, PathBuf},
 };
 use tectonic_errors::{
-    anyhow::{bail, ensure},
     Error, Result,
+    anyhow::{bail, ensure},
 };
 use tectonic_status_base::StatusBackend;
 use thiserror::Error as ThisError;
@@ -258,13 +258,13 @@ impl InputHandle {
 
 impl Read for InputHandle {
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-        if !buf.is_empty() {
-            if let Some(c) = self.ungetc_char {
-                // This does sometimes happen, so we need to deal with it. It's not that bad really.
-                buf[0] = c;
-                self.ungetc_char = None;
-                return Ok(self.read(&mut buf[1..])? + 1);
-            }
+        if !buf.is_empty()
+            && let Some(c) = self.ungetc_char
+        {
+            // This does sometimes happen, so we need to deal with it. It's not that bad really.
+            buf[0] = c;
+            self.ungetc_char = None;
+            return Ok(self.read(&mut buf[1..])? + 1);
         }
 
         self.ever_read = true;

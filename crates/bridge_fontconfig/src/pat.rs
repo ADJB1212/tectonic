@@ -1,7 +1,7 @@
 //! Font patterns - used to select fonts matching certain properties, or as a unique identifier
 //! of a resolved font.
 
-use super::{sys, FcErr};
+use super::{FcErr, sys};
 use std::ffi::CStr;
 use std::marker::PhantomData;
 use std::ptr;
@@ -223,12 +223,10 @@ mod tests {
         let mut has_index = false;
         for pat in fs.as_ref().fonts() {
             let file = pat.get::<File>(0);
-            if !has_file {
-                if let Ok(f) = file {
-                    // Ensure we don't fault on reading the bytes of the file
-                    let _ = f.to_str();
-                    has_file = true;
-                }
+            if !has_file && let Ok(f) = file {
+                // Ensure we don't fault on reading the bytes of the file
+                let _ = f.to_str();
+                has_file = true;
             }
             if !has_index && pat.get::<Index>(0).is_ok() {
                 has_index = true;

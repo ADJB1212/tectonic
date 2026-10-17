@@ -9,8 +9,8 @@ use tectonic_errors::prelude::*;
 
 use super::HasPrimitive;
 use crate::{
-    symbols::{HasSymbol, SymbolCategory, SymbolTable},
     FormatVersion,
+    symbols::{HasSymbol, SymbolCategory, SymbolTable},
 };
 
 /// For a variant of a dynamic enum, where its numerical value comes from.

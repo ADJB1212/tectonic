@@ -6,7 +6,7 @@
 use serde::Serialize;
 use std::{
     borrow::Cow,
-    collections::{hash_map::Iter, HashMap},
+    collections::{HashMap, hash_map::Iter},
     fs::File,
     io::{Read, Write},
     path::{Path, PathBuf},
@@ -14,7 +14,7 @@ use std::{
 use tectonic_errors::{anyhow::Context, prelude::*};
 use tectonic_status_base::tt_warning;
 
-use crate::{fonts::FontEnsemble, specials::Special, Common};
+use crate::{Common, fonts::FontEnsemble, specials::Special};
 
 /// Runtime state about which non-font assets have been created.
 #[derive(Debug, Default)]
@@ -248,7 +248,7 @@ impl AssetSpecification {
         use syntax::AssetOrigin as AO;
 
         for (path, new_origin) in &new.0 {
-            if let Some(cur_origin) = self.0 .0.get_mut(path) {
+            if let Some(cur_origin) = self.0.0.get_mut(path) {
                 match (new_origin, cur_origin) {
                     (AO::Copy(new_src), AO::Copy(cur_src)) => {
                         if cur_src != new_src {
@@ -302,7 +302,7 @@ impl AssetSpecification {
                 }
             } else {
                 // This path is undefined in the current object. Just add it!
-                self.0 .0.insert(path.clone(), new_origin.clone());
+                self.0.0.insert(path.clone(), new_origin.clone());
             }
         }
 
@@ -324,7 +324,7 @@ impl AssetSpecification {
     /// specification.
     pub fn output_paths(&self) -> impl Iterator<Item = Cow<'_, str>> {
         AssetOutputsIterator {
-            iter: self.0 .0.iter(),
+            iter: self.0.0.iter(),
             cur_vg_path: None,
             next_vg_index: 0,
         }
@@ -355,7 +355,7 @@ impl AssetSpecification {
     /// the ones this particular session knows about.
     pub(crate) fn check_runtime_assets(&self, assets: &mut Assets) -> Result<()> {
         for (path, run_origin) in &assets.paths {
-            if let Some(pre_origin) = self.0 .0.get(path) {
+            if let Some(pre_origin) = self.0.0.get(path) {
                 match (run_origin, pre_origin) {
                     (AssetOrigin::Copy(run_path), syntax::AssetOrigin::Copy(pre_path)) => {
                         ensure!(
@@ -387,7 +387,7 @@ impl AssetSpecification {
 
         // Now update the runtime assets to include all precomputed ones.
 
-        for (path, pre_origin) in &self.0 .0 {
+        for (path, pre_origin) in &self.0.0 {
             let mapped = match pre_origin {
                 syntax::AssetOrigin::Copy(pre_path) => AssetOrigin::Copy(pre_path.to_owned()),
                 syntax::AssetOrigin::FontCss(_) => AssetOrigin::FontCss,
@@ -424,20 +424,20 @@ impl<'a> Iterator for AssetOutputsIterator<'a> {
         }
 
         self.iter.next().map(|(path, origin)| {
-            if let syntax::AssetOrigin::FontFile(ref ffi) = origin {
-                if !ffi.vglyphs.is_empty() {
-                    // If we have moved on to a font file with variant glyphs,
-                    // we first (now) yield the unmodified filename, then set up
-                    // to iterate through the `vg` versions.
-                    let mut highest_vg_index = 0;
+            if let syntax::AssetOrigin::FontFile(ffi) = origin
+                && !ffi.vglyphs.is_empty()
+            {
+                // If we have moved on to a font file with variant glyphs,
+                // we first (now) yield the unmodified filename, then set up
+                // to iterate through the `vg` versions.
+                let mut highest_vg_index = 0;
 
-                    for mapping in ffi.vglyphs.values() {
-                        highest_vg_index = std::cmp::max(highest_vg_index, mapping.index);
-                    }
-
-                    self.cur_vg_path = Some(path.to_owned());
-                    self.next_vg_index = highest_vg_index;
+                for mapping in ffi.vglyphs.values() {
+                    highest_vg_index = std::cmp::max(highest_vg_index, mapping.index);
                 }
+
+                self.cur_vg_path = Some(path.to_owned());
+                self.next_vg_index = highest_vg_index;
             }
 
             Cow::Borrowed(path.as_ref())

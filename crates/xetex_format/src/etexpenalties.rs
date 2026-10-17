@@ -11,8 +11,8 @@ use std::io::Write;
 use tectonic_errors::prelude::*;
 
 use crate::{
-    symbols::{SymbolCategory, SymbolTable},
     FormatVersion,
+    symbols::{SymbolCategory, SymbolTable},
 };
 
 /// Information about e-TeX penalties parameters.

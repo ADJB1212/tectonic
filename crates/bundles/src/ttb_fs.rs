@@ -6,8 +6,8 @@
 //! The main type offered by this module is the [`Ttbv1NetBundle`] struct.
 
 use crate::{
-    ttb::{TTBFileIndex, TTBFileInfo, TTBv1Header},
     Bundle, FileIndex, FileInfo,
+    ttb::{TTBFileIndex, TTBFileInfo, TTBv1Header},
 };
 use flate2::read::GzDecoder;
 use std::{
@@ -17,7 +17,7 @@ use std::{
     path::Path,
 };
 use tectonic_errors::prelude::*;
-use tectonic_io_base::{digest::DigestData, InputHandle, InputOrigin, IoProvider, OpenResult};
+use tectonic_io_base::{InputHandle, InputOrigin, IoProvider, OpenResult, digest::DigestData};
 use tectonic_status_base::StatusBackend;
 
 /// Read a [`TTBFileInfo`] from this bundle.
@@ -88,10 +88,10 @@ impl IoProvider for TTBFsBundle<TTBFileIndex> {
         _status: &mut dyn StatusBackend,
     ) -> OpenResult<InputHandle> {
         // Fetch index if it is empty
-        if self.index.is_empty() {
-            if let Err(e) = self.fill_index() {
-                return OpenResult::Err(e);
-            }
+        if self.index.is_empty()
+            && let Err(e) = self.fill_index()
+        {
+            return OpenResult::Err(e);
         }
 
         let info = match self.index.search(name) {

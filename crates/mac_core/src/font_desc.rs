@@ -1,4 +1,4 @@
-use super::{sys, CFArray, CFDictionary, CFSet, CFString, CFType, CoreType, FontAttribute};
+use super::{CFArray, CFDictionary, CFSet, CFString, CFType, CoreType, FontAttribute, sys};
 use std::ptr::NonNull;
 
 cfty! {

@@ -4,7 +4,7 @@
 //! Parse an XDV/SPX file and dump some stats about its contents.
 
 use clap::parser::ValueSource;
-use clap::{crate_version, Arg, Command};
+use clap::{Arg, Command, crate_version};
 use std::fmt::{Display, Error as FmtError, Formatter};
 use std::fs::File;
 use std::io;

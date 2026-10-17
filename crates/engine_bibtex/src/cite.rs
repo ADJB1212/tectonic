@@ -1,10 +1,10 @@
 use crate::{
+    CiteNumber, FindCiteLocs, HashPointer,
     entries::EntryData,
     hash,
     hash::{Cite, HashData, LcCite},
     other::OtherData,
     pool::{StrNumber, StringPool},
-    CiteNumber, FindCiteLocs, HashPointer,
 };
 use std::{cmp::Ordering, ops::IndexMut};
 

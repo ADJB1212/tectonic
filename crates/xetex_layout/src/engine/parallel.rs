@@ -89,82 +89,86 @@ pub struct PreparedLayouts {
 /// # Safety
 /// Requests must contain live engines and text buffers. Engines must remain
 /// exclusively accessible to this call and alive until `ttxl_release_prepared_layouts`.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn ttxl_prepare_layouts(
     requests: *const NativeLayoutRequest,
     count: usize,
 ) -> *mut PreparedLayouts {
-    if count < 4 {
-        return ptr::null_mut();
+    unsafe {
+        if count < 4 {
+            return ptr::null_mut();
+        }
+        let requests = slice::from_raw_parts(requests, count);
+        if requests.iter().map(|request| request.length).sum::<usize>() < 256 {
+            return ptr::null_mut();
+        }
+        let Some(pool) = pool() else {
+            return ptr::null_mut();
+        };
+        prepare_layouts(requests, pool)
     }
-    let requests = slice::from_raw_parts(requests, count);
-    if requests.iter().map(|request| request.length).sum::<usize>() < 256 {
-        return ptr::null_mut();
-    }
-    let Some(pool) = pool() else {
-        return ptr::null_mut();
-    };
-    prepare_layouts(requests, pool)
 }
 
 unsafe fn prepare_layouts(
     requests: &[NativeLayoutRequest],
     pool: &rayon::ThreadPool,
 ) -> *mut PreparedLayouts {
-    let mut engines = Vec::new();
-    let mut indices = HashMap::new();
-    let mut work = Vec::new();
-    for request in requests {
-        let engine = &*request.engine;
-        if !matches!(engine.shaper, Shaper::OpenType)
-            || engine.shaper_list.len() != 2
-            || CStr::from_ptr(engine.shaper_list[0]) != c"ot"
-        {
-            continue;
+    unsafe {
+        let mut engines = Vec::new();
+        let mut indices = HashMap::new();
+        let mut work = Vec::new();
+        for request in requests {
+            let engine = &*request.engine;
+            if !matches!(engine.shaper, Shaper::OpenType)
+                || engine.shaper_list.len() != 2
+                || CStr::from_ptr(engine.shaper_list[0]) != c"ot"
+            {
+                continue;
+            }
+            let text = slice::from_raw_parts(request.text, request.length);
+            if !text.iter().all(|&ch| (32..127).contains(&ch))
+                || !text.iter().any(|&ch| (ch as u8).is_ascii_alphabetic())
+            {
+                continue;
+            }
+            let index = *indices.entry(request.engine as usize).or_insert_with(|| {
+                engines.push(request.engine);
+                engines.len() - 1
+            });
+            work.push((index, text.to_vec()));
         }
-        let text = slice::from_raw_parts(request.text, request.length);
-        if !text.iter().all(|&ch| (32..127).contains(&ch))
-            || !text.iter().any(|&ch| (ch as u8).is_ascii_alphabetic())
-        {
-            continue;
+        if work.len() < 4 {
+            return ptr::null_mut();
         }
-        let index = *indices.entry(request.engine as usize).or_insert_with(|| {
-            engines.push(request.engine);
-            engines.len() - 1
-        });
-        work.push((index, text.to_vec()));
-    }
-    if work.len() < 4 {
-        return ptr::null_mut();
-    }
-    let results = {
-        let fonts: Vec<_> = engines
-            .iter()
-            .map(|&engine| {
-                let engine = &*engine;
-                let font = engine.font().hb_font();
-                hb::sys::hb_font_make_immutable(font.as_ptr());
-                ShapingFont {
-                    font,
-                    script: engine.script,
-                    language: engine.language,
-                    features: &engine.features,
-                    vertical: engine.font().layout_dir_vertical(),
-                }
+        let results = {
+            let fonts: Vec<_> = engines
+                .iter()
+                .map(|&engine| {
+                    let engine = &*engine;
+                    let font = engine.font().hb_font();
+                    hb::sys::hb_font_make_immutable(font.as_ptr());
+                    ShapingFont {
+                        font,
+                        script: engine.script,
+                        language: engine.language,
+                        features: &engine.features,
+                        vertical: engine.font().layout_dir_vertical(),
+                    }
+                })
+                .collect();
+            pool.install(|| {
+                work.par_iter()
+                    .map(|(index, text)| fonts[*index].shape(text))
+                    .collect::<Vec<_>>()
             })
-            .collect();
-        pool.install(|| {
-            work.par_iter()
-                .map(|(index, text)| fonts[*index].shape(text))
-                .collect::<Vec<_>>()
-        })
-    };
-    for ((index, text), result) in work.into_iter().zip(results) {
-        if let Some(buffer) = result {
-            (*engines[index]).prepared_layouts.insert(text, buffer);
+        };
+        for ((index, text), result) in work.into_iter().zip(results) {
+            if let Some(buffer) = result {
+                (*engines[index]).prepared_layouts.insert(text, buffer);
+            }
         }
+        Box::into_raw(Box::new(PreparedLayouts { engines }))
     }
-    Box::into_raw(Box::new(PreparedLayouts { engines }))
 }
 
 /// Release unused prepared buffers after packing a paragraph.
@@ -172,12 +176,14 @@ unsafe fn prepare_layouts(
 /// # Safety
 /// `prepared` must be null or a live handle returned by `ttxl_prepare_layouts`.
 /// All referenced engines must still be alive and exclusively accessible.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn ttxl_release_prepared_layouts(prepared: *mut PreparedLayouts) {
-    if !prepared.is_null() {
-        let prepared = Box::from_raw(prepared);
-        for &engine in &prepared.engines {
-            (*engine).prepared_layouts.clear();
+    unsafe {
+        if !prepared.is_null() {
+            let prepared = Box::from_raw(prepared);
+            for &engine in &prepared.engines {
+                (*engine).prepared_layouts.clear();
+            }
         }
     }
 }

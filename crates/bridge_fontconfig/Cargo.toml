@@ -4,7 +4,7 @@ lints.workspace = true
 name = "tectonic_bridge_fontconfig"
 license = "MIT"
 version = "0.0.0-dev.0"
-edition = "2021"
+edition = "2024"
 links = "fontconfig"
 description = """
 Exposing fontconfig APIs to the Tectonic C/C++ and Rust code.

@@ -306,15 +306,13 @@ impl Document {
                 }
             }
 
-            if !tried_src_path {
-                if let Ok(cwd) = env::current_dir() {
-                    let full_path = cwd.join(&src_dir);
+            if !tried_src_path && let Ok(cwd) = env::current_dir() {
+                let full_path = cwd.join(&src_dir);
 
-                    if let Some(Component::Normal(t)) = full_path.components().next_back() {
-                        if let Some(s) = t.to_str() {
-                            s.clone_into(&mut name);
-                        }
-                    }
+                if let Some(Component::Normal(t)) = full_path.components().next_back()
+                    && let Some(s) = t.to_str()
+                {
+                    s.clone_into(&mut name);
                 }
             }
 

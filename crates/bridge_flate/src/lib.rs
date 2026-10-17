@@ -12,7 +12,7 @@ use std::{io::Error, slice};
 
 mod compress;
 
-pub use compress::{use_compression_pool, CompressionPoolGuard};
+pub use compress::{CompressionPoolGuard, use_compression_pool};
 
 /// Re-export of the flate2 crate linked by this crate.
 pub use flate2;
@@ -55,7 +55,7 @@ impl From<Status> for FlateResult {
 /// The input and output pointers must describe valid, nonoverlapping buffers.
 /// `output_len` must point to the output capacity, and receives the written
 /// length on success or zero on error.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn tectonic_flate_compress(
     output_ptr: *mut u8,
     output_len: *mut u64,
@@ -63,16 +63,18 @@ pub unsafe extern "C" fn tectonic_flate_compress(
     input_len: u64,
     compression_level: u32,
 ) -> FlateResult {
-    let input = slice::from_raw_parts(input_ptr, input_len as usize);
-    let output = slice::from_raw_parts_mut(output_ptr, *output_len as usize);
+    unsafe {
+        let input = slice::from_raw_parts(input_ptr, input_len as usize);
+        let output = slice::from_raw_parts_mut(output_ptr, *output_len as usize);
 
-    let (size, result) = match compress::compress(input, output, compression_level) {
-        Ok(size) => (size as u64, FlateResult::Success),
-        Err(error) => (0, error),
-    };
+        let (size, result) = match compress::compress(input, output, compression_level) {
+            Ok(size) => (size as u64, FlateResult::Success),
+            Err(error) => (0, error),
+        };
 
-    *output_len = size;
-    result
+        *output_len = size;
+        result
+    }
 }
 
 /// Deompress a block of data. This function maps fairly directly onto the
@@ -83,25 +85,27 @@ pub unsafe extern "C" fn tectonic_flate_compress(
 /// # Safety
 ///
 /// This is a C API function, so it is unsafe.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn tectonic_flate_decompress(
     output_ptr: *mut u8,
     output_len: *mut u64,
     input_ptr: *const u8,
     input_len: u64,
 ) -> FlateResult {
-    let mut dc = Decompress::new(true);
+    unsafe {
+        let mut dc = Decompress::new(true);
 
-    let input = slice::from_raw_parts(input_ptr, input_len as usize);
-    let output = slice::from_raw_parts_mut(output_ptr, *output_len as usize);
+        let input = slice::from_raw_parts(input_ptr, input_len as usize);
+        let output = slice::from_raw_parts_mut(output_ptr, *output_len as usize);
 
-    let (size, result) = match dc.decompress(input, output, FlushDecompress::Finish) {
-        Ok(status) => (dc.total_out(), status.into()),
-        Err(_) => (0, FlateResult::OtherError),
-    };
+        let (size, result) = match dc.decompress(input, output, FlushDecompress::Finish) {
+            Ok(status) => (dc.total_out(), status.into()),
+            Err(_) => (0, FlateResult::OtherError),
+        };
 
-    *output_len = size;
-    result
+        *output_len = size;
+        result
+    }
 }
 
 /// A progressive decompressor of a complete input stream.
@@ -144,21 +148,23 @@ impl Decompressor<'_> {
 /// # Safety
 ///
 /// This is a C API function, so it is unsafe.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn tectonic_flate_new_decompressor(
     input_ptr: *const u8,
     input_len: u64,
 ) -> *mut libc::c_void {
-    let input = slice::from_raw_parts(input_ptr, input_len as usize);
+    unsafe {
+        let input = slice::from_raw_parts(input_ptr, input_len as usize);
 
-    let dc = Decompressor {
-        deflate: Decompress::new(true),
-        input_data: input,
-        amount_written: 0,
-        done: false,
-    };
+        let dc = Decompressor {
+            deflate: Decompress::new(true),
+            input_data: input,
+            amount_written: 0,
+            done: false,
+        };
 
-    Box::into_raw(Box::new(dc)).cast::<libc::c_void>()
+        Box::into_raw(Box::new(dc)).cast::<libc::c_void>()
+    }
 }
 
 /// Decompress some DEFLATEd data.
@@ -173,23 +179,25 @@ pub unsafe extern "C" fn tectonic_flate_new_decompressor(
 /// # Safety
 ///
 /// This is a C API function, so it is unsafe.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn tectonic_flate_decompress_chunk(
     handle: *mut libc::c_void,
     output_ptr: *mut u8,
     output_len: *mut u64,
 ) -> libc::c_int {
-    let mut dc = Box::from_raw(handle.cast::<Decompressor>());
-    let output = slice::from_raw_parts_mut(output_ptr, *output_len as usize);
+    unsafe {
+        let mut dc = Box::from_raw(handle.cast::<Decompressor>());
+        let output = slice::from_raw_parts_mut(output_ptr, *output_len as usize);
 
-    let (amount, flag) = match dc.decompress_chunk(output) {
-        Ok(n) => (n, 0),
-        Err(_) => (0, 1),
-    };
+        let (amount, flag) = match dc.decompress_chunk(output) {
+            Ok(n) => (n, 0),
+            Err(_) => (0, 1),
+        };
 
-    *output_len = amount as u64;
-    Box::leak(dc);
-    flag
+        *output_len = amount as u64;
+        Box::leak(dc);
+        flag
+    }
 }
 
 /// Deallocate a DEFLATE decompressor.
@@ -197,8 +205,10 @@ pub unsafe extern "C" fn tectonic_flate_decompress_chunk(
 /// # Safety
 ///
 /// This is a C API function, so it is unsafe.
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub unsafe extern "C" fn tectonic_flate_free_decompressor(handle: *mut libc::c_void) {
-    let _dc = Box::from_raw(handle.cast::<Decompressor>());
-    // The box will be freed as we exit.
+    unsafe {
+        let _dc = Box::from_raw(handle.cast::<Decompressor>());
+        // The box will be freed as we exit.
+    }
 }

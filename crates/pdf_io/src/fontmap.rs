@@ -5,8 +5,8 @@
 
 use std::{
     cell::RefCell,
-    collections::{hash_map::Entry, HashMap},
-    ffi::{c_char, CStr, CString},
+    collections::{HashMap, hash_map::Entry},
+    ffi::{CStr, CString, c_char},
     io::Read,
     ops::Range,
     ptr,
@@ -90,30 +90,32 @@ fn retain_string(strings: &mut Vec<CString>, value: &[u8]) -> *mut c_char {
 
 impl OwnedRecord {
     unsafe fn copy_from(key: &[u8], source: &FontMapRecord) -> Box<Self> {
-        let mut record = *source;
-        let mut strings = Vec::new();
-        for field in [
-            &mut record.map_name,
-            &mut record.font_name,
-            &mut record.enc_name,
-            &mut record.sfd_name,
-            &mut record.subfont_id,
-            &mut record.opt.otl_tags,
-            &mut record.opt.tounicode,
-            &mut record.opt.charcoll,
-        ] {
-            if !field.is_null() {
-                let bytes = CStr::from_ptr(*field).to_bytes();
-                *field = retain_string(&mut strings, bytes);
+        unsafe {
+            let mut record = *source;
+            let mut strings = Vec::new();
+            for field in [
+                &mut record.map_name,
+                &mut record.font_name,
+                &mut record.enc_name,
+                &mut record.sfd_name,
+                &mut record.subfont_id,
+                &mut record.opt.otl_tags,
+                &mut record.opt.tounicode,
+                &mut record.opt.charcoll,
+            ] {
+                if !field.is_null() {
+                    let bytes = CStr::from_ptr(*field).to_bytes();
+                    *field = retain_string(&mut strings, bytes);
+                }
             }
+            if !source.map_name.is_null() && CStr::from_ptr(source.map_name).to_bytes() == key {
+                record.map_name = ptr::null_mut();
+            }
+            Box::new(Self {
+                record,
+                _strings: strings,
+            })
         }
-        if !source.map_name.is_null() && CStr::from_ptr(source.map_name).to_bytes() == key {
-            record.map_name = ptr::null_mut();
-        }
-        Box::new(Self {
-            record,
-            _strings: strings,
-        })
     }
 }
 
@@ -294,11 +296,7 @@ fn map_format(line: &[u8]) -> i32 {
         count += 1;
         cursor.skip_blank();
     }
-    if count == 2 {
-        0
-    } else {
-        1
-    }
+    if count == 2 { 0 } else { 1 }
 }
 
 struct ParsedLine {
@@ -437,25 +435,27 @@ impl MapReader {
             if !mismatch {
                 self.format = self.format.saturating_add(format);
             }
-            if !mismatch && self.format <= 0 && !self.verbose {
-                if let Some(parsed) = parse_dvips(line) {
-                    let key = &line[parsed.key];
-                    if self.mode == Mode::Remove {
-                        records.remove(key);
-                    } else if self.mode == Mode::Replace || !records.contains_key(key) {
-                        let record = ParsedRecord {
-                            source: self.source.clone(),
-                            font: start + parsed.font.start..start + parsed.font.end,
-                            encoding: parsed
-                                .encoding
-                                .map(|span| start + span.start..start + span.end),
-                            slant: parsed.slant,
-                            extend: parsed.extend,
-                        };
-                        records.insert(key.into(), StoredRecord::Parsed(record));
-                    }
-                    continue;
+            if !mismatch
+                && self.format <= 0
+                && !self.verbose
+                && let Some(parsed) = parse_dvips(line)
+            {
+                let key = &line[parsed.key];
+                if self.mode == Mode::Remove {
+                    records.remove(key);
+                } else if self.mode == Mode::Replace || !records.contains_key(key) {
+                    let record = ParsedRecord {
+                        source: self.source.clone(),
+                        font: start + parsed.font.start..start + parsed.font.end,
+                        encoding: parsed
+                            .encoding
+                            .map(|span| start + span.start..start + span.end),
+                        slant: parsed.slant,
+                        extend: parsed.extend,
+                    };
+                    records.insert(key.into(), StoredRecord::Parsed(record));
                 }
+                continue;
             }
             self.pending = Some(CString::new(line).expect("line was truncated at NUL"));
             return if mismatch { 2 } else { 1 };
@@ -464,63 +464,69 @@ impl MapReader {
     }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn tt_fontmap_reset() {
     FONT_MAPS.with(|maps| *maps.borrow_mut() = FontMaps::default());
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 pub(crate) extern "C" fn tt_fontmap_clear() {
     tt_fontmap_reset();
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn tt_fontmap_lookup(key: *const c_char) -> *mut FontMapRecord {
-    if key.is_null() {
-        return ptr::null_mut();
+    unsafe {
+        if key.is_null() {
+            return ptr::null_mut();
+        }
+        let key = CStr::from_ptr(key).to_bytes();
+        FONT_MAPS.with(|maps| {
+            maps.borrow_mut()
+                .records
+                .get_mut(key)
+                .map_or(ptr::null_mut(), StoredRecord::as_mut_ptr)
+        })
     }
-    let key = CStr::from_ptr(key).to_bytes();
-    FONT_MAPS.with(|maps| {
-        maps.borrow_mut()
-            .records
-            .get_mut(key)
-            .map_or(ptr::null_mut(), StoredRecord::as_mut_ptr)
-    })
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn tt_fontmap_insert(
     key: *const c_char,
     record: *const FontMapRecord,
     replace: i32,
 ) -> *mut FontMapRecord {
-    let key = CStr::from_ptr(key).to_bytes();
-    // Copy before borrowing the table: the source may itself be a stored record.
-    let owned = OwnedRecord::copy_from(key, &*record);
-    FONT_MAPS.with(|maps| {
-        let mut maps = maps.borrow_mut();
-        let stored = match maps.records.entry(key.into()) {
-            Entry::Occupied(mut entry) => {
-                if replace != 0 {
-                    entry.insert(StoredRecord::Ready(owned));
+    unsafe {
+        let key = CStr::from_ptr(key).to_bytes();
+        // Copy before borrowing the table: the source may itself be a stored record.
+        let owned = OwnedRecord::copy_from(key, &*record);
+        FONT_MAPS.with(|maps| {
+            let mut maps = maps.borrow_mut();
+            let stored = match maps.records.entry(key.into()) {
+                Entry::Occupied(mut entry) => {
+                    if replace != 0 {
+                        entry.insert(StoredRecord::Ready(owned));
+                    }
+                    entry.into_mut()
                 }
-                entry.into_mut()
-            }
-            Entry::Vacant(entry) => entry.insert(StoredRecord::Ready(owned)),
-        };
-        stored.as_mut_ptr()
-    })
+                Entry::Vacant(entry) => entry.insert(StoredRecord::Ready(owned)),
+            };
+            stored.as_mut_ptr()
+        })
+    }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn tt_fontmap_remove(key: *const c_char) {
-    let key = CStr::from_ptr(key).to_bytes();
-    FONT_MAPS.with(|maps| {
-        maps.borrow_mut().records.remove(key);
-    });
+    unsafe {
+        let key = CStr::from_ptr(key).to_bytes();
+        FONT_MAPS.with(|maps| {
+            maps.borrow_mut().records.remove(key);
+        });
+    }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn tt_fontmap_load_begin(handle: Option<InputId>, mode: i32, verbose: i32) -> i32 {
     let mut bytes = Vec::new();
     let result = CoreBridgeState::with_global_state(|state| {
@@ -534,35 +540,33 @@ extern "C" fn tt_fontmap_load_begin(handle: Option<InputId>, mode: i32, verbose:
             .reserve(bytes.iter().filter(|&&b| b == b'\n').count());
         maps.reader = Some(MapReader::new(bytes, Mode::from_raw(mode), verbose > 3));
     });
-    if result.is_ok() {
-        0
-    } else {
-        -1
-    }
+    if result.is_ok() { 0 } else { -1 }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn tt_fontmap_load_next(
     line: *mut *const c_char,
     line_number: *mut i32,
     format: *mut i32,
 ) -> i32 {
-    FONT_MAPS.with(|maps| {
-        let mut maps = maps.borrow_mut();
-        let FontMaps { records, reader } = &mut *maps;
-        let reader = reader.as_mut().expect("font-map load in progress");
-        let result = reader.next(records);
-        *line = reader
-            .pending
-            .as_ref()
-            .map_or(ptr::null(), |line| line.as_ptr());
-        *line_number = reader.line_number;
-        *format = reader.format;
-        result
-    })
+    unsafe {
+        FONT_MAPS.with(|maps| {
+            let mut maps = maps.borrow_mut();
+            let FontMaps { records, reader } = &mut *maps;
+            let reader = reader.as_mut().expect("font-map load in progress");
+            let result = reader.next(records);
+            *line = reader
+                .pending
+                .as_ref()
+                .map_or(ptr::null(), |line| line.as_ptr());
+            *line_number = reader.line_number;
+            *format = reader.format;
+            result
+        })
+    }
 }
 
-#[no_mangle]
+#[unsafe(no_mangle)]
 extern "C" fn tt_fontmap_load_end() {
     FONT_MAPS.with(|maps| maps.borrow_mut().reader = None);
 }
@@ -594,7 +598,9 @@ mod tests {
             record.opt.charcoll,
         ]
         .iter()
-        .map(|&pointer| (!pointer.is_null()).then(|| CStr::from_ptr(pointer).to_bytes().to_vec()))
+        .map(|&pointer| {
+            (!pointer.is_null()).then(|| unsafe { CStr::from_ptr(pointer) }.to_bytes().to_vec())
+        })
         .collect()
     }
 
@@ -675,9 +681,11 @@ mod tests {
         let mut records = HashMap::new();
         assert_eq!(reader.next(&mut records), 0);
         assert_eq!(records.len(), 2);
-        assert!(records
-            .values()
-            .all(|record| matches!(record, StoredRecord::Parsed(_))));
+        assert!(
+            records
+                .values()
+                .all(|record| matches!(record, StoredRecord::Parsed(_)))
+        );
         let pointer = records.get_mut(b"font".as_slice()).unwrap().as_mut_ptr();
         for index in 0..10000 {
             let source = format!("f{index} Font <font.pfb\n").into_bytes();
@@ -711,12 +719,14 @@ mod tests {
         let mut reader = MapReader::new(source, Mode::Append, false);
         let mut records = HashMap::new();
         assert_eq!(reader.next(&mut records), 2);
-        assert!(reader
-            .pending
-            .as_ref()
-            .unwrap()
-            .to_bytes()
-            .starts_with(b"font default"));
+        assert!(
+            reader
+                .pending
+                .as_ref()
+                .unwrap()
+                .to_bytes()
+                .starts_with(b"font default")
+        );
         assert!(records.contains_key(b"font".as_slice()));
         assert!(records.contains_key(b"other".as_slice()));
         assert_eq!(reader.next(&mut records), 0);

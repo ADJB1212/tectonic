@@ -3,7 +3,7 @@
 
 //! Learned working-set prefetching for cached bundles.
 
-use super::{file_create_write, BundleCache};
+use super::{BundleCache, file_create_write};
 use crate::{FileIndex, FileInfo};
 use std::{
     collections::HashSet,
@@ -12,7 +12,7 @@ use std::{
     path::Path,
 };
 use tectonic_io_base::OpenResult;
-use tectonic_status_base::{tt_note, StatusBackend};
+use tectonic_status_base::{StatusBackend, tt_note};
 
 /// Upper bound on the number of file names recorded in a prefetch manifest.
 const MAX_MANIFEST_ENTRIES: usize = 512;
@@ -70,10 +70,11 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
         let mut infos = Vec::new();
         let mut paths = HashSet::new();
         for name in names {
-            if let Some(info) = self.bundle.search(name) {
-                if !self.get_file_path(&info).exists() && paths.insert(info.path().to_owned()) {
-                    infos.push(info);
-                }
+            if let Some(info) = self.bundle.search(name)
+                && !self.get_file_path(&info).exists()
+                && paths.insert(info.path().to_owned())
+            {
+                infos.push(info);
             }
         }
 

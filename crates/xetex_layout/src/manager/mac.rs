@@ -1,7 +1,7 @@
 use crate::c_api::PlatformFontRef;
 use crate::manager::{
-    base_get_op_size_rec_and_style_flags, FontInfo, FontManager, FontManagerBackend, FontMaps,
-    NameCollection,
+    FontInfo, FontManager, FontManagerBackend, FontMaps, NameCollection,
+    base_get_op_size_rec_and_style_flags,
 };
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
@@ -85,10 +85,10 @@ impl FontManagerBackend for MacBackend {
             // SAFETY: CFUrl has no generic parameters
             .and_then(|ty| unsafe { ty.downcast::<CFUrl>() }.ok());
 
-        if let Some(url) = url {
-            if let Some(fs_path) = url.fs_representation() {
-                path = Cow::Owned(fs_path);
-            }
+        if let Some(url) = url
+            && let Some(fs_path) = url.fs_representation()
+        {
+            path = Cow::Owned(fs_path);
         }
 
         path

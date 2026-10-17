@@ -9,8 +9,8 @@
 use std::path::PathBuf;
 
 use crate::document::{
-    BuildTargetType, InputFile, OutputProfile, DEFAULT_INDEX_FILE, DEFAULT_POSTAMBLE_FILE,
-    DEFAULT_PREAMBLE_FILE,
+    BuildTargetType, DEFAULT_INDEX_FILE, DEFAULT_POSTAMBLE_FILE, DEFAULT_PREAMBLE_FILE, InputFile,
+    OutputProfile,
 };
 use serde::{Deserialize, Serialize, Serializer};
 

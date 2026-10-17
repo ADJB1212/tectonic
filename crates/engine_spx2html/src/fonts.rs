@@ -9,12 +9,12 @@
 use std::{collections::HashMap, fmt::Write, io::Read, path::Path};
 use tectonic_errors::prelude::*;
 use tectonic_io_base::{InputHandle, OpenResult};
-use tectonic_status_base::{tt_warning, StatusBackend};
+use tectonic_status_base::{StatusBackend, tt_warning};
 
 use crate::{
+    Common, FixedPoint, TexFontNum,
     assets::syntax,
     fontfile::{FontFileData, GlyphId, GlyphMetrics, MapEntry},
-    Common, FixedPoint, TexFontNum,
 };
 
 /// An identifier for a "font file" (which may be one face in a collection).
@@ -349,20 +349,20 @@ impl FontEnsemble {
         cur_af: FamilyRelativeFontId,
     ) -> FontFamilyAnalysis {
         if let Ok(tf) = self.lookup_tex(fnum) {
-            if let Ok(tc) = self.lookup_tex(cur_ffid) {
-                if let Some(cur_fam) = self.font_families.get(&tc.fid) {
-                    // Already set up for the right font? If so, great!
-                    return if cur_fam.relative_id_to_font_num(cur_af) == tf.fid {
-                        FontFamilyAnalysis::AlreadyActive
-                    } else {
-                        // No. Figure out what we need to do.
-                        let desired_af = cur_fam.font_num_to_relative_id(tf.fid);
-                        FontFamilyAnalysis::Reachable(
-                            cur_fam.path_to_new_font(cur_af, desired_af),
-                            desired_af,
-                        )
-                    };
-                }
+            if let Ok(tc) = self.lookup_tex(cur_ffid)
+                && let Some(cur_fam) = self.font_families.get(&tc.fid)
+            {
+                // Already set up for the right font? If so, great!
+                return if cur_fam.relative_id_to_font_num(cur_af) == tf.fid {
+                    FontFamilyAnalysis::AlreadyActive
+                } else {
+                    // No. Figure out what we need to do.
+                    let desired_af = cur_fam.font_num_to_relative_id(tf.fid);
+                    FontFamilyAnalysis::Reachable(
+                        cur_fam.path_to_new_font(cur_af, desired_af),
+                        desired_af,
+                    )
+                };
             }
 
             FontFamilyAnalysis::NoMatch(tf.fid)
@@ -989,7 +989,7 @@ mod tests {
     use super::*;
     use std::io::Cursor;
     use tectonic_bridge_core::DriverHooks;
-    use tectonic_io_base::{digest::DigestData, InputOrigin, IoProvider};
+    use tectonic_io_base::{InputOrigin, IoProvider, digest::DigestData};
     use tectonic_status_base::NoopStatusBackend;
 
     const FONT: &[u8] = include_bytes!("../../../tests/assets/lmroman12-regular.otf");
@@ -1088,9 +1088,11 @@ mod tests {
                 out_base: None,
                 precomputed_assets: None,
             };
-            assert!(fonts
-                .load_external_font("font.otf", 0, &mut common)
-                .is_err());
+            assert!(
+                fonts
+                    .load_external_font("font.otf", 0, &mut common)
+                    .is_err()
+            );
         }
         hooks.contents = FONT;
         {

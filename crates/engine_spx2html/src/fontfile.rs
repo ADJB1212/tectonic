@@ -11,12 +11,12 @@
 //! sometimes necessary.
 
 use byteorder::{BigEndian, ByteOrder, WriteBytesExt};
-use percent_encoding::{utf8_percent_encode, CONTROLS};
+use percent_encoding::{CONTROLS, utf8_percent_encode};
 use pinot::{
+    FontDataRef, TableProvider,
     math::MathVariants,
     otl::{Feature, SubtableKind},
     types::{FWord, Tag, UfWord},
-    FontDataRef, TableProvider,
 };
 use std::{collections::HashMap, num::Wrapping, path::Path};
 use tectonic_errors::prelude::*;
@@ -218,10 +218,10 @@ impl FontFileData {
 
         // Check for math extras.
 
-        if let Some(math) = font.math() {
-            if let Some(variants) = math.variants() {
-                load_math_variants(&mut gmap, &variants, &dglyphs[..])?;
-            }
+        if let Some(math) = font.math()
+            && let Some(variants) = math.variants()
+        {
+            load_math_variants(&mut gmap, &variants, &dglyphs[..])?;
         }
 
         // Get horizontal metrics data. Note that pinot doesn't currently
@@ -358,10 +358,10 @@ impl FontFileData {
     ) -> Option<GlyphVariantMapping> {
         let map_entry = self.variant_map_allocations.entry(glyph);
 
-        if self.no_new_variants {
-            if let std::collections::hash_map::Entry::Vacant(_) = map_entry {
-                return None;
-            }
+        if self.no_new_variants
+            && let std::collections::hash_map::Entry::Vacant(_) = map_entry
+        {
+            return None;
         }
 
         let new_index = self
@@ -579,15 +579,15 @@ fn load_ssty_mappings(
             for glyph in dglyphs {
                 let c = map.get(glyph).unwrap().get_char();
 
-                if let Some(cov) = st.covered(*glyph) {
-                    if let Some(sl) = t.get(cov) {
-                        if let Some(g) = sl.get(0) {
-                            map.insert(g, MapEntry::SubSuperScript(c, false));
-                        }
+                if let Some(cov) = st.covered(*glyph)
+                    && let Some(sl) = t.get(cov)
+                {
+                    if let Some(g) = sl.get(0) {
+                        map.insert(g, MapEntry::SubSuperScript(c, false));
+                    }
 
-                        if let Some(g) = sl.get(1) {
-                            map.insert(g, MapEntry::SubSuperScript(c, true));
-                        }
+                    if let Some(g) = sl.get(1) {
+                        map.insert(g, MapEntry::SubSuperScript(c, true));
                     }
                 }
             }

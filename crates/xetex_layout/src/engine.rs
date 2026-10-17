@@ -190,12 +190,10 @@ impl LayoutEngine {
 
     /// Get the number of characters in the given slice
     pub fn layout_chars(&mut self, chars: &[u16], rtl: bool) -> usize {
-        if !rtl {
-            if let Some(prepared) = self.prepared_layouts.remove(chars) {
-                self.hb_buffer = prepared.0;
-                self.shaper = Shaper::OpenType;
-                return self.hb_buffer.as_ref().len();
-            }
+        if !rtl && let Some(prepared) = self.prepared_layouts.remove(chars) {
+            self.hb_buffer = prepared.0;
+            self.shaper = Shaper::OpenType;
+            return self.hb_buffer.as_ref().len();
         }
         let hb_font = self.font.hb_font();
         let hb_face = hb_font.face();

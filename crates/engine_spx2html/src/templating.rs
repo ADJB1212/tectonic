@@ -73,11 +73,15 @@ impl Templating {
 
     pub(crate) fn emit(&mut self, common: &mut Common) -> Result<()> {
         if self.next_template_path.is_empty() {
-            bail!("need to emit HTML content but no template has been specified; is your document HTML-compatible?");
+            bail!(
+                "need to emit HTML content but no template has been specified; is your document HTML-compatible?"
+            );
         }
 
         if self.next_output_path.is_empty() {
-            bail!("need to emit HTML content but no output path has been specified; is your document HTML-compatible?");
+            bail!(
+                "need to emit HTML content but no output path has been specified; is your document HTML-compatible?"
+            );
         }
 
         let (out_path, n_levels) =

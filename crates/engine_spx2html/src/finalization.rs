@@ -7,7 +7,7 @@ use tectonic_errors::prelude::*;
 use tectonic_status_base::tt_warning;
 
 use crate::{
-    assets::Assets, fonts::FontEnsemble, specials::Special, templating::Templating, Common,
+    Common, assets::Assets, fonts::FontEnsemble, specials::Special, templating::Templating,
 };
 
 #[derive(Debug)]

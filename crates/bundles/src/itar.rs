@@ -16,7 +16,7 @@
 //! then used to construct an HTTP Range request to obtain the file as needed.
 
 use crate::{
-    batch, Bundle, CachableBundle, FileIndex, FileInfo, NET_RETRY_ATTEMPTS, NET_RETRY_SLEEP_MS,
+    Bundle, CachableBundle, FileIndex, FileInfo, NET_RETRY_ATTEMPTS, NET_RETRY_SLEEP_MS, batch,
 };
 use flate2::read::GzDecoder;
 use std::{
@@ -28,8 +28,8 @@ use std::{
 };
 use tectonic_errors::prelude::*;
 use tectonic_geturl::{DefaultBackend, DefaultRangeReader, GetUrlBackend, RangeReader};
-use tectonic_io_base::{digest, InputHandle, InputOrigin, IoProvider, OpenResult};
-use tectonic_status_base::{tt_note, tt_warning, NoopStatusBackend, StatusBackend};
+use tectonic_io_base::{InputHandle, InputOrigin, IoProvider, OpenResult, digest};
+use tectonic_status_base::{NoopStatusBackend, StatusBackend, tt_note, tt_warning};
 
 /// Read a single file's bytes through `reader`, retrying on transient failures.
 ///

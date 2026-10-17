@@ -6,9 +6,9 @@
 //! The hash table for multi-letter control sequences.
 
 use nom::{
+    IResult, Parser,
     multi::count,
     number::complete::{be_i32, be_u8},
-    IResult, Parser,
 };
 use tectonic_errors::prelude::*;
 

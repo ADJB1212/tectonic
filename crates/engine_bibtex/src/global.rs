@@ -1,4 +1,4 @@
-use crate::{pool::StrNumber, ASCIICode};
+use crate::{ASCIICode, pool::StrNumber};
 
 const MAX_GLOB_STRS: usize = 10;
 pub(crate) const GLOB_STR_SIZE: usize = 20000;

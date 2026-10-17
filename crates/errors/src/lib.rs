@@ -151,7 +151,7 @@ macro_rules! a_ok_or {
 /// - Rust's `std::result::Result` type aliased as StdResult for convenience
 pub mod prelude {
     pub use crate::{a_ok_or, atry};
-    pub use anyhow::{anyhow, bail, ensure, Error, Result};
+    pub use anyhow::{Error, Result, anyhow, bail, ensure};
     pub use std::result::Result as StdResult;
 }
 

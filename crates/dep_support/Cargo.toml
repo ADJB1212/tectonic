@@ -15,7 +15,7 @@ documentation = "https://docs.rs/tectonic_dep_support"
 repository = "https://github.com/tectonic-typesetting/tectonic/"
 readme = "README.md"
 license = "MIT"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 pkg-config = "^0.3"

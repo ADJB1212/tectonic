@@ -108,14 +108,13 @@ pub(crate) fn get_font_funcs() -> hb::FontFuncsRef<'static, Arc<Mutex<ft::Face>>
             f.glyph_contour_point(|_, face, gid, point_index| {
                 let mut face = face.lock().unwrap();
 
-                if let Ok(glyph) = face.load_glyph(gid, ft::LoadFlags::NO_SCALE) {
-                    if let Some(outline) = glyph.outline() {
-                        if point_index < (outline.n_points as u32) {
-                            let x = outline.points()[point_index as usize].x as hb::Position;
-                            let y = outline.points()[point_index as usize].y as hb::Position;
-                            return Some((x, y));
-                        }
-                    }
+                if let Ok(glyph) = face.load_glyph(gid, ft::LoadFlags::NO_SCALE)
+                    && let Some(outline) = glyph.outline()
+                    && point_index < (outline.n_points as u32)
+                {
+                    let x = outline.points()[point_index as usize].x as hb::Position;
+                    let y = outline.points()[point_index as usize].y as hb::Position;
+                    return Some((x, y));
                 }
                 None
             });
@@ -567,28 +566,28 @@ pub(crate) fn get_file_name_from_ct_font(ct_font: &CTFont, index: &mut u32) -> O
     *index = 0;
 
     let face = ft::Face::new(&pathname, 0);
-    if let Ok(face) = face {
-        if face.num_faces() > 1 {
-            let num_faces = face.num_faces();
-            let ps_name1 = ct_font.name(FontNameKey::PostScript);
-            *index = u32::MAX;
-            for i in 0..num_faces {
-                let face = ft::Face::new(&pathname, i);
-                if let Ok(face) = face {
-                    let ps_name2 = face.get_postscript_name();
-                    match (&ps_name1, ps_name2) {
-                        (None, None) => {
-                            *index = i as u32;
-                            break;
-                        }
-                        (Some(name1), Some(name2))
-                            if name1.as_cstr().is_some_and(|name1| name1 == name2) =>
-                        {
-                            *index = i as u32;
-                            break;
-                        }
-                        _ => (),
+    if let Ok(face) = face
+        && face.num_faces() > 1
+    {
+        let num_faces = face.num_faces();
+        let ps_name1 = ct_font.name(FontNameKey::PostScript);
+        *index = u32::MAX;
+        for i in 0..num_faces {
+            let face = ft::Face::new(&pathname, i);
+            if let Ok(face) = face {
+                let ps_name2 = face.get_postscript_name();
+                match (&ps_name1, ps_name2) {
+                    (None, None) => {
+                        *index = i as u32;
+                        break;
                     }
+                    (Some(name1), Some(name2))
+                        if name1.as_cstr().is_some_and(|name1| name1 == name2) =>
+                    {
+                        *index = i as u32;
+                        break;
+                    }
+                    _ => (),
                 }
             }
         }

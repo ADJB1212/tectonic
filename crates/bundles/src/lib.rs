@@ -16,8 +16,8 @@
 //! - [`zip::ZipBundle`] for a ZIP-format bundle.
 
 use std::{fmt::Debug, io::Read, path::PathBuf};
-use tectonic_errors::{prelude::bail, Result};
-use tectonic_io_base::{digest::DigestData, InputHandle, IoProvider, OpenResult};
+use tectonic_errors::{Result, prelude::bail};
+use tectonic_io_base::{InputHandle, IoProvider, OpenResult, digest::DigestData};
 use tectonic_status_base::StatusBackend;
 
 mod batch;

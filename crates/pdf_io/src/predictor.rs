@@ -10,7 +10,7 @@ use std::{
 
 const PARALLEL_THRESHOLD: usize = 256 * 1024;
 
-extern "C" {
+unsafe extern "C" {
     fn tt_pdf_filter_png_rows(
         raster: *const u8,
         destination: *mut u8,
@@ -78,7 +78,7 @@ fn filter_parallel(
 /// The buffers must be nonoverlapping and valid for `row_bytes * rows` input
 /// bytes and `(row_bytes + 1) * rows` output bytes. Dimensions must be nonnegative
 /// and products must fit i32. `bytes_per_pixel` must be positive.
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn tt_pdf_filter_png_parallel(
     raster: *const u8,
     destination: *mut u8,
@@ -86,18 +86,20 @@ unsafe extern "C" fn tt_pdf_filter_png_parallel(
     rows: i32,
     bytes_per_pixel: i32,
 ) {
-    if rows == 0 {
-        return;
-    }
-    if row_bytes == 0 {
-        slice::from_raw_parts_mut(destination, rows as usize).fill(0);
-        return;
-    }
-    let source = slice::from_raw_parts(raster, row_bytes as usize * rows as usize);
-    let destination =
-        slice::from_raw_parts_mut(destination, (row_bytes as usize + 1) * rows as usize);
-    if source.len() >= PARALLEL_THRESHOLD {
-        if let Some(pool) = pool() {
+    unsafe {
+        if rows == 0 {
+            return;
+        }
+        if row_bytes == 0 {
+            slice::from_raw_parts_mut(destination, rows as usize).fill(0);
+            return;
+        }
+        let source = slice::from_raw_parts(raster, row_bytes as usize * rows as usize);
+        let destination =
+            slice::from_raw_parts_mut(destination, (row_bytes as usize + 1) * rows as usize);
+        if source.len() >= PARALLEL_THRESHOLD
+            && let Some(pool) = pool()
+        {
             filter_parallel(
                 source,
                 destination,
@@ -107,15 +109,15 @@ unsafe extern "C" fn tt_pdf_filter_png_parallel(
             );
             return;
         }
+        tt_pdf_filter_png_rows(
+            source.as_ptr(),
+            destination.as_mut_ptr(),
+            row_bytes,
+            bytes_per_pixel,
+            0,
+            rows,
+        );
     }
-    tt_pdf_filter_png_rows(
-        source.as_ptr(),
-        destination.as_mut_ptr(),
-        row_bytes,
-        bytes_per_pixel,
-        0,
-        rows,
-    );
 }
 
 fn filter_tiff_row(
@@ -208,7 +210,7 @@ fn filter_tiff(
 /// Buffers must be valid and nonoverlapping for `ceil(columns * bpc * colors / 8)
 /// * rows` bytes. Dimensions must be nonnegative with products fitting i32;
 /// `bpc` and `colors` must be positive.
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn tt_pdf_filter_tiff_parallel(
     raster: *const u8,
     destination: *mut u8,
@@ -217,25 +219,28 @@ unsafe extern "C" fn tt_pdf_filter_tiff_parallel(
     bpc: i32,
     colors: i32,
 ) {
-    let length = (columns as usize * bpc as usize * colors as usize).div_ceil(8) * rows as usize;
-    if length == 0 {
-        return;
+    unsafe {
+        let length =
+            (columns as usize * bpc as usize * colors as usize).div_ceil(8) * rows as usize;
+        if length == 0 {
+            return;
+        }
+        let source = slice::from_raw_parts(raster, length);
+        let destination = slice::from_raw_parts_mut(destination, length);
+        let pool = if length >= PARALLEL_THRESHOLD {
+            pool()
+        } else {
+            None
+        };
+        filter_tiff(
+            source,
+            destination,
+            columns as usize,
+            bpc as usize,
+            colors as usize,
+            pool.as_deref(),
+        );
     }
-    let source = slice::from_raw_parts(raster, length);
-    let destination = slice::from_raw_parts_mut(destination, length);
-    let pool = if length >= PARALLEL_THRESHOLD {
-        pool()
-    } else {
-        None
-    };
-    filter_tiff(
-        source,
-        destination,
-        columns as usize,
-        bpc as usize,
-        colors as usize,
-        pool.as_deref(),
-    );
 }
 
 pub(crate) fn filter_owned(
@@ -414,8 +419,11 @@ mod tests {
         };
         let serial = measure(&mut output, None);
         let parallel = measure(&mut output, Some(&pool));
-        eprintln!("24 MiB TIFF predictor, 10 iterations, {} workers: serial={serial:?}, parallel={parallel:?}, speedup={:.2}x",
-            pool.current_num_threads(), serial.as_secs_f64() / parallel.as_secs_f64());
+        eprintln!(
+            "24 MiB TIFF predictor, 10 iterations, {} workers: serial={serial:?}, parallel={parallel:?}, speedup={:.2}x",
+            pool.current_num_threads(),
+            serial.as_secs_f64() / parallel.as_secs_f64()
+        );
     }
 
     #[test]
@@ -488,6 +496,10 @@ mod tests {
             std::hint::black_box(&output);
         }
         let parallel = start.elapsed();
-        eprintln!("12 MiB PDF image, 3 iterations, {} workers: serial={serial:?}, parallel={parallel:?}, speedup={:.2}x", pool.current_num_threads(), serial.as_secs_f64() / parallel.as_secs_f64());
+        eprintln!(
+            "12 MiB PDF image, 3 iterations, {} workers: serial={serial:?}, parallel={parallel:?}, speedup={:.2}x",
+            pool.current_num_threads(),
+            serial.as_secs_f64() / parallel.as_secs_f64()
+        );
     }
 }

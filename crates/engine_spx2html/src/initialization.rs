@@ -8,8 +8,8 @@ use tectonic_errors::prelude::*;
 use tectonic_status_base::tt_warning;
 
 use crate::{
-    fonts::FontEnsemble, html::Element, specials::Special, templating::Templating, Common,
-    EmittingState, FixedPoint, TexFontNum,
+    Common, EmittingState, FixedPoint, TexFontNum, fonts::FontEnsemble, html::Element,
+    specials::Special, templating::Templating,
 };
 
 #[derive(Debug)]

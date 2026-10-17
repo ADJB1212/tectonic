@@ -1,4 +1,4 @@
-use crate::{sys, Property};
+use crate::{Property, sys};
 use std::marker::PhantomData;
 use std::ptr::NonNull;
 

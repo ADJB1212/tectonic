@@ -10,7 +10,7 @@ use std::{
     str::FromStr,
 };
 use tectonic_errors::prelude::*;
-use tectonic_io_base::{digest, filesystem::FilesystemIo, InputHandle, IoProvider, OpenResult};
+use tectonic_io_base::{InputHandle, IoProvider, OpenResult, digest, filesystem::FilesystemIo};
 use tectonic_status_base::{NoopStatusBackend, StatusBackend};
 
 use super::Bundle;
@@ -69,11 +69,7 @@ impl Bundle for DirBundle {
             .filter(|x| !x.file_type().map(|x| x.is_dir()).unwrap_or(false))
             .filter_map(|x| {
                 let name = x.file_name().into_string().ok()?;
-                if !name.is_empty() {
-                    Some(name)
-                } else {
-                    None
-                }
+                if !name.is_empty() { Some(name) } else { None }
             })
             .collect()
     }

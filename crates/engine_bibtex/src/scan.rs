@@ -1,8 +1,9 @@
 use crate::{
-    bibs::{compress_bib_white, eat_bib_white_space, BibCommand, BibData},
+    ASCIICode, Bibtex, BibtexError, BufPointer, GlobalItems, HashPointer,
+    bibs::{BibCommand, BibData, compress_bib_white, eat_bib_white_space},
     buffer::{BufTy, GlobalBuffer},
     char_info::{IdClass, LexClass},
-    cite::{add_database_cite, CiteInfo},
+    cite::{CiteInfo, add_database_cite},
     exec::{ControlSeq, ExecCtx},
     hash,
     hash::{BstFn, HashData},
@@ -16,7 +17,6 @@ use crate::{
     other::WizOp,
     peekable::input_ln,
     pool::{StrNumber, StringPool},
-    ASCIICode, Bibtex, BibtexError, BufPointer, GlobalItems, HashPointer,
 };
 
 #[derive(Clone, Copy)]
@@ -262,7 +262,7 @@ fn handle_char(
 
             match res {
                 None => {
-                    return skip_token_unknown_function_print(ctx, globals.buffers, globals.pool)
+                    return skip_token_unknown_function_print(ctx, globals.buffers, globals.pool);
                 }
                 Some(loc) if loc == wiz_loc => {
                     return print_recursion_illegal(ctx, globals.buffers, globals.pool);
@@ -313,7 +313,7 @@ fn handle_char(
 
             match res {
                 None => {
-                    return skip_token_unknown_function_print(ctx, globals.buffers, globals.pool)
+                    return skip_token_unknown_function_print(ctx, globals.buffers, globals.pool);
                 }
                 Some(loc) if loc == wiz_loc => {
                     return print_recursion_illegal(ctx, globals.buffers, globals.pool);

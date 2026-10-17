@@ -6,9 +6,9 @@
 //! The TeX dynamic memory array.
 
 use nom::{
+    IResult, Parser,
     multi::count,
     number::complete::{be_i32, be_u8},
-    IResult, Parser,
 };
 
 use crate::{

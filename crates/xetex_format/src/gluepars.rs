@@ -7,8 +7,8 @@ use std::io::Write;
 use tectonic_errors::prelude::*;
 
 use crate::{
-    symbols::{SymbolCategory, SymbolTable},
     FormatVersion,
+    symbols::{SymbolCategory, SymbolTable},
 };
 
 /// Different kinds of glue parameters.

@@ -17,7 +17,7 @@ documentation = "https://docs.rs/tectonic_bundles"
 repository = "https://github.com/tectonic-typesetting/tectonic/"
 readme = "README.md"
 license = "MIT"
-edition = "2021"
+edition = "2024"
 
 [dependencies]
 flate2 = { version = "^1.0.19", default-features = false, features = ["zlib"] }

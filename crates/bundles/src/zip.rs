@@ -11,9 +11,9 @@ use std::{
     str::FromStr,
 };
 use tectonic_errors::prelude::*;
-use tectonic_io_base::{digest, InputHandle, InputOrigin, IoProvider, OpenResult};
+use tectonic_io_base::{InputHandle, InputOrigin, IoProvider, OpenResult, digest};
 use tectonic_status_base::{NoopStatusBackend, StatusBackend};
-use zip::{result::ZipError, ZipArchive};
+use zip::{ZipArchive, result::ZipError};
 
 /// A bundle backed by a ZIP file.
 pub struct ZipBundle<R: Read + Seek> {
@@ -110,7 +110,7 @@ impl<R: Read + Seek> Bundle for ZipBundle<R> {
 mod tests {
     use super::*;
     use std::io::Write;
-    use zip::{write::SimpleFileOptions, CompressionMethod, ZipWriter};
+    use zip::{CompressionMethod, ZipWriter, write::SimpleFileOptions};
 
     #[test]
     fn lists_and_reads_bundle_files() {

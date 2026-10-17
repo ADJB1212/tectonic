@@ -233,7 +233,7 @@ pub mod c_api {
     use tectonic_bridge_core::CoreBridgeState;
 
     #[allow(improper_ctypes)] // for CoreBridgeState
-    extern "C" {
+    unsafe extern "C" {
         pub fn tt_xetex_set_int_variable(
             var_name: *const libc::c_char,
             value: libc::c_int,

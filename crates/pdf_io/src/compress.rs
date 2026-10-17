@@ -70,48 +70,48 @@ struct CompressionJob {
 /// # Safety
 /// Jobs and their buffers must be valid for the duration of this call. Output
 /// buffers must be disjoint from all other buffers and from the jobs array.
-#[no_mangle]
+#[unsafe(no_mangle)]
 unsafe extern "C" fn tt_pdf_compress_streams(jobs: *mut CompressionJob, count: usize, level: u32) {
-    let jobs = slice::from_raw_parts_mut(jobs, count);
-    let mut buffers: Vec<_> = jobs
-        .iter_mut()
-        .map(|job| {
-            (
-                slice::from_raw_parts(job.input, job.input_len as usize),
-                slice::from_raw_parts_mut(job.output, job.output_len as usize),
-                &mut job.output_len,
-                &mut job.result,
-            )
-        })
-        .collect();
-    let compress =
-        |(input, output, length, result): &mut (&[u8], &mut [u8], &mut u64, &mut i32)| {
-            // SAFETY: Each job exclusively owns its output and only reads its input.
-            **result = unsafe {
-                tectonic_flate_compress(
+    unsafe {
+        let jobs = slice::from_raw_parts_mut(jobs, count);
+        let mut buffers: Vec<_> = jobs
+            .iter_mut()
+            .map(|job| {
+                (
+                    slice::from_raw_parts(job.input, job.input_len as usize),
+                    slice::from_raw_parts_mut(job.output, job.output_len as usize),
+                    &mut job.output_len,
+                    &mut job.result,
+                )
+            })
+            .collect();
+        let compress =
+            |(input, output, length, result): &mut (&[u8], &mut [u8], &mut u64, &mut i32)| {
+                // SAFETY: Each job exclusively owns its output and only reads its input.
+                **result = tectonic_flate_compress(
                     output.as_mut_ptr(),
                     *length,
                     input.as_ptr(),
                     input.len() as u64,
                     level,
-                )
-            } as i32;
-        };
-    if count > 1 {
-        if let Some(pool) = crate::predictor::pool() {
+                ) as i32;
+            };
+        if count > 1
+            && let Some(pool) = crate::predictor::pool()
+        {
             pool.install(|| buffers.par_iter_mut().for_each(compress));
             return;
         }
+        buffers.iter_mut().for_each(compress);
     }
-    buffers.iter_mut().for_each(compress);
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use std::io::Read;
-    use tectonic_bridge_flate::flate2::read::ZlibDecoder;
     use tectonic_bridge_flate::FlateResult;
+    use tectonic_bridge_flate::flate2::read::ZlibDecoder;
 
     #[test]
     fn independent_streams_round_trip_and_report_individual_errors() {

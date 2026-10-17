@@ -12,13 +12,13 @@ use tectonic_errors::prelude::*;
 use tectonic_status_base::tt_warning;
 
 use crate::{
+    Common, FixedPoint, TexFontNum,
     assets::Assets,
     finalization::FinalizingState,
     fonts::{FamilyRelativeFontId, FontEnsemble, FontFamilyAnalysis, PathToNewFont},
     html::Element,
     specials::Special,
     templating::Templating,
-    Common, FixedPoint, TexFontNum,
 };
 
 #[derive(Debug)]
@@ -315,16 +315,16 @@ impl EmittingState {
             );
         }
 
-        if let Some(cur) = self.cur_elstate().elem.as_ref() {
-            if cur.is_autoclosed_by(&el) {
-                tt_warning!(
-                    common.status,
-                    "currently open HTML element `{}` will be implicitly closed by new \
+        if let Some(cur) = self.cur_elstate().elem.as_ref()
+            && cur.is_autoclosed_by(&el)
+        {
+            tt_warning!(
+                common.status,
+                "currently open HTML element `{}` will be implicitly closed by new \
                     element `{}`; explicit closing tags are strongly encouraged",
-                    cur.name(),
-                    name
-                );
-            }
+                cur.name(),
+                name
+            );
         }
 
         el

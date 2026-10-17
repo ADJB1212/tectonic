@@ -11,11 +11,11 @@ use std::{
     path::{Path, PathBuf},
 };
 use tectonic_errors::Result;
-use tectonic_status_base::{tt_warning, StatusBackend};
+use tectonic_status_base::{StatusBackend, tt_warning};
 
 use super::{
-    try_open_file, InputFeatures, InputHandle, InputOrigin, IoProvider, OpenResult, OutputHandle,
-    TectonicIoError,
+    InputFeatures, InputHandle, InputOrigin, IoProvider, OpenResult, OutputHandle, TectonicIoError,
+    try_open_file,
 };
 
 /// FilesystemPrimaryInputIo is an I/O provider that provides the TeX "primary input"

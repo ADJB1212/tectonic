@@ -6,14 +6,15 @@
 //! Decode a format file.
 
 use nom::{
+    Err as NomErr, IResult, Parser,
     multi::count,
     number::complete::{be_i16, be_i32, be_i64, be_u16},
-    Err as NomErr, IResult, Parser,
 };
 use std::io::Write;
 use tectonic_errors::prelude::*;
 
 use crate::{
+    FormatVersion,
     base::{MAX_HALFWORD, MIN_HALFWORD, TEX_NULL},
     catcodes::CatCode,
     commands::CommandCode,
@@ -22,7 +23,6 @@ use crate::{
     eqtb::{self, EqtbPointer},
     mem, parseutils, stringtable,
     tokenlist::Token,
-    FormatVersion,
 };
 
 /// Saved Tectonic/XeTeX engine state, decoded into memory.

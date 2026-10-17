@@ -1,7 +1,7 @@
 use crate::{
+    ASCIICode, Bibtex, BibtexError, BufPointer,
     buffer::{BufTy, GlobalBuffer},
     char_info::LexClass,
-    ASCIICode, Bibtex, BibtexError, BufPointer,
 };
 use libc::EOF;
 use std::{

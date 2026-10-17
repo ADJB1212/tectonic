@@ -4,8 +4,8 @@
 //! Format-file parsing utilities.
 
 use nom::{
-    error::ErrorKind as NomErrorKind, error::ParseError, number::complete::be_i32, Err as NomErr,
-    IResult, Input,
+    Err as NomErr, IResult, Input, error::ErrorKind as NomErrorKind, error::ParseError,
+    number::complete::be_i32,
 };
 
 pub fn satisfy_be_i32<I, Error: ParseError<I>>(
