@@ -2,6 +2,112 @@ use super::{dpx_dpxcrypt::*, runtime};
 use std::{ffi::CStr, fmt::Write, mem::zeroed};
 
 #[test]
+fn c_allocator_handoffs_remain_c_owned_across_document_completion() {
+    let document = crate::compat::document::DocumentScope::new().unwrap();
+    unsafe {
+        let mut memory = std::ptr::null_mut();
+        assert_eq!(super::dpx_mem::__pdf_entry_new(8, &mut memory), 0);
+        memory.cast::<u8>().write_bytes(0x5a, 8);
+        assert!((*crate::compat::document::current()).allocations.is_empty());
+        assert_eq!(
+            super::dpx_mem::__pdf_entry_renew(memory, 32, &mut memory),
+            0
+        );
+        assert!((*crate::compat::document::current()).allocations.is_empty());
+        let input = b"identifier ";
+        let mut start = input.as_ptr().cast();
+        let end = input.as_ptr().add(input.len()).cast();
+        let mut identifier = std::ptr::null_mut();
+        assert_eq!(
+            super::dpx_pdfparse::__pdf_entry_parse_ident(&mut start, end, &mut identifier),
+            0
+        );
+        assert!((*crate::compat::document::current()).allocations.is_empty());
+        let mut cipher = std::ptr::null_mut();
+        let mut cipher_len = 0;
+        assert_eq!(
+            __pdf_entry_AES_ecb_encrypt(
+                [0u8; 16].as_ptr(),
+                16,
+                [0u8; 16].as_ptr(),
+                16,
+                &mut cipher,
+                &mut cipher_len
+            ),
+            0
+        );
+        assert_eq!(cipher_len, 16);
+        assert!((*crate::compat::document::current()).allocations.is_empty());
+        drop(document);
+        assert_eq!(
+            std::slice::from_raw_parts(memory.cast::<u8>(), 8),
+            &[0x5a; 8]
+        );
+        assert_eq!(CStr::from_ptr(identifier), c"identifier");
+        assert_eq!(
+            std::slice::from_raw_parts(cipher, cipher_len),
+            &[
+                0x66, 0xe9, 0x4b, 0xd4, 0xef, 0x8a, 0x2c, 0x3b, 0x88, 0x4c, 0xfa, 0x59, 0xca, 0x34,
+                0x2b, 0x2e
+            ]
+        );
+        libc::free(memory);
+        libc::free(identifier.cast());
+        libc::free(cipher.cast());
+    }
+}
+
+#[test]
+fn document_failure_reclaims_state_and_resets_abi_configuration_and_diagnostics() {
+    use crate::{
+        compat::{allocation, document},
+        error::{PdfError, PdfErrorKind},
+    };
+    let failure = runtime::catch_backend::<()>(|| {
+        let _document = document::DocumentScope::new()?;
+        assert_eq!(
+            document::DocumentScope::new().err().unwrap().kind,
+            PdfErrorKind::InvalidState
+        );
+        document::with_diagnostics(|state| {
+            state.quiet = 2;
+            state.last_warning = true;
+        });
+        unsafe {
+            super::dpx_dpxconf::dpx_conf.verbose_level = 7;
+            super::dpx_dpxconf::dpx_conf.file.keep_cache = 1;
+            super::dpx_cid::opt_flags_cidfont = 123;
+            let memory = allocation::malloc(32);
+            assert!(!memory.is_null());
+            let memory = allocation::realloc(memory, 64);
+            assert!(!memory.is_null());
+            assert_eq!((*document::current()).allocations.len(), 1);
+            allocation::free(memory);
+            assert!((*document::current()).allocations.is_empty());
+            let abandoned = allocation::malloc(16);
+            assert!(!abandoned.is_null());
+        }
+        runtime::legacy_result(Err(PdfError::new(
+            PdfErrorKind::MalformedInput,
+            c"injected document failure".to_owned(),
+        )))
+    });
+    assert_eq!(failure.unwrap_err().kind, PdfErrorKind::MalformedInput);
+    assert!(!document::active());
+    let _next = document::DocumentScope::new().unwrap();
+    document::with_diagnostics(|state| {
+        assert_eq!(state.quiet, 0);
+        assert!(!state.last_warning);
+    });
+    unsafe {
+        assert_eq!({ super::dpx_dpxconf::dpx_conf.verbose_level }, 0);
+        assert_eq!({ super::dpx_dpxconf::dpx_conf.file.keep_cache }, 0);
+        assert_eq!({ super::dpx_cid::opt_flags_cidfont }, 0);
+        assert!((*document::current()).allocations.is_empty());
+    }
+}
+
+#[test]
 fn typed_errors_cross_only_the_compatibility_boundary() {
     use crate::error::{PdfError, PdfErrorKind};
     let error = runtime::catch_backend::<()>(|| {

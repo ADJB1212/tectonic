@@ -52,59 +52,62 @@ pub const M: ::core::ffi::c_int = 397 as ::core::ffi::c_int;
 pub const MATRIX_A: ::core::ffi::c_ulong = 0x9908b0df as ::core::ffi::c_ulong;
 pub const UPPER_MASK: ::core::ffi::c_ulong = 0x80000000 as ::core::ffi::c_ulong;
 pub const LOWER_MASK: ::core::ffi::c_ulong = 0x7fffffff as ::core::ffi::c_ulong;
-static mut mt: [::core::ffi::c_ulong; 624] = [0; 624];
-static mut mti: ::core::ffi::c_int = N + 1 as ::core::ffi::c_int;
+
 #[unsafe(export_name = "__pdf_impl_init_genrand")]
 pub unsafe extern "C-unwind" fn init_genrand(mut s: ::core::ffi::c_ulonglong) {
-    mt[0 as ::core::ffi::c_int as usize] =
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).mt[0 as ::core::ffi::c_int as usize] =
         (s & 0xffffffff as ::core::ffi::c_ulonglong) as ::core::ffi::c_ulong;
-    mti = 1 as ::core::ffi::c_int;
-    while mti < N {
-        mt[mti as usize] = (1812433253 as ::core::ffi::c_ulong)
+    (*__pdf_state).mti = 1 as ::core::ffi::c_int;
+    while (*__pdf_state).mti < N {
+        (*__pdf_state).mt[(*__pdf_state).mti as usize] = (1812433253 as ::core::ffi::c_ulong)
             .wrapping_mul(
-                mt[(mti - 1 as ::core::ffi::c_int) as usize]
-                    ^ mt[(mti - 1 as ::core::ffi::c_int) as usize] >> 30 as ::core::ffi::c_int,
+                (*__pdf_state).mt[((*__pdf_state).mti - 1 as ::core::ffi::c_int) as usize]
+                    ^ (*__pdf_state).mt[((*__pdf_state).mti - 1 as ::core::ffi::c_int) as usize]
+                        >> 30 as ::core::ffi::c_int,
             )
-            .wrapping_add(mti as ::core::ffi::c_ulong);
-        mt[mti as usize] &= 0xffffffff as ::core::ffi::c_ulong;
-        mti += 1;
+            .wrapping_add((*__pdf_state).mti as ::core::ffi::c_ulong);
+        (*__pdf_state).mt[(*__pdf_state).mti as usize] &= 0xffffffff as ::core::ffi::c_ulong;
+        (*__pdf_state).mti += 1;
     }
 }
 unsafe extern "C-unwind" fn genrand_int32() -> ::core::ffi::c_ulong {
+    let __pdf_state = unsafe { document_state() };
     let mut y: ::core::ffi::c_ulong = 0;
     static mut mag01: [::core::ffi::c_ulong; 2] = [0 as ::core::ffi::c_ulong, MATRIX_A];
-    if mti >= N {
+    if (*__pdf_state).mti >= N {
         let mut kk: ::core::ffi::c_int = 0;
-        if mti == N + 1 as ::core::ffi::c_int {
+        if (*__pdf_state).mti == N + 1 as ::core::ffi::c_int {
             init_genrand(5489 as ::core::ffi::c_ulonglong);
         }
         kk = 0 as ::core::ffi::c_int;
         while kk < N - M {
-            y = mt[kk as usize] & UPPER_MASK
-                | mt[(kk + 1 as ::core::ffi::c_int) as usize] & LOWER_MASK;
-            mt[kk as usize] = mt[(kk + M) as usize]
+            y = (*__pdf_state).mt[kk as usize] & UPPER_MASK
+                | (*__pdf_state).mt[(kk + 1 as ::core::ffi::c_int) as usize] & LOWER_MASK;
+            (*__pdf_state).mt[kk as usize] = (*__pdf_state).mt[(kk + M) as usize]
                 ^ y >> 1 as ::core::ffi::c_int
                 ^ mag01[(y & 0x1 as ::core::ffi::c_ulong) as usize];
             kk += 1;
         }
         while kk < N - 1 as ::core::ffi::c_int {
-            y = mt[kk as usize] & UPPER_MASK
-                | mt[(kk + 1 as ::core::ffi::c_int) as usize] & LOWER_MASK;
-            mt[kk as usize] = mt[(kk + (M - N)) as usize]
+            y = (*__pdf_state).mt[kk as usize] & UPPER_MASK
+                | (*__pdf_state).mt[(kk + 1 as ::core::ffi::c_int) as usize] & LOWER_MASK;
+            (*__pdf_state).mt[kk as usize] = (*__pdf_state).mt[(kk + (M - N)) as usize]
                 ^ y >> 1 as ::core::ffi::c_int
                 ^ mag01[(y & 0x1 as ::core::ffi::c_ulong) as usize];
             kk += 1;
         }
-        y = mt[(N - 1 as ::core::ffi::c_int) as usize] & UPPER_MASK
-            | mt[0 as ::core::ffi::c_int as usize] & LOWER_MASK;
-        mt[(N - 1 as ::core::ffi::c_int) as usize] = mt[(M - 1 as ::core::ffi::c_int) as usize]
+        y = (*__pdf_state).mt[(N - 1 as ::core::ffi::c_int) as usize] & UPPER_MASK
+            | (*__pdf_state).mt[0 as ::core::ffi::c_int as usize] & LOWER_MASK;
+        (*__pdf_state).mt[(N - 1 as ::core::ffi::c_int) as usize] = (*__pdf_state).mt
+            [(M - 1 as ::core::ffi::c_int) as usize]
             ^ y >> 1 as ::core::ffi::c_int
             ^ mag01[(y & 0x1 as ::core::ffi::c_ulong) as usize];
-        mti = 0 as ::core::ffi::c_int;
+        (*__pdf_state).mti = 0 as ::core::ffi::c_int;
     }
-    let fresh0 = mti;
-    mti = mti + 1;
-    y = mt[fresh0 as usize];
+    let fresh0 = (*__pdf_state).mti;
+    (*__pdf_state).mti = (*__pdf_state).mti + 1;
+    y = (*__pdf_state).mt[fresh0 as usize];
     y ^= y >> 11 as ::core::ffi::c_int;
     y ^= y << 7 as ::core::ffi::c_int & 0x9d2c5680 as ::core::ffi::c_ulong;
     y ^= y << 15 as ::core::ffi::c_int & 0xefc60000 as ::core::ffi::c_ulong;
@@ -136,5 +139,31 @@ pub unsafe extern "C" fn __pdf_entry_genrand_int31(_result: *mut ::core::ffi::c_
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    mt: [::core::ffi::c_ulong; 624],
+    mti: ::core::ffi::c_int,
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                mt: [0; 624],
+                mti: N + 1 as ::core::ffi::c_int,
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_mt19937ar
+            .pointer
     }
 }

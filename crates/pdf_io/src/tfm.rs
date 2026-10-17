@@ -59,11 +59,12 @@ struct Diagnostic {
     text: CString,
 }
 
-thread_local! {
-    static FONTS: RefCell<Vec<Font>> = RefCell::default();
-    static DIAGNOSTICS: RefCell<VecDeque<Diagnostic>> = RefCell::default();
-    static HELD_DIAGNOSTIC: RefCell<Option<CString>> = RefCell::default();
-    static LAST_ERROR: RefCell<Option<CString>> = RefCell::default();
+#[derive(Default)]
+pub(crate) struct DocumentState {
+    fonts: RefCell<Vec<Font>>,
+    diagnostics: RefCell<VecDeque<Diagnostic>>,
+    held_diagnostic: RefCell<Option<CString>>,
+    last_error: RefCell<Option<CString>>,
 }
 
 struct Cursor<'a> {
@@ -490,19 +491,19 @@ fn parse(
 }
 
 fn clear_fonts() {
-    FONTS.with(|fonts| fonts.borrow_mut().clear());
+    with_fonts(|fonts| fonts.borrow_mut().clear());
 }
 
 fn clear_diagnostics() {
-    DIAGNOSTICS.with(|queue| queue.borrow_mut().clear());
-    HELD_DIAGNOSTIC.with(|held| *held.borrow_mut() = None);
+    with_diagnostics(|queue| queue.borrow_mut().clear());
+    with_held_diagnostic(|held| *held.borrow_mut() = None);
 }
 
 fn push_diagnostic(kind: i32, text: &str) {
     let Ok(text) = CString::new(text) else {
         return;
     };
-    DIAGNOSTICS.with(|queue| queue.borrow_mut().push_back(Diagnostic { kind, text }));
+    with_diagnostics(|queue| queue.borrow_mut().push_back(Diagnostic { kind, text }));
 }
 
 fn publish(error: *mut *const c_char, message: Option<&str>) {
@@ -511,12 +512,12 @@ fn publish(error: *mut *const c_char, message: Option<&str>) {
     }
     let pointer = match message {
         None => {
-            LAST_ERROR.with(|slot| *slot.borrow_mut() = None);
+            with_last_error(|slot| *slot.borrow_mut() = None);
             ptr::null()
         }
         Some(message) => {
             let text = CString::new(message).unwrap_or_else(|_| c"Invalid TFM header.".to_owned());
-            LAST_ERROR.with(|slot| {
+            with_last_error(|slot| {
                 let mut slot = slot.borrow_mut();
                 *slot = Some(text);
                 slot.as_ref().expect("error stored").as_ptr()
@@ -540,7 +541,7 @@ fn finish<T: Default>(result: Result<T, String>, error: *mut *const c_char) -> T
 }
 
 fn find_font(name: &[u8]) -> Option<i32> {
-    FONTS.with(|fonts| {
+    with_fonts(|fonts| {
         fonts
             .borrow()
             .iter()
@@ -550,7 +551,7 @@ fn find_font(name: &[u8]) -> Option<i32> {
 }
 
 fn intern(name: &[u8], metrics: Metrics) -> i32 {
-    FONTS.with(|fonts| {
+    with_fonts(|fonts| {
         let mut fonts = fonts.borrow_mut();
         if let Some(index) = fonts.iter().position(|font| font.name.as_ref() == name) {
             return i32::try_from(index).unwrap_or(-1);
@@ -580,7 +581,7 @@ fn with_metrics<T>(
     id: i32,
     select: impl FnOnce(&Metrics) -> Result<T, String>,
 ) -> Result<T, String> {
-    FONTS.with(|fonts| {
+    with_fonts(|fonts| {
         let fonts = fonts.borrow();
         let font = usize::try_from(id)
             .ok()
@@ -688,13 +689,13 @@ fn open_named(name: &CStr, must_exist: bool, verbose: bool) -> Result<i32, Strin
 
 #[unsafe(no_mangle)]
 unsafe extern "C" fn tt_tfm_next_diagnostic(kind: *mut i32) -> *const c_char {
-    let Some(diagnostic) = DIAGNOSTICS.with(|queue| queue.borrow_mut().pop_front()) else {
+    let Some(diagnostic) = with_diagnostics(|queue| queue.borrow_mut().pop_front()) else {
         return ptr::null();
     };
     if !kind.is_null() {
         unsafe { *kind = diagnostic.kind };
     }
-    HELD_DIAGNOSTIC.with(|held| {
+    with_held_diagnostic(|held| {
         let mut held = held.borrow_mut();
         *held = Some(diagnostic.text);
         held.as_ref().expect("diagnostic stored").as_ptr()
@@ -820,6 +821,22 @@ unsafe extern "C" fn tt_tfm_exists(name: *const c_char) -> bool {
     file_available(&name, FileFormat::Ofm) || file_available(&name, FileFormat::Tfm)
 }
 
+fn with_fonts<T>(callback: impl FnOnce(&RefCell<Vec<Font>>) -> T) -> T {
+    crate::compat::document::with_tfm(|state| callback(&state.fonts))
+}
+
+fn with_diagnostics<T>(callback: impl FnOnce(&RefCell<VecDeque<Diagnostic>>) -> T) -> T {
+    crate::compat::document::with_tfm(|state| callback(&state.diagnostics))
+}
+
+fn with_held_diagnostic<T>(callback: impl FnOnce(&RefCell<Option<CString>>) -> T) -> T {
+    crate::compat::document::with_tfm(|state| callback(&state.held_diagnostic))
+}
+
+fn with_last_error<T>(callback: impl FnOnce(&RefCell<Option<CString>>) -> T) -> T {
+    crate::compat::document::with_tfm(|state| callback(&state.last_error))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -894,6 +911,7 @@ mod tests {
 
     #[test]
     fn names_without_a_metric_suffix_try_an_ofm_alias_first() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         assert_eq!(
             open_steps("cmr10"),
             &[OpenStep::AliasOfm, OpenStep::Tfm, OpenStep::Ofm]
@@ -909,6 +927,7 @@ mod tests {
 
     #[test]
     fn tfm_metrics_scale_from_fixwords_and_reject_bad_characters() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         let _isolate = Isolate::new();
         let design = 10 << 20;
         let bytes = minimal_tfm(design, 524_288, 65_536, 32_768);
@@ -951,6 +970,7 @@ mod tests {
 
     #[test]
     fn tfm_size_mismatches_warn_or_stop_before_reading_tables() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         let mut bytes = Vec::new();
         push_pair(&mut bytes, 20, 2);
         push_pair(&mut bytes, 0, 0);
@@ -979,6 +999,7 @@ mod tests {
 
     #[test]
     fn tfm_rejects_inverted_ranges_short_headers_and_bad_indexes() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         let mut bytes = Vec::new();
         push_pair(&mut bytes, 15, 2);
         push_pair(&mut bytes, 3, 1);
@@ -1019,6 +1040,7 @@ mod tests {
 
     #[test]
     fn coding_scheme_length_is_validated_when_the_header_is_long_enough() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         let mut bytes = Vec::new();
         push_pair(&mut bytes, 22, 12);
         push_pair(&mut bytes, 0, 0);
@@ -1050,6 +1072,7 @@ mod tests {
 
     #[test]
     fn ofm_level_zero_reads_split_char_info_and_warns_about_direction() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         let mut bytes = Vec::new();
         push_ofm_directory(&mut bytes, &[0, 24, 2, 0, 0, 2, 2, 2, 0, 0, 0, 0, 0, 1]);
         push_i32(&mut bytes, 0);
@@ -1076,6 +1099,7 @@ mod tests {
 
     #[test]
     fn ofm_level_one_repeats_copy_metrics_and_reject_overruns() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         let mut bytes = Vec::new();
         push_ofm_directory(
             &mut bytes,
@@ -1110,6 +1134,7 @@ mod tests {
 
     #[test]
     fn ofm_reports_negative_fields_bad_ranges_and_unsupported_levels() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         let mut negative = vec![0u8; 8];
         negative[0..4].copy_from_slice(&0i32.to_be_bytes());
         negative[4..8].copy_from_slice(&(-5i32).to_be_bytes());
@@ -1138,6 +1163,7 @@ mod tests {
 
     #[test]
     fn diagnostics_come_out_in_submission_order() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         let _isolate = Isolate::new();
         push_diagnostic(MESSAGE, "(TFM:cmr10");
         push_diagnostic(WARNING, "Proceeding nervously...");

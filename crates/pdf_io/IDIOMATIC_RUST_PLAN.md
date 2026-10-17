@@ -191,6 +191,15 @@ useful early milestone for text-heavy builds.
 Page bytes match under every worker and queue configuration. Raw pointers
 remain only in external adapters that still need them.
 
+Implemented in `src/renderer.rs`. `PageRenderer` uses explicit command,
+direction, rotation, and device-mode enums, borrowed font/command data, and a
+borrowed output Vec. Positioning, escaping, rules and numeric output use safe
+Rust. The pipeline retains adjacent text batching and its owned page buffers;
+it renders directly into the output without allocating an ABI command array.
+The former translated worker renderer and raw-output device branch are removed.
+The C adapter retains its published layouts and symbols. Golden byte snapshots
+cover font modes, transformations, escaping, precision and direction combinations.
+
 ## Stage 5: Document-owned state
 
 Inventory mutable statics in DVI interpretation, device/document handling,
@@ -210,6 +219,19 @@ data, document state, or a justified shared cache with explicit invalidation.
 consecutive builds cannot leak settings or resources. Retain the engine lock
 until the bridge and native engines also support independent execution;
 moving PDF statics alone does not establish thread safety.
+
+Implemented with `compat::document::DocumentScope`, 29 focused translated state
+groups (139 fields), document-owned Rust caches/diagnostics, and scoped allocation
+ownership. Both native engine wrappers end their scope on success and abort.
+Nesting/overlap is rejected, partial allocations are reclaimed, and caller-owned
+C buffers retain their ownership when returned through adapters. Published ABI
+data keeps its symbol addresses and is exclusively reserved/reset per scope.
+See [the state inventory](DOCUMENT_STATE_INVENTORY.md) for ownership boundaries,
+immutable tables, compatibility storage, shared pools and remaining constraints.
+The native engine lock and translated pointer-based object representation remain.
+
+Output comparisons, benchmark measurements and test results for both stages
+are recorded in [the validation report](STAGES_4_5_VALIDATION.md).
 
 ## Stage 6: PDF object ownership
 

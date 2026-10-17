@@ -24,6 +24,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -2109,7 +2110,6 @@ pub unsafe extern "C-unwind" fn CIDFont_type2_open(
 }
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memmove(
         __dst: *mut ::core::ffi::c_void,
         __src: *const ::core::ffi::c_void,

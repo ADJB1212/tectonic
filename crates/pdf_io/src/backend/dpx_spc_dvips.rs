@@ -27,6 +27,7 @@
     dangerous_implicit_autorefs
 )]
 use crate::backend::dpx_pdfdev::transform_info_clear;
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -204,17 +205,12 @@ unsafe extern "C-unwind" fn strstartswith(
     }
     return ::core::ptr::null::<::core::ffi::c_char>();
 }
-static mut block_pending: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-static mut pending_x: ::core::ffi::c_double = 0.0f64;
-static mut pending_y: ::core::ffi::c_double = 0.0f64;
-static mut position_set: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-static mut ps_headers: *mut *mut ::core::ffi::c_char =
-    ::core::ptr::null::<*mut ::core::ffi::c_char>() as *mut *mut ::core::ffi::c_char;
-static mut num_ps_headers: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+
 unsafe extern "C-unwind" fn spc_handler_ps_header(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut pro: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut ps_header: rust_input_handle_t = 0;
     skip_white(&raw mut (*args).curptr, (*args).endptr);
@@ -250,16 +246,16 @@ unsafe extern "C-unwind" fn spc_handler_ps_header(
         return -(1 as ::core::ffi::c_int);
     }
     crate::backend::runtime::input_close(ps_header);
-    if num_ps_headers & 0xf as ::core::ffi::c_int == 0 {
-        ps_headers = crate::backend::runtime::reallocate(
-            ps_headers as *mut ::core::ffi::c_void,
+    if (*__pdf_state).num_ps_headers & 0xf as ::core::ffi::c_int == 0 {
+        (*__pdf_state).ps_headers = crate::backend::runtime::reallocate(
+            (*__pdf_state).ps_headers as *mut ::core::ffi::c_void,
             (::core::mem::size_of::<*mut ::core::ffi::c_char>() as size_t)
-                .wrapping_mul((num_ps_headers + 16 as ::core::ffi::c_int) as size_t),
+                .wrapping_mul(((*__pdf_state).num_ps_headers + 16 as ::core::ffi::c_int) as size_t),
         ) as *mut *mut ::core::ffi::c_char;
     }
-    let fresh1 = num_ps_headers;
-    num_ps_headers = num_ps_headers + 1;
-    let ref mut fresh2 = *ps_headers.offset(fresh1 as isize);
+    let fresh1 = (*__pdf_state).num_ps_headers;
+    (*__pdf_state).num_ps_headers = (*__pdf_state).num_ps_headers + 1;
+    let ref mut fresh2 = *(*__pdf_state).ps_headers.offset(fresh1 as isize);
     *fresh2 = pro;
     (*args).curptr = (*args).endptr;
     return 0 as ::core::ffi::c_int;
@@ -471,6 +467,7 @@ unsafe extern "C-unwind" fn spc_handler_ps_literal(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut st_depth: ::core::ffi::c_int = 0;
     let mut gs_depth: ::core::ffi::c_int = 0;
@@ -488,12 +485,12 @@ unsafe extern "C-unwind" fn spc_handler_ps_literal(
         )
         .is_null()
     {
-        block_pending += 1;
-        position_set = 1 as ::core::ffi::c_int;
-        pending_x = cp.x;
-        x_user = pending_x;
-        pending_y = cp.y;
-        y_user = pending_y;
+        (*__pdf_state).block_pending += 1;
+        (*__pdf_state).position_set = 1 as ::core::ffi::c_int;
+        (*__pdf_state).pending_x = cp.x;
+        x_user = (*__pdf_state).pending_x;
+        (*__pdf_state).pending_y = cp.y;
+        y_user = (*__pdf_state).pending_y;
         (*args).curptr = (*args)
             .curptr
             .offset(strlen(b":[begin]\0" as *const u8 as *const ::core::ffi::c_char) as isize);
@@ -507,16 +504,16 @@ unsafe extern "C-unwind" fn spc_handler_ps_literal(
         )
         .is_null()
     {
-        if block_pending <= 0 as ::core::ffi::c_int {
+        if (*__pdf_state).block_pending <= 0 as ::core::ffi::c_int {
             pdf_warning!(
                 b"No corresponding ::[begin] found.\0" as *const u8 as *const ::core::ffi::c_char
             );
             return -(1 as ::core::ffi::c_int);
         }
-        block_pending -= 1;
-        position_set = 0 as ::core::ffi::c_int;
-        x_user = pending_x;
-        y_user = pending_y;
+        (*__pdf_state).block_pending -= 1;
+        (*__pdf_state).position_set = 0 as ::core::ffi::c_int;
+        x_user = (*__pdf_state).pending_x;
+        y_user = (*__pdf_state).pending_y;
         (*args).curptr = (*args)
             .curptr
             .offset(strlen(b":[end]\0" as *const u8 as *const ::core::ffi::c_char) as isize);
@@ -524,15 +521,23 @@ unsafe extern "C-unwind" fn spc_handler_ps_literal(
         && *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
             == ':' as i32
     {
-        x_user = if position_set != 0 { pending_x } else { cp.x };
-        y_user = if position_set != 0 { pending_y } else { cp.y };
+        x_user = if (*__pdf_state).position_set != 0 {
+            (*__pdf_state).pending_x
+        } else {
+            cp.x
+        };
+        y_user = if (*__pdf_state).position_set != 0 {
+            (*__pdf_state).pending_y
+        } else {
+            cp.y
+        };
         (*args).curptr = (*args).curptr.offset(1);
     } else {
-        position_set = 1 as ::core::ffi::c_int;
-        pending_x = cp.x;
-        x_user = pending_x;
-        pending_y = cp.y;
-        y_user = pending_y;
+        (*__pdf_state).position_set = 1 as ::core::ffi::c_int;
+        (*__pdf_state).pending_x = cp.x;
+        x_user = (*__pdf_state).pending_x;
+        (*__pdf_state).pending_y = cp.y;
+        y_user = (*__pdf_state).pending_y;
     }
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     if (*args).curptr < (*args).endptr {
@@ -757,12 +762,19 @@ pub unsafe extern "C-unwind" fn spc_dvips_at_begin_document() -> ::core::ffi::c_
 }
 #[unsafe(export_name = "__pdf_impl_spc_dvips_at_end_document")]
 pub unsafe extern "C-unwind" fn spc_dvips_at_end_document() -> ::core::ffi::c_int {
-    if !ps_headers.is_null() {
-        while num_ps_headers > 0 as ::core::ffi::c_int {
-            num_ps_headers -= 1;
-            free(*ps_headers.offset(num_ps_headers as isize) as *mut ::core::ffi::c_void);
+    let __pdf_state = unsafe { document_state() };
+    if !(*__pdf_state).ps_headers.is_null() {
+        while (*__pdf_state).num_ps_headers > 0 as ::core::ffi::c_int {
+            (*__pdf_state).num_ps_headers -= 1;
+            free(
+                *(*__pdf_state)
+                    .ps_headers
+                    .offset((*__pdf_state).num_ps_headers as isize)
+                    as *mut ::core::ffi::c_void,
+            );
         }
-        ps_headers = mfree(ps_headers as *mut ::core::ffi::c_void) as *mut *mut ::core::ffi::c_char;
+        (*__pdf_state).ps_headers = mfree((*__pdf_state).ps_headers as *mut ::core::ffi::c_void)
+            as *mut *mut ::core::ffi::c_char;
     }
     return 0 as ::core::ffi::c_int;
 }
@@ -890,7 +902,6 @@ pub unsafe extern "C-unwind" fn spc_dvips_setup_handler(
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcmp(
         __s1: *const ::core::ffi::c_void,
         __s2: *const ::core::ffi::c_void,
@@ -996,5 +1007,40 @@ pub unsafe extern "C" fn __pdf_entry_spc_dvips_setup_handler(
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    block_pending: ::core::ffi::c_int,
+    pending_x: ::core::ffi::c_double,
+    pending_y: ::core::ffi::c_double,
+    position_set: ::core::ffi::c_int,
+    ps_headers: *mut *mut ::core::ffi::c_char,
+    num_ps_headers: ::core::ffi::c_int,
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                block_pending: 0 as ::core::ffi::c_int,
+                pending_x: 0.0f64,
+                pending_y: 0.0f64,
+                position_set: 0 as ::core::ffi::c_int,
+                ps_headers: ::core::ptr::null::<*mut ::core::ffi::c_char>()
+                    as *mut *mut ::core::ffi::c_char,
+                num_ps_headers: 0 as ::core::ffi::c_int,
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_spc_dvips
+            .pointer
     }
 }

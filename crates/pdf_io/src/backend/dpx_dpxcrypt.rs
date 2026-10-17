@@ -5128,6 +5128,9 @@ pub unsafe extern "C" fn __pdf_entry_AES_ecb_encrypt(
         AES_ecb_encrypt(key, key_len, plain, plain_len, cipher, cipher_len)
     }) {
         Ok(value) => {
+            unsafe {
+                crate::compat::allocation::release((*cipher).cast());
+            }
             let _ = value;
             0
         }
@@ -5151,6 +5154,9 @@ pub unsafe extern "C" fn __pdf_entry_AES_cbc_encrypt_tectonic(
         )
     }) {
         Ok(value) => {
+            unsafe {
+                crate::compat::allocation::release((*cipher).cast());
+            }
             let _ = value;
             0
         }

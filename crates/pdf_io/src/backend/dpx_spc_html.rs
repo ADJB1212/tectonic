@@ -28,6 +28,7 @@
 )]
 use crate::backend::dpx_pdfdev::transform_info_clear;
 use crate::backend::dpx_pdfdraw::pdf_dev_transform;
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -214,14 +215,7 @@ pub const INFO_HAS_HEIGHT: ::core::ffi::c_int =
     (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
 pub const ANCHOR_TYPE_HREF: ::core::ffi::c_int = 0;
 pub const ANCHOR_TYPE_NAME: ::core::ffi::c_int = 1;
-static mut _html_state: spc_html_ = spc_html_ {
-    opts: C2RustUnnamed_0 {
-        extensions: 0 as ::core::ffi::c_int,
-    },
-    link_dict: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-    baseurl: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-    pending_type: -(1 as ::core::ffi::c_int),
-};
+
 unsafe extern "C-unwind" fn parse_key_val(
     mut pp: *mut *const ::core::ffi::c_char,
     mut endptr: *const ::core::ffi::c_char,
@@ -1004,7 +998,8 @@ unsafe extern "C-unwind" fn spc_handler_html_default(
     mut spe: *mut spc_env,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut sd: *mut spc_html_ = &raw mut _html_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_html_ = &raw mut (*__pdf_state)._html_state;
     let mut name: [::core::ffi::c_char; 128] = [0; 128];
     let mut attr: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
@@ -1251,12 +1246,14 @@ pub const K_TRNS__SKEWX: ::core::ffi::c_int = 4;
 pub const K_TRNS__SKEWY: ::core::ffi::c_int = 5;
 #[unsafe(export_name = "__pdf_impl_spc_html_at_begin_document")]
 pub unsafe extern "C-unwind" fn spc_html_at_begin_document() -> ::core::ffi::c_int {
-    let mut sd: *mut spc_html_ = &raw mut _html_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_html_ = &raw mut (*__pdf_state)._html_state;
     return spc_handler_html__init(sd as *mut ::core::ffi::c_void);
 }
 #[unsafe(export_name = "__pdf_impl_spc_html_at_begin_page")]
 pub unsafe extern "C-unwind" fn spc_html_at_begin_page() -> ::core::ffi::c_int {
-    let mut sd: *mut spc_html_ = &raw mut _html_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_html_ = &raw mut (*__pdf_state)._html_state;
     return spc_handler_html__bophook(
         ::core::ptr::null_mut::<spc_env>(),
         sd as *mut ::core::ffi::c_void,
@@ -1264,7 +1261,8 @@ pub unsafe extern "C-unwind" fn spc_html_at_begin_page() -> ::core::ffi::c_int {
 }
 #[unsafe(export_name = "__pdf_impl_spc_html_at_end_page")]
 pub unsafe extern "C-unwind" fn spc_html_at_end_page() -> ::core::ffi::c_int {
-    let mut sd: *mut spc_html_ = &raw mut _html_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_html_ = &raw mut (*__pdf_state)._html_state;
     return spc_handler_html__eophook(
         ::core::ptr::null_mut::<spc_env>(),
         sd as *mut ::core::ffi::c_void,
@@ -1272,7 +1270,8 @@ pub unsafe extern "C-unwind" fn spc_html_at_end_page() -> ::core::ffi::c_int {
 }
 #[unsafe(export_name = "__pdf_impl_spc_html_at_end_document")]
 pub unsafe extern "C-unwind" fn spc_html_at_end_document() -> ::core::ffi::c_int {
-    let mut sd: *mut spc_html_ = &raw mut _html_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_html_ = &raw mut (*__pdf_state)._html_state;
     return spc_handler_html__clean(
         ::core::ptr::null_mut::<spc_env>(),
         sd as *mut ::core::ffi::c_void,
@@ -1360,7 +1359,6 @@ pub unsafe extern "C-unwind" fn spc_html_setup_handler(
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcmp(
         __s1: *const ::core::ffi::c_void,
         __s2: *const ::core::ffi::c_void,
@@ -1462,5 +1460,36 @@ pub unsafe extern "C" fn __pdf_entry_spc_html_setup_handler(
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    _html_state: spc_html_,
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                _html_state: spc_html_ {
+                    opts: C2RustUnnamed_0 {
+                        extensions: 0 as ::core::ffi::c_int,
+                    },
+                    link_dict: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                    baseurl: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
+                    pending_type: -(1 as ::core::ffi::c_int),
+                },
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_spc_html
+            .pointer
     }
 }

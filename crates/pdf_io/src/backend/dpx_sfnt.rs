@@ -24,6 +24,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -522,7 +523,7 @@ pub unsafe extern "C-unwind" fn sfnt_require_table(
     }
     return 0 as ::core::ffi::c_int;
 }
-static mut wbuf: [::core::ffi::c_uchar; 1024] = [0; 1024];
+
 static mut padbytes: [::core::ffi::c_uchar; 4] = [
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
@@ -531,6 +532,7 @@ static mut padbytes: [::core::ffi::c_uchar; 4] = [
 ];
 #[unsafe(export_name = "__pdf_impl_sfnt_create_FontFile_stream")]
 pub unsafe extern "C-unwind" fn sfnt_create_FontFile_stream(mut sfont: *mut sfnt) -> *mut pdf_obj {
+    let __pdf_state = unsafe { document_state() };
     let mut stream: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut stream_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut td: *mut sfnt_table_directory = ::core::ptr::null_mut::<sfnt_table_directory>();
@@ -549,7 +551,7 @@ pub unsafe extern "C-unwind" fn sfnt_create_FontFile_stream(mut sfont: *mut sfnt
     };
     stream = pdf_new_stream(STREAM_COMPRESS);
     td = (*sfont).directory;
-    p = &raw mut wbuf as *mut ::core::ffi::c_uchar as *mut ::core::ffi::c_char;
+    p = &raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar as *mut ::core::ffi::c_char;
     p = p.offset(put_big_endian(
         p as *mut ::core::ffi::c_void,
         (*td).version as SFNT_LONG,
@@ -579,7 +581,7 @@ pub unsafe extern "C-unwind" fn sfnt_create_FontFile_stream(mut sfont: *mut sfnt
     ) as isize);
     pdf_add_stream(
         stream,
-        &raw mut wbuf as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
+        &raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
         12 as ::core::ffi::c_int,
     );
     offset = 12 as ::core::ffi::c_int
@@ -590,7 +592,8 @@ pub unsafe extern "C-unwind" fn sfnt_create_FontFile_stream(mut sfont: *mut sfnt
             if offset % 4 as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
                 offset += 4 as ::core::ffi::c_int - offset % 4 as ::core::ffi::c_int;
             }
-            p = &raw mut wbuf as *mut ::core::ffi::c_uchar as *mut ::core::ffi::c_char;
+            p = &raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar
+                as *mut ::core::ffi::c_char;
             memcpy(
                 p as *mut ::core::ffi::c_void,
                 &raw mut (*(*td).tables.offset(i as isize)).tag as *mut ::core::ffi::c_char
@@ -615,7 +618,8 @@ pub unsafe extern "C-unwind" fn sfnt_create_FontFile_stream(mut sfont: *mut sfnt
             ) as isize);
             pdf_add_stream(
                 stream,
-                &raw mut wbuf as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
+                &raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar
+                    as *const ::core::ffi::c_void,
                 16 as ::core::ffi::c_int,
             );
             offset = (offset as SFNT_ULONG).wrapping_add((*(*td).tables.offset(i as isize)).length)
@@ -654,7 +658,8 @@ pub unsafe extern "C-unwind" fn sfnt_create_FontFile_stream(mut sfont: *mut sfnt
                 while length > 0 as ::core::ffi::c_int {
                     nb_read = ttstub_input_read(
                         (*sfont).handle,
-                        &raw mut wbuf as *mut ::core::ffi::c_uchar as *mut ::core::ffi::c_char,
+                        &raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar
+                            as *mut ::core::ffi::c_char,
                         (if length < 1024 as ::core::ffi::c_int {
                             length
                         } else {
@@ -669,7 +674,7 @@ pub unsafe extern "C-unwind" fn sfnt_create_FontFile_stream(mut sfont: *mut sfnt
                     } else if nb_read > 0 as ::core::ffi::c_int {
                         pdf_add_stream(
                             stream,
-                            &raw mut wbuf as *mut ::core::ffi::c_uchar
+                            &raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar
                                 as *const ::core::ffi::c_void,
                             nb_read,
                         );
@@ -700,7 +705,6 @@ pub unsafe extern "C-unwind" fn sfnt_create_FontFile_stream(mut sfont: *mut sfnt
     return stream;
 }
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcmp(
         __s1: *const ::core::ffi::c_void,
         __s2: *const ::core::ffi::c_void,
@@ -887,5 +891,25 @@ pub unsafe extern "C" fn __pdf_entry_sfnt_create_FontFile_stream(
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    wbuf: [::core::ffi::c_uchar; 1024],
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe { Self { wbuf: [0; 1024] } }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_sfnt
+            .pointer
     }
 }

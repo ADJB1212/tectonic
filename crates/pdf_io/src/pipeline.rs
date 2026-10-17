@@ -1,7 +1,9 @@
 use crate::PdfBuildOptions;
 use crate::compress::StreamOptions;
 use crate::error::{PdfError, PdfErrorKind};
-use crate::renderer::{RenderCommand, RenderFont, RenderSettings};
+use crate::renderer::{
+    Direction, PageRenderer, RenderCommand, RenderFont, RenderSettings, TextRun,
+};
 use std::{
     cell::Cell,
     collections::{HashMap, VecDeque},
@@ -54,12 +56,19 @@ thread_local! {
     static CURRENT: Cell<*mut Runtime> = const { Cell::new(ptr::null_mut()) };
 }
 
-const RAW_BYTES: i32 = 0;
-const TEXT: i32 = 1;
-const DIRECTION: i32 = 4;
+#[derive(Clone, Copy, PartialEq)]
+enum CommandKind {
+    Bytes,
+    Text,
+    Rule,
+    Graphics,
+    Direction,
+    ResetFonts,
+    Unsupported,
+}
 
 struct Command {
-    kind: i32,
+    kind: CommandKind,
     font: i32,
     coordinates: [i32; 4],
     start: usize,
@@ -87,25 +96,53 @@ impl PagePlan {
     }
 
     fn render(self) -> Result<Vec<u8>, PdfError> {
-        let commands = self.commands.iter().map(|command| RenderCommand {
-            kind: command.kind,
-            font: command.font,
-            x: command.coordinates[0],
-            y: command.coordinates[1],
-            width: command.coordinates[2],
-            height: command.coordinates[3],
-            data: &self.data[command.start..command.start + command.length],
-        });
-        crate::renderer::render(
-            commands,
+        let mut output = Vec::new();
+        let mut renderer = PageRenderer::new(
             &self.fonts,
             RenderSettings {
                 unit: self.unit,
                 precision: self.precision,
-                autorotate: self.autorotate,
-                direction: self.direction,
+                autorotate: self.autorotate != 0,
+                direction: Direction::try_from(self.direction)?,
             },
-        )
+            &mut output,
+        )?;
+        for command in &self.commands {
+            let [x, y, width, height] = command.coordinates;
+            let data = &self.data[command.start..command.start + command.length];
+            renderer.command(match command.kind {
+                CommandKind::Bytes => RenderCommand::Bytes(data),
+                CommandKind::Text => RenderCommand::Text(TextRun {
+                    font: usize::try_from(command.font).map_err(|_| {
+                        PdfError::new(
+                            PdfErrorKind::MalformedInput,
+                            c"Invalid renderer font".to_owned(),
+                        )
+                    })?,
+                    x,
+                    y,
+                    width,
+                    data,
+                }),
+                CommandKind::Rule => RenderCommand::Rule {
+                    x,
+                    y,
+                    width,
+                    height,
+                },
+                CommandKind::Graphics => RenderCommand::Graphics,
+                CommandKind::Direction => RenderCommand::Direction(Direction::try_from(x)?),
+                CommandKind::ResetFonts => RenderCommand::ResetFonts { new_page: x != 0 },
+                CommandKind::Unsupported => {
+                    return Err(PdfError::new(
+                        PdfErrorKind::Unsupported,
+                        c"Unsupported renderer command".to_owned(),
+                    ));
+                }
+            })?;
+        }
+        output.push(b'\n');
+        Ok(output)
     }
 }
 
@@ -442,7 +479,7 @@ pub(crate) fn page_text(font: &RenderFont, id: i32, x: i32, y: i32, width: i32, 
             page.data.extend_from_slice(data);
             if page.current_direction == 0
                 && let Some(last) = page.commands.last_mut()
-                && last.kind == TEXT
+                && last.kind == CommandKind::Text
                 && last.font == font
                 && last.coordinates[1] == y
                 && last.coordinates[0].checked_add(last.coordinates[2]) == Some(x)
@@ -455,7 +492,7 @@ pub(crate) fn page_text(font: &RenderFont, id: i32, x: i32, y: i32, width: i32, 
                 return;
             }
             page.commands.push(Command {
-                kind: TEXT,
+                kind: CommandKind::Text,
                 font,
                 coordinates: [x, y, width, 0],
                 start,
@@ -466,9 +503,16 @@ pub(crate) fn page_text(font: &RenderFont, id: i32, x: i32, y: i32, width: i32, 
 }
 
 pub(crate) fn page_command(kind: i32, x: i32, y: i32, width: i32, height: i32) {
+    let kind = match kind {
+        2 => CommandKind::Rule,
+        3 => CommandKind::Graphics,
+        4 => CommandKind::Direction,
+        5 => CommandKind::ResetFonts,
+        _ => CommandKind::Unsupported,
+    };
     with_runtime((), |runtime| {
         if let Some(page) = &mut runtime.page {
-            if kind == DIRECTION {
+            if kind == CommandKind::Direction {
                 page.current_direction = x;
             }
             page.commands.push(Command {
@@ -493,14 +537,14 @@ unsafe extern "C" fn tt_pdf_page_bytes(data: *const c_char, length: usize) -> i3
             page.data
                 .extend_from_slice(slice::from_raw_parts(data.cast(), length));
             if let Some(last) = page.commands.last_mut()
-                && last.kind == RAW_BYTES
+                && last.kind == CommandKind::Bytes
                 && last.start + last.length == start
             {
                 last.length += length;
                 return 1;
             }
             page.commands.push(Command {
-                kind: RAW_BYTES,
+                kind: CommandKind::Bytes,
                 font: 0,
                 coordinates: [0; 4],
                 start,

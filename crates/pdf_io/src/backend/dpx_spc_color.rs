@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -300,9 +301,7 @@ pub unsafe extern "C-unwind" fn spc_color_setup_handler(
 }
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
-}
+unsafe extern "C" {}
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_color_check_special(
     mut buf: *const ::core::ffi::c_char,

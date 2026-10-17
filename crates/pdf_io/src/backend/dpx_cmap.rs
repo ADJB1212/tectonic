@@ -24,6 +24,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -217,10 +218,11 @@ pub const CMAP_PROF_TYPE_INBYTES_MIN: ::core::ffi::c_int = 0;
 pub const CMAP_PROF_TYPE_INBYTES_MAX: ::core::ffi::c_int = 1;
 pub const CMAP_PROF_TYPE_OUTBYTES_MIN: ::core::ffi::c_int = 2;
 pub const CMAP_PROF_TYPE_OUTBYTES_MAX: ::core::ffi::c_int = 3;
-static mut __silent: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+
 #[unsafe(export_name = "__pdf_impl_CMap_set_silent")]
 pub unsafe extern "C-unwind" fn CMap_set_silent(mut value: ::core::ffi::c_int) {
-    __silent = if value != 0 {
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).__silent = if value != 0 {
         1 as ::core::ffi::c_int
     } else {
         0 as ::core::ffi::c_int
@@ -943,6 +945,7 @@ pub unsafe extern "C-unwind" fn CMap_add_notdefrange(
     mut srcdim: size_t,
     mut dst: CID,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut c: ::core::ffi::c_int = 0;
     let mut cur: *mut mapDef = ::core::ptr::null_mut::<mapDef>();
     if cmap.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -978,7 +981,7 @@ pub unsafe extern "C-unwind" fn CMap_add_notdefrange(
             0 as ::core::ffi::c_int
         } != 0
         {
-            if __silent == 0 {
+            if (*__pdf_state).__silent == 0 {
                 pdf_warning!(
                     b"Trying to redefine already defined code mapping. (ignored)\0" as *const u8
                         as *const ::core::ffi::c_char,
@@ -1097,6 +1100,7 @@ pub unsafe extern "C-unwind" fn CMap_add_cidrange(
     mut srcdim: size_t,
     mut base: CID,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut i: size_t = 0;
     let mut c: size_t = 0;
     let mut v: size_t = 0;
@@ -1135,7 +1139,7 @@ pub unsafe extern "C-unwind" fn CMap_add_cidrange(
     c = *srclo.offset(srcdim.wrapping_sub(1 as size_t) as isize) as size_t;
     while c <= *srchi.offset(srcdim.wrapping_sub(1 as size_t) as isize) as size_t {
         if (*cur.offset(c as isize)).flag != 0 as ::core::ffi::c_int {
-            if __silent == 0 {
+            if (*__pdf_state).__silent == 0 {
                 pdf_warning!(
                     b"Trying to redefine already defined CID mapping. (ignored)\0" as *const u8
                         as *const ::core::ffi::c_char,
@@ -1373,9 +1377,10 @@ unsafe extern "C-unwind" fn check_range(
     return 0 as ::core::ffi::c_int;
 }
 pub const CMAP_CACHE_ALLOC_SIZE: ::core::ffi::c_uint = 16 as ::core::ffi::c_uint;
-static mut __cache: *mut CMap_cache = ::core::ptr::null::<CMap_cache>() as *mut CMap_cache;
+
 #[unsafe(export_name = "__pdf_impl_CMap_cache_init")]
 pub unsafe extern "C-unwind" fn CMap_cache_init() {
+    let __pdf_state = unsafe { document_state() };
     static mut range_min: [::core::ffi::c_uchar; 2] = [
         0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
         0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
@@ -1384,96 +1389,122 @@ pub unsafe extern "C-unwind" fn CMap_cache_init() {
         0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
         0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
     ];
-    if !__cache.is_null() {
+    if !(*__pdf_state).__cache.is_null() {
         pdf_abort!(
             b"%s: Already initialized.\0" as *const u8 as *const ::core::ffi::c_char,
             CMAP_DEBUG_STR.as_ptr(),
         );
     }
-    __cache = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<CMap_cache>() as usize) as uint32_t)
-        as *mut CMap_cache;
-    (*__cache).max = CMAP_CACHE_ALLOC_SIZE as ::core::ffi::c_int;
-    (*__cache).cmaps = new(((*__cache).max as uint32_t as usize)
+    (*__pdf_state).__cache = new((1 as ::core::ffi::c_int as uint32_t as usize)
+        .wrapping_mul(::core::mem::size_of::<CMap_cache>() as usize)
+        as uint32_t) as *mut CMap_cache;
+    (*(*__pdf_state).__cache).max = CMAP_CACHE_ALLOC_SIZE as ::core::ffi::c_int;
+    (*(*__pdf_state).__cache).cmaps = new(((*(*__pdf_state).__cache).max as uint32_t as usize)
         .wrapping_mul(::core::mem::size_of::<*mut CMap>() as usize)
         as uint32_t) as *mut *mut CMap;
-    (*__cache).num = 0 as ::core::ffi::c_int;
-    let ref mut fresh7 = *(*__cache).cmaps.offset(0 as ::core::ffi::c_int as isize);
+    (*(*__pdf_state).__cache).num = 0 as ::core::ffi::c_int;
+    let ref mut fresh7 = *(*(*__pdf_state).__cache)
+        .cmaps
+        .offset(0 as ::core::ffi::c_int as isize);
     *fresh7 = CMap_new();
     CMap_set_name(
-        *(*__cache).cmaps.offset(0 as ::core::ffi::c_int as isize),
+        *(*(*__pdf_state).__cache)
+            .cmaps
+            .offset(0 as ::core::ffi::c_int as isize),
         b"Identity-H\0" as *const u8 as *const ::core::ffi::c_char,
     );
     CMap_set_type(
-        *(*__cache).cmaps.offset(0 as ::core::ffi::c_int as isize),
+        *(*(*__pdf_state).__cache)
+            .cmaps
+            .offset(0 as ::core::ffi::c_int as isize),
         CMAP_TYPE_IDENTITY,
     );
     CMap_set_wmode(
-        *(*__cache).cmaps.offset(0 as ::core::ffi::c_int as isize),
+        *(*(*__pdf_state).__cache)
+            .cmaps
+            .offset(0 as ::core::ffi::c_int as isize),
         0 as ::core::ffi::c_int,
     );
     CMap_set_CIDSysInfo(
-        *(*__cache).cmaps.offset(0 as ::core::ffi::c_int as isize),
+        *(*(*__pdf_state).__cache)
+            .cmaps
+            .offset(0 as ::core::ffi::c_int as isize),
         &raw mut CSI_IDENTITY,
     );
     CMap_add_codespacerange(
-        *(*__cache).cmaps.offset(0 as ::core::ffi::c_int as isize),
+        *(*(*__pdf_state).__cache)
+            .cmaps
+            .offset(0 as ::core::ffi::c_int as isize),
         &raw mut range_min as *mut ::core::ffi::c_uchar,
         &raw mut range_max as *mut ::core::ffi::c_uchar,
         2 as size_t,
     );
-    let ref mut fresh8 = *(*__cache).cmaps.offset(1 as ::core::ffi::c_int as isize);
+    let ref mut fresh8 = *(*(*__pdf_state).__cache)
+        .cmaps
+        .offset(1 as ::core::ffi::c_int as isize);
     *fresh8 = CMap_new();
     CMap_set_name(
-        *(*__cache).cmaps.offset(1 as ::core::ffi::c_int as isize),
+        *(*(*__pdf_state).__cache)
+            .cmaps
+            .offset(1 as ::core::ffi::c_int as isize),
         b"Identity-V\0" as *const u8 as *const ::core::ffi::c_char,
     );
     CMap_set_type(
-        *(*__cache).cmaps.offset(1 as ::core::ffi::c_int as isize),
+        *(*(*__pdf_state).__cache)
+            .cmaps
+            .offset(1 as ::core::ffi::c_int as isize),
         CMAP_TYPE_IDENTITY,
     );
     CMap_set_wmode(
-        *(*__cache).cmaps.offset(1 as ::core::ffi::c_int as isize),
+        *(*(*__pdf_state).__cache)
+            .cmaps
+            .offset(1 as ::core::ffi::c_int as isize),
         1 as ::core::ffi::c_int,
     );
     CMap_set_CIDSysInfo(
-        *(*__cache).cmaps.offset(1 as ::core::ffi::c_int as isize),
+        *(*(*__pdf_state).__cache)
+            .cmaps
+            .offset(1 as ::core::ffi::c_int as isize),
         &raw mut CSI_IDENTITY,
     );
     CMap_add_codespacerange(
-        *(*__cache).cmaps.offset(1 as ::core::ffi::c_int as isize),
+        *(*(*__pdf_state).__cache)
+            .cmaps
+            .offset(1 as ::core::ffi::c_int as isize),
         &raw mut range_min as *mut ::core::ffi::c_uchar,
         &raw mut range_max as *mut ::core::ffi::c_uchar,
         2 as size_t,
     );
-    (*__cache).num += 2 as ::core::ffi::c_int;
+    (*(*__pdf_state).__cache).num += 2 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_CMap_cache_get")]
 pub unsafe extern "C-unwind" fn CMap_cache_get(mut id: ::core::ffi::c_int) -> *mut CMap {
-    if __cache.is_null() {
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).__cache.is_null() {
         pdf_abort!(
             b"%s: CMap cache not initialized.\0" as *const u8 as *const ::core::ffi::c_char,
             CMAP_DEBUG_STR.as_ptr(),
         );
     }
-    if id < 0 as ::core::ffi::c_int || id >= (*__cache).num {
+    if id < 0 as ::core::ffi::c_int || id >= (*(*__pdf_state).__cache).num {
         pdf_abort!(
             b"Invalid CMap ID %d\0" as *const u8 as *const ::core::ffi::c_char,
             id,
         );
     }
-    return *(*__cache).cmaps.offset(id as isize);
+    return *(*(*__pdf_state).__cache).cmaps.offset(id as isize);
 }
 #[unsafe(export_name = "__pdf_impl_CMap_cache_find")]
 pub unsafe extern "C-unwind" fn CMap_cache_find(
     mut cmap_name: *const ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut id: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut handle: rust_input_handle_t = INVALID_HANDLE;
-    if __cache.is_null() {
+    if (*__pdf_state).__cache.is_null() {
         CMap_cache_init();
     }
-    if __cache.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
+    if (*__pdf_state).__cache.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"__cache\0" as *const u8 as *const ::core::ffi::c_char
@@ -1481,9 +1512,9 @@ pub unsafe extern "C-unwind" fn CMap_cache_find(
     } else {
     };
     id = 0 as ::core::ffi::c_int;
-    while id < (*__cache).num {
+    while id < (*(*__pdf_state).__cache).num {
         let mut name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-        name = CMap_get_name(*(*__cache).cmaps.offset(id as isize));
+        name = CMap_get_name(*(*(*__pdf_state).__cache).cmaps.offset(id as isize));
         if !name.is_null() && streq_ptr(cmap_name, name) as ::core::ffi::c_int != 0 {
             return id;
         }
@@ -1503,20 +1534,23 @@ pub unsafe extern "C-unwind" fn CMap_cache_find(
             cmap_name
         );
     }
-    if (*__cache).num >= (*__cache).max {
-        (*__cache).max = ((*__cache).max as ::core::ffi::c_uint).wrapping_add(CMAP_CACHE_ALLOC_SIZE)
+    if (*(*__pdf_state).__cache).num >= (*(*__pdf_state).__cache).max {
+        (*(*__pdf_state).__cache).max = ((*(*__pdf_state).__cache).max as ::core::ffi::c_uint)
+            .wrapping_add(CMAP_CACHE_ALLOC_SIZE)
             as ::core::ffi::c_int as ::core::ffi::c_int;
-        (*__cache).cmaps = renew(
-            (*__cache).cmaps as *mut ::core::ffi::c_void,
-            ((*__cache).max as uint32_t as usize)
+        (*(*__pdf_state).__cache).cmaps = renew(
+            (*(*__pdf_state).__cache).cmaps as *mut ::core::ffi::c_void,
+            ((*(*__pdf_state).__cache).max as uint32_t as usize)
                 .wrapping_mul(::core::mem::size_of::<*mut CMap>() as usize) as uint32_t,
         ) as *mut *mut CMap;
     }
-    id = (*__cache).num;
-    (*__cache).num += 1;
-    let ref mut fresh9 = *(*__cache).cmaps.offset(id as isize);
+    id = (*(*__pdf_state).__cache).num;
+    (*(*__pdf_state).__cache).num += 1;
+    let ref mut fresh9 = *(*(*__pdf_state).__cache).cmaps.offset(id as isize);
     *fresh9 = CMap_new();
-    if CMap_parse(*(*__cache).cmaps.offset(id as isize), handle) < 0 as ::core::ffi::c_int {
+    if CMap_parse(*(*(*__pdf_state).__cache).cmaps.offset(id as isize), handle)
+        < 0 as ::core::ffi::c_int
+    {
         pdf_abort!(
             b"%s: Parsing CMap file failed.\0" as *const u8 as *const ::core::ffi::c_char,
             CMAP_DEBUG_STR.as_ptr(),
@@ -1530,6 +1564,7 @@ pub unsafe extern "C-unwind" fn CMap_cache_find(
 }
 #[unsafe(export_name = "__pdf_impl_CMap_cache_add")]
 pub unsafe extern "C-unwind" fn CMap_cache_add(mut cmap: *mut CMap) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut id: ::core::ffi::c_int = 0;
     let mut cmap_name0: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut cmap_name1: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -1540,9 +1575,9 @@ pub unsafe extern "C-unwind" fn CMap_cache_add(mut cmap: *mut CMap) -> ::core::f
         );
     }
     id = 0 as ::core::ffi::c_int;
-    while id < (*__cache).num {
+    while id < (*(*__pdf_state).__cache).num {
         cmap_name0 = CMap_get_name(cmap);
-        cmap_name1 = CMap_get_name(*(*__cache).cmaps.offset(id as isize));
+        cmap_name1 = CMap_get_name(*(*(*__pdf_state).__cache).cmaps.offset(id as isize));
         if streq_ptr(cmap_name0, cmap_name1) {
             pdf_abort!(
                 b"%s: CMap \"%s\" already defined.\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1552,38 +1587,40 @@ pub unsafe extern "C-unwind" fn CMap_cache_add(mut cmap: *mut CMap) -> ::core::f
         }
         id += 1;
     }
-    if (*__cache).num >= (*__cache).max {
-        (*__cache).max = ((*__cache).max as ::core::ffi::c_uint).wrapping_add(CMAP_CACHE_ALLOC_SIZE)
+    if (*(*__pdf_state).__cache).num >= (*(*__pdf_state).__cache).max {
+        (*(*__pdf_state).__cache).max = ((*(*__pdf_state).__cache).max as ::core::ffi::c_uint)
+            .wrapping_add(CMAP_CACHE_ALLOC_SIZE)
             as ::core::ffi::c_int as ::core::ffi::c_int;
-        (*__cache).cmaps = renew(
-            (*__cache).cmaps as *mut ::core::ffi::c_void,
-            ((*__cache).max as uint32_t as usize)
+        (*(*__pdf_state).__cache).cmaps = renew(
+            (*(*__pdf_state).__cache).cmaps as *mut ::core::ffi::c_void,
+            ((*(*__pdf_state).__cache).max as uint32_t as usize)
                 .wrapping_mul(::core::mem::size_of::<*mut CMap>() as usize) as uint32_t,
         ) as *mut *mut CMap;
     }
-    id = (*__cache).num;
-    (*__cache).num += 1;
-    let ref mut fresh10 = *(*__cache).cmaps.offset(id as isize);
+    id = (*(*__pdf_state).__cache).num;
+    (*(*__pdf_state).__cache).num += 1;
+    let ref mut fresh10 = *(*(*__pdf_state).__cache).cmaps.offset(id as isize);
     *fresh10 = cmap;
     return id;
 }
 #[unsafe(export_name = "__pdf_impl_CMap_cache_close")]
 pub unsafe extern "C-unwind" fn CMap_cache_close() {
-    if !__cache.is_null() {
+    let __pdf_state = unsafe { document_state() };
+    if !(*__pdf_state).__cache.is_null() {
         let mut id: ::core::ffi::c_int = 0;
         id = 0 as ::core::ffi::c_int;
-        while id < (*__cache).num {
-            CMap_release(*(*__cache).cmaps.offset(id as isize));
+        while id < (*(*__pdf_state).__cache).num {
+            CMap_release(*(*(*__pdf_state).__cache).cmaps.offset(id as isize));
             id += 1;
         }
-        free((*__cache).cmaps as *mut ::core::ffi::c_void);
-        __cache = mfree(__cache as *mut ::core::ffi::c_void) as *mut CMap_cache;
+        free((*(*__pdf_state).__cache).cmaps as *mut ::core::ffi::c_void);
+        (*__pdf_state).__cache =
+            mfree((*__pdf_state).__cache as *mut ::core::ffi::c_void) as *mut CMap_cache;
     }
 }
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcmp(
         __s1: *const ::core::ffi::c_void,
         __s2: *const ::core::ffi::c_void,
@@ -2047,5 +2084,31 @@ pub unsafe extern "C" fn __pdf_entry_CMap_cache_close() -> i32 {
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    __silent: ::core::ffi::c_int,
+    __cache: *mut CMap_cache,
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                __silent: 0 as ::core::ffi::c_int,
+                __cache: ::core::ptr::null::<CMap_cache>() as *mut CMap_cache,
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_cmap
+            .pointer
     }
 }

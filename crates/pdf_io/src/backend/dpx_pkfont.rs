@@ -27,6 +27,7 @@
     dangerous_implicit_autorefs
 )]
 use crate::backend::dpx_pdfdev::pdf_sprint_number;
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -202,22 +203,24 @@ pub const INVALID_HANDLE: uintptr_t = 0 as ::core::ffi::c_int as uintptr_t;
 pub const STREAM_COMPRESS: ::core::ffi::c_int =
     (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const PKFONT_DPI_DEFAULT: ::core::ffi::c_uint = 600 as ::core::ffi::c_uint;
-static mut base_dpi: ::core::ffi::c_uint = PKFONT_DPI_DEFAULT;
+
 #[unsafe(export_name = "__pdf_impl_PKFont_set_dpi")]
 pub unsafe extern "C-unwind" fn PKFont_set_dpi(mut dpi: ::core::ffi::c_int) {
+    let __pdf_state = unsafe { document_state() };
     if dpi <= 0 as ::core::ffi::c_int {
         pdf_abort!(
             b"Invalid DPI: %d\n\0" as *const u8 as *const ::core::ffi::c_char,
             dpi,
         );
     }
-    base_dpi = dpi as ::core::ffi::c_uint;
+    (*__pdf_state).base_dpi = dpi as ::core::ffi::c_uint;
 }
 unsafe extern "C-unwind" fn truedpi(
     mut ident: *const ::core::ffi::c_char,
     mut point_size: ::core::ffi::c_double,
     mut bdpi: ::core::ffi::c_uint,
 ) -> ::core::ffi::c_uint {
+    let __pdf_state = unsafe { document_state() };
     let mut dpi: ::core::ffi::c_uint = bdpi;
     let mut design_size: ::core::ffi::c_double = 0.;
     let mut tfm_id: ::core::ffi::c_int = 0;
@@ -232,9 +235,10 @@ unsafe extern "C-unwind" fn truedpi(
             ident,
         );
     } else {
-        dpi =
-            (floor(base_dpi as ::core::ffi::c_double * point_size / design_size / 1.0f64 + 0.5f64)
-                * 1.0f64) as ::core::ffi::c_uint;
+        dpi = (floor(
+            (*__pdf_state).base_dpi as ::core::ffi::c_double * point_size / design_size / 1.0f64
+                + 0.5f64,
+        ) * 1.0f64) as ::core::ffi::c_uint;
     }
     return dpi;
 }
@@ -259,6 +263,7 @@ pub unsafe extern "C-unwind" fn pdf_font_open_pkfont(
     mut embedding: ::core::ffi::c_int,
     mut point_size: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut dpi: ::core::ffi::c_uint = 0;
     let mut handle: rust_input_handle_t = 0;
     if ident.is_null() || point_size <= 0.0f64 {
@@ -278,7 +283,7 @@ pub unsafe extern "C-unwind" fn pdf_font_open_pkfont(
             ident,
         );
     }
-    dpi = truedpi(ident, point_size, base_dpi);
+    dpi = truedpi(ident, point_size, (*__pdf_state).base_dpi);
     handle = dpx_open_pk_font_at(ident, dpi);
     if handle == 0 {
         return -(1 as ::core::ffi::c_int);
@@ -842,6 +847,7 @@ pub const PK_PRE: ::core::ffi::c_int = 247;
 pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
     mut font: *mut pdf_font,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut fontdict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut usedchars: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut ident: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -892,7 +898,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
         );
     } else {
     };
-    dpi = truedpi(ident, point_size, base_dpi);
+    dpi = truedpi(ident, point_size, (*__pdf_state).base_dpi);
     handle = dpx_open_pk_font_at(ident, dpi);
     if handle == 0 {
         pdf_abort!(
@@ -908,7 +914,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
         256 as size_t,
     );
     charprocs = pdf_new_dict();
-    pix2charu = 72.0f64 * 1000.0f64 / base_dpi as ::core::ffi::c_double / point_size;
+    pix2charu = 72.0f64 * 1000.0f64 / (*__pdf_state).base_dpi as ::core::ffi::c_double / point_size;
     bbox.lly = ::core::f64::INFINITY;
     bbox.llx = bbox.lly;
     bbox.ury = -::core::f64::INFINITY;
@@ -1239,7 +1245,6 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memset(
         __b: *mut ::core::ffi::c_void,
         __c: ::core::ffi::c_int,
@@ -1296,5 +1301,29 @@ pub unsafe extern "C" fn __pdf_entry_pdf_font_load_pkfont(
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    base_dpi: ::core::ffi::c_uint,
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                base_dpi: PKFONT_DPI_DEFAULT,
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_pkfont
+            .pointer
     }
 }

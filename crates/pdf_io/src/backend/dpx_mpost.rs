@@ -30,6 +30,7 @@ use crate::backend::dpx_pdfdev::{
     dev_unit_dviunit, pdf_dev_get_dirmode, pdf_dev_get_param, pdf_dev_set_dirmode,
     pdf_dev_set_param, transform_info_clear,
 };
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -482,1808 +483,13 @@ pub const INFO_HAS_USER_BBOX: ::core::ffi::c_int =
 pub const PDF_DEV_PARAM_AUTOROTATE: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const PDF_DASH_SIZE_MAX: ::core::ffi::c_int = 16 as ::core::ffi::c_int;
 pub const PDF_FILL_RULE_NONZERO: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-static mut Yorigin: ::core::ffi::c_double = 0.;
-static mut Xorigin: ::core::ffi::c_double = 0.;
-static mut translate_origin: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+
 #[unsafe(export_name = "__pdf_impl_mps_set_translate_origin")]
 pub unsafe extern "C-unwind" fn mps_set_translate_origin(mut v: ::core::ffi::c_int) {
-    translate_origin = v;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).translate_origin = v;
 }
-static mut font_stack: [mp_font; 256] = [
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: -(1 as ::core::ffi::c_int),
-        tfm_id: -(1 as ::core::ffi::c_int),
-        subfont_id: -(1 as ::core::ffi::c_int),
-        pt_size: 0 as ::core::ffi::c_int as ::core::ffi::c_double,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-    mp_font {
-        font_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        font_id: 0,
-        tfm_id: 0,
-        subfont_id: 0,
-        pt_size: 0.,
-    },
-];
-static mut currentfont: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+
 unsafe extern "C-unwind" fn clear_mp_font_struct(mut font: *mut mp_font) {
     if font.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
@@ -2304,19 +510,21 @@ unsafe extern "C-unwind" fn clear_mp_font_struct(mut font: *mut mp_font) {
 pub const MP_CMODE_MPOST: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const MP_CMODE_DVIPSK: ::core::ffi::c_int = 1;
 pub const MP_CMODE_PTEXVERT: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
-static mut mp_cmode: ::core::ffi::c_int = MP_CMODE_MPOST;
+
 unsafe extern "C-unwind" fn mp_setfont(
     mut font_name: *const ::core::ffi::c_char,
     mut pt_size: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut name: *const ::core::ffi::c_char = font_name;
     let mut font: *mut mp_font = ::core::ptr::null_mut::<mp_font>();
     let mut subfont_id: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut mrec: *mut fontmap_rec = ::core::ptr::null_mut::<fontmap_rec>();
-    font = (if currentfont < 0 as ::core::ffi::c_int {
+    font = (if (*__pdf_state).currentfont < 0 as ::core::ffi::c_int {
         ::core::ptr::null_mut::<mp_font>()
     } else {
-        (&raw mut font_stack as *mut mp_font).offset(currentfont as isize) as *mut mp_font
+        (&raw mut (*__pdf_state).font_stack as *mut mp_font)
+            .offset((*__pdf_state).currentfont as isize) as *mut mp_font
     }) as *mut mp_font;
     mrec = pdf_lookup_fontmap_record(font_name);
     if !mrec.is_null()
@@ -2351,14 +559,15 @@ unsafe extern "C-unwind" fn mp_setfont(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn save_font() {
+    let __pdf_state = unsafe { document_state() };
     let mut current: *mut mp_font = ::core::ptr::null_mut::<mp_font>();
     let mut next: *mut mp_font = ::core::ptr::null_mut::<mp_font>();
-    let fresh23 = currentfont;
-    currentfont = currentfont + 1;
-    current = (&raw mut font_stack as *mut mp_font).offset(fresh23 as isize) as *mut mp_font
-        as *mut mp_font;
-    next = (&raw mut font_stack as *mut mp_font).offset(currentfont as isize) as *mut mp_font
-        as *mut mp_font;
+    let fresh23 = (*__pdf_state).currentfont;
+    (*__pdf_state).currentfont = (*__pdf_state).currentfont + 1;
+    current = (&raw mut (*__pdf_state).font_stack as *mut mp_font).offset(fresh23 as isize)
+        as *mut mp_font as *mut mp_font;
+    next = (&raw mut (*__pdf_state).font_stack as *mut mp_font)
+        .offset((*__pdf_state).currentfont as isize) as *mut mp_font as *mut mp_font;
     if !current.is_null()
         && !(*current).font_name.is_null()
         && (*current).font_id >= 0 as ::core::ffi::c_int
@@ -2382,27 +591,31 @@ unsafe extern "C-unwind" fn save_font() {
     };
 }
 unsafe extern "C-unwind" fn restore_font() {
+    let __pdf_state = unsafe { document_state() };
     let mut current: *mut mp_font = ::core::ptr::null_mut::<mp_font>();
-    current = (if currentfont < 0 as ::core::ffi::c_int {
+    current = (if (*__pdf_state).currentfont < 0 as ::core::ffi::c_int {
         ::core::ptr::null_mut::<mp_font>()
     } else {
-        (&raw mut font_stack as *mut mp_font).offset(currentfont as isize) as *mut mp_font
+        (&raw mut (*__pdf_state).font_stack as *mut mp_font)
+            .offset((*__pdf_state).currentfont as isize) as *mut mp_font
     }) as *mut mp_font;
     if !current.is_null() {
         clear_mp_font_struct(current);
     }
-    if currentfont > 0 as ::core::ffi::c_int {
-        currentfont -= 1;
+    if (*__pdf_state).currentfont > 0 as ::core::ffi::c_int {
+        (*__pdf_state).currentfont -= 1;
     }
 }
 unsafe extern "C-unwind" fn clear_fonts() {
-    while currentfont >= 0 as ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
+    while (*__pdf_state).currentfont >= 0 as ::core::ffi::c_int {
         clear_mp_font_struct(
-            (&raw mut font_stack as *mut mp_font).offset(currentfont as isize) as *mut mp_font,
+            (&raw mut (*__pdf_state).font_stack as *mut mp_font)
+                .offset((*__pdf_state).currentfont as isize) as *mut mp_font,
         );
-        currentfont -= 1;
+        (*__pdf_state).currentfont -= 1;
     }
-    currentfont = 0 as ::core::ffi::c_int;
+    (*__pdf_state).currentfont = 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn is_fontname(mut token: *const ::core::ffi::c_char) -> bool {
     let mut mrec: *mut fontmap_rec = ::core::ptr::null_mut::<fontmap_rec>();
@@ -2418,6 +631,7 @@ pub unsafe extern "C-unwind" fn mps_scan_bbox(
     mut endptr: *const ::core::ffi::c_char,
     mut bbox: *mut pdf_rect,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut number: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut values: [::core::ffi::c_double; 4] = [0.; 4];
     let mut i: ::core::ffi::c_int = 0;
@@ -2447,22 +661,22 @@ pub unsafe extern "C-unwind" fn mps_scan_bbox(
             if i < 4 as ::core::ffi::c_int {
                 return -(1 as ::core::ffi::c_int);
             } else {
-                if translate_origin != 0 {
+                if (*__pdf_state).translate_origin != 0 {
                     (*bbox).llx = 0 as ::core::ffi::c_int as ::core::ffi::c_double;
                     (*bbox).lly = 0 as ::core::ffi::c_int as ::core::ffi::c_double;
                     (*bbox).urx = values[2 as ::core::ffi::c_int as usize]
                         - values[0 as ::core::ffi::c_int as usize];
                     (*bbox).ury = values[3 as ::core::ffi::c_int as usize]
                         - values[1 as ::core::ffi::c_int as usize];
-                    Xorigin = values[0 as ::core::ffi::c_int as usize];
-                    Yorigin = values[1 as ::core::ffi::c_int as usize];
+                    (*__pdf_state).Xorigin = values[0 as ::core::ffi::c_int as usize];
+                    (*__pdf_state).Yorigin = values[1 as ::core::ffi::c_int as usize];
                 } else {
                     (*bbox).llx = values[0 as ::core::ffi::c_int as usize];
                     (*bbox).lly = values[1 as ::core::ffi::c_int as usize];
                     (*bbox).urx = values[2 as ::core::ffi::c_int as usize];
                     (*bbox).ury = values[3 as ::core::ffi::c_int as usize];
-                    Xorigin = 0.0f64;
-                    Yorigin = 0.0f64;
+                    (*__pdf_state).Xorigin = 0.0f64;
+                    (*__pdf_state).Yorigin = 0.0f64;
                 }
                 return 0 as ::core::ffi::c_int;
             }
@@ -2901,25 +1115,34 @@ unsafe extern "C-unwind" fn get_opcode(
     return -(1 as ::core::ffi::c_int);
 }
 pub const PS_STACK_SIZE: ::core::ffi::c_int = 1024 as ::core::ffi::c_int;
-static mut stack: [*mut pdf_obj; 1024] = [::core::ptr::null::<pdf_obj>() as *mut pdf_obj; 1024];
-static mut top_stack: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
+
 unsafe extern "C-unwind" fn do_exch() -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut tmp: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    if top_stack < 2 as ::core::ffi::c_uint {
+    if (*__pdf_state).top_stack < 2 as ::core::ffi::c_uint {
         return -(1 as ::core::ffi::c_int);
     }
-    tmp = stack[top_stack.wrapping_sub(1 as ::core::ffi::c_uint) as usize];
-    stack[top_stack.wrapping_sub(1 as ::core::ffi::c_uint) as usize] =
-        stack[top_stack.wrapping_sub(2 as ::core::ffi::c_uint) as usize];
-    stack[top_stack.wrapping_sub(2 as ::core::ffi::c_uint) as usize] = tmp;
+    tmp = (*__pdf_state).stack[(*__pdf_state)
+        .top_stack
+        .wrapping_sub(1 as ::core::ffi::c_uint) as usize];
+    (*__pdf_state).stack[(*__pdf_state)
+        .top_stack
+        .wrapping_sub(1 as ::core::ffi::c_uint) as usize] = (*__pdf_state).stack[(*__pdf_state)
+        .top_stack
+        .wrapping_sub(2 as ::core::ffi::c_uint)
+        as usize];
+    (*__pdf_state).stack[(*__pdf_state)
+        .top_stack
+        .wrapping_sub(2 as ::core::ffi::c_uint) as usize] = tmp;
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn do_clear() -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut tmp: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    while top_stack > 0 as ::core::ffi::c_uint {
-        tmp = if top_stack > 0 as ::core::ffi::c_uint {
-            top_stack = top_stack.wrapping_sub(1);
-            stack[top_stack as usize]
+    while (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+        tmp = if (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+            (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_sub(1);
+            (*__pdf_state).stack[(*__pdf_state).top_stack as usize]
         } else {
             ::core::ptr::null_mut::<pdf_obj>()
         };
@@ -2931,6 +1154,7 @@ unsafe extern "C-unwind" fn pop_get_numbers(
     mut values: *mut ::core::ffi::c_double,
     mut count: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut tmp: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     loop {
         let fresh18 = count;
@@ -2938,9 +1162,9 @@ unsafe extern "C-unwind" fn pop_get_numbers(
         if !(fresh18 > 0 as ::core::ffi::c_int) {
             break;
         }
-        tmp = if top_stack > 0 as ::core::ffi::c_uint {
-            top_stack = top_stack.wrapping_sub(1);
-            stack[top_stack as usize]
+        tmp = if (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+            (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_sub(1);
+            (*__pdf_state).stack[(*__pdf_state).top_stack as usize]
         } else {
             ::core::ptr::null_mut::<pdf_obj>()
         };
@@ -3017,12 +1241,13 @@ unsafe extern "C-unwind" fn is_fontdict(mut dict: *mut pdf_obj) -> bool {
     return true_0 != 0;
 }
 unsafe extern "C-unwind" fn do_findfont() -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut font_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut font_name: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    font_name = if top_stack > 0 as ::core::ffi::c_uint {
-        top_stack = top_stack.wrapping_sub(1);
-        stack[top_stack as usize]
+    font_name = if (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+        (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_sub(1);
+        (*__pdf_state).stack[(*__pdf_state).top_stack as usize]
     } else {
         ::core::ptr::null_mut::<pdf_obj>()
     };
@@ -3056,10 +1281,10 @@ unsafe extern "C-unwind" fn do_findfont() -> ::core::ffi::c_int {
             pdf_new_name(b"FontScale\0" as *const u8 as *const ::core::ffi::c_char),
             pdf_new_number(1.0f64),
         );
-        if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-            let fresh21 = top_stack;
-            top_stack = top_stack.wrapping_add(1);
-            stack[fresh21 as usize] = font_dict;
+        if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+            let fresh21 = (*__pdf_state).top_stack;
+            (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+            (*__pdf_state).stack[fresh21 as usize] = font_dict;
         } else {
             pdf_warning!(
                 b"PS stack overflow including MetaPost file or inline PS code\0" as *const u8
@@ -3074,6 +1299,7 @@ unsafe extern "C-unwind" fn do_findfont() -> ::core::ffi::c_int {
     return error;
 }
 unsafe extern "C-unwind" fn do_scalefont() -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut font_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut font_scale: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -3082,9 +1308,9 @@ unsafe extern "C-unwind" fn do_scalefont() -> ::core::ffi::c_int {
     if error != 0 {
         return error;
     }
-    font_dict = if top_stack > 0 as ::core::ffi::c_uint {
-        top_stack = top_stack.wrapping_sub(1);
-        stack[top_stack as usize]
+    font_dict = if (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+        (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_sub(1);
+        (*__pdf_state).stack[(*__pdf_state).top_stack as usize]
     } else {
         ::core::ptr::null_mut::<pdf_obj>()
     };
@@ -3096,10 +1322,10 @@ unsafe extern "C-unwind" fn do_scalefont() -> ::core::ffi::c_int {
             b"FontScale\0" as *const u8 as *const ::core::ffi::c_char,
         );
         pdf_set_number(font_scale, pdf_number_value(font_scale) * scale);
-        if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-            let fresh20 = top_stack;
-            top_stack = top_stack.wrapping_add(1);
-            stack[fresh20 as usize] = font_dict;
+        if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+            let fresh20 = (*__pdf_state).top_stack;
+            (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+            (*__pdf_state).stack[fresh20 as usize] = font_dict;
         } else {
             pdf_warning!(
                 b"PS stack overflow including MetaPost file or inline PS code\0" as *const u8
@@ -3114,13 +1340,14 @@ unsafe extern "C-unwind" fn do_scalefont() -> ::core::ffi::c_int {
     return error;
 }
 unsafe extern "C-unwind" fn do_setfont() -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut font_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut font_scale: ::core::ffi::c_double = 0.;
     let mut font_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    font_dict = if top_stack > 0 as ::core::ffi::c_uint {
-        top_stack = top_stack.wrapping_sub(1);
-        stack[top_stack as usize]
+    font_dict = if (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+        (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_sub(1);
+        (*__pdf_state).stack[(*__pdf_state).top_stack as usize]
     } else {
         ::core::ptr::null_mut::<pdf_obj>()
     };
@@ -3141,13 +1368,15 @@ unsafe extern "C-unwind" fn do_setfont() -> ::core::ffi::c_int {
     return error;
 }
 unsafe extern "C-unwind" fn do_currentfont() -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut font: *mut mp_font = ::core::ptr::null_mut::<mp_font>();
     let mut font_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    font = (if currentfont < 0 as ::core::ffi::c_int {
+    font = (if (*__pdf_state).currentfont < 0 as ::core::ffi::c_int {
         ::core::ptr::null_mut::<mp_font>()
     } else {
-        (&raw mut font_stack as *mut mp_font).offset(currentfont as isize) as *mut mp_font
+        (&raw mut (*__pdf_state).font_stack as *mut mp_font)
+            .offset((*__pdf_state).currentfont as isize) as *mut mp_font
     }) as *mut mp_font;
     if !(!font.is_null()
         && !(*font).font_name.is_null()
@@ -3172,10 +1401,10 @@ unsafe extern "C-unwind" fn do_currentfont() -> ::core::ffi::c_int {
             pdf_new_name(b"FontScale\0" as *const u8 as *const ::core::ffi::c_char),
             pdf_new_number((*font).pt_size),
         );
-        if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-            let fresh19 = top_stack;
-            top_stack = top_stack.wrapping_add(1);
-            stack[fresh19 as usize] = font_dict;
+        if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+            let fresh19 = (*__pdf_state).top_stack;
+            (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+            (*__pdf_state).stack[fresh19 as usize] = font_dict;
         } else {
             pdf_warning!(b"PS stack overflow...\0" as *const u8 as *const ::core::ffi::c_char,);
             pdf_release_obj(font_dict);
@@ -3185,16 +1414,18 @@ unsafe extern "C-unwind" fn do_currentfont() -> ::core::ffi::c_int {
     return error;
 }
 unsafe extern "C-unwind" fn do_show() -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut font: *mut mp_font = ::core::ptr::null_mut::<mp_font>();
     let mut cp: pdf_coord = pdf_coord { x: 0., y: 0. };
     let mut text_str: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut length: ::core::ffi::c_int = 0;
     let mut strptr: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
     let mut text_width: ::core::ffi::c_double = 0.;
-    font = (if currentfont < 0 as ::core::ffi::c_int {
+    font = (if (*__pdf_state).currentfont < 0 as ::core::ffi::c_int {
         ::core::ptr::null_mut::<mp_font>()
     } else {
-        (&raw mut font_stack as *mut mp_font).offset(currentfont as isize) as *mut mp_font
+        (&raw mut (*__pdf_state).font_stack as *mut mp_font)
+            .offset((*__pdf_state).currentfont as isize) as *mut mp_font
     }) as *mut mp_font;
     if !(!font.is_null()
         && !(*font).font_name.is_null()
@@ -3204,9 +1435,9 @@ unsafe extern "C-unwind" fn do_show() -> ::core::ffi::c_int {
         return 1 as ::core::ffi::c_int;
     }
     pdf_dev_currentpoint(&raw mut cp);
-    text_str = if top_stack > 0 as ::core::ffi::c_uint {
-        top_stack = top_stack.wrapping_sub(1);
-        stack[top_stack as usize]
+    text_str = if (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+        (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_sub(1);
+        (*__pdf_state).stack[(*__pdf_state).top_stack as usize]
     } else {
         ::core::ptr::null_mut::<pdf_obj>()
     };
@@ -3305,29 +1536,7 @@ unsafe extern "C-unwind" fn do_texfig_operator(
     mut x_user: ::core::ffi::c_double,
     mut y_user: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
-    static mut fig_p: transform_info = transform_info {
-        width: 0.,
-        height: 0.,
-        depth: 0.,
-        matrix: pdf_tmatrix {
-            a: 0.,
-            b: 0.,
-            c: 0.,
-            d: 0.,
-            e: 0.,
-            f: 0.,
-        },
-        bbox: pdf_rect {
-            llx: 0.,
-            lly: 0.,
-            urx: 0.,
-            ury: 0.,
-        },
-        flags: 0,
-    };
-    static mut in_tfig: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    static mut xobj_id: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
-    static mut count: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+    let __pdf_state = unsafe { document_state() };
     let mut values: [::core::ffi::c_double; 6] = [0.; 6];
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     match opcode {
@@ -3339,32 +1548,38 @@ unsafe extern "C-unwind" fn do_texfig_operator(
             if error == 0 {
                 let mut dvi2pts: ::core::ffi::c_double = 0.;
                 let mut resname: [::core::ffi::c_char; 256] = [0; 256];
-                transform_info_clear(&raw mut fig_p);
+                transform_info_clear(&raw mut (*__pdf_state).do_texfig_operator_fig_p);
                 dvi2pts = 1.0f64 / dev_unit_dviunit();
-                fig_p.width = values[0 as ::core::ffi::c_int as usize] * dvi2pts;
-                fig_p.height = values[1 as ::core::ffi::c_int as usize] * dvi2pts;
-                fig_p.bbox.llx = values[2 as ::core::ffi::c_int as usize] * dvi2pts;
-                fig_p.bbox.lly = -values[3 as ::core::ffi::c_int as usize] * dvi2pts;
-                fig_p.bbox.urx = values[4 as ::core::ffi::c_int as usize] * dvi2pts;
-                fig_p.bbox.ury = -values[5 as ::core::ffi::c_int as usize] * dvi2pts;
-                fig_p.flags |= INFO_HAS_USER_BBOX;
+                (*__pdf_state).do_texfig_operator_fig_p.width =
+                    values[0 as ::core::ffi::c_int as usize] * dvi2pts;
+                (*__pdf_state).do_texfig_operator_fig_p.height =
+                    values[1 as ::core::ffi::c_int as usize] * dvi2pts;
+                (*__pdf_state).do_texfig_operator_fig_p.bbox.llx =
+                    values[2 as ::core::ffi::c_int as usize] * dvi2pts;
+                (*__pdf_state).do_texfig_operator_fig_p.bbox.lly =
+                    -values[3 as ::core::ffi::c_int as usize] * dvi2pts;
+                (*__pdf_state).do_texfig_operator_fig_p.bbox.urx =
+                    values[4 as ::core::ffi::c_int as usize] * dvi2pts;
+                (*__pdf_state).do_texfig_operator_fig_p.bbox.ury =
+                    -values[5 as ::core::ffi::c_int as usize] * dvi2pts;
+                (*__pdf_state).do_texfig_operator_fig_p.flags |= INFO_HAS_USER_BBOX;
                 sprintf(
                     &raw mut resname as *mut ::core::ffi::c_char,
                     b"__tf%d__\0" as *const u8 as *const ::core::ffi::c_char,
-                    count,
+                    (*__pdf_state).do_texfig_operator_count,
                 );
-                xobj_id = pdf_doc_begin_grabbing(
+                (*__pdf_state).do_texfig_operator_xobj_id = pdf_doc_begin_grabbing(
                     &raw mut resname as *mut ::core::ffi::c_char,
-                    fig_p.bbox.llx,
-                    fig_p.bbox.ury,
-                    &raw mut fig_p.bbox,
+                    (*__pdf_state).do_texfig_operator_fig_p.bbox.llx,
+                    (*__pdf_state).do_texfig_operator_fig_p.bbox.ury,
+                    &raw mut (*__pdf_state).do_texfig_operator_fig_p.bbox,
                 );
-                in_tfig = 1 as ::core::ffi::c_int;
-                count += 1;
+                (*__pdf_state).do_texfig_operator_in_tfig = 1 as ::core::ffi::c_int;
+                (*__pdf_state).do_texfig_operator_count += 1;
             }
         }
         ETEXFIG => {
-            if in_tfig == 0 {
+            if (*__pdf_state).do_texfig_operator_in_tfig == 0 {
                 pdf_abort!(
                     b"endTexFig without valid startTexFig!.\0" as *const u8
                         as *const ::core::ffi::c_char,
@@ -3372,13 +1587,13 @@ unsafe extern "C-unwind" fn do_texfig_operator(
             }
             pdf_doc_end_grabbing(::core::ptr::null_mut::<pdf_obj>());
             pdf_dev_put_image(
-                xobj_id,
-                &raw mut fig_p,
+                (*__pdf_state).do_texfig_operator_xobj_id,
+                &raw mut (*__pdf_state).do_texfig_operator_fig_p,
                 x_user,
                 y_user,
                 ::core::ptr::null_mut::<pdf_rect>(),
             );
-            in_tfig = 0 as ::core::ffi::c_int;
+            (*__pdf_state).do_texfig_operator_in_tfig = 0 as ::core::ffi::c_int;
         }
         _ => {
             error = 1 as ::core::ffi::c_int;
@@ -3402,6 +1617,7 @@ unsafe extern "C-unwind" fn do_operator(
     mut x_user: ::core::ffi::c_double,
     mut y_user: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut opcode: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut values: [::core::ffi::c_double; 12] = [0.; 12];
@@ -3432,10 +1648,10 @@ unsafe extern "C-unwind" fn do_operator(
                 2 as ::core::ffi::c_int,
             );
             if error == 0 {
-                if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                    let fresh5 = top_stack;
-                    top_stack = top_stack.wrapping_add(1);
-                    stack[fresh5 as usize] = pdf_new_number(
+                if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                    let fresh5 = (*__pdf_state).top_stack;
+                    (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+                    (*__pdf_state).stack[fresh5 as usize] = pdf_new_number(
                         values[0 as ::core::ffi::c_int as usize]
                             + values[1 as ::core::ffi::c_int as usize],
                     );
@@ -3454,10 +1670,10 @@ unsafe extern "C-unwind" fn do_operator(
                 2 as ::core::ffi::c_int,
             );
             if error == 0 {
-                if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                    let fresh6 = top_stack;
-                    top_stack = top_stack.wrapping_add(1);
-                    stack[fresh6 as usize] = pdf_new_number(
+                if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                    let fresh6 = (*__pdf_state).top_stack;
+                    (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+                    (*__pdf_state).stack[fresh6 as usize] = pdf_new_number(
                         values[0 as ::core::ffi::c_int as usize]
                             * values[1 as ::core::ffi::c_int as usize],
                     );
@@ -3476,10 +1692,10 @@ unsafe extern "C-unwind" fn do_operator(
                 1 as ::core::ffi::c_int,
             );
             if error == 0 {
-                if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                    let fresh7 = top_stack;
-                    top_stack = top_stack.wrapping_add(1);
-                    stack[fresh7 as usize] =
+                if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                    let fresh7 = (*__pdf_state).top_stack;
+                    (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+                    (*__pdf_state).stack[fresh7 as usize] =
                         pdf_new_number(-values[0 as ::core::ffi::c_int as usize]);
                 } else {
                     pdf_warning!(
@@ -3496,10 +1712,10 @@ unsafe extern "C-unwind" fn do_operator(
                 2 as ::core::ffi::c_int,
             );
             if error == 0 {
-                if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                    let fresh8 = top_stack;
-                    top_stack = top_stack.wrapping_add(1);
-                    stack[fresh8 as usize] = pdf_new_number(
+                if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                    let fresh8 = (*__pdf_state).top_stack;
+                    (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+                    (*__pdf_state).stack[fresh8 as usize] = pdf_new_number(
                         values[0 as ::core::ffi::c_int as usize]
                             - values[1 as ::core::ffi::c_int as usize],
                     );
@@ -3518,10 +1734,10 @@ unsafe extern "C-unwind" fn do_operator(
                 2 as ::core::ffi::c_int,
             );
             if error == 0 {
-                if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                    let fresh9 = top_stack;
-                    top_stack = top_stack.wrapping_add(1);
-                    stack[fresh9 as usize] = pdf_new_number(
+                if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                    let fresh9 = (*__pdf_state).top_stack;
+                    (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+                    (*__pdf_state).stack[fresh9 as usize] = pdf_new_number(
                         values[0 as ::core::ffi::c_int as usize]
                             / values[1 as ::core::ffi::c_int as usize],
                     );
@@ -3540,10 +1756,10 @@ unsafe extern "C-unwind" fn do_operator(
                 1 as ::core::ffi::c_int,
             );
             if error == 0 {
-                if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                    let fresh10 = top_stack;
-                    top_stack = top_stack.wrapping_add(1);
-                    stack[fresh10 as usize] = pdf_new_number(
+                if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                    let fresh10 = (*__pdf_state).top_stack;
+                    (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+                    (*__pdf_state).stack[fresh10 as usize] = pdf_new_number(
                         if values[0 as ::core::ffi::c_int as usize]
                             > 0 as ::core::ffi::c_int as ::core::ffi::c_double
                         {
@@ -3565,9 +1781,9 @@ unsafe extern "C-unwind" fn do_operator(
             error = do_clear();
         }
         POP => {
-            tmp = if top_stack > 0 as ::core::ffi::c_uint {
-                top_stack = top_stack.wrapping_sub(1);
-                stack[top_stack as usize]
+            tmp = if (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+                (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_sub(1);
+                (*__pdf_state).stack[(*__pdf_state).top_stack as usize]
             } else {
                 ::core::ptr::null_mut::<pdf_obj>()
             };
@@ -3713,9 +1929,9 @@ unsafe extern "C-unwind" fn do_operator(
             restore_font();
         }
         CONCAT => {
-            tmp = if top_stack > 0 as ::core::ffi::c_uint {
-                top_stack = top_stack.wrapping_sub(1);
-                stack[top_stack as usize]
+            tmp = if (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+                (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_sub(1);
+                (*__pdf_state).stack[(*__pdf_state).top_stack as usize]
             } else {
                 ::core::ptr::null_mut::<pdf_obj>()
             };
@@ -3746,7 +1962,7 @@ unsafe extern "C-unwind" fn do_operator(
                 2 as ::core::ffi::c_int,
             );
             if error == 0 {
-                match mp_cmode {
+                match (*__pdf_state).mp_cmode {
                     _ => {}
                 }
                 matrix.a = values[0 as ::core::ffi::c_int as usize];
@@ -3767,7 +1983,7 @@ unsafe extern "C-unwind" fn do_operator(
                 values[0 as ::core::ffi::c_int as usize] = values[0 as ::core::ffi::c_int as usize]
                     * M_PI
                     / 180 as ::core::ffi::c_int as ::core::ffi::c_double;
-                match mp_cmode {
+                match (*__pdf_state).mp_cmode {
                     MP_CMODE_DVIPSK | MP_CMODE_MPOST => {
                         matrix.a = cos(values[0 as ::core::ffi::c_int as usize]);
                         matrix.b = -sin(values[0 as ::core::ffi::c_int as usize]);
@@ -3816,9 +2032,9 @@ unsafe extern "C-unwind" fn do_operator(
                 let mut dash_values: [::core::ffi::c_double; 16] = [0.; 16];
                 let mut offset: ::core::ffi::c_double = 0.;
                 offset = values[0 as ::core::ffi::c_int as usize];
-                pattern = if top_stack > 0 as ::core::ffi::c_uint {
-                    top_stack = top_stack.wrapping_sub(1);
-                    stack[top_stack as usize]
+                pattern = if (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+                    (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_sub(1);
+                    (*__pdf_state).stack[(*__pdf_state).top_stack as usize]
                 } else {
                     ::core::ptr::null_mut::<pdf_obj>()
                 };
@@ -3968,14 +2184,14 @@ unsafe extern "C-unwind" fn do_operator(
         CURRENTPOINT => {
             error = pdf_dev_currentpoint(&raw mut cp);
             if error == 0 {
-                if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                    let fresh11 = top_stack;
-                    top_stack = top_stack.wrapping_add(1);
-                    stack[fresh11 as usize] = pdf_new_number(cp.x);
-                    if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                        let fresh12 = top_stack;
-                        top_stack = top_stack.wrapping_add(1);
-                        stack[fresh12 as usize] = pdf_new_number(cp.y);
+                if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                    let fresh11 = (*__pdf_state).top_stack;
+                    (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+                    (*__pdf_state).stack[fresh11 as usize] = pdf_new_number(cp.x);
+                    if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                        let fresh12 = (*__pdf_state).top_stack;
+                        (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+                        (*__pdf_state).stack[fresh12 as usize] = pdf_new_number(cp.y);
                     } else {
                         pdf_warning!(
                             b"PS stack overflow including MetaPost file or inline PS code\0"
@@ -3995,9 +2211,9 @@ unsafe extern "C-unwind" fn do_operator(
         }
         DTRANSFORM => {
             let mut has_matrix: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-            tmp = if top_stack > 0 as ::core::ffi::c_uint {
-                top_stack = top_stack.wrapping_sub(1);
-                stack[top_stack as usize]
+            tmp = if (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+                (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_sub(1);
+                (*__pdf_state).stack[(*__pdf_state).top_stack as usize]
             } else {
                 ::core::ptr::null_mut::<pdf_obj>()
             };
@@ -4017,9 +2233,9 @@ unsafe extern "C-unwind" fn do_operator(
                     matrix.d = values[3 as ::core::ffi::c_int as usize];
                     matrix.e = values[4 as ::core::ffi::c_int as usize];
                     matrix.f = values[5 as ::core::ffi::c_int as usize];
-                    tmp = if top_stack > 0 as ::core::ffi::c_uint {
-                        top_stack = top_stack.wrapping_sub(1);
-                        stack[top_stack as usize]
+                    tmp = if (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+                        (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_sub(1);
+                        (*__pdf_state).stack[(*__pdf_state).top_stack as usize]
                     } else {
                         ::core::ptr::null_mut::<pdf_obj>()
                     };
@@ -4037,9 +2253,9 @@ unsafe extern "C-unwind" fn do_operator(
                     } else {
                         cp.y = pdf_number_value(tmp);
                         pdf_release_obj(tmp);
-                        tmp = if top_stack > 0 as ::core::ffi::c_uint {
-                            top_stack = top_stack.wrapping_sub(1);
-                            stack[top_stack as usize]
+                        tmp = if (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+                            (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_sub(1);
+                            (*__pdf_state).stack[(*__pdf_state).top_stack as usize]
                         } else {
                             ::core::ptr::null_mut::<pdf_obj>()
                         };
@@ -4052,14 +2268,15 @@ unsafe extern "C-unwind" fn do_operator(
                                 ps_dev_CTM(&raw mut matrix);
                             }
                             pdf_dev_dtransform(&raw mut cp, &raw mut matrix);
-                            if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                                let fresh13 = top_stack;
-                                top_stack = top_stack.wrapping_add(1);
-                                stack[fresh13 as usize] = pdf_new_number(cp.x);
-                                if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                                    let fresh14 = top_stack;
-                                    top_stack = top_stack.wrapping_add(1);
-                                    stack[fresh14 as usize] = pdf_new_number(cp.y);
+                            if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                                let fresh13 = (*__pdf_state).top_stack;
+                                (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+                                (*__pdf_state).stack[fresh13 as usize] = pdf_new_number(cp.x);
+                                if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                                    let fresh14 = (*__pdf_state).top_stack;
+                                    (*__pdf_state).top_stack =
+                                        (*__pdf_state).top_stack.wrapping_add(1);
+                                    (*__pdf_state).stack[fresh14 as usize] = pdf_new_number(cp.y);
                                 } else {
                                     pdf_warning!(
                                         b"PS stack overflow including MetaPost file or inline PS code\0"
@@ -4082,9 +2299,9 @@ unsafe extern "C-unwind" fn do_operator(
         }
         IDTRANSFORM => {
             let mut has_matrix_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-            tmp = if top_stack > 0 as ::core::ffi::c_uint {
-                top_stack = top_stack.wrapping_sub(1);
-                stack[top_stack as usize]
+            tmp = if (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+                (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_sub(1);
+                (*__pdf_state).stack[(*__pdf_state).top_stack as usize]
             } else {
                 ::core::ptr::null_mut::<pdf_obj>()
             };
@@ -4104,9 +2321,9 @@ unsafe extern "C-unwind" fn do_operator(
                     matrix.d = values[3 as ::core::ffi::c_int as usize];
                     matrix.e = values[4 as ::core::ffi::c_int as usize];
                     matrix.f = values[5 as ::core::ffi::c_int as usize];
-                    tmp = if top_stack > 0 as ::core::ffi::c_uint {
-                        top_stack = top_stack.wrapping_sub(1);
-                        stack[top_stack as usize]
+                    tmp = if (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+                        (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_sub(1);
+                        (*__pdf_state).stack[(*__pdf_state).top_stack as usize]
                     } else {
                         ::core::ptr::null_mut::<pdf_obj>()
                     };
@@ -4124,9 +2341,9 @@ unsafe extern "C-unwind" fn do_operator(
                     } else {
                         cp.y = pdf_number_value(tmp);
                         pdf_release_obj(tmp);
-                        tmp = if top_stack > 0 as ::core::ffi::c_uint {
-                            top_stack = top_stack.wrapping_sub(1);
-                            stack[top_stack as usize]
+                        tmp = if (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+                            (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_sub(1);
+                            (*__pdf_state).stack[(*__pdf_state).top_stack as usize]
                         } else {
                             ::core::ptr::null_mut::<pdf_obj>()
                         };
@@ -4139,14 +2356,15 @@ unsafe extern "C-unwind" fn do_operator(
                                 ps_dev_CTM(&raw mut matrix);
                             }
                             pdf_dev_idtransform(&raw mut cp, &raw mut matrix);
-                            if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                                let fresh15 = top_stack;
-                                top_stack = top_stack.wrapping_add(1);
-                                stack[fresh15 as usize] = pdf_new_number(cp.x);
-                                if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                                    let fresh16 = top_stack;
-                                    top_stack = top_stack.wrapping_add(1);
-                                    stack[fresh16 as usize] = pdf_new_number(cp.y);
+                            if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                                let fresh15 = (*__pdf_state).top_stack;
+                                (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+                                (*__pdf_state).stack[fresh15 as usize] = pdf_new_number(cp.x);
+                                if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                                    let fresh16 = (*__pdf_state).top_stack;
+                                    (*__pdf_state).top_stack =
+                                        (*__pdf_state).top_stack.wrapping_add(1);
+                                    (*__pdf_state).stack[fresh16 as usize] = pdf_new_number(cp.y);
                                 } else {
                                     pdf_warning!(
                                         b"PS stack overflow including MetaPost file or inline PS code\0"
@@ -4227,25 +2445,25 @@ unsafe extern "C-unwind" fn do_operator(
             );
         }
         DEF => {
-            tmp = if top_stack > 0 as ::core::ffi::c_uint {
-                top_stack = top_stack.wrapping_sub(1);
-                stack[top_stack as usize]
+            tmp = if (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+                (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_sub(1);
+                (*__pdf_state).stack[(*__pdf_state).top_stack as usize]
             } else {
                 ::core::ptr::null_mut::<pdf_obj>()
             };
-            tmp = if top_stack > 0 as ::core::ffi::c_uint {
-                top_stack = top_stack.wrapping_sub(1);
-                stack[top_stack as usize]
+            tmp = if (*__pdf_state).top_stack > 0 as ::core::ffi::c_uint {
+                (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_sub(1);
+                (*__pdf_state).stack[(*__pdf_state).top_stack as usize]
             } else {
                 ::core::ptr::null_mut::<pdf_obj>()
             };
         }
         _ => {
             if is_fontname(token) {
-                if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                    let fresh17 = top_stack;
-                    top_stack = top_stack.wrapping_add(1);
-                    stack[fresh17 as usize] = pdf_new_name(token);
+                if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                    let fresh17 = (*__pdf_state).top_stack;
+                    (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+                    (*__pdf_state).stack[fresh17 as usize] = pdf_new_name(token);
                 } else {
                     pdf_warning!(
                         b"PS stack overflow including MetaPost file or inline PS code\0"
@@ -4270,6 +2488,7 @@ unsafe extern "C-unwind" fn mp_parse_body(
     mut x_user: ::core::ffi::c_double,
     mut y_user: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut token: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut obj: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
@@ -4297,10 +2516,10 @@ unsafe extern "C-unwind" fn mp_parse_body(
                 );
                 dump(*start, next);
                 error = 1 as ::core::ffi::c_int;
-            } else if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                let fresh0 = top_stack;
-                top_stack = top_stack.wrapping_add(1);
-                stack[fresh0 as usize] = pdf_new_number(value);
+            } else if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                let fresh0 = (*__pdf_state).top_stack;
+                (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+                (*__pdf_state).stack[fresh0 as usize] = pdf_new_number(value);
                 *start = next;
             } else {
                 pdf_warning!(
@@ -4314,10 +2533,10 @@ unsafe extern "C-unwind" fn mp_parse_body(
             obj = parse_pdf_array(start, end, ::core::ptr::null_mut::<pdf_file>());
             !obj.is_null()
         } {
-            if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                let fresh1 = top_stack;
-                top_stack = top_stack.wrapping_add(1);
-                stack[fresh1 as usize] = obj;
+            if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                let fresh1 = (*__pdf_state).top_stack;
+                (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+                (*__pdf_state).stack[fresh1 as usize] = obj;
             } else {
                 pdf_warning!(
                     b"PS stack overflow including MetaPost file or inline PS code\0" as *const u8
@@ -4335,10 +2554,10 @@ unsafe extern "C-unwind" fn mp_parse_body(
                 !obj.is_null()
             }
         {
-            if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                let fresh2 = top_stack;
-                top_stack = top_stack.wrapping_add(1);
-                stack[fresh2 as usize] = obj;
+            if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                let fresh2 = (*__pdf_state).top_stack;
+                (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+                (*__pdf_state).stack[fresh2 as usize] = obj;
             } else {
                 pdf_warning!(
                     b"PS stack overflow including MetaPost file or inline PS code\0" as *const u8
@@ -4354,10 +2573,10 @@ unsafe extern "C-unwind" fn mp_parse_body(
                 !obj.is_null()
             }
         {
-            if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                let fresh3 = top_stack;
-                top_stack = top_stack.wrapping_add(1);
-                stack[fresh3 as usize] = obj;
+            if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                let fresh3 = (*__pdf_state).top_stack;
+                (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+                (*__pdf_state).stack[fresh3 as usize] = obj;
             } else {
                 pdf_warning!(
                     b"PS stack overflow including MetaPost file or inline PS code\0" as *const u8
@@ -4370,10 +2589,10 @@ unsafe extern "C-unwind" fn mp_parse_body(
             obj = parse_pdf_name(start, end);
             !obj.is_null()
         } {
-            if top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
-                let fresh4 = top_stack;
-                top_stack = top_stack.wrapping_add(1);
-                stack[fresh4 as usize] = obj;
+            if (*__pdf_state).top_stack < PS_STACK_SIZE as ::core::ffi::c_uint {
+                let fresh4 = (*__pdf_state).top_stack;
+                (*__pdf_state).top_stack = (*__pdf_state).top_stack.wrapping_add(1);
+                (*__pdf_state).stack[fresh4 as usize] = obj;
             } else {
                 pdf_warning!(
                     b"PS stack overflow including MetaPost file or inline PS code\0" as *const u8
@@ -4402,7 +2621,8 @@ pub unsafe extern "C-unwind" fn mps_eop_cleanup() {
 }
 #[unsafe(export_name = "__pdf_impl_mps_stack_depth")]
 pub unsafe extern "C-unwind" fn mps_stack_depth() -> ::core::ffi::c_int {
-    return top_stack as ::core::ffi::c_int;
+    let __pdf_state = unsafe { document_state() };
+    return (*__pdf_state).top_stack as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_mps_exec_inline")]
 pub unsafe extern "C-unwind" fn mps_exec_inline(
@@ -4411,14 +2631,15 @@ pub unsafe extern "C-unwind" fn mps_exec_inline(
     mut x_user: ::core::ffi::c_double,
     mut y_user: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut error: ::core::ffi::c_int = 0;
     let mut dirmode: ::core::ffi::c_int = 0;
     let mut autorotate: ::core::ffi::c_int = 0;
     dirmode = pdf_dev_get_dirmode();
     if dirmode != 0 {
-        mp_cmode = MP_CMODE_PTEXVERT;
+        (*__pdf_state).mp_cmode = MP_CMODE_PTEXVERT;
     } else {
-        mp_cmode = MP_CMODE_DVIPSK;
+        (*__pdf_state).mp_cmode = MP_CMODE_DVIPSK;
     }
     autorotate = pdf_dev_get_param(PDF_DEV_PARAM_AUTOROTATE);
     pdf_dev_set_param(PDF_DEV_PARAM_AUTOROTATE, 0 as ::core::ffi::c_int);
@@ -4430,6 +2651,7 @@ pub unsafe extern "C-unwind" fn mps_exec_inline(
 }
 #[unsafe(export_name = "__pdf_impl_mps_do_page")]
 pub unsafe extern "C-unwind" fn mps_do_page(mut image_file: *mut FILE) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut bbox: pdf_rect = pdf_rect {
         llx: 0.,
@@ -4471,8 +2693,8 @@ pub unsafe extern "C-unwind" fn mps_do_page(mut image_file: *mut FILE) -> ::core
         free(buffer as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
     }
-    mp_cmode = MP_CMODE_MPOST;
-    pdf_doc_begin_page(1.0f64, -Xorigin, -Yorigin);
+    (*__pdf_state).mp_cmode = MP_CMODE_MPOST;
+    pdf_doc_begin_page(1.0f64, -(*__pdf_state).Xorigin, -(*__pdf_state).Yorigin);
     pdf_doc_set_mediabox(
         pdf_doc_current_page_number() as ::core::ffi::c_uint,
         &raw mut bbox,
@@ -4499,21 +2721,23 @@ pub unsafe extern "C-unwind" fn mps_do_page(mut image_file: *mut FILE) -> ::core
 }
 #[unsafe(export_name = "__pdf_impl_mps_reset_global_state")]
 pub unsafe extern "C-unwind" fn mps_reset_global_state() {
-    translate_origin = 0 as ::core::ffi::c_int;
-    currentfont = 0 as ::core::ffi::c_int;
-    font_stack[0 as ::core::ffi::c_int as usize].font_name =
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).translate_origin = 0 as ::core::ffi::c_int;
+    (*__pdf_state).currentfont = 0 as ::core::ffi::c_int;
+    (*__pdf_state).font_stack[0 as ::core::ffi::c_int as usize].font_name =
         ::core::ptr::null_mut::<::core::ffi::c_char>();
-    font_stack[0 as ::core::ffi::c_int as usize].font_id = -(1 as ::core::ffi::c_int);
-    font_stack[0 as ::core::ffi::c_int as usize].tfm_id = -(1 as ::core::ffi::c_int);
-    font_stack[0 as ::core::ffi::c_int as usize].subfont_id = -(1 as ::core::ffi::c_int);
-    font_stack[0 as ::core::ffi::c_int as usize].pt_size = 0.0f64;
-    mp_cmode = MP_CMODE_MPOST;
-    top_stack = 0 as ::core::ffi::c_uint;
+    (*__pdf_state).font_stack[0 as ::core::ffi::c_int as usize].font_id =
+        -(1 as ::core::ffi::c_int);
+    (*__pdf_state).font_stack[0 as ::core::ffi::c_int as usize].tfm_id = -(1 as ::core::ffi::c_int);
+    (*__pdf_state).font_stack[0 as ::core::ffi::c_int as usize].subfont_id =
+        -(1 as ::core::ffi::c_int);
+    (*__pdf_state).font_stack[0 as ::core::ffi::c_int as usize].pt_size = 0.0f64;
+    (*__pdf_state).mp_cmode = MP_CMODE_MPOST;
+    (*__pdf_state).top_stack = 0 as ::core::ffi::c_uint;
 }
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -4620,5 +2844,2119 @@ pub unsafe extern "C" fn __pdf_entry_mps_reset_global_state() -> i32 {
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    Yorigin: ::core::ffi::c_double,
+    Xorigin: ::core::ffi::c_double,
+    translate_origin: ::core::ffi::c_int,
+    font_stack: [mp_font; 256],
+    currentfont: ::core::ffi::c_int,
+    mp_cmode: ::core::ffi::c_int,
+    stack: [*mut pdf_obj; 1024],
+    top_stack: ::core::ffi::c_uint,
+    do_texfig_operator_fig_p: transform_info,
+    do_texfig_operator_in_tfig: ::core::ffi::c_int,
+    do_texfig_operator_xobj_id: ::core::ffi::c_int,
+    do_texfig_operator_count: ::core::ffi::c_int,
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                Yorigin: 0.,
+                Xorigin: 0.,
+                translate_origin: 0 as ::core::ffi::c_int,
+                font_stack: [
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: -(1 as ::core::ffi::c_int),
+                        tfm_id: -(1 as ::core::ffi::c_int),
+                        subfont_id: -(1 as ::core::ffi::c_int),
+                        pt_size: 0 as ::core::ffi::c_int as ::core::ffi::c_double,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                    mp_font {
+                        font_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        font_id: 0,
+                        tfm_id: 0,
+                        subfont_id: 0,
+                        pt_size: 0.,
+                    },
+                ],
+                currentfont: 0 as ::core::ffi::c_int,
+                mp_cmode: MP_CMODE_MPOST,
+                stack: [::core::ptr::null::<pdf_obj>() as *mut pdf_obj; 1024],
+                top_stack: 0 as ::core::ffi::c_uint,
+                do_texfig_operator_fig_p: transform_info {
+                    width: 0.,
+                    height: 0.,
+                    depth: 0.,
+                    matrix: pdf_tmatrix {
+                        a: 0.,
+                        b: 0.,
+                        c: 0.,
+                        d: 0.,
+                        e: 0.,
+                        f: 0.,
+                    },
+                    bbox: pdf_rect {
+                        llx: 0.,
+                        lly: 0.,
+                        urx: 0.,
+                        ury: 0.,
+                    },
+                    flags: 0,
+                },
+                do_texfig_operator_in_tfig: 0 as ::core::ffi::c_int,
+                do_texfig_operator_xobj_id: -(1 as ::core::ffi::c_int),
+                do_texfig_operator_count: 0 as ::core::ffi::c_int,
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_mpost
+            .pointer
     }
 }

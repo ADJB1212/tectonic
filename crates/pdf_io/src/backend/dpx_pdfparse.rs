@@ -122,9 +122,7 @@ unsafe extern "C-unwind" fn strstartswith(
 pub const PDF_NUMBER: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
 pub const STREAM_COMPRESS: ::core::ffi::c_int =
     (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
-static mut parser_state: C2RustUnnamed = C2RustUnnamed {
-    tainted: 0 as ::core::ffi::c_int,
-};
+
 #[unsafe(export_name = "__pdf_impl_dump")]
 pub unsafe extern "C-unwind" fn dump(
     mut start: *const ::core::ffi::c_char,
@@ -435,7 +433,7 @@ unsafe extern "C-unwind" fn pn_getc(
 }
 pub const PDF_NAME_LEN_MAX: ::core::ffi::c_int = 128 as ::core::ffi::c_int;
 pub const PDF_STRING_LEN_MAX: ::core::ffi::c_int = 65535 as ::core::ffi::c_int;
-static mut sbuf: [::core::ffi::c_char; 65536] = [0; 65536];
+
 #[unsafe(export_name = "__pdf_impl_parse_pdf_name")]
 pub unsafe extern "C-unwind" fn parse_pdf_name(
     mut pp: *mut *const ::core::ffi::c_char,
@@ -709,6 +707,7 @@ unsafe extern "C-unwind" fn parse_pdf_literal_string(
     mut pp: *mut *const ::core::ffi::c_char,
     mut endptr: *const ::core::ffi::c_char,
 ) -> *mut pdf_obj {
+    let __pdf_state = unsafe { document_state() };
     let mut ch: ::core::ffi::c_int = 0;
     let mut op_count: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
@@ -726,7 +725,7 @@ unsafe extern "C-unwind" fn parse_pdf_literal_string(
         if ch == ')' as i32 && op_count < 1 as ::core::ffi::c_int {
             break;
         }
-        if parser_state.tainted != 0 {
+        if (*__pdf_state).parser_state.tainted != 0 {
             if p.offset(1 as ::core::ffi::c_int as isize) < endptr
                 && ch & 0x80 as ::core::ffi::c_int != 0
             {
@@ -740,10 +739,10 @@ unsafe extern "C-unwind" fn parse_pdf_literal_string(
                 }
                 let fresh3 = len;
                 len = len + 1;
-                sbuf[fresh3 as usize] = *p.offset(0 as ::core::ffi::c_int as isize);
+                (*__pdf_state).sbuf[fresh3 as usize] = *p.offset(0 as ::core::ffi::c_int as isize);
                 let fresh4 = len;
                 len = len + 1;
-                sbuf[fresh4 as usize] = *p.offset(1 as ::core::ffi::c_int as isize);
+                (*__pdf_state).sbuf[fresh4 as usize] = *p.offset(1 as ::core::ffi::c_int as isize);
                 p = p.offset(2 as ::core::ffi::c_int as isize);
                 continue;
             }
@@ -762,7 +761,7 @@ unsafe extern "C-unwind" fn parse_pdf_literal_string(
                 if ch >= 0 as ::core::ffi::c_int {
                     let fresh5 = len;
                     len = len + 1;
-                    sbuf[fresh5 as usize] =
+                    (*__pdf_state).sbuf[fresh5 as usize] =
                         (ch & 0xff as ::core::ffi::c_int) as ::core::ffi::c_char;
                 }
             }
@@ -776,7 +775,7 @@ unsafe extern "C-unwind" fn parse_pdf_literal_string(
                 }
                 let fresh6 = len;
                 len = len + 1;
-                sbuf[fresh6 as usize] = '\n' as i32 as ::core::ffi::c_char;
+                (*__pdf_state).sbuf[fresh6 as usize] = '\n' as i32 as ::core::ffi::c_char;
             }
             _ => {
                 if ch == '(' as i32 {
@@ -786,7 +785,7 @@ unsafe extern "C-unwind" fn parse_pdf_literal_string(
                 }
                 let fresh7 = len;
                 len = len + 1;
-                sbuf[fresh7 as usize] = ch as ::core::ffi::c_char;
+                (*__pdf_state).sbuf[fresh7 as usize] = ch as ::core::ffi::c_char;
                 p = p.offset(1);
             }
         }
@@ -803,7 +802,7 @@ unsafe extern "C-unwind" fn parse_pdf_literal_string(
     }
     *pp = p.offset(1 as ::core::ffi::c_int as isize);
     return pdf_new_string(
-        &raw mut sbuf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
+        &raw mut (*__pdf_state).sbuf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
         len as size_t,
     );
 }
@@ -811,6 +810,7 @@ unsafe extern "C-unwind" fn parse_pdf_hex_string(
     mut pp: *mut *const ::core::ffi::c_char,
     mut endptr: *const ::core::ffi::c_char,
 ) -> *mut pdf_obj {
+    let __pdf_state = unsafe { document_state() };
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut len: ::core::ffi::c_int = 0;
     p = *pp;
@@ -844,7 +844,8 @@ unsafe extern "C-unwind" fn parse_pdf_hex_string(
         }
         let fresh2 = len;
         len = len + 1;
-        sbuf[fresh2 as usize] = (ch & 0xff as ::core::ffi::c_int) as ::core::ffi::c_char;
+        (*__pdf_state).sbuf[fresh2 as usize] =
+            (ch & 0xff as ::core::ffi::c_int) as ::core::ffi::c_char;
     }
     if p >= endptr {
         pdf_warning!(
@@ -860,7 +861,7 @@ unsafe extern "C-unwind" fn parse_pdf_hex_string(
     }
     *pp = p.offset(1 as ::core::ffi::c_int as isize);
     return pdf_new_string(
-        &raw mut sbuf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
+        &raw mut (*__pdf_state).sbuf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
         len as size_t,
     );
 }
@@ -1300,8 +1301,9 @@ pub unsafe extern "C-unwind" fn parse_pdf_tainted_dict(
     >,
     mut user_data: *mut ::core::ffi::c_void,
 ) -> *mut pdf_obj {
+    let __pdf_state = unsafe { document_state() };
     let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    parser_state.tainted = 1 as ::core::ffi::c_int;
+    (*__pdf_state).parser_state.tainted = 1 as ::core::ffi::c_int;
     result = parse_pdf_dict_extended(
         pp,
         endptr,
@@ -1309,7 +1311,7 @@ pub unsafe extern "C-unwind" fn parse_pdf_tainted_dict(
         unknown_handler,
         user_data,
     );
-    parser_state.tainted = 0 as ::core::ffi::c_int;
+    (*__pdf_state).parser_state.tainted = 0 as ::core::ffi::c_int;
     return result;
 }
 unsafe extern "C" {
@@ -1397,6 +1399,7 @@ pub unsafe extern "C" fn __pdf_entry_parse_unsigned(
     match crate::backend::runtime::boundary(|| unsafe { parse_unsigned(start, end) }) {
         Ok(value) => {
             unsafe {
+                crate::compat::allocation::release(value.cast());
                 _result.write(value);
             }
             0
@@ -1413,6 +1416,7 @@ pub unsafe extern "C" fn __pdf_entry_parse_ident(
     match crate::backend::runtime::boundary(|| unsafe { parse_ident(start, end) }) {
         Ok(value) => {
             unsafe {
+                crate::compat::allocation::release(value.cast());
                 _result.write(value);
             }
             0
@@ -1429,6 +1433,7 @@ pub unsafe extern "C" fn __pdf_entry_parse_val_ident(
     match crate::backend::runtime::boundary(|| unsafe { parse_val_ident(start, end) }) {
         Ok(value) => {
             unsafe {
+                crate::compat::allocation::release(value.cast());
                 _result.write(value);
             }
             0
@@ -1445,6 +1450,7 @@ pub unsafe extern "C" fn __pdf_entry_parse_opt_ident(
     match crate::backend::runtime::boundary(|| unsafe { parse_opt_ident(start, end) }) {
         Ok(value) => {
             unsafe {
+                crate::compat::allocation::release(value.cast());
                 _result.write(value);
             }
             0
@@ -1634,5 +1640,33 @@ pub unsafe extern "C" fn __pdf_entry_parse_pdf_tainted_dict(
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    parser_state: C2RustUnnamed,
+    sbuf: [::core::ffi::c_char; 65536],
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                parser_state: C2RustUnnamed {
+                    tainted: 0 as ::core::ffi::c_int,
+                },
+                sbuf: [0; 65536],
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_pdfparse
+            .pointer
     }
 }

@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 use std::{
-    cell::RefCell,
     collections::{HashMap, hash_map::Entry},
     ffi::{CStr, CString, c_char},
     io::Read,
@@ -169,13 +168,9 @@ impl StoredRecord {
 }
 
 #[derive(Default)]
-struct FontMaps {
+pub(crate) struct FontMaps {
     records: HashMap<Box<[u8]>, StoredRecord>,
     reader: Option<MapReader>,
-}
-
-thread_local! {
-    static FONT_MAPS: RefCell<FontMaps> = RefCell::default();
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -466,7 +461,7 @@ impl MapReader {
 
 #[unsafe(no_mangle)]
 extern "C" fn tt_fontmap_reset() {
-    FONT_MAPS.with(|maps| *maps.borrow_mut() = FontMaps::default());
+    crate::compat::document::with_font_maps(|maps| *maps.borrow_mut() = FontMaps::default());
 }
 
 #[unsafe(no_mangle)]
@@ -481,7 +476,7 @@ unsafe extern "C" fn tt_fontmap_lookup(key: *const c_char) -> *mut FontMapRecord
             return ptr::null_mut();
         }
         let key = CStr::from_ptr(key).to_bytes();
-        FONT_MAPS.with(|maps| {
+        crate::compat::document::with_font_maps(|maps| {
             maps.borrow_mut()
                 .records
                 .get_mut(key)
@@ -500,7 +495,7 @@ unsafe extern "C" fn tt_fontmap_insert(
         let key = CStr::from_ptr(key).to_bytes();
         // Copy before borrowing the table: the source may itself be a stored record.
         let owned = OwnedRecord::copy_from(key, &*record);
-        FONT_MAPS.with(|maps| {
+        crate::compat::document::with_font_maps(|maps| {
             let mut maps = maps.borrow_mut();
             let stored = match maps.records.entry(key.into()) {
                 Entry::Occupied(mut entry) => {
@@ -520,7 +515,7 @@ unsafe extern "C" fn tt_fontmap_insert(
 unsafe extern "C" fn tt_fontmap_remove(key: *const c_char) {
     unsafe {
         let key = CStr::from_ptr(key).to_bytes();
-        FONT_MAPS.with(|maps| {
+        crate::compat::document::with_font_maps(|maps| {
             maps.borrow_mut().records.remove(key);
         });
     }
@@ -534,7 +529,7 @@ extern "C" fn tt_fontmap_load_begin(handle: Option<InputId>, mode: i32, verbose:
             .get_input(handle.expect("open font-map handle"))
             .read_to_end(&mut bytes)
     });
-    FONT_MAPS.with(|maps| {
+    crate::compat::document::with_font_maps(|maps| {
         let mut maps = maps.borrow_mut();
         maps.records
             .reserve(bytes.iter().filter(|&&b| b == b'\n').count());
@@ -550,7 +545,7 @@ unsafe extern "C" fn tt_fontmap_load_next(
     format: *mut i32,
 ) -> i32 {
     unsafe {
-        FONT_MAPS.with(|maps| {
+        crate::compat::document::with_font_maps(|maps| {
             let mut maps = maps.borrow_mut();
             let FontMaps { records, reader } = &mut *maps;
             let reader = reader.as_mut().expect("font-map load in progress");
@@ -568,7 +563,7 @@ unsafe extern "C" fn tt_fontmap_load_next(
 
 #[unsafe(no_mangle)]
 extern "C" fn tt_fontmap_load_end() {
-    FONT_MAPS.with(|maps| maps.borrow_mut().reader = None);
+    crate::compat::document::with_font_maps(|maps| maps.borrow_mut().reader = None);
 }
 
 #[cfg(test)]
@@ -606,6 +601,7 @@ mod tests {
 
     #[test]
     fn dvips_records_match_native_parser_including_options_and_quoted_fields() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         for line in [
             "cmr10 CMR10 <cmr10.pfb",
             "cmr10 <cmr10.pfb",
@@ -660,6 +656,7 @@ mod tests {
 
     #[test]
     fn legacy_syntax_escapes_and_malformed_options_are_deferred() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         for line in [
             b"font@SFD@ Font <font.pfb".as_slice(),
             b"font Font <\"font\\056pfb\"",
@@ -676,6 +673,7 @@ mod tests {
 
     #[test]
     fn loading_is_lazy_and_materialized_record_pointers_survive_table_growth() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         let source = b"font Font <font.pfb\nother Other <other.pfb\n".to_vec();
         let mut reader = MapReader::new(source, Mode::Append, false);
         let mut records = HashMap::new();
@@ -711,6 +709,7 @@ mod tests {
 
     #[test]
     fn line_chunks_comments_nuls_crlf_and_format_mismatches_match_legacy_rules() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         let mut source =
             format!("%{}\r\nfont Font <font.pfb%ignored\r", " ".repeat(8190)).into_bytes();
         source.extend_from_slice(
@@ -736,6 +735,7 @@ mod tests {
 
     #[test]
     fn append_replace_remove_and_reset_do_not_reuse_prior_map_contents() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         let mut records = HashMap::new();
         for (mode, source, expected) in [
             (
@@ -774,13 +774,14 @@ mod tests {
             });
             assert_eq!(found.as_deref(), expected);
         }
-        FONT_MAPS.with(|maps| maps.borrow_mut().records = records);
+        crate::compat::document::with_font_maps(|maps| maps.borrow_mut().records = records);
         tt_fontmap_reset();
-        FONT_MAPS.with(|maps| assert!(maps.borrow().records.is_empty()));
+        crate::compat::document::with_font_maps(|maps| assert!(maps.borrow().records.is_empty()));
     }
 
     #[test]
     fn inserted_subfont_links_and_options_outlive_the_callers_strings() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         tt_fontmap_reset();
         let key = CString::new("font00").unwrap();
         let source = {

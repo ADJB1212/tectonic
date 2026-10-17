@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -167,12 +168,11 @@ pub const CS_PARSE_ERROR: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
 pub const CS_PARSE_OK: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const CS_SUBR_RETURN: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
 pub const CS_CHAR_END: ::core::ffi::c_int = 3 as ::core::ffi::c_int;
-static mut status: ::core::ffi::c_int = CS_PARSE_ERROR;
+
 pub const T1_CS_PHASE_INIT: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const T1_CS_PHASE_PATH: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
 pub const T1_CS_PHASE_FLEX: ::core::ffi::c_int = 3 as ::core::ffi::c_int;
-static mut phase: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
-static mut nest: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
+
 pub const CS_STEM_GROUP_MAX: ::core::ffi::c_int = CS_STEM_ZONE_MAX;
 pub const PS_ARG_STACK_MAX: ::core::ffi::c_int =
     CS_STEM_ZONE_MAX * 2 as ::core::ffi::c_int + 2 as ::core::ffi::c_int;
@@ -185,10 +185,7 @@ pub const T1_CS_FLAG_USE_CNTRMASK: ::core::ffi::c_int =
     (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
 pub const T1_CS_FLAG_USE_SEAC: ::core::ffi::c_int =
     (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
-static mut cs_stack_top: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-static mut ps_stack_top: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-static mut cs_arg_stack: [::core::ffi::c_double; 49] = [0.; 49];
-static mut ps_arg_stack: [::core::ffi::c_double; 194] = [0.; 194];
+
 pub const CS_HINT_DECL: ::core::ffi::c_int = -1;
 pub const CS_FLEX_CTRL: ::core::ffi::c_int = -(2 as ::core::ffi::c_int);
 pub const cs_hstem: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
@@ -345,6 +342,7 @@ unsafe extern "C-unwind" fn add_charpath(
     mut argv: *mut ::core::ffi::c_double,
     mut argn: ::core::ffi::c_int,
 ) {
+    let __pdf_state = unsafe { document_state() };
     let mut p: *mut t1_cpath = ::core::ptr::null_mut::<t1_cpath>();
     if cd.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
@@ -382,7 +380,7 @@ unsafe extern "C-unwind" fn add_charpath(
     }
     (*cd).lastpath = p;
     if type_0 >= 0 as ::core::ffi::c_int
-        && phase != T1_CS_PHASE_FLEX
+        && (*__pdf_state).phase != T1_CS_PHASE_FLEX
         && (type_0 >= cs_vmoveto && type_0 <= cs_closepath
             || type_0 >= cs_rmoveto
                 && type_0 <= cs_hvcurveto
@@ -390,7 +388,7 @@ unsafe extern "C-unwind" fn add_charpath(
                 && type_0 != cs_callgsubr
                 && type_0 != 28 as ::core::ffi::c_int)
     {
-        phase = T1_CS_PHASE_PATH;
+        (*__pdf_state).phase = T1_CS_PHASE_PATH;
     }
 }
 unsafe extern "C-unwind" fn init_charpath(mut cd: *mut t1_chardesc) {
@@ -427,35 +425,38 @@ unsafe extern "C-unwind" fn release_charpath(mut cd: *mut t1_chardesc) {
     (*cd).charpath = (*cd).lastpath;
 }
 unsafe extern "C-unwind" fn do_operator1(mut cd: *mut t1_chardesc, mut data: *mut *mut card8) {
+    let __pdf_state = unsafe { document_state() };
     let mut op: card8 = **data;
     *data = (*data).offset(1 as ::core::ffi::c_int as isize);
     match op as ::core::ffi::c_int {
         cs_closepath => {
-            cs_stack_top = 0 as ::core::ffi::c_int;
+            (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
         }
         cs_hsbw => {
-            if cs_stack_top < 2 as ::core::ffi::c_int {
-                status = CS_STACK_ERROR;
+            if (*__pdf_state).cs_stack_top < 2 as ::core::ffi::c_int {
+                (*__pdf_state).status = CS_STACK_ERROR;
                 return;
             }
-            cs_stack_top -= 1;
-            (*cd).sbw.wx = cs_arg_stack[cs_stack_top as usize];
+            (*__pdf_state).cs_stack_top -= 1;
+            (*cd).sbw.wx = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize];
             (*cd).sbw.wy = 0 as ::core::ffi::c_int as ::core::ffi::c_double;
-            cs_stack_top -= 1;
-            (*cd).sbw.sbx = cs_arg_stack[cs_stack_top as usize];
+            (*__pdf_state).cs_stack_top -= 1;
+            (*cd).sbw.sbx = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize];
             (*cd).sbw.sby = 0 as ::core::ffi::c_int as ::core::ffi::c_double;
-            cs_stack_top = 0 as ::core::ffi::c_int;
+            (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
         }
         cs_hstem | cs_vstem => {
-            if cs_stack_top < 2 as ::core::ffi::c_int {
-                status = CS_STACK_ERROR;
+            if (*__pdf_state).cs_stack_top < 2 as ::core::ffi::c_int {
+                (*__pdf_state).status = CS_STACK_ERROR;
                 return;
             }
             let mut stem_id: ::core::ffi::c_int = 0;
             stem_id = add_stem(
                 cd,
-                cs_arg_stack[(cs_stack_top - 2 as ::core::ffi::c_int) as usize],
-                cs_arg_stack[(cs_stack_top - 1 as ::core::ffi::c_int) as usize],
+                (*__pdf_state).cs_arg_stack
+                    [((*__pdf_state).cs_stack_top - 2 as ::core::ffi::c_int) as usize],
+                (*__pdf_state).cs_arg_stack
+                    [((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize],
                 if op as ::core::ffi::c_int == cs_hstem {
                     HSTEM
                 } else {
@@ -464,67 +465,75 @@ unsafe extern "C-unwind" fn do_operator1(mut cd: *mut t1_chardesc, mut data: *mu
             );
             if stem_id < 0 as ::core::ffi::c_int {
                 pdf_warning!(b"Too many hints...\0" as *const u8 as *const ::core::ffi::c_char,);
-                status = CS_PARSE_ERROR;
+                (*__pdf_state).status = CS_PARSE_ERROR;
                 return;
             }
-            let fresh2 = cs_stack_top;
-            cs_stack_top = cs_stack_top + 1;
-            cs_arg_stack[fresh2 as usize] = stem_id as ::core::ffi::c_double;
+            let fresh2 = (*__pdf_state).cs_stack_top;
+            (*__pdf_state).cs_stack_top = (*__pdf_state).cs_stack_top + 1;
+            (*__pdf_state).cs_arg_stack[fresh2 as usize] = stem_id as ::core::ffi::c_double;
             add_charpath(
                 cd,
                 -(1 as ::core::ffi::c_int),
-                (&raw mut cs_arg_stack as *mut ::core::ffi::c_double)
-                    .offset((cs_stack_top - 1 as ::core::ffi::c_int) as isize)
+                (&raw mut (*__pdf_state).cs_arg_stack as *mut ::core::ffi::c_double)
+                    .offset(((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as isize)
                     as *mut ::core::ffi::c_double,
                 1 as ::core::ffi::c_int,
             );
-            cs_stack_top = 0 as ::core::ffi::c_int;
+            (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
         }
         cs_rmoveto => {
-            if cs_stack_top < 2 as ::core::ffi::c_int {
-                status = CS_STACK_ERROR;
+            if (*__pdf_state).cs_stack_top < 2 as ::core::ffi::c_int {
+                (*__pdf_state).status = CS_STACK_ERROR;
                 return;
             }
-            if phase < T1_CS_PHASE_PATH {
-                cs_arg_stack[(cs_stack_top - 2 as ::core::ffi::c_int) as usize] += (*cd).sbw.sbx;
-                cs_arg_stack[(cs_stack_top - 1 as ::core::ffi::c_int) as usize] += (*cd).sbw.sby;
+            if (*__pdf_state).phase < T1_CS_PHASE_PATH {
+                (*__pdf_state).cs_arg_stack
+                    [((*__pdf_state).cs_stack_top - 2 as ::core::ffi::c_int) as usize] +=
+                    (*cd).sbw.sbx;
+                (*__pdf_state).cs_arg_stack
+                    [((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize] +=
+                    (*cd).sbw.sby;
             }
             add_charpath(
                 cd,
                 op as ::core::ffi::c_int,
-                (&raw mut cs_arg_stack as *mut ::core::ffi::c_double)
-                    .offset((cs_stack_top - 2 as ::core::ffi::c_int) as isize)
+                (&raw mut (*__pdf_state).cs_arg_stack as *mut ::core::ffi::c_double)
+                    .offset(((*__pdf_state).cs_stack_top - 2 as ::core::ffi::c_int) as isize)
                     as *mut ::core::ffi::c_double,
                 2 as ::core::ffi::c_int,
             );
-            cs_stack_top = 0 as ::core::ffi::c_int;
+            (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
         }
         cs_hmoveto | cs_vmoveto => {
-            if cs_stack_top < 1 as ::core::ffi::c_int {
-                status = CS_STACK_ERROR;
+            if (*__pdf_state).cs_stack_top < 1 as ::core::ffi::c_int {
+                (*__pdf_state).status = CS_STACK_ERROR;
                 return;
             }
             let mut argn: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-            if phase < T1_CS_PHASE_PATH {
+            if (*__pdf_state).phase < T1_CS_PHASE_PATH {
                 if op as ::core::ffi::c_int == cs_hmoveto {
-                    cs_arg_stack[(cs_stack_top - 1 as ::core::ffi::c_int) as usize] +=
+                    (*__pdf_state).cs_arg_stack
+                        [((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize] +=
                         (*cd).sbw.sbx;
                     if (*cd).sbw.sby != 0.0f64 {
-                        let fresh3 = cs_stack_top;
-                        cs_stack_top = cs_stack_top + 1;
-                        cs_arg_stack[fresh3 as usize] = (*cd).sbw.sby;
+                        let fresh3 = (*__pdf_state).cs_stack_top;
+                        (*__pdf_state).cs_stack_top = (*__pdf_state).cs_stack_top + 1;
+                        (*__pdf_state).cs_arg_stack[fresh3 as usize] = (*cd).sbw.sby;
                         argn = 2 as ::core::ffi::c_int;
                         op = cs_rmoveto as card8;
                     }
                 } else {
-                    cs_arg_stack[(cs_stack_top - 1 as ::core::ffi::c_int) as usize] +=
+                    (*__pdf_state).cs_arg_stack
+                        [((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize] +=
                         (*cd).sbw.sby;
                     if (*cd).sbw.sbx != 0.0f64 {
-                        cs_arg_stack[cs_stack_top as usize] =
-                            cs_arg_stack[(cs_stack_top - 1 as ::core::ffi::c_int) as usize];
-                        cs_arg_stack[(cs_stack_top - 1 as ::core::ffi::c_int) as usize] =
+                        (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize] =
+                            (*__pdf_state).cs_arg_stack
+                                [((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize];
+                        (*__pdf_state).cs_arg_stack
+                            [((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize] =
                             (*cd).sbw.sbx;
-                        cs_stack_top += 1;
+                        (*__pdf_state).cs_stack_top += 1;
                         argn = 2 as ::core::ffi::c_int;
                         op = cs_rmoveto as card8;
                     }
@@ -533,76 +542,76 @@ unsafe extern "C-unwind" fn do_operator1(mut cd: *mut t1_chardesc, mut data: *mu
             add_charpath(
                 cd,
                 op as ::core::ffi::c_int,
-                (&raw mut cs_arg_stack as *mut ::core::ffi::c_double)
-                    .offset((cs_stack_top - argn) as isize)
+                (&raw mut (*__pdf_state).cs_arg_stack as *mut ::core::ffi::c_double)
+                    .offset(((*__pdf_state).cs_stack_top - argn) as isize)
                     as *mut ::core::ffi::c_double,
                 argn,
             );
-            cs_stack_top = 0 as ::core::ffi::c_int;
+            (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
         }
         cs_endchar => {
-            status = CS_CHAR_END;
-            cs_stack_top = 0 as ::core::ffi::c_int;
+            (*__pdf_state).status = CS_CHAR_END;
+            (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
         }
         cs_rlineto => {
-            if cs_stack_top < 2 as ::core::ffi::c_int {
-                status = CS_STACK_ERROR;
+            if (*__pdf_state).cs_stack_top < 2 as ::core::ffi::c_int {
+                (*__pdf_state).status = CS_STACK_ERROR;
                 return;
             }
             add_charpath(
                 cd,
                 op as ::core::ffi::c_int,
-                (&raw mut cs_arg_stack as *mut ::core::ffi::c_double)
-                    .offset((cs_stack_top - 2 as ::core::ffi::c_int) as isize)
+                (&raw mut (*__pdf_state).cs_arg_stack as *mut ::core::ffi::c_double)
+                    .offset(((*__pdf_state).cs_stack_top - 2 as ::core::ffi::c_int) as isize)
                     as *mut ::core::ffi::c_double,
                 2 as ::core::ffi::c_int,
             );
-            cs_stack_top = 0 as ::core::ffi::c_int;
+            (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
         }
         cs_hlineto | cs_vlineto => {
-            if cs_stack_top < 1 as ::core::ffi::c_int {
-                status = CS_STACK_ERROR;
+            if (*__pdf_state).cs_stack_top < 1 as ::core::ffi::c_int {
+                (*__pdf_state).status = CS_STACK_ERROR;
                 return;
             }
             add_charpath(
                 cd,
                 op as ::core::ffi::c_int,
-                (&raw mut cs_arg_stack as *mut ::core::ffi::c_double)
-                    .offset((cs_stack_top - 1 as ::core::ffi::c_int) as isize)
+                (&raw mut (*__pdf_state).cs_arg_stack as *mut ::core::ffi::c_double)
+                    .offset(((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as isize)
                     as *mut ::core::ffi::c_double,
                 1 as ::core::ffi::c_int,
             );
-            cs_stack_top = 0 as ::core::ffi::c_int;
+            (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
         }
         cs_rrcurveto => {
-            if cs_stack_top < 6 as ::core::ffi::c_int {
-                status = CS_STACK_ERROR;
+            if (*__pdf_state).cs_stack_top < 6 as ::core::ffi::c_int {
+                (*__pdf_state).status = CS_STACK_ERROR;
                 return;
             }
             add_charpath(
                 cd,
                 op as ::core::ffi::c_int,
-                (&raw mut cs_arg_stack as *mut ::core::ffi::c_double)
-                    .offset((cs_stack_top - 6 as ::core::ffi::c_int) as isize)
+                (&raw mut (*__pdf_state).cs_arg_stack as *mut ::core::ffi::c_double)
+                    .offset(((*__pdf_state).cs_stack_top - 6 as ::core::ffi::c_int) as isize)
                     as *mut ::core::ffi::c_double,
                 6 as ::core::ffi::c_int,
             );
-            cs_stack_top = 0 as ::core::ffi::c_int;
+            (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
         }
         cs_vhcurveto | cs_hvcurveto => {
-            if cs_stack_top < 4 as ::core::ffi::c_int {
-                status = CS_STACK_ERROR;
+            if (*__pdf_state).cs_stack_top < 4 as ::core::ffi::c_int {
+                (*__pdf_state).status = CS_STACK_ERROR;
                 return;
             }
             add_charpath(
                 cd,
                 op as ::core::ffi::c_int,
-                (&raw mut cs_arg_stack as *mut ::core::ffi::c_double)
-                    .offset((cs_stack_top - 4 as ::core::ffi::c_int) as isize)
+                (&raw mut (*__pdf_state).cs_arg_stack as *mut ::core::ffi::c_double)
+                    .offset(((*__pdf_state).cs_stack_top - 4 as ::core::ffi::c_int) as isize)
                     as *mut ::core::ffi::c_double,
                 4 as ::core::ffi::c_int,
             );
-            cs_stack_top = 0 as ::core::ffi::c_int;
+            (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
         }
         cs_return => {}
         cs_callsubr => {
@@ -613,16 +622,17 @@ unsafe extern "C-unwind" fn do_operator1(mut cd: *mut t1_chardesc, mut data: *mu
                 b"Unknown charstring operator: 0x%02x\0" as *const u8 as *const ::core::ffi::c_char,
                 op as ::core::ffi::c_int,
             );
-            status = CS_PARSE_ERROR;
+            (*__pdf_state).status = CS_PARSE_ERROR;
         }
     };
 }
 unsafe extern "C-unwind" fn do_othersubr0(mut cd: *mut t1_chardesc) {
+    let __pdf_state = unsafe { document_state() };
     let mut flex: *mut t1_cpath = ::core::ptr::null_mut::<t1_cpath>();
     let mut cur: *mut t1_cpath = ::core::ptr::null_mut::<t1_cpath>();
     let mut next: *mut t1_cpath = ::core::ptr::null_mut::<t1_cpath>();
-    if ps_stack_top < 1 as ::core::ffi::c_int {
-        status = CS_PARSE_ERROR;
+    if (*__pdf_state).ps_stack_top < 1 as ::core::ffi::c_int {
+        (*__pdf_state).status = CS_PARSE_ERROR;
         return;
     }
     cur = (*cd).charpath;
@@ -638,7 +648,7 @@ unsafe extern "C-unwind" fn do_othersubr0(mut cd: *mut t1_chardesc) {
             || (*cur).type_0 != CS_FLEX_CTRL
             || (*cur).num_args != 2 as ::core::ffi::c_int
         {
-            status = CS_PARSE_ERROR;
+            (*__pdf_state).status = CS_PARSE_ERROR;
             return;
         }
         if i == 1 as ::core::ffi::c_uint {
@@ -663,23 +673,26 @@ unsafe extern "C-unwind" fn do_othersubr0(mut cd: *mut t1_chardesc) {
         i = i.wrapping_add(1);
     }
     if !cur.is_null() {
-        status = CS_PARSE_ERROR;
+        (*__pdf_state).status = CS_PARSE_ERROR;
         return;
     }
     (*flex).type_0 = cs_flex;
-    ps_stack_top -= 1;
-    (*flex).args[12 as ::core::ffi::c_int as usize] = ps_arg_stack[ps_stack_top as usize];
+    (*__pdf_state).ps_stack_top -= 1;
+    (*flex).args[12 as ::core::ffi::c_int as usize] =
+        (*__pdf_state).ps_arg_stack[(*__pdf_state).ps_stack_top as usize];
     (*flex).num_args = 13 as ::core::ffi::c_int;
     (*flex).next = ::core::ptr::null_mut::<t1_cpath>();
     (*cd).lastpath = flex;
-    phase = T1_CS_PHASE_PATH;
+    (*__pdf_state).phase = T1_CS_PHASE_PATH;
 }
 unsafe extern "C-unwind" fn do_othersubr1() {
-    phase = T1_CS_PHASE_FLEX;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).phase = T1_CS_PHASE_FLEX;
 }
 unsafe extern "C-unwind" fn do_othersubr2(mut cd: *mut t1_chardesc) {
-    if phase != T1_CS_PHASE_FLEX || (*cd).lastpath.is_null() {
-        status = CS_PARSE_ERROR;
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).phase != T1_CS_PHASE_FLEX || (*cd).lastpath.is_null() {
+        (*__pdf_state).status = CS_PARSE_ERROR;
         return;
     }
     match (*(*cd).lastpath).type_0 {
@@ -695,7 +708,7 @@ unsafe extern "C-unwind" fn do_othersubr2(mut cd: *mut t1_chardesc) {
             (*(*cd).lastpath).args[0 as ::core::ffi::c_int as usize] = 0.0f64;
         }
         _ => {
-            status = CS_PARSE_ERROR;
+            (*__pdf_state).status = CS_PARSE_ERROR;
             return;
         }
     }
@@ -705,12 +718,14 @@ unsafe extern "C-unwind" fn do_othersubr3(mut cd: *mut t1_chardesc) {
     (*cd).flags |= T1_CS_FLAG_USE_HINTMASK;
 }
 unsafe extern "C-unwind" fn do_othersubr12() {
-    if phase != T1_CS_PHASE_INIT {
-        status = CS_PARSE_ERROR;
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).phase != T1_CS_PHASE_INIT {
+        (*__pdf_state).status = CS_PARSE_ERROR;
         return;
     }
 }
 unsafe extern "C-unwind" fn do_othersubr13(mut cd: *mut t1_chardesc) {
+    let __pdf_state = unsafe { document_state() };
     let mut stemgroups: [t1_stemgroup; 96] = [t1_stemgroup {
         num_stems: 0,
         stems: [0.; 96],
@@ -721,8 +736,8 @@ unsafe extern "C-unwind" fn do_othersubr13(mut cd: *mut t1_chardesc) {
     let mut stem_id: ::core::ffi::c_int = 0;
     let mut pos: ::core::ffi::c_double = 0.;
     let mut del: ::core::ffi::c_double = 0.;
-    if phase != T1_CS_PHASE_INIT {
-        status = CS_PARSE_ERROR;
+    if (*__pdf_state).phase != T1_CS_PHASE_INIT {
+        (*__pdf_state).status = CS_PARSE_ERROR;
         return;
     }
     n = 0 as ::core::ffi::c_int;
@@ -730,19 +745,20 @@ unsafe extern "C-unwind" fn do_othersubr13(mut cd: *mut t1_chardesc) {
         stemgroups[n as usize].num_stems = 0 as ::core::ffi::c_int;
         n += 1;
     }
-    ps_stack_top -= 1;
-    num_hgroups = ps_arg_stack[ps_stack_top as usize] as ::core::ffi::c_int;
+    (*__pdf_state).ps_stack_top -= 1;
+    num_hgroups =
+        (*__pdf_state).ps_arg_stack[(*__pdf_state).ps_stack_top as usize] as ::core::ffi::c_int;
     if num_hgroups < 0 as ::core::ffi::c_int || num_hgroups > CS_STEM_GROUP_MAX {
-        status = CS_PARSE_ERROR;
+        (*__pdf_state).status = CS_PARSE_ERROR;
         return;
     }
     n = 0 as ::core::ffi::c_int;
     pos = 0.0f64;
-    while ps_stack_top >= 2 as ::core::ffi::c_int && n < num_hgroups {
-        ps_stack_top -= 1;
-        pos += ps_arg_stack[ps_stack_top as usize];
-        ps_stack_top -= 1;
-        del = ps_arg_stack[ps_stack_top as usize];
+    while (*__pdf_state).ps_stack_top >= 2 as ::core::ffi::c_int && n < num_hgroups {
+        (*__pdf_state).ps_stack_top -= 1;
+        pos += (*__pdf_state).ps_arg_stack[(*__pdf_state).ps_stack_top as usize];
+        (*__pdf_state).ps_stack_top -= 1;
+        del = (*__pdf_state).ps_arg_stack[(*__pdf_state).ps_stack_top as usize];
         stem_id = add_stem(
             cd,
             if del < 0.0f64 { pos + del } else { pos },
@@ -759,22 +775,23 @@ unsafe extern "C-unwind" fn do_othersubr13(mut cd: *mut t1_chardesc) {
         }
     }
     if n != num_hgroups {
-        status = CS_STACK_ERROR;
+        (*__pdf_state).status = CS_STACK_ERROR;
         return;
     }
-    ps_stack_top -= 1;
-    num_vgroups = ps_arg_stack[ps_stack_top as usize] as ::core::ffi::c_int;
+    (*__pdf_state).ps_stack_top -= 1;
+    num_vgroups =
+        (*__pdf_state).ps_arg_stack[(*__pdf_state).ps_stack_top as usize] as ::core::ffi::c_int;
     if num_vgroups < 0 as ::core::ffi::c_int || num_vgroups > CS_STEM_GROUP_MAX {
-        status = CS_PARSE_ERROR;
+        (*__pdf_state).status = CS_PARSE_ERROR;
         return;
     }
     n = 0 as ::core::ffi::c_int;
     pos = 0.0f64;
-    while ps_stack_top >= 2 as ::core::ffi::c_int && n < num_vgroups {
-        ps_stack_top -= 1;
-        pos += ps_arg_stack[ps_stack_top as usize];
-        ps_stack_top -= 1;
-        del = ps_arg_stack[ps_stack_top as usize];
+    while (*__pdf_state).ps_stack_top >= 2 as ::core::ffi::c_int && n < num_vgroups {
+        (*__pdf_state).ps_stack_top -= 1;
+        pos += (*__pdf_state).ps_arg_stack[(*__pdf_state).ps_stack_top as usize];
+        (*__pdf_state).ps_stack_top -= 1;
+        del = (*__pdf_state).ps_arg_stack[(*__pdf_state).ps_stack_top as usize];
         stem_id = add_stem(
             cd,
             if del < 0.0f64 { pos + del } else { pos },
@@ -791,7 +808,7 @@ unsafe extern "C-unwind" fn do_othersubr13(mut cd: *mut t1_chardesc) {
         }
     }
     if n != num_vgroups {
-        status = CS_STACK_ERROR;
+        (*__pdf_state).status = CS_STACK_ERROR;
         return;
     }
     n = 0 as ::core::ffi::c_int;
@@ -814,22 +831,24 @@ unsafe extern "C-unwind" fn do_othersubr13(mut cd: *mut t1_chardesc) {
     (*cd).flags |= T1_CS_FLAG_USE_CNTRMASK;
 }
 unsafe extern "C-unwind" fn do_callothersubr(mut cd: *mut t1_chardesc) {
+    let __pdf_state = unsafe { document_state() };
     let mut argn: ::core::ffi::c_int = 0;
     let mut subrno: ::core::ffi::c_int = 0;
-    if cs_stack_top < 2 as ::core::ffi::c_int {
-        status = CS_STACK_ERROR;
+    if (*__pdf_state).cs_stack_top < 2 as ::core::ffi::c_int {
+        (*__pdf_state).status = CS_STACK_ERROR;
         return;
     }
-    cs_stack_top -= 1;
-    subrno = cs_arg_stack[cs_stack_top as usize] as ::core::ffi::c_int;
-    cs_stack_top -= 1;
-    argn = cs_arg_stack[cs_stack_top as usize] as ::core::ffi::c_int;
-    if cs_stack_top < argn {
-        status = CS_STACK_ERROR;
+    (*__pdf_state).cs_stack_top -= 1;
+    subrno =
+        (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize] as ::core::ffi::c_int;
+    (*__pdf_state).cs_stack_top -= 1;
+    argn = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize] as ::core::ffi::c_int;
+    if (*__pdf_state).cs_stack_top < argn {
+        (*__pdf_state).status = CS_STACK_ERROR;
         return;
     }
-    if ps_stack_top + argn > PS_ARG_STACK_MAX {
-        status = CS_PARSE_ERROR;
+    if (*__pdf_state).ps_stack_top + argn > PS_ARG_STACK_MAX {
+        (*__pdf_state).status = CS_PARSE_ERROR;
         return;
     }
     loop {
@@ -838,10 +857,11 @@ unsafe extern "C-unwind" fn do_callothersubr(mut cd: *mut t1_chardesc) {
         if !(fresh7 > 0 as ::core::ffi::c_int) {
             break;
         }
-        cs_stack_top -= 1;
-        let fresh8 = ps_stack_top;
-        ps_stack_top = ps_stack_top + 1;
-        ps_arg_stack[fresh8 as usize] = cs_arg_stack[cs_stack_top as usize];
+        (*__pdf_state).cs_stack_top -= 1;
+        let fresh8 = (*__pdf_state).ps_stack_top;
+        (*__pdf_state).ps_stack_top = (*__pdf_state).ps_stack_top + 1;
+        (*__pdf_state).ps_arg_stack[fresh8 as usize] =
+            (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize];
     }
     match subrno {
         0 => {
@@ -875,33 +895,34 @@ unsafe extern "C-unwind" fn do_operator2(
     mut data: *mut *mut card8,
     mut endptr: *mut card8,
 ) {
+    let __pdf_state = unsafe { document_state() };
     let mut op: card8 = 0;
     *data = (*data).offset(1 as ::core::ffi::c_int as isize);
     if endptr < (*data).offset(1 as ::core::ffi::c_int as isize) {
-        status = CS_PARSE_ERROR;
+        (*__pdf_state).status = CS_PARSE_ERROR;
         return;
     }
     op = **data;
     *data = (*data).offset(1 as ::core::ffi::c_int as isize);
     match op as ::core::ffi::c_int {
         cs_sbw => {
-            if cs_stack_top < 4 as ::core::ffi::c_int {
-                status = CS_STACK_ERROR;
+            if (*__pdf_state).cs_stack_top < 4 as ::core::ffi::c_int {
+                (*__pdf_state).status = CS_STACK_ERROR;
                 return;
             }
-            cs_stack_top -= 1;
-            (*cd).sbw.wy = cs_arg_stack[cs_stack_top as usize];
-            cs_stack_top -= 1;
-            (*cd).sbw.wx = cs_arg_stack[cs_stack_top as usize];
-            cs_stack_top -= 1;
-            (*cd).sbw.sby = cs_arg_stack[cs_stack_top as usize];
-            cs_stack_top -= 1;
-            (*cd).sbw.sbx = cs_arg_stack[cs_stack_top as usize];
-            cs_stack_top = 0 as ::core::ffi::c_int;
+            (*__pdf_state).cs_stack_top -= 1;
+            (*cd).sbw.wy = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize];
+            (*__pdf_state).cs_stack_top -= 1;
+            (*cd).sbw.wx = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize];
+            (*__pdf_state).cs_stack_top -= 1;
+            (*cd).sbw.sby = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize];
+            (*__pdf_state).cs_stack_top -= 1;
+            (*cd).sbw.sbx = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize];
+            (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
         }
         cs_hstem3 | cs_vstem3 => {
-            if cs_stack_top < 6 as ::core::ffi::c_int {
-                status = CS_STACK_ERROR;
+            if (*__pdf_state).cs_stack_top < 6 as ::core::ffi::c_int {
+                (*__pdf_state).status = CS_STACK_ERROR;
                 return;
             }
             let mut i: ::core::ffi::c_int = 0;
@@ -910,12 +931,14 @@ unsafe extern "C-unwind" fn do_operator2(
                 let mut stem_id: ::core::ffi::c_int = 0;
                 stem_id = add_stem(
                     cd,
-                    cs_arg_stack[(cs_stack_top
+                    (*__pdf_state).cs_arg_stack[((*__pdf_state).cs_stack_top
                         - 2 as ::core::ffi::c_int * i
-                        - 2 as ::core::ffi::c_int) as usize],
-                    cs_arg_stack[(cs_stack_top
+                        - 2 as ::core::ffi::c_int)
+                        as usize],
+                    (*__pdf_state).cs_arg_stack[((*__pdf_state).cs_stack_top
                         - 2 as ::core::ffi::c_int * i
-                        - 1 as ::core::ffi::c_int) as usize],
+                        - 1 as ::core::ffi::c_int)
+                        as usize],
                     if op as ::core::ffi::c_int == cs_hstem3 {
                         HSTEM
                     } else {
@@ -924,77 +947,83 @@ unsafe extern "C-unwind" fn do_operator2(
                 );
                 if stem_id < 0 as ::core::ffi::c_int {
                     pdf_warning!(b"Too many hints...\0" as *const u8 as *const ::core::ffi::c_char,);
-                    status = CS_PARSE_ERROR;
+                    (*__pdf_state).status = CS_PARSE_ERROR;
                     return;
                 }
-                let fresh5 = cs_stack_top;
-                cs_stack_top = cs_stack_top + 1;
-                cs_arg_stack[fresh5 as usize] = stem_id as ::core::ffi::c_double;
+                let fresh5 = (*__pdf_state).cs_stack_top;
+                (*__pdf_state).cs_stack_top = (*__pdf_state).cs_stack_top + 1;
+                (*__pdf_state).cs_arg_stack[fresh5 as usize] = stem_id as ::core::ffi::c_double;
                 add_charpath(
                     cd,
                     -(1 as ::core::ffi::c_int),
-                    (&raw mut cs_arg_stack as *mut ::core::ffi::c_double)
-                        .offset((cs_stack_top - 1 as ::core::ffi::c_int) as isize)
+                    (&raw mut (*__pdf_state).cs_arg_stack as *mut ::core::ffi::c_double)
+                        .offset(((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as isize)
                         as *mut ::core::ffi::c_double,
                     1 as ::core::ffi::c_int,
                 );
-                cs_stack_top -= 1;
+                (*__pdf_state).cs_stack_top -= 1;
                 i -= 1;
             }
-            cs_stack_top = 0 as ::core::ffi::c_int;
+            (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
         }
         cs_setcurrentpoint => {
-            if cs_stack_top < 2 as ::core::ffi::c_int {
-                status = CS_STACK_ERROR;
+            if (*__pdf_state).cs_stack_top < 2 as ::core::ffi::c_int {
+                (*__pdf_state).status = CS_STACK_ERROR;
                 return;
             }
-            cs_stack_top = 0 as ::core::ffi::c_int;
+            (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
         }
         cs_pop => {
-            if ps_stack_top < 1 as ::core::ffi::c_int {
-                status = CS_PARSE_ERROR;
+            if (*__pdf_state).ps_stack_top < 1 as ::core::ffi::c_int {
+                (*__pdf_state).status = CS_PARSE_ERROR;
                 return;
             }
-            if cs_stack_top + 1 as ::core::ffi::c_int > CS_ARG_STACK_MAX {
-                status = CS_STACK_ERROR;
+            if (*__pdf_state).cs_stack_top + 1 as ::core::ffi::c_int > CS_ARG_STACK_MAX {
+                (*__pdf_state).status = CS_STACK_ERROR;
                 return;
             }
-            ps_stack_top -= 1;
-            let fresh6 = cs_stack_top;
-            cs_stack_top = cs_stack_top + 1;
-            cs_arg_stack[fresh6 as usize] = ps_arg_stack[ps_stack_top as usize];
+            (*__pdf_state).ps_stack_top -= 1;
+            let fresh6 = (*__pdf_state).cs_stack_top;
+            (*__pdf_state).cs_stack_top = (*__pdf_state).cs_stack_top + 1;
+            (*__pdf_state).cs_arg_stack[fresh6 as usize] =
+                (*__pdf_state).ps_arg_stack[(*__pdf_state).ps_stack_top as usize];
         }
         cs_dotsection => {}
         cs_div => {
-            if cs_stack_top < 2 as ::core::ffi::c_int {
-                status = CS_STACK_ERROR;
+            if (*__pdf_state).cs_stack_top < 2 as ::core::ffi::c_int {
+                (*__pdf_state).status = CS_STACK_ERROR;
                 return;
             }
-            cs_arg_stack[(cs_stack_top - 2 as ::core::ffi::c_int) as usize] /=
-                cs_arg_stack[(cs_stack_top - 1 as ::core::ffi::c_int) as usize];
-            cs_stack_top -= 1;
+            (*__pdf_state).cs_arg_stack
+                [((*__pdf_state).cs_stack_top - 2 as ::core::ffi::c_int) as usize] /=
+                (*__pdf_state).cs_arg_stack
+                    [((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize];
+            (*__pdf_state).cs_stack_top -= 1;
         }
         cs_callothersubr => {
             do_callothersubr(cd);
         }
         cs_seac => {
-            if cs_stack_top < 5 as ::core::ffi::c_int {
-                status = CS_STACK_ERROR;
+            if (*__pdf_state).cs_stack_top < 5 as ::core::ffi::c_int {
+                (*__pdf_state).status = CS_STACK_ERROR;
                 return;
             }
             (*cd).flags |= T1_CS_FLAG_USE_SEAC;
-            cs_stack_top -= 1;
-            (*cd).seac.achar = cs_arg_stack[cs_stack_top as usize] as card8;
-            cs_stack_top -= 1;
-            (*cd).seac.bchar = cs_arg_stack[cs_stack_top as usize] as card8;
-            cs_stack_top -= 1;
-            (*cd).seac.ady = cs_arg_stack[cs_stack_top as usize];
-            cs_stack_top -= 1;
-            (*cd).seac.adx = cs_arg_stack[cs_stack_top as usize];
+            (*__pdf_state).cs_stack_top -= 1;
+            (*cd).seac.achar =
+                (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize] as card8;
+            (*__pdf_state).cs_stack_top -= 1;
+            (*cd).seac.bchar =
+                (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize] as card8;
+            (*__pdf_state).cs_stack_top -= 1;
+            (*cd).seac.ady = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize];
+            (*__pdf_state).cs_stack_top -= 1;
+            (*cd).seac.adx = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize];
             (*cd).seac.ady += (*cd).sbw.sby;
-            cs_stack_top -= 1;
-            (*cd).seac.adx += (*cd).sbw.sbx - cs_arg_stack[cs_stack_top as usize];
-            cs_stack_top = 0 as ::core::ffi::c_int;
+            (*__pdf_state).cs_stack_top -= 1;
+            (*cd).seac.adx +=
+                (*cd).sbw.sbx - (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize];
+            (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
         }
         _ => {
             pdf_warning!(
@@ -1002,7 +1031,7 @@ unsafe extern "C-unwind" fn do_operator2(
                     as *const ::core::ffi::c_char,
                 op as ::core::ffi::c_int,
             );
-            status = CS_PARSE_ERROR;
+            (*__pdf_state).status = CS_PARSE_ERROR;
         }
     };
 }
@@ -1012,6 +1041,7 @@ unsafe extern "C-unwind" fn put_numbers(
     mut dest: *mut *mut card8,
     mut limit: *mut card8,
 ) {
+    let __pdf_state = unsafe { document_state() };
     let mut i: ::core::ffi::c_int = 0;
     i = 0 as ::core::ffi::c_int;
     while i < argn {
@@ -1030,7 +1060,7 @@ unsafe extern "C-unwind" fn put_numbers(
             );
         } else if fabs(value - ivalue as ::core::ffi::c_double) > 3.0e-5f64 {
             if limit < (*dest).offset(5 as ::core::ffi::c_int as isize) {
-                status = CS_BUFFER_ERROR;
+                (*__pdf_state).status = CS_BUFFER_ERROR;
                 return;
             }
             let fresh21 = *dest;
@@ -1054,7 +1084,7 @@ unsafe extern "C-unwind" fn put_numbers(
             *fresh25 = (ivalue & 0xff as ::core::ffi::c_int) as card8;
         } else if ivalue >= -(107 as ::core::ffi::c_int) && ivalue <= 107 as ::core::ffi::c_int {
             if limit < (*dest).offset(1 as ::core::ffi::c_int as isize) {
-                status = CS_BUFFER_ERROR;
+                (*__pdf_state).status = CS_BUFFER_ERROR;
                 return;
             }
             let fresh26 = *dest;
@@ -1062,7 +1092,7 @@ unsafe extern "C-unwind" fn put_numbers(
             *fresh26 = (ivalue + 139 as ::core::ffi::c_int) as card8;
         } else if ivalue >= 108 as ::core::ffi::c_int && ivalue <= 1131 as ::core::ffi::c_int {
             if limit < (*dest).offset(2 as ::core::ffi::c_int as isize) {
-                status = CS_BUFFER_ERROR;
+                (*__pdf_state).status = CS_BUFFER_ERROR;
                 return;
             }
             ivalue = (0xf700 as ::core::ffi::c_uint)
@@ -1078,7 +1108,7 @@ unsafe extern "C-unwind" fn put_numbers(
         } else if ivalue >= -(1131 as ::core::ffi::c_int) && ivalue <= -(108 as ::core::ffi::c_int)
         {
             if limit < (*dest).offset(2 as ::core::ffi::c_int as isize) {
-                status = CS_BUFFER_ERROR;
+                (*__pdf_state).status = CS_BUFFER_ERROR;
                 return;
             }
             ivalue = (0xfb00 as ::core::ffi::c_uint)
@@ -1094,7 +1124,7 @@ unsafe extern "C-unwind" fn put_numbers(
         } else if ivalue >= -(32768 as ::core::ffi::c_int) && ivalue <= 32767 as ::core::ffi::c_int
         {
             if limit < (*dest).offset(3 as ::core::ffi::c_int as isize) {
-                status = CS_BUFFER_ERROR;
+                (*__pdf_state).status = CS_BUFFER_ERROR;
                 return;
             }
             let fresh31 = *dest;
@@ -1113,6 +1143,7 @@ unsafe extern "C-unwind" fn put_numbers(
     }
 }
 unsafe extern "C-unwind" fn get_integer(mut data: *mut *mut card8, mut endptr: *mut card8) {
+    let __pdf_state = unsafe { document_state() };
     let mut result: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut b0: card8 = **data;
     let mut b1: card8 = 0;
@@ -1120,7 +1151,7 @@ unsafe extern "C-unwind" fn get_integer(mut data: *mut *mut card8, mut endptr: *
     *data = (*data).offset(1 as ::core::ffi::c_int as isize);
     if b0 as ::core::ffi::c_int == 28 as ::core::ffi::c_int {
         if endptr < (*data).offset(2 as ::core::ffi::c_int as isize) {
-            status = CS_PARSE_ERROR;
+            (*__pdf_state).status = CS_PARSE_ERROR;
             return;
         }
         b1 = **data;
@@ -1139,7 +1170,7 @@ unsafe extern "C-unwind" fn get_integer(mut data: *mut *mut card8, mut endptr: *
         && b0 as ::core::ffi::c_int <= 250 as ::core::ffi::c_int
     {
         if endptr < (*data).offset(1 as ::core::ffi::c_int as isize) {
-            status = CS_PARSE_ERROR;
+            (*__pdf_state).status = CS_PARSE_ERROR;
             return;
         }
         b1 = **data;
@@ -1151,7 +1182,7 @@ unsafe extern "C-unwind" fn get_integer(mut data: *mut *mut card8, mut endptr: *
         && b0 as ::core::ffi::c_int <= 254 as ::core::ffi::c_int
     {
         if endptr < (*data).offset(1 as ::core::ffi::c_int as isize) {
-            status = CS_PARSE_ERROR;
+            (*__pdf_state).status = CS_PARSE_ERROR;
             return;
         }
         b1 = **data;
@@ -1161,23 +1192,24 @@ unsafe extern "C-unwind" fn get_integer(mut data: *mut *mut card8, mut endptr: *
             - 108 as ::core::ffi::c_int;
         *data = (*data).offset(1 as ::core::ffi::c_int as isize);
     } else {
-        status = CS_PARSE_ERROR;
+        (*__pdf_state).status = CS_PARSE_ERROR;
         return;
     }
-    if cs_stack_top + 1 as ::core::ffi::c_int > CS_ARG_STACK_MAX {
-        status = CS_STACK_ERROR;
+    if (*__pdf_state).cs_stack_top + 1 as ::core::ffi::c_int > CS_ARG_STACK_MAX {
+        (*__pdf_state).status = CS_STACK_ERROR;
         return;
     }
-    let fresh1 = cs_stack_top;
-    cs_stack_top = cs_stack_top + 1;
-    cs_arg_stack[fresh1 as usize] = result as ::core::ffi::c_double;
+    let fresh1 = (*__pdf_state).cs_stack_top;
+    (*__pdf_state).cs_stack_top = (*__pdf_state).cs_stack_top + 1;
+    (*__pdf_state).cs_arg_stack[fresh1 as usize] = result as ::core::ffi::c_double;
 }
 unsafe extern "C-unwind" fn get_longint(mut data: *mut *mut card8, mut endptr: *mut card8) {
+    let __pdf_state = unsafe { document_state() };
     let mut result: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut i: ::core::ffi::c_uint = 0;
     *data = (*data).offset(1 as ::core::ffi::c_int as isize);
     if endptr < (*data).offset(4 as ::core::ffi::c_int as isize) {
-        status = CS_PARSE_ERROR;
+        (*__pdf_state).status = CS_PARSE_ERROR;
         return;
     }
     result = **data as ::core::ffi::c_int;
@@ -1192,13 +1224,13 @@ unsafe extern "C-unwind" fn get_longint(mut data: *mut *mut card8, mut endptr: *
         *data = (*data).offset(1 as ::core::ffi::c_int as isize);
         i = i.wrapping_add(1);
     }
-    if cs_stack_top + 1 as ::core::ffi::c_int > CS_ARG_STACK_MAX {
-        status = CS_STACK_ERROR;
+    if (*__pdf_state).cs_stack_top + 1 as ::core::ffi::c_int > CS_ARG_STACK_MAX {
+        (*__pdf_state).status = CS_STACK_ERROR;
         return;
     }
-    let fresh9 = cs_stack_top;
-    cs_stack_top = cs_stack_top + 1;
-    cs_arg_stack[fresh9 as usize] = result as ::core::ffi::c_double;
+    let fresh9 = (*__pdf_state).cs_stack_top;
+    (*__pdf_state).cs_stack_top = (*__pdf_state).cs_stack_top + 1;
+    (*__pdf_state).cs_arg_stack[fresh9 as usize] = result as ::core::ffi::c_double;
 }
 unsafe extern "C-unwind" fn t1char_build_charpath(
     mut cd: *mut t1_chardesc,
@@ -1206,26 +1238,28 @@ unsafe extern "C-unwind" fn t1char_build_charpath(
     mut endptr: *mut card8,
     mut subrs: *mut cff_index,
 ) {
+    let __pdf_state = unsafe { document_state() };
     let mut b0: card8 = 0 as card8;
     let mut subr: *mut card8 = ::core::ptr::null_mut::<card8>();
     let mut len: ::core::ffi::c_int = 0;
-    if nest > CS_SUBR_NEST_MAX {
+    if (*__pdf_state).nest > CS_SUBR_NEST_MAX {
         pdf_abort!(b"Subroutine nested too deeply.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
-    nest += 1;
-    while *data < endptr && status == CS_PARSE_OK {
+    (*__pdf_state).nest += 1;
+    while *data < endptr && (*__pdf_state).status == CS_PARSE_OK {
         b0 = **data;
         if b0 as ::core::ffi::c_int == 255 as ::core::ffi::c_int {
             get_longint(data, endptr);
         } else if b0 as ::core::ffi::c_int == cs_return {
-            status = CS_SUBR_RETURN;
+            (*__pdf_state).status = CS_SUBR_RETURN;
         } else if b0 as ::core::ffi::c_int == cs_callsubr {
-            if cs_stack_top < 1 as ::core::ffi::c_int {
-                status = CS_STACK_ERROR;
+            if (*__pdf_state).cs_stack_top < 1 as ::core::ffi::c_int {
+                (*__pdf_state).status = CS_STACK_ERROR;
             } else {
                 let mut idx: ::core::ffi::c_int = 0;
-                cs_stack_top -= 1;
-                idx = cs_arg_stack[cs_stack_top as usize] as ::core::ffi::c_int;
+                (*__pdf_state).cs_stack_top -= 1;
+                idx = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize]
+                    as ::core::ffi::c_int;
                 if subrs.is_null() || idx >= (*subrs).count as ::core::ffi::c_int {
                     pdf_abort!(b"Invalid Subr#.\0" as *const u8 as *const ::core::ffi::c_char,);
                 }
@@ -1251,14 +1285,14 @@ unsafe extern "C-unwind" fn t1char_build_charpath(
             && b0 as ::core::ffi::c_int <= 27 as ::core::ffi::c_int
             || b0 as ::core::ffi::c_int == 31 as ::core::ffi::c_int
         {
-            status = CS_PARSE_ERROR;
+            (*__pdf_state).status = CS_PARSE_ERROR;
         } else {
             get_integer(data, endptr);
         }
     }
-    if status == CS_SUBR_RETURN {
-        status = CS_PARSE_OK;
-    } else if status == CS_CHAR_END && *data < endptr {
+    if (*__pdf_state).status == CS_SUBR_RETURN {
+        (*__pdf_state).status = CS_PARSE_OK;
+    } else if (*__pdf_state).status == CS_CHAR_END && *data < endptr {
         if !(*data == endptr.offset(-(1 as ::core::ffi::c_int as isize))
             && **data as ::core::ffi::c_int == cs_return)
         {
@@ -1267,15 +1301,15 @@ unsafe extern "C-unwind" fn t1char_build_charpath(
                 endptr.offset_from(*data) as ::core::ffi::c_long as ::core::ffi::c_int,
             );
         }
-    } else if status < CS_PARSE_OK {
+    } else if (*__pdf_state).status < CS_PARSE_OK {
         pdf_abort!(
             b"Parsing charstring failed: (status=%d, stack=%d)\0" as *const u8
                 as *const ::core::ffi::c_char,
-            status,
-            cs_stack_top,
+            (*__pdf_state).status,
+            (*__pdf_state).cs_stack_top,
         );
     }
-    nest -= 1;
+    (*__pdf_state).nest -= 1;
 }
 unsafe extern "C-unwind" fn do_postproc(mut cd: *mut t1_chardesc) {
     let mut i: ::core::ffi::c_uint = 0;
@@ -1729,6 +1763,7 @@ pub unsafe extern "C-unwind" fn t1char_get_metrics(
     mut subrs: *mut cff_index,
     mut ginfo: *mut t1_ginfo,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut t1char: t1_chardesc = t1_chardesc {
         flags: 0,
         sbw: C2RustUnnamed_3 {
@@ -1763,17 +1798,19 @@ pub unsafe extern "C-unwind" fn t1char_get_metrics(
     let mut cd: *mut t1_chardesc = ::core::ptr::null_mut::<t1_chardesc>();
     cd = &raw mut t1char;
     init_charpath(cd);
-    status = CS_PARSE_OK;
-    phase = T1_CS_PHASE_INIT;
-    nest = 0 as ::core::ffi::c_int;
-    ps_stack_top = 0 as ::core::ffi::c_int;
-    cs_stack_top = 0 as ::core::ffi::c_int;
+    (*__pdf_state).status = CS_PARSE_OK;
+    (*__pdf_state).phase = T1_CS_PHASE_INIT;
+    (*__pdf_state).nest = 0 as ::core::ffi::c_int;
+    (*__pdf_state).ps_stack_top = 0 as ::core::ffi::c_int;
+    (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
     t1char_build_charpath(cd, &raw mut src, src.offset(srclen as isize), subrs);
-    if cs_stack_top != 0 as ::core::ffi::c_int || ps_stack_top != 0 as ::core::ffi::c_int {
+    if (*__pdf_state).cs_stack_top != 0 as ::core::ffi::c_int
+        || (*__pdf_state).ps_stack_top != 0 as ::core::ffi::c_int
+    {
         pdf_warning!(
             b"Stack not empty. (%d, %d)\0" as *const u8 as *const ::core::ffi::c_char,
-            cs_stack_top,
-            ps_stack_top,
+            (*__pdf_state).cs_stack_top,
+            (*__pdf_state).ps_stack_top,
         );
     }
     do_postproc(cd);
@@ -1804,6 +1841,7 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
     mut dst: *mut card8,
     mut endptr: *mut card8,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut save: *mut card8 = ::core::ptr::null_mut::<card8>();
     let mut curr: *mut t1_cpath = ::core::ptr::null_mut::<t1_cpath>();
     if cd.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -1815,18 +1853,18 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
     };
     save = dst;
     curr = (*cd).charpath;
-    status = CS_PARSE_OK;
-    phase = T1_CS_PHASE_INIT;
-    nest = 0 as ::core::ffi::c_int;
-    ps_stack_top = 0 as ::core::ffi::c_int;
-    cs_stack_top = 0 as ::core::ffi::c_int;
+    (*__pdf_state).status = CS_PARSE_OK;
+    (*__pdf_state).phase = T1_CS_PHASE_INIT;
+    (*__pdf_state).nest = 0 as ::core::ffi::c_int;
+    (*__pdf_state).ps_stack_top = 0 as ::core::ffi::c_int;
+    (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
     if (*cd).sbw.wx != default_width {
         let mut wx: ::core::ffi::c_double = (*cd).sbw.wx - nominal_width;
         put_numbers(&raw mut wx, 1 as ::core::ffi::c_int, &raw mut dst, endptr);
-        if status != CS_PARSE_OK {
+        if (*__pdf_state).status != CS_PARSE_OK {
             pdf_abort!(
                 b"Charstring encoder error: %d\0" as *const u8 as *const ::core::ffi::c_char,
-                status,
+                (*__pdf_state).status,
             );
         }
     }
@@ -1852,10 +1890,10 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
             &raw mut dst,
             endptr,
         );
-        if status != CS_PARSE_OK {
+        if (*__pdf_state).status != CS_PARSE_OK {
             pdf_abort!(
                 b"Charstring encoder error: %d\0" as *const u8 as *const ::core::ffi::c_char,
-                status,
+                (*__pdf_state).status,
             );
         }
         reset = 0 as ::core::ffi::c_int;
@@ -1905,10 +1943,10 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
                 &raw mut dst,
                 endptr,
             );
-            if status != CS_PARSE_OK {
+            if (*__pdf_state).status != CS_PARSE_OK {
                 pdf_abort!(
                     b"Charstring encoder error: %d\0" as *const u8 as *const ::core::ffi::c_char,
-                    status,
+                    (*__pdf_state).status,
                 );
             }
             reset = 0 as ::core::ffi::c_int;
@@ -2066,11 +2104,11 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
                     &raw mut dst,
                     endptr,
                 );
-                if status != CS_PARSE_OK {
+                if (*__pdf_state).status != CS_PARSE_OK {
                     pdf_abort!(
                         b"Charstring encoder error: %d\0" as *const u8
                             as *const ::core::ffi::c_char,
-                        status,
+                        (*__pdf_state).status,
                     );
                 }
                 if dst.offset(1 as ::core::ffi::c_int as isize) >= endptr {
@@ -2088,11 +2126,11 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
                     &raw mut dst,
                     endptr,
                 );
-                if status != CS_PARSE_OK {
+                if (*__pdf_state).status != CS_PARSE_OK {
                     pdf_abort!(
                         b"Charstring encoder error: %d\0" as *const u8
                             as *const ::core::ffi::c_char,
-                        status,
+                        (*__pdf_state).status,
                     );
                 }
                 if dst.offset(2 as ::core::ffi::c_int as isize) >= endptr {
@@ -2127,10 +2165,10 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
             &raw mut dst,
             endptr,
         );
-        if status != CS_PARSE_OK {
+        if (*__pdf_state).status != CS_PARSE_OK {
             pdf_abort!(
                 b"Charstring encoder error: %d\0" as *const u8 as *const ::core::ffi::c_char,
-                status,
+                (*__pdf_state).status,
             );
         }
         if dst.offset(2 as ::core::ffi::c_int as isize) >= endptr {
@@ -2160,6 +2198,7 @@ pub unsafe extern "C-unwind" fn t1char_convert_charstring(
     mut nominal_width: ::core::ffi::c_double,
     mut ginfo: *mut t1_ginfo,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut length: ::core::ffi::c_int = 0;
     let mut t1char: t1_chardesc = t1_chardesc {
         flags: 0,
@@ -2195,17 +2234,19 @@ pub unsafe extern "C-unwind" fn t1char_convert_charstring(
     let mut cd: *mut t1_chardesc = ::core::ptr::null_mut::<t1_chardesc>();
     cd = &raw mut t1char;
     init_charpath(cd);
-    status = CS_PARSE_OK;
-    phase = T1_CS_PHASE_INIT;
-    nest = 0 as ::core::ffi::c_int;
-    ps_stack_top = 0 as ::core::ffi::c_int;
-    cs_stack_top = 0 as ::core::ffi::c_int;
+    (*__pdf_state).status = CS_PARSE_OK;
+    (*__pdf_state).phase = T1_CS_PHASE_INIT;
+    (*__pdf_state).nest = 0 as ::core::ffi::c_int;
+    (*__pdf_state).ps_stack_top = 0 as ::core::ffi::c_int;
+    (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
     t1char_build_charpath(cd, &raw mut src, src.offset(srclen as isize), subrs);
-    if cs_stack_top != 0 as ::core::ffi::c_int || ps_stack_top != 0 as ::core::ffi::c_int {
+    if (*__pdf_state).cs_stack_top != 0 as ::core::ffi::c_int
+        || (*__pdf_state).ps_stack_top != 0 as ::core::ffi::c_int
+    {
         pdf_warning!(
             b"Stack not empty. (%d, %d)\0" as *const u8 as *const ::core::ffi::c_char,
-            cs_stack_top,
-            ps_stack_top,
+            (*__pdf_state).cs_stack_top,
+            (*__pdf_state).ps_stack_top,
         );
     }
     do_postproc(cd);
@@ -2249,7 +2290,6 @@ pub unsafe extern "C-unwind" fn t1char_convert_charstring(
     return length;
 }
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcpy(
         __dst: *mut ::core::ffi::c_void,
         __src: *const ::core::ffi::c_void,
@@ -2312,5 +2352,41 @@ pub unsafe extern "C" fn __pdf_entry_t1char_convert_charstring(
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    status: ::core::ffi::c_int,
+    phase: ::core::ffi::c_int,
+    nest: ::core::ffi::c_int,
+    cs_stack_top: ::core::ffi::c_int,
+    ps_stack_top: ::core::ffi::c_int,
+    cs_arg_stack: [::core::ffi::c_double; 49],
+    ps_arg_stack: [::core::ffi::c_double; 194],
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                status: CS_PARSE_ERROR,
+                phase: -(1 as ::core::ffi::c_int),
+                nest: -(1 as ::core::ffi::c_int),
+                cs_stack_top: 0 as ::core::ffi::c_int,
+                ps_stack_top: 0 as ::core::ffi::c_int,
+                cs_arg_stack: [0.; 49],
+                ps_arg_stack: [0.; 194],
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_t1_char
+            .pointer
     }
 }

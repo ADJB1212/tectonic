@@ -28,6 +28,7 @@
 )]
 use crate::backend::dpx_pdfdev::{pdf_sprint_matrix, transform_info_clear};
 use crate::backend::dpx_pdfdraw::pdf_dev_transform;
+use crate::compat::allocation::free;
 use crate::unicode::is_valid as UC_is_valid;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
@@ -692,16 +693,7 @@ pub const FONTMAP_RMODE_REPLACE: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const FONTMAP_RMODE_APPEND: ::core::ffi::c_int = '+' as i32;
 pub const FONTMAP_RMODE_REMOVE: ::core::ffi::c_int = '-' as i32;
 pub const PDF_XOBJECT_TYPE_IMAGE: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-static mut _pdf_stat: spc_pdf_ = spc_pdf_ {
-    annot_dict: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-    lowest_level: 255 as ::core::ffi::c_int,
-    cd: tounicode {
-        cmap_id: -(1 as ::core::ffi::c_int),
-        unescape_backslash: 0 as ::core::ffi::c_int,
-        taintkeys: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-    },
-    pageresources: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-};
+
 unsafe extern "C-unwind" fn parse_pdf_reference(
     mut start: *mut *const ::core::ffi::c_char,
     mut end: *const ::core::ffi::c_char,
@@ -784,12 +776,14 @@ unsafe extern "C-unwind" fn spc_handler_pdfm__clean(
 }
 #[unsafe(export_name = "__pdf_impl_spc_pdfm_at_begin_document")]
 pub unsafe extern "C-unwind" fn spc_pdfm_at_begin_document() -> ::core::ffi::c_int {
-    let mut sd: *mut spc_pdf_ = &raw mut _pdf_stat;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     return spc_handler_pdfm__init(sd as *mut ::core::ffi::c_void);
 }
 #[unsafe(export_name = "__pdf_impl_spc_pdfm_at_end_document")]
 pub unsafe extern "C-unwind" fn spc_pdfm_at_end_document() -> ::core::ffi::c_int {
-    let mut sd: *mut spc_pdf_ = &raw mut _pdf_stat;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     return spc_handler_pdfm__clean(sd as *mut ::core::ffi::c_void);
 }
 unsafe extern "C-unwind" fn spc_handler_pdfm_bop(
@@ -1048,7 +1042,8 @@ unsafe extern "C-unwind" fn forallresourcecategory(
 }
 #[unsafe(export_name = "__pdf_impl_spc_pdfm_at_end_page")]
 pub unsafe extern "C-unwind" fn spc_pdfm_at_end_page() -> ::core::ffi::c_int {
-    let mut sd: *mut spc_pdf_ = &raw mut _pdf_stat;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     if !(*sd).pageresources.is_null() {
         pdf_foreach_dict(
             (*sd).pageresources,
@@ -1647,7 +1642,8 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_annot(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut sd: *mut spc_pdf_ = &raw mut _pdf_stat;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut annot_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut rect: pdf_rect = pdf_rect {
         llx: 0.,
@@ -1735,7 +1731,8 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_bann(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut sd: *mut spc_pdf_ = &raw mut _pdf_stat;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut ident: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     if !(*sd).annot_dict.is_null() {
@@ -1784,7 +1781,8 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_eann(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut sd: *mut spc_pdf_ = &raw mut _pdf_stat;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     if (*sd).annot_dict.is_null() {
         pdf_warning!(
@@ -2097,7 +2095,8 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_outline(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut sd: *mut spc_pdf_ = &raw mut _pdf_stat;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut item_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut tmp: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut level: ::core::ffi::c_int = 0;
@@ -2176,7 +2175,8 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_article(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut sd: *mut spc_pdf_ = &raw mut _pdf_stat;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut ident: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut info_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     skip_white(&raw mut (*args).curptr, (*args).endptr);
@@ -2206,7 +2206,8 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_bead(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut sd: *mut spc_pdf_ = &raw mut _pdf_stat;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut article: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut article_info: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut article_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -2642,7 +2643,8 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_docinfo(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut sd: *mut spc_pdf_ = &raw mut _pdf_stat;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut docinfo: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     dict =
@@ -2663,7 +2665,8 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_docview(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut sd: *mut spc_pdf_ = &raw mut _pdf_stat;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut catalog: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut pref_old: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -3206,9 +3209,10 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_eform(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut error: ::core::ffi::c_int = 0;
     let mut attrib: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut sd: *mut spc_pdf_ = &raw mut _pdf_stat;
+    let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     if (*args).curptr < (*args).endptr {
         attrib = parse_pdf_object_extended(
@@ -3350,7 +3354,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_mapline(
     let mut map_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut opchr: ::core::ffi::c_char = 0;
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    static mut buffer: [::core::ffi::c_char; 1024] = [0; 1024];
+    let mut buffer: [::core::ffi::c_char; 1024] = [0; 1024];
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut count: ::core::ffi::c_int = 0;
@@ -3463,7 +3467,8 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_tounicode(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut sd: *mut spc_pdf_ = &raw mut _pdf_stat;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut cmap_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut taint_keys: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     (*sd).cd.cmap_id = -(1 as ::core::ffi::c_int);
@@ -3556,7 +3561,8 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_pageresources(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut sd: *mut spc_pdf_ = &raw mut _pdf_stat;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     dict = parse_pdf_object_extended(
         &raw mut (*args).curptr,
@@ -4668,7 +4674,6 @@ pub unsafe extern "C-unwind" fn spc_pdfm_setup_handler(
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcmp(
         __s1: *const ::core::ffi::c_void,
         __s2: *const ::core::ffi::c_void,
@@ -4755,5 +4760,38 @@ pub unsafe extern "C" fn __pdf_entry_spc_pdfm_setup_handler(
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    _pdf_stat: spc_pdf_,
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                _pdf_stat: spc_pdf_ {
+                    annot_dict: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                    lowest_level: 255 as ::core::ffi::c_int,
+                    cd: tounicode {
+                        cmap_id: -(1 as ::core::ffi::c_int),
+                        unescape_backslash: 0 as ::core::ffi::c_int,
+                        taintkeys: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                    },
+                    pageresources: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                },
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_spc_pdfm
+            .pointer
     }
 }

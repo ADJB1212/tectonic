@@ -25,6 +25,7 @@
 */
 
 #include "tectonic_bridge_core.h"
+#include "tectonic-document.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -520,11 +521,15 @@ tt_engine_xdvipdfmx_main(
   const char *pdfname
 ) {
   int rv;
+  void *pdf_document = tt_pdf_document_begin();
+  if (pdf_document == NULL)
+    return 99;
 
   if (setjmp(*ttbc_global_engine_enter(api))) {
     pdf_error_cleanup();
     pdf_abort_fonts();
     ttbc_global_engine_exit();
+    tt_pdf_document_end(pdf_document);
     return 99;
   }
 
@@ -546,5 +551,6 @@ tt_engine_xdvipdfmx_main(
   );
 
   ttbc_global_engine_exit();
+  tt_pdf_document_end(pdf_document);
   return rv;
 }

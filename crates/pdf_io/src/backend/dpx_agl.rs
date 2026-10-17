@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 use crate::unicode::is_valid as UC_is_valid;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
@@ -896,19 +897,16 @@ unsafe extern "C-unwind" fn agl_normalized_name(
     }
     return agln;
 }
-static mut aglmap: ht_table = ht_table {
-    count: 0,
-    hval_free_fn: None,
-    table: [::core::ptr::null::<ht_entry>() as *mut ht_entry; 503],
-};
+
 #[inline]
 unsafe extern "C-unwind" fn hval_free(mut hval: *mut ::core::ffi::c_void) {
     agl_release_name(hval as *mut agl_name);
 }
 #[unsafe(export_name = "__pdf_impl_agl_init_map")]
 pub unsafe extern "C-unwind" fn agl_init_map() {
+    let __pdf_state = unsafe { document_state() };
     ht_init_table(
-        &raw mut aglmap,
+        &raw mut (*__pdf_state).aglmap,
         Some(hval_free as unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void) -> ()),
     );
     agl_load_listfile(AGL_EXTRA_LISTFILE.as_ptr(), 0 as ::core::ffi::c_int);
@@ -931,13 +929,15 @@ pub unsafe extern "C-unwind" fn agl_init_map() {
 }
 #[unsafe(export_name = "__pdf_impl_agl_close_map")]
 pub unsafe extern "C-unwind" fn agl_close_map() {
-    ht_clear_table(&raw mut aglmap);
+    let __pdf_state = unsafe { document_state() };
+    ht_clear_table(&raw mut (*__pdf_state).aglmap);
 }
 pub const WBUF_SIZE: ::core::ffi::c_int = 1024 as ::core::ffi::c_int;
 unsafe extern "C-unwind" fn agl_load_listfile(
     mut filename: *const ::core::ffi::c_char,
     mut is_predef: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut count: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut endptr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
@@ -1038,13 +1038,13 @@ unsafe extern "C-unwind" fn agl_load_listfile(
                     i += 1;
                 }
                 duplicate = ht_lookup_table(
-                    &raw mut aglmap,
+                    &raw mut (*__pdf_state).aglmap,
                     name as *const ::core::ffi::c_void,
                     strlen(name) as ::core::ffi::c_int,
                 ) as *mut agl_name;
                 if duplicate.is_null() {
                     ht_append_table(
-                        &raw mut aglmap,
+                        &raw mut (*__pdf_state).aglmap,
                         name as *const ::core::ffi::c_void,
                         strlen(name) as ::core::ffi::c_int,
                         agln as *mut ::core::ffi::c_void,
@@ -1102,12 +1102,13 @@ unsafe extern "C-unwind" fn agl_load_listfile(
 pub unsafe extern "C-unwind" fn agl_lookup_list(
     mut glyphname: *const ::core::ffi::c_char,
 ) -> *mut agl_name {
+    let __pdf_state = unsafe { document_state() };
     let mut agln: *mut agl_name = ::core::ptr::null_mut::<agl_name>();
     if glyphname.is_null() {
         return ::core::ptr::null_mut::<agl_name>();
     }
     agln = ht_lookup_table(
-        &raw mut aglmap,
+        &raw mut (*__pdf_state).aglmap,
         glyphname as *const ::core::ffi::c_void,
         strlen(glyphname) as ::core::ffi::c_int,
     ) as *mut agl_name;
@@ -1543,7 +1544,6 @@ pub unsafe extern "C-unwind" fn agl_get_unicodes(
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcmp(
         __s1: *const ::core::ffi::c_void,
         __s2: *const ::core::ffi::c_void,
@@ -1689,5 +1689,33 @@ pub unsafe extern "C" fn __pdf_entry_agl_get_unicodes(
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    aglmap: ht_table,
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                aglmap: ht_table {
+                    count: 0,
+                    hval_free_fn: None,
+                    table: [::core::ptr::null::<ht_entry>() as *mut ht_entry; 503],
+                },
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_agl
+            .pointer
     }
 }

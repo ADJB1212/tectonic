@@ -24,6 +24,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -586,9 +587,7 @@ static mut macglyphorder: [*const ::core::ffi::c_char; 258] = [
     b"dcroat\0" as *const u8 as *const ::core::ffi::c_char,
 ];
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
-}
+unsafe extern "C" {}
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_tt_read_post_table(
     mut sfont: *mut sfnt,

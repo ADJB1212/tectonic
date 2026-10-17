@@ -24,6 +24,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn floor(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
@@ -541,7 +542,6 @@ pub unsafe extern "C-unwind" fn tt_get_fontdesc(
     return descriptor;
 }
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcpy(
         __dst: *mut ::core::ffi::c_void,
         __src: *const ::core::ffi::c_void,

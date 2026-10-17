@@ -24,6 +24,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -274,8 +275,7 @@ pub unsafe extern "C-unwind" fn cff_release_dict(mut dict: *mut cff_dict) {
     }
 }
 pub const CFF_DICT_STACK_LIMIT: ::core::ffi::c_int = 64 as ::core::ffi::c_int;
-static mut stack_top: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-static mut arg_stack: [::core::ffi::c_double; 64] = [0.; 64];
+
 pub const CFF_LAST_DICT_OP1: ::core::ffi::c_int = 22 as ::core::ffi::c_int;
 pub const CFF_LAST_DICT_OP2: ::core::ffi::c_int = 39 as ::core::ffi::c_int;
 pub const CFF_LAST_DICT_OP: ::core::ffi::c_int = CFF_LAST_DICT_OP1 + CFF_LAST_DICT_OP2;
@@ -684,6 +684,7 @@ unsafe extern "C-unwind" fn add_dict(
     mut endptr: *mut card8,
     mut status: *mut ::core::ffi::c_int,
 ) {
+    let __pdf_state = unsafe { document_state() };
     let mut id: ::core::ffi::c_int = 0;
     let mut argtype: ::core::ffi::c_int = 0;
     id = **data as ::core::ffi::c_int;
@@ -721,11 +722,11 @@ unsafe extern "C-unwind" fn add_dict(
         || argtype == CFF_TYPE_SID
         || argtype == CFF_TYPE_OFFSET
     {
-        if stack_top < 1 as ::core::ffi::c_int {
+        if (*__pdf_state).stack_top < 1 as ::core::ffi::c_int {
             *status = CFF_ERROR_STACK_UNDERFLOW;
             return;
         }
-        stack_top -= 1;
+        (*__pdf_state).stack_top -= 1;
         (*(*dict).entries.offset((*dict).count as isize)).count = 1 as ::core::ffi::c_int;
         let ref mut fresh17 = (*(*dict).entries.offset((*dict).count as isize)).values;
         *fresh17 = new((1 as ::core::ffi::c_int as uint32_t as usize)
@@ -733,19 +734,21 @@ unsafe extern "C-unwind" fn add_dict(
             as uint32_t) as *mut ::core::ffi::c_double;
         *(*(*dict).entries.offset((*dict).count as isize))
             .values
-            .offset(0 as ::core::ffi::c_int as isize) = arg_stack[stack_top as usize];
+            .offset(0 as ::core::ffi::c_int as isize) =
+            (*__pdf_state).arg_stack[(*__pdf_state).stack_top as usize];
         (*dict).count += 1 as ::core::ffi::c_int;
-    } else if stack_top > 0 as ::core::ffi::c_int {
-        (*(*dict).entries.offset((*dict).count as isize)).count = stack_top;
+    } else if (*__pdf_state).stack_top > 0 as ::core::ffi::c_int {
+        (*(*dict).entries.offset((*dict).count as isize)).count = (*__pdf_state).stack_top;
         let ref mut fresh18 = (*(*dict).entries.offset((*dict).count as isize)).values;
-        *fresh18 = new((stack_top as uint32_t as usize)
+        *fresh18 = new(((*__pdf_state).stack_top as uint32_t as usize)
             .wrapping_mul(::core::mem::size_of::<::core::ffi::c_double>() as usize)
             as uint32_t) as *mut ::core::ffi::c_double;
-        while stack_top > 0 as ::core::ffi::c_int {
-            stack_top -= 1;
+        while (*__pdf_state).stack_top > 0 as ::core::ffi::c_int {
+            (*__pdf_state).stack_top -= 1;
             *(*(*dict).entries.offset((*dict).count as isize))
                 .values
-                .offset(stack_top as isize) = arg_stack[stack_top as usize];
+                .offset((*__pdf_state).stack_top as isize) =
+                (*__pdf_state).arg_stack[(*__pdf_state).stack_top as usize];
         }
         (*dict).count += 1 as ::core::ffi::c_int;
     }
@@ -756,17 +759,19 @@ pub unsafe extern "C-unwind" fn cff_dict_unpack(
     mut data: *mut card8,
     mut endptr: *mut card8,
 ) -> *mut cff_dict {
+    let __pdf_state = unsafe { document_state() };
     let mut dict: *mut cff_dict = ::core::ptr::null_mut::<cff_dict>();
     let mut status: ::core::ffi::c_int = CFF_PARSE_OK;
-    stack_top = 0 as ::core::ffi::c_int;
+    (*__pdf_state).stack_top = 0 as ::core::ffi::c_int;
     dict = cff_new_dict();
     while data < endptr && status == CFF_PARSE_OK {
         if (*data as ::core::ffi::c_int) < 22 as ::core::ffi::c_int {
             add_dict(dict, &raw mut data, endptr, &raw mut status);
         } else if *data as ::core::ffi::c_int == 30 as ::core::ffi::c_int {
-            if stack_top < CFF_DICT_STACK_LIMIT {
-                arg_stack[stack_top as usize] = get_real(&raw mut data, endptr, &raw mut status);
-                stack_top += 1;
+            if (*__pdf_state).stack_top < CFF_DICT_STACK_LIMIT {
+                (*__pdf_state).arg_stack[(*__pdf_state).stack_top as usize] =
+                    get_real(&raw mut data, endptr, &raw mut status);
+                (*__pdf_state).stack_top += 1;
             } else {
                 status = CFF_ERROR_STACK_OVERFLOW;
             }
@@ -775,9 +780,10 @@ pub unsafe extern "C-unwind" fn cff_dict_unpack(
                 && *data as ::core::ffi::c_int <= 27 as ::core::ffi::c_int
         {
             data = data.offset(1);
-        } else if stack_top < CFF_DICT_STACK_LIMIT {
-            arg_stack[stack_top as usize] = get_integer(&raw mut data, endptr, &raw mut status);
-            stack_top += 1;
+        } else if (*__pdf_state).stack_top < CFF_DICT_STACK_LIMIT {
+            (*__pdf_state).arg_stack[(*__pdf_state).stack_top as usize] =
+                get_integer(&raw mut data, endptr, &raw mut status);
+            (*__pdf_state).stack_top += 1;
         } else {
             status = CFF_ERROR_STACK_OVERFLOW;
         }
@@ -788,12 +794,12 @@ pub unsafe extern "C-unwind" fn cff_dict_unpack(
             CFF_DEBUG_STR.as_ptr(),
             status,
         );
-    } else if stack_top != 0 as ::core::ffi::c_int {
+    } else if (*__pdf_state).stack_top != 0 as ::core::ffi::c_int {
         pdf_warning!(
             b"%s: Garbage in CFF DICT data.\0" as *const u8 as *const ::core::ffi::c_char,
             CFF_DEBUG_STR.as_ptr(),
         );
-        stack_top = 0 as ::core::ffi::c_int;
+        (*__pdf_state).stack_top = 0 as ::core::ffi::c_int;
     }
     return dict;
 }
@@ -1335,7 +1341,6 @@ pub unsafe extern "C-unwind" fn cff_dict_update(mut dict: *mut cff_dict, mut cff
 }
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memset(
         __b: *mut ::core::ffi::c_void,
         __c: ::core::ffi::c_int,
@@ -1483,5 +1488,31 @@ pub unsafe extern "C" fn __pdf_entry_cff_dict_update(
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    stack_top: ::core::ffi::c_int,
+    arg_stack: [::core::ffi::c_double; 64],
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                stack_top: 0 as ::core::ffi::c_int,
+                arg_stack: [0.; 64],
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_cff_dict
+            .pointer
     }
 }

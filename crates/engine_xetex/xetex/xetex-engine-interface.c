@@ -6,6 +6,7 @@
 #include "xetex-core.h"
 #include "xetex-xetexd.h"
 #include "xetex-ext.h"
+#include "tectonic-document.h"
 
 #include <string.h>
 
@@ -56,9 +57,13 @@ tt_engine_xetex_main(
     uint64_t build_date
 ) {
     int rv;
+    void *pdf_document = tt_pdf_document_begin();
+    if (pdf_document == NULL)
+        return HISTORY_FATAL_ERROR;
 
     if (setjmp(*ttbc_global_engine_enter(api))) {
         ttbc_global_engine_exit();
+        tt_pdf_document_end(pdf_document);
         return HISTORY_FATAL_ERROR;
     }
 
@@ -66,6 +71,7 @@ tt_engine_xetex_main(
     * over FFI. */
     rv = tt_run_engine(dump_name, input_file_name, (time_t) build_date);
     ttbc_global_engine_exit();
+    tt_pdf_document_end(pdf_document);
     return rv;
 }
 

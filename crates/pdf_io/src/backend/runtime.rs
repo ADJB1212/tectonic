@@ -1,6 +1,6 @@
 use crate::error::{PdfError, PdfErrorKind};
 use std::{
-    cell::{Cell, RefCell},
+    cell::RefCell,
     ffi::{CStr, CString, c_char, c_int, c_void},
     panic::{AssertUnwindSafe, catch_unwind, resume_unwind},
 };
@@ -11,8 +11,6 @@ use tectonic_bridge_core::{
 
 thread_local! {
     static ERROR: RefCell<Option<CString>> = RefCell::default();
-    static QUIET: Cell<i32> = const { Cell::new(0) };
-    static LAST_WARNING: Cell<bool> = const { Cell::new(false) };
 }
 
 struct Abort(CString);
@@ -91,14 +89,15 @@ pub extern "C" fn tt_pdf_last_error() -> *const c_char {
 }
 
 pub fn emit(message: &CStr, warning: bool) {
-    if QUIET.with(|quiet| quiet.get()) > i32::from(warning) {
+    let (quiet, last_warning) =
+        crate::compat::document::with_diagnostics(|state| (state.quiet, state.last_warning));
+    if quiet > i32::from(warning) {
         return;
     }
-    let result = CoreBridgeState::with_global_state(|state| {
-        emit_to(state, message, warning, LAST_WARNING.with(Cell::get))
-    });
+    let result =
+        CoreBridgeState::with_global_state(|state| emit_to(state, message, warning, last_warning));
     legacy_result(result);
-    LAST_WARNING.with(|last| last.set(warning));
+    crate::compat::document::with_diagnostics(|state| state.last_warning = warning);
 }
 
 pub(crate) fn emit_to(
@@ -142,11 +141,17 @@ pub unsafe extern "C" fn tt_pdf_emit_message(text: *const c_char, warning: c_int
 
 #[unsafe(no_mangle)]
 pub extern "C" fn shut_up(quietness: c_int) {
-    QUIET.with(|quiet| quiet.set(quietness));
+    if crate::compat::document::active() {
+        crate::compat::document::with_diagnostics(|state| state.quiet = quietness);
+    }
+}
+
+pub(crate) fn clear_error() {
+    ERROR.with(|stored| *stored.borrow_mut() = None);
 }
 
 pub unsafe fn allocate(size: usize) -> *mut c_void {
-    let pointer = unsafe { libc::malloc(size.max(1)) };
+    let pointer = unsafe { crate::compat::allocation::malloc(size.max(1)) };
     if pointer.is_null() {
         raise(CString::new("Out of memory").unwrap());
     }
@@ -154,7 +159,7 @@ pub unsafe fn allocate(size: usize) -> *mut c_void {
 }
 
 pub unsafe fn reallocate(pointer: *mut c_void, size: usize) -> *mut c_void {
-    let pointer = unsafe { libc::realloc(pointer, size.max(1)) };
+    let pointer = unsafe { crate::compat::allocation::realloc(pointer, size.max(1)) };
     if pointer.is_null() {
         raise(CString::new("Out of memory").unwrap());
     }

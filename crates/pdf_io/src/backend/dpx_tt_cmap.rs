@@ -24,6 +24,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 use crate::unicode::is_valid as UC_is_valid;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
@@ -2917,7 +2918,6 @@ pub unsafe extern "C-unwind" fn otf_try_load_GID_to_CID_map(
     return cmap_id;
 }
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcpy(
         __dst: *mut ::core::ffi::c_void,
         __src: *const ::core::ffi::c_void,

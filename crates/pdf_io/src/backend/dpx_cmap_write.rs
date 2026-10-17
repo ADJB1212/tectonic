@@ -24,6 +24,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
     fn sprintf(
@@ -904,7 +905,6 @@ pub unsafe extern "C-unwind" fn CMap_create_stream(mut cmap: *mut CMap) -> *mut 
 }
 pub const WBUF_SIZE: ::core::ffi::c_int = 40960 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcmp(
         __s1: *const ::core::ffi::c_void,
         __s2: *const ::core::ffi::c_void,

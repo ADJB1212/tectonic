@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn ttstub_input_seek(
         handle: rust_input_handle_t,
@@ -919,7 +920,6 @@ unsafe extern "C-unwind" fn read_raster_rle4(
     return count;
 }
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memset(
         __b: *mut ::core::ffi::c_void,
         __c: ::core::ffi::c_int,

@@ -24,6 +24,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 use crate::unicode::is_valid as UC_is_valid;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
@@ -1588,7 +1589,6 @@ pub unsafe extern "C-unwind" fn pdf_enc_set_generation(
 }
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcpy(
         __dst: *mut ::core::ffi::c_void,
         __src: *const ::core::ffi::c_void,
@@ -1658,6 +1658,9 @@ pub unsafe extern "C" fn __pdf_entry_pdf_encrypt_data(
         pdf_encrypt_data(p_sec, plain, plain_len, cipher, cipher_len)
     }) {
         Ok(value) => {
+            unsafe {
+                crate::compat::allocation::release((*cipher).cast());
+            }
             let _ = value;
             0
         }

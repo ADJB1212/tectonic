@@ -27,6 +27,7 @@
     dangerous_implicit_autorefs
 )]
 use crate::backend::dpx_pdfdev::transform_info_clear;
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -292,17 +293,7 @@ pub const INFO_HAS_WIDTH: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 1 as
 pub const INFO_HAS_HEIGHT: ::core::ffi::c_int =
     (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
 pub const PDFCOLORSTACK_MAX_STACK: ::core::ffi::c_int = 256 as ::core::ffi::c_int;
-static mut spc_stack: spc_stack = spc_stack {
-    stacks: [stack {
-        page: 0,
-        direct: 0,
-        stack: dpx_stack {
-            size: 0,
-            top: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
-            bottom: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
-        },
-    }; 256],
-};
+
 unsafe extern "C-unwind" fn pdfcolorstack__get_id(
     mut spe: *mut spc_env,
     mut id: *mut ::core::ffi::c_int,
@@ -405,6 +396,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfcolorstackinit(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut id: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut st: *mut stack = ::core::ptr::null_mut::<stack>();
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -428,7 +420,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfcolorstackinit(
         return -(1 as ::core::ffi::c_int);
     }
     skip_white(&raw mut (*args).curptr, (*args).endptr);
-    st = (&raw mut spc_stack.stacks as *mut stack).offset(id as isize) as *mut stack;
+    st = (&raw mut (*__pdf_state).spc_stack.stacks as *mut stack).offset(id as isize) as *mut stack;
     if dpx_stack_depth(&raw mut (*st).stack) > 0 as ::core::ffi::c_int {
         pdf_warning!(
             b"Stadk ID=%d already initialized?\0" as *const u8 as *const ::core::ffi::c_char,
@@ -557,6 +549,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfcolorstack(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut id: ::core::ffi::c_int = 0;
     let mut command: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -577,7 +570,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfcolorstack(
         return -(1 as ::core::ffi::c_int);
     }
     skip_white(&raw mut (*args).curptr, (*args).endptr);
-    st = (&raw mut spc_stack.stacks as *mut stack).offset(id as isize) as *mut stack;
+    st = (&raw mut (*__pdf_state).spc_stack.stacks as *mut stack).offset(id as isize) as *mut stack;
     if dpx_stack_depth(&raw mut (*st).stack) < 1 as ::core::ffi::c_int {
         pdf_warning!(
             b"Stack ID=%d not properly initialized?\0" as *const u8 as *const ::core::ffi::c_char,
@@ -650,12 +643,7 @@ unsafe extern "C-unwind" fn parse_pdf_reference(
     }
     return result;
 }
-#[unsafe(no_mangle)]
-pub static mut fontattrs: *mut fontattr = ::core::ptr::null::<fontattr>() as *mut fontattr;
-#[unsafe(no_mangle)]
-pub static mut num_fontattrs: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-#[unsafe(no_mangle)]
-pub static mut max_fontattrs: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+
 unsafe extern "C-unwind" fn process_fontattr(
     mut ident: *const ::core::ffi::c_char,
     mut size: ::core::ffi::c_double,
@@ -696,6 +684,7 @@ unsafe extern "C-unwind" fn spc_handler_pdffontattr(
     mut spe: *mut spc_env,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut fontattr: *mut fontattr = ::core::ptr::null_mut::<fontattr>();
     let mut ident: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut size: ::core::ffi::c_double = 0.0f64;
@@ -758,16 +747,18 @@ unsafe extern "C-unwind" fn spc_handler_pdffontattr(
         return -(1 as ::core::ffi::c_int);
     }
     skip_white(&raw mut (*ap).curptr, (*ap).endptr);
-    if num_fontattrs >= max_fontattrs {
-        fontattrs = renew(
-            fontattrs as *mut ::core::ffi::c_void,
-            ((max_fontattrs + 256 as ::core::ffi::c_int) as uint32_t as usize)
+    if (*__pdf_state).num_fontattrs >= (*__pdf_state).max_fontattrs {
+        (*__pdf_state).fontattrs = renew(
+            (*__pdf_state).fontattrs as *mut ::core::ffi::c_void,
+            (((*__pdf_state).max_fontattrs + 256 as ::core::ffi::c_int) as uint32_t as usize)
                 .wrapping_mul(::core::mem::size_of::<fontattr>() as usize) as uint32_t,
         ) as *mut fontattr;
-        max_fontattrs += 256 as ::core::ffi::c_int;
+        (*__pdf_state).max_fontattrs += 256 as ::core::ffi::c_int;
     }
-    fontattr = fontattrs.offset(num_fontattrs as isize) as *mut fontattr;
-    num_fontattrs += 1 as ::core::ffi::c_int;
+    fontattr = (*__pdf_state)
+        .fontattrs
+        .offset((*__pdf_state).num_fontattrs as isize) as *mut fontattr;
+    (*__pdf_state).num_fontattrs += 1 as ::core::ffi::c_int;
     (*fontattr).ident = ident;
     (*fontattr).size = size;
     (*fontattr).attr = attr;
@@ -775,42 +766,45 @@ unsafe extern "C-unwind" fn spc_handler_pdffontattr(
 }
 #[unsafe(export_name = "__pdf_impl_spc_misc_at_begin_document")]
 pub unsafe extern "C-unwind" fn spc_misc_at_begin_document() -> ::core::ffi::c_int {
-    let mut sd: *mut spc_stack = &raw mut spc_stack;
-    if fontattrs.is_null() {
-        fontattrs = new((256 as ::core::ffi::c_int as uint32_t as usize)
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_stack = &raw mut (*__pdf_state).spc_stack;
+    if (*__pdf_state).fontattrs.is_null() {
+        (*__pdf_state).fontattrs = new((256 as ::core::ffi::c_int as uint32_t as usize)
             .wrapping_mul(::core::mem::size_of::<fontattr>() as usize)
             as uint32_t) as *mut fontattr;
-        num_fontattrs = 0 as ::core::ffi::c_int;
-        max_fontattrs = 256 as ::core::ffi::c_int;
+        (*__pdf_state).num_fontattrs = 0 as ::core::ffi::c_int;
+        (*__pdf_state).max_fontattrs = 256 as ::core::ffi::c_int;
     }
     return pdfcolorstack__init(sd as *mut ::core::ffi::c_void);
 }
 #[unsafe(export_name = "__pdf_impl_spc_misc_at_end_document")]
 pub unsafe extern "C-unwind" fn spc_misc_at_end_document() -> ::core::ffi::c_int {
-    let mut sd: *mut spc_stack = &raw mut spc_stack;
-    if !fontattrs.is_null() {
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_stack = &raw mut (*__pdf_state).spc_stack;
+    if !(*__pdf_state).fontattrs.is_null() {
         let mut i: ::core::ffi::c_int = 0;
         i = 0 as ::core::ffi::c_int;
-        while i < num_fontattrs {
+        while i < (*__pdf_state).num_fontattrs {
             process_fontattr(
-                (*fontattrs.offset(i as isize)).ident,
-                (*fontattrs.offset(i as isize)).size,
-                (*fontattrs.offset(i as isize)).attr,
+                (*(*__pdf_state).fontattrs.offset(i as isize)).ident,
+                (*(*__pdf_state).fontattrs.offset(i as isize)).size,
+                (*(*__pdf_state).fontattrs.offset(i as isize)).attr,
             );
-            free((*fontattrs.offset(i as isize)).ident as *mut ::core::ffi::c_void);
-            pdf_release_obj((*fontattrs.offset(i as isize)).attr);
+            free((*(*__pdf_state).fontattrs.offset(i as isize)).ident as *mut ::core::ffi::c_void);
+            pdf_release_obj((*(*__pdf_state).fontattrs.offset(i as isize)).attr);
             i += 1;
         }
-        free(fontattrs as *mut ::core::ffi::c_void);
-        fontattrs = ::core::ptr::null_mut::<fontattr>();
-        num_fontattrs = 0 as ::core::ffi::c_int;
-        max_fontattrs = num_fontattrs;
+        free((*__pdf_state).fontattrs as *mut ::core::ffi::c_void);
+        (*__pdf_state).fontattrs = ::core::ptr::null_mut::<fontattr>();
+        (*__pdf_state).num_fontattrs = 0 as ::core::ffi::c_int;
+        (*__pdf_state).max_fontattrs = (*__pdf_state).num_fontattrs;
     }
     return pdfcolorstack__clean(sd as *mut ::core::ffi::c_void);
 }
 #[unsafe(export_name = "__pdf_impl_spc_misc_at_begin_page")]
 pub unsafe extern "C-unwind" fn spc_misc_at_begin_page() -> ::core::ffi::c_int {
-    let mut sd: *mut spc_stack = &raw mut spc_stack;
+    let __pdf_state = unsafe { document_state() };
+    let mut sd: *mut spc_stack = &raw mut (*__pdf_state).spc_stack;
     let mut i: ::core::ffi::c_int = 0;
     i = 0 as ::core::ffi::c_int;
     while i < PDFCOLORSTACK_MAX_STACK {
@@ -1156,7 +1150,6 @@ pub unsafe extern "C-unwind" fn spc_misc_setup_handler(
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcpy(
         __dst: *mut ::core::ffi::c_void,
         __src: *const ::core::ffi::c_void,
@@ -1272,5 +1265,45 @@ pub unsafe extern "C" fn __pdf_entry_spc_misc_setup_handler(
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    spc_stack: spc_stack,
+    fontattrs: *mut fontattr,
+    num_fontattrs: ::core::ffi::c_int,
+    max_fontattrs: ::core::ffi::c_int,
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                spc_stack: spc_stack {
+                    stacks: [stack {
+                        page: 0,
+                        direct: 0,
+                        stack: dpx_stack {
+                            size: 0,
+                            top: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
+                            bottom: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
+                        },
+                    }; 256],
+                },
+                fontattrs: ::core::ptr::null::<fontattr>() as *mut fontattr,
+                num_fontattrs: 0 as ::core::ffi::c_int,
+                max_fontattrs: 0 as ::core::ffi::c_int,
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_spc_misc
+            .pointer
     }
 }

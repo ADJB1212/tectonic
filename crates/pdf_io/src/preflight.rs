@@ -5,7 +5,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 use std::{
-    cell::RefCell,
     io::{Read, Seek, SeekFrom},
     ops::Range,
     slice,
@@ -134,7 +133,7 @@ struct ScannedPage {
 }
 
 #[derive(Default)]
-struct PageScanner {
+pub(crate) struct PageScanner {
     bytes: Vec<u8>,
     definitions: Vec<Range<usize>>,
     specials: Vec<Special>,
@@ -179,12 +178,10 @@ impl PageScanner {
     }
 }
 
-thread_local! {
-    static PAGE_SCANNER: RefCell<PageScanner> = RefCell::default();
-}
-
 pub(crate) fn clear_page_scanner() {
-    PAGE_SCANNER.with(|scanner| *scanner.borrow_mut() = PageScanner::default());
+    crate::compat::document::with_page_scanner(|scanner| {
+        *scanner.borrow_mut() = PageScanner::default()
+    });
 }
 
 #[unsafe(no_mangle)]
@@ -199,7 +196,7 @@ unsafe extern "C" fn tt_pdf_scan_page(
         let Some(length) = end.checked_sub(start).filter(|&length| length > 0) else {
             return 0;
         };
-        PAGE_SCANNER.with(|scanner| {
+        crate::compat::document::with_page_scanner(|scanner| {
             let mut scanner = scanner.borrow_mut();
             scanner.bytes.resize(length as usize, 0);
             let result = CoreBridgeState::with_global_state(|state| {
@@ -293,6 +290,7 @@ mod tests {
 
     #[test]
     fn playback_buffer_removes_all_font_definitions_and_preserves_special_offsets() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         let mut commands = vec![65];
         let mut expected = vec![65];
         let mut payloads = Vec::new();
@@ -332,6 +330,7 @@ mod tests {
 
     #[test]
     fn playback_scan_validates_unknown_specials_and_rejects_truncation_before_compacting() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         let payload = b"pdf:literal direct /Unknown BMC";
         let mut commands = vec![239, payload.len() as u8];
         commands.extend_from_slice(payload);
@@ -357,6 +356,7 @@ mod tests {
 
     #[test]
     fn opcode_arguments_and_font_definitions_cannot_be_mistaken_for_specials() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         let mut commands = Vec::new();
         for (opcode, length) in [
             (128, 1),
@@ -402,6 +402,7 @@ mod tests {
 
     #[test]
     fn glyph_runs_text_and_all_native_font_options_are_skipped_exactly() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         let mut commands = vec![252];
         commands.extend_from_slice(&[0; 8]);
         commands.extend_from_slice(&[0x73, 0x00, 4]);
@@ -438,6 +439,7 @@ mod tests {
 
     #[test]
     fn all_special_length_encodings_use_the_shared_compatibility_classifier() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         for width in 1..=4 {
             for (special, expected) in [
                 (b"color push rgb 1 0 0".as_slice(), true),
@@ -462,6 +464,7 @@ mod tests {
 
     #[test]
     fn page_offsets_empty_documents_and_malformed_ranges_are_handled() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
         let first = page(b"First page");
         let mut bytes = vec![0; 17];
         bytes.extend_from_slice(&first);

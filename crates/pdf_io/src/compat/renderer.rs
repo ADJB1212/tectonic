@@ -127,11 +127,79 @@ unsafe extern "C-unwind" fn tt_pdf_render_page(
     direction: c_int,
     output: *mut c_void,
 ) -> c_int {
-    unsafe {
-        crate::backend::render_page(
-            commands, count, fonts, font_count, unit, precision, autorotate, direction, output,
-        )
-    }
+    use crate::error::{PdfError, PdfErrorKind};
+    use crate::renderer::{Direction, PageRenderer, RenderCommand, RenderSettings, TextRun};
+    let render = || -> Result<(), PdfError> {
+        unsafe {
+            let commands = if count == 0 {
+                &[]
+            } else {
+                core::slice::from_raw_parts(commands, count)
+            };
+            let fonts = if font_count == 0 {
+                &[]
+            } else {
+                core::slice::from_raw_parts(fonts, font_count)
+            };
+            let output = output.cast::<Vec<u8>>().as_mut().ok_or_else(|| {
+                PdfError::new(
+                    PdfErrorKind::InvalidState,
+                    c"Missing renderer output".to_owned(),
+                )
+            })?;
+            let mut renderer = PageRenderer::new(
+                fonts,
+                RenderSettings {
+                    unit,
+                    precision,
+                    autorotate: autorotate != 0,
+                    direction: Direction::try_from(direction)?,
+                },
+                output,
+            )?;
+            for command in commands {
+                let data = if command.length == 0 {
+                    &[]
+                } else {
+                    core::slice::from_raw_parts(command.data, command.length)
+                };
+                renderer.command(match command.kind {
+                    0 => RenderCommand::Bytes(data),
+                    1 => RenderCommand::Text(TextRun {
+                        font: usize::try_from(command.font).map_err(|_| {
+                            PdfError::new(
+                                PdfErrorKind::MalformedInput,
+                                c"Invalid renderer font".to_owned(),
+                            )
+                        })?,
+                        x: command.x,
+                        y: command.y,
+                        width: command.width,
+                        data,
+                    }),
+                    2 => RenderCommand::Rule {
+                        x: command.x,
+                        y: command.y,
+                        width: command.width,
+                        height: command.height,
+                    },
+                    3 => RenderCommand::Graphics,
+                    4 => RenderCommand::Direction(Direction::try_from(command.x)?),
+                    5 => RenderCommand::ResetFonts {
+                        new_page: command.x != 0,
+                    },
+                    _ => {
+                        return Err(PdfError::new(
+                            PdfErrorKind::Unsupported,
+                            c"Unsupported renderer command".to_owned(),
+                        ));
+                    }
+                })?;
+            }
+            Ok(())
+        }
+    };
+    render().map_or(-1, |()| 0)
 }
 
 #[unsafe(no_mangle)]

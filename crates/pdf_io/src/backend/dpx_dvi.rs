@@ -29,6 +29,7 @@
     dangerous_implicit_autorefs
 )]
 use crate::backend::dpx_pdfdev::{pdf_dev_set_dirmode, pdf_dev_set_rect};
+use crate::compat::allocation::free;
 use crate::numbers::scaled_fixword as sqxfw;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
@@ -1021,353 +1022,72 @@ pub const SFNT_TYPE_DFONT: ::core::ffi::c_int =
 pub const DVI_STACK_DEPTH_MAX: ::core::ffi::c_uint = 256 as ::core::ffi::c_uint;
 pub const TEX_FONTS_ALLOC_SIZE: ::core::ffi::c_uint = 16 as ::core::ffi::c_uint;
 pub const VF_NESTING_MAX: ::core::ffi::c_uint = 16 as ::core::ffi::c_uint;
-static mut dvi_handle: rust_input_handle_t = INVALID_HANDLE;
-static mut linear: ::core::ffi::c_char = 0 as ::core::ffi::c_char;
-static mut page_loc: *mut uint32_t = ::core::ptr::null::<uint32_t>() as *mut uint32_t;
-static mut num_pages: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
-static mut dvi_file_size: uint32_t = 0 as uint32_t;
-static mut dvi_info: dvi_header = dvi_header {
-    unit_num: 25400000 as uint32_t,
-    unit_den: 473628672 as uint32_t,
-    mag: 1000 as uint32_t,
-    media_width: 0 as uint32_t,
-    media_height: 0 as uint32_t,
-    stackdepth: 0 as ::core::ffi::c_uint,
-    comment: [
-        '\0' as i32 as ::core::ffi::c_char,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-    ],
-};
-static mut dev_origin_y: ::core::ffi::c_double = 770.0f64;
-static mut dev_origin_x: ::core::ffi::c_double = 72.0f64;
+
 #[unsafe(export_name = "__pdf_impl_get_origin")]
 pub unsafe extern "C-unwind" fn get_origin(mut x: ::core::ffi::c_int) -> ::core::ffi::c_double {
-    return if x != 0 { dev_origin_x } else { dev_origin_y };
+    let __pdf_state = unsafe { document_state() };
+    return if x != 0 {
+        (*__pdf_state).dev_origin_x
+    } else {
+        (*__pdf_state).dev_origin_y
+    };
 }
 pub const LTYPESETTING: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const RTYPESETTING: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const SKIMMING: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
-static mut lr_state: dvi_lr = dvi_lr {
-    state: 0,
-    font: 0,
-    buf_index: 0,
-};
-static mut lr_mode: ::core::ffi::c_int = 0;
-static mut lr_width: uint32_t = 0;
-static mut lr_width_stack: [uint32_t; 256] = [0; 256];
-static mut lr_width_stack_depth: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
+
 pub const PHYSICAL: ::core::ffi::c_int = 1;
 pub const VIRTUAL: ::core::ffi::c_int = 2;
 pub const NATIVE: ::core::ffi::c_int = 4;
 pub const DVI: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const VF: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
-static mut loaded_fonts: *mut loaded_font = ::core::ptr::null::<loaded_font>() as *mut loaded_font;
-static mut max_loaded_fonts: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
-static mut num_loaded_fonts: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
+
 unsafe extern "C-unwind" fn need_more_fonts(mut n: ::core::ffi::c_uint) {
-    if num_loaded_fonts.wrapping_add(n) > max_loaded_fonts {
-        max_loaded_fonts = max_loaded_fonts.wrapping_add(TEX_FONTS_ALLOC_SIZE);
-        loaded_fonts = renew(
-            loaded_fonts as *mut ::core::ffi::c_void,
-            (max_loaded_fonts as uint32_t as usize)
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).num_loaded_fonts.wrapping_add(n) > (*__pdf_state).max_loaded_fonts {
+        (*__pdf_state).max_loaded_fonts = (*__pdf_state)
+            .max_loaded_fonts
+            .wrapping_add(TEX_FONTS_ALLOC_SIZE);
+        (*__pdf_state).loaded_fonts = renew(
+            (*__pdf_state).loaded_fonts as *mut ::core::ffi::c_void,
+            ((*__pdf_state).max_loaded_fonts as uint32_t as usize)
                 .wrapping_mul(::core::mem::size_of::<loaded_font>() as usize)
                 as uint32_t,
         ) as *mut loaded_font as *mut loaded_font;
     }
 }
-static mut def_fonts: *mut font_def = ::core::ptr::null::<font_def>() as *mut font_def;
+
 pub const XDV_FLAG_VERTICAL: ::core::ffi::c_int = 0x100 as ::core::ffi::c_int;
 pub const XDV_FLAG_COLORED: ::core::ffi::c_int = 0x200 as ::core::ffi::c_int;
 pub const XDV_FLAG_EXTEND: ::core::ffi::c_int = 0x1000 as ::core::ffi::c_int;
 pub const XDV_FLAG_SLANT: ::core::ffi::c_int = 0x2000 as ::core::ffi::c_int;
 pub const XDV_FLAG_EMBOLDEN: ::core::ffi::c_int = 0x4000 as ::core::ffi::c_int;
-static mut num_def_fonts: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
-static mut max_def_fonts: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
-static mut compute_boxes: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-static mut link_annot: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-static mut catch_phantom: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-static mut phantom_height: ::core::ffi::c_double = 0.0f64;
-static mut phantom_depth: ::core::ffi::c_double = 0.0f64;
+
 pub const DVI_PAGE_BUF_CHUNK: ::core::ffi::c_uint = 0x10000 as ::core::ffi::c_uint;
-static mut dvi_page_buffer: *mut ::core::ffi::c_uchar =
-    ::core::ptr::null::<::core::ffi::c_uchar>() as *mut ::core::ffi::c_uchar;
-static mut dvi_page_buf_size: ::core::ffi::c_uint = 0;
-static mut dvi_page_buf_index: ::core::ffi::c_uint = 0;
+
 unsafe extern "C-unwind" fn get_and_buffer_unsigned_byte(
     mut handle: rust_input_handle_t,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut ch: ::core::ffi::c_int = 0;
     ch = ttstub_input_getc(handle);
     if ch < 0 as ::core::ffi::c_int {
         pdf_abort!(b"File ended prematurely\n\0" as *const u8 as *const ::core::ffi::c_char,);
     }
-    if dvi_page_buf_index >= dvi_page_buf_size {
-        dvi_page_buf_size = dvi_page_buf_size.wrapping_add(DVI_PAGE_BUF_CHUNK);
-        dvi_page_buffer = renew(
-            dvi_page_buffer as *mut ::core::ffi::c_void,
-            (dvi_page_buf_size as uint32_t as usize)
+    if (*__pdf_state).dvi_page_buf_index >= (*__pdf_state).dvi_page_buf_size {
+        (*__pdf_state).dvi_page_buf_size = (*__pdf_state)
+            .dvi_page_buf_size
+            .wrapping_add(DVI_PAGE_BUF_CHUNK);
+        (*__pdf_state).dvi_page_buffer = renew(
+            (*__pdf_state).dvi_page_buffer as *mut ::core::ffi::c_void,
+            ((*__pdf_state).dvi_page_buf_size as uint32_t as usize)
                 .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
                 as uint32_t,
         ) as *mut ::core::ffi::c_uchar;
     }
-    let fresh25 = dvi_page_buf_index;
-    dvi_page_buf_index = dvi_page_buf_index.wrapping_add(1);
-    *dvi_page_buffer.offset(fresh25 as isize) = ch as ::core::ffi::c_uchar;
+    let fresh25 = (*__pdf_state).dvi_page_buf_index;
+    (*__pdf_state).dvi_page_buf_index = (*__pdf_state).dvi_page_buf_index.wrapping_add(1);
+    *(*__pdf_state).dvi_page_buffer.offset(fresh25 as isize) = ch as ::core::ffi::c_uchar;
     return ch;
 }
 unsafe extern "C-unwind" fn get_and_buffer_unsigned_pair(
@@ -1382,75 +1102,82 @@ unsafe extern "C-unwind" fn get_and_buffer_bytes(
     mut handle: rust_input_handle_t,
     mut count: ::core::ffi::c_uint,
 ) {
-    if dvi_page_buf_index.wrapping_add(count) >= dvi_page_buf_size {
-        dvi_page_buf_size = dvi_page_buf_index
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).dvi_page_buf_index.wrapping_add(count) >= (*__pdf_state).dvi_page_buf_size {
+        (*__pdf_state).dvi_page_buf_size = (*__pdf_state)
+            .dvi_page_buf_index
             .wrapping_add(count)
             .wrapping_add(DVI_PAGE_BUF_CHUNK);
-        dvi_page_buffer = renew(
-            dvi_page_buffer as *mut ::core::ffi::c_void,
-            (dvi_page_buf_size as uint32_t as usize)
+        (*__pdf_state).dvi_page_buffer = renew(
+            (*__pdf_state).dvi_page_buffer as *mut ::core::ffi::c_void,
+            ((*__pdf_state).dvi_page_buf_size as uint32_t as usize)
                 .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
                 as uint32_t,
         ) as *mut ::core::ffi::c_uchar;
     }
     if ttstub_input_read(
         handle,
-        (dvi_page_buffer as *mut ::core::ffi::c_char).offset(dvi_page_buf_index as isize),
+        ((*__pdf_state).dvi_page_buffer as *mut ::core::ffi::c_char)
+            .offset((*__pdf_state).dvi_page_buf_index as isize),
         count as size_t,
     ) != count as ssize_t
     {
         pdf_abort!(b"File ended prematurely\n\0" as *const u8 as *const ::core::ffi::c_char,);
     }
-    dvi_page_buf_index = dvi_page_buf_index.wrapping_add(count);
+    (*__pdf_state).dvi_page_buf_index = (*__pdf_state).dvi_page_buf_index.wrapping_add(count);
 }
 unsafe extern "C-unwind" fn get_buffered_unsigned_byte() -> ::core::ffi::c_int {
-    let fresh12 = dvi_page_buf_index;
-    dvi_page_buf_index = dvi_page_buf_index.wrapping_add(1);
-    return *dvi_page_buffer.offset(fresh12 as isize) as ::core::ffi::c_int;
+    let __pdf_state = unsafe { document_state() };
+    let fresh12 = (*__pdf_state).dvi_page_buf_index;
+    (*__pdf_state).dvi_page_buf_index = (*__pdf_state).dvi_page_buf_index.wrapping_add(1);
+    return *(*__pdf_state).dvi_page_buffer.offset(fresh12 as isize) as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn get_buffered_unsigned_pair() -> ::core::ffi::c_uint {
-    let fresh8 = dvi_page_buf_index;
-    dvi_page_buf_index = dvi_page_buf_index.wrapping_add(1);
+    let __pdf_state = unsafe { document_state() };
+    let fresh8 = (*__pdf_state).dvi_page_buf_index;
+    (*__pdf_state).dvi_page_buf_index = (*__pdf_state).dvi_page_buf_index.wrapping_add(1);
     let mut pair: ::core::ffi::c_uint =
-        *dvi_page_buffer.offset(fresh8 as isize) as ::core::ffi::c_uint;
-    let fresh9 = dvi_page_buf_index;
-    dvi_page_buf_index = dvi_page_buf_index.wrapping_add(1);
+        *(*__pdf_state).dvi_page_buffer.offset(fresh8 as isize) as ::core::ffi::c_uint;
+    let fresh9 = (*__pdf_state).dvi_page_buf_index;
+    (*__pdf_state).dvi_page_buf_index = (*__pdf_state).dvi_page_buf_index.wrapping_add(1);
     pair = pair << 8 as ::core::ffi::c_int
-        | *dvi_page_buffer.offset(fresh9 as isize) as ::core::ffi::c_uint;
+        | *(*__pdf_state).dvi_page_buffer.offset(fresh9 as isize) as ::core::ffi::c_uint;
     return pair;
 }
 unsafe extern "C-unwind" fn get_buffered_signed_quad() -> int32_t {
+    let __pdf_state = unsafe { document_state() };
     let mut i: ::core::ffi::c_uint = 0;
-    let fresh10 = dvi_page_buf_index;
-    dvi_page_buf_index = dvi_page_buf_index.wrapping_add(1);
-    let mut quad: int32_t = *dvi_page_buffer.offset(fresh10 as isize) as int32_t;
+    let fresh10 = (*__pdf_state).dvi_page_buf_index;
+    (*__pdf_state).dvi_page_buf_index = (*__pdf_state).dvi_page_buf_index.wrapping_add(1);
+    let mut quad: int32_t = *(*__pdf_state).dvi_page_buffer.offset(fresh10 as isize) as int32_t;
     if quad >= 0x80 as int32_t {
         quad = (quad as ::core::ffi::c_int - 0x100 as ::core::ffi::c_int) as int32_t;
     }
     i = 0 as ::core::ffi::c_uint;
     while i < 3 as ::core::ffi::c_uint {
-        let fresh11 = dvi_page_buf_index;
-        dvi_page_buf_index = dvi_page_buf_index.wrapping_add(1);
-        quad =
-            quad << 8 as ::core::ffi::c_int | *dvi_page_buffer.offset(fresh11 as isize) as int32_t;
+        let fresh11 = (*__pdf_state).dvi_page_buf_index;
+        (*__pdf_state).dvi_page_buf_index = (*__pdf_state).dvi_page_buf_index.wrapping_add(1);
+        quad = quad << 8 as ::core::ffi::c_int
+            | *(*__pdf_state).dvi_page_buffer.offset(fresh11 as isize) as int32_t;
         i = i.wrapping_add(1);
     }
     return quad;
 }
 unsafe extern "C-unwind" fn get_buffered_signed_num(mut num: ::core::ffi::c_uchar) -> int32_t {
-    let fresh21 = dvi_page_buf_index;
-    dvi_page_buf_index = dvi_page_buf_index.wrapping_add(1);
-    let mut quad: int32_t = *dvi_page_buffer.offset(fresh21 as isize) as int32_t;
+    let __pdf_state = unsafe { document_state() };
+    let fresh21 = (*__pdf_state).dvi_page_buf_index;
+    (*__pdf_state).dvi_page_buf_index = (*__pdf_state).dvi_page_buf_index.wrapping_add(1);
+    let mut quad: int32_t = *(*__pdf_state).dvi_page_buffer.offset(fresh21 as isize) as int32_t;
     if quad > 0x7f as int32_t {
         quad = (quad as ::core::ffi::c_int - 0x100 as ::core::ffi::c_int) as int32_t;
     }
     let mut current_block_4: u64;
     match num as ::core::ffi::c_int {
         3 => {
-            let fresh22 = dvi_page_buf_index;
-            dvi_page_buf_index = dvi_page_buf_index.wrapping_add(1);
+            let fresh22 = (*__pdf_state).dvi_page_buf_index;
+            (*__pdf_state).dvi_page_buf_index = (*__pdf_state).dvi_page_buf_index.wrapping_add(1);
             quad = quad << 8 as ::core::ffi::c_int
-                | *dvi_page_buffer.offset(fresh22 as isize) as int32_t;
+                | *(*__pdf_state).dvi_page_buffer.offset(fresh22 as isize) as int32_t;
             current_block_4 = 4139671058212713198;
         }
         2 => {
@@ -1465,39 +1192,40 @@ unsafe extern "C-unwind" fn get_buffered_signed_num(mut num: ::core::ffi::c_ucha
     }
     match current_block_4 {
         4139671058212713198 => {
-            let fresh23 = dvi_page_buf_index;
-            dvi_page_buf_index = dvi_page_buf_index.wrapping_add(1);
+            let fresh23 = (*__pdf_state).dvi_page_buf_index;
+            (*__pdf_state).dvi_page_buf_index = (*__pdf_state).dvi_page_buf_index.wrapping_add(1);
             quad = quad << 8 as ::core::ffi::c_int
-                | *dvi_page_buffer.offset(fresh23 as isize) as int32_t;
+                | *(*__pdf_state).dvi_page_buffer.offset(fresh23 as isize) as int32_t;
             current_block_4 = 11897030533752700014;
         }
         _ => {}
     }
     match current_block_4 {
         11897030533752700014 => {
-            let fresh24 = dvi_page_buf_index;
-            dvi_page_buf_index = dvi_page_buf_index.wrapping_add(1);
+            let fresh24 = (*__pdf_state).dvi_page_buf_index;
+            (*__pdf_state).dvi_page_buf_index = (*__pdf_state).dvi_page_buf_index.wrapping_add(1);
             quad = quad << 8 as ::core::ffi::c_int
-                | *dvi_page_buffer.offset(fresh24 as isize) as int32_t;
+                | *(*__pdf_state).dvi_page_buffer.offset(fresh24 as isize) as int32_t;
         }
         _ => {}
     }
     return quad;
 }
 unsafe extern "C-unwind" fn get_buffered_unsigned_num(mut num: ::core::ffi::c_uchar) -> int32_t {
-    let fresh13 = dvi_page_buf_index;
-    dvi_page_buf_index = dvi_page_buf_index.wrapping_add(1);
-    let mut quad: int32_t = *dvi_page_buffer.offset(fresh13 as isize) as int32_t;
+    let __pdf_state = unsafe { document_state() };
+    let fresh13 = (*__pdf_state).dvi_page_buf_index;
+    (*__pdf_state).dvi_page_buf_index = (*__pdf_state).dvi_page_buf_index.wrapping_add(1);
+    let mut quad: int32_t = *(*__pdf_state).dvi_page_buffer.offset(fresh13 as isize) as int32_t;
     let mut current_block_4: u64;
     match num as ::core::ffi::c_int {
         3 => {
             if quad > 0x7f as int32_t {
                 quad = (quad as ::core::ffi::c_int - 0x100 as ::core::ffi::c_int) as int32_t;
             }
-            let fresh14 = dvi_page_buf_index;
-            dvi_page_buf_index = dvi_page_buf_index.wrapping_add(1);
+            let fresh14 = (*__pdf_state).dvi_page_buf_index;
+            (*__pdf_state).dvi_page_buf_index = (*__pdf_state).dvi_page_buf_index.wrapping_add(1);
             quad = quad << 8 as ::core::ffi::c_int
-                | *dvi_page_buffer.offset(fresh14 as isize) as int32_t;
+                | *(*__pdf_state).dvi_page_buffer.offset(fresh14 as isize) as int32_t;
             current_block_4 = 15152277268355049698;
         }
         2 => {
@@ -1512,20 +1240,20 @@ unsafe extern "C-unwind" fn get_buffered_unsigned_num(mut num: ::core::ffi::c_uc
     }
     match current_block_4 {
         15152277268355049698 => {
-            let fresh15 = dvi_page_buf_index;
-            dvi_page_buf_index = dvi_page_buf_index.wrapping_add(1);
+            let fresh15 = (*__pdf_state).dvi_page_buf_index;
+            (*__pdf_state).dvi_page_buf_index = (*__pdf_state).dvi_page_buf_index.wrapping_add(1);
             quad = quad << 8 as ::core::ffi::c_int
-                | *dvi_page_buffer.offset(fresh15 as isize) as int32_t;
+                | *(*__pdf_state).dvi_page_buffer.offset(fresh15 as isize) as int32_t;
             current_block_4 = 3155149378587051232;
         }
         _ => {}
     }
     match current_block_4 {
         3155149378587051232 => {
-            let fresh16 = dvi_page_buf_index;
-            dvi_page_buf_index = dvi_page_buf_index.wrapping_add(1);
+            let fresh16 = (*__pdf_state).dvi_page_buf_index;
+            (*__pdf_state).dvi_page_buf_index = (*__pdf_state).dvi_page_buf_index.wrapping_add(1);
             quad = quad << 8 as ::core::ffi::c_int
-                | *dvi_page_buffer.offset(fresh16 as isize) as int32_t;
+                | *(*__pdf_state).dvi_page_buffer.offset(fresh16 as isize) as int32_t;
         }
         _ => {}
     }
@@ -1533,24 +1261,25 @@ unsafe extern "C-unwind" fn get_buffered_unsigned_num(mut num: ::core::ffi::c_uc
 }
 #[unsafe(export_name = "__pdf_impl_dvi_npages")]
 pub unsafe extern "C-unwind" fn dvi_npages() -> ::core::ffi::c_uint {
-    return num_pages;
+    let __pdf_state = unsafe { document_state() };
+    return (*__pdf_state).num_pages;
 }
 static mut invalid_signature: [::core::ffi::c_char; 53] = unsafe {
     ::core::mem::transmute::<[u8; 53], [::core::ffi::c_char; 53]>(
         *b"Something is wrong. Are you sure this is a DVI file?\0",
     )
 };
-static mut post_id_byte: ::core::ffi::c_int = 0;
-static mut pre_id_byte: ::core::ffi::c_int = 0;
-static mut is_ptex: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-static mut has_ptex: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+
 unsafe extern "C-unwind" fn check_id_bytes() {
-    if pre_id_byte != post_id_byte && (pre_id_byte != DVI_ID || post_id_byte != DVIV_ID) {
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).pre_id_byte != (*__pdf_state).post_id_byte
+        && ((*__pdf_state).pre_id_byte != DVI_ID || (*__pdf_state).post_id_byte != DVIV_ID)
+    {
         pdf_abort!(
             b"Inconsistent DVI id_bytes %d (pre) and %d (post)\0" as *const u8
                 as *const ::core::ffi::c_char,
-            pre_id_byte,
-            post_id_byte,
+            (*__pdf_state).pre_id_byte,
+            (*__pdf_state).post_id_byte,
         );
     }
 }
@@ -1565,34 +1294,43 @@ unsafe extern "C-unwind" fn need_XeTeX(mut c: ::core::ffi::c_int) {
     }
 }
 unsafe extern "C-unwind" fn need_pTeX(mut c: ::core::ffi::c_int) {
-    if is_ptex == 0 {
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).is_ptex == 0 {
         pdf_abort!(
             b"DVI opcode %i only valid for Ascii pTeX\0" as *const u8 as *const ::core::ffi::c_char,
             c,
         );
     }
-    has_ptex = 1 as ::core::ffi::c_int;
+    (*__pdf_state).has_ptex = 1 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn find_post() -> int32_t {
+    let __pdf_state = unsafe { document_state() };
     let mut dvi_size: off_t = 0;
     let mut current: int32_t = 0;
     let mut ch: ::core::ffi::c_int = 0;
-    dvi_size = ttstub_input_get_size(dvi_handle) as off_t;
+    dvi_size = ttstub_input_get_size((*__pdf_state).dvi_handle) as off_t;
     if dvi_size > 0x7fffffff as off_t {
         pdf_abort!(b"DVI file size exceeds 31-bit\0" as *const u8 as *const ::core::ffi::c_char,);
     }
-    dvi_file_size = dvi_size as uint32_t;
-    crate::backend::runtime::input_seek(dvi_handle, 0 as ssize_t, SEEK_END);
+    (*__pdf_state).dvi_file_size = dvi_size as uint32_t;
+    crate::backend::runtime::input_seek((*__pdf_state).dvi_handle, 0 as ssize_t, SEEK_END);
     current = dvi_size as int32_t;
     loop {
         current -= 1;
-        crate::backend::runtime::input_seek(dvi_handle, current as ssize_t, SEEK_SET);
-        ch = ttstub_input_getc(dvi_handle);
+        crate::backend::runtime::input_seek(
+            (*__pdf_state).dvi_handle,
+            current as ssize_t,
+            SEEK_SET,
+        );
+        ch = ttstub_input_getc((*__pdf_state).dvi_handle);
         if !(ch == PADDING && current > 0 as int32_t) {
             break;
         }
     }
-    if dvi_file_size.wrapping_sub(current as uint32_t) < 4 as uint32_t
+    if (*__pdf_state)
+        .dvi_file_size
+        .wrapping_sub(current as uint32_t)
+        < 4 as uint32_t
         || current == 0 as int32_t
         || !(ch == DVI_ID || ch == DVIV_ID || ch == XDV_ID || ch == XDV_ID_OLD)
     {
@@ -1602,14 +1340,14 @@ unsafe extern "C-unwind" fn find_post() -> int32_t {
         );
         pdf_abort!(&raw const invalid_signature as *const ::core::ffi::c_char);
     }
-    post_id_byte = ch;
+    (*__pdf_state).post_id_byte = ch;
     if ch == XDV_ID || ch == XDV_ID_OLD {
         dpx_conf.compat_mode = dpx_mode_xdv_mode;
     }
-    is_ptex = (ch == DVIV_ID) as ::core::ffi::c_int;
+    (*__pdf_state).is_ptex = (ch == DVIV_ID) as ::core::ffi::c_int;
     current = current - 5 as int32_t;
-    crate::backend::runtime::input_seek(dvi_handle, current as ssize_t, SEEK_SET);
-    ch = ttstub_input_getc(dvi_handle);
+    crate::backend::runtime::input_seek((*__pdf_state).dvi_handle, current as ssize_t, SEEK_SET);
+    ch = ttstub_input_getc((*__pdf_state).dvi_handle);
     if ch != POST_POST {
         pdf_message!(
             b"Found %d where post_post opcode should be\n\0" as *const u8
@@ -1618,9 +1356,9 @@ unsafe extern "C-unwind" fn find_post() -> int32_t {
         );
         pdf_abort!(&raw const invalid_signature as *const ::core::ffi::c_char);
     }
-    current = tt_get_signed_quad(dvi_handle);
-    crate::backend::runtime::input_seek(dvi_handle, current as ssize_t, SEEK_SET);
-    ch = ttstub_input_getc(dvi_handle);
+    current = tt_get_signed_quad((*__pdf_state).dvi_handle);
+    crate::backend::runtime::input_seek((*__pdf_state).dvi_handle, current as ssize_t, SEEK_SET);
+    ch = ttstub_input_getc((*__pdf_state).dvi_handle);
     if ch != POST {
         pdf_message!(
             b"Found %d where post_post opcode should be\n\0" as *const u8
@@ -1629,8 +1367,8 @@ unsafe extern "C-unwind" fn find_post() -> int32_t {
         );
         pdf_abort!(&raw const invalid_signature as *const ::core::ffi::c_char);
     }
-    crate::backend::runtime::input_seek(dvi_handle, 0 as ssize_t, SEEK_SET);
-    ch = tt_get_unsigned_byte(dvi_handle) as ::core::ffi::c_int;
+    crate::backend::runtime::input_seek((*__pdf_state).dvi_handle, 0 as ssize_t, SEEK_SET);
+    ch = tt_get_unsigned_byte((*__pdf_state).dvi_handle) as ::core::ffi::c_int;
     if ch != PRE {
         pdf_message!(
             b"Found %d where PRE was expected\n\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1638,7 +1376,7 @@ unsafe extern "C-unwind" fn find_post() -> int32_t {
         );
         pdf_abort!(&raw const invalid_signature as *const ::core::ffi::c_char);
     }
-    ch = tt_get_unsigned_byte(dvi_handle) as ::core::ffi::c_int;
+    ch = tt_get_unsigned_byte((*__pdf_state).dvi_handle) as ::core::ffi::c_int;
     if !(ch == DVI_ID || ch == XDV_ID || ch == XDV_ID_OLD) {
         pdf_message!(
             b"DVI ID = %d\n\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1646,89 +1384,111 @@ unsafe extern "C-unwind" fn find_post() -> int32_t {
         );
         pdf_abort!(&raw const invalid_signature as *const ::core::ffi::c_char);
     }
-    pre_id_byte = ch;
+    (*__pdf_state).pre_id_byte = ch;
     check_id_bytes();
     return current;
 }
 unsafe extern "C-unwind" fn get_page_info(mut post_location: int32_t) {
+    let __pdf_state = unsafe { document_state() };
     let mut i: ::core::ffi::c_int = 0;
     crate::backend::runtime::input_seek(
-        dvi_handle,
+        (*__pdf_state).dvi_handle,
         (post_location + 27 as int32_t) as ssize_t,
         SEEK_SET,
     );
-    num_pages = tt_get_unsigned_pair(dvi_handle) as ::core::ffi::c_uint;
-    if num_pages == 0 as ::core::ffi::c_uint {
+    (*__pdf_state).num_pages =
+        tt_get_unsigned_pair((*__pdf_state).dvi_handle) as ::core::ffi::c_uint;
+    if (*__pdf_state).num_pages == 0 as ::core::ffi::c_uint {
         pdf_abort!(b"Page count is 0!\0" as *const u8 as *const ::core::ffi::c_char);
     }
     if dpx_conf.verbose_level > 2 as ::core::ffi::c_int {
         pdf_message!(
             b"Page count:\t %4d\n\0" as *const u8 as *const ::core::ffi::c_char,
-            num_pages,
+            (*__pdf_state).num_pages,
         );
     }
-    page_loc = new((num_pages as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<uint32_t>() as usize) as uint32_t)
-        as *mut uint32_t;
+    (*__pdf_state).page_loc = new(((*__pdf_state).num_pages as uint32_t as usize)
+        .wrapping_mul(::core::mem::size_of::<uint32_t>() as usize)
+        as uint32_t) as *mut uint32_t;
     crate::backend::runtime::input_seek(
-        dvi_handle,
+        (*__pdf_state).dvi_handle,
         (post_location + 1 as int32_t) as ssize_t,
         SEEK_SET,
     );
-    *page_loc.offset(num_pages.wrapping_sub(1 as ::core::ffi::c_uint) as isize) =
-        tt_get_unsigned_quad(dvi_handle);
-    if (*page_loc.offset(num_pages.wrapping_sub(1 as ::core::ffi::c_uint) as isize))
-        .wrapping_add(41 as uint32_t)
-        > dvi_file_size
+    *(*__pdf_state).page_loc.offset(
+        (*__pdf_state)
+            .num_pages
+            .wrapping_sub(1 as ::core::ffi::c_uint) as isize,
+    ) = tt_get_unsigned_quad((*__pdf_state).dvi_handle);
+    if (*(*__pdf_state).page_loc.offset(
+        (*__pdf_state)
+            .num_pages
+            .wrapping_sub(1 as ::core::ffi::c_uint) as isize,
+    ))
+    .wrapping_add(41 as uint32_t)
+        > (*__pdf_state).dvi_file_size
     {
         pdf_abort!(&raw const invalid_signature as *const ::core::ffi::c_char);
     }
-    i = num_pages.wrapping_sub(2 as ::core::ffi::c_uint) as ::core::ffi::c_int;
+    i = (*__pdf_state)
+        .num_pages
+        .wrapping_sub(2 as ::core::ffi::c_uint) as ::core::ffi::c_int;
     while i >= 0 as ::core::ffi::c_int {
         crate::backend::runtime::input_seek(
-            dvi_handle,
-            (*page_loc.offset((i + 1 as ::core::ffi::c_int) as isize)).wrapping_add(41 as uint32_t)
-                as ssize_t,
+            (*__pdf_state).dvi_handle,
+            (*(*__pdf_state)
+                .page_loc
+                .offset((i + 1 as ::core::ffi::c_int) as isize))
+            .wrapping_add(41 as uint32_t) as ssize_t,
             SEEK_SET,
         );
-        *page_loc.offset(i as isize) = tt_get_unsigned_quad(dvi_handle);
-        if (*page_loc.offset(num_pages.wrapping_sub(1 as ::core::ffi::c_uint) as isize))
-            .wrapping_add(41 as uint32_t)
-            > dvi_file_size
+        *(*__pdf_state).page_loc.offset(i as isize) =
+            tt_get_unsigned_quad((*__pdf_state).dvi_handle);
+        if (*(*__pdf_state).page_loc.offset(
+            (*__pdf_state)
+                .num_pages
+                .wrapping_sub(1 as ::core::ffi::c_uint) as isize,
+        ))
+        .wrapping_add(41 as uint32_t)
+            > (*__pdf_state).dvi_file_size
         {
             pdf_abort!(&raw const invalid_signature as *const ::core::ffi::c_char);
         }
         i -= 1;
     }
 }
-static mut total_mag: ::core::ffi::c_double = 1.0f64;
-static mut dvi2pts: ::core::ffi::c_double = 1.52018f64;
+
 #[unsafe(export_name = "__pdf_impl_dvi_tell_mag")]
 pub unsafe extern "C-unwind" fn dvi_tell_mag() -> ::core::ffi::c_double {
-    return total_mag;
+    let __pdf_state = unsafe { document_state() };
+    return (*__pdf_state).total_mag;
 }
 unsafe extern "C-unwind" fn do_scales(mut mag: ::core::ffi::c_double) {
-    total_mag = dvi_info.mag as ::core::ffi::c_double / 1000.0f64 * mag;
-    dvi2pts =
-        dvi_info.unit_num as ::core::ffi::c_double / dvi_info.unit_den as ::core::ffi::c_double;
-    dvi2pts *= 72.0f64 / 254000.0f64;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).total_mag =
+        (*__pdf_state).dvi_info.mag as ::core::ffi::c_double / 1000.0f64 * mag;
+    (*__pdf_state).dvi2pts = (*__pdf_state).dvi_info.unit_num as ::core::ffi::c_double
+        / (*__pdf_state).dvi_info.unit_den as ::core::ffi::c_double;
+    (*__pdf_state).dvi2pts *= 72.0f64 / 254000.0f64;
 }
 unsafe extern "C-unwind" fn get_dvi_info(mut post_location: int32_t) {
+    let __pdf_state = unsafe { document_state() };
     crate::backend::runtime::input_seek(
-        dvi_handle,
+        (*__pdf_state).dvi_handle,
         (post_location + 5 as int32_t) as ssize_t,
         SEEK_SET,
     );
-    dvi_info.unit_num = tt_get_unsigned_quad(dvi_handle);
-    dvi_info.unit_den = tt_get_unsigned_quad(dvi_handle);
-    dvi_info.mag = tt_get_unsigned_quad(dvi_handle);
-    dvi_info.media_height = tt_get_unsigned_quad(dvi_handle);
-    dvi_info.media_width = tt_get_unsigned_quad(dvi_handle);
-    dvi_info.stackdepth = tt_get_unsigned_pair(dvi_handle) as ::core::ffi::c_uint;
-    if dvi_info.stackdepth > DVI_STACK_DEPTH_MAX {
+    (*__pdf_state).dvi_info.unit_num = tt_get_unsigned_quad((*__pdf_state).dvi_handle);
+    (*__pdf_state).dvi_info.unit_den = tt_get_unsigned_quad((*__pdf_state).dvi_handle);
+    (*__pdf_state).dvi_info.mag = tt_get_unsigned_quad((*__pdf_state).dvi_handle);
+    (*__pdf_state).dvi_info.media_height = tt_get_unsigned_quad((*__pdf_state).dvi_handle);
+    (*__pdf_state).dvi_info.media_width = tt_get_unsigned_quad((*__pdf_state).dvi_handle);
+    (*__pdf_state).dvi_info.stackdepth =
+        tt_get_unsigned_pair((*__pdf_state).dvi_handle) as ::core::ffi::c_uint;
+    if (*__pdf_state).dvi_info.stackdepth > DVI_STACK_DEPTH_MAX {
         pdf_warning!(
             b"DVI need stack depth of %d,\0" as *const u8 as *const ::core::ffi::c_char,
-            dvi_info.stackdepth,
+            (*__pdf_state).dvi_info.stackdepth,
         );
         pdf_warning!(
             b"but DVI_STACK_DEPTH_MAX is %d.\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1740,30 +1500,31 @@ unsafe extern "C-unwind" fn get_dvi_info(mut post_location: int32_t) {
         pdf_message!(b"DVI File Info\n\0" as *const u8 as *const ::core::ffi::c_char);
         pdf_message!(
             b"Unit: %u / %u\n\0" as *const u8 as *const ::core::ffi::c_char,
-            dvi_info.unit_num,
-            dvi_info.unit_den,
+            (*__pdf_state).dvi_info.unit_num,
+            (*__pdf_state).dvi_info.unit_den,
         );
         pdf_message!(
             b"Magnification: %u\n\0" as *const u8 as *const ::core::ffi::c_char,
-            dvi_info.mag,
+            (*__pdf_state).dvi_info.mag,
         );
         pdf_message!(
             b"Media Height: %u\n\0" as *const u8 as *const ::core::ffi::c_char,
-            dvi_info.media_height,
+            (*__pdf_state).dvi_info.media_height,
         );
         pdf_message!(
             b"Media Width: %u\n\0" as *const u8 as *const ::core::ffi::c_char,
-            dvi_info.media_width,
+            (*__pdf_state).dvi_info.media_width,
         );
         pdf_message!(
             b"Stack Depth: %u\n\0" as *const u8 as *const ::core::ffi::c_char,
-            dvi_info.stackdepth,
+            (*__pdf_state).dvi_info.stackdepth,
         );
     }
 }
 #[unsafe(export_name = "__pdf_impl_dvi_comment")]
 pub unsafe extern "C-unwind" fn dvi_comment() -> *const ::core::ffi::c_char {
-    return &raw mut dvi_info.comment as *mut ::core::ffi::c_char;
+    let __pdf_state = unsafe { document_state() };
+    return &raw mut (*__pdf_state).dvi_info.comment as *mut ::core::ffi::c_char;
 }
 unsafe extern "C-unwind" fn proc_dvilua_font_record(
     mut tex_id: int32_t,
@@ -1771,6 +1532,7 @@ unsafe extern "C-unwind" fn proc_dvilua_font_record(
     mut point_size: uint32_t,
     mut design_size: uint32_t,
 ) {
+    let __pdf_state = unsafe { document_state() };
     let mut file_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut p: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -1789,11 +1551,13 @@ unsafe extern "C-unwind" fn proc_dvilua_font_record(
         );
     } else {
     };
-    if num_def_fonts >= max_def_fonts {
-        max_def_fonts = max_def_fonts.wrapping_add(TEX_FONTS_ALLOC_SIZE);
-        def_fonts = renew(
-            def_fonts as *mut ::core::ffi::c_void,
-            (max_def_fonts as uint32_t as usize)
+    if (*__pdf_state).num_def_fonts >= (*__pdf_state).max_def_fonts {
+        (*__pdf_state).max_def_fonts = (*__pdf_state)
+            .max_def_fonts
+            .wrapping_add(TEX_FONTS_ALLOC_SIZE);
+        (*__pdf_state).def_fonts = renew(
+            (*__pdf_state).def_fonts as *mut ::core::ffi::c_void,
+            ((*__pdf_state).max_def_fonts as uint32_t as usize)
                 .wrapping_mul(::core::mem::size_of::<font_def>() as usize) as uint32_t,
         ) as *mut font_def as *mut font_def;
     }
@@ -1911,28 +1675,67 @@ unsafe extern "C-unwind" fn proc_dvilua_font_record(
             p = delim.offset(1 as ::core::ffi::c_int as isize);
         }
     }
-    (*def_fonts.offset(num_def_fonts as isize)).tex_id = tex_id;
-    let ref mut fresh2 = (*def_fonts.offset(num_def_fonts as isize)).font_name;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .tex_id = tex_id;
+    let ref mut fresh2 = (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .font_name;
     *fresh2 = file_name;
-    (*def_fonts.offset(num_def_fonts as isize)).face_index = index;
-    (*def_fonts.offset(num_def_fonts as isize)).point_size = point_size as spt_t;
-    (*def_fonts.offset(num_def_fonts as isize)).design_size = design_size as spt_t;
-    (*def_fonts.offset(num_def_fonts as isize)).used = 0 as ::core::ffi::c_int;
-    (*def_fonts.offset(num_def_fonts as isize)).native = 1 as ::core::ffi::c_int;
-    (*def_fonts.offset(num_def_fonts as isize)).layout_dir = 0 as ::core::ffi::c_int;
-    (*def_fonts.offset(num_def_fonts as isize)).rgba_color =
-        0xffffffff as ::core::ffi::c_uint as uint32_t;
-    (*def_fonts.offset(num_def_fonts as isize)).rgba_used = 0 as uint8_t;
-    (*def_fonts.offset(num_def_fonts as isize)).extend = extend as ::core::ffi::c_int;
-    (*def_fonts.offset(num_def_fonts as isize)).slant = slant as ::core::ffi::c_int;
-    (*def_fonts.offset(num_def_fonts as isize)).embolden = embolden as ::core::ffi::c_int;
-    num_def_fonts = num_def_fonts.wrapping_add(1);
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .face_index = index;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .point_size = point_size as spt_t;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .design_size = design_size as spt_t;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .used = 0 as ::core::ffi::c_int;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .native = 1 as ::core::ffi::c_int;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .layout_dir = 0 as ::core::ffi::c_int;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .rgba_color = 0xffffffff as ::core::ffi::c_uint as uint32_t;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .rgba_used = 0 as uint8_t;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .extend = extend as ::core::ffi::c_int;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .slant = slant as ::core::ffi::c_int;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .embolden = embolden as ::core::ffi::c_int;
+    (*__pdf_state).num_def_fonts = (*__pdf_state).num_def_fonts.wrapping_add(1);
 }
 pub const SIG_DVILUA_FNT_DEF: ::core::ffi::c_int = ('L' as i32) << 24 as ::core::ffi::c_int
     | ('u' as i32) << 16 as ::core::ffi::c_int
     | ('a' as i32) << 8 as ::core::ffi::c_int
     | 'F' as i32;
 unsafe extern "C-unwind" fn read_font_record(mut tex_id: uint32_t) {
+    let __pdf_state = unsafe { document_state() };
     let mut dir_length: ::core::ffi::c_int = 0;
     let mut name_length: ::core::ffi::c_int = 0;
     let mut checksum: uint32_t = 0;
@@ -1940,33 +1743,37 @@ unsafe extern "C-unwind" fn read_font_record(mut tex_id: uint32_t) {
     let mut design_size: uint32_t = 0;
     let mut directory: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut font_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    if num_def_fonts >= max_def_fonts {
-        max_def_fonts = max_def_fonts.wrapping_add(TEX_FONTS_ALLOC_SIZE);
-        def_fonts = renew(
-            def_fonts as *mut ::core::ffi::c_void,
-            (max_def_fonts as uint32_t as usize)
+    if (*__pdf_state).num_def_fonts >= (*__pdf_state).max_def_fonts {
+        (*__pdf_state).max_def_fonts = (*__pdf_state)
+            .max_def_fonts
+            .wrapping_add(TEX_FONTS_ALLOC_SIZE);
+        (*__pdf_state).def_fonts = renew(
+            (*__pdf_state).def_fonts as *mut ::core::ffi::c_void,
+            ((*__pdf_state).max_def_fonts as uint32_t as usize)
                 .wrapping_mul(::core::mem::size_of::<font_def>() as usize) as uint32_t,
         ) as *mut font_def as *mut font_def;
     }
-    checksum = tt_get_unsigned_quad(dvi_handle);
+    checksum = tt_get_unsigned_quad((*__pdf_state).dvi_handle);
     point_size = tt_get_positive_quad(
-        dvi_handle,
+        (*__pdf_state).dvi_handle,
         b"DVI\0" as *const u8 as *const ::core::ffi::c_char,
         b"point_size\0" as *const u8 as *const ::core::ffi::c_char,
     );
     design_size = tt_get_positive_quad(
-        dvi_handle,
+        (*__pdf_state).dvi_handle,
         b"DVI\0" as *const u8 as *const ::core::ffi::c_char,
         b"design_size\0" as *const u8 as *const ::core::ffi::c_char,
     );
-    dir_length = tt_get_unsigned_byte(dvi_handle) as ::core::ffi::c_int;
-    name_length = tt_get_unsigned_byte(dvi_handle) as ::core::ffi::c_int;
+    dir_length = tt_get_unsigned_byte((*__pdf_state).dvi_handle) as ::core::ffi::c_int;
+    name_length = tt_get_unsigned_byte((*__pdf_state).dvi_handle) as ::core::ffi::c_int;
     directory = new(
         ((dir_length + 1 as ::core::ffi::c_int) as uint32_t as usize)
             .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
             as uint32_t,
     ) as *mut ::core::ffi::c_char;
-    if ttstub_input_read(dvi_handle, directory, dir_length as size_t) != dir_length as ssize_t {
+    if ttstub_input_read((*__pdf_state).dvi_handle, directory, dir_length as size_t)
+        != dir_length as ssize_t
+    {
         pdf_abort!(&raw const invalid_signature as *const ::core::ffi::c_char);
     }
     *directory.offset(dir_length as isize) = '\0' as i32 as ::core::ffi::c_char;
@@ -1976,7 +1783,9 @@ unsafe extern "C-unwind" fn read_font_record(mut tex_id: uint32_t) {
             .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
             as uint32_t,
     ) as *mut ::core::ffi::c_char;
-    if ttstub_input_read(dvi_handle, font_name, name_length as size_t) != name_length as ssize_t {
+    if ttstub_input_read((*__pdf_state).dvi_handle, font_name, name_length as size_t)
+        != name_length as ssize_t
+    {
         pdf_abort!(&raw const invalid_signature as *const ::core::ffi::c_char);
     }
     *font_name.offset(name_length as isize) = '\0' as i32 as ::core::ffi::c_char;
@@ -1988,114 +1797,209 @@ unsafe extern "C-unwind" fn read_font_record(mut tex_id: uint32_t) {
         free(font_name as *mut ::core::ffi::c_void);
         return;
     }
-    (*def_fonts.offset(num_def_fonts as isize)).tex_id = tex_id as int32_t;
-    let ref mut fresh1 = (*def_fonts.offset(num_def_fonts as isize)).font_name;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .tex_id = tex_id as int32_t;
+    let ref mut fresh1 = (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .font_name;
     *fresh1 = font_name;
-    (*def_fonts.offset(num_def_fonts as isize)).point_size = point_size as spt_t;
-    (*def_fonts.offset(num_def_fonts as isize)).design_size = design_size as spt_t;
-    (*def_fonts.offset(num_def_fonts as isize)).used = 0 as ::core::ffi::c_int;
-    (*def_fonts.offset(num_def_fonts as isize)).native = 0 as ::core::ffi::c_int;
-    (*def_fonts.offset(num_def_fonts as isize)).rgba_color =
-        0xffffffff as ::core::ffi::c_uint as uint32_t;
-    (*def_fonts.offset(num_def_fonts as isize)).rgba_used = 0 as uint8_t;
-    (*def_fonts.offset(num_def_fonts as isize)).face_index = 0 as uint32_t;
-    (*def_fonts.offset(num_def_fonts as isize)).layout_dir = 0 as ::core::ffi::c_int;
-    (*def_fonts.offset(num_def_fonts as isize)).extend = 0x10000 as ::core::ffi::c_int;
-    (*def_fonts.offset(num_def_fonts as isize)).slant = 0 as ::core::ffi::c_int;
-    (*def_fonts.offset(num_def_fonts as isize)).embolden = 0 as ::core::ffi::c_int;
-    num_def_fonts = num_def_fonts.wrapping_add(1);
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .point_size = point_size as spt_t;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .design_size = design_size as spt_t;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .used = 0 as ::core::ffi::c_int;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .native = 0 as ::core::ffi::c_int;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .rgba_color = 0xffffffff as ::core::ffi::c_uint as uint32_t;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .rgba_used = 0 as uint8_t;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .face_index = 0 as uint32_t;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .layout_dir = 0 as ::core::ffi::c_int;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .extend = 0x10000 as ::core::ffi::c_int;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .slant = 0 as ::core::ffi::c_int;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .embolden = 0 as ::core::ffi::c_int;
+    (*__pdf_state).num_def_fonts = (*__pdf_state).num_def_fonts.wrapping_add(1);
 }
 unsafe extern "C-unwind" fn read_native_font_record(mut tex_id: uint32_t) {
+    let __pdf_state = unsafe { document_state() };
     let mut flags: ::core::ffi::c_uint = 0;
     let mut point_size: uint32_t = 0;
     let mut font_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut len: ::core::ffi::c_int = 0;
     let mut index: uint32_t = 0;
-    if num_def_fonts >= max_def_fonts {
-        max_def_fonts = max_def_fonts.wrapping_add(TEX_FONTS_ALLOC_SIZE);
-        def_fonts = renew(
-            def_fonts as *mut ::core::ffi::c_void,
-            (max_def_fonts as uint32_t as usize)
+    if (*__pdf_state).num_def_fonts >= (*__pdf_state).max_def_fonts {
+        (*__pdf_state).max_def_fonts = (*__pdf_state)
+            .max_def_fonts
+            .wrapping_add(TEX_FONTS_ALLOC_SIZE);
+        (*__pdf_state).def_fonts = renew(
+            (*__pdf_state).def_fonts as *mut ::core::ffi::c_void,
+            ((*__pdf_state).max_def_fonts as uint32_t as usize)
                 .wrapping_mul(::core::mem::size_of::<font_def>() as usize) as uint32_t,
         ) as *mut font_def as *mut font_def;
     }
     point_size = tt_get_positive_quad(
-        dvi_handle,
+        (*__pdf_state).dvi_handle,
         b"DVI\0" as *const u8 as *const ::core::ffi::c_char,
         b"point_size\0" as *const u8 as *const ::core::ffi::c_char,
     );
-    flags = tt_get_unsigned_pair(dvi_handle) as ::core::ffi::c_uint;
-    len = tt_get_unsigned_byte(dvi_handle) as ::core::ffi::c_int;
+    flags = tt_get_unsigned_pair((*__pdf_state).dvi_handle) as ::core::ffi::c_uint;
+    len = tt_get_unsigned_byte((*__pdf_state).dvi_handle) as ::core::ffi::c_int;
     font_name = new(((len + 1 as ::core::ffi::c_int) as uint32_t as usize)
         .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
         as uint32_t) as *mut ::core::ffi::c_char;
-    if ttstub_input_read(dvi_handle, font_name, len as size_t) != len as ssize_t {
+    if ttstub_input_read((*__pdf_state).dvi_handle, font_name, len as size_t) != len as ssize_t {
         pdf_abort!(&raw const invalid_signature as *const ::core::ffi::c_char);
     }
     *font_name.offset(len as isize) = '\0' as i32 as ::core::ffi::c_char;
     index = tt_get_positive_quad(
-        dvi_handle,
+        (*__pdf_state).dvi_handle,
         b"DVI\0" as *const u8 as *const ::core::ffi::c_char,
         b"index\0" as *const u8 as *const ::core::ffi::c_char,
     );
-    (*def_fonts.offset(num_def_fonts as isize)).tex_id = tex_id as int32_t;
-    let ref mut fresh0 = (*def_fonts.offset(num_def_fonts as isize)).font_name;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .tex_id = tex_id as int32_t;
+    let ref mut fresh0 = (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .font_name;
     *fresh0 = font_name;
-    (*def_fonts.offset(num_def_fonts as isize)).face_index = index;
-    (*def_fonts.offset(num_def_fonts as isize)).point_size = point_size as spt_t;
-    (*def_fonts.offset(num_def_fonts as isize)).design_size = 655360 as ::core::ffi::c_int as spt_t;
-    (*def_fonts.offset(num_def_fonts as isize)).used = 0 as ::core::ffi::c_int;
-    (*def_fonts.offset(num_def_fonts as isize)).native = 1 as ::core::ffi::c_int;
-    (*def_fonts.offset(num_def_fonts as isize)).layout_dir = 0 as ::core::ffi::c_int;
-    (*def_fonts.offset(num_def_fonts as isize)).rgba_color =
-        0xffffffff as ::core::ffi::c_uint as uint32_t;
-    (*def_fonts.offset(num_def_fonts as isize)).rgba_used = 0 as uint8_t;
-    (*def_fonts.offset(num_def_fonts as isize)).extend = 0x10000 as ::core::ffi::c_int;
-    (*def_fonts.offset(num_def_fonts as isize)).slant = 0 as ::core::ffi::c_int;
-    (*def_fonts.offset(num_def_fonts as isize)).embolden = 0 as ::core::ffi::c_int;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .face_index = index;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .point_size = point_size as spt_t;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .design_size = 655360 as ::core::ffi::c_int as spt_t;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .used = 0 as ::core::ffi::c_int;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .native = 1 as ::core::ffi::c_int;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .layout_dir = 0 as ::core::ffi::c_int;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .rgba_color = 0xffffffff as ::core::ffi::c_uint as uint32_t;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .rgba_used = 0 as uint8_t;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .extend = 0x10000 as ::core::ffi::c_int;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .slant = 0 as ::core::ffi::c_int;
+    (*(*__pdf_state)
+        .def_fonts
+        .offset((*__pdf_state).num_def_fonts as isize))
+    .embolden = 0 as ::core::ffi::c_int;
     if flags & XDV_FLAG_VERTICAL as ::core::ffi::c_uint != 0 {
-        (*def_fonts.offset(num_def_fonts as isize)).layout_dir = 1 as ::core::ffi::c_int;
+        (*(*__pdf_state)
+            .def_fonts
+            .offset((*__pdf_state).num_def_fonts as isize))
+        .layout_dir = 1 as ::core::ffi::c_int;
     }
     if flags & XDV_FLAG_COLORED as ::core::ffi::c_uint != 0 {
-        (*def_fonts.offset(num_def_fonts as isize)).rgba_color = tt_get_unsigned_quad(dvi_handle);
-        (*def_fonts.offset(num_def_fonts as isize)).rgba_used = 1 as uint8_t;
+        (*(*__pdf_state)
+            .def_fonts
+            .offset((*__pdf_state).num_def_fonts as isize))
+        .rgba_color = tt_get_unsigned_quad((*__pdf_state).dvi_handle);
+        (*(*__pdf_state)
+            .def_fonts
+            .offset((*__pdf_state).num_def_fonts as isize))
+        .rgba_used = 1 as uint8_t;
     }
     if flags & XDV_FLAG_EXTEND as ::core::ffi::c_uint != 0 {
-        (*def_fonts.offset(num_def_fonts as isize)).extend =
-            tt_get_signed_quad(dvi_handle) as ::core::ffi::c_int;
+        (*(*__pdf_state)
+            .def_fonts
+            .offset((*__pdf_state).num_def_fonts as isize))
+        .extend = tt_get_signed_quad((*__pdf_state).dvi_handle) as ::core::ffi::c_int;
     }
     if flags & XDV_FLAG_SLANT as ::core::ffi::c_uint != 0 {
-        (*def_fonts.offset(num_def_fonts as isize)).slant =
-            tt_get_signed_quad(dvi_handle) as ::core::ffi::c_int;
+        (*(*__pdf_state)
+            .def_fonts
+            .offset((*__pdf_state).num_def_fonts as isize))
+        .slant = tt_get_signed_quad((*__pdf_state).dvi_handle) as ::core::ffi::c_int;
     }
     if flags & XDV_FLAG_EMBOLDEN as ::core::ffi::c_uint != 0 {
-        (*def_fonts.offset(num_def_fonts as isize)).embolden =
-            tt_get_signed_quad(dvi_handle) as ::core::ffi::c_int;
+        (*(*__pdf_state)
+            .def_fonts
+            .offset((*__pdf_state).num_def_fonts as isize))
+        .embolden = tt_get_signed_quad((*__pdf_state).dvi_handle) as ::core::ffi::c_int;
     }
-    num_def_fonts = num_def_fonts.wrapping_add(1);
+    (*__pdf_state).num_def_fonts = (*__pdf_state).num_def_fonts.wrapping_add(1);
 }
 unsafe extern "C-unwind" fn get_dvi_fonts(mut post_location: int32_t) {
+    let __pdf_state = unsafe { document_state() };
     let mut code: ::core::ffi::c_int = 0;
     crate::backend::runtime::input_seek(
-        dvi_handle,
+        (*__pdf_state).dvi_handle,
         (post_location + 29 as int32_t) as ssize_t,
         SEEK_SET,
     );
     loop {
-        code = tt_get_unsigned_byte(dvi_handle) as ::core::ffi::c_int;
+        code = tt_get_unsigned_byte((*__pdf_state).dvi_handle) as ::core::ffi::c_int;
         if !(code != POST_POST) {
             break;
         }
         match code {
             FNT_DEF1 | FNT_DEF2 | FNT_DEF3 | FNT_DEF4 => {
                 read_font_record(tt_get_unsigned_num(
-                    dvi_handle,
+                    (*__pdf_state).dvi_handle,
                     (code - FNT_DEF1) as ::core::ffi::c_uchar,
                 ));
             }
             XDV_NATIVE_FONT_DEF => {
                 need_XeTeX(code);
-                read_native_font_record(tt_get_signed_quad(dvi_handle) as uint32_t);
+                read_native_font_record(tt_get_signed_quad((*__pdf_state).dvi_handle) as uint32_t);
             }
             _ => {
                 pdf_message!(
@@ -2111,18 +2015,21 @@ unsafe extern "C-unwind" fn get_dvi_fonts(mut post_location: int32_t) {
         pdf_message!(b"\n\0" as *const u8 as *const ::core::ffi::c_char);
         pdf_message!(b"DVI file font info\n\0" as *const u8 as *const ::core::ffi::c_char,);
         i = 0 as ::core::ffi::c_uint;
-        while i < num_def_fonts {
+        while i < (*__pdf_state).num_def_fonts {
             pdf_message!(
                 b"TeX Font: %10s loaded at ID=%5d, \0" as *const u8 as *const ::core::ffi::c_char,
-                (*def_fonts.offset(i as isize)).font_name,
-                (*def_fonts.offset(i as isize)).tex_id,
+                (*(*__pdf_state).def_fonts.offset(i as isize)).font_name,
+                (*(*__pdf_state).def_fonts.offset(i as isize)).tex_id,
             );
             pdf_message!(
                 b"size=%5.2fpt (scaled %4.1f%%)\0" as *const u8 as *const ::core::ffi::c_char,
-                (*def_fonts.offset(i as isize)).point_size as ::core::ffi::c_double * dvi2pts,
+                (*(*__pdf_state).def_fonts.offset(i as isize)).point_size as ::core::ffi::c_double
+                    * (*__pdf_state).dvi2pts,
                 100.0f64
-                    * ((*def_fonts.offset(i as isize)).point_size as ::core::ffi::c_double
-                        / (*def_fonts.offset(i as isize)).design_size as ::core::ffi::c_double),
+                    * ((*(*__pdf_state).def_fonts.offset(i as isize)).point_size
+                        as ::core::ffi::c_double
+                        / (*(*__pdf_state).def_fonts.offset(i as isize)).design_size
+                            as ::core::ffi::c_double),
             );
             pdf_message!(b"\n\0" as *const u8 as *const ::core::ffi::c_char);
             i = i.wrapping_add(1);
@@ -2130,94 +2037,84 @@ unsafe extern "C-unwind" fn get_dvi_fonts(mut post_location: int32_t) {
     }
 }
 unsafe extern "C-unwind" fn get_comment() {
+    let __pdf_state = unsafe { document_state() };
     let mut length: ::core::ffi::c_int = 0;
-    crate::backend::runtime::input_seek(dvi_handle, 14 as ssize_t, SEEK_SET);
-    length = tt_get_unsigned_byte(dvi_handle) as ::core::ffi::c_int;
+    crate::backend::runtime::input_seek((*__pdf_state).dvi_handle, 14 as ssize_t, SEEK_SET);
+    length = tt_get_unsigned_byte((*__pdf_state).dvi_handle) as ::core::ffi::c_int;
     if ttstub_input_read(
-        dvi_handle,
-        &raw mut dvi_info.comment as *mut ::core::ffi::c_char,
+        (*__pdf_state).dvi_handle,
+        &raw mut (*__pdf_state).dvi_info.comment as *mut ::core::ffi::c_char,
         length as size_t,
     ) != length as ssize_t
     {
         pdf_abort!(&raw const invalid_signature as *const ::core::ffi::c_char);
     }
-    dvi_info.comment[length as usize] = '\0' as i32 as ::core::ffi::c_char;
+    (*__pdf_state).dvi_info.comment[length as usize] = '\0' as i32 as ::core::ffi::c_char;
     if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
         pdf_message!(
             b"DVI Comment: %s\n\0" as *const u8 as *const ::core::ffi::c_char,
-            &raw mut dvi_info.comment as *mut ::core::ffi::c_char,
+            &raw mut (*__pdf_state).dvi_info.comment as *mut ::core::ffi::c_char,
         );
     }
 }
-static mut dvi_state: dvi_registers = dvi_registers {
-    h: 0,
-    v: 0,
-    w: 0,
-    x: 0,
-    y: 0,
-    z: 0,
-    d: 0,
-};
-static mut dvi_stack: [dvi_registers; 256] = [dvi_registers {
-    h: 0,
-    v: 0,
-    w: 0,
-    x: 0,
-    y: 0,
-    z: 0,
-    d: 0,
-}; 256];
-static mut dvi_stack_depth: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-static mut current_font: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
-static mut processing_page: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+
 unsafe extern "C-unwind" fn clear_state() {
-    dvi_state.h = 0 as ::core::ffi::c_int as int32_t;
-    dvi_state.v = 0 as ::core::ffi::c_int as int32_t;
-    dvi_state.w = 0 as ::core::ffi::c_int as int32_t;
-    dvi_state.x = 0 as ::core::ffi::c_int as int32_t;
-    dvi_state.y = 0 as ::core::ffi::c_int as int32_t;
-    dvi_state.z = 0 as ::core::ffi::c_int as int32_t;
-    dvi_state.d = 0 as ::core::ffi::c_uint;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).dvi_state.h = 0 as ::core::ffi::c_int as int32_t;
+    (*__pdf_state).dvi_state.v = 0 as ::core::ffi::c_int as int32_t;
+    (*__pdf_state).dvi_state.w = 0 as ::core::ffi::c_int as int32_t;
+    (*__pdf_state).dvi_state.x = 0 as ::core::ffi::c_int as int32_t;
+    (*__pdf_state).dvi_state.y = 0 as ::core::ffi::c_int as int32_t;
+    (*__pdf_state).dvi_state.z = 0 as ::core::ffi::c_int as int32_t;
+    (*__pdf_state).dvi_state.d = 0 as ::core::ffi::c_uint;
     pdf_dev_set_dirmode(0 as ::core::ffi::c_int);
-    dvi_stack_depth = 0 as ::core::ffi::c_int;
-    current_font = -(1 as ::core::ffi::c_int);
+    (*__pdf_state).dvi_stack_depth = 0 as ::core::ffi::c_int;
+    (*__pdf_state).current_font = -(1 as ::core::ffi::c_int);
 }
-static mut marked_depth: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-static mut tagged_depth: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
+
 unsafe extern "C-unwind" fn dvi_mark_depth() {
-    if link_annot != 0
-        && marked_depth == tagged_depth
-        && dvi_stack_depth == tagged_depth - 1 as ::core::ffi::c_int
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).link_annot != 0
+        && (*__pdf_state).marked_depth == (*__pdf_state).tagged_depth
+        && (*__pdf_state).dvi_stack_depth == (*__pdf_state).tagged_depth - 1 as ::core::ffi::c_int
     {
         pdf_doc_break_annot();
     }
-    marked_depth = dvi_stack_depth;
+    (*__pdf_state).marked_depth = (*__pdf_state).dvi_stack_depth;
 }
 #[unsafe(export_name = "__pdf_impl_dvi_tag_depth")]
 pub unsafe extern "C-unwind" fn dvi_tag_depth() {
-    tagged_depth = marked_depth;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).tagged_depth = (*__pdf_state).marked_depth;
     dvi_compute_boxes(1 as ::core::ffi::c_int);
 }
 #[unsafe(export_name = "__pdf_impl_dvi_untag_depth")]
 pub unsafe extern "C-unwind" fn dvi_untag_depth() {
-    tagged_depth = -(1 as ::core::ffi::c_int);
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).tagged_depth = -(1 as ::core::ffi::c_int);
     dvi_compute_boxes(0 as ::core::ffi::c_int);
 }
 #[unsafe(export_name = "__pdf_impl_dvi_compute_boxes")]
 pub unsafe extern "C-unwind" fn dvi_compute_boxes(mut flag: ::core::ffi::c_int) {
-    compute_boxes = flag;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).compute_boxes = flag;
 }
 #[unsafe(export_name = "__pdf_impl_dvi_link_annot")]
 pub unsafe extern "C-unwind" fn dvi_link_annot(mut flag: ::core::ffi::c_int) {
-    link_annot = flag;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).link_annot = flag;
 }
 #[unsafe(export_name = "__pdf_impl_dvi_is_tracking_boxes")]
 pub unsafe extern "C-unwind" fn dvi_is_tracking_boxes() -> bool {
-    return compute_boxes != 0 && link_annot != 0 && marked_depth >= tagged_depth;
+    let __pdf_state = unsafe { document_state() };
+    return (*__pdf_state).compute_boxes != 0
+        && (*__pdf_state).link_annot != 0
+        && (*__pdf_state).marked_depth >= (*__pdf_state).tagged_depth;
 }
 #[unsafe(export_name = "__pdf_impl_dvi_set_linkmode")]
 pub unsafe extern "C-unwind" fn dvi_set_linkmode(mut mode: ::core::ffi::c_int) {
-    catch_phantom = if mode != 0 as ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).catch_phantom = if mode != 0 as ::core::ffi::c_int {
         1 as ::core::ffi::c_int
     } else {
         0 as ::core::ffi::c_int
@@ -2228,21 +2125,20 @@ pub unsafe extern "C-unwind" fn dvi_set_phantom_height(
     mut height: ::core::ffi::c_double,
     mut depth: ::core::ffi::c_double,
 ) {
-    phantom_height = height;
-    phantom_depth = depth;
-    catch_phantom = 2 as ::core::ffi::c_int;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).phantom_height = height;
+    (*__pdf_state).phantom_depth = depth;
+    (*__pdf_state).catch_phantom = 2 as ::core::ffi::c_int;
 }
-static mut compensation: spt_coord = spt_coord {
-    x: 0 as spt_t,
-    y: 0 as spt_t,
-};
+
 #[unsafe(export_name = "__pdf_impl_dvi_set_compensation")]
 pub unsafe extern "C-unwind" fn dvi_set_compensation(
     mut x: ::core::ffi::c_double,
     mut y: ::core::ffi::c_double,
 ) {
-    compensation.x = round(x / dvi2pts) as spt_t;
-    compensation.y = round(y / dvi2pts) as spt_t;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).compensation.x = round(x / (*__pdf_state).dvi2pts) as spt_t;
+    (*__pdf_state).compensation.y = round(y / (*__pdf_state).dvi2pts) as spt_t;
 }
 unsafe extern "C-unwind" fn set_string(
     mut xpos: spt_t,
@@ -2252,8 +2148,9 @@ unsafe extern "C-unwind" fn set_string(
     mut width: spt_t,
     mut font_id: ::core::ffi::c_int,
 ) {
-    xpos -= compensation.x;
-    ypos -= compensation.y;
+    let __pdf_state = unsafe { document_state() };
+    xpos -= (*__pdf_state).compensation.x;
+    ypos -= (*__pdf_state).compensation.y;
     pdf_dev_set_string(xpos, ypos, instr_ptr, instr_len as size_t, width, font_id);
 }
 unsafe extern "C-unwind" fn set_rule(
@@ -2262,8 +2159,9 @@ unsafe extern "C-unwind" fn set_rule(
     mut width: spt_t,
     mut height: spt_t,
 ) {
-    xpos -= compensation.x;
-    ypos -= compensation.y;
+    let __pdf_state = unsafe { document_state() };
+    xpos -= (*__pdf_state).compensation.x;
+    ypos -= (*__pdf_state).compensation.y;
     pdf_dev_set_rule(xpos, ypos, width, height);
 }
 unsafe extern "C-unwind" fn calc_rect(
@@ -2274,8 +2172,9 @@ unsafe extern "C-unwind" fn calc_rect(
     mut height: spt_t,
     mut depth: spt_t,
 ) {
-    xpos -= compensation.x;
-    ypos -= compensation.y;
+    let __pdf_state = unsafe { document_state() };
+    xpos -= (*__pdf_state).compensation.x;
+    ypos -= (*__pdf_state).compensation.y;
     pdf_dev_set_rect(r, xpos, ypos, width, height, depth);
 }
 #[unsafe(export_name = "__pdf_impl_dvi_do_special")]
@@ -2283,6 +2182,7 @@ pub unsafe extern "C-unwind" fn dvi_do_special(
     mut buffer: *const ::core::ffi::c_void,
     mut size: int32_t,
 ) {
+    let __pdf_state = unsafe { document_state() };
     let mut x_user: ::core::ffi::c_double = 0.;
     let mut y_user: ::core::ffi::c_double = 0.;
     let mut mag: ::core::ffi::c_double = 0.;
@@ -2296,8 +2196,8 @@ pub unsafe extern "C-unwind" fn dvi_do_special(
     };
     graphics_mode();
     p = buffer as *const ::core::ffi::c_char;
-    x_user = dvi_state.h as ::core::ffi::c_double * dvi2pts;
-    y_user = -dvi_state.v as ::core::ffi::c_double * dvi2pts;
+    x_user = (*__pdf_state).dvi_state.h as ::core::ffi::c_double * (*__pdf_state).dvi2pts;
+    y_user = -(*__pdf_state).dvi_state.v as ::core::ffi::c_double * (*__pdf_state).dvi2pts;
     mag = dvi_tell_mag();
     if spc_exec_special(
         p,
@@ -2320,13 +2220,15 @@ pub unsafe extern "C-unwind" fn dvi_do_special(
 }
 #[unsafe(export_name = "__pdf_impl_dvi_unit_size")]
 pub unsafe extern "C-unwind" fn dvi_unit_size() -> ::core::ffi::c_double {
-    return dvi2pts;
+    let __pdf_state = unsafe { document_state() };
+    return (*__pdf_state).dvi2pts;
 }
 #[unsafe(export_name = "__pdf_impl_dvi_locate_font")]
 pub unsafe extern "C-unwind" fn dvi_locate_font(
     mut tfm_name: *const ::core::ffi::c_char,
     mut ptsize: spt_t,
 ) -> ::core::ffi::c_uint {
+    let __pdf_state = unsafe { document_state() };
     let mut cur_id: ::core::ffi::c_uint = 0;
     let mut name: *const ::core::ffi::c_char = tfm_name;
     let mut subfont_id: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
@@ -2336,12 +2238,12 @@ pub unsafe extern "C-unwind" fn dvi_locate_font(
         pdf_message!(
             b"<%s@%.2fpt\0" as *const u8 as *const ::core::ffi::c_char,
             tfm_name,
-            ptsize as ::core::ffi::c_double * dvi2pts,
+            ptsize as ::core::ffi::c_double * (*__pdf_state).dvi2pts,
         );
     }
     need_more_fonts(1 as ::core::ffi::c_uint);
-    let fresh17 = num_loaded_fonts;
-    num_loaded_fonts = num_loaded_fonts.wrapping_add(1);
+    let fresh17 = (*__pdf_state).num_loaded_fonts;
+    (*__pdf_state).num_loaded_fonts = (*__pdf_state).num_loaded_fonts.wrapping_add(1);
     cur_id = fresh17;
     mrec = pdf_lookup_fontmap_record(tfm_name);
     if !mrec.is_null()
@@ -2351,19 +2253,21 @@ pub unsafe extern "C-unwind" fn dvi_locate_font(
         subfont_id = sfd_load_record((*mrec).charmap.sfd_name, (*mrec).charmap.subfont_id);
     }
     memset(
-        loaded_fonts.offset(cur_id as isize) as *mut loaded_font as *mut ::core::ffi::c_void,
+        (*__pdf_state).loaded_fonts.offset(cur_id as isize) as *mut loaded_font
+            as *mut ::core::ffi::c_void,
         0 as ::core::ffi::c_int,
         ::core::mem::size_of::<loaded_font>() as size_t,
     );
-    (*loaded_fonts.offset(cur_id as isize)).tfm_id = tfm_open(tfm_name, 1 as ::core::ffi::c_int);
-    (*loaded_fonts.offset(cur_id as isize)).subfont_id = subfont_id;
-    (*loaded_fonts.offset(cur_id as isize)).size = ptsize;
-    (*loaded_fonts.offset(cur_id as isize)).source = VF;
+    (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).tfm_id =
+        tfm_open(tfm_name, 1 as ::core::ffi::c_int);
+    (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).subfont_id = subfont_id;
+    (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).size = ptsize;
+    (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).source = VF;
     if mrec.is_null() {
         font_id = vf_locate_font(tfm_name, ptsize);
         if font_id >= 0 as ::core::ffi::c_int {
-            (*loaded_fonts.offset(cur_id as isize)).type_0 = VIRTUAL;
-            (*loaded_fonts.offset(cur_id as isize)).font_id = font_id;
+            (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).type_0 = VIRTUAL;
+            (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).font_id = font_id;
             if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
                 pdf_message!(b"(VF)>\0" as *const u8 as *const ::core::ffi::c_char);
             }
@@ -2381,8 +2285,8 @@ pub unsafe extern "C-unwind" fn dvi_locate_font(
                     tfm_name,
                 );
             } else {
-                (*loaded_fonts.offset(cur_id as isize)).type_0 = VIRTUAL;
-                (*loaded_fonts.offset(cur_id as isize)).font_id = font_id;
+                (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).type_0 = VIRTUAL;
+                (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).font_id = font_id;
                 if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
                     pdf_message!(b"(OVF)>\0" as *const u8 as *const ::core::ffi::c_char);
                 }
@@ -2473,16 +2377,17 @@ pub unsafe extern "C-unwind" fn dvi_locate_font(
         );
     }
     memset(
-        &raw mut (*loaded_fonts.offset(cur_id as isize)).padbytes as *mut ::core::ffi::c_char
-            as *mut ::core::ffi::c_void,
+        &raw mut (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).padbytes
+            as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
         0 as ::core::ffi::c_int,
         4 as size_t,
     );
     if !mrec.is_null() {
         if (*mrec).opt.mapc >= 0 as ::core::ffi::c_int {
-            (*loaded_fonts.offset(cur_id as isize)).padbytes[2 as ::core::ffi::c_int as usize] =
-                ((*mrec).opt.mapc >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int)
-                    as ::core::ffi::c_char;
+            (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).padbytes
+                [2 as ::core::ffi::c_int as usize] = ((*mrec).opt.mapc >> 8 as ::core::ffi::c_int
+                & 0xff as ::core::ffi::c_int)
+                as ::core::ffi::c_char;
         }
         if !(*mrec).enc_name.is_null()
             && strcmp(
@@ -2490,28 +2395,30 @@ pub unsafe extern "C-unwind" fn dvi_locate_font(
                 b"unicode\0" as *const u8 as *const ::core::ffi::c_char,
             ) == 0
         {
-            (*loaded_fonts.offset(cur_id as isize)).is_unicode = 1 as ::core::ffi::c_int;
+            (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).is_unicode =
+                1 as ::core::ffi::c_int;
             if (*mrec).opt.mapc >= 0 as ::core::ffi::c_int {
-                (*loaded_fonts.offset(cur_id as isize)).padbytes
+                (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).padbytes
                     [0 as ::core::ffi::c_int as usize] =
                     ((*mrec).opt.mapc >> 24 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int)
                         as ::core::ffi::c_char;
-                (*loaded_fonts.offset(cur_id as isize)).padbytes
+                (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).padbytes
                     [1 as ::core::ffi::c_int as usize] =
                     ((*mrec).opt.mapc >> 16 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int)
                         as ::core::ffi::c_char;
             }
         }
     }
-    (*loaded_fonts.offset(cur_id as isize)).minbytes = pdf_dev_font_minbytes(font_id);
-    (*loaded_fonts.offset(cur_id as isize)).type_0 = PHYSICAL;
-    (*loaded_fonts.offset(cur_id as isize)).font_id = font_id;
-    if (*loaded_fonts.offset(cur_id as isize)).minbytes > 4 as ::core::ffi::c_int {
+    (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).minbytes =
+        pdf_dev_font_minbytes(font_id);
+    (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).type_0 = PHYSICAL;
+    (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).font_id = font_id;
+    if (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).minbytes > 4 as ::core::ffi::c_int {
         pdf_warning!(
             b"Input encoding requries more than 4 bytes per char... (unsupported)\0" as *const u8
                 as *const ::core::ffi::c_char,
         );
-        (*loaded_fonts.offset(cur_id as isize)).minbytes = 4 as ::core::ffi::c_int;
+        (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).minbytes = 4 as ::core::ffi::c_int;
     }
     if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
         pdf_message!(b">\0" as *const u8 as *const ::core::ffi::c_char);
@@ -2527,6 +2434,7 @@ unsafe extern "C-unwind" fn dvi_locate_native_font(
     mut slant: ::core::ffi::c_int,
     mut embolden: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut cur_id: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut mrec: *mut fontmap_rec = ::core::ptr::null_mut::<fontmap_rec>();
     let mut fontmap_key: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -2539,7 +2447,7 @@ unsafe extern "C-unwind" fn dvi_locate_native_font(
         pdf_message!(
             b"<%s@%.2fpt\0" as *const u8 as *const ::core::ffi::c_char,
             filename,
-            ptsize as ::core::ffi::c_double * dvi2pts,
+            ptsize as ::core::ffi::c_double * (*__pdf_state).dvi2pts,
         );
     }
     handle = dpx_open_dfont_file(filename);
@@ -2564,8 +2472,8 @@ unsafe extern "C-unwind" fn dvi_locate_native_font(
         }
     }
     need_more_fonts(1 as ::core::ffi::c_uint);
-    let fresh18 = num_loaded_fonts;
-    num_loaded_fonts = num_loaded_fonts.wrapping_add(1);
+    let fresh18 = (*__pdf_state).num_loaded_fonts;
+    (*__pdf_state).num_loaded_fonts = (*__pdf_state).num_loaded_fonts.wrapping_add(1);
     cur_id = fresh18 as ::core::ffi::c_int;
     fontmap_key = crate::backend::runtime::allocate(strlen(filename).wrapping_add(40 as size_t))
         as *mut ::core::ffi::c_char;
@@ -2596,21 +2504,23 @@ unsafe extern "C-unwind" fn dvi_locate_native_font(
         }
     }
     memset(
-        loaded_fonts.offset(cur_id as isize) as *mut loaded_font as *mut ::core::ffi::c_void,
+        (*__pdf_state).loaded_fonts.offset(cur_id as isize) as *mut loaded_font
+            as *mut ::core::ffi::c_void,
         0 as ::core::ffi::c_int,
         ::core::mem::size_of::<loaded_font>() as size_t,
     );
-    (*loaded_fonts.offset(cur_id as isize)).font_id = pdf_dev_locate_font(fontmap_key, ptsize);
-    (*loaded_fonts.offset(cur_id as isize)).size = ptsize;
-    (*loaded_fonts.offset(cur_id as isize)).type_0 = NATIVE;
-    (*loaded_fonts.offset(cur_id as isize)).minbytes =
-        pdf_dev_font_minbytes((*loaded_fonts.offset(cur_id as isize)).font_id);
-    if (*loaded_fonts.offset(cur_id as isize)).minbytes > 4 as ::core::ffi::c_int {
+    (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).font_id =
+        pdf_dev_locate_font(fontmap_key, ptsize);
+    (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).size = ptsize;
+    (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).type_0 = NATIVE;
+    (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).minbytes =
+        pdf_dev_font_minbytes((*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).font_id);
+    if (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).minbytes > 4 as ::core::ffi::c_int {
         pdf_warning!(
             b"Input encoding requries more than 4 bytes per char... (unsupprted)\0" as *const u8
                 as *const ::core::ffi::c_char,
         );
-        (*loaded_fonts.offset(cur_id as isize)).minbytes = 4 as ::core::ffi::c_int;
+        (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).minbytes = 4 as ::core::ffi::c_int;
     }
     free(fontmap_key as *mut ::core::ffi::c_void);
     if is_type1 != 0 {
@@ -2647,10 +2557,11 @@ unsafe extern "C-unwind" fn dvi_locate_native_font(
             }
             i += 1;
         }
-        (*loaded_fonts.offset(cur_id as isize)).shift_gid = (*cffont).is_notdef_notzero;
+        (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).shift_gid =
+            (*cffont).is_notdef_notzero;
         num_glyphs = (*cffont).num_glyphs as uint16_t;
-        (*loaded_fonts.offset(cur_id as isize)).num_glyphs = num_glyphs;
-        let ref mut fresh19 = (*loaded_fonts.offset(cur_id as isize)).gm;
+        (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).num_glyphs = num_glyphs;
+        let ref mut fresh19 = (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).gm;
         *fresh19 = new(
             ((num_glyphs as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as uint32_t as usize)
                 .wrapping_mul(::core::mem::size_of::<gm>() as usize) as uint32_t,
@@ -2708,16 +2619,16 @@ unsafe extern "C-unwind" fn dvi_locate_native_font(
             };
             ascent = gm.bbox.ury;
             descent = gm.bbox.lly;
-            (*(*loaded_fonts.offset(cur_id as isize))
+            (*(*(*__pdf_state).loaded_fonts.offset(cur_id as isize))
                 .gm
                 .offset(gid as isize))
             .advance = (ptsize as ::core::ffi::c_double
                 * (advance / 1000.0f64 * (*mrec).opt.extend)) as spt_t;
-            (*(*loaded_fonts.offset(cur_id as isize))
+            (*(*(*__pdf_state).loaded_fonts.offset(cur_id as isize))
                 .gm
                 .offset(gid as isize))
             .ascent = (ptsize as ::core::ffi::c_double * (ascent / 1000.0f64)) as spt_t;
-            (*(*loaded_fonts.offset(cur_id as isize))
+            (*(*(*__pdf_state).loaded_fonts.offset(cur_id as isize))
                 .gm
                 .offset(gid as isize))
             .descent = (ptsize as ::core::ffi::c_double * (descent / 1000.0f64)) as spt_t;
@@ -2755,7 +2666,7 @@ unsafe extern "C-unwind" fn dvi_locate_native_font(
             * ((*hhea).descent as ::core::ffi::c_double
                 / (*head).unitsPerEm as ::core::ffi::c_double)) as spt_t;
         num_glyphs_0 = (*maxp).numGlyphs as uint16_t;
-        (*loaded_fonts.offset(cur_id as isize)).num_glyphs = num_glyphs_0;
+        (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).num_glyphs = num_glyphs_0;
         if layout_dir == 1 as ::core::ffi::c_int
             && sfnt_find_table_pos(sfont, b"vmtx\0" as *const u8 as *const ::core::ffi::c_char)
                 > 0 as SFNT_ULONG
@@ -2784,24 +2695,24 @@ unsafe extern "C-unwind" fn dvi_locate_native_font(
                     as *const ::core::ffi::c_char,
             );
         }
-        let ref mut fresh20 = (*loaded_fonts.offset(cur_id as isize)).gm;
+        let ref mut fresh20 = (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).gm;
         *fresh20 = new((num_glyphs_0 as uint32_t as usize)
             .wrapping_mul(::core::mem::size_of::<gm>() as usize) as uint32_t)
             as *mut gm;
         i_0 = 0 as ::core::ffi::c_int;
         while i_0 < num_glyphs_0 as ::core::ffi::c_int {
-            (*(*loaded_fonts.offset(cur_id as isize))
+            (*(*(*__pdf_state).loaded_fonts.offset(cur_id as isize))
                 .gm
                 .offset(i_0 as isize))
             .advance = (ptsize as ::core::ffi::c_double
                 * ((*gm_0.offset(i_0 as isize)).advance as ::core::ffi::c_double
                     / (*head).unitsPerEm as ::core::ffi::c_double)
                 * (*mrec).opt.extend) as spt_t;
-            (*(*loaded_fonts.offset(cur_id as isize))
+            (*(*(*__pdf_state).loaded_fonts.offset(cur_id as isize))
                 .gm
                 .offset(i_0 as isize))
             .ascent = ascent_0;
-            (*(*loaded_fonts.offset(cur_id as isize))
+            (*(*(*__pdf_state).loaded_fonts.offset(cur_id as isize))
                 .gm
                 .offset(i_0 as isize))
             .descent = descent_0;
@@ -2814,10 +2725,13 @@ unsafe extern "C-unwind" fn dvi_locate_native_font(
         sfnt_close(sfont);
         crate::backend::runtime::input_close(handle);
     }
-    (*loaded_fonts.offset(cur_id as isize)).layout_dir = layout_dir;
-    (*loaded_fonts.offset(cur_id as isize)).extend = (*mrec).opt.extend as ::core::ffi::c_float;
-    (*loaded_fonts.offset(cur_id as isize)).slant = (*mrec).opt.slant as ::core::ffi::c_float;
-    (*loaded_fonts.offset(cur_id as isize)).embolden = (*mrec).opt.bold as ::core::ffi::c_float;
+    (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).layout_dir = layout_dir;
+    (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).extend =
+        (*mrec).opt.extend as ::core::ffi::c_float;
+    (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).slant =
+        (*mrec).opt.slant as ::core::ffi::c_float;
+    (*(*__pdf_state).loaded_fonts.offset(cur_id as isize)).embolden =
+        (*mrec).opt.bold as ::core::ffi::c_float;
     if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
         pdf_message!(b">\0" as *const u8 as *const ::core::ffi::c_char);
     }
@@ -2825,42 +2739,47 @@ unsafe extern "C-unwind" fn dvi_locate_native_font(
 }
 #[unsafe(export_name = "__pdf_impl_dvi_dev_xpos")]
 pub unsafe extern "C-unwind" fn dvi_dev_xpos() -> ::core::ffi::c_double {
-    return dvi_state.h as ::core::ffi::c_double * dvi2pts;
+    let __pdf_state = unsafe { document_state() };
+    return (*__pdf_state).dvi_state.h as ::core::ffi::c_double * (*__pdf_state).dvi2pts;
 }
 #[unsafe(export_name = "__pdf_impl_dvi_dev_ypos")]
 pub unsafe extern "C-unwind" fn dvi_dev_ypos() -> ::core::ffi::c_double {
-    return -(dvi_state.v as ::core::ffi::c_double * dvi2pts);
+    let __pdf_state = unsafe { document_state() };
+    return -((*__pdf_state).dvi_state.v as ::core::ffi::c_double * (*__pdf_state).dvi2pts);
 }
 unsafe extern "C-unwind" fn do_moveto(mut x: int32_t, mut y: int32_t) {
-    dvi_state.h = x;
-    dvi_state.v = y;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).dvi_state.h = x;
+    (*__pdf_state).dvi_state.v = y;
 }
 #[unsafe(export_name = "__pdf_impl_dvi_right")]
 pub unsafe extern "C-unwind" fn dvi_right(mut x: int32_t) {
+    let __pdf_state = unsafe { document_state() };
     let mut save_h: spt_t = 0;
     let mut save_v: spt_t = 0;
-    if lr_mode >= SKIMMING {
-        lr_width = lr_width.wrapping_add(x as uint32_t);
+    if (*__pdf_state).lr_mode >= SKIMMING {
+        (*__pdf_state).lr_width = (*__pdf_state).lr_width.wrapping_add(x as uint32_t);
         return;
     }
-    if lr_mode == RTYPESETTING {
+    if (*__pdf_state).lr_mode == RTYPESETTING {
         x = -x;
     }
-    save_h = dvi_state.h as spt_t;
-    save_v = dvi_state.v as spt_t;
-    match dvi_state.d {
+    save_h = (*__pdf_state).dvi_state.h as spt_t;
+    save_v = (*__pdf_state).dvi_state.v as spt_t;
+    match (*__pdf_state).dvi_state.d {
         0 => {
-            dvi_state.h += x;
+            (*__pdf_state).dvi_state.h += x;
         }
         1 => {
-            dvi_state.v += x;
+            (*__pdf_state).dvi_state.v += x;
         }
         3 => {
-            dvi_state.v -= x;
+            (*__pdf_state).dvi_state.v -= x;
         }
         _ => {}
     }
-    if dvi_is_tracking_boxes() as ::core::ffi::c_int != 0 && catch_phantom > 0 as ::core::ffi::c_int
+    if dvi_is_tracking_boxes() as ::core::ffi::c_int != 0
+        && (*__pdf_state).catch_phantom > 0 as ::core::ffi::c_int
     {
         let mut rect: pdf_rect = pdf_rect {
             llx: 0.,
@@ -2871,11 +2790,15 @@ pub unsafe extern "C-unwind" fn dvi_right(mut x: int32_t) {
         let mut width: spt_t = 0;
         let mut height: spt_t = 0;
         let mut depth: spt_t = 0;
-        if catch_phantom == 1 as ::core::ffi::c_int {
-            if current_font >= 0 as ::core::ffi::c_int
-                && (current_font as ::core::ffi::c_uint) < num_loaded_fonts
+        if (*__pdf_state).catch_phantom == 1 as ::core::ffi::c_int {
+            if (*__pdf_state).current_font >= 0 as ::core::ffi::c_int
+                && ((*__pdf_state).current_font as ::core::ffi::c_uint)
+                    < (*__pdf_state).num_loaded_fonts
             {
-                height = (*loaded_fonts.offset(current_font as isize)).size;
+                height = (*(*__pdf_state)
+                    .loaded_fonts
+                    .offset((*__pdf_state).current_font as isize))
+                .size;
             } else {
                 if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
                     pdf_warning!(
@@ -2887,18 +2810,18 @@ pub unsafe extern "C-unwind" fn dvi_right(mut x: int32_t) {
             }
             depth = 0.0f64 as spt_t;
         } else {
-            height = (phantom_height / dvi2pts) as spt_t;
-            depth = (phantom_depth / dvi2pts) as spt_t;
+            height = ((*__pdf_state).phantom_height / (*__pdf_state).dvi2pts) as spt_t;
+            depth = ((*__pdf_state).phantom_depth / (*__pdf_state).dvi2pts) as spt_t;
         }
-        match dvi_state.d {
+        match (*__pdf_state).dvi_state.d {
             0 => {
-                width = (dvi_state.h - save_h as int32_t) as spt_t;
+                width = ((*__pdf_state).dvi_state.h - save_h as int32_t) as spt_t;
             }
             1 | 2 => {
-                width = (dvi_state.v - save_v as int32_t) as spt_t;
+                width = ((*__pdf_state).dvi_state.v - save_v as int32_t) as spt_t;
             }
             _ => {
-                width = (dvi_state.h - save_h as int32_t) as spt_t;
+                width = ((*__pdf_state).dvi_state.h - save_h as int32_t) as spt_t;
             }
         }
         calc_rect(&raw mut rect, save_h, -save_v, width, height, depth);
@@ -2907,16 +2830,17 @@ pub unsafe extern "C-unwind" fn dvi_right(mut x: int32_t) {
 }
 #[unsafe(export_name = "__pdf_impl_dvi_down")]
 pub unsafe extern "C-unwind" fn dvi_down(mut y: int32_t) {
-    if lr_mode < SKIMMING {
-        match dvi_state.d {
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).lr_mode < SKIMMING {
+        match (*__pdf_state).dvi_state.d {
             0 => {
-                dvi_state.v += y;
+                (*__pdf_state).dvi_state.v += y;
             }
             1 => {
-                dvi_state.h -= y;
+                (*__pdf_state).dvi_state.h -= y;
             }
             3 => {
-                dvi_state.h += y;
+                (*__pdf_state).dvi_state.h += y;
             }
             _ => {}
         }
@@ -2924,6 +2848,7 @@ pub unsafe extern "C-unwind" fn dvi_down(mut y: int32_t) {
 }
 #[unsafe(export_name = "__pdf_impl_dvi_set")]
 pub unsafe extern "C-unwind" fn dvi_set(mut ch: int32_t) {
+    let __pdf_state = unsafe { document_state() };
     let mut font: *mut loaded_font = ::core::ptr::null_mut::<loaded_font>();
     let mut width: spt_t = 0;
     let mut height: spt_t = 0;
@@ -2931,10 +2856,13 @@ pub unsafe extern "C-unwind" fn dvi_set(mut ch: int32_t) {
     let mut wbuf: [::core::ffi::c_uchar; 4] = [0; 4];
     let mut n: ::core::ffi::c_int = 0;
     let mut cbytes: ::core::ffi::c_int = 0;
-    if current_font < 0 as ::core::ffi::c_int {
+    if (*__pdf_state).current_font < 0 as ::core::ffi::c_int {
         pdf_abort!(b"No font selected!\0" as *const u8 as *const ::core::ffi::c_char);
     }
-    font = loaded_fonts.offset(current_font as isize) as *mut loaded_font as *mut loaded_font;
+    font = (*__pdf_state)
+        .loaded_fonts
+        .offset((*__pdf_state).current_font as isize) as *mut loaded_font
+        as *mut loaded_font;
     if (*font).type_0 == NATIVE {
         if ch >= 0 as int32_t && ch < (*font).num_glyphs as int32_t {
             width = (*(*font).gm.offset(ch as isize)).advance;
@@ -2950,11 +2878,11 @@ pub unsafe extern "C-unwind" fn dvi_set(mut ch: int32_t) {
         width = tfm_get_fw_width((*font).tfm_id, ch) as spt_t;
         width = sqxfw((*font).size as int32_t, width as fixword) as spt_t;
     }
-    if lr_mode >= SKIMMING {
-        lr_width = lr_width.wrapping_add(width as uint32_t);
+    if (*__pdf_state).lr_mode >= SKIMMING {
+        (*__pdf_state).lr_width = (*__pdf_state).lr_width.wrapping_add(width as uint32_t);
         return;
     }
-    if lr_mode == RTYPESETTING {
+    if (*__pdf_state).lr_mode == RTYPESETTING {
         dvi_right(width as int32_t);
     }
     memcpy(
@@ -3018,8 +2946,8 @@ pub unsafe extern "C-unwind" fn dvi_set(mut ch: int32_t) {
                 n
             };
             set_string(
-                dvi_state.h as spt_t,
-                -(dvi_state.v as spt_t),
+                (*__pdf_state).dvi_state.h as spt_t,
+                -((*__pdf_state).dvi_state.v as spt_t),
                 (&raw mut wbuf as *mut ::core::ffi::c_uchar)
                     .offset(4 as ::core::ffi::c_int as isize)
                     .offset(-(cbytes as isize)) as *const ::core::ffi::c_void,
@@ -3040,8 +2968,8 @@ pub unsafe extern "C-unwind" fn dvi_set(mut ch: int32_t) {
                 depth = sqxfw((*font).size as int32_t, depth as fixword) as spt_t;
                 calc_rect(
                     &raw mut rect,
-                    dvi_state.h as spt_t,
-                    -(dvi_state.v as spt_t),
+                    (*__pdf_state).dvi_state.h as spt_t,
+                    -((*__pdf_state).dvi_state.v as spt_t),
                     width,
                     height,
                     depth,
@@ -3054,8 +2982,8 @@ pub unsafe extern "C-unwind" fn dvi_set(mut ch: int32_t) {
                 (ch >> 8 as ::core::ffi::c_int & 0xff as int32_t) as ::core::ffi::c_uchar;
             wbuf[1 as ::core::ffi::c_int as usize] = (ch & 0xff as int32_t) as ::core::ffi::c_uchar;
             set_string(
-                dvi_state.h as spt_t,
-                -(dvi_state.v as spt_t),
+                (*__pdf_state).dvi_state.h as spt_t,
+                -((*__pdf_state).dvi_state.v as spt_t),
                 &raw mut wbuf as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
                 2 as ::core::ffi::c_int,
                 width,
@@ -3072,8 +3000,8 @@ pub unsafe extern "C-unwind" fn dvi_set(mut ch: int32_t) {
                 depth = (*(*font).gm.offset(ch as isize)).descent;
                 calc_rect(
                     &raw mut rect_0,
-                    dvi_state.h as spt_t,
-                    -(dvi_state.v as spt_t),
+                    (*__pdf_state).dvi_state.h as spt_t,
+                    -((*__pdf_state).dvi_state.v as spt_t),
                     width,
                     height,
                     depth,
@@ -3086,12 +3014,13 @@ pub unsafe extern "C-unwind" fn dvi_set(mut ch: int32_t) {
         }
         _ => {}
     }
-    if lr_mode == LTYPESETTING {
+    if (*__pdf_state).lr_mode == LTYPESETTING {
         dvi_right(width as int32_t);
     }
 }
 #[unsafe(export_name = "__pdf_impl_dvi_put")]
 pub unsafe extern "C-unwind" fn dvi_put(mut ch: int32_t) {
+    let __pdf_state = unsafe { document_state() };
     let mut font: *mut loaded_font = ::core::ptr::null_mut::<loaded_font>();
     let mut width: spt_t = 0;
     let mut height: spt_t = 0;
@@ -3099,10 +3028,13 @@ pub unsafe extern "C-unwind" fn dvi_put(mut ch: int32_t) {
     let mut wbuf: [::core::ffi::c_uchar; 4] = [0; 4];
     let mut n: ::core::ffi::c_int = 0;
     let mut cbytes: ::core::ffi::c_int = 0;
-    if current_font < 0 as ::core::ffi::c_int {
+    if (*__pdf_state).current_font < 0 as ::core::ffi::c_int {
         pdf_abort!(b"No font selected!\0" as *const u8 as *const ::core::ffi::c_char);
     }
-    font = loaded_fonts.offset(current_font as isize) as *mut loaded_font as *mut loaded_font;
+    font = (*__pdf_state)
+        .loaded_fonts
+        .offset((*__pdf_state).current_font as isize) as *mut loaded_font
+        as *mut loaded_font;
     memcpy(
         &raw mut wbuf as *mut ::core::ffi::c_uchar as *mut ::core::ffi::c_void,
         &raw mut (*font).padbytes as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
@@ -3166,8 +3098,8 @@ pub unsafe extern "C-unwind" fn dvi_put(mut ch: int32_t) {
                 n
             };
             set_string(
-                dvi_state.h as spt_t,
-                -(dvi_state.v as spt_t),
+                (*__pdf_state).dvi_state.h as spt_t,
+                -((*__pdf_state).dvi_state.v as spt_t),
                 (&raw mut wbuf as *mut ::core::ffi::c_uchar)
                     .offset(4 as ::core::ffi::c_int as isize)
                     .offset(-(cbytes as isize)) as *const ::core::ffi::c_void,
@@ -3188,8 +3120,8 @@ pub unsafe extern "C-unwind" fn dvi_put(mut ch: int32_t) {
                 depth = sqxfw((*font).size as int32_t, depth as fixword) as spt_t;
                 calc_rect(
                     &raw mut rect,
-                    dvi_state.h as spt_t,
-                    -(dvi_state.v as spt_t),
+                    (*__pdf_state).dvi_state.h as spt_t,
+                    -((*__pdf_state).dvi_state.v as spt_t),
                     width,
                     height,
                     depth,
@@ -3205,29 +3137,30 @@ pub unsafe extern "C-unwind" fn dvi_put(mut ch: int32_t) {
 }
 #[unsafe(export_name = "__pdf_impl_dvi_rule")]
 pub unsafe extern "C-unwind" fn dvi_rule(mut width: int32_t, mut height: int32_t) {
+    let __pdf_state = unsafe { document_state() };
     if width > 0 as int32_t && height > 0 as int32_t {
-        do_moveto(dvi_state.h, dvi_state.v);
-        match dvi_state.d {
+        do_moveto((*__pdf_state).dvi_state.h, (*__pdf_state).dvi_state.v);
+        match (*__pdf_state).dvi_state.d {
             0 => {
                 set_rule(
-                    dvi_state.h as spt_t,
-                    -(dvi_state.v as spt_t),
+                    (*__pdf_state).dvi_state.h as spt_t,
+                    -((*__pdf_state).dvi_state.v as spt_t),
                     width as spt_t,
                     height as spt_t,
                 );
             }
             1 => {
                 set_rule(
-                    dvi_state.h as spt_t,
-                    -(dvi_state.v as spt_t) - width as spt_t,
+                    (*__pdf_state).dvi_state.h as spt_t,
+                    -((*__pdf_state).dvi_state.v as spt_t) - width as spt_t,
                     height as spt_t,
                     width as spt_t,
                 );
             }
             3 => {
                 set_rule(
-                    dvi_state.h as spt_t - height as spt_t,
-                    -(dvi_state.v as spt_t),
+                    (*__pdf_state).dvi_state.h as spt_t - height as spt_t,
+                    -((*__pdf_state).dvi_state.v as spt_t),
                     height as spt_t,
                     width as spt_t,
                 );
@@ -3238,6 +3171,7 @@ pub unsafe extern "C-unwind" fn dvi_rule(mut width: int32_t, mut height: int32_t
 }
 #[unsafe(export_name = "__pdf_impl_dvi_dirchg")]
 pub unsafe extern "C-unwind" fn dvi_dirchg(mut dir: ::core::ffi::c_uchar) {
+    let __pdf_state = unsafe { document_state() };
     if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
         fprintf(
             crate::backend::runtime::stderr().cast(),
@@ -3245,15 +3179,16 @@ pub unsafe extern "C-unwind" fn dvi_dirchg(mut dir: ::core::ffi::c_uchar) {
             dir as ::core::ffi::c_int,
         );
     }
-    dvi_state.d = dir as ::core::ffi::c_uint;
-    pdf_dev_set_dirmode(dvi_state.d as ::core::ffi::c_int);
+    (*__pdf_state).dvi_state.d = dir as ::core::ffi::c_uint;
+    pdf_dev_set_dirmode((*__pdf_state).dvi_state.d as ::core::ffi::c_int);
 }
 unsafe extern "C-unwind" fn do_setrule() {
+    let __pdf_state = unsafe { document_state() };
     let mut width: int32_t = 0;
     let mut height: int32_t = 0;
     height = get_buffered_signed_quad();
     width = get_buffered_signed_quad();
-    match lr_mode {
+    match (*__pdf_state).lr_mode {
         LTYPESETTING => {
             dvi_rule(width, height);
             dvi_right(width);
@@ -3263,16 +3198,17 @@ unsafe extern "C-unwind" fn do_setrule() {
             dvi_rule(width, height);
         }
         _ => {
-            lr_width = lr_width.wrapping_add(width as uint32_t);
+            (*__pdf_state).lr_width = (*__pdf_state).lr_width.wrapping_add(width as uint32_t);
         }
     };
 }
 unsafe extern "C-unwind" fn do_putrule() {
+    let __pdf_state = unsafe { document_state() };
     let mut width: int32_t = 0;
     let mut height: int32_t = 0;
     height = get_buffered_signed_quad();
     width = get_buffered_signed_quad();
-    match lr_mode {
+    match (*__pdf_state).lr_mode {
         LTYPESETTING => {
             dvi_rule(width, height);
         }
@@ -3286,126 +3222,144 @@ unsafe extern "C-unwind" fn do_putrule() {
 }
 #[unsafe(export_name = "__pdf_impl_dvi_push")]
 pub unsafe extern "C-unwind" fn dvi_push() {
-    if dvi_stack_depth as ::core::ffi::c_uint >= DVI_STACK_DEPTH_MAX {
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).dvi_stack_depth as ::core::ffi::c_uint >= DVI_STACK_DEPTH_MAX {
         pdf_abort!(b"DVI stack exceeded limit.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
-    let fresh6 = dvi_stack_depth;
-    dvi_stack_depth = dvi_stack_depth + 1;
-    dvi_stack[fresh6 as usize] = dvi_state;
+    let fresh6 = (*__pdf_state).dvi_stack_depth;
+    (*__pdf_state).dvi_stack_depth = (*__pdf_state).dvi_stack_depth + 1;
+    (*__pdf_state).dvi_stack[fresh6 as usize] = (*__pdf_state).dvi_state;
 }
 #[unsafe(export_name = "__pdf_impl_dpx_dvi_pop")]
 pub unsafe extern "C-unwind" fn dpx_dvi_pop() {
-    if dvi_stack_depth <= 0 as ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).dvi_stack_depth <= 0 as ::core::ffi::c_int {
         pdf_abort!(b"Tried to pop an empty stack.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
-    dvi_stack_depth -= 1;
-    dvi_state = dvi_stack[dvi_stack_depth as usize];
-    do_moveto(dvi_state.h, dvi_state.v);
-    pdf_dev_set_dirmode(dvi_state.d as ::core::ffi::c_int);
+    (*__pdf_state).dvi_stack_depth -= 1;
+    (*__pdf_state).dvi_state = (*__pdf_state).dvi_stack[(*__pdf_state).dvi_stack_depth as usize];
+    do_moveto((*__pdf_state).dvi_state.h, (*__pdf_state).dvi_state.v);
+    pdf_dev_set_dirmode((*__pdf_state).dvi_state.d as ::core::ffi::c_int);
 }
 #[unsafe(export_name = "__pdf_impl_dvi_w")]
 pub unsafe extern "C-unwind" fn dvi_w(mut ch: int32_t) {
-    dvi_state.w = ch;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).dvi_state.w = ch;
     dvi_right(ch);
 }
 #[unsafe(export_name = "__pdf_impl_dvi_w0")]
 pub unsafe extern "C-unwind" fn dvi_w0() {
-    dvi_right(dvi_state.w);
+    let __pdf_state = unsafe { document_state() };
+    dvi_right((*__pdf_state).dvi_state.w);
 }
 #[unsafe(export_name = "__pdf_impl_dvi_x")]
 pub unsafe extern "C-unwind" fn dvi_x(mut ch: int32_t) {
-    dvi_state.x = ch;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).dvi_state.x = ch;
     dvi_right(ch);
 }
 #[unsafe(export_name = "__pdf_impl_dvi_x0")]
 pub unsafe extern "C-unwind" fn dvi_x0() {
-    dvi_right(dvi_state.x);
+    let __pdf_state = unsafe { document_state() };
+    dvi_right((*__pdf_state).dvi_state.x);
 }
 #[unsafe(export_name = "__pdf_impl_dvi_y")]
 pub unsafe extern "C-unwind" fn dvi_y(mut ch: int32_t) {
-    dvi_state.y = ch;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).dvi_state.y = ch;
     dvi_down(ch);
 }
 #[unsafe(export_name = "__pdf_impl_dvi_y0")]
 pub unsafe extern "C-unwind" fn dvi_y0() {
-    dvi_down(dvi_state.y);
+    let __pdf_state = unsafe { document_state() };
+    dvi_down((*__pdf_state).dvi_state.y);
 }
 #[unsafe(export_name = "__pdf_impl_dvi_z")]
 pub unsafe extern "C-unwind" fn dvi_z(mut ch: int32_t) {
-    dvi_state.z = ch;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).dvi_state.z = ch;
     dvi_down(ch);
 }
 #[unsafe(export_name = "__pdf_impl_dvi_z0")]
 pub unsafe extern "C-unwind" fn dvi_z0() {
-    dvi_down(dvi_state.z);
+    let __pdf_state = unsafe { document_state() };
+    dvi_down((*__pdf_state).dvi_state.z);
 }
 unsafe extern "C-unwind" fn skip_fntdef() {
+    let __pdf_state = unsafe { document_state() };
     let mut area_len: ::core::ffi::c_int = 0;
     let mut name_len: ::core::ffi::c_int = 0;
-    tt_skip_bytes(12 as ::core::ffi::c_uint, dvi_handle);
-    area_len = tt_get_unsigned_byte(dvi_handle) as ::core::ffi::c_int;
-    name_len = tt_get_unsigned_byte(dvi_handle) as ::core::ffi::c_int;
-    tt_skip_bytes((area_len + name_len) as ::core::ffi::c_uint, dvi_handle);
+    tt_skip_bytes(12 as ::core::ffi::c_uint, (*__pdf_state).dvi_handle);
+    area_len = tt_get_unsigned_byte((*__pdf_state).dvi_handle) as ::core::ffi::c_int;
+    name_len = tt_get_unsigned_byte((*__pdf_state).dvi_handle) as ::core::ffi::c_int;
+    tt_skip_bytes(
+        (area_len + name_len) as ::core::ffi::c_uint,
+        (*__pdf_state).dvi_handle,
+    );
 }
 unsafe extern "C-unwind" fn do_fntdef(mut tex_id: uint32_t) {
-    if linear != 0 {
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).linear != 0 {
         read_font_record(tex_id);
     } else {
         skip_fntdef();
     }
-    dvi_page_buf_index = dvi_page_buf_index.wrapping_sub(1);
+    (*__pdf_state).dvi_page_buf_index = (*__pdf_state).dvi_page_buf_index.wrapping_sub(1);
 }
 #[unsafe(export_name = "__pdf_impl_dvi_set_font")]
 pub unsafe extern "C-unwind" fn dvi_set_font(mut font_id: ::core::ffi::c_int) {
-    current_font = font_id;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).current_font = font_id;
 }
 unsafe extern "C-unwind" fn do_fnt(mut tex_id: uint32_t) {
+    let __pdf_state = unsafe { document_state() };
     let mut i: ::core::ffi::c_uint = 0;
     i = 0 as ::core::ffi::c_uint;
-    while i < num_def_fonts {
-        if (*def_fonts.offset(i as isize)).tex_id as uint32_t == tex_id {
+    while i < (*__pdf_state).num_def_fonts {
+        if (*(*__pdf_state).def_fonts.offset(i as isize)).tex_id as uint32_t == tex_id {
             break;
         }
         i = i.wrapping_add(1);
     }
-    if i == num_def_fonts {
+    if i == (*__pdf_state).num_def_fonts {
         pdf_abort!(
             b"Tried to select a font that hasn't been defined: id=%d\0" as *const u8
                 as *const ::core::ffi::c_char,
             tex_id,
         );
     }
-    if (*def_fonts.offset(i as isize)).used == 0 {
+    if (*(*__pdf_state).def_fonts.offset(i as isize)).used == 0 {
         let mut font_id: ::core::ffi::c_uint = 0;
-        if (*def_fonts.offset(i as isize)).native != 0 {
+        if (*(*__pdf_state).def_fonts.offset(i as isize)).native != 0 {
             font_id = dvi_locate_native_font(
-                (*def_fonts.offset(i as isize)).font_name,
-                (*def_fonts.offset(i as isize)).face_index,
-                (*def_fonts.offset(i as isize)).point_size,
-                (*def_fonts.offset(i as isize)).layout_dir,
-                (*def_fonts.offset(i as isize)).extend,
-                (*def_fonts.offset(i as isize)).slant,
-                (*def_fonts.offset(i as isize)).embolden,
+                (*(*__pdf_state).def_fonts.offset(i as isize)).font_name,
+                (*(*__pdf_state).def_fonts.offset(i as isize)).face_index,
+                (*(*__pdf_state).def_fonts.offset(i as isize)).point_size,
+                (*(*__pdf_state).def_fonts.offset(i as isize)).layout_dir,
+                (*(*__pdf_state).def_fonts.offset(i as isize)).extend,
+                (*(*__pdf_state).def_fonts.offset(i as isize)).slant,
+                (*(*__pdf_state).def_fonts.offset(i as isize)).embolden,
             ) as ::core::ffi::c_uint;
         } else {
             font_id = dvi_locate_font(
-                (*def_fonts.offset(i as isize)).font_name,
-                (*def_fonts.offset(i as isize)).point_size,
+                (*(*__pdf_state).def_fonts.offset(i as isize)).font_name,
+                (*(*__pdf_state).def_fonts.offset(i as isize)).point_size,
             );
         }
-        (*loaded_fonts.offset(font_id as isize)).rgba_color =
-            (*def_fonts.offset(i as isize)).rgba_color;
-        (*loaded_fonts.offset(font_id as isize)).rgba_used =
-            (*def_fonts.offset(i as isize)).rgba_used;
-        if (*loaded_fonts.offset(font_id as isize)).rgba_used as ::core::ffi::c_int
+        (*(*__pdf_state).loaded_fonts.offset(font_id as isize)).rgba_color =
+            (*(*__pdf_state).def_fonts.offset(i as isize)).rgba_color;
+        (*(*__pdf_state).loaded_fonts.offset(font_id as isize)).rgba_used =
+            (*(*__pdf_state).def_fonts.offset(i as isize)).rgba_used;
+        if (*(*__pdf_state).loaded_fonts.offset(font_id as isize)).rgba_used as ::core::ffi::c_int
             == 0 as ::core::ffi::c_int
         {
-            (*loaded_fonts.offset(font_id as isize)).xgs_id = -(1 as ::core::ffi::c_int);
+            (*(*__pdf_state).loaded_fonts.offset(font_id as isize)).xgs_id =
+                -(1 as ::core::ffi::c_int);
         } else {
             let mut xgs_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-            let mut a: ::core::ffi::c_int = ((*loaded_fonts.offset(font_id as isize)).rgba_color
-                & 0xff as uint32_t)
-                as ::core::ffi::c_int;
+            let mut a: ::core::ffi::c_int =
+                ((*(*__pdf_state).loaded_fonts.offset(font_id as isize)).rgba_color
+                    & 0xff as uint32_t) as ::core::ffi::c_int;
             xgs_dict = pdf_new_dict();
             pdf_add_dict(
                 xgs_dict,
@@ -3422,49 +3376,65 @@ unsafe extern "C-unwind" fn do_fnt(mut tex_id: uint32_t) {
                 pdf_new_name(b"CA\0" as *const u8 as *const ::core::ffi::c_char),
                 pdf_new_number(a as ::core::ffi::c_double / 255.0f64),
             );
-            (*loaded_fonts.offset(font_id as isize)).xgs_id = pdf_defineresource(
+            (*(*__pdf_state).loaded_fonts.offset(font_id as isize)).xgs_id = pdf_defineresource(
                 b"ExtGState\0" as *const u8 as *const ::core::ffi::c_char,
                 ::core::ptr::null::<::core::ffi::c_char>(),
                 xgs_dict,
                 0 as ::core::ffi::c_int,
             );
         }
-        (*loaded_fonts.offset(font_id as isize)).source = DVI;
-        (*def_fonts.offset(i as isize)).used = 1 as ::core::ffi::c_int;
-        (*def_fonts.offset(i as isize)).font_id = font_id as ::core::ffi::c_int;
+        (*(*__pdf_state).loaded_fonts.offset(font_id as isize)).source = DVI;
+        (*(*__pdf_state).def_fonts.offset(i as isize)).used = 1 as ::core::ffi::c_int;
+        (*(*__pdf_state).def_fonts.offset(i as isize)).font_id = font_id as ::core::ffi::c_int;
     }
-    current_font = (*def_fonts.offset(i as isize)).font_id;
+    (*__pdf_state).current_font = (*(*__pdf_state).def_fonts.offset(i as isize)).font_id;
 }
 unsafe extern "C-unwind" fn do_xxx(mut size: int32_t) {
-    if lr_mode < SKIMMING {
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).lr_mode < SKIMMING {
         dvi_do_special(
-            dvi_page_buffer.offset(dvi_page_buf_index as isize) as *const ::core::ffi::c_void,
+            (*__pdf_state)
+                .dvi_page_buffer
+                .offset((*__pdf_state).dvi_page_buf_index as isize)
+                as *const ::core::ffi::c_void,
             size,
         );
     }
-    dvi_page_buf_index = dvi_page_buf_index.wrapping_add(size as ::core::ffi::c_uint);
+    (*__pdf_state).dvi_page_buf_index = (*__pdf_state)
+        .dvi_page_buf_index
+        .wrapping_add(size as ::core::ffi::c_uint);
 }
 unsafe extern "C-unwind" fn do_bop() {
+    let __pdf_state = unsafe { document_state() };
     let mut i: ::core::ffi::c_uint = 0;
-    if processing_page != 0 {
+    if (*__pdf_state).processing_page != 0 {
         pdf_abort!(
             b"Got a bop in the middle of a page!\0" as *const u8 as *const ::core::ffi::c_char,
         );
     }
     i = 0 as ::core::ffi::c_uint;
     while i < 10 as ::core::ffi::c_uint {
-        dvi_page_buf_index = dvi_page_buf_index.wrapping_add(4 as ::core::ffi::c_uint);
+        (*__pdf_state).dvi_page_buf_index = (*__pdf_state)
+            .dvi_page_buf_index
+            .wrapping_add(4 as ::core::ffi::c_uint);
         i = i.wrapping_add(1);
     }
-    dvi_page_buf_index = dvi_page_buf_index.wrapping_add(4 as ::core::ffi::c_uint);
+    (*__pdf_state).dvi_page_buf_index = (*__pdf_state)
+        .dvi_page_buf_index
+        .wrapping_add(4 as ::core::ffi::c_uint);
     clear_state();
-    processing_page = 1 as ::core::ffi::c_int;
-    pdf_doc_begin_page(dvi_tell_mag(), dev_origin_x, dev_origin_y);
+    (*__pdf_state).processing_page = 1 as ::core::ffi::c_int;
+    pdf_doc_begin_page(
+        dvi_tell_mag(),
+        (*__pdf_state).dev_origin_x,
+        (*__pdf_state).dev_origin_y,
+    );
     spc_exec_at_begin_page();
 }
 unsafe extern "C-unwind" fn do_eop() {
-    processing_page = 0 as ::core::ffi::c_int;
-    if dvi_stack_depth != 0 as ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).processing_page = 0 as ::core::ffi::c_int;
+    if (*__pdf_state).dvi_stack_depth != 0 as ::core::ffi::c_int {
         pdf_abort!(
             b"DVI stack depth is not zero at end of page\0" as *const u8
                 as *const ::core::ffi::c_char,
@@ -3474,103 +3444,119 @@ unsafe extern "C-unwind" fn do_eop() {
     pdf_doc_end_page();
 }
 unsafe extern "C-unwind" fn do_dir() {
-    dvi_state.d = get_buffered_unsigned_byte() as ::core::ffi::c_uint;
-    pdf_dev_set_dirmode(dvi_state.d as ::core::ffi::c_int);
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).dvi_state.d = get_buffered_unsigned_byte() as ::core::ffi::c_uint;
+    pdf_dev_set_dirmode((*__pdf_state).dvi_state.d as ::core::ffi::c_int);
 }
 unsafe extern "C-unwind" fn lr_width_push() {
-    if lr_width_stack_depth >= DVI_STACK_DEPTH_MAX {
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).lr_width_stack_depth >= DVI_STACK_DEPTH_MAX {
         pdf_abort!(
             b"Segment width stack exceeded limit.\0" as *const u8 as *const ::core::ffi::c_char,
         );
     }
-    let fresh7 = lr_width_stack_depth;
-    lr_width_stack_depth = lr_width_stack_depth.wrapping_add(1);
-    lr_width_stack[fresh7 as usize] = lr_width;
+    let fresh7 = (*__pdf_state).lr_width_stack_depth;
+    (*__pdf_state).lr_width_stack_depth = (*__pdf_state).lr_width_stack_depth.wrapping_add(1);
+    (*__pdf_state).lr_width_stack[fresh7 as usize] = (*__pdf_state).lr_width;
 }
 unsafe extern "C-unwind" fn lr_width_pop() {
-    if lr_width_stack_depth <= 0 as ::core::ffi::c_uint {
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).lr_width_stack_depth <= 0 as ::core::ffi::c_uint {
         pdf_abort!(
             b"Tried to pop an empty segment width stack.\0" as *const u8
                 as *const ::core::ffi::c_char,
         );
     }
-    lr_width_stack_depth = lr_width_stack_depth.wrapping_sub(1);
-    lr_width = lr_width_stack[lr_width_stack_depth as usize];
+    (*__pdf_state).lr_width_stack_depth = (*__pdf_state).lr_width_stack_depth.wrapping_sub(1);
+    (*__pdf_state).lr_width =
+        (*__pdf_state).lr_width_stack[(*__pdf_state).lr_width_stack_depth as usize];
 }
 unsafe extern "C-unwind" fn dvi_begin_reflect() {
-    if lr_mode >= SKIMMING {
-        lr_mode += 1;
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).lr_mode >= SKIMMING {
+        (*__pdf_state).lr_mode += 1;
     } else {
-        lr_state.buf_index = dvi_page_buf_index;
-        lr_state.font = current_font;
-        lr_state.state = lr_mode;
-        lr_mode = SKIMMING;
-        lr_width = 0 as uint32_t;
+        (*__pdf_state).lr_state.buf_index = (*__pdf_state).dvi_page_buf_index;
+        (*__pdf_state).lr_state.font = (*__pdf_state).current_font;
+        (*__pdf_state).lr_state.state = (*__pdf_state).lr_mode;
+        (*__pdf_state).lr_mode = SKIMMING;
+        (*__pdf_state).lr_width = 0 as uint32_t;
     };
 }
 unsafe extern "C-unwind" fn dvi_end_reflect() {
-    match lr_mode {
+    let __pdf_state = unsafe { document_state() };
+    match (*__pdf_state).lr_mode {
         SKIMMING => {
-            current_font = lr_state.font;
-            dvi_page_buf_index = lr_state.buf_index;
-            lr_mode = LTYPESETTING + RTYPESETTING - lr_state.state;
-            dvi_right(-(lr_width as int32_t));
+            (*__pdf_state).current_font = (*__pdf_state).lr_state.font;
+            (*__pdf_state).dvi_page_buf_index = (*__pdf_state).lr_state.buf_index;
+            (*__pdf_state).lr_mode = LTYPESETTING + RTYPESETTING - (*__pdf_state).lr_state.state;
+            dvi_right(-((*__pdf_state).lr_width as int32_t));
             lr_width_push();
         }
         LTYPESETTING | RTYPESETTING => {
             lr_width_pop();
-            dvi_right(-(lr_width as int32_t));
-            lr_mode = LTYPESETTING + RTYPESETTING - lr_mode;
+            dvi_right(-((*__pdf_state).lr_width as int32_t));
+            (*__pdf_state).lr_mode = LTYPESETTING + RTYPESETTING - (*__pdf_state).lr_mode;
         }
         _ => {
-            lr_mode -= 1;
+            (*__pdf_state).lr_mode -= 1;
         }
     };
 }
 unsafe extern "C-unwind" fn skip_native_font_def() {
+    let __pdf_state = unsafe { document_state() };
     let mut flags: ::core::ffi::c_uint = 0;
     let mut name_length: ::core::ffi::c_int = 0;
-    tt_skip_bytes(4 as ::core::ffi::c_uint, dvi_handle);
-    flags = tt_get_unsigned_pair(dvi_handle) as ::core::ffi::c_uint;
-    name_length = tt_get_unsigned_byte(dvi_handle) as ::core::ffi::c_int;
+    tt_skip_bytes(4 as ::core::ffi::c_uint, (*__pdf_state).dvi_handle);
+    flags = tt_get_unsigned_pair((*__pdf_state).dvi_handle) as ::core::ffi::c_uint;
+    name_length = tt_get_unsigned_byte((*__pdf_state).dvi_handle) as ::core::ffi::c_int;
     tt_skip_bytes(
         (name_length + 4 as ::core::ffi::c_int) as ::core::ffi::c_uint,
-        dvi_handle,
+        (*__pdf_state).dvi_handle,
     );
     if flags & XDV_FLAG_COLORED as ::core::ffi::c_uint != 0 {
-        tt_skip_bytes(4 as ::core::ffi::c_uint, dvi_handle);
+        tt_skip_bytes(4 as ::core::ffi::c_uint, (*__pdf_state).dvi_handle);
     }
     if flags & XDV_FLAG_EXTEND as ::core::ffi::c_uint != 0 {
-        tt_skip_bytes(4 as ::core::ffi::c_uint, dvi_handle);
+        tt_skip_bytes(4 as ::core::ffi::c_uint, (*__pdf_state).dvi_handle);
     }
     if flags & XDV_FLAG_SLANT as ::core::ffi::c_uint != 0 {
-        tt_skip_bytes(4 as ::core::ffi::c_uint, dvi_handle);
+        tt_skip_bytes(4 as ::core::ffi::c_uint, (*__pdf_state).dvi_handle);
     }
     if flags & XDV_FLAG_EMBOLDEN as ::core::ffi::c_uint != 0 {
-        tt_skip_bytes(4 as ::core::ffi::c_uint, dvi_handle);
+        tt_skip_bytes(4 as ::core::ffi::c_uint, (*__pdf_state).dvi_handle);
     }
 }
 unsafe extern "C-unwind" fn do_native_font_def(mut tex_id: int32_t) {
-    if linear != 0 {
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).linear != 0 {
         read_native_font_record(tex_id as uint32_t);
     } else {
         skip_native_font_def();
     }
-    dvi_page_buf_index = dvi_page_buf_index.wrapping_sub(1);
+    (*__pdf_state).dvi_page_buf_index = (*__pdf_state).dvi_page_buf_index.wrapping_sub(1);
 }
 unsafe extern "C-unwind" fn skip_glyphs() {
+    let __pdf_state = unsafe { document_state() };
     let mut i: ::core::ffi::c_uint = 0;
     let mut slen: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
     slen = get_buffered_unsigned_pair();
     i = 0 as ::core::ffi::c_uint;
     while i < slen {
-        dvi_page_buf_index = dvi_page_buf_index.wrapping_add(4 as ::core::ffi::c_uint);
-        dvi_page_buf_index = dvi_page_buf_index.wrapping_add(4 as ::core::ffi::c_uint);
-        dvi_page_buf_index = dvi_page_buf_index.wrapping_add(2 as ::core::ffi::c_uint);
+        (*__pdf_state).dvi_page_buf_index = (*__pdf_state)
+            .dvi_page_buf_index
+            .wrapping_add(4 as ::core::ffi::c_uint);
+        (*__pdf_state).dvi_page_buf_index = (*__pdf_state)
+            .dvi_page_buf_index
+            .wrapping_add(4 as ::core::ffi::c_uint);
+        (*__pdf_state).dvi_page_buf_index = (*__pdf_state)
+            .dvi_page_buf_index
+            .wrapping_add(2 as ::core::ffi::c_uint);
         i = i.wrapping_add(1);
     }
 }
 unsafe extern "C-unwind" fn do_glyphs(mut do_actual_text: ::core::ffi::c_int) {
+    let __pdf_state = unsafe { document_state() };
     let mut font: *mut loaded_font = ::core::ptr::null_mut::<loaded_font>();
     let mut width: spt_t = 0;
     let mut height: spt_t = 0;
@@ -3581,16 +3567,21 @@ unsafe extern "C-unwind" fn do_glyphs(mut do_actual_text: ::core::ffi::c_int) {
     let mut i: int32_t = 0;
     let mut glyph_id: uint16_t = 0;
     let mut slen: uint16_t = 0 as uint16_t;
-    if current_font < 0 as ::core::ffi::c_int {
+    if (*__pdf_state).current_font < 0 as ::core::ffi::c_int {
         pdf_abort!(b"No font selected!\0" as *const u8 as *const ::core::ffi::c_char);
     }
-    font = loaded_fonts.offset(current_font as isize) as *mut loaded_font as *mut loaded_font;
+    font = (*__pdf_state)
+        .loaded_fonts
+        .offset((*__pdf_state).current_font as isize) as *mut loaded_font
+        as *mut loaded_font;
     if do_actual_text != 0 {
         slen = get_buffered_unsigned_pair() as uint16_t;
-        if lr_mode >= SKIMMING {
+        if (*__pdf_state).lr_mode >= SKIMMING {
             i = 0 as ::core::ffi::c_int as int32_t;
             while i < slen as int32_t {
-                dvi_page_buf_index = dvi_page_buf_index.wrapping_add(2 as ::core::ffi::c_uint);
+                (*__pdf_state).dvi_page_buf_index = (*__pdf_state)
+                    .dvi_page_buf_index
+                    .wrapping_add(2 as ::core::ffi::c_uint);
                 i += 1;
             }
         } else {
@@ -3607,12 +3598,12 @@ unsafe extern "C-unwind" fn do_glyphs(mut do_actual_text: ::core::ffi::c_int) {
         }
     }
     width = get_buffered_signed_quad() as spt_t;
-    if lr_mode >= SKIMMING {
-        lr_width = lr_width.wrapping_add(width as uint32_t);
+    if (*__pdf_state).lr_mode >= SKIMMING {
+        (*__pdf_state).lr_width = (*__pdf_state).lr_width.wrapping_add(width as uint32_t);
         skip_glyphs();
         return;
     }
-    if lr_mode == RTYPESETTING {
+    if (*__pdf_state).lr_mode == RTYPESETTING {
         dvi_right(width as int32_t);
     }
     slen = get_buffered_unsigned_pair() as uint16_t;
@@ -3662,7 +3653,7 @@ unsafe extern "C-unwind" fn do_glyphs(mut do_actual_text: ::core::ffi::c_int) {
             sprintf(
                 &raw mut resname as *mut ::core::ffi::c_char,
                 b"Xtx_Gs_%08x\0" as *const u8 as *const ::core::ffi::c_char,
-                current_font,
+                (*__pdf_state).current_font,
             );
             ref_0 = pdf_get_resource_reference((*font).xgs_id);
             pdf_doc_add_page_resource(
@@ -3703,8 +3694,8 @@ unsafe extern "C-unwind" fn do_glyphs(mut do_actual_text: ::core::ffi::c_int) {
                 depth = -(*(*font).gm.offset(glyph_id as isize)).descent;
                 calc_rect(
                     &raw mut rect,
-                    dvi_state.h as spt_t + *xloc.offset(i as isize),
-                    -(dvi_state.v as spt_t) - *yloc.offset(i as isize),
+                    (*__pdf_state).dvi_state.h as spt_t + *xloc.offset(i as isize),
+                    -((*__pdf_state).dvi_state.v as spt_t) - *yloc.offset(i as isize),
                     advance,
                     height,
                     depth,
@@ -3717,8 +3708,8 @@ unsafe extern "C-unwind" fn do_glyphs(mut do_actual_text: ::core::ffi::c_int) {
         wbuf[1 as ::core::ffi::c_int as usize] =
             (glyph_id as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
         set_string(
-            dvi_state.h as spt_t + *xloc.offset(i as isize),
-            -(dvi_state.v as spt_t) - *yloc.offset(i as isize),
+            (*__pdf_state).dvi_state.h as spt_t + *xloc.offset(i as isize),
+            -((*__pdf_state).dvi_state.v as spt_t) - *yloc.offset(i as isize),
             &raw mut wbuf as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
             2 as ::core::ffi::c_int,
             advance,
@@ -3738,15 +3729,16 @@ unsafe extern "C-unwind" fn do_glyphs(mut do_actual_text: ::core::ffi::c_int) {
     if do_actual_text != 0 {
         pdf_dev_end_actualtext();
     }
-    if lr_mode == LTYPESETTING {
+    if (*__pdf_state).lr_mode == LTYPESETTING {
         dvi_right(width as int32_t);
     }
 }
 unsafe extern "C-unwind" fn check_postamble() {
+    let __pdf_state = unsafe { document_state() };
     let mut code: ::core::ffi::c_int = 0;
-    tt_skip_bytes(28 as ::core::ffi::c_uint, dvi_handle);
+    tt_skip_bytes(28 as ::core::ffi::c_uint, (*__pdf_state).dvi_handle);
     loop {
-        code = tt_get_unsigned_byte(dvi_handle) as ::core::ffi::c_int;
+        code = tt_get_unsigned_byte((*__pdf_state).dvi_handle) as ::core::ffi::c_int;
         if !(code != POST_POST) {
             break;
         }
@@ -3754,12 +3746,12 @@ unsafe extern "C-unwind" fn check_postamble() {
             FNT_DEF1 | FNT_DEF2 | FNT_DEF3 | FNT_DEF4 => {
                 tt_skip_bytes(
                     (code + 1 as ::core::ffi::c_int - FNT_DEF1) as ::core::ffi::c_uint,
-                    dvi_handle,
+                    (*__pdf_state).dvi_handle,
                 );
                 skip_fntdef();
             }
             XDV_NATIVE_FONT_DEF => {
-                tt_skip_bytes(4 as ::core::ffi::c_uint, dvi_handle);
+                tt_skip_bytes(4 as ::core::ffi::c_uint, (*__pdf_state).dvi_handle);
                 skip_native_font_def();
             }
             _ => {
@@ -3771,28 +3763,29 @@ unsafe extern "C-unwind" fn check_postamble() {
             }
         }
     }
-    tt_skip_bytes(4 as ::core::ffi::c_uint, dvi_handle);
-    post_id_byte = tt_get_unsigned_byte(dvi_handle) as ::core::ffi::c_int;
-    if !(post_id_byte == DVI_ID
-        || post_id_byte == DVIV_ID
-        || post_id_byte == XDV_ID
-        || post_id_byte == XDV_ID_OLD)
+    tt_skip_bytes(4 as ::core::ffi::c_uint, (*__pdf_state).dvi_handle);
+    (*__pdf_state).post_id_byte =
+        tt_get_unsigned_byte((*__pdf_state).dvi_handle) as ::core::ffi::c_int;
+    if !((*__pdf_state).post_id_byte == DVI_ID
+        || (*__pdf_state).post_id_byte == DVIV_ID
+        || (*__pdf_state).post_id_byte == XDV_ID
+        || (*__pdf_state).post_id_byte == XDV_ID_OLD)
     {
         pdf_message!(
             b"DVI ID = %d\n\0" as *const u8 as *const ::core::ffi::c_char,
-            post_id_byte,
+            (*__pdf_state).post_id_byte,
         );
         pdf_abort!(&raw const invalid_signature as *const ::core::ffi::c_char);
     }
     check_id_bytes();
-    if has_ptex != 0 && post_id_byte != DVIV_ID {
+    if (*__pdf_state).has_ptex != 0 && (*__pdf_state).post_id_byte != DVIV_ID {
         pdf_abort!(
             b"Saw opcode %i in DVI file not for Ascii pTeX\0" as *const u8
                 as *const ::core::ffi::c_char,
             PTEXDIR,
         );
     }
-    num_pages = 0 as ::core::ffi::c_uint;
+    (*__pdf_state).num_pages = 0 as ::core::ffi::c_uint;
 }
 #[unsafe(export_name = "__pdf_impl_dvi_do_page")]
 pub unsafe extern "C-unwind" fn dvi_do_page(
@@ -3800,11 +3793,12 @@ pub unsafe extern "C-unwind" fn dvi_do_page(
     mut hmargin: ::core::ffi::c_double,
     mut vmargin: ::core::ffi::c_double,
 ) {
+    let __pdf_state = unsafe { document_state() };
     let mut opcode: ::core::ffi::c_uchar = 0;
-    dvi_page_buf_index = 0 as ::core::ffi::c_uint;
-    dev_origin_x = hmargin;
-    dev_origin_y = page_paper_height - vmargin;
-    dvi_stack_depth = 0 as ::core::ffi::c_int;
+    (*__pdf_state).dvi_page_buf_index = 0 as ::core::ffi::c_uint;
+    (*__pdf_state).dev_origin_x = hmargin;
+    (*__pdf_state).dev_origin_y = page_paper_height - vmargin;
+    (*__pdf_state).dvi_stack_depth = 0 as ::core::ffi::c_int;
     loop {
         opcode = get_buffered_unsigned_byte() as ::core::ffi::c_uchar;
         if opcode as ::core::ffi::c_int <= SET_CHAR_127 {
@@ -3854,19 +3848,22 @@ pub unsafe extern "C-unwind" fn dvi_do_page(
                 }
                 EOP => {
                     do_eop();
-                    if linear != 0 {
-                        opcode = tt_get_unsigned_byte(dvi_handle);
+                    if (*__pdf_state).linear != 0 {
+                        opcode = tt_get_unsigned_byte((*__pdf_state).dvi_handle);
                         if opcode as ::core::ffi::c_int == POST {
                             check_postamble();
                         } else {
-                            ttstub_input_ungetc(dvi_handle, opcode as ::core::ffi::c_int);
+                            ttstub_input_ungetc(
+                                (*__pdf_state).dvi_handle,
+                                opcode as ::core::ffi::c_int,
+                            );
                         }
                     }
                     return;
                 }
                 PUSH => {
                     dvi_push();
-                    if lr_mode >= SKIMMING {
+                    if (*__pdf_state).lr_mode >= SKIMMING {
                         lr_width_push();
                     }
                     dvi_mark_depth();
@@ -3874,7 +3871,7 @@ pub unsafe extern "C-unwind" fn dvi_do_page(
                 }
                 POP => {
                     dpx_dvi_pop();
-                    if lr_mode >= SKIMMING {
+                    if (*__pdf_state).lr_mode >= SKIMMING {
                         lr_width_pop();
                     }
                     dvi_mark_depth();
@@ -3986,8 +3983,10 @@ pub unsafe extern "C-unwind" fn dvi_do_page(
                     current_block_59 = 10007731352114176167;
                 }
                 POST => {
-                    if linear as ::core::ffi::c_int != 0 && processing_page == 0 {
-                        num_pages = 0 as ::core::ffi::c_uint;
+                    if (*__pdf_state).linear as ::core::ffi::c_int != 0
+                        && (*__pdf_state).processing_page == 0
+                    {
+                        (*__pdf_state).num_pages = 0 as ::core::ffi::c_uint;
                         return;
                     }
                     current_block_59 = 18402748268671662874;
@@ -4019,16 +4018,17 @@ pub unsafe extern "C-unwind" fn dvi_init(
     mut dvi_filename: *const ::core::ffi::c_char,
     mut mag: ::core::ffi::c_double,
 ) -> ::core::ffi::c_double {
+    let __pdf_state = unsafe { document_state() };
     let mut post_location: int32_t = 0;
     if dvi_filename.is_null() {
         pdf_abort!(b"filename must be specified\0" as *const u8 as *const ::core::ffi::c_char,);
     }
-    dvi_handle = ttstub_input_open(
+    (*__pdf_state).dvi_handle = ttstub_input_open(
         dvi_filename,
         TTBC_FILE_FORMAT_PROGRAM_DATA,
         0 as ::core::ffi::c_int,
     );
-    if dvi_handle == INVALID_HANDLE {
+    if (*__pdf_state).dvi_handle == INVALID_HANDLE {
         pdf_abort!(
             b"cannot open \"%s\"\0" as *const u8 as *const ::core::ffi::c_char,
             dvi_filename,
@@ -4041,76 +4041,84 @@ pub unsafe extern "C-unwind" fn dvi_init(
     get_comment();
     get_dvi_fonts(post_location);
     clear_state();
-    dvi_page_buf_size = DVI_PAGE_BUF_CHUNK;
-    dvi_page_buffer = new((dvi_page_buf_size as uint32_t as usize)
+    (*__pdf_state).dvi_page_buf_size = DVI_PAGE_BUF_CHUNK;
+    (*__pdf_state).dvi_page_buffer = new(((*__pdf_state).dvi_page_buf_size as uint32_t as usize)
         .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
         as uint32_t) as *mut ::core::ffi::c_uchar;
-    return dvi2pts;
+    return (*__pdf_state).dvi2pts;
 }
 #[unsafe(export_name = "__pdf_impl_dvi_close")]
 pub unsafe extern "C-unwind" fn dvi_close() {
+    let __pdf_state = unsafe { document_state() };
     let mut i: ::core::ffi::c_uint = 0;
-    if linear != 0 {
-        while ttstub_input_getc(dvi_handle) != EOF {}
+    if (*__pdf_state).linear != 0 {
+        while ttstub_input_getc((*__pdf_state).dvi_handle) != EOF {}
     }
-    crate::backend::runtime::input_close(dvi_handle);
-    dvi_handle = INVALID_HANDLE as rust_input_handle_t;
-    if !def_fonts.is_null() {
+    crate::backend::runtime::input_close((*__pdf_state).dvi_handle);
+    (*__pdf_state).dvi_handle = INVALID_HANDLE as rust_input_handle_t;
+    if !(*__pdf_state).def_fonts.is_null() {
         i = 0 as ::core::ffi::c_uint;
-        while i < num_def_fonts {
-            let ref mut fresh3 = (*def_fonts.offset(i as isize)).font_name;
-            *fresh3 = mfree((*def_fonts.offset(i as isize)).font_name as *mut ::core::ffi::c_void)
-                as *mut ::core::ffi::c_char;
+        while i < (*__pdf_state).num_def_fonts {
+            let ref mut fresh3 = (*(*__pdf_state).def_fonts.offset(i as isize)).font_name;
+            *fresh3 = mfree(
+                (*(*__pdf_state).def_fonts.offset(i as isize)).font_name
+                    as *mut ::core::ffi::c_void,
+            ) as *mut ::core::ffi::c_char;
             i = i.wrapping_add(1);
         }
-        free(def_fonts as *mut ::core::ffi::c_void);
+        free((*__pdf_state).def_fonts as *mut ::core::ffi::c_void);
     }
-    def_fonts = ::core::ptr::null_mut::<font_def>();
-    page_loc = mfree(page_loc as *mut ::core::ffi::c_void) as *mut uint32_t;
-    num_pages = 0 as ::core::ffi::c_uint;
+    (*__pdf_state).def_fonts = ::core::ptr::null_mut::<font_def>();
+    (*__pdf_state).page_loc =
+        mfree((*__pdf_state).page_loc as *mut ::core::ffi::c_void) as *mut uint32_t;
+    (*__pdf_state).num_pages = 0 as ::core::ffi::c_uint;
     i = 0 as ::core::ffi::c_uint;
-    while i < num_loaded_fonts {
-        free((*loaded_fonts.offset(i as isize)).gm as *mut ::core::ffi::c_void);
-        let ref mut fresh4 = (*loaded_fonts.offset(i as isize)).gm;
+    while i < (*__pdf_state).num_loaded_fonts {
+        free((*(*__pdf_state).loaded_fonts.offset(i as isize)).gm as *mut ::core::ffi::c_void);
+        let ref mut fresh4 = (*(*__pdf_state).loaded_fonts.offset(i as isize)).gm;
         *fresh4 = ::core::ptr::null_mut::<gm>();
         i = i.wrapping_add(1);
     }
-    loaded_fonts = mfree(loaded_fonts as *mut ::core::ffi::c_void) as *mut loaded_font;
-    num_loaded_fonts = 0 as ::core::ffi::c_uint;
+    (*__pdf_state).loaded_fonts =
+        mfree((*__pdf_state).loaded_fonts as *mut ::core::ffi::c_void) as *mut loaded_font;
+    (*__pdf_state).num_loaded_fonts = 0 as ::core::ffi::c_uint;
     vf_close_all_fonts();
     tfm_close_all();
-    if !dvi_page_buffer.is_null() {
-        dvi_page_buffer =
-            mfree(dvi_page_buffer as *mut ::core::ffi::c_void) as *mut ::core::ffi::c_uchar;
-        dvi_page_buf_size = 0 as ::core::ffi::c_uint;
+    if !(*__pdf_state).dvi_page_buffer.is_null() {
+        (*__pdf_state).dvi_page_buffer =
+            mfree((*__pdf_state).dvi_page_buffer as *mut ::core::ffi::c_void)
+                as *mut ::core::ffi::c_uchar;
+        (*__pdf_state).dvi_page_buf_size = 0 as ::core::ffi::c_uint;
     }
 }
-static mut saved_dvi_font: [::core::ffi::c_int; 16] = [0; 16];
-static mut num_saved_fonts: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
+
 #[unsafe(export_name = "__pdf_impl_dvi_vf_init")]
 pub unsafe extern "C-unwind" fn dvi_vf_init(mut dev_font_id: ::core::ffi::c_int) {
+    let __pdf_state = unsafe { document_state() };
     dvi_push();
-    dvi_state.w = 0 as ::core::ffi::c_int as int32_t;
-    dvi_state.x = 0 as ::core::ffi::c_int as int32_t;
-    dvi_state.y = 0 as ::core::ffi::c_int as int32_t;
-    dvi_state.z = 0 as ::core::ffi::c_int as int32_t;
-    if num_saved_fonts < VF_NESTING_MAX {
-        let fresh5 = num_saved_fonts;
-        num_saved_fonts = num_saved_fonts.wrapping_add(1);
-        saved_dvi_font[fresh5 as usize] = current_font;
+    (*__pdf_state).dvi_state.w = 0 as ::core::ffi::c_int as int32_t;
+    (*__pdf_state).dvi_state.x = 0 as ::core::ffi::c_int as int32_t;
+    (*__pdf_state).dvi_state.y = 0 as ::core::ffi::c_int as int32_t;
+    (*__pdf_state).dvi_state.z = 0 as ::core::ffi::c_int as int32_t;
+    if (*__pdf_state).num_saved_fonts < VF_NESTING_MAX {
+        let fresh5 = (*__pdf_state).num_saved_fonts;
+        (*__pdf_state).num_saved_fonts = (*__pdf_state).num_saved_fonts.wrapping_add(1);
+        (*__pdf_state).saved_dvi_font[fresh5 as usize] = (*__pdf_state).current_font;
     } else {
         pdf_abort!(
             b"Virtual fonts nested too deeply!\0" as *const u8 as *const ::core::ffi::c_char,
         );
     }
-    current_font = dev_font_id;
+    (*__pdf_state).current_font = dev_font_id;
 }
 #[unsafe(export_name = "__pdf_impl_dvi_vf_finish")]
 pub unsafe extern "C-unwind" fn dvi_vf_finish() {
+    let __pdf_state = unsafe { document_state() };
     dpx_dvi_pop();
-    if num_saved_fonts > 0 as ::core::ffi::c_uint {
-        num_saved_fonts = num_saved_fonts.wrapping_sub(1);
-        current_font = saved_dvi_font[num_saved_fonts as usize];
+    if (*__pdf_state).num_saved_fonts > 0 as ::core::ffi::c_uint {
+        (*__pdf_state).num_saved_fonts = (*__pdf_state).num_saved_fonts.wrapping_sub(1);
+        (*__pdf_state).current_font =
+            (*__pdf_state).saved_dvi_font[(*__pdf_state).num_saved_fonts as usize];
     } else {
         pdf_abort!(
             b"Tried to pop an empty font stack\0" as *const u8 as *const ::core::ffi::c_char,
@@ -4583,9 +4591,7 @@ unsafe extern "C-unwind" fn scan_special(
     }
     return error;
 }
-static mut buffered_page: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
-static mut eligibility_only: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-static mut parallel_eligible: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
+
 #[unsafe(export_name = "__pdf_impl_dvi_scan_specials")]
 pub unsafe extern "C-unwind" fn dvi_scan_specials(
     mut page_no: ::core::ffi::c_int,
@@ -4609,38 +4615,44 @@ pub unsafe extern "C-unwind" fn dvi_scan_specials(
     mut id2: *mut ::core::ffi::c_uchar,
     mut opt_flags: *mut ::core::ffi::c_int,
 ) {
+    let __pdf_state = unsafe { document_state() };
     let mut offset: uint32_t = 0;
     let mut opcode: ::core::ffi::c_uchar = 0;
     let mut len: ::core::ffi::c_uint = 0;
-    if page_no == buffered_page || num_pages == 0 as ::core::ffi::c_uint {
+    if page_no == (*__pdf_state).buffered_page
+        || (*__pdf_state).num_pages == 0 as ::core::ffi::c_uint
+    {
         return;
     }
-    buffered_page = page_no;
-    dvi_page_buf_index = 0 as ::core::ffi::c_uint;
-    if linear == 0 {
-        if page_no as ::core::ffi::c_uint >= num_pages {
+    (*__pdf_state).buffered_page = page_no;
+    (*__pdf_state).dvi_page_buf_index = 0 as ::core::ffi::c_uint;
+    if (*__pdf_state).linear == 0 {
+        if page_no as ::core::ffi::c_uint >= (*__pdf_state).num_pages {
             pdf_abort!(
                 b"Invalid page number: %u\0" as *const u8 as *const ::core::ffi::c_char,
                 page_no,
             );
         }
-        offset = *page_loc.offset(page_no as isize);
-        if eligibility_only == 0 {
-            let mut end: uint32_t =
-                if ((page_no + 1 as ::core::ffi::c_int) as ::core::ffi::c_uint) < num_pages {
-                    *page_loc.offset((page_no + 1 as ::core::ffi::c_int) as isize)
-                } else {
-                    dvi_file_size
-                };
+        offset = *(*__pdf_state).page_loc.offset(page_no as isize);
+        if (*__pdf_state).eligibility_only == 0 {
+            let mut end: uint32_t = if ((page_no + 1 as ::core::ffi::c_int) as ::core::ffi::c_uint)
+                < (*__pdf_state).num_pages
+            {
+                *(*__pdf_state)
+                    .page_loc
+                    .offset((page_no + 1 as ::core::ffi::c_int) as isize)
+            } else {
+                (*__pdf_state).dvi_file_size
+            };
             let mut page: tt_pdf_scanned_page = tt_pdf_scanned_page {
                 data: ::core::ptr::null::<::core::ffi::c_uchar>(),
                 length: 0,
                 specials: ::core::ptr::null::<tt_pdf_special_span>(),
                 special_count: 0,
             };
-            if end <= dvi_file_size
+            if end <= (*__pdf_state).dvi_file_size
                 && tt_pdf_scan_page(
-                    dvi_handle,
+                    (*__pdf_state).dvi_handle,
                     offset,
                     end,
                     (dpx_conf.compat_mode as ::core::ffi::c_uint
@@ -4655,27 +4667,28 @@ pub unsafe extern "C-unwind" fn dvi_scan_specials(
                         b"DVI page is too large!\0" as *const u8 as *const ::core::ffi::c_char,
                     );
                 }
-                if page.length >= dvi_page_buf_size as size_t {
-                    dvi_page_buf_size =
+                if page.length >= (*__pdf_state).dvi_page_buf_size as size_t {
+                    (*__pdf_state).dvi_page_buf_size =
                         (page.length as ::core::ffi::c_uint).wrapping_add(DVI_PAGE_BUF_CHUNK);
-                    dvi_page_buffer = renew(
-                        dvi_page_buffer as *mut ::core::ffi::c_void,
-                        (dvi_page_buf_size as uint32_t as usize)
+                    (*__pdf_state).dvi_page_buffer = renew(
+                        (*__pdf_state).dvi_page_buffer as *mut ::core::ffi::c_void,
+                        ((*__pdf_state).dvi_page_buf_size as uint32_t as usize)
                             .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
                             as uint32_t,
-                    ) as *mut ::core::ffi::c_uchar;
+                    )
+                        as *mut ::core::ffi::c_uchar;
                 }
                 memcpy(
-                    dvi_page_buffer as *mut ::core::ffi::c_void,
+                    (*__pdf_state).dvi_page_buffer as *mut ::core::ffi::c_void,
                     page.data as *const ::core::ffi::c_void,
                     page.length,
                 );
-                dvi_page_buf_index = page.length as ::core::ffi::c_uint;
+                (*__pdf_state).dvi_page_buf_index = page.length as ::core::ffi::c_uint;
                 i = 0 as size_t;
                 while i < page.special_count {
                     let mut span: *const tt_pdf_special_span =
                         page.specials.offset(i as isize) as *const tt_pdf_special_span;
-                    let mut buf_0: *const ::core::ffi::c_char = (dvi_page_buffer
+                    let mut buf_0: *const ::core::ffi::c_char = ((*__pdf_state).dvi_page_buffer
                         as *const ::core::ffi::c_char)
                         .offset((*span).offset as isize);
                     if scan_special(
@@ -4714,10 +4727,10 @@ pub unsafe extern "C-unwind" fn dvi_scan_specials(
                 return;
             }
         }
-        crate::backend::runtime::input_seek(dvi_handle, offset as ssize_t, SEEK_SET);
+        crate::backend::runtime::input_seek((*__pdf_state).dvi_handle, offset as ssize_t, SEEK_SET);
     }
     loop {
-        opcode = get_and_buffer_unsigned_byte(dvi_handle) as ::core::ffi::c_uchar;
+        opcode = get_and_buffer_unsigned_byte((*__pdf_state).dvi_handle) as ::core::ffi::c_uchar;
         if !(opcode as ::core::ffi::c_int != EOP) {
             break;
         }
@@ -4732,13 +4745,14 @@ pub unsafe extern "C-unwind" fn dvi_scan_specials(
             || opcode as ::core::ffi::c_int == XXX3
             || opcode as ::core::ffi::c_int == XXX4
         {
-            let mut size: uint32_t = get_and_buffer_unsigned_byte(dvi_handle) as uint32_t;
+            let mut size: uint32_t =
+                get_and_buffer_unsigned_byte((*__pdf_state).dvi_handle) as uint32_t;
             let mut current_block_32: u64;
             match opcode as ::core::ffi::c_int {
                 XXX4 => {
-                    size = size
-                        .wrapping_mul(0x100 as uint32_t)
-                        .wrapping_add(get_and_buffer_unsigned_byte(dvi_handle) as uint32_t);
+                    size = size.wrapping_mul(0x100 as uint32_t).wrapping_add(
+                        get_and_buffer_unsigned_byte((*__pdf_state).dvi_handle) as uint32_t,
+                    );
                     if size > 0x7fff as uint32_t {
                         pdf_warning!(
                             b"Unsigned number starting with %x exceeds 0x7fffffff\0" as *const u8
@@ -4760,37 +4774,41 @@ pub unsafe extern "C-unwind" fn dvi_scan_specials(
             }
             match current_block_32 {
                 9891201208829039439 => {
-                    size = size
-                        .wrapping_mul(0x100 as uint32_t)
-                        .wrapping_add(get_and_buffer_unsigned_byte(dvi_handle) as uint32_t);
+                    size = size.wrapping_mul(0x100 as uint32_t).wrapping_add(
+                        get_and_buffer_unsigned_byte((*__pdf_state).dvi_handle) as uint32_t,
+                    );
                     current_block_32 = 13520245842808149009;
                 }
                 _ => {}
             }
             match current_block_32 {
                 13520245842808149009 => {
-                    size = size
-                        .wrapping_mul(0x100 as uint32_t)
-                        .wrapping_add(get_and_buffer_unsigned_byte(dvi_handle) as uint32_t);
+                    size = size.wrapping_mul(0x100 as uint32_t).wrapping_add(
+                        get_and_buffer_unsigned_byte((*__pdf_state).dvi_handle) as uint32_t,
+                    );
                 }
                 _ => {}
             }
-            if (dvi_page_buf_index as uint32_t).wrapping_add(size) >= dvi_page_buf_size as uint32_t
+            if ((*__pdf_state).dvi_page_buf_index as uint32_t).wrapping_add(size)
+                >= (*__pdf_state).dvi_page_buf_size as uint32_t
             {
-                dvi_page_buf_size = (dvi_page_buf_index as uint32_t)
+                (*__pdf_state).dvi_page_buf_size = ((*__pdf_state).dvi_page_buf_index as uint32_t)
                     .wrapping_add(size)
                     .wrapping_add(DVI_PAGE_BUF_CHUNK as uint32_t)
                     as ::core::ffi::c_uint;
-                dvi_page_buffer = renew(
-                    dvi_page_buffer as *mut ::core::ffi::c_void,
-                    (dvi_page_buf_size as uint32_t as usize)
+                (*__pdf_state).dvi_page_buffer = renew(
+                    (*__pdf_state).dvi_page_buffer as *mut ::core::ffi::c_void,
+                    ((*__pdf_state).dvi_page_buf_size as uint32_t as usize)
                         .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
                         as uint32_t,
                 ) as *mut ::core::ffi::c_uchar;
             }
             if ttstub_input_read(
-                dvi_handle,
-                dvi_page_buffer.offset(dvi_page_buf_index as isize) as *mut ::core::ffi::c_char,
+                (*__pdf_state).dvi_handle,
+                (*__pdf_state)
+                    .dvi_page_buffer
+                    .offset((*__pdf_state).dvi_page_buf_index as isize)
+                    as *mut ::core::ffi::c_char,
                 size as size_t,
             ) != size as ssize_t
             {
@@ -4798,14 +4816,17 @@ pub unsafe extern "C-unwind" fn dvi_scan_specials(
                     b"Reading DVI file failed!\0" as *const u8 as *const ::core::ffi::c_char,
                 );
             }
-            if eligibility_only != 0 {
+            if (*__pdf_state).eligibility_only != 0 {
                 if tt_pdf_special_supported(
-                    dvi_page_buffer.offset(dvi_page_buf_index as isize) as *mut ::core::ffi::c_char
+                    (*__pdf_state)
+                        .dvi_page_buffer
+                        .offset((*__pdf_state).dvi_page_buf_index as isize)
+                        as *mut ::core::ffi::c_char
                         as *const ::core::ffi::c_uchar,
                     size as size_t,
                 ) == 0
                 {
-                    parallel_eligible = 0 as ::core::ffi::c_int;
+                    (*__pdf_state).parallel_eligible = 0 as ::core::ffi::c_int;
                 }
             } else if scan_special(
                 page_width,
@@ -4827,7 +4848,10 @@ pub unsafe extern "C-unwind" fn dvi_scan_specials(
                 id1,
                 id2,
                 opt_flags,
-                dvi_page_buffer.offset(dvi_page_buf_index as isize) as *mut ::core::ffi::c_char,
+                (*__pdf_state)
+                    .dvi_page_buffer
+                    .offset((*__pdf_state).dvi_page_buf_index as isize)
+                    as *mut ::core::ffi::c_char,
                 size,
             ) != 0
             {
@@ -4835,66 +4859,80 @@ pub unsafe extern "C-unwind" fn dvi_scan_specials(
                     b"Reading special command failed: \"%.*s\"\0" as *const u8
                         as *const ::core::ffi::c_char,
                     size,
-                    dvi_page_buffer.offset(dvi_page_buf_index as isize) as *mut ::core::ffi::c_char,
+                    (*__pdf_state)
+                        .dvi_page_buffer
+                        .offset((*__pdf_state).dvi_page_buf_index as isize)
+                        as *mut ::core::ffi::c_char,
                 );
             }
-            dvi_page_buf_index = dvi_page_buf_index.wrapping_add(size as ::core::ffi::c_uint);
+            (*__pdf_state).dvi_page_buf_index = (*__pdf_state)
+                .dvi_page_buf_index
+                .wrapping_add(size as ::core::ffi::c_uint);
         } else {
             let mut current_block_72: u64;
             match opcode as ::core::ffi::c_int {
                 BOP => {
-                    get_and_buffer_bytes(dvi_handle, 44 as ::core::ffi::c_uint);
+                    get_and_buffer_bytes((*__pdf_state).dvi_handle, 44 as ::core::ffi::c_uint);
                     current_block_72 = 1209030638129645089;
                 }
                 NOP | PUSH | POP | W0 | X0 | Y0 | Z0 => {
                     current_block_72 = 1209030638129645089;
                 }
                 SET1 | PUT1 | RIGHT1 | DOWN1 | W1 | X1 | Y1 | Z1 | FNT1 => {
-                    get_and_buffer_bytes(dvi_handle, 1 as ::core::ffi::c_uint);
+                    get_and_buffer_bytes((*__pdf_state).dvi_handle, 1 as ::core::ffi::c_uint);
                     current_block_72 = 1209030638129645089;
                 }
                 SET2 | PUT2 | RIGHT2 | DOWN2 | W2 | X2 | Y2 | Z2 | FNT2 => {
-                    get_and_buffer_bytes(dvi_handle, 2 as ::core::ffi::c_uint);
+                    get_and_buffer_bytes((*__pdf_state).dvi_handle, 2 as ::core::ffi::c_uint);
                     current_block_72 = 1209030638129645089;
                 }
                 SET3 | PUT3 | RIGHT3 | DOWN3 | W3 | X3 | Y3 | Z3 | FNT3 => {
-                    get_and_buffer_bytes(dvi_handle, 3 as ::core::ffi::c_uint);
+                    get_and_buffer_bytes((*__pdf_state).dvi_handle, 3 as ::core::ffi::c_uint);
                     current_block_72 = 1209030638129645089;
                 }
                 SET4 | PUT4 | RIGHT4 | DOWN4 | W4 | X4 | Y4 | Z4 | FNT4 => {
-                    get_and_buffer_bytes(dvi_handle, 4 as ::core::ffi::c_uint);
+                    get_and_buffer_bytes((*__pdf_state).dvi_handle, 4 as ::core::ffi::c_uint);
                     current_block_72 = 1209030638129645089;
                 }
                 SET_RULE | PUT_RULE => {
-                    get_and_buffer_bytes(dvi_handle, 8 as ::core::ffi::c_uint);
+                    get_and_buffer_bytes((*__pdf_state).dvi_handle, 8 as ::core::ffi::c_uint);
                     current_block_72 = 1209030638129645089;
                 }
                 FNT_DEF1 | FNT_DEF2 | FNT_DEF3 | FNT_DEF4 => {
                     do_fntdef(tt_get_unsigned_num(
-                        dvi_handle,
+                        (*__pdf_state).dvi_handle,
                         (opcode as ::core::ffi::c_int - FNT_DEF1) as ::core::ffi::c_uchar,
                     ));
                     current_block_72 = 1209030638129645089;
                 }
                 XDV_GLYPHS => {
                     need_XeTeX(opcode as ::core::ffi::c_int);
-                    get_and_buffer_bytes(dvi_handle, 4 as ::core::ffi::c_uint);
-                    len = get_and_buffer_unsigned_pair(dvi_handle);
-                    get_and_buffer_bytes(dvi_handle, len.wrapping_mul(10 as ::core::ffi::c_uint));
+                    get_and_buffer_bytes((*__pdf_state).dvi_handle, 4 as ::core::ffi::c_uint);
+                    len = get_and_buffer_unsigned_pair((*__pdf_state).dvi_handle);
+                    get_and_buffer_bytes(
+                        (*__pdf_state).dvi_handle,
+                        len.wrapping_mul(10 as ::core::ffi::c_uint),
+                    );
                     current_block_72 = 1209030638129645089;
                 }
                 XDV_TEXT_AND_GLYPHS => {
                     need_XeTeX(opcode as ::core::ffi::c_int);
-                    len = get_and_buffer_unsigned_pair(dvi_handle);
-                    get_and_buffer_bytes(dvi_handle, len.wrapping_mul(2 as ::core::ffi::c_uint));
-                    get_and_buffer_bytes(dvi_handle, 4 as ::core::ffi::c_uint);
-                    len = get_and_buffer_unsigned_pair(dvi_handle);
-                    get_and_buffer_bytes(dvi_handle, len.wrapping_mul(10 as ::core::ffi::c_uint));
+                    len = get_and_buffer_unsigned_pair((*__pdf_state).dvi_handle);
+                    get_and_buffer_bytes(
+                        (*__pdf_state).dvi_handle,
+                        len.wrapping_mul(2 as ::core::ffi::c_uint),
+                    );
+                    get_and_buffer_bytes((*__pdf_state).dvi_handle, 4 as ::core::ffi::c_uint);
+                    len = get_and_buffer_unsigned_pair((*__pdf_state).dvi_handle);
+                    get_and_buffer_bytes(
+                        (*__pdf_state).dvi_handle,
+                        len.wrapping_mul(10 as ::core::ffi::c_uint),
+                    );
                     current_block_72 = 1209030638129645089;
                 }
                 XDV_NATIVE_FONT_DEF => {
                     need_XeTeX(opcode as ::core::ffi::c_int);
-                    do_native_font_def(tt_get_signed_quad(dvi_handle));
+                    do_native_font_def(tt_get_signed_quad((*__pdf_state).dvi_handle));
                     current_block_72 = 1209030638129645089;
                 }
                 BEGIN_REFLECT | END_REFLECT => {
@@ -4903,12 +4941,12 @@ pub unsafe extern "C-unwind" fn dvi_scan_specials(
                 }
                 PTEXDIR => {
                     need_pTeX(opcode as ::core::ffi::c_int);
-                    get_and_buffer_bytes(dvi_handle, 1 as ::core::ffi::c_uint);
+                    get_and_buffer_bytes((*__pdf_state).dvi_handle, 1 as ::core::ffi::c_uint);
                     current_block_72 = 1209030638129645089;
                 }
                 POST => {
-                    if linear as ::core::ffi::c_int != 0
-                        && dvi_page_buf_index == 1 as ::core::ffi::c_uint
+                    if (*__pdf_state).linear as ::core::ffi::c_int != 0
+                        && (*__pdf_state).dvi_page_buf_index == 1 as ::core::ffi::c_uint
                     {
                         return;
                     }
@@ -4932,16 +4970,17 @@ pub unsafe extern "C-unwind" fn dvi_scan_specials(
 }
 #[unsafe(export_name = "__pdf_impl_dvi_parallel_eligible")]
 pub unsafe extern "C-unwind" fn dvi_parallel_eligible() -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut i: ::core::ffi::c_uint = 0;
     let mut result: ::core::ffi::c_int = 0;
-    if linear != 0 {
+    if (*__pdf_state).linear != 0 {
         return 0 as ::core::ffi::c_int;
     }
     i = 0 as ::core::ffi::c_uint;
-    while i < num_def_fonts {
-        if (*def_fonts.offset(i as isize)).native == 0 {
+    while i < (*__pdf_state).num_def_fonts {
+        if (*(*__pdf_state).def_fonts.offset(i as isize)).native == 0 {
             let mut vf: rust_input_handle_t = ttstub_input_open(
-                (*def_fonts.offset(i as isize)).font_name,
+                (*(*__pdf_state).def_fonts.offset(i as isize)).font_name,
                 TTBC_FILE_FORMAT_VF,
                 0 as ::core::ffi::c_int,
             );
@@ -4953,22 +4992,22 @@ pub unsafe extern "C-unwind" fn dvi_parallel_eligible() -> ::core::ffi::c_int {
         i = i.wrapping_add(1);
     }
     result = tt_pdf_preflight_pages(
-        dvi_handle,
-        page_loc,
-        num_pages as size_t,
-        dvi_file_size,
+        (*__pdf_state).dvi_handle,
+        (*__pdf_state).page_loc,
+        (*__pdf_state).num_pages as size_t,
+        (*__pdf_state).dvi_file_size,
         (dpx_conf.compat_mode as ::core::ffi::c_uint
             == dpx_mode_xdv_mode as ::core::ffi::c_int as ::core::ffi::c_uint)
             as ::core::ffi::c_int,
     );
     if result >= 0 as ::core::ffi::c_int {
-        buffered_page = -(1 as ::core::ffi::c_int);
+        (*__pdf_state).buffered_page = -(1 as ::core::ffi::c_int);
         return result;
     }
-    eligibility_only = 1 as ::core::ffi::c_int;
-    parallel_eligible = 1 as ::core::ffi::c_int;
+    (*__pdf_state).eligibility_only = 1 as ::core::ffi::c_int;
+    (*__pdf_state).parallel_eligible = 1 as ::core::ffi::c_int;
     i = 0 as ::core::ffi::c_uint;
-    while i < num_pages && parallel_eligible != 0 {
+    while i < (*__pdf_state).num_pages && (*__pdf_state).parallel_eligible != 0 {
         dvi_scan_specials(
             i as ::core::ffi::c_int,
             ::core::ptr::null_mut::<::core::ffi::c_double>(),
@@ -4993,26 +5032,26 @@ pub unsafe extern "C-unwind" fn dvi_parallel_eligible() -> ::core::ffi::c_int {
         );
         i = i.wrapping_add(1);
     }
-    eligibility_only = 0 as ::core::ffi::c_int;
-    buffered_page = -(1 as ::core::ffi::c_int);
-    return parallel_eligible;
+    (*__pdf_state).eligibility_only = 0 as ::core::ffi::c_int;
+    (*__pdf_state).buffered_page = -(1 as ::core::ffi::c_int);
+    return (*__pdf_state).parallel_eligible;
 }
 #[unsafe(export_name = "__pdf_impl_dvi_reset_global_state")]
 pub unsafe extern "C-unwind" fn dvi_reset_global_state() {
-    buffered_page = -(1 as ::core::ffi::c_int);
-    eligibility_only = 0 as ::core::ffi::c_int;
-    parallel_eligible = 1 as ::core::ffi::c_int;
-    processing_page = 0 as ::core::ffi::c_int;
-    num_def_fonts = 0 as ::core::ffi::c_uint;
-    max_def_fonts = 0 as ::core::ffi::c_uint;
-    compute_boxes = 0 as ::core::ffi::c_int;
-    link_annot = 1 as ::core::ffi::c_int;
-    num_loaded_fonts = 0 as ::core::ffi::c_uint;
-    max_loaded_fonts = 0 as ::core::ffi::c_uint;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).buffered_page = -(1 as ::core::ffi::c_int);
+    (*__pdf_state).eligibility_only = 0 as ::core::ffi::c_int;
+    (*__pdf_state).parallel_eligible = 1 as ::core::ffi::c_int;
+    (*__pdf_state).processing_page = 0 as ::core::ffi::c_int;
+    (*__pdf_state).num_def_fonts = 0 as ::core::ffi::c_uint;
+    (*__pdf_state).max_def_fonts = 0 as ::core::ffi::c_uint;
+    (*__pdf_state).compute_boxes = 0 as ::core::ffi::c_int;
+    (*__pdf_state).link_annot = 1 as ::core::ffi::c_int;
+    (*__pdf_state).num_loaded_fonts = 0 as ::core::ffi::c_uint;
+    (*__pdf_state).max_loaded_fonts = 0 as ::core::ffi::c_uint;
 }
 pub const UINT_MAX: ::core::ffi::c_uint = 0xffffffff as ::core::ffi::c_uint;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcpy(
         __dst: *mut ::core::ffi::c_void,
         __src: *const ::core::ffi::c_void,
@@ -5549,5 +5588,409 @@ pub unsafe extern "C" fn __pdf_entry_dvi_reset_global_state() -> i32 {
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    dvi_handle: rust_input_handle_t,
+    linear: ::core::ffi::c_char,
+    page_loc: *mut uint32_t,
+    num_pages: ::core::ffi::c_uint,
+    dvi_file_size: uint32_t,
+    dvi_info: dvi_header,
+    dev_origin_y: ::core::ffi::c_double,
+    dev_origin_x: ::core::ffi::c_double,
+    lr_state: dvi_lr,
+    lr_mode: ::core::ffi::c_int,
+    lr_width: uint32_t,
+    lr_width_stack: [uint32_t; 256],
+    lr_width_stack_depth: ::core::ffi::c_uint,
+    loaded_fonts: *mut loaded_font,
+    max_loaded_fonts: ::core::ffi::c_uint,
+    num_loaded_fonts: ::core::ffi::c_uint,
+    def_fonts: *mut font_def,
+    num_def_fonts: ::core::ffi::c_uint,
+    max_def_fonts: ::core::ffi::c_uint,
+    compute_boxes: ::core::ffi::c_int,
+    link_annot: ::core::ffi::c_int,
+    catch_phantom: ::core::ffi::c_int,
+    phantom_height: ::core::ffi::c_double,
+    phantom_depth: ::core::ffi::c_double,
+    dvi_page_buffer: *mut ::core::ffi::c_uchar,
+    dvi_page_buf_size: ::core::ffi::c_uint,
+    dvi_page_buf_index: ::core::ffi::c_uint,
+    post_id_byte: ::core::ffi::c_int,
+    pre_id_byte: ::core::ffi::c_int,
+    is_ptex: ::core::ffi::c_int,
+    has_ptex: ::core::ffi::c_int,
+    total_mag: ::core::ffi::c_double,
+    dvi2pts: ::core::ffi::c_double,
+    dvi_state: dvi_registers,
+    dvi_stack: [dvi_registers; 256],
+    dvi_stack_depth: ::core::ffi::c_int,
+    current_font: ::core::ffi::c_int,
+    processing_page: ::core::ffi::c_int,
+    marked_depth: ::core::ffi::c_int,
+    tagged_depth: ::core::ffi::c_int,
+    compensation: spt_coord,
+    saved_dvi_font: [::core::ffi::c_int; 16],
+    num_saved_fonts: ::core::ffi::c_uint,
+    buffered_page: ::core::ffi::c_int,
+    eligibility_only: ::core::ffi::c_int,
+    parallel_eligible: ::core::ffi::c_int,
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                dvi_handle: INVALID_HANDLE,
+                linear: 0 as ::core::ffi::c_char,
+                page_loc: ::core::ptr::null::<uint32_t>() as *mut uint32_t,
+                num_pages: 0 as ::core::ffi::c_uint,
+                dvi_file_size: 0 as uint32_t,
+                dvi_info: dvi_header {
+                    unit_num: 25400000 as uint32_t,
+                    unit_den: 473628672 as uint32_t,
+                    mag: 1000 as uint32_t,
+                    media_width: 0 as uint32_t,
+                    media_height: 0 as uint32_t,
+                    stackdepth: 0 as ::core::ffi::c_uint,
+                    comment: [
+                        '\0' as i32 as ::core::ffi::c_char,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                    ],
+                },
+                dev_origin_y: 770.0f64,
+                dev_origin_x: 72.0f64,
+                lr_state: dvi_lr {
+                    state: 0,
+                    font: 0,
+                    buf_index: 0,
+                },
+                lr_mode: 0,
+                lr_width: 0,
+                lr_width_stack: [0; 256],
+                lr_width_stack_depth: 0 as ::core::ffi::c_uint,
+                loaded_fonts: ::core::ptr::null::<loaded_font>() as *mut loaded_font,
+                max_loaded_fonts: 0 as ::core::ffi::c_uint,
+                num_loaded_fonts: 0 as ::core::ffi::c_uint,
+                def_fonts: ::core::ptr::null::<font_def>() as *mut font_def,
+                num_def_fonts: 0 as ::core::ffi::c_uint,
+                max_def_fonts: 0 as ::core::ffi::c_uint,
+                compute_boxes: 0 as ::core::ffi::c_int,
+                link_annot: 1 as ::core::ffi::c_int,
+                catch_phantom: 0 as ::core::ffi::c_int,
+                phantom_height: 0.0f64,
+                phantom_depth: 0.0f64,
+                dvi_page_buffer: ::core::ptr::null::<::core::ffi::c_uchar>()
+                    as *mut ::core::ffi::c_uchar,
+                dvi_page_buf_size: 0,
+                dvi_page_buf_index: 0,
+                post_id_byte: 0,
+                pre_id_byte: 0,
+                is_ptex: 0 as ::core::ffi::c_int,
+                has_ptex: 0 as ::core::ffi::c_int,
+                total_mag: 1.0f64,
+                dvi2pts: 1.52018f64,
+                dvi_state: dvi_registers {
+                    h: 0,
+                    v: 0,
+                    w: 0,
+                    x: 0,
+                    y: 0,
+                    z: 0,
+                    d: 0,
+                },
+                dvi_stack: [dvi_registers {
+                    h: 0,
+                    v: 0,
+                    w: 0,
+                    x: 0,
+                    y: 0,
+                    z: 0,
+                    d: 0,
+                }; 256],
+                dvi_stack_depth: 0 as ::core::ffi::c_int,
+                current_font: -(1 as ::core::ffi::c_int),
+                processing_page: 0 as ::core::ffi::c_int,
+                marked_depth: 0 as ::core::ffi::c_int,
+                tagged_depth: -(1 as ::core::ffi::c_int),
+                compensation: spt_coord {
+                    x: 0 as spt_t,
+                    y: 0 as spt_t,
+                },
+                saved_dvi_font: [0; 16],
+                num_saved_fonts: 0 as ::core::ffi::c_uint,
+                buffered_page: -(1 as ::core::ffi::c_int),
+                eligibility_only: 0 as ::core::ffi::c_int,
+                parallel_eligible: 1 as ::core::ffi::c_int,
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_dvi
+            .pointer
     }
 }

@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -1203,7 +1204,6 @@ pub unsafe extern "C-unwind" fn parse_float_decimal(
     return q;
 }
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcmp(
         __s1: *const ::core::ffi::c_void,
         __s2: *const ::core::ffi::c_void,
@@ -1612,6 +1612,7 @@ pub unsafe extern "C" fn __pdf_entry_parse_c_string(
     match crate::backend::runtime::boundary(|| unsafe { parse_c_string(pp, endptr) }) {
         Ok(value) => {
             unsafe {
+                crate::compat::allocation::release(value.cast());
                 _result.write(value);
             }
             0
@@ -1628,6 +1629,7 @@ pub unsafe extern "C" fn __pdf_entry_parse_c_ident(
     match crate::backend::runtime::boundary(|| unsafe { parse_c_ident(pp, endptr) }) {
         Ok(value) => {
             unsafe {
+                crate::compat::allocation::release(value.cast());
                 _result.write(value);
             }
             0
@@ -1644,6 +1646,7 @@ pub unsafe extern "C" fn __pdf_entry_parse_float_decimal(
     match crate::backend::runtime::boundary(|| unsafe { parse_float_decimal(pp, endptr) }) {
         Ok(value) => {
             unsafe {
+                crate::compat::allocation::release(value.cast());
                 _result.write(value);
             }
             0

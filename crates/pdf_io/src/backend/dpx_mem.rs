@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::{free, malloc, realloc};
 unsafe extern "C-unwind" {
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
 }
@@ -65,11 +66,7 @@ pub unsafe extern "C-unwind" fn renew(
         return NULL;
     };
 }
-unsafe extern "C" {
-    fn malloc(__size: size_t) -> *mut ::core::ffi::c_void;
-    fn free(_: *mut ::core::ffi::c_void);
-    fn realloc(__ptr: *mut ::core::ffi::c_void, __size: size_t) -> *mut ::core::ffi::c_void;
-}
+unsafe extern "C" {}
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_new(
     mut size: uint32_t,
@@ -78,6 +75,7 @@ pub unsafe extern "C" fn __pdf_entry_new(
     match crate::backend::runtime::boundary(|| unsafe { new(size) }) {
         Ok(value) => {
             unsafe {
+                crate::compat::allocation::release(value);
                 _result.write(value);
             }
             0
@@ -94,6 +92,7 @@ pub unsafe extern "C" fn __pdf_entry_renew(
     match crate::backend::runtime::boundary(|| unsafe { renew(mem, size) }) {
         Ok(value) => {
             unsafe {
+                crate::compat::allocation::release(value);
                 _result.write(value);
             }
             0

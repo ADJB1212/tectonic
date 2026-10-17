@@ -38,8 +38,10 @@ pub use pipeline::{PdfBuildStatistics, PdfRuntime};
 /// # Safety
 /// Native code must no longer use pointers borrowed from Rust-owned input storage.
 pub unsafe fn clear_input_state() {
-    preflight::clear_page_scanner();
-    fontmap::tt_fontmap_clear();
+    if compat::document::active() {
+        preflight::clear_page_scanner();
+        fontmap::tt_fontmap_clear();
+    }
 }
 
 /// Import things from our bridge crates to ensure that we actually link with

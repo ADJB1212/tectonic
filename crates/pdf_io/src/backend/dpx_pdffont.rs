@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -426,35 +427,37 @@ pub const FONT_STYLE_NONE: ::core::ffi::c_int = FONTMAP_STYLE_NONE;
 pub unsafe extern "C-unwind" fn pdf_font_set_dpi(mut font_dpi: ::core::ffi::c_int) {
     PKFont_set_dpi(font_dpi);
 }
-static mut unique_tag_state: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-static mut unique_tags_deterministic: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+
 #[unsafe(export_name = "__pdf_impl_pdf_font_reset_unique_tag_state")]
 pub unsafe extern "C-unwind" fn pdf_font_reset_unique_tag_state() {
-    unique_tag_state = 1 as ::core::ffi::c_int;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).unique_tag_state = 1 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_font_set_deterministic_unique_tags")]
 pub unsafe extern "C-unwind" fn pdf_font_set_deterministic_unique_tags(
     mut value: ::core::ffi::c_int,
 ) {
-    unique_tags_deterministic = value;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).unique_tags_deterministic = value;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_font_make_uniqueTag")]
 pub unsafe extern "C-unwind" fn pdf_font_make_uniqueTag(mut tag: *mut ::core::ffi::c_char) {
+    let __pdf_state = unsafe { document_state() };
     let mut i: ::core::ffi::c_int = 0;
     let mut ch: ::core::ffi::c_char = 0;
-    if unique_tags_deterministic != 0 {
+    if (*__pdf_state).unique_tags_deterministic != 0 {
         snprintf(
             tag,
             7 as size_t,
             b"%06d\0" as *const u8 as *const ::core::ffi::c_char,
-            unique_tag_state,
+            (*__pdf_state).unique_tag_state,
         );
-        unique_tag_state += 1;
+        (*__pdf_state).unique_tag_state += 1;
         return;
     }
-    if unique_tag_state != 0 {
+    if (*__pdf_state).unique_tag_state != 0 {
         init_genrand(0 as ::core::ffi::c_ulonglong);
-        unique_tag_state = 0 as ::core::ffi::c_int;
+        (*__pdf_state).unique_tag_state = 0 as ::core::ffi::c_int;
     }
     i = 0 as ::core::ffi::c_int;
     while i < 6 as ::core::ffi::c_int {
@@ -635,14 +638,12 @@ unsafe extern "C-unwind" fn pdf_clean_font_struct(mut font: *mut pdf_font) {
     (*font).cid.usedchars_v = ::core::ptr::null_mut::<::core::ffi::c_char>();
 }
 pub const CACHE_ALLOC_SIZE: ::core::ffi::c_uint = 16 as ::core::ffi::c_uint;
-static mut font_cache: C2RustUnnamed_2 = C2RustUnnamed_2 {
-    count: 0 as ::core::ffi::c_int,
-    capacity: 0 as ::core::ffi::c_int,
-    fonts: ::core::ptr::null::<pdf_font>() as *mut pdf_font,
-};
+
 #[unsafe(export_name = "__pdf_impl_pdf_init_fonts")]
 pub unsafe extern "C-unwind" fn pdf_init_fonts() {
-    if !font_cache.fonts.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
+    let __pdf_state = unsafe { document_state() };
+    if !(*__pdf_state).font_cache.fonts.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0
+    {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"font_cache.fonts == NULL\0" as *const u8 as *const ::core::ffi::c_char
@@ -652,21 +653,23 @@ pub unsafe extern "C-unwind" fn pdf_init_fonts() {
     agl_init_map();
     CMap_cache_init();
     pdf_init_encodings();
-    font_cache.count = 0 as ::core::ffi::c_int;
-    font_cache.capacity = CACHE_ALLOC_SIZE as ::core::ffi::c_int;
-    font_cache.fonts = new((font_cache.capacity as uint32_t as usize)
+    (*__pdf_state).font_cache.count = 0 as ::core::ffi::c_int;
+    (*__pdf_state).font_cache.capacity = CACHE_ALLOC_SIZE as ::core::ffi::c_int;
+    (*__pdf_state).font_cache.fonts = new(((*__pdf_state).font_cache.capacity as uint32_t as usize)
         .wrapping_mul(::core::mem::size_of::<pdf_font>() as usize)
         as uint32_t) as *mut pdf_font;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_abort_fonts")]
 pub unsafe extern "C-unwind" fn pdf_abort_fonts() {
+    let __pdf_state = unsafe { document_state() };
     let mut i: ::core::ffi::c_int = 0;
-    if font_cache.fonts.is_null() {
+    if (*__pdf_state).font_cache.fonts.is_null() {
         return;
     }
     i = 0 as ::core::ffi::c_int;
-    while i < font_cache.count {
-        let mut font: *mut pdf_font = font_cache.fonts.offset(i as isize) as *mut pdf_font;
+    while i < (*__pdf_state).font_cache.count {
+        let mut font: *mut pdf_font =
+            (*__pdf_state).font_cache.fonts.offset(i as isize) as *mut pdf_font;
         if (*font).flags & (PDF_FONT_FLAG_IS_ALIAS | PDF_FONT_FLAG_IS_REENCODE) == 0 {
             pdf_release_obj((*font).resource);
             pdf_release_obj((*font).descriptor);
@@ -678,20 +681,24 @@ pub unsafe extern "C-unwind" fn pdf_abort_fonts() {
         pdf_clean_font_struct(font);
         i += 1;
     }
-    free(font_cache.fonts as *mut ::core::ffi::c_void);
-    font_cache.fonts = ::core::ptr::null_mut::<pdf_font>();
-    font_cache.capacity = 0 as ::core::ffi::c_int;
-    font_cache.count = font_cache.capacity;
+    free((*__pdf_state).font_cache.fonts as *mut ::core::ffi::c_void);
+    (*__pdf_state).font_cache.fonts = ::core::ptr::null_mut::<pdf_font>();
+    (*__pdf_state).font_cache.capacity = 0 as ::core::ffi::c_int;
+    (*__pdf_state).font_cache.count = (*__pdf_state).font_cache.capacity;
     CMap_cache_close();
     pdf_close_encodings();
     agl_close_map();
 }
 unsafe extern "C-unwind" fn GET_FONT(mut font_id: ::core::ffi::c_int) -> *mut pdf_font {
+    let __pdf_state = unsafe { document_state() };
     let mut font: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
-    if font_id >= 0 as ::core::ffi::c_int && font_id < font_cache.count {
-        font = font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
+    if font_id >= 0 as ::core::ffi::c_int && font_id < (*__pdf_state).font_cache.count {
+        font = (*__pdf_state).font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
         if (*font).flags & PDF_FONT_FLAG_IS_ALIAS != 0 {
-            font = font_cache.fonts.offset((*font).font_id as isize) as *mut pdf_font;
+            font = (*__pdf_state)
+                .font_cache
+                .fonts
+                .offset((*font).font_id as isize) as *mut pdf_font;
         }
     }
     return font;
@@ -700,34 +707,37 @@ unsafe extern "C-unwind" fn GET_FONT(mut font_id: ::core::ffi::c_int) -> *mut pd
 pub unsafe extern "C-unwind" fn pdf_get_font_data(
     mut font_id: ::core::ffi::c_int,
 ) -> *mut pdf_font {
-    if font_id < 0 as ::core::ffi::c_int || font_id >= font_cache.count {
+    let __pdf_state = unsafe { document_state() };
+    if font_id < 0 as ::core::ffi::c_int || font_id >= (*__pdf_state).font_cache.count {
         pdf_abort!(
             b"Invalid font ID: %d\0" as *const u8 as *const ::core::ffi::c_char,
             font_id,
         );
     }
-    return font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
+    return (*__pdf_state).font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_get_font_ident")]
 pub unsafe extern "C-unwind" fn pdf_get_font_ident(
     mut font_id: ::core::ffi::c_int,
 ) -> *mut ::core::ffi::c_char {
+    let __pdf_state = unsafe { document_state() };
     let mut font: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
-    if font_id < 0 as ::core::ffi::c_int || font_id >= font_cache.count {
+    if font_id < 0 as ::core::ffi::c_int || font_id >= (*__pdf_state).font_cache.count {
         pdf_abort!(
             b"Invalid font ID: %d\0" as *const u8 as *const ::core::ffi::c_char,
             font_id,
         );
     }
-    font = font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
+    font = (*__pdf_state).font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
     return (*font).ident;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_get_font_reference")]
 pub unsafe extern "C-unwind" fn pdf_get_font_reference(
     mut font_id: ::core::ffi::c_int,
 ) -> *mut pdf_obj {
+    let __pdf_state = unsafe { document_state() };
     let mut font: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
-    if font_id < 0 as ::core::ffi::c_int || font_id >= font_cache.count {
+    if font_id < 0 as ::core::ffi::c_int || font_id >= (*__pdf_state).font_cache.count {
         pdf_abort!(
             b"Invalid font ID: %d\0" as *const u8 as *const ::core::ffi::c_char,
             font_id,
@@ -763,8 +773,9 @@ pub unsafe extern "C-unwind" fn pdf_get_font_reference(
 pub unsafe extern "C-unwind" fn pdf_get_font_resource(
     mut font_id: ::core::ffi::c_int,
 ) -> *mut pdf_obj {
+    let __pdf_state = unsafe { document_state() };
     let mut font: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
-    if font_id < 0 as ::core::ffi::c_int || font_id >= font_cache.count {
+    if font_id < 0 as ::core::ffi::c_int || font_id >= (*__pdf_state).font_cache.count {
         pdf_abort!(
             b"Invalid font ID: %d\0" as *const u8 as *const ::core::ffi::c_char,
             font_id,
@@ -783,8 +794,9 @@ pub unsafe extern "C-unwind" fn pdf_get_font_resource(
 pub unsafe extern "C-unwind" fn pdf_get_font_usedchars(
     mut font_id: ::core::ffi::c_int,
 ) -> *mut ::core::ffi::c_char {
+    let __pdf_state = unsafe { document_state() };
     let mut font: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
-    if font_id < 0 as ::core::ffi::c_int || font_id >= font_cache.count {
+    if font_id < 0 as ::core::ffi::c_int || font_id >= (*__pdf_state).font_cache.count {
         pdf_abort!(
             b"Invalid font ID: %d\0" as *const u8 as *const ::core::ffi::c_char,
             font_id,
@@ -813,8 +825,9 @@ pub unsafe extern "C-unwind" fn pdf_get_font_usedchars(
 pub unsafe extern "C-unwind" fn pdf_get_font_wmode(
     mut font_id: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut font: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
-    if font_id < 0 as ::core::ffi::c_int || font_id >= font_cache.count {
+    if font_id < 0 as ::core::ffi::c_int || font_id >= (*__pdf_state).font_cache.count {
         pdf_abort!(
             b"Invalid font ID: %d\0" as *const u8 as *const ::core::ffi::c_char,
             font_id,
@@ -834,8 +847,9 @@ pub unsafe extern "C-unwind" fn pdf_get_font_wmode(
 pub unsafe extern "C-unwind" fn pdf_get_font_subtype(
     mut font_id: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut font: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
-    if font_id < 0 as ::core::ffi::c_int || font_id >= font_cache.count {
+    if font_id < 0 as ::core::ffi::c_int || font_id >= (*__pdf_state).font_cache.count {
         pdf_abort!(
             b"Invalid font ID: %d\0" as *const u8 as *const ::core::ffi::c_char,
             font_id,
@@ -851,8 +865,9 @@ pub unsafe extern "C-unwind" fn pdf_get_font_subtype(
 pub unsafe extern "C-unwind" fn pdf_get_font_encoding(
     mut font_id: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut font: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
-    if font_id < 0 as ::core::ffi::c_int || font_id >= font_cache.count {
+    if font_id < 0 as ::core::ffi::c_int || font_id >= (*__pdf_state).font_cache.count {
         pdf_abort!(
             b"Invalid font ID: %d\0" as *const u8 as *const ::core::ffi::c_char,
             font_id,
@@ -866,15 +881,16 @@ pub unsafe extern "C-unwind" fn pdf_font_resource_name(
     mut font_id: ::core::ffi::c_int,
     mut buff: *mut ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut len: ::core::ffi::c_int = 0;
     let mut font: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
-    if font_id < 0 as ::core::ffi::c_int || font_id >= font_cache.count {
+    if font_id < 0 as ::core::ffi::c_int || font_id >= (*__pdf_state).font_cache.count {
         pdf_abort!(
             b"Invalid font ID: %d\0" as *const u8 as *const ::core::ffi::c_char,
             font_id,
         );
     }
-    font = font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
+    font = (*__pdf_state).font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
     if (*font).flags & PDF_FONT_FLAG_IS_ALIAS != 0 {
         font_id = (*font).font_id;
     }
@@ -953,11 +969,12 @@ unsafe extern "C-unwind" fn try_load_ToUnicode_CMap(mut font: *mut pdf_font) -> 
 }
 #[unsafe(export_name = "__pdf_impl_pdf_close_fonts")]
 pub unsafe extern "C-unwind" fn pdf_close_fonts() {
+    let __pdf_state = unsafe { document_state() };
     let mut font_id: ::core::ffi::c_int = 0;
     font_id = 0 as ::core::ffi::c_int;
-    while font_id < font_cache.count {
+    while font_id < (*__pdf_state).font_cache.count {
         let mut font: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
-        font = font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
+        font = (*__pdf_state).font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
         if !((*font).flags & PDF_FONT_FLAG_IS_ALIAS != 0
             || (*font).flags & PDF_FONT_FLAG_IS_REENCODE != 0
             || (*font).reference.is_null())
@@ -1055,8 +1072,9 @@ pub unsafe extern "C-unwind" fn pdf_close_fonts() {
     }
     pdf_encoding_complete();
     font_id = 0 as ::core::ffi::c_int;
-    while font_id < font_cache.count {
-        let mut font_0: *mut pdf_font = font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
+    while font_id < (*__pdf_state).font_cache.count {
+        let mut font_0: *mut pdf_font =
+            (*__pdf_state).font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
         if !((*font_0).flags & PDF_FONT_FLAG_IS_ALIAS != 0
             || (*font_0).flags & PDF_FONT_FLAG_IS_REENCODE != 0
             || (*font_0).reference.is_null())
@@ -1071,9 +1089,9 @@ pub unsafe extern "C-unwind" fn pdf_close_fonts() {
         font_id += 1;
     }
     font_id = 0 as ::core::ffi::c_int;
-    while font_id < font_cache.count {
+    while font_id < (*__pdf_state).font_cache.count {
         let mut font_1: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
-        font_1 = font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
+        font_1 = (*__pdf_state).font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
         if (*font_1).flags & PDF_FONT_FLAG_IS_ALIAS != 0
             || (*font_1).flags & PDF_FONT_FLAG_IS_REENCODE != 0
             || (*font_1).reference.is_null()
@@ -1143,10 +1161,10 @@ pub unsafe extern "C-unwind" fn pdf_close_fonts() {
         }
         font_id += 1;
     }
-    free(font_cache.fonts as *mut ::core::ffi::c_void);
-    font_cache.fonts = ::core::ptr::null_mut::<pdf_font>();
-    font_cache.count = 0 as ::core::ffi::c_int;
-    font_cache.capacity = 0 as ::core::ffi::c_int;
+    free((*__pdf_state).font_cache.fonts as *mut ::core::ffi::c_void);
+    (*__pdf_state).font_cache.fonts = ::core::ptr::null_mut::<pdf_font>();
+    (*__pdf_state).font_cache.count = 0 as ::core::ffi::c_int;
+    (*__pdf_state).font_cache.capacity = 0 as ::core::ffi::c_int;
     CMap_cache_close();
     pdf_close_encodings();
     agl_close_map();
@@ -1156,12 +1174,13 @@ pub unsafe extern "C-unwind" fn pdf_font_findresource(
     mut ident: *const ::core::ffi::c_char,
     mut scale: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut font_id: ::core::ffi::c_int = 0;
     let mut found: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     font_id = 0 as ::core::ffi::c_int;
-    while font_id < font_cache.count {
+    while font_id < (*__pdf_state).font_cache.count {
         let mut font: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
-        font = font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
+        font = (*__pdf_state).font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
         match (*font).subtype {
             PDF_FONT_FONTTYPE_TYPE1
             | PDF_FONT_FONTTYPE_TYPE1C
@@ -1203,25 +1222,27 @@ unsafe extern "C-unwind" fn create_font_alias(
     mut ident: *const ::core::ffi::c_char,
     mut font_id: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut this_id: ::core::ffi::c_int = 0;
     let mut font: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
     let mut src: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
-    if font_id < 0 as ::core::ffi::c_int || font_id >= font_cache.count {
+    if font_id < 0 as ::core::ffi::c_int || font_id >= (*__pdf_state).font_cache.count {
         return -(1 as ::core::ffi::c_int);
     }
-    src = font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
-    this_id = font_cache.count;
-    if font_cache.count >= font_cache.capacity {
-        font_cache.capacity = (font_cache.capacity as ::core::ffi::c_uint)
-            .wrapping_add(CACHE_ALLOC_SIZE) as ::core::ffi::c_int
-            as ::core::ffi::c_int;
-        font_cache.fonts = renew(
-            font_cache.fonts as *mut ::core::ffi::c_void,
-            (font_cache.capacity as uint32_t as usize)
+    src = (*__pdf_state).font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
+    this_id = (*__pdf_state).font_cache.count;
+    if (*__pdf_state).font_cache.count >= (*__pdf_state).font_cache.capacity {
+        (*__pdf_state).font_cache.capacity =
+            ((*__pdf_state).font_cache.capacity as ::core::ffi::c_uint)
+                .wrapping_add(CACHE_ALLOC_SIZE) as ::core::ffi::c_int
+                as ::core::ffi::c_int;
+        (*__pdf_state).font_cache.fonts = renew(
+            (*__pdf_state).font_cache.fonts as *mut ::core::ffi::c_void,
+            ((*__pdf_state).font_cache.capacity as uint32_t as usize)
                 .wrapping_mul(::core::mem::size_of::<pdf_font>() as usize) as uint32_t,
         ) as *mut pdf_font;
     }
-    font = font_cache.fonts.offset(this_id as isize) as *mut pdf_font;
+    font = (*__pdf_state).font_cache.fonts.offset(this_id as isize) as *mut pdf_font;
     pdf_init_font_struct(font);
     (*font).ident = new(
         (strlen(ident).wrapping_add(1 as size_t) as uint32_t as usize)
@@ -1233,7 +1254,7 @@ unsafe extern "C-unwind" fn create_font_alias(
     (*font).subtype = (*src).subtype;
     (*font).encoding_id = (*src).encoding_id;
     (*font).flags |= PDF_FONT_FLAG_IS_ALIAS;
-    font_cache.count += 1;
+    (*__pdf_state).font_cache.count += 1;
     return this_id;
 }
 unsafe extern "C-unwind" fn create_font_reencoded(
@@ -1241,20 +1262,24 @@ unsafe extern "C-unwind" fn create_font_reencoded(
     mut font_id: ::core::ffi::c_int,
     mut cmap_id: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut this_id: ::core::ffi::c_int = 0;
     let mut font: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
-    if font_cache.count + 1 as ::core::ffi::c_int >= font_cache.capacity {
-        font_cache.capacity = (font_cache.capacity as ::core::ffi::c_uint)
-            .wrapping_add(CACHE_ALLOC_SIZE) as ::core::ffi::c_int
-            as ::core::ffi::c_int;
-        font_cache.fonts = renew(
-            font_cache.fonts as *mut ::core::ffi::c_void,
-            (font_cache.capacity as uint32_t as usize)
+    if (*__pdf_state).font_cache.count + 1 as ::core::ffi::c_int
+        >= (*__pdf_state).font_cache.capacity
+    {
+        (*__pdf_state).font_cache.capacity =
+            ((*__pdf_state).font_cache.capacity as ::core::ffi::c_uint)
+                .wrapping_add(CACHE_ALLOC_SIZE) as ::core::ffi::c_int
+                as ::core::ffi::c_int;
+        (*__pdf_state).font_cache.fonts = renew(
+            (*__pdf_state).font_cache.fonts as *mut ::core::ffi::c_void,
+            ((*__pdf_state).font_cache.capacity as uint32_t as usize)
                 .wrapping_mul(::core::mem::size_of::<pdf_font>() as usize) as uint32_t,
         ) as *mut pdf_font;
     }
-    this_id = font_cache.count;
-    font = font_cache.fonts.offset(this_id as isize) as *mut pdf_font;
+    this_id = (*__pdf_state).font_cache.count;
+    font = (*__pdf_state).font_cache.fonts.offset(this_id as isize) as *mut pdf_font;
     pdf_init_font_struct(font);
     (*font).ident = new(
         (strlen(ident).wrapping_add(1 as size_t) as uint32_t as usize)
@@ -1267,7 +1292,7 @@ unsafe extern "C-unwind" fn create_font_reencoded(
     (*font).encoding_id = cmap_id;
     (*font).flags |= PDF_FONT_FLAG_IS_REENCODE;
     (*font).flags |= PDF_FONT_FLAG_USEDCHAR_SHARED;
-    font_cache.count += 1;
+    (*__pdf_state).font_cache.count += 1;
     return this_id;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_font_load_font")]
@@ -1276,6 +1301,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_font(
     mut font_scale: ::core::ffi::c_double,
     mut mrec: *const fontmap_rec,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut font_id: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut font: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
     let mut encoding_id: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
@@ -1377,16 +1403,16 @@ pub unsafe extern "C-unwind" fn pdf_font_load_font(
         };
         wmode_0 = CMap_get_wmode(cmap);
         cid_id = pdf_font_cidfont_lookup_cache(
-            font_cache.fonts,
-            font_cache.count,
+            (*__pdf_state).font_cache.fonts,
+            (*__pdf_state).font_cache.count,
             (*mrec).font_name,
             csi,
             &raw const (*mrec).opt,
         );
         if cid_id >= 0 as ::core::ffi::c_int {
             font_id = 0 as ::core::ffi::c_int;
-            while font_id < font_cache.count {
-                font = font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
+            while font_id < (*__pdf_state).font_cache.count {
+                font = (*__pdf_state).font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
                 if !((*font).subtype != PDF_FONT_FONTTYPE_TYPE0) {
                     if (*font).type0.wmode == wmode_0 && (*font).type0.descendant == cid_id {
                         break;
@@ -1394,8 +1420,8 @@ pub unsafe extern "C-unwind" fn pdf_font_load_font(
                 }
                 font_id += 1;
             }
-            if font_id >= 0 as ::core::ffi::c_int && font_id < font_cache.count {
-                font = font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
+            if font_id >= 0 as ::core::ffi::c_int && font_id < (*__pdf_state).font_cache.count {
+                font = (*__pdf_state).font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
                 if (*font).encoding_id == cmap_id {
                     if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
                         pdf_message!(
@@ -1423,21 +1449,24 @@ pub unsafe extern "C-unwind" fn pdf_font_load_font(
                 }
             }
         }
-        if font_cache.count + 1 as ::core::ffi::c_int >= font_cache.capacity {
-            font_cache.capacity = (font_cache.capacity as ::core::ffi::c_uint)
-                .wrapping_add(CACHE_ALLOC_SIZE)
-                as ::core::ffi::c_int as ::core::ffi::c_int;
-            font_cache.fonts = renew(
-                font_cache.fonts as *mut ::core::ffi::c_void,
-                (font_cache.capacity as uint32_t as usize)
+        if (*__pdf_state).font_cache.count + 1 as ::core::ffi::c_int
+            >= (*__pdf_state).font_cache.capacity
+        {
+            (*__pdf_state).font_cache.capacity =
+                ((*__pdf_state).font_cache.capacity as ::core::ffi::c_uint)
+                    .wrapping_add(CACHE_ALLOC_SIZE) as ::core::ffi::c_int
+                    as ::core::ffi::c_int;
+            (*__pdf_state).font_cache.fonts = renew(
+                (*__pdf_state).font_cache.fonts as *mut ::core::ffi::c_void,
+                ((*__pdf_state).font_cache.capacity as uint32_t as usize)
                     .wrapping_mul(::core::mem::size_of::<pdf_font>() as usize)
                     as uint32_t,
             ) as *mut pdf_font;
         }
         if cid_id < 0 as ::core::ffi::c_int {
             let mut cidfont: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
-            cid_id = font_cache.count;
-            cidfont = font_cache.fonts.offset(cid_id as isize) as *mut pdf_font;
+            cid_id = (*__pdf_state).font_cache.count;
+            cidfont = (*__pdf_state).font_cache.fonts.offset(cid_id as isize) as *mut pdf_font;
             pdf_init_font_struct(cidfont);
             if pdf_font_open_cidfont(cidfont, fontname, csi, &raw const (*mrec).opt)
                 < 0 as ::core::ffi::c_int
@@ -1445,10 +1474,10 @@ pub unsafe extern "C-unwind" fn pdf_font_load_font(
                 pdf_clean_font_struct(cidfont);
                 return -(1 as ::core::ffi::c_int);
             }
-            font_cache.count += 1;
+            (*__pdf_state).font_cache.count += 1;
         }
-        font_id = font_cache.count;
-        font = font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
+        font_id = (*__pdf_state).font_cache.count;
+        font = (*__pdf_state).font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
         pdf_init_font_struct(font);
         if pdf_font_open_type0(font, cid_id, wmode_0) < 0 as ::core::ffi::c_int {
             pdf_clean_font_struct(font);
@@ -1462,7 +1491,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_font(
         strcpy((*font).ident, ident);
         (*font).subtype = PDF_FONT_FONTTYPE_TYPE0;
         (*font).encoding_id = cmap_id;
-        font_cache.count += 1;
+        (*__pdf_state).font_cache.count += 1;
         if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
             pdf_message!(b"\n\0" as *const u8 as *const ::core::ffi::c_char);
             pdf_message!(
@@ -1483,8 +1512,8 @@ pub unsafe extern "C-unwind" fn pdf_font_load_font(
         }
     } else {
         font_id = 0 as ::core::ffi::c_int;
-        while font_id < font_cache.count {
-            font = font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
+        while font_id < (*__pdf_state).font_cache.count {
+            font = (*__pdf_state).font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
             if !((*font).flags & PDF_FONT_FLAG_IS_ALIAS != 0) {
                 match (*font).subtype {
                     PDF_FONT_FONTTYPE_TYPE1
@@ -1531,19 +1560,20 @@ pub unsafe extern "C-unwind" fn pdf_font_load_font(
             }
             font_id += 1;
         }
-        font_id = font_cache.count;
-        if font_cache.count >= font_cache.capacity {
-            font_cache.capacity = (font_cache.capacity as ::core::ffi::c_uint)
-                .wrapping_add(CACHE_ALLOC_SIZE)
-                as ::core::ffi::c_int as ::core::ffi::c_int;
-            font_cache.fonts = renew(
-                font_cache.fonts as *mut ::core::ffi::c_void,
-                (font_cache.capacity as uint32_t as usize)
+        font_id = (*__pdf_state).font_cache.count;
+        if (*__pdf_state).font_cache.count >= (*__pdf_state).font_cache.capacity {
+            (*__pdf_state).font_cache.capacity =
+                ((*__pdf_state).font_cache.capacity as ::core::ffi::c_uint)
+                    .wrapping_add(CACHE_ALLOC_SIZE) as ::core::ffi::c_int
+                    as ::core::ffi::c_int;
+            (*__pdf_state).font_cache.fonts = renew(
+                (*__pdf_state).font_cache.fonts as *mut ::core::ffi::c_void,
+                ((*__pdf_state).font_cache.capacity as uint32_t as usize)
                     .wrapping_mul(::core::mem::size_of::<pdf_font>() as usize)
                     as uint32_t,
             ) as *mut pdf_font;
         }
-        font = font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
+        font = (*__pdf_state).font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
         pdf_init_font_struct(font);
         (*font).ident = new(
             (strlen(ident).wrapping_add(1 as size_t) as uint32_t as usize)
@@ -1626,7 +1656,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_font(
             pdf_clean_font_struct(font);
             return -(1 as ::core::ffi::c_int);
         }
-        font_cache.count += 1;
+        (*__pdf_state).font_cache.count += 1;
         if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
             pdf_message!(b"\n\0" as *const u8 as *const ::core::ffi::c_char);
             pdf_message!(
@@ -1797,7 +1827,6 @@ pub unsafe extern "C-unwind" fn pdf_check_tfm_widths(
     };
 }
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memset(
         __b: *mut ::core::ffi::c_void,
         __c: ::core::ffi::c_int,
@@ -2120,5 +2149,37 @@ pub unsafe extern "C" fn __pdf_entry_pdf_check_tfm_widths(
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    unique_tag_state: ::core::ffi::c_int,
+    unique_tags_deterministic: ::core::ffi::c_int,
+    font_cache: C2RustUnnamed_2,
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                unique_tag_state: 1 as ::core::ffi::c_int,
+                unique_tags_deterministic: 0 as ::core::ffi::c_int,
+                font_cache: C2RustUnnamed_2 {
+                    count: 0 as ::core::ffi::c_int,
+                    capacity: 0 as ::core::ffi::c_int,
+                    fonts: ::core::ptr::null::<pdf_font>() as *mut pdf_font,
+                },
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_pdffont
+            .pointer
     }
 }

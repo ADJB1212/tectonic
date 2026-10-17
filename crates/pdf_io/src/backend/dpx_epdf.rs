@@ -28,6 +28,7 @@
 )]
 use crate::backend::dpx_pdfdev::{pdf_sprint_coord, pdf_sprint_length};
 use crate::backend::dpx_pdfdraw::pdf_dev_transform;
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn strcmp(
         __s1: *const ::core::ffi::c_char,
@@ -962,7 +963,6 @@ pub unsafe extern "C-unwind" fn pdf_copy_clip(
     return error;
 }
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]

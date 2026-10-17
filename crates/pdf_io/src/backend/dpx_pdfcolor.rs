@@ -27,6 +27,7 @@
     dangerous_implicit_autorefs
 )]
 use crate::backend::dpx_pdfdev::pdf_dev_get_param;
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -809,30 +810,7 @@ pub unsafe extern "C-unwind" fn pdf_color_set_color(
     }
     return len;
 }
-#[unsafe(no_mangle)]
-pub static mut current_fill: pdf_color = pdf_color {
-    res_id: -(1 as ::core::ffi::c_int),
-    type_0: PDF_COLORSPACE_TYPE_GRAY,
-    num_components: 1 as ::core::ffi::c_int,
-    spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-    values: [
-        0.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-        0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-    ],
-    pattern_id: -(1 as ::core::ffi::c_int),
-};
-#[unsafe(no_mangle)]
-pub static mut current_stroke: pdf_color = pdf_color {
-    res_id: -(1 as ::core::ffi::c_int),
-    type_0: PDF_COLORSPACE_TYPE_GRAY,
-    num_components: 1 as ::core::ffi::c_int,
-    spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-    values: [
-        0.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-        0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-    ],
-    pattern_id: -(1 as ::core::ffi::c_int),
-};
+
 #[unsafe(export_name = "__pdf_impl_pdf_color_compare")]
 pub unsafe extern "C-unwind" fn pdf_color_compare(
     mut color1: *const pdf_color,
@@ -866,98 +844,79 @@ pub unsafe extern "C-unwind" fn pdf_color_compare(
     }
     return 0 as ::core::ffi::c_int;
 }
-#[unsafe(no_mangle)]
-pub static mut default_color: pdf_color = pdf_color {
-    res_id: -(1 as ::core::ffi::c_int),
-    type_0: PDF_COLORSPACE_TYPE_GRAY,
-    num_components: 1 as ::core::ffi::c_int,
-    spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-    values: [
-        0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0., 0., 0., 0., 0., 0., 0.,
-        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-    ],
-    pattern_id: -(1 as ::core::ffi::c_int),
-};
+
 pub const DEV_COLOR_STACK_MAX: ::core::ffi::c_int = 128 as ::core::ffi::c_int;
-static mut color_stack: C2RustUnnamed_2 = C2RustUnnamed_2 {
-    current: 0,
-    stroke: [pdf_color {
-        res_id: 0,
-        type_0: 0,
-        num_components: 0,
-        spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        values: [0.; 32],
-        pattern_id: 0,
-    }; 128],
-    fill: [pdf_color {
-        res_id: 0,
-        type_0: 0,
-        num_components: 0,
-        spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-        values: [0.; 32],
-        pattern_id: 0,
-    }; 128],
-};
+
 #[unsafe(export_name = "__pdf_impl_pdf_color_clear_stack")]
 pub unsafe extern "C-unwind" fn pdf_color_clear_stack() {
-    if color_stack.current > 0 as ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).color_stack.current > 0 as ::core::ffi::c_int {
         pdf_warning!(
             b"You've mistakenly made a global color change within nested colors.\0" as *const u8
                 as *const ::core::ffi::c_char,
         );
     }
     loop {
-        let fresh2 = color_stack.current;
-        color_stack.current = color_stack.current - 1;
+        let fresh2 = (*__pdf_state).color_stack.current;
+        (*__pdf_state).color_stack.current = (*__pdf_state).color_stack.current - 1;
         if !(fresh2 != 0) {
             break;
         }
         free(
-            color_stack.stroke[color_stack.current as usize].spot_color_name
-                as *mut ::core::ffi::c_void,
+            (*__pdf_state).color_stack.stroke[(*__pdf_state).color_stack.current as usize]
+                .spot_color_name as *mut ::core::ffi::c_void,
         );
         free(
-            color_stack.fill[color_stack.current as usize].spot_color_name
-                as *mut ::core::ffi::c_void,
+            (*__pdf_state).color_stack.fill[(*__pdf_state).color_stack.current as usize]
+                .spot_color_name as *mut ::core::ffi::c_void,
         );
     }
-    color_stack.current = 0 as ::core::ffi::c_int;
-    pdf_color_graycolor(&raw mut color_stack.stroke as *mut pdf_color, 0.0f64);
-    pdf_color_graycolor(&raw mut color_stack.fill as *mut pdf_color, 0.0f64);
+    (*__pdf_state).color_stack.current = 0 as ::core::ffi::c_int;
+    pdf_color_graycolor(
+        &raw mut (*__pdf_state).color_stack.stroke as *mut pdf_color,
+        0.0f64,
+    );
+    pdf_color_graycolor(
+        &raw mut (*__pdf_state).color_stack.fill as *mut pdf_color,
+        0.0f64,
+    );
 }
 #[unsafe(export_name = "__pdf_impl_pdf_color_set")]
 pub unsafe extern "C-unwind" fn pdf_color_set(mut sc: *mut pdf_color, mut fc: *mut pdf_color) {
+    let __pdf_state = unsafe { document_state() };
     pdf_color_copycolor(
-        (&raw mut color_stack.stroke as *mut pdf_color).offset(color_stack.current as isize)
-            as *mut pdf_color,
+        (&raw mut (*__pdf_state).color_stack.stroke as *mut pdf_color)
+            .offset((*__pdf_state).color_stack.current as isize) as *mut pdf_color,
         sc,
     );
     pdf_color_copycolor(
-        (&raw mut color_stack.fill as *mut pdf_color).offset(color_stack.current as isize)
-            as *mut pdf_color,
+        (&raw mut (*__pdf_state).color_stack.fill as *mut pdf_color)
+            .offset((*__pdf_state).color_stack.current as isize) as *mut pdf_color,
         fc,
     );
     pdf_dev_reset_color(1 as ::core::ffi::c_int);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_color_push")]
 pub unsafe extern "C-unwind" fn pdf_color_push(mut sc: *mut pdf_color, mut fc: *mut pdf_color) {
-    if color_stack.current >= DEV_COLOR_STACK_MAX - 1 as ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).color_stack.current >= DEV_COLOR_STACK_MAX - 1 as ::core::ffi::c_int {
         pdf_warning!(
             b"Color stack overflow. Just ignore.\0" as *const u8 as *const ::core::ffi::c_char,
         );
     } else {
-        color_stack.current += 1;
+        (*__pdf_state).color_stack.current += 1;
         pdf_color_set(sc, fc);
     };
 }
 #[unsafe(export_name = "__pdf_impl_pdf_color_pop")]
 pub unsafe extern "C-unwind" fn pdf_color_pop() {
-    if color_stack.current <= 0 as ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).color_stack.current <= 0 as ::core::ffi::c_int {
         pdf_warning!(
             b"Color stack underflow. Just ignore.\0" as *const u8 as *const ::core::ffi::c_char,
         );
     } else {
-        color_stack.current -= 1;
+        (*__pdf_state).color_stack.current -= 1;
         pdf_dev_reset_color(1 as ::core::ffi::c_int);
     };
 }
@@ -966,10 +925,11 @@ pub unsafe extern "C-unwind" fn pdf_color_get_current(
     mut sc: *mut *mut pdf_color,
     mut fc: *mut *mut pdf_color,
 ) {
-    *sc = (&raw mut color_stack.stroke as *mut pdf_color).offset(color_stack.current as isize)
-        as *mut pdf_color;
-    *fc = (&raw mut color_stack.fill as *mut pdf_color).offset(color_stack.current as isize)
-        as *mut pdf_color;
+    let __pdf_state = unsafe { document_state() };
+    *sc = (&raw mut (*__pdf_state).color_stack.stroke as *mut pdf_color)
+        .offset((*__pdf_state).color_stack.current as isize) as *mut pdf_color;
+    *fc = (&raw mut (*__pdf_state).color_stack.fill as *mut pdf_color)
+        .offset((*__pdf_state).color_stack.current as isize) as *mut pdf_color;
 }
 static mut nullbytes16: [::core::ffi::c_uchar; 16] = [
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
@@ -2159,22 +2119,22 @@ pub unsafe extern "C-unwind" fn iccp_load_profile(
     );
     return cspc_id;
 }
-static mut cspc_cache: C2RustUnnamed = C2RustUnnamed {
-    count: 0 as ::core::ffi::c_uint,
-    capacity: 0 as ::core::ffi::c_uint,
-    colorspaces: ::core::ptr::null::<pdf_colorspace>() as *mut pdf_colorspace,
-};
+
 unsafe extern "C-unwind" fn pdf_colorspace_findresource(
     mut ident: *const ::core::ffi::c_char,
     mut type_0: ::core::ffi::c_int,
     mut cdata: *const ::core::ffi::c_void,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut colorspace: *mut pdf_colorspace = ::core::ptr::null_mut::<pdf_colorspace>();
     let mut cspc_id: ::core::ffi::c_int = 0;
     let mut cmp: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     cspc_id = 0 as ::core::ffi::c_int;
-    while cmp != 0 && (cspc_id as ::core::ffi::c_uint) < cspc_cache.count {
-        colorspace = cspc_cache.colorspaces.offset(cspc_id as isize) as *mut pdf_colorspace;
+    while cmp != 0 && (cspc_id as ::core::ffi::c_uint) < (*__pdf_state).cspc_cache.count {
+        colorspace = (*__pdf_state)
+            .cspc_cache
+            .colorspaces
+            .offset(cspc_id as isize) as *mut pdf_colorspace;
         if !((*colorspace).subtype != type_0) {
             match (*colorspace).subtype {
                 PDF_COLORSPACE_TYPE_ICCBASED => {
@@ -2252,19 +2212,26 @@ unsafe extern "C-unwind" fn pdf_colorspace_defineresource(
     mut cdata: *mut ::core::ffi::c_void,
     mut resource: *mut pdf_obj,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut cspc_id: ::core::ffi::c_int = 0;
     let mut colorspace: *mut pdf_colorspace = ::core::ptr::null_mut::<pdf_colorspace>();
-    if cspc_cache.count >= cspc_cache.capacity {
-        cspc_cache.capacity = cspc_cache.capacity.wrapping_add(16 as ::core::ffi::c_uint);
-        cspc_cache.colorspaces = renew(
-            cspc_cache.colorspaces as *mut ::core::ffi::c_void,
-            (cspc_cache.capacity as uint32_t as usize)
+    if (*__pdf_state).cspc_cache.count >= (*__pdf_state).cspc_cache.capacity {
+        (*__pdf_state).cspc_cache.capacity = (*__pdf_state)
+            .cspc_cache
+            .capacity
+            .wrapping_add(16 as ::core::ffi::c_uint);
+        (*__pdf_state).cspc_cache.colorspaces = renew(
+            (*__pdf_state).cspc_cache.colorspaces as *mut ::core::ffi::c_void,
+            ((*__pdf_state).cspc_cache.capacity as uint32_t as usize)
                 .wrapping_mul(::core::mem::size_of::<pdf_colorspace>() as usize)
                 as uint32_t,
         ) as *mut pdf_colorspace;
     }
-    cspc_id = cspc_cache.count as ::core::ffi::c_int;
-    colorspace = cspc_cache.colorspaces.offset(cspc_id as isize) as *mut pdf_colorspace;
+    cspc_id = (*__pdf_state).cspc_cache.count as ::core::ffi::c_int;
+    colorspace = (*__pdf_state)
+        .cspc_cache
+        .colorspaces
+        .offset(cspc_id as isize) as *mut pdf_colorspace;
     pdf_init_colorspace_struct(colorspace);
     if !ident.is_null() {
         (*colorspace).ident = new(
@@ -2298,15 +2265,19 @@ unsafe extern "C-unwind" fn pdf_colorspace_defineresource(
         }
         pdf_message!(b")\0" as *const u8 as *const ::core::ffi::c_char);
     }
-    cspc_cache.count = cspc_cache.count.wrapping_add(1);
+    (*__pdf_state).cspc_cache.count = (*__pdf_state).cspc_cache.count.wrapping_add(1);
     return cspc_id;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_get_colorspace_reference")]
 pub unsafe extern "C-unwind" fn pdf_get_colorspace_reference(
     mut cspc_id: ::core::ffi::c_int,
 ) -> *mut pdf_obj {
+    let __pdf_state = unsafe { document_state() };
     let mut colorspace: *mut pdf_colorspace = ::core::ptr::null_mut::<pdf_colorspace>();
-    colorspace = cspc_cache.colorspaces.offset(cspc_id as isize) as *mut pdf_colorspace;
+    colorspace = (*__pdf_state)
+        .cspc_cache
+        .colorspaces
+        .offset(cspc_id as isize) as *mut pdf_colorspace;
     if (*colorspace).reference.is_null() {
         (*colorspace).reference = pdf_ref_obj((*colorspace).resource);
         pdf_release_obj((*colorspace).resource);
@@ -2316,30 +2287,33 @@ pub unsafe extern "C-unwind" fn pdf_get_colorspace_reference(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_init_colors")]
 pub unsafe extern "C-unwind" fn pdf_init_colors() {
-    cspc_cache.count = 0 as ::core::ffi::c_uint;
-    cspc_cache.capacity = 0 as ::core::ffi::c_uint;
-    cspc_cache.colorspaces = ::core::ptr::null_mut::<pdf_colorspace>();
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).cspc_cache.count = 0 as ::core::ffi::c_uint;
+    (*__pdf_state).cspc_cache.capacity = 0 as ::core::ffi::c_uint;
+    (*__pdf_state).cspc_cache.colorspaces = ::core::ptr::null_mut::<pdf_colorspace>();
 }
 #[unsafe(export_name = "__pdf_impl_pdf_close_colors")]
 pub unsafe extern "C-unwind" fn pdf_close_colors() {
+    let __pdf_state = unsafe { document_state() };
     let mut i: ::core::ffi::c_uint = 0;
     i = 0 as ::core::ffi::c_uint;
-    while i < cspc_cache.count {
+    while i < (*__pdf_state).cspc_cache.count {
         let mut colorspace: *mut pdf_colorspace = ::core::ptr::null_mut::<pdf_colorspace>();
-        colorspace = cspc_cache.colorspaces.offset(i as isize) as *mut pdf_colorspace;
+        colorspace =
+            (*__pdf_state).cspc_cache.colorspaces.offset(i as isize) as *mut pdf_colorspace;
         pdf_flush_colorspace(colorspace);
         pdf_clean_colorspace_struct(colorspace);
         i = i.wrapping_add(1);
     }
-    cspc_cache.colorspaces =
-        mfree(cspc_cache.colorspaces as *mut ::core::ffi::c_void) as *mut pdf_colorspace;
-    cspc_cache.capacity = 0 as ::core::ffi::c_uint;
-    cspc_cache.count = cspc_cache.capacity;
+    (*__pdf_state).cspc_cache.colorspaces =
+        mfree((*__pdf_state).cspc_cache.colorspaces as *mut ::core::ffi::c_void)
+            as *mut pdf_colorspace;
+    (*__pdf_state).cspc_cache.capacity = 0 as ::core::ffi::c_uint;
+    (*__pdf_state).cspc_cache.count = (*__pdf_state).cspc_cache.capacity;
 }
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcmp(
         __s1: *const ::core::ffi::c_void,
         __s2: *const ::core::ffi::c_void,
@@ -2672,5 +2646,95 @@ pub unsafe extern "C" fn __pdf_entry_pdf_close_colors() -> i32 {
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    current_fill: pdf_color,
+    current_stroke: pdf_color,
+    default_color: pdf_color,
+    color_stack: C2RustUnnamed_2,
+    cspc_cache: C2RustUnnamed,
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                current_fill: pdf_color {
+                    res_id: -(1 as ::core::ffi::c_int),
+                    type_0: PDF_COLORSPACE_TYPE_GRAY,
+                    num_components: 1 as ::core::ffi::c_int,
+                    spot_color_name: ::core::ptr::null::<::core::ffi::c_char>()
+                        as *mut ::core::ffi::c_char,
+                    values: [
+                        0.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                    ],
+                    pattern_id: -(1 as ::core::ffi::c_int),
+                },
+                current_stroke: pdf_color {
+                    res_id: -(1 as ::core::ffi::c_int),
+                    type_0: PDF_COLORSPACE_TYPE_GRAY,
+                    num_components: 1 as ::core::ffi::c_int,
+                    spot_color_name: ::core::ptr::null::<::core::ffi::c_char>()
+                        as *mut ::core::ffi::c_char,
+                    values: [
+                        0.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                    ],
+                    pattern_id: -(1 as ::core::ffi::c_int),
+                },
+                default_color: pdf_color {
+                    res_id: -(1 as ::core::ffi::c_int),
+                    type_0: PDF_COLORSPACE_TYPE_GRAY,
+                    num_components: 1 as ::core::ffi::c_int,
+                    spot_color_name: ::core::ptr::null::<::core::ffi::c_char>()
+                        as *mut ::core::ffi::c_char,
+                    values: [
+                        0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0., 0., 0.,
+                        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                        0., 0.,
+                    ],
+                    pattern_id: -(1 as ::core::ffi::c_int),
+                },
+                color_stack: C2RustUnnamed_2 {
+                    current: 0,
+                    stroke: [pdf_color {
+                        res_id: 0,
+                        type_0: 0,
+                        num_components: 0,
+                        spot_color_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        values: [0.; 32],
+                        pattern_id: 0,
+                    }; 128],
+                    fill: [pdf_color {
+                        res_id: 0,
+                        type_0: 0,
+                        num_components: 0,
+                        spot_color_name: ::core::ptr::null::<::core::ffi::c_char>()
+                            as *mut ::core::ffi::c_char,
+                        values: [0.; 32],
+                        pattern_id: 0,
+                    }; 128],
+                },
+                cspc_cache: C2RustUnnamed {
+                    count: 0 as ::core::ffi::c_uint,
+                    capacity: 0 as ::core::ffi::c_uint,
+                    colorspaces: ::core::ptr::null::<pdf_colorspace>() as *mut pdf_colorspace,
+                },
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_pdfcolor
+            .pointer
     }
 }

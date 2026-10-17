@@ -24,6 +24,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -172,14 +173,9 @@ unsafe extern "C-unwind" fn clean_sfd_file_(mut sfd: *mut sfd_file_) {
     free((*sfd).rec_id as *mut ::core::ffi::c_void);
     init_sfd_file_(sfd);
 }
-static mut sfd_files: *mut sfd_file_ = ::core::ptr::null::<sfd_file_>() as *mut sfd_file_;
-static mut num_sfd_files: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-static mut max_sfd_files: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-static mut sfd_record: *mut sfd_rec_ = ::core::ptr::null::<sfd_rec_>() as *mut sfd_rec_;
-static mut max_sfd_records: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-static mut num_sfd_records: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+
 pub const LINE_BUF_SIZE: ::core::ffi::c_int = 4096 as ::core::ffi::c_int;
-static mut line_buf: [::core::ffi::c_char; 4096] = [0; 4096];
+
 unsafe extern "C-unwind" fn readline(
     mut buf: *mut ::core::ffi::c_char,
     mut buf_len: ::core::ffi::c_int,
@@ -368,6 +364,7 @@ unsafe extern "C-unwind" fn scan_sfd_file(
     mut sfd: *mut sfd_file_,
     mut handle: rust_input_handle_t,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut id: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut p: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -392,7 +389,7 @@ unsafe extern "C-unwind" fn scan_sfd_file(
     (*sfd).max_subfonts = (*sfd).num_subfonts;
     loop {
         p = readline(
-            &raw mut line_buf as *mut ::core::ffi::c_char,
+            &raw mut (*__pdf_state).line_buf as *mut ::core::ffi::c_char,
             LINE_BUF_SIZE,
             handle,
         );
@@ -467,12 +464,16 @@ unsafe extern "C-unwind" fn scan_sfd_file(
 unsafe extern "C-unwind" fn find_sfd_file(
     mut sfd_name: *const ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut id: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut i: ::core::ffi::c_int = 0;
     let mut error: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     i = 0 as ::core::ffi::c_int;
-    while i < num_sfd_files {
-        if streq_ptr((*sfd_files.offset(i as isize)).ident, sfd_name) {
+    while i < (*__pdf_state).num_sfd_files {
+        if streq_ptr(
+            (*(*__pdf_state).sfd_files.offset(i as isize)).ident,
+            sfd_name,
+        ) {
             id = i;
             break;
         } else {
@@ -482,16 +483,18 @@ unsafe extern "C-unwind" fn find_sfd_file(
     if id < 0 as ::core::ffi::c_int {
         let mut sfd: *mut sfd_file_ = ::core::ptr::null_mut::<sfd_file_>();
         let mut handle: rust_input_handle_t = INVALID_HANDLE;
-        if num_sfd_files >= max_sfd_files {
-            max_sfd_files += 8 as ::core::ffi::c_int;
-            sfd_files = renew(
-                sfd_files as *mut ::core::ffi::c_void,
-                (max_sfd_files as uint32_t as usize)
+        if (*__pdf_state).num_sfd_files >= (*__pdf_state).max_sfd_files {
+            (*__pdf_state).max_sfd_files += 8 as ::core::ffi::c_int;
+            (*__pdf_state).sfd_files = renew(
+                (*__pdf_state).sfd_files as *mut ::core::ffi::c_void,
+                ((*__pdf_state).max_sfd_files as uint32_t as usize)
                     .wrapping_mul(::core::mem::size_of::<sfd_file_>() as usize)
                     as uint32_t,
             ) as *mut sfd_file_;
         }
-        sfd = sfd_files.offset(num_sfd_files as isize) as *mut sfd_file_;
+        sfd = (*__pdf_state)
+            .sfd_files
+            .offset((*__pdf_state).num_sfd_files as isize) as *mut sfd_file_;
         init_sfd_file_(sfd);
         (*sfd).ident = new(
             (strlen(sfd_name).wrapping_add(1 as size_t) as uint32_t as usize)
@@ -507,8 +510,8 @@ unsafe extern "C-unwind" fn find_sfd_file(
         error = scan_sfd_file(sfd, handle);
         crate::backend::runtime::input_close(handle);
         if error == 0 {
-            let fresh2 = num_sfd_files;
-            num_sfd_files = num_sfd_files + 1;
+            let fresh2 = (*__pdf_state).num_sfd_files;
+            (*__pdf_state).num_sfd_files = (*__pdf_state).num_sfd_files + 1;
             id = fresh2;
         } else {
             pdf_warning!(
@@ -527,6 +530,7 @@ pub unsafe extern "C-unwind" fn sfd_get_subfont_ids(
     mut sfd_name: *const ::core::ffi::c_char,
     mut num_ids: *mut ::core::ffi::c_int,
 ) -> *mut *mut ::core::ffi::c_char {
+    let __pdf_state = unsafe { document_state() };
     let mut sfd_id: ::core::ffi::c_int = 0;
     if sfd_name.is_null() {
         return ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
@@ -536,15 +540,16 @@ pub unsafe extern "C-unwind" fn sfd_get_subfont_ids(
         return ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
     }
     if !num_ids.is_null() {
-        *num_ids = (*sfd_files.offset(sfd_id as isize)).num_subfonts;
+        *num_ids = (*(*__pdf_state).sfd_files.offset(sfd_id as isize)).num_subfonts;
     }
-    return (*sfd_files.offset(sfd_id as isize)).sub_id;
+    return (*(*__pdf_state).sfd_files.offset(sfd_id as isize)).sub_id;
 }
 #[unsafe(export_name = "__pdf_impl_sfd_load_record")]
 pub unsafe extern "C-unwind" fn sfd_load_record(
     mut sfd_name: *const ::core::ffi::c_char,
     mut subfont_id: *const ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut rec_id: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut sfd: *mut sfd_file_ = ::core::ptr::null_mut::<sfd_file_>();
     let mut handle: rust_input_handle_t = 0;
@@ -560,7 +565,7 @@ pub unsafe extern "C-unwind" fn sfd_load_record(
     if sfd_id < 0 as ::core::ffi::c_int {
         return -(1 as ::core::ffi::c_int);
     }
-    sfd = sfd_files.offset(sfd_id as isize) as *mut sfd_file_;
+    sfd = (*__pdf_state).sfd_files.offset(sfd_id as isize) as *mut sfd_file_;
     i = 0 as ::core::ffi::c_int;
     while i < (*sfd).num_subfonts && strcmp(*(*sfd).sub_id.offset(i as isize), subfont_id) != 0 {
         i += 1;
@@ -590,7 +595,7 @@ pub unsafe extern "C-unwind" fn sfd_load_record(
     }
     loop {
         p = readline(
-            &raw mut line_buf as *mut ::core::ffi::c_char,
+            &raw mut (*__pdf_state).line_buf as *mut ::core::ffi::c_char,
             LINE_BUF_SIZE,
             handle,
         );
@@ -614,29 +619,36 @@ pub unsafe extern "C-unwind" fn sfd_load_record(
         *p = '\0' as i32 as ::core::ffi::c_char;
         p = p.offset(1);
         if streq_ptr(q, subfont_id) {
-            if num_sfd_records >= max_sfd_records {
-                max_sfd_records += 16 as ::core::ffi::c_int;
-                sfd_record = renew(
-                    sfd_record as *mut ::core::ffi::c_void,
-                    (max_sfd_records as uint32_t as usize)
+            if (*__pdf_state).num_sfd_records >= (*__pdf_state).max_sfd_records {
+                (*__pdf_state).max_sfd_records += 16 as ::core::ffi::c_int;
+                (*__pdf_state).sfd_record = renew(
+                    (*__pdf_state).sfd_record as *mut ::core::ffi::c_void,
+                    ((*__pdf_state).max_sfd_records as uint32_t as usize)
                         .wrapping_mul(::core::mem::size_of::<sfd_rec_>() as usize)
                         as uint32_t,
                 ) as *mut sfd_rec_;
             }
-            if !(&raw mut (*sfd_record.offset(num_sfd_records as isize)).vector
-                as *mut ::core::ffi::c_ushort)
+            if !(&raw mut (*(*__pdf_state)
+                .sfd_record
+                .offset((*__pdf_state).num_sfd_records as isize))
+            .vector as *mut ::core::ffi::c_ushort)
                 .is_null()
             {
                 let mut __i: ::core::ffi::c_int = 0;
                 __i = 0 as ::core::ffi::c_int;
                 while __i < 256 as ::core::ffi::c_int {
-                    (*sfd_record.offset(num_sfd_records as isize)).vector[__i as usize] =
-                        0 as ::core::ffi::c_ushort;
+                    (*(*__pdf_state)
+                        .sfd_record
+                        .offset((*__pdf_state).num_sfd_records as isize))
+                    .vector[__i as usize] = 0 as ::core::ffi::c_ushort;
                     __i += 1;
                 }
             }
             error = read_sfd_record(
-                sfd_record.offset(num_sfd_records as isize) as *mut sfd_rec_,
+                (*__pdf_state)
+                    .sfd_record
+                    .offset((*__pdf_state).num_sfd_records as isize)
+                    as *mut sfd_rec_,
                 p,
             );
             if error != 0 {
@@ -647,8 +659,8 @@ pub unsafe extern "C-unwind" fn sfd_load_record(
                     subfont_id,
                 );
             } else {
-                let fresh0 = num_sfd_records;
-                num_sfd_records = num_sfd_records + 1;
+                let fresh0 = (*__pdf_state).num_sfd_records;
+                (*__pdf_state).num_sfd_records = (*__pdf_state).num_sfd_records + 1;
                 rec_id = fresh0;
             }
         }
@@ -681,7 +693,7 @@ pub unsafe extern "C-unwind" fn sfd_load_record(
                 }
                 pdf_message!(
                     b" %04x\0" as *const u8 as *const ::core::ffi::c_char,
-                    (*sfd_record.offset(rec_id as isize)).vector[__i_0 as usize]
+                    (*(*__pdf_state).sfd_record.offset(rec_id as isize)).vector[__i_0 as usize]
                         as ::core::ffi::c_int,
                 );
                 __i_0 += 1;
@@ -696,38 +708,42 @@ pub unsafe extern "C-unwind" fn lookup_sfd_record(
     mut rec_id: ::core::ffi::c_int,
     mut c: ::core::ffi::c_uchar,
 ) -> ::core::ffi::c_ushort {
-    if sfd_record.is_null() || rec_id < 0 as ::core::ffi::c_int || rec_id >= num_sfd_records {
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).sfd_record.is_null()
+        || rec_id < 0 as ::core::ffi::c_int
+        || rec_id >= (*__pdf_state).num_sfd_records
+    {
         pdf_abort!(
             b"Invalid subfont_id: %d\0" as *const u8 as *const ::core::ffi::c_char,
             rec_id,
         );
     }
-    return (*sfd_record.offset(rec_id as isize)).vector[c as usize];
+    return (*(*__pdf_state).sfd_record.offset(rec_id as isize)).vector[c as usize];
 }
 #[unsafe(export_name = "__pdf_impl_release_sfd_record")]
 pub unsafe extern "C-unwind" fn release_sfd_record() {
+    let __pdf_state = unsafe { document_state() };
     let mut i: ::core::ffi::c_int = 0;
-    if !sfd_record.is_null() {
-        free(sfd_record as *mut ::core::ffi::c_void);
+    if !(*__pdf_state).sfd_record.is_null() {
+        free((*__pdf_state).sfd_record as *mut ::core::ffi::c_void);
     }
-    if !sfd_files.is_null() {
+    if !(*__pdf_state).sfd_files.is_null() {
         i = 0 as ::core::ffi::c_int;
-        while i < num_sfd_files {
-            clean_sfd_file_(sfd_files.offset(i as isize) as *mut sfd_file_);
+        while i < (*__pdf_state).num_sfd_files {
+            clean_sfd_file_((*__pdf_state).sfd_files.offset(i as isize) as *mut sfd_file_);
             i += 1;
         }
-        free(sfd_files as *mut ::core::ffi::c_void);
+        free((*__pdf_state).sfd_files as *mut ::core::ffi::c_void);
     }
-    sfd_record = ::core::ptr::null_mut::<sfd_rec_>();
-    sfd_files = ::core::ptr::null_mut::<sfd_file_>();
-    max_sfd_records = 0 as ::core::ffi::c_int;
-    num_sfd_records = max_sfd_records;
-    max_sfd_files = 0 as ::core::ffi::c_int;
-    num_sfd_files = max_sfd_files;
+    (*__pdf_state).sfd_record = ::core::ptr::null_mut::<sfd_rec_>();
+    (*__pdf_state).sfd_files = ::core::ptr::null_mut::<sfd_file_>();
+    (*__pdf_state).max_sfd_records = 0 as ::core::ffi::c_int;
+    (*__pdf_state).num_sfd_records = (*__pdf_state).max_sfd_records;
+    (*__pdf_state).max_sfd_files = 0 as ::core::ffi::c_int;
+    (*__pdf_state).num_sfd_files = (*__pdf_state).max_sfd_files;
 }
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcpy(
         __dst: *mut ::core::ffi::c_void,
         __src: *const ::core::ffi::c_void,
@@ -791,5 +807,41 @@ pub unsafe extern "C" fn __pdf_entry_release_sfd_record() -> i32 {
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    sfd_files: *mut sfd_file_,
+    num_sfd_files: ::core::ffi::c_int,
+    max_sfd_files: ::core::ffi::c_int,
+    sfd_record: *mut sfd_rec_,
+    max_sfd_records: ::core::ffi::c_int,
+    num_sfd_records: ::core::ffi::c_int,
+    line_buf: [::core::ffi::c_char; 4096],
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                sfd_files: ::core::ptr::null::<sfd_file_>() as *mut sfd_file_,
+                num_sfd_files: 0 as ::core::ffi::c_int,
+                max_sfd_files: 0 as ::core::ffi::c_int,
+                sfd_record: ::core::ptr::null::<sfd_rec_>() as *mut sfd_rec_,
+                max_sfd_records: 0 as ::core::ffi::c_int,
+                num_sfd_records: 0 as ::core::ffi::c_int,
+                line_buf: [0; 4096],
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_subfont
+            .pointer
     }
 }

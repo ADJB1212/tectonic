@@ -27,6 +27,7 @@
     dangerous_implicit_autorefs
 )]
 use crate::backend::dpx_pdfdev::pdf_sprint_number;
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -533,53 +534,16 @@ pub const OBJSTM_MAX_OBJS: ::core::ffi::c_int = 200 as ::core::ffi::c_int;
 pub const COMPRESSION_BATCH_SIZE: ::core::ffi::c_int = 64 as ::core::ffi::c_int;
 pub const COMPRESSION_BATCH_BYTES: ::core::ffi::c_int =
     8 as ::core::ffi::c_int * 1024 as ::core::ffi::c_int * 1024 as ::core::ffi::c_int;
-static mut pout: pdf_out = pdf_out {
-    state: C2RustUnnamed_5 { enc_mode: 0 },
-    id1: [0; 16],
-    id2: [0; 16],
-    version: C2RustUnnamed_4 { major: 0, minor: 0 },
-    options: C2RustUnnamed_2 {
-        compression: C2RustUnnamed_3 {
-            level: 0,
-            use_predictor: 0,
-        },
-        enable_encrypt: 0,
-        use_objstm: 0,
-    },
-    output: C2RustUnnamed_1 {
-        handle: 0,
-        file_position: 0,
-        line_position: 0,
-        compression_saved: 0,
-    },
-    obj: C2RustUnnamed_0 {
-        next_label: 0,
-        max_ind_objects: 0,
-    },
-    sec_data: ::core::ptr::null::<pdf_sec>() as *mut pdf_sec,
-    trailer: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-    startxref: 0,
-    xref_table: ::core::ptr::null::<xref_entry>() as *mut xref_entry,
-    xref_stream: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-    output_stream: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-    current_objstm: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-    compression_batch: [::core::ptr::null::<pdf_obj>() as *mut pdf_obj; 64],
-    compression_batch_count: 0,
-    compression_batch_bytes: 0,
-    flushing_compression_batch: 0,
-    defer_compression: 0,
-    completed_head: ::core::ptr::null::<completed_object>() as *mut completed_object,
-    completed_tail: ::core::ptr::null::<completed_object>() as *mut completed_object,
-    free_list: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-};
-static mut tectonic_pout_initialized: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+
 unsafe extern "C-unwind" fn current_output() -> *mut pdf_out {
-    if tectonic_pout_initialized == 0 {
-        init_pdf_out_struct(&raw mut pout);
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).tectonic_pout_initialized == 0 {
+        init_pdf_out_struct(&raw mut (*__pdf_state).pout);
     }
-    return &raw mut pout;
+    return &raw mut (*__pdf_state).pout;
 }
 unsafe extern "C-unwind" fn init_pdf_out_struct(mut p: *mut pdf_out) {
+    let __pdf_state = unsafe { document_state() };
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
@@ -635,7 +599,7 @@ unsafe extern "C-unwind" fn init_pdf_out_struct(mut p: *mut pdf_out) {
             .wrapping_add(1 as size_t)
             .wrapping_div(8 as size_t),
     );
-    tectonic_pout_initialized = 1 as ::core::ffi::c_int;
+    (*__pdf_state).tectonic_pout_initialized = 1 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn clean_pdf_out_struct(mut p: *mut pdf_out) {
     if !(*p).free_list.is_null() {
@@ -5866,7 +5830,7 @@ unsafe extern "C-unwind" fn read_xref(mut pf: *mut pdf_file) -> *mut pdf_obj {
         }
     }
 }
-static mut pdf_files: *mut ht_table = ::core::ptr::null::<ht_table>() as *mut ht_table;
+
 unsafe extern "C-unwind" fn pdf_file_new(mut handle: rust_input_handle_t) -> *mut pdf_file {
     let mut pf: *mut pdf_file = ::core::ptr::null_mut::<pdf_file>();
     if (handle == 0) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -5907,11 +5871,12 @@ unsafe extern "C-unwind" fn pdf_file_free(mut pf: *mut pdf_file) {
 }
 #[unsafe(export_name = "__pdf_impl_pdf_files_init")]
 pub unsafe extern "C-unwind" fn pdf_files_init() {
-    pdf_files = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<ht_table>() as usize) as uint32_t)
-        as *mut ht_table;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).pdf_files = new((1 as ::core::ffi::c_int as uint32_t as usize)
+        .wrapping_mul(::core::mem::size_of::<ht_table>() as usize)
+        as uint32_t) as *mut ht_table;
     ht_init_table(
-        pdf_files,
+        (*__pdf_state).pdf_files,
         ::core::mem::transmute::<
             Option<unsafe extern "C-unwind" fn(*mut pdf_file) -> ()>,
             hval_free_func,
@@ -5958,10 +5923,11 @@ pub unsafe extern "C-unwind" fn pdf_open(
     mut ident: *const ::core::ffi::c_char,
     mut handle: rust_input_handle_t,
 ) -> *mut pdf_file {
+    let __pdf_state = unsafe { document_state() };
     let mut current_block: u64;
     let mut p: *mut pdf_out = current_output();
     let mut pf: *mut pdf_file = ::core::ptr::null_mut::<pdf_file>();
-    if pdf_files.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
+    if (*__pdf_state).pdf_files.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"pdf_files\0" as *const u8 as *const ::core::ffi::c_char
@@ -5970,7 +5936,7 @@ pub unsafe extern "C-unwind" fn pdf_open(
     };
     if !ident.is_null() {
         pf = ht_lookup_table(
-            pdf_files,
+            (*__pdf_state).pdf_files,
             ident as *const ::core::ffi::c_void,
             strlen(ident) as ::core::ffi::c_int,
         ) as *mut pdf_file;
@@ -6070,7 +6036,7 @@ pub unsafe extern "C-unwind" fn pdf_open(
                     _ => {
                         if !ident.is_null() {
                             ht_append_table(
-                                pdf_files,
+                                (*__pdf_state).pdf_files,
                                 ident as *const ::core::ffi::c_void,
                                 strlen(ident) as ::core::ffi::c_int,
                                 pf as *mut ::core::ffi::c_void,
@@ -6099,15 +6065,16 @@ pub unsafe extern "C-unwind" fn pdf_close(mut pf: *mut pdf_file) {
 }
 #[unsafe(export_name = "__pdf_impl_pdf_files_close")]
 pub unsafe extern "C-unwind" fn pdf_files_close() {
-    if pdf_files.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
+    let __pdf_state = unsafe { document_state() };
+    if (*__pdf_state).pdf_files.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"pdf_files\0" as *const u8 as *const ::core::ffi::c_char
         );
     } else {
     };
-    ht_clear_table(pdf_files);
-    free(pdf_files as *mut ::core::ffi::c_void);
+    ht_clear_table((*__pdf_state).pdf_files);
+    free((*__pdf_state).pdf_files as *mut ::core::ffi::c_void);
 }
 unsafe extern "C-unwind" fn check_for_pdf_version(
     mut handle: rust_input_handle_t,
@@ -6454,16 +6421,16 @@ pub unsafe extern "C-unwind" fn pdf_compare_object(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_obj_reset_global_state")]
 pub unsafe extern "C-unwind" fn pdf_obj_reset_global_state() {
+    let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_out = current_output();
     pdf_error_cleanup();
     (*p).output.file_position = 0 as size_t;
     (*p).output.line_position = 0 as ::core::ffi::c_int;
     (*p).output.compression_saved = 0 as size_t;
-    tectonic_pout_initialized = 0 as ::core::ffi::c_int;
+    (*__pdf_state).tectonic_pout_initialized = 0 as ::core::ffi::c_int;
 }
 pub const INT_MAX: ::core::ffi::c_int = 2147483647 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcmp(
         __s1: *const ::core::ffi::c_void,
         __s2: *const ::core::ffi::c_void,
@@ -7448,5 +7415,74 @@ pub unsafe extern "C" fn __pdf_entry_pdf_obj_reset_global_state() -> i32 {
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    pout: pdf_out,
+    tectonic_pout_initialized: ::core::ffi::c_int,
+    pdf_files: *mut ht_table,
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                pout: pdf_out {
+                    state: C2RustUnnamed_5 { enc_mode: 0 },
+                    id1: [0; 16],
+                    id2: [0; 16],
+                    version: C2RustUnnamed_4 { major: 0, minor: 0 },
+                    options: C2RustUnnamed_2 {
+                        compression: C2RustUnnamed_3 {
+                            level: 0,
+                            use_predictor: 0,
+                        },
+                        enable_encrypt: 0,
+                        use_objstm: 0,
+                    },
+                    output: C2RustUnnamed_1 {
+                        handle: 0,
+                        file_position: 0,
+                        line_position: 0,
+                        compression_saved: 0,
+                    },
+                    obj: C2RustUnnamed_0 {
+                        next_label: 0,
+                        max_ind_objects: 0,
+                    },
+                    sec_data: ::core::ptr::null::<pdf_sec>() as *mut pdf_sec,
+                    trailer: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                    startxref: 0,
+                    xref_table: ::core::ptr::null::<xref_entry>() as *mut xref_entry,
+                    xref_stream: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                    output_stream: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                    current_objstm: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                    compression_batch: [::core::ptr::null::<pdf_obj>() as *mut pdf_obj; 64],
+                    compression_batch_count: 0,
+                    compression_batch_bytes: 0,
+                    flushing_compression_batch: 0,
+                    defer_compression: 0,
+                    completed_head: ::core::ptr::null::<completed_object>()
+                        as *mut completed_object,
+                    completed_tail: ::core::ptr::null::<completed_object>()
+                        as *mut completed_object,
+                    free_list: ::core::ptr::null::<::core::ffi::c_char>()
+                        as *mut ::core::ffi::c_char,
+                },
+                tectonic_pout_initialized: 0 as ::core::ffi::c_int,
+                pdf_files: ::core::ptr::null::<ht_table>() as *mut ht_table,
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_pdfobj
+            .pointer
     }
 }

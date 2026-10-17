@@ -27,6 +27,7 @@
     dangerous_implicit_autorefs
 )]
 use crate::backend::dpx_pdfdev::pdf_dev_get_param;
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -688,54 +689,7 @@ unsafe extern "C-unwind" fn read_thumbnail(
 pub static mut global_names: *mut ht_table = ::core::ptr::null::<ht_table>() as *mut ht_table;
 pub const USE_MY_MEDIABOX: ::core::ffi::c_int =
     (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
-static mut pdoc: pdf_doc = pdf_doc {
-    root: C2RustUnnamed_5 {
-        dict: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-        viewerpref: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-        pagelabels: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-        pages: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-        names: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-        threads: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-    },
-    info: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-    pages: C2RustUnnamed_4 {
-        mediabox: pdf_rect {
-            llx: 0.,
-            lly: 0.,
-            urx: 0.,
-            ury: 0.,
-        },
-        bop: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-        eop: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-        num_entries: 0,
-        max_entries: 0,
-        entries: ::core::ptr::null::<pdf_page>() as *mut pdf_page,
-    },
-    outlines: C2RustUnnamed_3 {
-        first: ::core::ptr::null::<pdf_olitem>() as *mut pdf_olitem,
-        current: ::core::ptr::null::<pdf_olitem>() as *mut pdf_olitem,
-        current_depth: 0,
-    },
-    articles: C2RustUnnamed_2 {
-        num_entries: 0,
-        max_entries: 0,
-        entries: ::core::ptr::null::<pdf_article>() as *mut pdf_article,
-    },
-    names: ::core::ptr::null::<name_dict>() as *mut name_dict,
-    check_gotos: 0,
-    gotos: ht_table {
-        count: 0,
-        hval_free_fn: None,
-        table: [::core::ptr::null::<ht_entry>() as *mut ht_entry; 503],
-    },
-    options: C2RustUnnamed_0 {
-        outline_open_depth: 0,
-        annot_grow: C2RustUnnamed_1 { x: 0., y: 0. },
-        enable_manual_thumb: 0,
-    },
-    pending_forms: ::core::ptr::null::<form_list_node>() as *mut form_list_node,
-    thumb_basename: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-};
+
 unsafe extern "C-unwind" fn pdf_doc_init_catalog(mut p: *mut pdf_doc) {
     (*p).root.viewerpref = ::core::ptr::null_mut::<pdf_obj>();
     (*p).root.pagelabels = ::core::ptr::null_mut::<pdf_obj>();
@@ -883,7 +837,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_set_bop_content(
     mut content: *const ::core::ffi::c_char,
     mut length: ::core::ffi::c_uint,
 ) {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
@@ -911,7 +866,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_set_eop_content(
     mut content: *const ::core::ffi::c_char,
     mut length: ::core::ffi::c_uint,
 ) {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     if !(*p).pages.eop.is_null() {
         pdf_release_obj((*p).pages.eop);
         (*p).pages.eop = ::core::ptr::null_mut::<pdf_obj>();
@@ -1056,7 +1012,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_page_resource(
     mut resource_name: *const ::core::ffi::c_char,
     mut resource_ref: *mut pdf_obj,
 ) {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut resources: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut duplicate: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     resources = pdf_doc_get_page_resources(p, category);
@@ -2044,7 +2001,8 @@ unsafe extern "C-unwind" fn flush_bookmarks(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_bookmarks_up")]
 pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_up() -> ::core::ffi::c_int {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut parent: *mut pdf_olitem = ::core::ptr::null_mut::<pdf_olitem>();
     let mut item: *mut pdf_olitem = ::core::ptr::null_mut::<pdf_olitem>();
     item = (*p).outlines.current;
@@ -2074,7 +2032,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_up() -> ::core::ffi::c_int {
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_bookmarks_down")]
 pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_down() -> ::core::ffi::c_int {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut item: *mut pdf_olitem = ::core::ptr::null_mut::<pdf_olitem>();
     let mut first: *mut pdf_olitem = ::core::ptr::null_mut::<pdf_olitem>();
     item = (*p).outlines.current;
@@ -2153,7 +2112,8 @@ pub const JS_CODE: [::core::ffi::c_char; 78] = unsafe {
 };
 #[unsafe(export_name = "__pdf_impl_pdf_doc_bookmarks_depth")]
 pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_depth() -> ::core::ffi::c_int {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     return (*p).outlines.current_depth;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_bookmarks_add")]
@@ -2161,7 +2121,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_add(
     mut dict: *mut pdf_obj,
     mut is_open: ::core::ffi::c_int,
 ) {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut item: *mut pdf_olitem = ::core::ptr::null_mut::<pdf_olitem>();
     let mut next: *mut pdf_olitem = ::core::ptr::null_mut::<pdf_olitem>();
     if !(!p.is_null() && !dict.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -2297,7 +2258,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_names(
     mut keylen: ::core::ffi::c_int,
     mut value: *mut pdf_obj,
 ) -> ::core::ffi::c_int {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut i: ::core::ffi::c_uint = 0;
     i = 0 as ::core::ffi::c_uint;
     while !(*(*p).names.offset(i as isize)).category.is_null() {
@@ -2321,6 +2283,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_names(
     return pdf_names_add_object((*(*p).names.offset(i as isize)).data, key, keylen, value);
 }
 unsafe extern "C-unwind" fn pdf_doc_add_goto(mut annot_dict: *mut pdf_obj) {
+    let __pdf_state = unsafe { document_state() };
     let mut current_block: u64;
     let mut subtype: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut A: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -2331,7 +2294,7 @@ unsafe extern "C-unwind" fn pdf_doc_add_goto(mut annot_dict: *mut pdf_obj) {
     let mut dest: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut key: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut destlen: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    if pdoc.check_gotos == 0 {
+    if (*__pdf_state).pdoc.check_gotos == 0 {
         return;
     }
     subtype = pdf_deref_obj(pdf_lookup_dict(
@@ -2406,7 +2369,7 @@ unsafe extern "C-unwind" fn pdf_doc_add_goto(mut annot_dict: *mut pdf_obj) {
                             dest = pdf_string_value(D) as *mut ::core::ffi::c_char;
                             destlen = pdf_string_length(D) as ::core::ffi::c_int;
                             D_new = ht_lookup_table(
-                                &raw mut pdoc.gotos,
+                                &raw mut (*__pdf_state).pdoc.gotos,
                                 dest as *const ::core::ffi::c_void,
                                 destlen,
                             ) as *mut pdf_obj;
@@ -2415,7 +2378,7 @@ unsafe extern "C-unwind" fn pdf_doc_add_goto(mut annot_dict: *mut pdf_obj) {
                                 sprintf(
                                     &raw mut buf as *mut ::core::ffi::c_char,
                                     b"%x\0" as *const u8 as *const ::core::ffi::c_char,
-                                    ht_table_size(&raw mut pdoc.gotos),
+                                    ht_table_size(&raw mut (*__pdf_state).pdoc.gotos),
                                 );
                                 D_new = pdf_new_string(
                                     &raw mut buf as *mut ::core::ffi::c_char
@@ -2423,7 +2386,7 @@ unsafe extern "C-unwind" fn pdf_doc_add_goto(mut annot_dict: *mut pdf_obj) {
                                     strlen(&raw mut buf as *mut ::core::ffi::c_char),
                                 );
                                 ht_append_table(
-                                    &raw mut pdoc.gotos,
+                                    &raw mut (*__pdf_state).pdoc.gotos,
                                     dest as *const ::core::ffi::c_void,
                                     destlen,
                                     D_new as *mut ::core::ffi::c_void,
@@ -2503,6 +2466,7 @@ unsafe extern "C-unwind" fn warn_undef_dests(mut dests: *mut ht_table, mut gotos
     ht_clear_iter(&raw mut iter);
 }
 unsafe extern "C-unwind" fn pdf_doc_close_names(mut p: *mut pdf_doc) {
+    let __pdf_state = unsafe { document_state() };
     let mut tmp: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut i: ::core::ffi::c_uint = 0;
     i = 0 as ::core::ffi::c_uint;
@@ -2511,7 +2475,7 @@ unsafe extern "C-unwind" fn pdf_doc_close_names(mut p: *mut pdf_doc) {
             let mut data: *mut ht_table = (*(*p).names.offset(i as isize)).data;
             let mut name_tree: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
             let mut count: ::core::ffi::c_int = 0;
-            if pdoc.check_gotos == 0
+            if (*__pdf_state).pdoc.check_gotos == 0
                 || strcmp(
                     (*(*p).names.offset(i as isize)).category,
                     b"Dests\0" as *const u8 as *const ::core::ffi::c_char,
@@ -2523,7 +2487,8 @@ unsafe extern "C-unwind" fn pdf_doc_close_names(mut p: *mut pdf_doc) {
                     ::core::ptr::null_mut::<ht_table>(),
                 );
             } else {
-                name_tree = pdf_names_create_tree(data, &raw mut count, &raw mut pdoc.gotos);
+                name_tree =
+                    pdf_names_create_tree(data, &raw mut count, &raw mut (*__pdf_state).pdoc.gotos);
                 if dpx_conf.verbose_level > 0 as ::core::ffi::c_int && count < (*data).count {
                     pdf_message!(
                         b"\nRemoved %d unused PDF destinations\n\0" as *const u8
@@ -2531,8 +2496,8 @@ unsafe extern "C-unwind" fn pdf_doc_close_names(mut p: *mut pdf_doc) {
                         (*data).count - count,
                     );
                 }
-                if count < pdoc.gotos.count {
-                    warn_undef_dests(data, &raw mut pdoc.gotos);
+                if count < (*__pdf_state).pdoc.gotos.count {
+                    warn_undef_dests(data, &raw mut (*__pdf_state).pdoc.gotos);
                 }
             }
             if !name_tree.is_null() {
@@ -2586,7 +2551,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_annot(
     mut annot_dict: *mut pdf_obj,
     mut new_annot: ::core::ffi::c_int,
 ) {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut page: *mut pdf_page = ::core::ptr::null_mut::<pdf_page>();
     let mut rect_array: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     page = doc_get_page_entry(p, page_no);
@@ -2674,7 +2640,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_begin_article(
     mut article_id: *const ::core::ffi::c_char,
     mut article_info: *mut pdf_obj,
 ) {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut article: *mut pdf_article = ::core::ptr::null_mut::<pdf_article>();
     if article_id.is_null() || strlen(article_id) == 0 as size_t {
         pdf_abort!(
@@ -2735,7 +2702,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_bead(
     mut page_no: ::core::ffi::c_int,
     mut rect: *const pdf_rect,
 ) {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut article: *mut pdf_article = ::core::ptr::null_mut::<pdf_article>();
     let mut bead: *mut pdf_bead = ::core::ptr::null_mut::<pdf_bead>();
     let mut i: ::core::ffi::c_uint = 0;
@@ -2999,7 +2967,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_set_mediabox(
     mut page_no: ::core::ffi::c_uint,
     mut mediabox: *const pdf_rect,
 ) {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut page: *mut pdf_page = ::core::ptr::null_mut::<pdf_page>();
     if page_no == 0 as ::core::ffi::c_uint {
         (*p).pages.mediabox.llx = (*mediabox).llx;
@@ -3019,7 +2988,8 @@ unsafe extern "C-unwind" fn pdf_doc_get_mediabox(
     mut page_no: ::core::ffi::c_uint,
     mut mediabox: *mut pdf_rect,
 ) {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut page: *mut pdf_page = ::core::ptr::null_mut::<pdf_page>();
     if page_no == 0 as ::core::ffi::c_uint {
         (*mediabox).llx = (*p).pages.mediabox.llx;
@@ -3043,8 +3013,9 @@ unsafe extern "C-unwind" fn pdf_doc_get_mediabox(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_current_page_resources")]
 pub unsafe extern "C-unwind" fn pdf_doc_current_page_resources() -> *mut pdf_obj {
+    let __pdf_state = unsafe { document_state() };
     let mut resources: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut currentpage: *mut pdf_page = ::core::ptr::null_mut::<pdf_page>();
     if !(*p).pending_forms.is_null() {
         if !(*(*p).pending_forms).form.resources.is_null() {
@@ -3068,7 +3039,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_current_page_resources() -> *mut pdf_obj
 pub unsafe extern "C-unwind" fn pdf_doc_get_dictionary(
     mut category: *const ::core::ffi::c_char,
 ) -> *mut pdf_obj {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     if category.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
@@ -3127,7 +3099,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_get_dictionary(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_current_page_number")]
 pub unsafe extern "C-unwind" fn pdf_doc_current_page_number() -> ::core::ffi::c_int {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     return (*p)
         .pages
         .num_entries
@@ -3135,7 +3108,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_current_page_number() -> ::core::ffi::c_
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_ref_page")]
 pub unsafe extern "C-unwind" fn pdf_doc_ref_page(mut page_no: ::core::ffi::c_uint) -> *mut pdf_obj {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut page: *mut pdf_page = ::core::ptr::null_mut::<pdf_page>();
     page = doc_get_page_entry(p, page_no);
     if (*page).page_obj.is_null() {
@@ -3326,26 +3300,18 @@ unsafe extern "C-unwind" fn pdf_doc_finish_page(mut p: *mut pdf_doc) {
     }
     (*p).pages.num_entries = (*p).pages.num_entries.wrapping_add(1);
 }
-static mut bgcolor: pdf_color = pdf_color {
-    res_id: -(1 as ::core::ffi::c_int),
-    type_0: PDF_COLORSPACE_TYPE_GRAY,
-    num_components: 1 as ::core::ffi::c_int,
-    spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-    values: [
-        1.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-        0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-    ],
-    pattern_id: -(1 as ::core::ffi::c_int),
-};
+
 #[unsafe(export_name = "__pdf_impl_pdf_doc_set_bgcolor")]
 pub unsafe extern "C-unwind" fn pdf_doc_set_bgcolor(mut color: *const pdf_color) {
+    let __pdf_state = unsafe { document_state() };
     if !color.is_null() {
-        pdf_color_copycolor(&raw mut bgcolor, color);
+        pdf_color_copycolor(&raw mut (*__pdf_state).bgcolor, color);
     } else {
-        pdf_color_graycolor(&raw mut bgcolor, 1.0f64);
+        pdf_color_graycolor(&raw mut (*__pdf_state).bgcolor, 1.0f64);
     };
 }
 unsafe extern "C-unwind" fn doc_fill_page_background(mut p: *mut pdf_doc) {
+    let __pdf_state = unsafe { document_state() };
     let mut currentpage: *mut pdf_page = ::core::ptr::null_mut::<pdf_page>();
     let mut r: pdf_rect = pdf_rect {
         llx: 0.,
@@ -3356,7 +3322,7 @@ unsafe extern "C-unwind" fn doc_fill_page_background(mut p: *mut pdf_doc) {
     let mut cm: ::core::ffi::c_int = 0;
     let mut saved_content: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     cm = pdf_dev_get_param(PDF_DEV_PARAM_COLORMODE);
-    if cm == 0 || pdf_color_is_white(&raw mut bgcolor) as ::core::ffi::c_int != 0 {
+    if cm == 0 || pdf_color_is_white(&raw mut (*__pdf_state).bgcolor) as ::core::ffi::c_int != 0 {
         return;
     }
     pdf_doc_get_mediabox(
@@ -3378,7 +3344,7 @@ unsafe extern "C-unwind" fn doc_fill_page_background(mut p: *mut pdf_doc) {
     (*currentpage).contents = (*currentpage).background;
     pdf_dev_gsave();
     pdf_dev_set_color(
-        &raw mut bgcolor,
+        &raw mut (*__pdf_state).bgcolor,
         0x20 as ::core::ffi::c_char,
         0 as ::core::ffi::c_int,
     );
@@ -3392,7 +3358,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_begin_page(
     mut x_origin: ::core::ffi::c_double,
     mut y_origin: ::core::ffi::c_double,
 ) {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut M: pdf_tmatrix = pdf_tmatrix {
         a: 0.,
         b: 0.,
@@ -3413,7 +3380,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_begin_page(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_end_page")]
 pub unsafe extern "C-unwind" fn pdf_doc_end_page() {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     pdf_dev_eop();
     if tt_pdf_page_recording() != 0 {
         let mut page: *mut pdf_page =
@@ -3435,7 +3403,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_page_content(
     mut buffer: *const ::core::ffi::c_char,
     mut length: ::core::ffi::c_uint,
 ) {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut currentpage: *mut pdf_page = ::core::ptr::null_mut::<pdf_page>();
     if tt_pdf_page_bytes(buffer, length as size_t) != 0 {
         return;
@@ -3463,7 +3432,8 @@ pub unsafe extern "C-unwind" fn pdf_open_document(
     mut id2: *const ::core::ffi::c_uchar,
     mut settings: pdf_setting,
 ) {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     pdf_out_init(
         filename,
         id1,
@@ -3548,7 +3518,8 @@ pub unsafe extern "C-unwind" fn pdf_open_document(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_close_document")]
 pub unsafe extern "C-unwind" fn pdf_close_document() {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     pdf_pipeline_drain(1 as ::core::ffi::c_int);
     pdf_delete_name_tree(&raw mut global_names);
     pdf_close_device();
@@ -3664,8 +3635,9 @@ pub unsafe extern "C-unwind" fn pdf_doc_begin_grabbing(
     mut ref_y: ::core::ffi::c_double,
     mut cropbox: *const pdf_rect,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut xobj_id: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut form: *mut pdf_form = ::core::ptr::null_mut::<pdf_form>();
     let mut fnode: *mut form_list_node = ::core::ptr::null_mut::<form_list_node>();
     let mut info: xform_info = xform_info {
@@ -3729,9 +3701,10 @@ pub unsafe extern "C-unwind" fn pdf_doc_begin_grabbing(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_end_grabbing")]
 pub unsafe extern "C-unwind" fn pdf_doc_end_grabbing(mut attrib: *mut pdf_obj) {
+    let __pdf_state = unsafe { document_state() };
     let mut form: *mut pdf_form = ::core::ptr::null_mut::<pdf_form>();
     let mut procset: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut fnode: *mut form_list_node = ::core::ptr::null_mut::<form_list_node>();
     if (*p).pending_forms.is_null() {
         pdf_warning!(
@@ -3786,44 +3759,38 @@ pub unsafe extern "C-unwind" fn pdf_doc_end_grabbing(mut attrib: *mut pdf_obj) {
     pdf_dev_reset_xgstate(1 as ::core::ffi::c_int);
     free(fnode as *mut ::core::ffi::c_void);
 }
-static mut breaking_state: C2RustUnnamed_7 = C2RustUnnamed_7 {
-    dirty: 0 as ::core::ffi::c_int,
-    broken: 0 as ::core::ffi::c_int,
-    annot_dict: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-    rect: pdf_rect {
-        llx: 0.0f64,
-        lly: 0.0f64,
-        urx: 0.0f64,
-        ury: 0.0f64,
-    },
-};
+
 unsafe extern "C-unwind" fn reset_box() {
-    breaking_state.rect.lly = ::core::f64::INFINITY;
-    breaking_state.rect.llx = breaking_state.rect.lly;
-    breaking_state.rect.ury = -::core::f64::INFINITY;
-    breaking_state.rect.urx = breaking_state.rect.ury;
-    breaking_state.dirty = 0 as ::core::ffi::c_int;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).breaking_state.rect.lly = ::core::f64::INFINITY;
+    (*__pdf_state).breaking_state.rect.llx = (*__pdf_state).breaking_state.rect.lly;
+    (*__pdf_state).breaking_state.rect.ury = -::core::f64::INFINITY;
+    (*__pdf_state).breaking_state.rect.urx = (*__pdf_state).breaking_state.rect.ury;
+    (*__pdf_state).breaking_state.dirty = 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_begin_annot")]
 pub unsafe extern "C-unwind" fn pdf_doc_begin_annot(mut dict: *mut pdf_obj) {
-    breaking_state.annot_dict = dict;
-    breaking_state.broken = 0 as ::core::ffi::c_int;
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).breaking_state.annot_dict = dict;
+    (*__pdf_state).breaking_state.broken = 0 as ::core::ffi::c_int;
     reset_box();
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_end_annot")]
 pub unsafe extern "C-unwind" fn pdf_doc_end_annot() {
+    let __pdf_state = unsafe { document_state() };
     pdf_doc_break_annot();
-    if !breaking_state.annot_dict.is_null() {
-        pdf_release_obj(breaking_state.annot_dict);
+    if !(*__pdf_state).breaking_state.annot_dict.is_null() {
+        pdf_release_obj((*__pdf_state).breaking_state.annot_dict);
     }
-    breaking_state.annot_dict = ::core::ptr::null_mut::<pdf_obj>();
+    (*__pdf_state).breaking_state.annot_dict = ::core::ptr::null_mut::<pdf_obj>();
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_break_annot")]
 pub unsafe extern "C-unwind" fn pdf_doc_break_annot() {
-    let mut p: *mut pdf_doc = &raw mut pdoc;
+    let __pdf_state = unsafe { document_state() };
+    let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut g_x: ::core::ffi::c_double = (*p).options.annot_grow.x;
     let mut g_y: ::core::ffi::c_double = (*p).options.annot_grow.y;
-    if breaking_state.dirty != 0 {
+    if (*__pdf_state).breaking_state.dirty != 0 {
         let mut annot_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
         let mut annot_copy: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
         let mut rect: pdf_rect = pdf_rect {
@@ -3832,11 +3799,11 @@ pub unsafe extern "C-unwind" fn pdf_doc_break_annot() {
             urx: 0.,
             ury: 0.,
         };
-        annot_dict = breaking_state.annot_dict;
+        annot_dict = (*__pdf_state).breaking_state.annot_dict;
         annot_copy = pdf_new_dict();
-        pdf_merge_dict(annot_copy, breaking_state.annot_dict);
-        breaking_state.annot_dict = annot_copy;
-        rect = breaking_state.rect;
+        pdf_merge_dict(annot_copy, (*__pdf_state).breaking_state.annot_dict);
+        (*__pdf_state).breaking_state.annot_dict = annot_copy;
+        rect = (*__pdf_state).breaking_state.rect;
         rect.llx -= g_x;
         rect.lly -= g_y;
         rect.urx += g_x;
@@ -3845,40 +3812,44 @@ pub unsafe extern "C-unwind" fn pdf_doc_break_annot() {
             pdf_doc_current_page_number() as ::core::ffi::c_uint,
             &raw mut rect,
             annot_dict,
-            (breaking_state.broken == 0) as ::core::ffi::c_int,
+            ((*__pdf_state).breaking_state.broken == 0) as ::core::ffi::c_int,
         );
         pdf_release_obj(annot_dict);
-        breaking_state.broken = 1 as ::core::ffi::c_int;
+        (*__pdf_state).breaking_state.broken = 1 as ::core::ffi::c_int;
     }
     reset_box();
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_expand_box")]
 pub unsafe extern "C-unwind" fn pdf_doc_expand_box(mut rect: *const pdf_rect) {
-    breaking_state.rect.llx = if breaking_state.rect.llx < (*rect).llx {
-        breaking_state.rect.llx
+    let __pdf_state = unsafe { document_state() };
+    (*__pdf_state).breaking_state.rect.llx = if (*__pdf_state).breaking_state.rect.llx < (*rect).llx
+    {
+        (*__pdf_state).breaking_state.rect.llx
     } else {
         (*rect).llx
     };
-    breaking_state.rect.lly = if breaking_state.rect.lly < (*rect).lly {
-        breaking_state.rect.lly
+    (*__pdf_state).breaking_state.rect.lly = if (*__pdf_state).breaking_state.rect.lly < (*rect).lly
+    {
+        (*__pdf_state).breaking_state.rect.lly
     } else {
         (*rect).lly
     };
-    breaking_state.rect.urx = if breaking_state.rect.urx > (*rect).urx {
-        breaking_state.rect.urx
+    (*__pdf_state).breaking_state.rect.urx = if (*__pdf_state).breaking_state.rect.urx > (*rect).urx
+    {
+        (*__pdf_state).breaking_state.rect.urx
     } else {
         (*rect).urx
     };
-    breaking_state.rect.ury = if breaking_state.rect.ury > (*rect).ury {
-        breaking_state.rect.ury
+    (*__pdf_state).breaking_state.rect.ury = if (*__pdf_state).breaking_state.rect.ury > (*rect).ury
+    {
+        (*__pdf_state).breaking_state.rect.ury
     } else {
         (*rect).ury
     };
-    breaking_state.dirty = 1 as ::core::ffi::c_int;
+    (*__pdf_state).breaking_state.dirty = 1 as ::core::ffi::c_int;
 }
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcpy(
         __dst: *mut ::core::ffi::c_void,
         __src: *const ::core::ffi::c_void,
@@ -4333,5 +4304,102 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_expand_box(mut rect: *const pdf_rec
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    pdoc: pdf_doc,
+    bgcolor: pdf_color,
+    breaking_state: C2RustUnnamed_7,
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                pdoc: pdf_doc {
+                    root: C2RustUnnamed_5 {
+                        dict: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                        viewerpref: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                        pagelabels: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                        pages: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                        names: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                        threads: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                    },
+                    info: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                    pages: C2RustUnnamed_4 {
+                        mediabox: pdf_rect {
+                            llx: 0.,
+                            lly: 0.,
+                            urx: 0.,
+                            ury: 0.,
+                        },
+                        bop: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                        eop: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                        num_entries: 0,
+                        max_entries: 0,
+                        entries: ::core::ptr::null::<pdf_page>() as *mut pdf_page,
+                    },
+                    outlines: C2RustUnnamed_3 {
+                        first: ::core::ptr::null::<pdf_olitem>() as *mut pdf_olitem,
+                        current: ::core::ptr::null::<pdf_olitem>() as *mut pdf_olitem,
+                        current_depth: 0,
+                    },
+                    articles: C2RustUnnamed_2 {
+                        num_entries: 0,
+                        max_entries: 0,
+                        entries: ::core::ptr::null::<pdf_article>() as *mut pdf_article,
+                    },
+                    names: ::core::ptr::null::<name_dict>() as *mut name_dict,
+                    check_gotos: 0,
+                    gotos: ht_table {
+                        count: 0,
+                        hval_free_fn: None,
+                        table: [::core::ptr::null::<ht_entry>() as *mut ht_entry; 503],
+                    },
+                    options: C2RustUnnamed_0 {
+                        outline_open_depth: 0,
+                        annot_grow: C2RustUnnamed_1 { x: 0., y: 0. },
+                        enable_manual_thumb: 0,
+                    },
+                    pending_forms: ::core::ptr::null::<form_list_node>() as *mut form_list_node,
+                    thumb_basename: ::core::ptr::null::<::core::ffi::c_char>()
+                        as *mut ::core::ffi::c_char,
+                },
+                bgcolor: pdf_color {
+                    res_id: -(1 as ::core::ffi::c_int),
+                    type_0: PDF_COLORSPACE_TYPE_GRAY,
+                    num_components: 1 as ::core::ffi::c_int,
+                    spot_color_name: ::core::ptr::null::<::core::ffi::c_char>()
+                        as *mut ::core::ffi::c_char,
+                    values: [
+                        1.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                    ],
+                    pattern_id: -(1 as ::core::ffi::c_int),
+                },
+                breaking_state: C2RustUnnamed_7 {
+                    dirty: 0 as ::core::ffi::c_int,
+                    broken: 0 as ::core::ffi::c_int,
+                    annot_dict: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+                    rect: pdf_rect {
+                        llx: 0.0f64,
+                        lly: 0.0f64,
+                        urx: 0.0f64,
+                        ury: 0.0f64,
+                    },
+                },
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_pdfdoc
+            .pointer
     }
 }

@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -149,11 +150,7 @@ pub const PDF_NUM_RESOURCE_CATEGORIES: usize = (::core::mem::size_of::<[C2RustUn
     as usize)
     .wrapping_div(::core::mem::size_of::<C2RustUnnamed>() as usize);
 pub const CACHE_ALLOC_SIZE: ::core::ffi::c_uint = 16 as ::core::ffi::c_uint;
-static mut resources: [res_cache; 9] = [res_cache {
-    count: 0,
-    capacity: 0,
-    resources: ::core::ptr::null::<pdf_res>() as *mut pdf_res,
-}; 9];
+
 unsafe extern "C-unwind" fn pdf_init_resource(mut res: *mut pdf_res) {
     if res.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
@@ -194,23 +191,26 @@ unsafe extern "C-unwind" fn pdf_clean_resource(mut res: *mut pdf_res) {
 }
 #[unsafe(export_name = "__pdf_impl_pdf_init_resources")]
 pub unsafe extern "C-unwind" fn pdf_init_resources() {
+    let __pdf_state = unsafe { document_state() };
     let mut i: ::core::ffi::c_uint = 0;
     i = 0 as ::core::ffi::c_uint;
     while (i as usize) < PDF_NUM_RESOURCE_CATEGORIES {
-        resources[i as usize].count = 0 as ::core::ffi::c_int;
-        resources[i as usize].capacity = 0 as ::core::ffi::c_int;
-        resources[i as usize].resources = ::core::ptr::null_mut::<pdf_res>();
+        (*__pdf_state).resources[i as usize].count = 0 as ::core::ffi::c_int;
+        (*__pdf_state).resources[i as usize].capacity = 0 as ::core::ffi::c_int;
+        (*__pdf_state).resources[i as usize].resources = ::core::ptr::null_mut::<pdf_res>();
         i = i.wrapping_add(1);
     }
 }
 #[unsafe(export_name = "__pdf_impl_pdf_close_resources")]
 pub unsafe extern "C-unwind" fn pdf_close_resources() {
+    let __pdf_state = unsafe { document_state() };
     let mut i: ::core::ffi::c_uint = 0;
     i = 0 as ::core::ffi::c_uint;
     while (i as usize) < PDF_NUM_RESOURCE_CATEGORIES {
         let mut rc: *mut res_cache = ::core::ptr::null_mut::<res_cache>();
         let mut j: ::core::ffi::c_int = 0;
-        rc = (&raw mut resources as *mut res_cache).offset(i as isize) as *mut res_cache;
+        rc = (&raw mut (*__pdf_state).resources as *mut res_cache).offset(i as isize)
+            as *mut res_cache;
         j = 0 as ::core::ffi::c_int;
         while j < (*rc).count {
             pdf_flush_resource((*rc).resources.offset(j as isize) as *mut pdf_res);
@@ -244,6 +244,7 @@ pub unsafe extern "C-unwind" fn pdf_defineresource(
     mut object: *mut pdf_obj,
     mut flags: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut res_id: ::core::ffi::c_int = 0;
     let mut rc: *mut res_cache = ::core::ptr::null_mut::<res_cache>();
     let mut cat_id: ::core::ffi::c_int = 0;
@@ -263,7 +264,8 @@ pub unsafe extern "C-unwind" fn pdf_defineresource(
             category,
         );
     }
-    rc = (&raw mut resources as *mut res_cache).offset(cat_id as isize) as *mut res_cache;
+    rc = (&raw mut (*__pdf_state).resources as *mut res_cache).offset(cat_id as isize)
+        as *mut res_cache;
     if !resname.is_null() {
         res_id = 0 as ::core::ffi::c_int;
         while res_id < (*rc).count {
@@ -331,6 +333,7 @@ pub unsafe extern "C-unwind" fn pdf_findresource(
     mut category: *const ::core::ffi::c_char,
     mut resname: *const ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut res: *mut pdf_res = ::core::ptr::null_mut::<pdf_res>();
     let mut res_id: ::core::ffi::c_int = 0;
     let mut cat_id: ::core::ffi::c_int = 0;
@@ -351,7 +354,8 @@ pub unsafe extern "C-unwind" fn pdf_findresource(
             category,
         );
     }
-    rc = (&raw mut resources as *mut res_cache).offset(cat_id as isize) as *mut res_cache;
+    rc = (&raw mut (*__pdf_state).resources as *mut res_cache).offset(cat_id as isize)
+        as *mut res_cache;
     res_id = 0 as ::core::ffi::c_int;
     while res_id < (*rc).count {
         res = (*rc).resources.offset(res_id as isize) as *mut pdf_res;
@@ -366,6 +370,7 @@ pub unsafe extern "C-unwind" fn pdf_findresource(
 pub unsafe extern "C-unwind" fn pdf_get_resource_reference(
     mut rc_id: ::core::ffi::c_int,
 ) -> *mut pdf_obj {
+    let __pdf_state = unsafe { document_state() };
     let mut cat_id: ::core::ffi::c_int = 0;
     let mut res_id: ::core::ffi::c_int = 0;
     let mut rc: *mut res_cache = ::core::ptr::null_mut::<res_cache>();
@@ -378,7 +383,8 @@ pub unsafe extern "C-unwind" fn pdf_get_resource_reference(
             cat_id,
         );
     }
-    rc = (&raw mut resources as *mut res_cache).offset(cat_id as isize) as *mut res_cache;
+    rc = (&raw mut (*__pdf_state).resources as *mut res_cache).offset(cat_id as isize)
+        as *mut res_cache;
     if res_id < 0 as ::core::ffi::c_int || res_id >= (*rc).count {
         pdf_abort!(
             b"Invalid resource ID: %d\0" as *const u8 as *const ::core::ffi::c_char,
@@ -397,7 +403,6 @@ pub unsafe extern "C-unwind" fn pdf_get_resource_reference(
 }
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -473,5 +478,33 @@ pub unsafe extern "C" fn __pdf_entry_pdf_get_resource_reference(
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    resources: [res_cache; 9],
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                resources: [res_cache {
+                    count: 0,
+                    capacity: 0,
+                    resources: ::core::ptr::null::<pdf_res>() as *mut pdf_res,
+                }; 9],
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_pdfresource
+            .pointer
     }
 }

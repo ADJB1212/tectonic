@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -294,15 +295,7 @@ unsafe extern "C-unwind" fn skip_blank(
     }
     *pp = p;
 }
-static mut _tpic_state: spc_tpic_ = spc_tpic_ {
-    mode: C2RustUnnamed_0 { fill: 0 },
-    pen_size: 0.,
-    fill_shape: false,
-    fill_color: 0.,
-    points: ::core::ptr::null::<pdf_coord>() as *mut pdf_coord,
-    num_points: 0,
-    max_points: 0,
-};
+
 unsafe extern "C-unwind" fn tpic__clear(mut tp: *mut spc_tpic_) {
     (*tp).points = mfree((*tp).points as *mut ::core::ffi::c_void) as *mut pdf_coord;
     (*tp).num_points = 0 as ::core::ffi::c_int;
@@ -697,7 +690,8 @@ unsafe extern "C-unwind" fn spc_handler_tpic_pn(
     mut spe: *mut spc_env,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
         as ::core::ffi::c_long
@@ -723,7 +717,8 @@ unsafe extern "C-unwind" fn spc_handler_tpic_pa(
     mut spe: *mut spc_env,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut i: ::core::ffi::c_int = 0;
     let mut v: [::core::ffi::c_double; 2] = [0.; 2];
@@ -778,7 +773,8 @@ unsafe extern "C-unwind" fn spc_handler_tpic_fp(
     mut spe: *mut spc_env,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut cp: pdf_coord = pdf_coord { x: 0., y: 0. };
     let mut pg: ::core::ffi::c_int = 0;
     if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
@@ -804,7 +800,8 @@ unsafe extern "C-unwind" fn spc_handler_tpic_ip(
     mut spe: *mut spc_env,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut cp: pdf_coord = pdf_coord { x: 0., y: 0. };
     let mut pg: ::core::ffi::c_int = 0;
     if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
@@ -830,7 +827,8 @@ unsafe extern "C-unwind" fn spc_handler_tpic_da(
     mut spe: *mut spc_env,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut da: ::core::ffi::c_double = 0.0f64;
     let mut cp: pdf_coord = pdf_coord { x: 0., y: 0. };
@@ -864,7 +862,8 @@ unsafe extern "C-unwind" fn spc_handler_tpic_dt(
     mut spe: *mut spc_env,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut da: ::core::ffi::c_double = 0.0f64;
     let mut cp: pdf_coord = pdf_coord { x: 0., y: 0. };
@@ -898,7 +897,8 @@ unsafe extern "C-unwind" fn spc_handler_tpic_sp(
     mut spe: *mut spc_env,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut da: ::core::ffi::c_double = 0.0f64;
     let mut cp: pdf_coord = pdf_coord { x: 0., y: 0. };
@@ -932,7 +932,8 @@ unsafe extern "C-unwind" fn spc_handler_tpic_ar(
     mut spe: *mut spc_env,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut v: [::core::ffi::c_double; 6] = [0.; 6];
     let mut cp: pdf_coord = pdf_coord { x: 0., y: 0. };
     let mut pg: ::core::ffi::c_int = 0;
@@ -989,7 +990,8 @@ unsafe extern "C-unwind" fn spc_handler_tpic_ia(
     mut spe: *mut spc_env,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut v: [::core::ffi::c_double; 6] = [0.; 6];
     let mut cp: pdf_coord = pdf_coord { x: 0., y: 0. };
     let mut pg: ::core::ffi::c_int = 0;
@@ -1046,7 +1048,8 @@ unsafe extern "C-unwind" fn spc_handler_tpic_sh(
     mut spe: *mut spc_env,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
         as ::core::ffi::c_long
@@ -1081,7 +1084,8 @@ unsafe extern "C-unwind" fn spc_handler_tpic_wh(
     mut spe: *mut spc_env,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
         as ::core::ffi::c_long
         != 0
@@ -1100,7 +1104,8 @@ unsafe extern "C-unwind" fn spc_handler_tpic_bk(
     mut spe: *mut spc_env,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
         as ::core::ffi::c_long
         != 0
@@ -1119,7 +1124,8 @@ unsafe extern "C-unwind" fn spc_handler_tpic_tx(
     mut spe: *mut spc_env,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
         as ::core::ffi::c_long
         != 0
@@ -1215,17 +1221,20 @@ unsafe extern "C-unwind" fn spc_handler_tpic__clean(
 }
 #[unsafe(export_name = "__pdf_impl_tpic_set_fill_mode")]
 pub unsafe extern "C-unwind" fn tpic_set_fill_mode(mut mode: ::core::ffi::c_int) {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     (*tp).mode.fill = mode;
 }
 #[unsafe(export_name = "__pdf_impl_spc_tpic_at_begin_page")]
 pub unsafe extern "C-unwind" fn spc_tpic_at_begin_page() -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     return spc_handler_tpic__bophook(tp as *mut ::core::ffi::c_void);
 }
 #[unsafe(export_name = "__pdf_impl_spc_tpic_at_end_page")]
 pub unsafe extern "C-unwind" fn spc_tpic_at_end_page() -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     return spc_handler_tpic__eophook(
         ::core::ptr::null_mut::<spc_env>(),
         tp as *mut ::core::ffi::c_void,
@@ -1233,7 +1242,8 @@ pub unsafe extern "C-unwind" fn spc_tpic_at_end_page() -> ::core::ffi::c_int {
 }
 #[unsafe(export_name = "__pdf_impl_spc_tpic_at_begin_document")]
 pub unsafe extern "C-unwind" fn spc_tpic_at_begin_document() -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     return spc_handler_tpic__init(
         ::core::ptr::null_mut::<spc_env>(),
         tp as *mut ::core::ffi::c_void,
@@ -1241,7 +1251,8 @@ pub unsafe extern "C-unwind" fn spc_tpic_at_begin_document() -> ::core::ffi::c_i
 }
 #[unsafe(export_name = "__pdf_impl_spc_tpic_at_end_document")]
 pub unsafe extern "C-unwind" fn spc_tpic_at_end_document() -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     return spc_handler_tpic__clean(
         ::core::ptr::null_mut::<spc_env>(),
         tp as *mut ::core::ffi::c_void,
@@ -1362,7 +1373,8 @@ unsafe extern "C-unwind" fn spc_handler_tpic__setopts(
     mut spe: *mut spc_env,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let mut tp: *mut spc_tpic_ = &raw mut _tpic_state;
+    let __pdf_state = unsafe { document_state() };
+    let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     dict = spc_parse_kvpairs(ap);
@@ -1663,7 +1675,6 @@ pub unsafe extern "C-unwind" fn spc_tpic_setup_handler(
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcmp(
         __s1: *const ::core::ffi::c_void,
         __s2: *const ::core::ffi::c_void,
@@ -1770,5 +1781,37 @@ pub unsafe extern "C" fn __pdf_entry_spc_tpic_setup_handler(
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    _tpic_state: spc_tpic_,
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                _tpic_state: spc_tpic_ {
+                    mode: C2RustUnnamed_0 { fill: 0 },
+                    pen_size: 0.,
+                    fill_shape: false,
+                    fill_color: 0.,
+                    points: ::core::ptr::null::<pdf_coord>() as *mut pdf_coord,
+                    num_points: 0,
+                    max_points: 0,
+                },
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_spc_tpic
+            .pointer
     }
 }

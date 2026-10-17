@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -169,11 +170,11 @@ pub const PDF_DICT: ::core::ffi::c_int = 6;
 pub const PDF_STREAM: ::core::ffi::c_int = 7;
 pub const PDF_UNDEFINED: ::core::ffi::c_int = 10 as ::core::ffi::c_int;
 pub const PDF_OBJ_INVALID: ::core::ffi::c_int = 0;
-unsafe extern "C-unwind" fn printable_key(
+unsafe fn printable_key(
     mut key: *const ::core::ffi::c_char,
     mut keylen: ::core::ffi::c_int,
-) -> *mut ::core::ffi::c_char {
-    static mut pkey: [::core::ffi::c_char; 36] = [0; 36];
+) -> [::core::ffi::c_char; 36] {
+    let mut pkey: [::core::ffi::c_char; 36] = [0; 36];
     let mut i: ::core::ffi::c_int = 0;
     let mut len: ::core::ffi::c_int = 0;
     let mut hi: ::core::ffi::c_uchar = 0;
@@ -211,7 +212,7 @@ unsafe extern "C-unwind" fn printable_key(
         i += 1;
     }
     pkey[len as usize] = '\0' as i32 as ::core::ffi::c_char;
-    return &raw mut pkey as *mut ::core::ffi::c_char;
+    return pkey;
 }
 pub const MAX_KEY: ::core::ffi::c_int = 32 as ::core::ffi::c_int;
 #[inline]
@@ -263,7 +264,7 @@ unsafe extern "C-unwind" fn check_objects_defined(mut ht_tab: *mut ht_table) {
                 pdf_warning!(
                     b"Object @%s used, but not defined. Replaced by null.\0" as *const u8
                         as *const ::core::ffi::c_char,
-                    printable_key(key, keylen),
+                    printable_key(key, keylen).as_ptr(),
                 );
             }
             if !(ht_iter_next(&raw mut iter) >= 0 as ::core::ffi::c_int) {
@@ -326,7 +327,7 @@ pub unsafe extern "C-unwind" fn pdf_names_add_object(
     } else {
         pdf_warning!(
             b"Object @%s already defined.\0" as *const u8 as *const ::core::ffi::c_char,
-            printable_key(key as *const ::core::ffi::c_char, keylen),
+            printable_key(key as *const ::core::ffi::c_char, keylen).as_ptr(),
         );
         pdf_release_obj(object);
         return -(1 as ::core::ffi::c_int);
@@ -374,7 +375,7 @@ pub unsafe extern "C-unwind" fn pdf_names_reserve(
     } else {
         pdf_warning!(
             b"Object @%s already defined.\0" as *const u8 as *const ::core::ffi::c_char,
-            printable_key(key as *const ::core::ffi::c_char, keylen),
+            printable_key(key as *const ::core::ffi::c_char, keylen).as_ptr(),
         );
         obj_ref = ::core::ptr::null_mut::<pdf_obj>();
     }
@@ -404,7 +405,7 @@ pub unsafe extern "C-unwind" fn pdf_names_lookup_reference(
                 pdf_warning!(
                     b"Can't create object ref for already released object: %s\0" as *const u8
                         as *const ::core::ffi::c_char,
-                    printable_key(key as *const ::core::ffi::c_char, keylen),
+                    printable_key(key as *const ::core::ffi::c_char, keylen).as_ptr(),
                 );
             }
         }
@@ -437,7 +438,7 @@ pub unsafe extern "C-unwind" fn pdf_names_lookup_object(
     if (*value).closed != 0 {
         pdf_warning!(
             b"Object \"%s\" already closed.\0" as *const u8 as *const ::core::ffi::c_char,
-            printable_key(key as *const ::core::ffi::c_char, keylen),
+            printable_key(key as *const ::core::ffi::c_char, keylen).as_ptr(),
         );
     }
     return (*value).object;
@@ -462,7 +463,7 @@ pub unsafe extern "C-unwind" fn pdf_names_close_object(
     {
         pdf_warning!(
             b"Cannot close undefined object @%s.\0" as *const u8 as *const ::core::ffi::c_char,
-            printable_key(key as *const ::core::ffi::c_char, keylen),
+            printable_key(key as *const ::core::ffi::c_char, keylen).as_ptr(),
         );
         return -(1 as ::core::ffi::c_int);
     }
@@ -476,7 +477,7 @@ pub unsafe extern "C-unwind" fn pdf_names_close_object(
     if (*value).closed != 0 {
         pdf_warning!(
             b"Object @%s already closed.\0" as *const u8 as *const ::core::ffi::c_char,
-            printable_key(key as *const ::core::ffi::c_char, keylen),
+            printable_key(key as *const ::core::ffi::c_char, keylen).as_ptr(),
         );
         return -(1 as ::core::ffi::c_int);
     }
@@ -575,7 +576,7 @@ unsafe extern "C-unwind" fn build_name_tree(
                 PDF_OBJ_INVALID => {
                     pdf_abort!(
                         b"Invalid object...: %s\0" as *const u8 as *const ::core::ffi::c_char,
-                        printable_key((*cur).key, (*cur).keylen),
+                        printable_key((*cur).key, (*cur).keylen).as_ptr(),
                     );
                 }
                 _ => {
@@ -678,7 +679,7 @@ unsafe extern "C-unwind" fn flat_table(
                         pdf_warning!(
                             b"Object @%s\" not defined. Replaced by null.\0" as *const u8
                                 as *const ::core::ffi::c_char,
-                            printable_key(key, keylen),
+                            printable_key(key, keylen).as_ptr(),
                         );
                         let ref mut fresh4 = (*objects.offset(count as isize)).key;
                         *fresh4 = key;
@@ -740,7 +741,6 @@ pub unsafe extern "C-unwind" fn pdf_names_create_tree(
     return name_tree;
 }
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcmp(
         __s1: *const ::core::ffi::c_void,
         __s2: *const ::core::ffi::c_void,

@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn floor(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn xmalloc(size: size_t) -> *mut ::core::ffi::c_void;
@@ -1651,7 +1652,6 @@ pub unsafe extern "C-unwind" fn jpeg_get_bbox(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcmp(
         __s1: *const ::core::ffi::c_void,
         __s2: *const ::core::ffi::c_void,

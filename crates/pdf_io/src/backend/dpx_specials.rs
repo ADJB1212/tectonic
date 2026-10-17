@@ -27,6 +27,7 @@
     dangerous_implicit_autorefs
 )]
 use crate::backend::dpx_pdfdraw::pdf_dev_transform;
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -638,17 +639,14 @@ pub unsafe extern "C-unwind" fn spc_flush_object(
 }
 #[unsafe(export_name = "__pdf_impl_spc_clear_objects")]
 pub unsafe extern "C-unwind" fn spc_clear_objects(mut spe: *mut spc_env) {}
-static mut coords: dpx_stack = dpx_stack {
-    size: 0,
-    top: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
-    bottom: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
-};
+
 #[unsafe(export_name = "__pdf_impl_spc_get_coord")]
 pub unsafe extern "C-unwind" fn spc_get_coord(
     mut spe: *mut spc_env,
     mut x: *mut ::core::ffi::c_double,
     mut y: *mut ::core::ffi::c_double,
 ) {
+    let __pdf_state = unsafe { document_state() };
     if !(!x.is_null() && !y.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
@@ -656,8 +654,8 @@ pub unsafe extern "C-unwind" fn spc_get_coord(
         );
     } else {
     };
-    if dpx_stack_depth(&raw mut coords) > 0 as ::core::ffi::c_int {
-        let mut p: *mut pdf_coord = dpx_stack_top(&raw mut coords) as *mut pdf_coord;
+    if dpx_stack_depth(&raw mut (*__pdf_state).coords) > 0 as ::core::ffi::c_int {
+        let mut p: *mut pdf_coord = dpx_stack_top(&raw mut (*__pdf_state).coords) as *mut pdf_coord;
         *x = (*p).x;
         *y = (*p).y;
     } else {
@@ -671,40 +669,42 @@ pub unsafe extern "C-unwind" fn spc_push_coord(
     mut x: ::core::ffi::c_double,
     mut y: ::core::ffi::c_double,
 ) {
+    let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_coord = ::core::ptr::null_mut::<pdf_coord>();
     p = new((1 as ::core::ffi::c_int as uint32_t as usize)
         .wrapping_mul(::core::mem::size_of::<pdf_coord>() as usize) as uint32_t)
         as *mut pdf_coord;
     (*p).x = x;
     (*p).y = y;
-    dpx_stack_push(&raw mut coords, p as *mut ::core::ffi::c_void);
+    dpx_stack_push(
+        &raw mut (*__pdf_state).coords,
+        p as *mut ::core::ffi::c_void,
+    );
     dvi_set_compensation(x, y);
 }
 #[unsafe(export_name = "__pdf_impl_spc_pop_coord")]
 pub unsafe extern "C-unwind" fn spc_pop_coord(mut spe: *mut spc_env) {
+    let __pdf_state = unsafe { document_state() };
     let mut x: ::core::ffi::c_double = 0.;
     let mut y: ::core::ffi::c_double = 0.;
     let mut p: *mut pdf_coord = ::core::ptr::null_mut::<pdf_coord>();
-    p = dpx_stack_pop(&raw mut coords) as *mut pdf_coord;
+    p = dpx_stack_pop(&raw mut (*__pdf_state).coords) as *mut pdf_coord;
     if !p.is_null() {
         free(p as *mut ::core::ffi::c_void);
     }
     spc_get_coord(spe, &raw mut x, &raw mut y);
     dvi_set_compensation(x, y);
 }
-static mut pt_fixee: dpx_stack = dpx_stack {
-    size: 0,
-    top: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
-    bottom: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
-};
+
 #[unsafe(export_name = "__pdf_impl_spc_set_fixed_point")]
 pub unsafe extern "C-unwind" fn spc_set_fixed_point(
     mut spe: *mut spc_env,
     mut x: ::core::ffi::c_double,
     mut y: ::core::ffi::c_double,
 ) {
+    let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_coord = ::core::ptr::null_mut::<pdf_coord>();
-    p = dpx_stack_top(&raw mut pt_fixee) as *mut pdf_coord;
+    p = dpx_stack_top(&raw mut (*__pdf_state).pt_fixee) as *mut pdf_coord;
     if !p.is_null() {
         (*p).x = x;
         (*p).y = y;
@@ -714,7 +714,10 @@ pub unsafe extern "C-unwind" fn spc_set_fixed_point(
             as *mut pdf_coord;
         (*p).x = x;
         (*p).y = y;
-        dpx_stack_push(&raw mut pt_fixee, p as *mut ::core::ffi::c_void);
+        dpx_stack_push(
+            &raw mut (*__pdf_state).pt_fixee,
+            p as *mut ::core::ffi::c_void,
+        );
     };
 }
 #[unsafe(export_name = "__pdf_impl_spc_get_fixed_point")]
@@ -723,6 +726,7 @@ pub unsafe extern "C-unwind" fn spc_get_fixed_point(
     mut x: *mut ::core::ffi::c_double,
     mut y: *mut ::core::ffi::c_double,
 ) {
+    let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_coord = ::core::ptr::null_mut::<pdf_coord>();
     if !(!x.is_null() && !y.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
@@ -731,7 +735,7 @@ pub unsafe extern "C-unwind" fn spc_get_fixed_point(
         );
     } else {
     };
-    p = dpx_stack_top(&raw mut pt_fixee) as *mut pdf_coord;
+    p = dpx_stack_top(&raw mut (*__pdf_state).pt_fixee) as *mut pdf_coord;
     if !p.is_null() {
         *x = (*p).x;
         *y = (*p).y;
@@ -746,19 +750,24 @@ pub unsafe extern "C-unwind" fn spc_put_fixed_point(
     mut x: ::core::ffi::c_double,
     mut y: ::core::ffi::c_double,
 ) {
+    let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_coord = ::core::ptr::null_mut::<pdf_coord>();
     p = new((1 as ::core::ffi::c_int as uint32_t as usize)
         .wrapping_mul(::core::mem::size_of::<pdf_coord>() as usize) as uint32_t)
         as *mut pdf_coord;
     (*p).x = x;
     (*p).y = y;
-    dpx_stack_push(&raw mut pt_fixee, p as *mut ::core::ffi::c_void);
+    dpx_stack_push(
+        &raw mut (*__pdf_state).pt_fixee,
+        p as *mut ::core::ffi::c_void,
+    );
 }
 #[unsafe(export_name = "__pdf_impl_spc_dup_fixed_point")]
 pub unsafe extern "C-unwind" fn spc_dup_fixed_point(mut spe: *mut spc_env) {
+    let __pdf_state = unsafe { document_state() };
     let mut p1: *mut pdf_coord = ::core::ptr::null_mut::<pdf_coord>();
     let mut p2: *mut pdf_coord = ::core::ptr::null_mut::<pdf_coord>();
-    p1 = dpx_stack_top(&raw mut pt_fixee) as *mut pdf_coord;
+    p1 = dpx_stack_top(&raw mut (*__pdf_state).pt_fixee) as *mut pdf_coord;
     p2 = new((1 as ::core::ffi::c_int as uint32_t as usize)
         .wrapping_mul(::core::mem::size_of::<pdf_coord>() as usize) as uint32_t)
         as *mut pdf_coord;
@@ -769,21 +778,26 @@ pub unsafe extern "C-unwind" fn spc_dup_fixed_point(mut spe: *mut spc_env) {
         (*p2).x = 0.0f64;
         (*p2).y = 0.0f64;
     }
-    dpx_stack_push(&raw mut pt_fixee, p2 as *mut ::core::ffi::c_void);
+    dpx_stack_push(
+        &raw mut (*__pdf_state).pt_fixee,
+        p2 as *mut ::core::ffi::c_void,
+    );
 }
 #[unsafe(export_name = "__pdf_impl_spc_pop_fixed_point")]
 pub unsafe extern "C-unwind" fn spc_pop_fixed_point(mut spe: *mut spc_env) {
+    let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_coord = ::core::ptr::null_mut::<pdf_coord>();
-    p = dpx_stack_pop(&raw mut pt_fixee) as *mut pdf_coord;
+    p = dpx_stack_pop(&raw mut (*__pdf_state).pt_fixee) as *mut pdf_coord;
     if !p.is_null() {
         free(p as *mut ::core::ffi::c_void);
     }
 }
 #[unsafe(export_name = "__pdf_impl_spc_clear_fixed_point")]
 pub unsafe extern "C-unwind" fn spc_clear_fixed_point(mut spe: *mut spc_env) {
+    let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_coord = ::core::ptr::null_mut::<pdf_coord>();
     loop {
-        p = dpx_stack_pop(&raw mut pt_fixee) as *mut pdf_coord;
+        p = dpx_stack_pop(&raw mut (*__pdf_state).pt_fixee) as *mut pdf_coord;
         if p.is_null() {
             break;
         }
@@ -1214,6 +1228,7 @@ pub unsafe extern "C-unwind" fn spc_exec_at_end_page() -> ::core::ffi::c_int {
 }
 #[unsafe(export_name = "__pdf_impl_spc_exec_at_begin_document")]
 pub unsafe extern "C-unwind" fn spc_exec_at_begin_document() -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut i: ::core::ffi::c_uint = 0;
     i = 0 as ::core::ffi::c_uint;
@@ -1225,12 +1240,13 @@ pub unsafe extern "C-unwind" fn spc_exec_at_begin_document() -> ::core::ffi::c_i
         }
         i = i.wrapping_add(1);
     }
-    dpx_stack_init(&raw mut coords);
-    dpx_stack_init(&raw mut pt_fixee);
+    dpx_stack_init(&raw mut (*__pdf_state).coords);
+    dpx_stack_init(&raw mut (*__pdf_state).pt_fixee);
     return error;
 }
 #[unsafe(export_name = "__pdf_impl_spc_exec_at_end_document")]
 pub unsafe extern "C-unwind" fn spc_exec_at_end_document() -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut i: ::core::ffi::c_uint = 0;
     let mut p: *mut pdf_coord = ::core::ptr::null_mut::<pdf_coord>();
@@ -1244,14 +1260,14 @@ pub unsafe extern "C-unwind" fn spc_exec_at_end_document() -> ::core::ffi::c_int
         i = i.wrapping_add(1);
     }
     loop {
-        p = dpx_stack_pop(&raw mut coords) as *mut pdf_coord;
+        p = dpx_stack_pop(&raw mut (*__pdf_state).coords) as *mut pdf_coord;
         if p.is_null() {
             break;
         }
         free(p as *mut ::core::ffi::c_void);
     }
     loop {
-        p = dpx_stack_pop(&raw mut pt_fixee) as *mut pdf_coord;
+        p = dpx_stack_pop(&raw mut (*__pdf_state).pt_fixee) as *mut pdf_coord;
         if p.is_null() {
             break;
         }
@@ -1449,7 +1465,6 @@ pub unsafe extern "C-unwind" fn spc_exec_special(
     return error;
 }
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcmp(
         __s1: *const ::core::ffi::c_void,
         __s2: *const ::core::ffi::c_void,
@@ -1881,5 +1896,39 @@ pub unsafe extern "C" fn __pdf_entry_spc_exec_special(
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    coords: dpx_stack,
+    pt_fixee: dpx_stack,
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                coords: dpx_stack {
+                    size: 0,
+                    top: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
+                    bottom: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
+                },
+                pt_fixee: dpx_stack {
+                    size: 0,
+                    top: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
+                    bottom: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
+                },
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_specials
+            .pointer
     }
 }

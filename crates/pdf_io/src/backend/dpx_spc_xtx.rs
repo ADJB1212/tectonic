@@ -33,6 +33,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -311,18 +312,18 @@ unsafe extern "C-unwind" fn spc_handler_xtx_scale(
         0 as ::core::ffi::c_int as ::core::ffi::c_double,
     );
 }
-static mut scaleFactors: *mut pdf_coord = ::core::ptr::null::<pdf_coord>() as *mut pdf_coord;
-static mut scaleFactorCount: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
+
 unsafe extern "C-unwind" fn spc_handler_xtx_bscale(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut values: [::core::ffi::c_double; 2] = [0.; 2];
-    scaleFactorCount += 1;
-    if scaleFactorCount & 0xf as ::core::ffi::c_int == 0 {
-        scaleFactors = crate::backend::runtime::reallocate(
-            scaleFactors as *mut ::core::ffi::c_void,
-            ((scaleFactorCount + 16 as ::core::ffi::c_int) as size_t)
+    (*__pdf_state).scaleFactorCount += 1;
+    if (*__pdf_state).scaleFactorCount & 0xf as ::core::ffi::c_int == 0 {
+        (*__pdf_state).scaleFactors = crate::backend::runtime::reallocate(
+            (*__pdf_state).scaleFactors as *mut ::core::ffi::c_void,
+            (((*__pdf_state).scaleFactorCount + 16 as ::core::ffi::c_int) as size_t)
                 .wrapping_mul(::core::mem::size_of::<pdf_coord>() as size_t),
         ) as *mut pdf_coord;
     }
@@ -340,9 +341,15 @@ unsafe extern "C-unwind" fn spc_handler_xtx_bscale(
     {
         return -(1 as ::core::ffi::c_int);
     }
-    (*scaleFactors.offset(scaleFactorCount as isize)).x =
+    (*(*__pdf_state)
+        .scaleFactors
+        .offset((*__pdf_state).scaleFactorCount as isize))
+    .x =
         1 as ::core::ffi::c_int as ::core::ffi::c_double / values[0 as ::core::ffi::c_int as usize];
-    (*scaleFactors.offset(scaleFactorCount as isize)).y =
+    (*(*__pdf_state)
+        .scaleFactors
+        .offset((*__pdf_state).scaleFactorCount as isize))
+    .y =
         1 as ::core::ffi::c_int as ::core::ffi::c_double / values[1 as ::core::ffi::c_int as usize];
     (*args).curptr = (*args).endptr;
     return spc_handler_xtx_do_transform(
@@ -361,9 +368,10 @@ unsafe extern "C-unwind" fn spc_handler_xtx_escale(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    let fresh2 = scaleFactorCount;
-    scaleFactorCount = scaleFactorCount - 1;
-    let mut factor: pdf_coord = *scaleFactors.offset(fresh2 as isize);
+    let __pdf_state = unsafe { document_state() };
+    let fresh2 = (*__pdf_state).scaleFactorCount;
+    (*__pdf_state).scaleFactorCount = (*__pdf_state).scaleFactorCount - 1;
+    let mut factor: pdf_coord = *(*__pdf_state).scaleFactors.offset(fresh2 as isize);
     (*args).curptr = (*args).endptr;
     return spc_handler_xtx_do_transform(
         spe,
@@ -453,11 +461,11 @@ unsafe extern "C-unwind" fn spc_handler_xtx_fontmapline(
     mut spe: *mut spc_env,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     let mut mrec: *mut fontmap_rec = ::core::ptr::null_mut::<fontmap_rec>();
     let mut map_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut opchr: ::core::ffi::c_char = 0;
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    static mut buffer: [::core::ffi::c_char; 1024] = [0; 1024];
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut count: ::core::ffi::c_int = 0;
@@ -487,7 +495,8 @@ unsafe extern "C-unwind" fn spc_handler_xtx_fontmapline(
         }
         _ => {
             p = (*ap).curptr;
-            q = &raw mut buffer as *mut ::core::ffi::c_char;
+            q = &raw mut (*__pdf_state).spc_handler_xtx_fontmapline_buffer
+                as *mut ::core::ffi::c_char;
             count = 0 as ::core::ffi::c_int;
             while p < (*ap).endptr && count < THEBUFFLENGTH - 1 as ::core::ffi::c_int {
                 let fresh0 = p;
@@ -512,9 +521,13 @@ unsafe extern "C-unwind" fn spc_handler_xtx_fontmapline(
             pdf_init_fontmap_record(mrec);
             error = pdf_read_fontmap_line(
                 mrec,
-                &raw mut buffer as *mut ::core::ffi::c_char,
+                &raw mut (*__pdf_state).spc_handler_xtx_fontmapline_buffer
+                    as *mut ::core::ffi::c_char,
                 (*ap).endptr.offset_from((*ap).curptr) as ::core::ffi::c_long as ::core::ffi::c_int,
-                is_pdfm_mapline(&raw mut buffer as *mut ::core::ffi::c_char),
+                is_pdfm_mapline(
+                    &raw mut (*__pdf_state).spc_handler_xtx_fontmapline_buffer
+                        as *mut ::core::ffi::c_char,
+                ),
             );
             if error != 0 {
                 pdf_warning!(b"Invalid fontmap line.\0" as *const u8 as *const ::core::ffi::c_char);
@@ -565,21 +578,23 @@ unsafe extern "C-unwind" fn spc_handler_xtx_fontmapfile(
     }
     return error;
 }
-static mut overlay_name: [::core::ffi::c_char; 256] = [0; 256];
+
 unsafe extern "C-unwind" fn spc_handler_xtx_initoverlay(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     if (*args).curptr >= (*args).endptr {
         return -(1 as ::core::ffi::c_int);
     }
     strncpy(
-        &raw mut overlay_name as *mut ::core::ffi::c_char,
+        &raw mut (*__pdf_state).overlay_name as *mut ::core::ffi::c_char,
         (*args).curptr,
         (*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as size_t,
     );
-    overlay_name[(*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as usize] =
+    (*__pdf_state).overlay_name
+        [(*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as usize] =
         0 as ::core::ffi::c_char;
     (*args).curptr = (*args).endptr;
     return 0 as ::core::ffi::c_int;
@@ -588,6 +603,7 @@ unsafe extern "C-unwind" fn spc_handler_xtx_clipoverlay(
     mut spe: *mut spc_env,
     mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
+    let __pdf_state = unsafe { document_state() };
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     if (*args).curptr >= (*args).endptr {
         return -(1 as ::core::ffi::c_int);
@@ -595,9 +611,9 @@ unsafe extern "C-unwind" fn spc_handler_xtx_clipoverlay(
     pdf_dev_grestore();
     pdf_dev_gsave();
     if strncmp(
-        &raw mut overlay_name as *mut ::core::ffi::c_char,
+        &raw mut (*__pdf_state).overlay_name as *mut ::core::ffi::c_char,
         (*args).curptr,
-        strlen(&raw mut overlay_name as *mut ::core::ffi::c_char),
+        strlen(&raw mut (*__pdf_state).overlay_name as *mut ::core::ffi::c_char),
     ) != 0 as ::core::ffi::c_int
         && strncmp(
             b"all\0" as *const u8 as *const ::core::ffi::c_char,
@@ -976,7 +992,6 @@ pub unsafe extern "C-unwind" fn spc_xtx_setup_handler(
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcmp(
         __s1: *const ::core::ffi::c_void,
         __s2: *const ::core::ffi::c_void,
@@ -1072,5 +1087,35 @@ pub unsafe extern "C" fn __pdf_entry_spc_xtx_setup_handler(
             0
         }
         Err(()) => -1,
+    }
+}
+
+pub(crate) struct DocumentState {
+    scaleFactors: *mut pdf_coord,
+    scaleFactorCount: ::core::ffi::c_int,
+    spc_handler_xtx_fontmapline_buffer: [::core::ffi::c_char; 1024],
+    overlay_name: [::core::ffi::c_char; 256],
+}
+
+impl DocumentState {
+    pub(crate) fn new() -> Self {
+        unsafe {
+            Self {
+                scaleFactors: ::core::ptr::null::<pdf_coord>() as *mut pdf_coord,
+                scaleFactorCount: -(1 as ::core::ffi::c_int),
+                spc_handler_xtx_fontmapline_buffer: [0; 1024],
+                overlay_name: [0; 256],
+            }
+        }
+    }
+}
+
+#[inline]
+unsafe fn document_state() -> *mut DocumentState {
+    unsafe {
+        (*crate::compat::document::current())
+            .backend
+            .dpx_spc_xtx
+            .pointer
     }
 }

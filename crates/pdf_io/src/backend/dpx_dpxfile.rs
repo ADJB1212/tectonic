@@ -24,6 +24,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn getenv(_: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     fn mkstemp(_: *mut ::core::ffi::c_char) -> ::core::ffi::c_int;
@@ -381,7 +382,6 @@ pub unsafe extern "C-unwind" fn dpx_file_apply_filter(
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn free(_: *mut ::core::ffi::c_void);
     fn memcmp(
         __s1: *const ::core::ffi::c_void,
         __s2: *const ::core::ffi::c_void,
@@ -474,6 +474,7 @@ pub unsafe extern "C" fn __pdf_entry_dpx_create_temp_file(
     match crate::backend::runtime::boundary(|| unsafe { dpx_create_temp_file() }) {
         Ok(value) => {
             unsafe {
+                crate::compat::allocation::release(value.cast());
                 _result.write(value);
             }
             0

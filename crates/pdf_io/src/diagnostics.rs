@@ -3,6 +3,12 @@ use std::{
     fmt::{self, Write},
 };
 
+#[derive(Default)]
+pub(crate) struct State {
+    pub(crate) quiet: i32,
+    pub(crate) last_warning: bool,
+}
+
 pub(crate) fn format_message(arguments: fmt::Arguments<'_>) -> CString {
     struct Buffer {
         bytes: [u8; 1024],
