@@ -26,6 +26,28 @@ an environment variable named `DEP_TECTONIC_PDF_IO_INCLUDE_PATH`, which will be
 a semicolon-separated list of directories enabling your code to include the
 `dpx-*.h` headers.
 
+The implementation lives in `src/backend/`, alongside the Rust worker pipeline,
+font-map loader, metric parser, and DVI scanner. The backend was migrated from
+dvipdfmx using C2Rust and retains unsafe pointers, C layouts, and document-global
+state. It still requires the engine's global lock. This migration does not make
+independent engine instances thread-safe.
+
+See the [incremental idiomatic Rust plan](IDIOMATIC_RUST_PLAN.md) for the next
+ownership, error-handling, and API migrations.
+
+The leaf utilities in `unicode`, `numbers`, `byte_cursor`, `line`, and `sfnt`
+use borrowed buffers, checked reads, and typed conversion errors. The translated
+entry points retain pointer conversion, NUL termination, and legacy return values.
+Unicode operations preserve historical encoding and decoding behavior, including
+overlong UTF-8 sequences; stricter Unicode acceptance is a separate change.
+
+`compat/` contains only C API adapters, variadic diagnostic formatting, and
+platform bindings. Internal backend calls go directly between Rust functions.
+Fatal backend errors unwind to a Rust entry boundary, which returns an error to
+the C adapter. The adapter invokes the engine's abort mechanism after Rust has
+returned. Seek and close errors follow the same path. Builds must use
+`panic = "unwind"`; aborting panics would prevent error recovery.
+
 You will need to ensure that your Rust code actually references this crate in
 order for the linker to include linked libraries. A `use` statement will
 suffice:
@@ -80,8 +102,7 @@ hashing. Rust loads font maps directly through the input provider, scans lines,
 parses common DVIPS records, and indexes them in a hash map. Parsed fields refer
 to a shared input buffer; stable C records and strings are allocated only when a
 font is used. DVIPDFM options, subfont expansion, escaped strings, and verbose
-diagnostics retain their C compatibility handlers. Those handlers run after
-Rust returns, so native aborts never cross a Rust stack frame. Map changes remain
+diagnostics use the migrated compatibility handlers. Map changes remain
 local to each build, and the runtime releases Rust storage after native aborts.
 
 Rust also scans DVI pages for worker eligibility, reading one page at a time
@@ -89,8 +110,8 @@ directly through the input provider and reusing its buffer. It skips font
 definitions and glyph runs without decoding or allocating their contents, and
 shares the special classifier with the native entry point. The same decoder
 builds playback buffers for both PDF backends: it validates complete pages,
-removes font definitions, and records special-command spans. C receives a copy
-of the compacted page and applies specials in source order after Rust returns.
+removes font definitions, and records special-command spans. The interpreter
+receives a copy of the compacted page and applies specials in source order.
 Malformed input and pTeX direction commands return to the native scanner for
 validation and state updates. Linear input retains its existing scanner.
 The engine releases Rust input buffers after success or native abort, including
@@ -156,7 +177,7 @@ For 200 text pages, PDF-stage medians were:
 
 The legacy backend improved about 8%; automatic-worker timing was effectively
 unchanged. All 15 workload/backend PDFs remained byte-identical. These figures
-isolate page loading and scanning; text interpretation still runs in C.
+isolate page loading and scanning and predate the full backend migration.
 
 
 ## Cargo features

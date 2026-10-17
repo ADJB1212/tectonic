@@ -158,7 +158,7 @@ native-tls-vendored = [
 opt-level = 3
 debug = false
 lto = "fat"
-panic = "abort"
+panic = "unwind"
 strip = true
 codegen-units = 1
 

@@ -1,4 +1,5 @@
 use crate::PdfBuildOptions;
+use crate::backend::{RenderCommand, RenderFont};
 use crate::compress::StreamOptions;
 use std::{
     cell::Cell,
@@ -56,30 +57,6 @@ const RAW_BYTES: i32 = 0;
 const TEXT: i32 = 1;
 const DIRECTION: i32 = 4;
 
-#[derive(Clone, Copy)]
-#[repr(C)]
-struct RenderFont {
-    name: [u8; 16],
-    size: i32,
-    format: i32,
-    wmode: i32,
-    extend: f64,
-    slant: f64,
-    bold: f64,
-}
-
-#[repr(C)]
-struct RenderCommand {
-    kind: i32,
-    font: i32,
-    x: i32,
-    y: i32,
-    width: i32,
-    height: i32,
-    data: *const u8,
-    length: usize,
-}
-
 struct Command {
     kind: i32,
     font: i32,
@@ -125,8 +102,8 @@ impl PagePlan {
             .collect();
         let mut output = Vec::<u8>::new();
         // SAFETY: The renderer only reads owned plans and writes through the output callback.
-        let status = unsafe {
-            tt_pdf_render_page(
+        let status = crate::backend::runtime::boundary(|| unsafe {
+            crate::backend::tt_pdf_render_page(
                 commands.as_ptr(),
                 commands.len(),
                 self.fonts.as_ptr(),
@@ -137,7 +114,7 @@ impl PagePlan {
                 self.direction,
                 (&mut output as *mut Vec<u8>).cast(),
             )
-        };
+        })?;
         if status != 0 {
             return Err(());
         }
@@ -698,20 +675,6 @@ unsafe extern "C" fn tt_pdf_render_output(output: *mut c_void, data: *const c_ch
         let output = &mut *output.cast::<Vec<u8>>();
         output.extend_from_slice(slice::from_raw_parts(data.cast(), length));
     }
-}
-
-unsafe extern "C" {
-    fn tt_pdf_render_page(
-        commands: *const RenderCommand,
-        count: usize,
-        fonts: *const RenderFont,
-        font_count: usize,
-        unit: f64,
-        precision: i32,
-        autorotate: i32,
-        direction: i32,
-        output: *mut c_void,
-    ) -> i32;
 }
 
 #[cfg(test)]

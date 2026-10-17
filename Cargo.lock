@@ -3213,11 +3213,11 @@ name = "tectonic_pdf_io"
 version = "0.0.0-dev.0"
 dependencies = [
  "cc",
+ "libc",
  "rayon",
  "tectonic_bridge_core",
  "tectonic_bridge_flate",
  "tectonic_bridge_png",
- "tectonic_cfg_support",
 ]
 
 [[package]]

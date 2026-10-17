@@ -9,8 +9,7 @@ use std::{
     collections::VecDeque,
     ffi::{CStr, CString, c_char},
     io::Read,
-    ptr,
-    slice,
+    ptr, slice,
 };
 use tectonic_bridge_core::{CoreBridgeState, FileFormat, InputId};
 
@@ -124,20 +123,14 @@ impl<'a> Cursor<'a> {
         let count = usize::try_from(count).map_err(|_| premature())?;
         let bytes = self.read(count.checked_mul(4).ok_or_else(premature)?)?;
         let (words, _) = bytes.as_chunks::<4>();
-        Ok(words
-            .iter()
-            .map(|word| i32::from_be_bytes(*word))
-            .collect())
+        Ok(words.iter().map(|word| i32::from_be_bytes(*word)).collect())
     }
 
     fn read_u32s(&mut self, count: u32) -> Result<Vec<u32>, String> {
         let count = usize::try_from(count).map_err(|_| premature())?;
         let bytes = self.read(count.checked_mul(4).ok_or_else(premature)?)?;
         let (words, _) = bytes.as_chunks::<4>();
-        Ok(words
-            .iter()
-            .map(|word| u32::from_be_bytes(*word))
-            .collect())
+        Ok(words.iter().map(|word| u32::from_be_bytes(*word)).collect())
     }
 }
 
@@ -177,10 +170,7 @@ fn design_size(header: &[i32]) -> Result<i32, String> {
 }
 
 fn metric_at(table: &[i32], index: usize, message: &str) -> Result<i32, String> {
-    table
-        .get(index)
-        .copied()
-        .ok_or_else(|| message.to_string())
+    table.get(index).copied().ok_or_else(|| message.to_string())
 }
 
 fn allocate(slots: usize) -> Result<Vec<i32>, String> {
@@ -412,7 +402,8 @@ fn read_level_one_chars(
         let depth = usize::from(cursor.u8()?);
         cursor.skip(4)?;
         let repeats = cursor.u16()?;
-        let pending = u64::from(parameters) * 2 + u64::from(u32::from(parameters.is_multiple_of(2))) * 2;
+        let pending =
+            u64::from(parameters) * 2 + u64::from(u32::from(parameters.is_multiple_of(2))) * 2;
         if pending > u64::try_from(cursor.bytes.len().saturating_sub(cursor.pos)).unwrap_or(0) {
             return Err(premature());
         }
@@ -466,9 +457,15 @@ fn assemble_ofm(
         let width = metric_at(widths, map.width[index], OFM_PROBLEM)?;
         let height = metric_at(heights, map.height[index], OFM_PROBLEM)?;
         let depth = metric_at(depths, map.depth[index], OFM_PROBLEM)?;
-        *width_out.get_mut(code).ok_or_else(|| OFM_PROBLEM.to_string())? = width;
-        *height_out.get_mut(code).ok_or_else(|| OFM_PROBLEM.to_string())? = height;
-        *depth_out.get_mut(code).ok_or_else(|| OFM_PROBLEM.to_string())? = depth;
+        *width_out
+            .get_mut(code)
+            .ok_or_else(|| OFM_PROBLEM.to_string())? = width;
+        *height_out
+            .get_mut(code)
+            .ok_or_else(|| OFM_PROBLEM.to_string())? = height;
+        *depth_out
+            .get_mut(code)
+            .ok_or_else(|| OFM_PROBLEM.to_string())? = depth;
     }
     Ok(Metrics {
         design_size: design,
@@ -579,7 +576,10 @@ fn metric_value(metrics: &Metrics, ch: i32, values: &[i32]) -> Result<i32, Strin
         .ok_or_else(|| format!("Invalid char: {ch}\n"))
 }
 
-fn with_metrics<T>(id: i32, select: impl FnOnce(&Metrics) -> Result<T, String>) -> Result<T, String> {
+fn with_metrics<T>(
+    id: i32,
+    select: impl FnOnce(&Metrics) -> Result<T, String>,
+) -> Result<T, String> {
     FONTS.with(|fonts| {
         let fonts = fonts.borrow();
         let font = usize::try_from(id)
@@ -627,10 +627,7 @@ fn file_available(name: &str, format: FileFormat) -> bool {
     })
 }
 
-fn locate(
-    requested: &str,
-    verbose: bool,
-) -> Result<Option<(Source, Vec<u8>, i64)>, String> {
+fn locate(requested: &str, verbose: bool) -> Result<Option<(Source, Vec<u8>, i64)>, String> {
     for step in open_steps(requested) {
         let (path, source, format) = match step {
             OpenStep::AliasOfm => (
@@ -655,7 +652,11 @@ fn locate(
             if size < 24 {
                 return Err("TFM/OFM file too small to be a valid file.".to_string());
             }
-            return Ok(Some((source, bytes, i64::try_from(size).unwrap_or(i64::MAX))));
+            return Ok(Some((
+                source,
+                bytes,
+                i64::try_from(size).unwrap_or(i64::MAX),
+            )));
         }
     }
     Ok(None)
@@ -717,10 +718,7 @@ unsafe extern "C" fn tt_tfm_open(
         return finish(result, error);
     }
     let name = unsafe { CStr::from_ptr(name) };
-    finish(
-        open_named(name, must_exist != 0, verbose > 0),
-        error,
-    )
+    finish(open_named(name, must_exist != 0, verbose > 0), error)
 }
 
 #[unsafe(no_mangle)]
@@ -734,11 +732,7 @@ extern "C" fn tt_tfm_reset() {
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn tt_tfm_get_fw_width(
-    font_id: i32,
-    ch: i32,
-    error: *mut *const c_char,
-) -> i32 {
+unsafe extern "C" fn tt_tfm_get_fw_width(font_id: i32, ch: i32, error: *mut *const c_char) -> i32 {
     finish(
         with_metrics(font_id, |metrics| {
             metric_value(metrics, ch, &metrics.widths)
@@ -748,11 +742,7 @@ unsafe extern "C" fn tt_tfm_get_fw_width(
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn tt_tfm_get_fw_height(
-    font_id: i32,
-    ch: i32,
-    error: *mut *const c_char,
-) -> i32 {
+unsafe extern "C" fn tt_tfm_get_fw_height(font_id: i32, ch: i32, error: *mut *const c_char) -> i32 {
     finish(
         with_metrics(font_id, |metrics| {
             metric_value(metrics, ch, &metrics.heights)
@@ -762,23 +752,17 @@ unsafe extern "C" fn tt_tfm_get_fw_height(
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn tt_tfm_get_fw_depth(
-    font_id: i32,
-    ch: i32,
-    error: *mut *const c_char,
-) -> i32 {
+unsafe extern "C" fn tt_tfm_get_fw_depth(font_id: i32, ch: i32, error: *mut *const c_char) -> i32 {
     finish(
-        with_metrics(font_id, |metrics| metric_value(metrics, ch, &metrics.depths)),
+        with_metrics(font_id, |metrics| {
+            metric_value(metrics, ch, &metrics.depths)
+        }),
         error,
     )
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn tt_tfm_get_width(
-    font_id: i32,
-    ch: i32,
-    error: *mut *const c_char,
-) -> f64 {
+unsafe extern "C" fn tt_tfm_get_width(font_id: i32, ch: i32, error: *mut *const c_char) -> f64 {
     finish(
         with_metrics(font_id, |metrics| {
             Ok(f64::from(metric_value(metrics, ch, &metrics.widths)?) / FIXWORD_SCALE)
@@ -803,7 +787,8 @@ unsafe extern "C" fn tt_tfm_string_width(
         with_metrics(font_id, |metrics| {
             let mut total = 0i32;
             for &byte in bytes {
-                total = total.wrapping_add(metric_value(metrics, i32::from(byte), &metrics.widths)?);
+                total =
+                    total.wrapping_add(metric_value(metrics, i32::from(byte), &metrics.widths)?);
             }
             Ok(total)
         }),
@@ -937,18 +922,21 @@ mod tests {
             assert!(error.is_null());
             assert_eq!(tt_tfm_get_fw_height(id, 0, &mut error), 65_536);
             assert_eq!(tt_tfm_get_fw_depth(id, 0, &mut error), 32_768);
-            assert_eq!(tt_tfm_get_width(id, 0, &mut error), 524_288.0 / FIXWORD_SCALE);
+            assert_eq!(
+                tt_tfm_get_width(id, 0, &mut error),
+                524_288.0 / FIXWORD_SCALE
+            );
             assert_eq!(
                 tt_tfm_get_design_size(id, &mut error),
                 f64::from(design) / FIXWORD_SCALE * (72.0 / 72.27)
             );
             let text = [0u8, 0];
-            assert_eq!(tt_tfm_string_width(id, text.as_ptr(), 2, &mut error), 1_048_576);
-            assert_eq!(tt_tfm_get_fw_width(id, 1, &mut error), 0);
             assert_eq!(
-                reported(error).as_deref(),
-                Some("Invalid char: 1\n")
+                tt_tfm_string_width(id, text.as_ptr(), 2, &mut error),
+                1_048_576
             );
+            assert_eq!(tt_tfm_get_fw_width(id, 1, &mut error), 0);
+            assert_eq!(reported(error).as_deref(), Some("Invalid char: 1\n"));
             assert_eq!(tt_tfm_get_fw_width(4, 0, &mut error), 0);
             assert_eq!(reported(error).as_deref(), Some("TFM: Invalid TFM ID: 4"));
             assert_eq!(tt_tfm_is_jfm(id), 0);
@@ -1063,12 +1051,7 @@ mod tests {
     #[test]
     fn ofm_level_zero_reads_split_char_info_and_warns_about_direction() {
         let mut bytes = Vec::new();
-        push_ofm_directory(
-            &mut bytes,
-            &[
-                0, 24, 2, 0, 0, 2, 2, 2, 0, 0, 0, 0, 0, 1,
-            ],
-        );
+        push_ofm_directory(&mut bytes, &[0, 24, 2, 0, 0, 2, 2, 2, 0, 0, 0, 0, 0, 1]);
         push_i32(&mut bytes, 0);
         push_i32(&mut bytes, 8 << 20);
         bytes.extend_from_slice(&[0, 1, 1, 1, 0, 0, 0, 0]);
