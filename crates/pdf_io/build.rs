@@ -10,6 +10,7 @@ fn main() {
     println!("cargo:rerun-if-changed=pdf_io/tectonic-compress.h");
     println!("cargo:rerun-if-changed=pdf_io/tectonic-predictor.h");
     println!("cargo:rerun-if-changed=pdf_io/tectonic-pipeline.h");
+    println!("cargo:rerun-if-changed=pdf_io/tectonic-fontmap.h");
     let manifest_dir: PathBuf = env::var("CARGO_MANIFEST_DIR").unwrap().into();
 
     // Include paths and settings exported by our internal dependencies.

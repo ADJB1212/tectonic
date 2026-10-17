@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "tectonic_bridge_core.h"
 
 enum {
     TT_PDF_RAW_BYTES,
@@ -44,6 +45,8 @@ int tt_pdf_pipeline_active(void);
 void tt_pdf_phase_start(int phase);
 void tt_pdf_phase_end(void);
 int tt_pdf_special_supported(const unsigned char *data, size_t length);
+int tt_pdf_preflight_pages(rust_input_handle_t handle, const uint32_t *offsets,
+                           size_t count, uint32_t file_size, int xdv);
 void tt_pdf_pipeline_enable_pages(int enabled);
 int tt_pdf_page_begin(double unit, int precision, int autorotate, int direction);
 int tt_pdf_page_recording(void);

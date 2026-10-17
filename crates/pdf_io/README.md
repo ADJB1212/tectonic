@@ -71,7 +71,25 @@ TeX layout and dependent passes retain their existing scheduling.
 and `ProcessingSessionBuilder`. The CLI exposes `--pdf-workers` and
 `--pdf-queue-mib`. `XdvipdfmxEngine::statistics()` reports phase timings, summed
 worker timings, queue wait, page/stream counts, and peak queued payload/jobs.
-Worker elapsed times overlap each other and coordinator phases.
+The coordinator phases distinguish font-map loading, DVI preparation, document
+setup, page interpretation, and finalization. Worker elapsed times overlap each
+other and coordinator phases.
+
+TeX source readers buffer 8 KiB at a time to amortize bridge dispatch and input
+hashing. Rust loads font maps directly through the input provider, scans lines,
+parses common DVIPS records, and indexes them in a hash map. Parsed fields refer
+to a shared input buffer; stable C records and strings are allocated only when a
+font is used. DVIPDFM options, subfont expansion, escaped strings, and verbose
+diagnostics retain their C compatibility handlers. Those handlers run after
+Rust returns, so native aborts never cross a Rust stack frame. Map changes remain
+local to each build, and the runtime releases Rust storage after native aborts.
+
+Rust also scans DVI pages for worker eligibility, reading one page at a time
+directly through the input provider and reusing its buffer. It skips font
+definitions and glyph runs without decoding or allocating their contents, and
+shares the special classifier with the native entry point. Malformed input and
+pTeX direction commands return to the native scanner for validation and state
+updates. Linear input retains its existing scanner.
 
 TIFF horizontal differencing supports 1, 2, 4, 8, and 16 bits per component.
 This includes PNG transparency masks. Packed rows retain their byte alignment
@@ -97,23 +115,29 @@ Use `/usr/bin/time -l` on macOS or `/usr/bin/time -v` on Linux to record peak
 memory for each backend in a separate process.
 
 On a macOS host with 10 available CPUs, five warm release runs produced these
-median PDF-stage times. The legacy column uses the original scheduling with the
-shared number-formatting improvement also applied.
+median times with automatic workers, before and after the Rust font-map and
+DVI preflight ports. The C baseline already includes buffered source/map input
+and a larger font-map hash table. Total time includes TeX layout and PDF generation.
 
-| Workload | Legacy | Automatic workers |
-| --- | ---: | ---: |
-| 200 text pages | 68.04 ms | 68.65 ms |
-| 24 native-font pages | 46.48 ms | 45.96 ms |
-| 100 rule-heavy pages | 53.37 ms | 53.17 ms |
-| 16 independent 1024x1024 images | 148.98 ms | 122.36 ms |
-| 128 attachments | 62.25 ms | 61.99 ms |
+| Workload | PDF before | PDF after | Total before | Total after |
+| --- | ---: | ---: | ---: | ---: |
+| 200 text pages | 43.98 ms | 32.97 ms | 86.22 ms | 76.52 ms |
+| 24 native-font pages | 22.53 ms | 15.32 ms | 45.07 ms | 37.63 ms |
+| 100 rule-heavy pages | 25.36 ms | 17.99 ms | 68.85 ms | 63.60 ms |
+| 16 independent 1024x1024 images | 91.07 ms | 84.53 ms | 105.83 ms | 99.25 ms |
+| 128 attachments | 35.08 ms | 28.23 ms | 50.31 ms | 45.99 ms |
 
-The image workload improved about 18% in the PDF stage and 16% end to end.
-Separate image-only processes measured peak RSS of 253 MB for legacy scheduling
-and 313 MB for automatic workers, including fixtures, font loading, and repeated
-builds. Reduce workers or the queue budget when memory is constrained. Plain
-text remains dominated by ordered interpretation and setup; these results do
-not imply a comparable speedup for every document.
+The text workload improved about 25% in the PDF stage and 11% end to end.
+The native-font workload improved about 32% in the PDF stage and 16% end to end.
+Font-map loading fell from about 14 ms to 9 ms, and text DVI preparation from
+5.45 ms to 0.70 ms. The font-map port also applies to the legacy backend.
+All 15 exported PDFs were byte-identical before and after the changes. Results
+depend on document content and font-map size.
+
+Separate text-only processes measured peak RSS of 190 MB for the C baseline and
+195 MB for the Rust ports, including fixtures and repeated builds. The lazy map
+index retains source buffers until the build ends. Reduce workers or the queue
+budget when memory is constrained.
 
 
 ## Cargo features

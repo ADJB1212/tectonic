@@ -23,6 +23,7 @@
 #include "dpx-fontmap.h"
 
 #include "tectonic_bridge_core.h"
+#include "tectonic-fontmap.h"
 #include "dpx-dpxconf.h"
 #include "dpx-dpxfile.h"
 #include "dpx-dpxutil.h"
@@ -98,46 +99,6 @@ mstrdup (const char *s)
 }
 
 static void
-pdf_copy_fontmap_record (fontmap_rec *dst, const fontmap_rec *src)
-{
-    assert( dst && src );
-
-    dst->map_name   = mstrdup(src->map_name);
-
-    dst->charmap.sfd_name   = mstrdup(src->charmap.sfd_name);
-    dst->charmap.subfont_id = mstrdup(src->charmap.subfont_id);
-
-    dst->font_name  = mstrdup(src->font_name);
-    dst->enc_name   = mstrdup(src->enc_name);
-
-    dst->opt.slant  = src->opt.slant;
-    dst->opt.extend = src->opt.extend;
-    dst->opt.bold   = src->opt.bold;
-
-    dst->opt.flags  = src->opt.flags;
-    dst->opt.mapc   = src->opt.mapc;
-
-    dst->opt.tounicode = mstrdup(src->opt.tounicode);
-    dst->opt.otl_tags  = mstrdup(src->opt.otl_tags);
-    dst->opt.index     = src->opt.index;
-    dst->opt.charcoll  = mstrdup(src->opt.charcoll);
-    dst->opt.style     = src->opt.style;
-    dst->opt.stemv     = src->opt.stemv;
-
-    dst->opt.use_glyph_encoding = src->opt.use_glyph_encoding;
-}
-
-
-static void
-hval_free (void *vp)
-{
-    fontmap_rec *mrec = (fontmap_rec *) vp;
-    pdf_clear_fontmap_record(mrec);
-    free(mrec);
-}
-
-
-static void
 fill_in_defaults (fontmap_rec *mrec, const char *tex_name)
 {
     if (mrec->enc_name &&
@@ -182,24 +143,6 @@ fill_in_defaults (fontmap_rec *mrec, const char *tex_name)
 #endif /* WITHOUT_COMPAT */
 
     return;
-}
-
-static char *
-tt_readline (char *buf, int buf_len, rust_input_handle_t handle)
-{
-    char *p, *q;
-
-    assert(buf && buf_len > 0 && handle);
-
-    p = tt_mfgets(buf, buf_len, handle);
-    if (!p)
-        return  NULL;
-
-    q = strchr(p, '%'); /* we don't have quoted string */
-    if (q)
-        *q = '\0';
-
-    return p;
 }
 
 #ifndef ISBLANK
@@ -632,8 +575,6 @@ fontmap_parse_mapdef_dps (fontmap_rec *mrec,
 }
 
 
-static struct ht_table *fontmap = NULL;
-
 #define fontmap_invalid(m) (!(m) || !(m)->map_name || !(m)->font_name)
 static char *
 chop_sfd_name (const char *tex_name, char **sfd_name)
@@ -732,14 +673,16 @@ pdf_append_fontmap_record (const char *kp, const fontmap_rec *vp)
             tfm_name = make_subfont_name(kp, sfd_name, subfont_ids[n]);
             if (!tfm_name)
                 continue;
-            mrec = ht_lookup_table(fontmap, tfm_name, strlen(tfm_name));
+            mrec = tt_fontmap_lookup(tfm_name);
             if (!mrec) {
                 mrec = NEW(1, fontmap_rec);
                 pdf_init_fontmap_record(mrec);
                 mrec->map_name = mstrdup(kp); /* link */
                 mrec->charmap.sfd_name   = mstrdup(sfd_name);
                 mrec->charmap.subfont_id = mstrdup(subfont_ids[n]);
-                ht_insert_table(fontmap, tfm_name, strlen(tfm_name), mrec);
+                tt_fontmap_insert(tfm_name, mrec, 0);
+                pdf_clear_fontmap_record(mrec);
+                free(mrec);
             }
             free(tfm_name);
         }
@@ -747,15 +690,7 @@ pdf_append_fontmap_record (const char *kp, const fontmap_rec *vp)
         free(sfd_name);
     }
 
-    mrec = ht_lookup_table(fontmap, kp, strlen(kp));
-    if (!mrec) {
-        mrec = NEW(1, fontmap_rec);
-        pdf_copy_fontmap_record(mrec, vp);
-        if (mrec->map_name && streq_ptr(kp, mrec->map_name)) {
-            mrec->map_name = mfree(mrec->map_name);
-        }
-        ht_insert_table(fontmap, kp, strlen(kp), mrec);
-    }
+    tt_fontmap_insert(kp, vp, 0);
     if (dpx_conf.verbose_level > 3)
         dpx_message("\n");
 
@@ -789,14 +724,14 @@ pdf_remove_fontmap_record (const char *kp)
                 continue;
             if (dpx_conf.verbose_level > 3)
                 dpx_message(" %s", tfm_name);
-            ht_remove_table(fontmap, tfm_name, strlen(tfm_name));
+            tt_fontmap_remove(tfm_name);
             free(tfm_name);
         }
         free(fnt_name);
         free(sfd_name);
     }
 
-    ht_remove_table(fontmap, kp, strlen(kp));
+    tt_fontmap_remove(kp);
 
     if (dpx_conf.verbose_level > 3)
         dpx_message("\n");
@@ -843,19 +778,16 @@ pdf_insert_fontmap_record (const char *kp, const fontmap_rec *vp)
             mrec->map_name = mstrdup(kp); /* link to this entry */
             mrec->charmap.sfd_name   = mstrdup(sfd_name);
             mrec->charmap.subfont_id = mstrdup(subfont_ids[n]);
-            ht_insert_table(fontmap, tfm_name, strlen(tfm_name), mrec);
+            tt_fontmap_insert(tfm_name, mrec, 1);
+            pdf_clear_fontmap_record(mrec);
+            free(mrec);
             free(tfm_name);
         }
         free(fnt_name);
         free(sfd_name);
     }
 
-    mrec = NEW(1, fontmap_rec);
-    pdf_copy_fontmap_record(mrec, vp);
-    if (mrec->map_name && streq_ptr(kp, mrec->map_name)) {
-        mrec->map_name = mfree(mrec->map_name);
-    }
-    ht_insert_table(fontmap, kp, strlen(kp), mrec);
+    mrec = tt_fontmap_insert(kp, vp, 1);
 
     if (dpx_conf.verbose_level > 3)
         dpx_message("\n");
@@ -952,11 +884,10 @@ pdf_load_fontmap_file (const char *filename, int mode)
     fontmap_rec *mrec;
     rust_input_handle_t handle;
     const char *p = NULL, *endptr;
-    int llen, lpos  = 0;
+    int llen, lpos = 0, next;
     int error = 0, format = 0;
 
     assert(filename);
-    assert(fontmap);
 
     if (dpx_conf.verbose_level)
         dpx_message("<FONTMAP:");
@@ -967,31 +898,27 @@ pdf_load_fontmap_file (const char *filename, int mode)
         return  -1;
     }
 
-    while (!error && (p = tt_readline(work_buffer, WORK_BUFFER_SIZE, handle)) != NULL) {
-        int m;
-
-        lpos++;
-        llen  = strlen(work_buffer);
+    if (tt_fontmap_load_begin(handle, mode, dpx_conf.verbose_level) < 0)
+        dpx_warning("Error reading font map file \"%s\".", filename);
+    while (!error && (next = tt_fontmap_load_next(&p, &lpos, &format)) != 0) {
+        llen = strlen(p);
         endptr = p + llen;
 
         skip_blank(&p, endptr);
         if (p == endptr)
             continue;
 
-        m = is_pdfm_mapline(p);
-
-        if (format * m < 0) { /* mismatch */
+        if (next == 2) {
             dpx_warning("Found a mismatched fontmap line %d from %s.", lpos, filename);
             dpx_warning("-- Ignore the current input buffer: %s", p);
             continue;
-        } else
-            format += m;
+        }
 
         mrec  = NEW(1, fontmap_rec);
         pdf_init_fontmap_record(mrec);
 
         /* format > 0: DVIPDFM, format <= 0: DVIPS/pdfTeX */
-        error = pdf_read_fontmap_line(mrec, p, llen, format);
+        error = pdf_read_fontmap_line(mrec, p, (int) (endptr - p), format);
         if (error) {
             dpx_warning("Invalid map record in fontmap line %d from %s.", lpos, filename);
             dpx_warning("-- Ignore the current input buffer: %s", p);
@@ -1015,6 +942,7 @@ pdf_load_fontmap_file (const char *filename, int mode)
         free(mrec);
     }
 
+    tt_fontmap_load_end();
     ttstub_input_close(handle);
 
     if (dpx_conf.verbose_level)
@@ -1071,30 +999,20 @@ pdf_insert_native_fontmap_record (const char *path, uint32_t index,
 fontmap_rec *
 pdf_lookup_fontmap_record (const char *tfm_name)
 {
-    fontmap_rec *mrec = NULL;
-
-    if (fontmap && tfm_name)
-        mrec = ht_lookup_table(fontmap, tfm_name, strlen(tfm_name));
-
-    return  mrec;
+    return tt_fontmap_lookup(tfm_name);
 }
 
 
 void
 pdf_init_fontmaps (void)
 {
-    fontmap = NEW(1, struct ht_table);
-    ht_init_table(fontmap, hval_free);
+    tt_fontmap_reset();
 }
 
 void
 pdf_close_fontmaps (void)
 {
-    if (fontmap) {
-        ht_clear_table(fontmap);
-        free(fontmap);
-    }
-    fontmap = NULL;
+    tt_fontmap_clear();
 
     release_sfd_record();
 }

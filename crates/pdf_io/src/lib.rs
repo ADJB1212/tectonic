@@ -2,15 +2,17 @@
 // Licensed under the MIT License.
 
 //! This crate exports a *C* API for I/O on PDF, XDV, and graphics files, with
-//! Rust workers for independent image processing, within the Cargo build
-//! framework used by [Tectonic].
+//! Rust font-map loading, DVI preflight, and workers for independent image
+//! processing, within the Cargo build framework used by [Tectonic].
 //!
 //! [Tectonic]: https://tectonic-typesetting.github.io/
 
 mod compress;
+mod fontmap;
 mod options;
 mod pipeline;
 mod predictor;
+mod preflight;
 
 pub use options::PdfBuildOptions;
 pub use pipeline::{PdfBuildStatistics, PdfRuntime};

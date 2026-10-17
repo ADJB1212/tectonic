@@ -7,6 +7,7 @@
 #define TECTONIC_XETEX_IO_H
 
 #include "tectonic_bridge_core.h"
+#include "tectonic_bridge_buffered.h"
 
 
 typedef struct {
@@ -15,6 +16,7 @@ typedef struct {
     short skipNextLF;
     short encodingMode;
     void *conversionData;
+    ttbc_buffered_input input;
 } UFILE;
 
 

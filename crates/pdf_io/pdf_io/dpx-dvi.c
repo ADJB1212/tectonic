@@ -2864,6 +2864,7 @@ int
 dvi_parallel_eligible(void)
 {
     unsigned int i;
+    int result;
     if (linear)
         return 0;
     for (i = 0; i < num_def_fonts; i++) {
@@ -2874,6 +2875,12 @@ dvi_parallel_eligible(void)
                 return 0;
             }
         }
+    }
+    result = tt_pdf_preflight_pages(dvi_handle, page_loc, num_pages, dvi_file_size,
+                                    dpx_conf.compat_mode == dpx_mode_xdv_mode);
+    if (result >= 0) {
+        buffered_page = -1;
+        return result;
     }
     eligibility_only = 1;
     parallel_eligible = 1;

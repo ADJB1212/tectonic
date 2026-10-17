@@ -17,6 +17,9 @@ use std::{
 /// Worker timings are summed elapsed times and can overlap coordinator timings.
 #[derive(Clone, Debug, Default)]
 pub struct PdfBuildStatistics {
+    pub font_maps: Duration,
+    pub dvi_preparation: Duration,
+    pub document_setup: Duration,
     pub interpretation: Duration,
     pub finalization: Duration,
     pub page_rendering: Duration,
@@ -286,6 +289,7 @@ impl Drop for PdfRuntime {
         for pending in self.runtime.pending.drain(..) {
             let _ = pending.receiver.recv();
         }
+        crate::fontmap::tt_fontmap_clear();
     }
 }
 
@@ -319,10 +323,14 @@ extern "C" fn tt_pdf_phase_start(phase: i32) {
 extern "C" fn tt_pdf_phase_end() {
     with_runtime((), |runtime| {
         if let Some((phase, start)) = runtime.phase.take() {
-            if phase == 0 {
-                runtime.statistics.interpretation += start.elapsed();
-            } else {
-                runtime.statistics.finalization += start.elapsed();
+            let duration = start.elapsed();
+            match phase {
+                0 => runtime.statistics.interpretation += duration,
+                1 => runtime.statistics.finalization += duration,
+                2 => runtime.statistics.font_maps += duration,
+                3 => runtime.statistics.dvi_preparation += duration,
+                4 => runtime.statistics.document_setup += duration,
+                _ => (),
             }
         }
     });
@@ -330,9 +338,12 @@ extern "C" fn tt_pdf_phase_end() {
 
 #[no_mangle]
 unsafe extern "C" fn tt_pdf_special_supported(data: *const u8, length: usize) -> i32 {
-    let bytes = slice::from_raw_parts(data, length);
+    i32::from(special_supported(slice::from_raw_parts(data, length)))
+}
+
+pub(crate) fn special_supported(bytes: &[u8]) -> bool {
     let Ok(text) = std::str::from_utf8(bytes) else {
-        return 0;
+        return false;
     };
     let text = text.trim();
     if !text.split('@').skip(1).all(|suffix| {
@@ -343,22 +354,22 @@ unsafe extern "C" fn tt_pdf_special_supported(data: *const u8, length: usize) ->
             Some("thispage" | "prevpage" | "nextpage")
         )
     }) {
-        return 0;
+        return false;
     }
     if text.starts_with("papersize=") || text == "landscape" {
-        return 1;
+        return true;
     }
     let mut words = text.split_ascii_whitespace();
     if matches!(words.next(), Some("color" | "background")) {
-        return 1;
+        return true;
     }
     let Some(command) = text
         .strip_prefix("pdf:")
         .and_then(|s| s.split_ascii_whitespace().next())
     else {
-        return 0;
+        return false;
     };
-    i32::from(matches!(
+    matches!(
         command,
         "pagesize"
             | "image"
@@ -400,7 +411,7 @@ unsafe extern "C" fn tt_pdf_special_supported(data: *const u8, length: usize) ->
             | "bgc"
             | "bbc"
             | "bbg"
-    ))
+    )
 }
 
 #[no_mangle]

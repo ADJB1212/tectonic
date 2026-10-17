@@ -20,6 +20,7 @@ fn main() {
 
     println!("cargo:rerun-if-changed=support/support.c");
     println!("cargo:rerun-if-changed=support/tectonic_bridge_core.h");
+    println!("cargo:rerun-if-changed=support/tectonic_bridge_buffered.h");
     println!("cargo:rerun-if-changed=support/tectonic_bridge_core_generated.h");
 
     // Cargo exposes this as the environment variable DEP_XXX_INCLUDE, where XXX

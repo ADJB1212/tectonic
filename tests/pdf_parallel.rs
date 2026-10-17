@@ -114,6 +114,137 @@ fn page_document() -> String {
 }
 
 #[test]
+fn buffered_text_input_preserves_encodings_and_line_endings_across_refills() {
+    let source = "\\nopagenumbers\\XeTeXgenerateactualtext=1\\font\\native=\"[lmroman12-regular]\"\\native\\input encoded.tex\\bye";
+    let text = "\u{1d11e}\u{20ac} office\\par\nMore text.\\par\n";
+    let mut memory = MemoryIo::new(true);
+    memory.create_entry("encoded.tex", text.as_bytes().to_vec());
+    let (expected, _, _) = compile_pdf(&mut memory, source, true);
+    let expected = decoded_streams(&expected);
+    for actual_text in [
+        b"/ActualText (\xfe\xff\xd8\x34\xdd\\036 \xac)".as_slice(),
+        b"/ActualText (office)",
+    ] {
+        assert!(expected.iter().any(|stream| {
+            stream
+                .windows(actual_text.len())
+                .any(|bytes| bytes == actual_text)
+        }));
+    }
+
+    let padded = format!("%{}\n{text}", " ".repeat(8189));
+    let mut utf8_bom = vec![0xef, 0xbb, 0xbf];
+    utf8_bom.extend_from_slice(padded.as_bytes());
+    let crlf = format!("%{}\r\n{text}", " ".repeat(8190));
+    let cr = format!("%{}\r{text}", " ".repeat(8190));
+    let mut inputs = vec![
+        padded.into_bytes(),
+        utf8_bom,
+        crlf.into_bytes(),
+        cr.into_bytes(),
+    ];
+    let utf16 = format!("%{}\n{text}", " ".repeat(4093));
+    for little_endian in [false, true] {
+        let mut bytes = if little_endian {
+            vec![0xff, 0xfe]
+        } else {
+            vec![0xfe, 0xff]
+        };
+        for unit in utf16.encode_utf16() {
+            bytes.extend_from_slice(&if little_endian {
+                unit.to_le_bytes()
+            } else {
+                unit.to_be_bytes()
+            });
+        }
+        inputs.push(bytes);
+    }
+    for (index, bytes) in inputs.into_iter().enumerate() {
+        memory.create_entry("encoded.tex", bytes);
+        let (pdf, _, _) = compile_pdf(&mut memory, source, true);
+        assert_eq!(decoded_streams(&pdf), expected, "encoding variant {index}");
+    }
+
+    memory.create_entry("encoded.tex", "\u{fffd}A office\\par\n".as_bytes().to_vec());
+    let (expected, _, _) = compile_pdf(&mut memory, source, true);
+    let mut malformed = format!("%{}\n", " ".repeat(8189)).into_bytes();
+    malformed.extend_from_slice(b"\xe2A office\\par\n");
+    memory.create_entry("encoded.tex", malformed);
+    let (pdf, _, _) = compile_pdf(&mut memory, source, true);
+    assert_eq!(decoded_streams(&pdf), decoded_streams(&expected));
+
+    memory.create_entry("encoded.tex", "\u{e9} office\\par\n".as_bytes().to_vec());
+    let (expected, _, _) = compile_pdf(&mut memory, source, true);
+    let mut switched = b"\\XeTeXinputencoding \"ISO-8859-1\"\n".to_vec();
+    switched.extend_from_slice(b"\xe9 office\\par\n");
+    memory.create_entry("encoded.tex", switched);
+    let (pdf, _, _) = compile_pdf(&mut memory, source, true);
+    assert_eq!(decoded_streams(&pdf), decoded_streams(&expected));
+}
+
+#[test]
+fn buffered_font_maps_preserve_duplicate_replace_remove_and_reload_behavior() {
+    let valid = "cmr10 CMR10 <cmr10.pfb";
+    let invalid = "cmr10 MissingFont <missing-font.pfb";
+    let text = "\\nopagenumbers Font map test.\\bye";
+    let mut memory = MemoryIo::new(true);
+    let (expected, _, _) = compile_pdf(&mut memory, text, true);
+    let expected = decoded_streams(&expected);
+    for map in [
+        format!("%{}\r\n{valid}\r{invalid}", " ".repeat(8190)),
+        format!("%{}\r{valid}\n{invalid}", " ".repeat(8190)),
+        valid.to_owned(),
+    ] {
+        memory.create_entry("pdftex.map", map.into_bytes());
+        let (pdf, _, _) = compile_pdf(&mut memory, text, true);
+        assert_eq!(decoded_streams(&pdf), expected);
+    }
+    memory.create_entry("pdftex.map", invalid.as_bytes().to_vec());
+    memory.create_entry("valid.map", valid.as_bytes().to_vec());
+    memory.create_entry("invalid.map", invalid.as_bytes().to_vec());
+    for specials in [
+        "\\special{pdf:mapfile valid.map}",
+        "\\special{pdf:mapfile -invalid.map}\\special{pdf:mapfile +valid.map}",
+        "\\special{pdf:mapfile valid.map}\\special{pdf:mapfile +invalid.map}",
+    ] {
+        let source = format!("\\nopagenumbers{specials}Font map test.\\bye");
+        let (pdf, _, _) = compile_pdf(&mut memory, &source, true);
+        assert_eq!(decoded_streams(&pdf), expected, "{specials}");
+    }
+    memory.create_entry("pdftex.map", valid.as_bytes().to_vec());
+    let (pdf, _, _) = compile_pdf(&mut memory, text, true);
+    assert_eq!(decoded_streams(&pdf), expected);
+}
+
+#[test]
+fn rust_font_map_loading_matches_mapline_options_and_legacy_syntax() {
+    let mut memory = MemoryIo::new(true);
+    for record in [
+        "cmr10 CMR10 <cmr10.pfb",
+        "cmr10 CMR10 \".2 SlantFont 1.1 ExtendFont\" <cmr10.pfb",
+        "cmr10 <cmr10.pfb",
+        "\"cmr10\" \"CMR10\" <<\"cmr10.pfb\"",
+        "cmr10 default cmr10.pfb -s .2 -e 1.1",
+    ] {
+        memory.create_entry("pdftex.map", Vec::new());
+        let source = format!("\\nopagenumbers\\special{{pdf:mapline {record}}}Font map test.\\bye");
+        let (expected, _, _) = compile_pdf(&mut memory, &source, true);
+        memory.create_entry("pdftex.map", record.as_bytes().to_vec());
+        let (pdf, _, _) = compile_pdf(&mut memory, "\\nopagenumbers Font map test.\\bye", true);
+        assert_eq!(
+            decoded_streams(&pdf),
+            decoded_streams(&expected),
+            "{record}"
+        );
+    }
+    memory.create_entry("pdftex.map", b"cmr10 CMR10 <\"cmr10.pf\\142\"".to_vec());
+    let (pdf, _, _) = compile_pdf(&mut memory, "\\nopagenumbers Font map test.\\bye", true);
+    memory.create_entry("pdftex.map", b"cmr10 CMR10 <cmr10.pfb".to_vec());
+    let (expected, _, _) = compile_pdf(&mut memory, "\\nopagenumbers Font map test.\\bye", true);
+    assert_eq!(decoded_streams(&pdf), decoded_streams(&expected));
+}
+
+#[test]
 fn page_workers_preserve_content_and_deterministic_output_under_backpressure() {
     let source = page_document();
     for compression in [false, true] {
@@ -229,6 +360,33 @@ fn native_abort_with_queued_pages_allows_another_pdf_build() {
             .unwrap_err();
         assert!(error.to_string().contains("physical"), "{error}");
         assert_eq!(engine.statistics().unwrap().rendered_pages, 2);
+    }
+    let (pdf, _, _) = compile_pdf(&mut memory, "Successful subsequent build.\\bye", true);
+    check_cross_references(&pdf);
+}
+
+#[test]
+fn malformed_dvi_preflight_keeps_native_diagnostics_and_allows_another_build() {
+    let mut memory = MemoryIo::new(true);
+    compile_pdf(&mut memory, "Original document.\\bye", true);
+    let mut xdv = memory.files.borrow()["batch.xdv"].data.clone();
+    let page_start = 15 + usize::from(xdv[14]);
+    assert_eq!(xdv[page_start], 139);
+    xdv[page_start + 45] = 247;
+    memory.create_entry("batch.xdv", xdv);
+    let mut assets = FilesystemIo::new(&util::test_path(&["assets"]), false, false, HashSet::new());
+    {
+        let io = IoStack::new(vec![&mut memory, &mut assets]);
+        let mut hooks = MinimalDriver::new(io);
+        let mut status = NoopStatusBackend {};
+        let mut launcher = CoreBridgeLauncher::new(&mut hooks, &mut status);
+        let error = XdvipdfmxEngine::default()
+            .process(&mut launcher, "batch.xdv", "batch.pdf")
+            .unwrap_err();
+        assert!(
+            error.to_string().contains("Unexpected opcode 247"),
+            "{error}"
+        );
     }
     let (pdf, _, _) = compile_pdf(&mut memory, "Successful subsequent build.\\bye", true);
     check_cross_references(&pdf);

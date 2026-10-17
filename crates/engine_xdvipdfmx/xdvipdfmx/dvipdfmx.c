@@ -371,6 +371,7 @@ dvipdfmx_main (
 
   pdf_font_set_deterministic_unique_tags(deterministic_tags ? 1 : 0);
 
+  tt_pdf_phase_start(2);
   pdf_init_fontmaps(); /* This must come before parsing options... */
 
   /* We used to read the config file here. It synthesized command-line
@@ -389,11 +390,13 @@ dvipdfmx_main (
   pdf_load_fontmap_file("pdftex.map", FONTMAP_RMODE_APPEND);
   pdf_load_fontmap_file("kanjix.map", FONTMAP_RMODE_APPEND);
   pdf_load_fontmap_file("ckx.map", FONTMAP_RMODE_APPEND);
+  tt_pdf_phase_end();
 
   if (pagespec) {
     select_pages(pagespec);
   }
 
+  tt_pdf_phase_start(3);
   {
     /* Dependency between DVI and PDF side is rather complicated... */
     dvi2pts = dvi_init(dvi_filename, mag);
@@ -417,7 +420,9 @@ dvipdfmx_main (
                       &do_encryption, &key_bits, &permission, oplain, uplain,
                       &has_id, id1, id2, &opt_flags);
   }
+  tt_pdf_phase_end();
 
+  tt_pdf_phase_start(4);
   /*kpse_init_prog("", font_dpi, NULL, NULL);
     kpse_set_program_enabled(kpse_pk_format, true, kpse_src_texmf_cnf);*/
   pdf_font_set_dpi(font_dpi);
@@ -487,6 +492,7 @@ dvipdfmx_main (
     tpic_set_fill_mode(1);
   if (translate_origin)
     mps_set_translate_origin(1);
+  tt_pdf_phase_end();
 
   tt_pdf_phase_start(0);
   do_dvi_pages();
