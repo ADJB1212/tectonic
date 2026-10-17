@@ -13,6 +13,7 @@ mod options;
 mod pipeline;
 mod predictor;
 mod preflight;
+mod tfm;
 
 pub use options::PdfBuildOptions;
 pub use pipeline::{PdfBuildStatistics, PdfRuntime};
