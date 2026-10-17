@@ -14,35 +14,264 @@ use tectonic_status_base::NoopStatusBackend;
 
 mod util;
 
-fn compile_pdf(memory: &mut MemoryIo, source: &str, compression: bool) -> (Vec<u8>, Duration, Duration) {
+fn compile_pdf(
+    memory: &mut MemoryIo,
+    source: &str,
+    compression: bool,
+) -> (Vec<u8>, Duration, Duration) {
+    let (pdf, tex, conversion, _) =
+        compile_pdf_with_backend(memory, source, compression, None, false, 64 * 1024 * 1024);
+    (pdf, tex, conversion)
+}
+
+fn compile_pdf_with_backend(
+    memory: &mut MemoryIo,
+    source: &str,
+    compression: bool,
+    workers: Option<usize>,
+    legacy: bool,
+    queued_bytes: usize,
+) -> (
+    Vec<u8>,
+    Duration,
+    Duration,
+    Option<tectonic::PdfBuildStatistics>,
+) {
     util::set_test_root();
     let mut format = SingleInputFileIo::new(&util::ensure_plain_format().unwrap());
     let mut assets = FilesystemIo::new(&util::test_path(&["assets"]), false, false, HashSet::new());
     let mut primary = BufferedPrimaryIo::from_text(source);
-    let (tex_time, pdf_time) = {
+    let (tex_time, pdf_time, statistics) = {
         let io = IoStack::new(vec![memory, &mut primary, &mut format, &mut assets]);
         let mut hooks = MinimalDriver::new(io);
         let mut status = NoopStatusBackend {};
         let mut launcher = CoreBridgeLauncher::new(&mut hooks, &mut status);
         let start = Instant::now();
-        TexEngine::default().process(&mut launcher, "plain.fmt", "batch.tex").unwrap();
+        TexEngine::default()
+            .process(&mut launcher, "plain.fmt", "batch.tex")
+            .unwrap();
         let tex_time = start.elapsed();
         let start = Instant::now();
-        XdvipdfmxEngine::default()
+        let mut engine = XdvipdfmxEngine::default();
+        engine
+            .legacy_backend(legacy)
+            .pdf_build_options(tectonic::PdfBuildOptions {
+                workers: workers.and_then(std::num::NonZeroUsize::new),
+                queued_bytes: std::num::NonZeroUsize::new(queued_bytes).unwrap(),
+            })
             .enable_compression(compression)
             .enable_deterministic_tags(true)
             .process(&mut launcher, "batch.xdv", "batch.pdf")
             .unwrap();
-        (tex_time, start.elapsed())
+        (tex_time, start.elapsed(), engine.statistics().cloned())
     };
     let pdf = memory.files.borrow()["batch.pdf"].data.clone();
-    (pdf, tex_time, pdf_time)
+    (pdf, tex_time, pdf_time, statistics)
+}
+
+fn decoded_streams(pdf: &[u8]) -> Vec<Vec<u8>> {
+    let mut streams = Vec::new();
+    let mut cursor = 0;
+    while let Some(start) = pdf[cursor..]
+        .windows(8)
+        .position(|bytes| bytes == b"\nstream\n")
+    {
+        let start = cursor + start;
+        let object_start = pdf[..start]
+            .windows(5)
+            .rposition(|bytes| bytes == b" obj\n")
+            .unwrap()
+            + 5;
+        let (dictionary, data) = read_stream(&pdf[object_start..]);
+        cursor = start + 8 + data.len();
+        if dictionary.contains("/Type/ObjStm") || dictionary.contains("/Type/XRef") {
+            continue;
+        }
+        let mut decoded = Vec::new();
+        if dictionary.contains("/FlateDecode") {
+            ZlibDecoder::new(data).read_to_end(&mut decoded).unwrap();
+        } else {
+            decoded.extend_from_slice(data);
+        }
+        streams.push(decoded);
+    }
+    streams.sort();
+    streams
+}
+
+fn page_document() -> String {
+    let mut source =
+        String::from("\\nopagenumbers\\font\\native=\"[lmroman12-regular]\" at 12pt\n");
+    for page in 0..24 {
+        source.push_str(&format!("Page {page}. {{\\native Native office ffi AVATAR}} \\vrule width 8pt height 12pt\\par\n"));
+        source.push_str(
+            &"Text with (parentheses), \\char92 and relative positioning.\\par\n".repeat(32),
+        );
+        source.push_str("\\vfill\\eject\n");
+    }
+    source.push_str("\\bye\n");
+    source
+}
+
+#[test]
+fn page_workers_preserve_content_and_deterministic_output_under_backpressure() {
+    let source = page_document();
+    for compression in [false, true] {
+        let mut memory = MemoryIo::new(true);
+        let (legacy, _, _, _) =
+            compile_pdf_with_backend(&mut memory, &source, compression, Some(1), true, 1);
+        let expected = decoded_streams(&legacy);
+        let mut deterministic = None;
+        for (workers, queued_bytes) in
+            [(1, 1), (3, 1), (3, 64 * 1024 * 1024), (1, 64 * 1024 * 1024)]
+        {
+            let (pdf, _, _, statistics) = compile_pdf_with_backend(
+                &mut memory,
+                &source,
+                compression,
+                Some(workers),
+                false,
+                queued_bytes,
+            );
+            let statistics = statistics.unwrap();
+            assert_eq!(statistics.rendered_pages, 24);
+            assert!(!statistics.serial_page_fallback);
+            check_cross_references(&pdf);
+            assert_eq!(
+                decoded_streams(&pdf),
+                expected,
+                "workers={workers}, compression={compression}"
+            );
+            if let Some(expected) = &deterministic {
+                assert!(
+                    pdf == *expected,
+                    "worker or queue limits changed deterministic PDF bytes"
+                );
+            } else {
+                deterministic = Some(pdf);
+            }
+        }
+    }
+}
+
+#[test]
+fn page_workers_preserve_images_colors_backgrounds_links_and_destinations() {
+    let mut memory = MemoryIo::new(true);
+    memory.create_entry("small.bmp", bmp_image(64, 64));
+    let mut source = String::from("\\nopagenumbers\n");
+    for page in 0..8 {
+        source.push_str(&format!("\\special{{background rgb 0.9 0.8 0.7}}\\special{{color push rgb 0 0 1}}\\special{{pdf:dest (page{page}) [ @thispage /Fit ]}}\n"));
+        source.push_str(
+            "Colored text.\\special{color pop}\\par\\special{pdf:image width 20pt (small.bmp)}\n",
+        );
+        source.push_str("\\special{pdf:bann << /Type /Annot /Subtype /Link /A << /S /URI /URI (https://example.com) >> >>}Link text\\special{pdf:eann}\\vfill\\eject\n");
+    }
+    source.push_str("\\bye\n");
+    let (legacy, _, _, _) =
+        compile_pdf_with_backend(&mut memory, &source, true, Some(1), true, 1024);
+    let (parallel, _, _, statistics) =
+        compile_pdf_with_backend(&mut memory, &source, true, Some(3), false, 1024);
+    let statistics = statistics.unwrap();
+    assert_eq!(statistics.rendered_pages, 8);
+    assert!(!statistics.serial_page_fallback);
+    check_cross_references(&parallel);
+    assert_eq!(decoded_streams(&parallel), decoded_streams(&legacy));
+    if let Some(root) = std::env::var_os("TECTONIC_PDF_BENCH_DIR") {
+        std::fs::create_dir_all(&root).unwrap();
+        let root = std::path::Path::new(&root);
+        std::fs::write(root.join("features-legacy.pdf"), legacy).unwrap();
+        std::fs::write(root.join("features-auto.pdf"), parallel).unwrap();
+        let (one, _, _, _) =
+            compile_pdf_with_backend(&mut memory, &source, true, Some(1), false, 1024);
+        std::fs::write(root.join("features-one.pdf"), one).unwrap();
+    }
+}
+
+#[test]
+fn unknown_specials_use_legacy_page_rendering_without_replaying_side_effects() {
+    let source = "\\nopagenumbers\\special{pdf:literal direct /FallbackTest BMC}First\\special{pdf:literal direct EMC}\\eject Second\\bye";
+    let mut memory = MemoryIo::new(true);
+    let (legacy, _, _, _) =
+        compile_pdf_with_backend(&mut memory, source, true, Some(1), true, 1024);
+    let (parallel, _, _, statistics) =
+        compile_pdf_with_backend(&mut memory, source, true, Some(3), false, 1024);
+    let statistics = statistics.unwrap();
+    assert_eq!(statistics.rendered_pages, 0);
+    assert!(statistics.serial_page_fallback);
+    assert_eq!(decoded_streams(&parallel), decoded_streams(&legacy));
+    check_cross_references(&parallel);
+}
+
+#[test]
+fn native_abort_with_queued_pages_allows_another_pdf_build() {
+    util::set_test_root();
+    let mut memory = MemoryIo::new(true);
+    let mut format = SingleInputFileIo::new(&util::ensure_plain_format().unwrap());
+    let mut assets = FilesystemIo::new(&util::test_path(&["assets"]), false, false, HashSet::new());
+    let mut primary = BufferedPrimaryIo::from_text(
+        "\\nopagenumbers First\\eject Second\\eject {\\bf Missing font outline}\\bye",
+    );
+    {
+        let io = IoStack::new(vec![&mut memory, &mut primary, &mut format, &mut assets]);
+        let mut hooks = MinimalDriver::new(io);
+        let mut status = NoopStatusBackend {};
+        let mut launcher = CoreBridgeLauncher::new(&mut hooks, &mut status);
+        TexEngine::default()
+            .process(&mut launcher, "plain.fmt", "batch.tex")
+            .unwrap();
+        let mut engine = XdvipdfmxEngine::default();
+        engine.pdf_build_options(tectonic::PdfBuildOptions {
+            workers: std::num::NonZeroUsize::new(3),
+            queued_bytes: std::num::NonZeroUsize::new(1024 * 1024).unwrap(),
+        });
+        let error = engine
+            .process(&mut launcher, "batch.xdv", "batch.pdf")
+            .unwrap_err();
+        assert!(error.to_string().contains("physical"), "{error}");
+        assert_eq!(engine.statistics().unwrap().rendered_pages, 2);
+    }
+    let (pdf, _, _) = compile_pdf(&mut memory, "Successful subsequent build.\\bye", true);
+    check_cross_references(&pdf);
+}
+
+#[test]
+fn resource_workers_preserve_metadata_and_large_stream_bytes_across_limits() {
+    let mut memory = MemoryIo::new(true);
+    let source = attachment_document(
+        &mut memory,
+        &[16 * 1024, 2 * 1024 * 1024 + 17, 600 * 1024, 32 * 1024],
+    );
+    let (legacy, _, _, _) = compile_pdf_with_backend(&mut memory, &source, true, Some(1), true, 1);
+    let expected = decoded_streams(&legacy);
+    let mut deterministic = None;
+    for (workers, queued_bytes) in [(1, 1), (3, 1), (3, 64 * 1024 * 1024)] {
+        let (pdf, _, _, statistics) = compile_pdf_with_backend(
+            &mut memory,
+            &source,
+            true,
+            Some(workers),
+            false,
+            queued_bytes,
+        );
+        let statistics = statistics.unwrap();
+        assert!(statistics.serial_page_fallback);
+        assert!(statistics.compressed_streams >= 3);
+        check_cross_references(&pdf);
+        assert_eq!(decoded_streams(&pdf), expected);
+        if let Some(expected) = &deterministic {
+            assert!(pdf == *expected);
+        } else {
+            deterministic = Some(pdf);
+        }
+    }
 }
 
 fn attachment_document(memory: &mut MemoryIo, lengths: &[usize]) -> String {
     let mut source = String::from("\\nopagenumbers\nBatch compression test.\n");
     for (index, &length) in lengths.iter().enumerate() {
-        let data: Vec<_> = (0..length).map(|offset| ((offset * 31 + index) % 251) as u8).collect();
+        let data: Vec<_> = (0..length)
+            .map(|offset| ((offset * 31 + index) % 251) as u8)
+            .collect();
         memory.create_entry(&format!("payload{index}.bin"), data);
         let metadata = if index == 0 { " /Type /Metadata" } else { "" };
         source.push_str(&format!(
@@ -55,11 +284,13 @@ fn attachment_document(memory: &mut MemoryIo, lengths: &[usize]) -> String {
 
 #[test]
 fn batched_streams_preserve_data_across_batch_limits_and_engine_runs() {
-    let lengths: Vec<_> = (0..140).map(|index| match index {
-        0..64 => 16 * 1024 + index,
-        64..82 => 600 * 1024 + index,
-        _ => 32 * 1024 + index,
-    }).collect();
+    let lengths: Vec<_> = (0..140)
+        .map(|index| match index {
+            0..64 => 16 * 1024 + index,
+            64..82 => 600 * 1024 + index,
+            _ => 32 * 1024 + index,
+        })
+        .collect();
     for compression in [true, false, true] {
         let mut memory = MemoryIo::new(true);
         let source = attachment_document(&mut memory, &lengths);
@@ -78,21 +309,49 @@ fn batched_streams_preserve_data_across_batch_limits_and_engine_runs() {
                 stream.to_vec()
             };
             assert_eq!(data.len(), length);
-            assert!(data.iter().enumerate().all(|(offset, &byte)| byte == ((offset * 31 + index) % 251) as u8));
+            assert!(
+                data.iter()
+                    .enumerate()
+                    .all(|(offset, &byte)| byte == ((offset * 31 + index) % 251) as u8)
+            );
         }
     }
 }
 
 fn check_cross_references(pdf: &[u8]) {
-    let startxref = pdf.windows(10).rposition(|bytes| bytes == b"startxref\n").unwrap() + 10;
-    let offset = std::str::from_utf8(&pdf[startxref..]).unwrap()
-        .lines().next().unwrap().parse::<usize>().unwrap();
+    let startxref = pdf
+        .windows(10)
+        .rposition(|bytes| bytes == b"startxref\n")
+        .unwrap()
+        + 10;
+    let offset = std::str::from_utf8(&pdf[startxref..])
+        .unwrap()
+        .lines()
+        .next()
+        .unwrap()
+        .parse::<usize>()
+        .unwrap();
     let xref = &pdf[offset..];
-    let header_end = xref.windows(5).position(|bytes| bytes == b" obj\n").unwrap();
-    assert!(xref[..header_end].iter().all(|byte| byte.is_ascii_digit() || *byte == b' '));
+    let header_end = xref
+        .windows(5)
+        .position(|bytes| bytes == b" obj\n")
+        .unwrap();
+    assert!(
+        xref[..header_end]
+            .iter()
+            .all(|byte| byte.is_ascii_digit() || *byte == b' ')
+    );
     let (dictionary, stream) = stream_data(xref, b"/Type/XRef");
-    let widths: Vec<usize> = dictionary.split("/W[").nth(1).unwrap().split(']').next().unwrap()
-        .split_whitespace().map(|width| width.parse().unwrap()).collect();
+    let widths: Vec<usize> = dictionary
+        .split("/W[")
+        .nth(1)
+        .unwrap()
+        .split(']')
+        .next()
+        .unwrap()
+        .split_whitespace()
+        .map(|width| width.parse().unwrap())
+        .collect();
     assert_eq!(widths.len(), 3);
     let entries = if dictionary.contains("/FlateDecode") {
         let mut decoded = Vec::new();
@@ -103,7 +362,11 @@ fn check_cross_references(pdf: &[u8]) {
     };
     let row_bytes: usize = widths.iter().sum();
     assert_eq!(entries.len() % row_bytes, 0);
-    let integer = |bytes: &[u8]| bytes.iter().fold(0usize, |value, &byte| value * 256 + usize::from(byte));
+    let integer = |bytes: &[u8]| {
+        bytes
+            .iter()
+            .fold(0usize, |value, &byte| value * 256 + usize::from(byte))
+    };
     for (label, entry) in entries.chunks_exact(row_bytes).enumerate() {
         if integer(&entry[..widths[0]]) == 1 {
             let offset = integer(&entry[widths[0]..widths[0] + widths[1]]);
@@ -127,9 +390,16 @@ fn batched_page_streams_preserve_graphics_and_cross_references() {
         check_cross_references(&pdf);
         let mut found = HashSet::new();
         let mut cursor = 0;
-        while let Some(start) = pdf[cursor..].windows(8).position(|bytes| bytes == b"\nstream\n") {
+        while let Some(start) = pdf[cursor..]
+            .windows(8)
+            .position(|bytes| bytes == b"\nstream\n")
+        {
             let start = cursor + start;
-            let object_start = pdf[..start].windows(5).rposition(|bytes| bytes == b" obj\n").unwrap() + 5;
+            let object_start = pdf[..start]
+                .windows(5)
+                .rposition(|bytes| bytes == b" obj\n")
+                .unwrap()
+                + 5;
             let (dictionary, stream) = read_stream(&pdf[object_start..]);
             cursor = start + 8 + stream.len();
             let data = if dictionary.contains("/FlateDecode") {
@@ -141,7 +411,12 @@ fn batched_page_streams_preserve_graphics_and_cross_references() {
             };
             if let Some(start) = data.windows(9).position(|bytes| bytes == b"/PageTest") {
                 let content = std::str::from_utf8(&data[start..]).unwrap();
-                let page: usize = content[9..].split_whitespace().next().unwrap().parse().unwrap();
+                let page: usize = content[9..]
+                    .split_whitespace()
+                    .next()
+                    .unwrap()
+                    .parse()
+                    .unwrap();
                 assert!(content.starts_with(&format!("/PageTest{page} BMC {commands}EMC")));
                 assert!((1024..16 * 1024).contains(&data.len()));
                 assert_eq!(dictionary.contains("/FlateDecode"), compression);
@@ -155,27 +430,89 @@ fn batched_page_streams_preserve_graphics_and_cross_references() {
 #[test]
 #[ignore = "manual full compilation benchmark"]
 fn benchmark_single_pdf_compilation() {
-    for attachments in [false, true] {
+    for workload in ["text", "native", "graphics", "images", "attachments"] {
+        if std::env::var("TECTONIC_PDF_BENCH_WORKLOAD").is_ok_and(|selected| selected != workload) {
+            continue;
+        }
         let mut memory = MemoryIo::new(true);
-        let source = if attachments {
+        let source = if workload == "attachments" {
             attachment_document(&mut memory, &vec![128 * 1024; 128])
+        } else if workload == "native" {
+            format!(
+                "\\font\\native=\"[lmroman12-regular]\"\\native\n{}",
+                page_document()
+            )
+        } else if workload == "images" {
+            let mut source = String::from("\\nopagenumbers\n");
+            for image in 0..16 {
+                let name = format!("benchmark{image}.bmp");
+                memory.create_entry(&name, bmp_image(1024, 1024));
+                source.push_str(&format!(
+                    "Image {image}.\\special{{pdf:image width 200pt ({name})}}\\vfill\\eject\n"
+                ));
+            }
+            source.push_str("\\bye\n");
+            source
+        } else if workload == "graphics" {
+            format!(
+                "\\nopagenumbers\n{}\\bye\n",
+                format!(
+                    "{}\\vfill\\eject\n",
+                    "\\vrule width 8pt height 12pt ".repeat(500)
+                )
+                .repeat(100)
+            )
         } else {
             let paragraph = "The quick brown fox jumps over the lazy dog. This paragraph exercises line breaking, font output, and page layout in a single document.\\par\n";
             let page = format!("{}\\vfill\\eject\n", paragraph.repeat(20));
             format!("\\nopagenumbers\n{}\\bye\n", page.repeat(200))
         };
-        let mut tex_times = Vec::new();
-        let mut pdf_times = Vec::new();
-        for iteration in 0..6 {
-            let (_, tex, pdf) = compile_pdf(&mut memory, &source, true);
-            if iteration > 0 {
-                tex_times.push(tex);
-                pdf_times.push(pdf);
+        for (label, workers, legacy) in [
+            ("legacy", None, true),
+            ("one", Some(1), false),
+            ("auto", None, false),
+        ] {
+            if std::env::var("TECTONIC_PDF_BENCH_BACKEND").is_ok_and(|selected| selected != label) {
+                continue;
             }
+            let mut tex_times = Vec::new();
+            let mut pdf_times = Vec::new();
+            for iteration in 0..6 {
+                let (bytes, tex, pdf, statistics) = compile_pdf_with_backend(
+                    &mut memory,
+                    &source,
+                    true,
+                    workers,
+                    legacy,
+                    64 * 1024 * 1024,
+                );
+                if iteration == 5 {
+                    if let Some(statistics) = statistics {
+                        eprintln!("{statistics:?}");
+                    }
+                    if let Some(root) = std::env::var_os("TECTONIC_PDF_BENCH_DIR") {
+                        std::fs::create_dir_all(&root).unwrap();
+                        std::fs::write(
+                            std::path::Path::new(&root).join(format!("{workload}-{label}.pdf")),
+                            bytes,
+                        )
+                        .unwrap();
+                    }
+                }
+                if iteration > 0 {
+                    tex_times.push(tex);
+                    pdf_times.push(pdf);
+                }
+            }
+            tex_times.sort();
+            pdf_times.sort();
+            eprintln!(
+                "workload={workload}, backend={label}: TeX={:?}, PDF={:?}, total={:?}",
+                tex_times[2],
+                pdf_times[2],
+                tex_times[2] + pdf_times[2]
+            );
         }
-        tex_times.sort();
-        pdf_times.sort();
-        eprintln!("attachments={attachments}: TeX={:?}, PDF={:?}, total={:?}", tex_times[2], pdf_times[2], tex_times[2] + pdf_times[2]);
     }
 }
 

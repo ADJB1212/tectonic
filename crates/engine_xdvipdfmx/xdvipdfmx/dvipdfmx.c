@@ -58,6 +58,7 @@
 #include "dpx-specials.h"
 #include "dpx-tfm.h"
 #include "dpx-vf.h"
+#include "tectonic-pipeline.h"
 #include "dpx-tt_aux.h"
 
 typedef struct page_range
@@ -399,6 +400,13 @@ dvipdfmx_main (
     if (dvi2pts == 0.0)
       _tt_abort("dvi_init() failed!");
 
+    if (tt_pdf_pipeline_active()) {
+      int eligible = dvi_parallel_eligible();
+      tt_pdf_pipeline_enable_pages(eligible);
+      if (!eligible)
+        dpx_message("PDF page rendering uses serial compatibility mode (specials or virtual fonts).\n");
+    }
+
     creator = dvi_comment(); /* Set PDF Creator entry */
     dvi_scan_specials(0,
                       &paper_width, &paper_height,
@@ -480,9 +488,13 @@ dvipdfmx_main (
   if (translate_origin)
     mps_set_translate_origin(1);
 
+  tt_pdf_phase_start(0);
   do_dvi_pages();
+  tt_pdf_phase_end();
 
+  tt_pdf_phase_start(1);
   pdf_close_document();
+  tt_pdf_phase_end();
 
   pdf_close_fontmaps(); /* pdf_font may depend on fontmap. */
 
@@ -504,6 +516,8 @@ tt_engine_xdvipdfmx_main(
   int rv;
 
   if (setjmp(*ttbc_global_engine_enter(api))) {
+    pdf_error_cleanup();
+    pdf_abort_fonts();
     ttbc_global_engine_exit();
     return 99;
   }

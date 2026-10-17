@@ -263,6 +263,46 @@ fn bad_outfmt_1() {
     error_or_panic(&output);
 }
 
+#[test]
+fn pdf_resource_options_reject_zero_and_overflow_before_building() {
+    let overflow = usize::MAX.to_string();
+    for command in [vec![], vec!["-X", "compile"], vec!["-X", "build"]] {
+        for (flag, value) in [
+            ("--pdf-workers", "0"),
+            ("--pdf-queue-mib", "0"),
+            ("--pdf-queue-mib", overflow.as_str()),
+        ] {
+            let mut args = command.clone();
+            args.extend([flag, value]);
+            if command.last().copied() != Some("build") {
+                args.push("-");
+            }
+            let output = run_tectonic(Path::new("."), &args);
+            assert_eq!(output.status.code(), Some(2));
+            assert!(String::from_utf8_lossy(&output.stderr).contains(flag));
+        }
+    }
+}
+
+#[test]
+fn pdf_worker_limits_work_for_classic_compile_and_workspace_build() {
+    let tempdir = setup_and_copy_files(&[]);
+    let format = get_plain_format_arg();
+    for command in [vec![], vec!["-X", "compile"]] {
+        let mut args = command;
+        args.extend([&format, "--pdf-workers=3", "--pdf-queue-mib=1", "-"]);
+        let output = run_tectonic_with_stdin(tempdir.path(), &args, "First\\eject Second\\bye");
+        success_or_panic(&output);
+        check_file(&tempdir, "texput.pdf");
+    }
+    let (_workspace, path) = setup_v2();
+    success_or_panic(&run_tectonic(
+        &path,
+        &["-X", "build", "--pdf-workers=1", "--pdf-queue-mib=1"],
+    ));
+    assert!(path.join("build/default/default.pdf").is_file());
+}
+
 fn run_with_biber(args: &str, stdin: &str) -> Output {
     run_with_biber_exe(None, args, stdin, &["subdirectory/empty.bib"])
 }
@@ -1057,7 +1097,8 @@ fn parallel_native_layout_preserves_paragraphs_adjustments_and_synctex() {
     let format = get_plain_format_arg();
     let tempdir = setup_and_copy_files(&[]);
     let paragraph = "office affinity final line kerning AVATAR To Wa ffi. Paragraph breaking preserves glyph positions, spaces, ligatures and discretionary hyphenation. ";
-    let text = format!(r#"\font\native="[lmroman12-regular]/OT" at 12pt
+    let text = format!(
+        r#"\font\native="[lmroman12-regular]/OT" at 12pt
 \native \hsize=160pt \pretolerance=-1 \tolerance=10000
 \emergencystretch=10pt \nopagenumbers
 {}\discretionary{{pre}}{{post}}{{replacement}}{}\vadjust{{\penalty73}}{}\par
@@ -1066,19 +1107,36 @@ fn parallel_native_layout_preserves_paragraphs_adjustments_and_synctex() {
 {{\lastlinefit=1000 {}\par}}
 Unicode quoted text: “office affinity”. {}\par
 \bye
-"#, paragraph.repeat(4), paragraph.repeat(4), paragraph.repeat(4),
-        paragraph.repeat(12), paragraph.repeat(12), paragraph.repeat(12), paragraph.repeat(12));
+"#,
+        paragraph.repeat(4),
+        paragraph.repeat(4),
+        paragraph.repeat(4),
+        paragraph.repeat(12),
+        paragraph.repeat(12),
+        paragraph.repeat(12),
+        paragraph.repeat(12)
+    );
     fs::write(tempdir.path().join("layout.tex"), text).unwrap();
-    let args = [format.as_str(), "--outfmt=xdv", "--synctex", "-Zdeterministic-mode", "layout.tex"];
+    let args = [
+        format.as_str(),
+        "--outfmt=xdv",
+        "--synctex",
+        "-Zdeterministic-mode",
+        "layout.tex",
+    ];
     let mut expected = None;
     for workers in ["1", "3", "1"] {
-        let output = prep_tectonic(tempdir.path(), &args).env("TECTONIC_LAYOUT_THREADS", workers)
-            .output().expect("tectonic failed to start");
+        let output = prep_tectonic(tempdir.path(), &args)
+            .env("TECTONIC_LAYOUT_THREADS", workers)
+            .output()
+            .expect("tectonic failed to start");
         success_or_panic(&output);
         let xdv = fs::read(tempdir.path().join("layout.xdv")).unwrap();
         let synctex = fs::read(tempdir.path().join("layout.synctex.gz")).unwrap();
         let mut decoded = Vec::new();
-        flate2::read::GzDecoder::new(synctex.as_slice()).read_to_end(&mut decoded).unwrap();
+        flate2::read::GzDecoder::new(synctex.as_slice())
+            .read_to_end(&mut decoded)
+            .unwrap();
         let result = (xdv, decoded);
         if let Some(expected) = &expected {
             assert_eq!(&result, expected);

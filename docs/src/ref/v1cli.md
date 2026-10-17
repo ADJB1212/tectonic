@@ -58,9 +58,16 @@ The following are the available flags.
 | `-o`  | `--outdir <outdir>`            | The directory in which to place output files [default: the directory containing `<input>`]             |
 |       | `--outfmt <format>`            | The kind of output to generate [default: `pdf`]  [possible values: `pdf`, `html`, `xdv`, `aux`, `fmt`] |
 |       | `--pass <pass>`                | Which engines to run [default: `default`]  [possible values: `default`, `tex`, `bibtex_first`]         |
+|       | `--pdf-workers <count>`        | PDF worker count [default: available CPUs]; use `1` for synchronous execution |
+|       | `--pdf-queue-mib <size>`       | Queued PDF input payload budget in MiB [default: `64`] |
 | `-p`  | `--print`                      | Print the engine’s chatter during processing                                                           |
 | `-r`  | `--reruns <count>`             | Rerun the TeX engine exactly this many times after the first                                           |
 |       | `--synctex`                    | Generate SyncTeX data                                                                                  |
 |       | `--untrusted`                  | Input is untrusted — disable all known-insecure features                                               |
 | `-V`  | `--version`                    | Prints version information                                                                             |
 | `-Z`  | `-Z <option>...`               | Unstable options. Pass `-Zhelp` to show a list                                                         |
+
+PDF worker and queue limits must be positive. The queue budget excludes
+active-job working memory and document storage; one oversized item may run
+alone. Unsupported specials and virtual fonts automatically select serial page
+rendering while independent resource processing can still use workers.

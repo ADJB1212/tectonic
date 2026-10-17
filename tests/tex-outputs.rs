@@ -14,12 +14,12 @@ use tectonic::io::{FilesystemIo, FilesystemPrimaryInputIo, IoProvider, IoStack, 
 use tectonic::unstable_opts::UnstableOptions;
 use tectonic::{TexEngine, XdvipdfmxEngine};
 use tectonic_bridge_core::{CoreBridgeLauncher, MinimalDriver};
-use tectonic_errors::{anyhow::anyhow, Result};
+use tectonic_errors::{Result, anyhow::anyhow};
 use tectonic_status_base::NoopStatusBackend;
 
 #[path = "util/mod.rs"]
 mod util;
-use crate::util::{ensure_plain_format, test_path, Expected, ExpectedFile};
+use crate::util::{Expected, ExpectedFile, ensure_plain_format, test_path};
 
 struct TestCase {
     stem: String,

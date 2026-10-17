@@ -8,7 +8,12 @@
 //! [Tectonic]: https://tectonic-typesetting.github.io/
 
 mod compress;
+mod options;
+mod pipeline;
 mod predictor;
+
+pub use options::PdfBuildOptions;
+pub use pipeline::{PdfBuildStatistics, PdfRuntime};
 
 /// Import things from our bridge crates to ensure that we actually link with
 /// them.

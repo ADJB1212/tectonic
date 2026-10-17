@@ -17,10 +17,10 @@ use std::{env, ffi::OsString, fs, path::Path, path::PathBuf, process};
 use tectonic::errors::dump_uncolorized;
 use tectonic::{
     config::PersistentConfig,
-    status::{termcolor::TermcolorStatusBackend, ChatterLevel, StatusBackend},
+    status::{ChatterLevel, StatusBackend, termcolor::TermcolorStatusBackend},
     tt_note,
 };
-use tectonic_errors::{prelude::anyhow, Result};
+use tectonic_errors::{Result, prelude::anyhow};
 use tectonic_status_base::plain::PlainStatusBackend;
 use tracing::level_filters::LevelFilter;
 

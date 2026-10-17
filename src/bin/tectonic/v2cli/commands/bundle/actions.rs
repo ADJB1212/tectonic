@@ -128,9 +128,7 @@ pub(super) fn pack(cli: &BundleCreateCommand) -> Result<()> {
     }
 
     match cli.format {
-        BundleFormat::BundleV1 => {
-            BundleV1::make(Box::new(File::create(target)?), build_dir)?
-        }
+        BundleFormat::BundleV1 => BundleV1::make(Box::new(File::create(target)?), build_dir)?,
     }
 
     Ok(())

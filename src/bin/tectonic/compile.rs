@@ -6,6 +6,7 @@
 //! `compile` subcommand of the "V2" / "cargo-like" interface.
 
 use clap::Parser;
+use std::num::NonZeroUsize;
 use std::path::{Path, PathBuf};
 use tectonic_bridge_core::{SecuritySettings, SecurityStance};
 use tectonic_bundles::detect_bundle;
@@ -13,7 +14,7 @@ use tectonic_errors::{Error, Result};
 
 use tectonic::errors::EngineError;
 use tectonic::{
-    config::{maybe_return_test_bundle, PersistentConfig},
+    config::{PersistentConfig, maybe_return_test_bundle},
     driver::{OutputFormat, PassSetting, ProcessingSession, ProcessingSessionBuilder},
     status::StatusBackend,
     tt_error, tt_note,
@@ -22,6 +23,13 @@ use tectonic::{
 
 #[derive(Debug, Parser)]
 pub struct CompileOptions {
+    /// Number of PDF workers [default: available CPU count]
+    #[arg(long)]
+    pdf_workers: Option<NonZeroUsize>,
+
+    /// Maximum queued PDF payload in MiB
+    #[arg(long, default_value = "64", value_parser = parse_pdf_queue_mib)]
+    pdf_queue_mib: NonZeroUsize,
     /// The file to process, or "-" to process the standard input stream
     #[arg(value_hint = clap::ValueHint::FilePath)]
     input: String,
@@ -106,6 +114,10 @@ impl CompileOptions {
 
         let mut sess_builder =
             ProcessingSessionBuilder::new_with_security(SecuritySettings::new(stance));
+        sess_builder.pdf_build_options(tectonic::PdfBuildOptions {
+            workers: self.pdf_workers,
+            queued_bytes: NonZeroUsize::new(self.pdf_queue_mib.get() * 1024 * 1024).unwrap(),
+        });
         let format_path = self.format;
         let deterministic_mode = unstable.deterministic_mode;
         sess_builder
@@ -209,6 +221,16 @@ impl CompileOptions {
     }
 }
 
+pub(crate) fn parse_pdf_queue_mib(value: &str) -> std::result::Result<NonZeroUsize, String> {
+    let mib = value
+        .parse::<NonZeroUsize>()
+        .map_err(|error| error.to_string())?;
+    mib.get()
+        .checked_mul(1024 * 1024)
+        .ok_or_else(|| "PDF queue size is too large".to_owned())?;
+    Ok(mib)
+}
+
 pub(crate) fn run_and_report(
     sess_builder: ProcessingSessionBuilder,
     status: &mut dyn StatusBackend,
@@ -217,24 +239,25 @@ pub(crate) fn run_and_report(
     let result = sess.run(status);
 
     if let Err(e) = &result
-        && let Some(err) = e.downcast_ref::<EngineError>() {
-            let output = sess.get_stdout_content();
+        && let Some(err) = e.downcast_ref::<EngineError>()
+    {
+        let output = sess.get_stdout_content();
 
-            if output.is_empty() {
-                tt_error!(
-                    status,
-                    "something bad happened inside {}, but no output was logged",
-                    err.engine()
-                );
-            } else {
-                tt_error!(
-                    status,
-                    "something bad happened inside {}; its output follows:\n",
-                    err.engine()
-                );
-                status.dump_error_logs(&output);
-            }
+        if output.is_empty() {
+            tt_error!(
+                status,
+                "something bad happened inside {}, but no output was logged",
+                err.engine()
+            );
+        } else {
+            tt_error!(
+                status,
+                "something bad happened inside {}; its output follows:\n",
+                err.engine()
+            );
+            status.dump_error_logs(&output);
         }
+    }
 
     result.map(|_| sess)
 }

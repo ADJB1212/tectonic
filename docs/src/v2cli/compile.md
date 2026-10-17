@@ -32,6 +32,8 @@ tectonic -X compile  # full form
   [--outdir <outdir>] [-o <outdir>]
   [--outfmt <format>]
   [--pass <pass>]
+  [--pdf-queue-mib <size>]
+  [--pdf-workers <count>]
   [--print] [-p]
   [--reruns <count>] [-r <count>]
   [--synctex]
@@ -61,6 +63,14 @@ tectonic -X compile myfile.tex
 This will compile the file and create `myfile.pdf` if nothing went wrong. You
 can use an input filename of `-` to have Tectonic process standard input. (In
 this case, the output file will be named `texput.pdf`.)
+
+PDF generation uses available CPUs by default. Set `--pdf-workers N` to limit
+workers, or `--pdf-workers 1` to run the pipeline synchronously. Set
+`--pdf-queue-mib N` to change the queued-input budget from 64 MiB. Both values
+must be positive. The budget excludes active-job working memory and document
+storage; a single oversized item is admitted when the queue is empty.
+Documents with unsupported specials or virtual fonts use serial page rendering
+automatically. TeX passes retain their existing order.
 
 ##### Security
 

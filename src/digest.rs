@@ -4,5 +4,5 @@
 //! Compatibility re-exports of `tectonic_io_base::digest` types.
 
 pub use tectonic_io_base::digest::{
-    bytes_to_hex, create, hex_to_bytes, Digest, DigestComputer, DigestData, DIGEST_LEN, DIGEST_NAME,
+    DIGEST_LEN, DIGEST_NAME, Digest, DigestComputer, DigestData, bytes_to_hex, create, hex_to_bytes,
 };

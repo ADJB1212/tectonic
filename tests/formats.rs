@@ -21,15 +21,15 @@ use std::{
 };
 
 use tectonic::{
+    TexEngine,
     digest::DigestData,
     io::{IoStack, MemoryIo},
-    TexEngine,
 };
 use tectonic_bridge_core::{CoreBridgeLauncher, DriverHooks};
 use tectonic_errors::Result;
 use tectonic_io_base::{
-    filesystem::{FilesystemIo, FilesystemPrimaryInputIo},
     InputHandle, IoProvider, OpenResult, OutputHandle,
+    filesystem::{FilesystemIo, FilesystemPrimaryInputIo},
 };
 use tectonic_status_base::{NoopStatusBackend, StatusBackend};
 

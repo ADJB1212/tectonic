@@ -50,6 +50,7 @@
 #include "dpx-pdffont.h"
 #include "dpx-pdfnames.h"
 #include "dpx-pdfobj.h"
+#include "tectonic-pipeline.h"
 #include "dpx-pdfresource.h"
 #include "dpx-pdfximage.h"
 #include "dpx-pngimage.h"
@@ -132,6 +133,7 @@ typedef struct pdf_page
 
   /* global bop, background, contents, global eop */
   pdf_obj  *content_refs[4];
+  int       render_pending;
 
   pdf_obj  *annots;
   pdf_obj  *beads;
@@ -2237,6 +2239,7 @@ pdf_doc_new_page (pdf_doc *p)
   currentpage->background = NULL;
     currentpage->contents   = pdf_new_stream(STREAM_COMPRESS | STREAM_PAGE_CONTENT);
   currentpage->resources  = pdf_new_dict();
+  currentpage->render_pending = 0;
 
   currentpage->annots = NULL;
   currentpage->beads  = NULL;
@@ -2291,7 +2294,9 @@ pdf_doc_finish_page (pdf_doc *p)
 
   /* Content body of current page */
   currentpage->content_refs[2] = pdf_ref_obj(currentpage->contents);
-  pdf_add_stream (currentpage->contents, "\n", 1);
+  if (!currentpage->render_pending) {
+    pdf_add_stream(currentpage->contents, "\n", 1);
+  }
   pdf_release_obj(currentpage->contents);
   currentpage->contents = NULL;
 
@@ -2406,6 +2411,7 @@ pdf_doc_begin_page (double scale, double x_origin, double y_origin)
 
   /* pdf_doc_new_page() allocates page content stream. */
   pdf_doc_new_page(p);
+  pdf_dev_begin_page_plan();
   pdf_dev_bop(&M);
 
   return;
@@ -2417,6 +2423,15 @@ pdf_doc_end_page (void)
   pdf_doc *p = &pdoc;
 
   pdf_dev_eop();
+  if (tt_pdf_page_recording()) {
+    pdf_page *page = LASTPAGE(p);
+    while (!tt_pdf_pipeline_has_capacity(tt_pdf_page_size()))
+      pdf_pipeline_drain(0);
+    page->render_pending = pdf_submit_page(page->contents);
+    if (!page->render_pending)
+      _tt_abort("Could not submit PDF page");
+  }
+  pdf_dev_end_page_plan();
   doc_fill_page_background(p);
 
   pdf_doc_finish_page(p);
@@ -2429,6 +2444,9 @@ pdf_doc_add_page_content (const char *buffer, unsigned int length)
 {
   pdf_doc  *p = &pdoc;
   pdf_page *currentpage;
+
+  if (tt_pdf_page_bytes(buffer, length))
+    return;
 
   if (p->pending_forms) {
     pdf_add_stream(p->pending_forms->form.contents, buffer, length);
@@ -2518,6 +2536,8 @@ void
 pdf_close_document (void)
 {
   pdf_doc *p = &pdoc;
+
+  pdf_pipeline_drain(1);
 
   pdf_delete_name_tree(&global_names);
 

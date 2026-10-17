@@ -131,6 +131,7 @@ typedef struct pdf_font pdf_font;
 /* pdf_open_document() call them. */
 void     pdf_init_fonts  (void);
 void     pdf_close_fonts (void);
+void     pdf_abort_fonts (void);
 
 /* tex_name is used when mrec is NULL.
  * font_scale (point size) used by PK font.

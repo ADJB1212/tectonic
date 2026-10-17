@@ -12,6 +12,8 @@ use std::{io::Error, slice};
 
 mod compress;
 
+pub use compress::{use_compression_pool, CompressionPoolGuard};
+
 /// Re-export of the flate2 crate linked by this crate.
 pub use flate2;
 

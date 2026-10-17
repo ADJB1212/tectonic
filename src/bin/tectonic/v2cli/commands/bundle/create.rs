@@ -1,6 +1,6 @@
 use clap::{Parser, ValueEnum};
 use std::{fmt::Display, path::PathBuf};
-use tectonic::{config::PersistentConfig, Result};
+use tectonic::{Result, config::PersistentConfig};
 use tectonic_status_base::StatusBackend;
 use tracing::error;
 

@@ -6,5 +6,5 @@
 pub mod termcolor;
 
 pub use tectonic_status_base::{
-    plain, ChatterLevel, MessageKind, NoopStatusBackend, StatusBackend,
+    ChatterLevel, MessageKind, NoopStatusBackend, StatusBackend, plain,
 };

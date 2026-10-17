@@ -21,6 +21,7 @@
 use std::{ffi::CString, time::SystemTime};
 use tectonic_bridge_core::{CoreBridgeLauncher, EngineAbortedError};
 use tectonic_errors::prelude::*;
+pub use tectonic_pdf_io::{PdfBuildOptions, PdfBuildStatistics};
 
 /// A struct for invoking the `xdvipdfmx` engine.
 ///
@@ -39,6 +40,9 @@ pub struct XdvipdfmxEngine {
     enable_compression: bool,
     deterministic_tags: bool,
     build_date: SystemTime,
+    pdf_options: PdfBuildOptions,
+    legacy_backend: bool,
+    statistics: Option<PdfBuildStatistics>,
 }
 
 impl Default for XdvipdfmxEngine {
@@ -48,11 +52,30 @@ impl Default for XdvipdfmxEngine {
             enable_compression: true,
             deterministic_tags: false,
             build_date: SystemTime::UNIX_EPOCH,
+            pdf_options: PdfBuildOptions::default(),
+            legacy_backend: false,
+            statistics: None,
         }
     }
 }
 
 impl XdvipdfmxEngine {
+    /// Statistics for the most recent invocation using the parallel pipeline.
+    pub fn statistics(&self) -> Option<&PdfBuildStatistics> {
+        self.statistics.as_ref()
+    }
+    /// Set the worker and queue limits for PDF generation.
+    pub fn pdf_build_options(&mut self, options: PdfBuildOptions) -> &mut Self {
+        self.pdf_options = options;
+        self
+    }
+
+    /// Select the original backend for differential testing.
+    #[doc(hidden)]
+    pub fn legacy_backend(&mut self, legacy: bool) -> &mut Self {
+        self.legacy_backend = legacy;
+        self
+    }
     /// Set whether compression will be enabled in the output PDF.
     ///
     /// The default value is true. You might want to set this to false to
@@ -129,11 +152,16 @@ impl XdvipdfmxEngine {
         let cpdf = CString::new(pdf)?;
 
         launcher.with_global_lock(|state| {
+            let runtime =
+                (!self.legacy_backend).then(|| tectonic_pdf_io::PdfRuntime::new(&self.pdf_options));
             // SAFETY: This is called while the global lock is held, and with valid C-strings for
             //         dvi and pdf.
             let r = unsafe {
                 c_api::tt_engine_xdvipdfmx_main(state, &config, cdvi.as_ptr(), cpdf.as_ptr())
             };
+            self.statistics = runtime
+                .as_ref()
+                .map(tectonic_pdf_io::PdfRuntime::statistics);
 
             // At the moment, the only possible return codes are 0 and 99 (= abort).
             if r == 99 {

@@ -14,16 +14,16 @@
 //! variable to "1", but that's an annoying solution. So, we use a global mutex
 //! to achieve the same effect. Classy.
 
+use tectonic::TexEngine;
 use tectonic::io::testing::SingleInputFileIo;
 use tectonic::io::{FilesystemPrimaryInputIo, IoProvider, IoStack, MemoryIo};
-use tectonic::TexEngine;
 use tectonic_bridge_core::{CoreBridgeLauncher, MinimalDriver};
 use tectonic_engine_xetex::TexOutcome;
 use tectonic_status_base::NoopStatusBackend;
 
 #[path = "util/mod.rs"]
 mod util;
-use crate::util::{test_path, Expected, ExpectedFile};
+use crate::util::{Expected, ExpectedFile, test_path};
 
 #[test]
 fn trip_test() {

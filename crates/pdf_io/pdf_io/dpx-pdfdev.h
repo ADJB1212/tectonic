@@ -79,6 +79,8 @@ typedef struct
 void   transform_info_clear (transform_info *info);
 
 void   pdf_dev_reset_global_state (void);
+void   pdf_dev_begin_page_plan(void);
+void   pdf_dev_end_page_plan(void);
 
 /* Not in spt_t. */
 int    pdf_sprint_matrix (char *buf, const pdf_tmatrix *p);

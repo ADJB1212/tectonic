@@ -117,7 +117,11 @@ mod tests {
         let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
         let files = [
             ("plain.tex", "plain text", CompressionMethod::Stored),
-            ("caf\u{e9}.tex", "compressed text", CompressionMethod::Deflated),
+            (
+                "caf\u{e9}.tex",
+                "compressed text",
+                CompressionMethod::Deflated,
+            ),
             (
                 digest::DIGEST_NAME,
                 "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",

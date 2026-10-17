@@ -10,7 +10,7 @@
 use anyhow::Context;
 use std::{fmt::Write as FmtWrite, fs, io, path::PathBuf};
 use tectonic_bridge_core::SecuritySettings;
-use tectonic_bundles::{detect_bundle, Bundle};
+use tectonic_bundles::{Bundle, detect_bundle};
 use tectonic_docmodel::{
     document::{BuildTargetType, Document, InputFile},
     workspace::{Workspace, WorkspaceCreator},

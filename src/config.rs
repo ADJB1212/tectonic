@@ -15,7 +15,7 @@ use std::{
     path::PathBuf,
     sync::atomic::{AtomicBool, Ordering},
 };
-use tectonic_bundles::{detect_bundle, Bundle};
+use tectonic_bundles::{Bundle, detect_bundle};
 use tectonic_errors::{Error, Result};
 use tectonic_io_base::app_dirs;
 

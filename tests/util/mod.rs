@@ -50,8 +50,8 @@ pub fn tectonic_exe() -> PathBuf {
 /// could use a locking scheme to get smarter about this.
 pub fn ensure_plain_format() -> Result<PathBuf> {
     use tectonic::{
-        io::{try_open_file, FilesystemIo, FilesystemPrimaryInputIo, IoStack, MemoryIo},
         TexEngine,
+        io::{FilesystemIo, FilesystemPrimaryInputIo, IoStack, MemoryIo, try_open_file},
     };
     use tectonic_status_base::NoopStatusBackend;
 

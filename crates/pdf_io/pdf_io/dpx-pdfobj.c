@@ -24,6 +24,7 @@
 #include <ctype.h>
 /* floor and abs */
 #include <math.h>
+#include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,6 +45,7 @@
 #include "tectonic_bridge_flate.h"
 #include "tectonic-predictor.h"
 #include "tectonic-compress.h"
+#include "tectonic-pipeline.h"
 
 #define STREAM_ALLOC_SIZE      4096u
 #define ARRAY_ALLOC_SIZE       256
@@ -180,6 +182,11 @@ struct pdf_file
 #define COMPRESSION_BATCH_SIZE 64
 #define COMPRESSION_BATCH_BYTES (8 * 1024 * 1024)
 
+typedef struct completed_object {
+    pdf_obj *object;
+    struct completed_object *next;
+} completed_object;
+
 struct pdf_out {
   struct {
     int         enc_mode; /* boolean */
@@ -229,6 +236,8 @@ struct pdf_out {
   size_t        compression_batch_bytes;
   int           flushing_compression_batch;
   int           defer_compression;
+  completed_object *completed_head;
+  completed_object *completed_tail;
   /* The following flag bits are (8,338,607+1)/8 bytes data
    * each bit represenging if the object is freed.
    * Where the value 8,338,607 is taken from PDF ref. manual, v.1.7,
@@ -294,6 +303,7 @@ init_pdf_out_struct (pdf_out *p)
   p->compression_batch_bytes = 0;
   p->flushing_compression_batch = 0;
   p->defer_compression = 1;
+  p->completed_head = p->completed_tail = NULL;
 
   p->free_list = NEW((PDF_NUM_INDIRECT_MAX+1)/8, char);
   memset(p->free_list, 0, (PDF_NUM_INDIRECT_MAX+1)/8);
@@ -660,6 +670,7 @@ pdf_out_flush (void)
         }
 
         flush_compression_batch(p);
+        pdf_pipeline_drain(1);
 
         /*
          * Label xref stream - we need the number of correct objects
@@ -731,6 +742,23 @@ pdf_error_cleanup (void)
         pdf_release_obj(object);
     }
     p->compression_batch_bytes = 0;
+    while (p->completed_head) {
+        completed_object *entry = p->completed_head;
+        p->completed_head = entry->next;
+        entry->object->label = 0;
+        pdf_release_obj(entry->object);
+        free(entry);
+    }
+    p->completed_tail = NULL;
+    {
+        tt_pdf_task_result result;
+        while (tt_pdf_pipeline_take(&result)) {
+            pdf_obj *object = result.target;
+            tt_pdf_pipeline_release(result.handle);
+            object->label = 0;
+            pdf_release_obj(object);
+        }
+    }
 }
 
 
@@ -1751,8 +1779,8 @@ tt_pdf_filter_png_rows (const unsigned char *raster, unsigned char *dst,
 
     for (j = first_row; j < last_row; j++) {
         int type = 0;
-        unsigned char *pp = dst + (j - first_row) * (rowbytes + 1);
-        const unsigned char *p = raster + j * rowbytes;
+        unsigned char *pp = dst + (size_t) (j - first_row) * ((size_t) rowbytes + 1);
+        const unsigned char *p = raster + (size_t) j * rowbytes;
         uint32_t sum[5]   = {0, 0, 0, 0, 0};
         /* First calculated sum of values to make a heuristic guess
          * of optimal predictor function.
@@ -2859,6 +2887,77 @@ release_objstm (pdf_obj *objstm)
 
 #define is_free(b,c) (((b)[(c)/8]) & (1 << (7-((c)%8))))
 
+void
+pdf_pipeline_drain(int all)
+{
+    pdf_out *p = current_output();
+    tt_pdf_task_result result;
+    for (;;) {
+        if (all && p->completed_head) {
+            completed_object *entry = p->completed_head;
+            p->completed_head = entry->next;
+            if (!p->completed_head)
+                p->completed_tail = NULL;
+            pdf_release_obj(entry->object);
+            free(entry);
+            continue;
+        }
+        if (!tt_pdf_pipeline_take(&result))
+            break;
+        pdf_obj *object = result.target;
+        if (result.status < 0) {
+            tt_pdf_pipeline_release(result.handle);
+            object->label = 0;
+            pdf_release_obj(object);
+            _tt_abort("PDF worker failed");
+        }
+        if (result.kind == 0) {
+            if (result.length > INT_MAX) {
+                tt_pdf_pipeline_release(result.handle);
+                object->label = 0;
+                pdf_release_obj(object);
+                _tt_abort("PDF page is too large");
+            }
+            pdf_add_stream(object, result.data, (int) result.length);
+        } else {
+            pdf_stream *stream = object->data;
+            pdf_obj *filters = pdf_lookup_dict(stream->dict, "Filter");
+            pdf_obj *name = pdf_new_name("FlateDecode");
+            if (filters)
+                pdf_unshift_array(filters, name);
+            else
+                pdf_add_dict(stream->dict, pdf_new_name("Filter"), name);
+            stream->stream = NEW(result.length, unsigned char);
+            memcpy(stream->stream, result.data, result.length);
+            if (stream->stream_length > result.length)
+                p->output.compression_saved += stream->stream_length - result.length;
+            stream->stream_length = stream->max_length = result.length;
+            stream->_flags &= ~STREAM_COMPRESS;
+        }
+        tt_pdf_pipeline_release(result.handle);
+        if (all) {
+            pdf_release_obj(object);
+        } else {
+            completed_object *entry = NEW(1, completed_object);
+            entry->object = object;
+            entry->next = NULL;
+            if (p->completed_tail)
+                p->completed_tail->next = entry;
+            else
+                p->completed_head = entry;
+            p->completed_tail = entry;
+            break;
+        }
+    }
+}
+
+int
+pdf_submit_page(pdf_obj *contents)
+{
+    pdf_out *p = current_output();
+    return tt_pdf_page_submit(pdf_link_obj(contents), p->options.compression.level);
+}
+
 static void
 flush_compression_batch (pdf_out *p)
 {
@@ -2930,6 +3029,33 @@ defer_stream_compression (pdf_out *p, pdf_obj *object)
         return 0;
 
     stream = object->data;
+    if (tt_pdf_pipeline_active() && (stream->_flags & STREAM_COMPRESS) && stream->stream_length > 0) {
+        int predictor = 0;
+        type = pdf_lookup_dict(stream->dict, "Type");
+        if (type && streq_ptr("Metadata", pdf_name_value(type)))
+            return 0;
+        if (p->options.compression.use_predictor && (stream->_flags & STREAM_USE_PREDICTOR) &&
+            !pdf_lookup_dict(stream->dict, "DecodeParms")) {
+            predictor = stream->decodeparms.predictor;
+            if (predictor != 2 && predictor != 15)
+                return 0;
+        }
+        while (!tt_pdf_pipeline_has_capacity(stream->stream_length))
+            pdf_pipeline_drain(0);
+        if (predictor) {
+            pdf_obj *parms = filter_create_predictor_dict(predictor, stream->decodeparms.columns,
+                stream->decodeparms.bits_per_component, stream->decodeparms.colors);
+            pdf_add_dict(stream->dict, pdf_new_name("DecodeParms"), parms);
+        }
+        object->refcount = 1;
+        if (!tt_pdf_stream_submit(object, stream->stream, stream->stream_length,
+            p->options.compression.level, predictor, stream->decodeparms.columns,
+            stream->decodeparms.bits_per_component, stream->decodeparms.colors))
+            _tt_abort("Could not submit PDF stream");
+        free(stream->stream);
+        stream->stream = NULL;
+        return 1;
+    }
     if (!(stream->_flags & STREAM_COMPRESS) ||
         stream->stream_length < ((stream->_flags & STREAM_PAGE_CONTENT) ? 1024 : 16 * 1024) ||
         stream->stream_length >= 1024 * 1024 ||

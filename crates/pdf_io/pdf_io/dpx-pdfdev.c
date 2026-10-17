@@ -23,6 +23,7 @@
 #include "dpx-pdfdev.h"
 
 #include <assert.h>
+#include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -45,6 +46,7 @@
 #include "dpx-pdfobj.h"
 #include "dpx-pdfximage.h"
 #include "dpx-type0.h"
+#include "tectonic-pipeline.h"
 
 struct dev_param
 {
@@ -236,6 +238,8 @@ struct pdf_dev {
   int               num_dev_fonts;
   int               max_dev_fonts;
   char              format_buffer[FORMAT_BUF_SIZE+1];
+  void             *render_output;
+  int               recording_page;
 };
 
 /*
@@ -253,7 +257,10 @@ current_device (void)
 static void
 dev_out (pdf_dev *p, const char *str, size_t len)
 {
-  pdf_doc_add_page_content(str, len);
+  if (p->render_output)
+    tt_pdf_render_output(p->render_output, str, len);
+  else
+    pdf_doc_add_page_content(str, len);
 }
 
 static double
@@ -344,7 +351,7 @@ p_dtoa (double value, int prec, char *buf)
   }
 
   if (i) {
-    int m = sprintf(c, "%.0f", i);
+    int m = i <= INT_MAX ? (int) p_itoa((int) i, c) : sprintf(c, "%.0f", i);
     c += m;
     n += m;
   } else if (g == 0) {
@@ -609,6 +616,14 @@ pdf_dev_text_mode (pdf_dev *p)
 static void
 pdf_dev_graphics_mode (pdf_dev *p)
 {
+  if (p->recording_page) {
+    tt_pdf_page_command(TT_PDF_GRAPHICS_MODE, 0, 0, 0, 0);
+    p->motion_state = GRAPHICS_MODE;
+    p->text_state.font_id = -1;
+    p->text_state.bold_param = 0.0;
+    p->text_state.force_reset = 0;
+    return;
+  }
   switch (p->motion_state) {
   case GRAPHICS_MODE:
     break;
@@ -871,12 +886,12 @@ pdf_dev_set_font (pdf_dev *p, int font_id)
   p->text_state.matrix.extend = font->extend;
   p->text_state.matrix.rotate = text_rotate;
 
-  if (!font->resource) {
+  if (!p->render_output && !font->resource) {
     font->resource   = pdf_get_font_reference(font->font_id);
     font->used_chars = pdf_get_font_usedchars(font->font_id);
   }
 
-  if (!font->used_on_this_page) {
+  if (!p->render_output && !font->used_on_this_page) {
     pdf_doc_add_page_resource("Font",
                               font->short_name,
                               pdf_link_obj(font->resource));
@@ -953,29 +968,29 @@ handle_multibyte_string (struct dev_font *font,
   return 0;
 }
 
-void
-pdf_dev_set_string (spt_t xpos, spt_t ypos,
+static void
+dev_set_string (pdf_dev *p, spt_t xpos, spt_t ypos,
                     const void *instr_ptr, size_t instr_len,
                     spt_t width,
-                    int   font_id)
+                    int font_id, int resolved)
 {
-  pdf_dev *p = current_device();
   struct dev_font *font;
   const unsigned char *str_ptr; /* Pointer to the reencoded string. */
   size_t           length, i, len = 0;
   spt_t            kern, delh, delv;
   spt_t            text_xorigin;
   spt_t            text_yorigin;
+  int recording = p->recording_page;
 
   if (font_id < 0 || font_id >= p->num_dev_fonts) {
     _tt_abort("Invalid font: %d (%d)", font_id, p->num_dev_fonts);
     return;
   }
-  if (font_id != p->text_state.font_id) {
+  if (!recording && font_id != p->text_state.font_id) {
     pdf_dev_set_font(p, font_id);
   }
 
-  font = CURRENTFONT(p);
+  font = GET_FONT(p, font_id);
   if (!font) {
     _tt_abort("Currentfont not set.");
   }
@@ -986,7 +1001,7 @@ pdf_dev_set_string (spt_t xpos, spt_t ypos,
   str_ptr = instr_ptr;
   length  = instr_len;
 
-  if (font->format == PDF_FONTTYPE_COMPOSITE) {
+  if (!resolved && font->format == PDF_FONTTYPE_COMPOSITE) {
     if (handle_multibyte_string(font, &str_ptr, &length) < 0) {
       _tt_abort("Error in converting input string...");
     }
@@ -996,11 +1011,42 @@ pdf_dev_set_string (spt_t xpos, spt_t ypos,
         add_to_used_chars2(font->used_chars, cid);
       }
     }
-  } else {
+  } else if (!resolved) {
     if (font->used_chars != NULL) {
       for (i = 0; i < length; i++)
         font->used_chars[str_ptr[i]] = 1;
     }
+  }
+
+  if (recording) {
+    tt_pdf_render_font snapshot;
+    if (!font->resource) {
+      font->resource = pdf_get_font_reference(font->font_id);
+      font->used_chars = pdf_get_font_usedchars(font->font_id);
+      if (font->used_chars) {
+        if (font->format == PDF_FONTTYPE_COMPOSITE) {
+          for (i = 0; i < length; i += 2)
+            add_to_used_chars2(font->used_chars, (str_ptr[i] << 8) | str_ptr[i + 1]);
+        } else {
+          for (i = 0; i < length; i++)
+            font->used_chars[str_ptr[i]] = 1;
+        }
+      }
+    }
+    if (!font->used_on_this_page) {
+      pdf_doc_add_page_resource("Font", font->short_name, pdf_link_obj(font->resource));
+      font->used_on_this_page = 1;
+    }
+    memcpy(snapshot.name, font->short_name, sizeof(snapshot.name));
+    snapshot.size = font->sptsize;
+    snapshot.format = font->format;
+    snapshot.wmode = font->wmode;
+    snapshot.extend = font->extend;
+    snapshot.slant = font->slant;
+    snapshot.bold = font->bold;
+    tt_pdf_page_text(&snapshot, font_id, xpos, ypos, width, str_ptr, length);
+    p->text_state.font_id = font_id;
+    return;
   }
 
   /*
@@ -1098,11 +1144,20 @@ pdf_dev_set_string (spt_t xpos, spt_t ypos,
 }
 
 void
+pdf_dev_set_string (spt_t xpos, spt_t ypos, const void *input, size_t length,
+                    spt_t width, int font_id)
+{
+  dev_set_string(current_device(), xpos, ypos, input, length, width, font_id, 0);
+}
+
+void
 pdf_init_device (double dvi2pts, int precision, int black_and_white)
 {
   pdf_dev *p = current_device();
 
   p->motion_state        = GRAPHICS_MODE;
+  p->render_output       = NULL;
+  p->recording_page      = 0;
   p->unit.dvi2pts        = 0.0;
   p->unit.min_bp_val     = 658;
   p->unit.precision      = 2;
@@ -1170,10 +1225,9 @@ pdf_close_device (void)
  * BOP and EOP manipulate some of the same data structures
  * as the font stuff.
  */
-void
-pdf_dev_reset_fonts (int newpage)
+static void
+dev_reset_fonts (pdf_dev *p, int newpage)
 {
-  pdf_dev *p = current_device();
   int  i;
 
   for (i = 0; i < p->num_dev_fonts; i++) {
@@ -1190,6 +1244,14 @@ pdf_dev_reset_fonts (int newpage)
     p->text_state.bold_param  = 0.0;
 
   p->text_state.is_mb         = 0;
+}
+
+void
+pdf_dev_reset_fonts (int newpage)
+{
+  if (pdev.recording_page)
+    tt_pdf_page_command(TT_PDF_RESET_FONTS, newpage, 0, 0, 0);
+  dev_reset_fonts(current_device(), newpage);
 }
 
 void
@@ -1400,10 +1462,9 @@ dev_sprint_line (pdf_dev *p, char *buf, spt_t width,
 
 /* Not optimized. */
 #define PDF_LINE_THICKNESS_MAX 5.0
-void
-pdf_dev_set_rule (spt_t xpos, spt_t ypos, spt_t width, spt_t height)
+static void
+dev_set_rule (pdf_dev *p, spt_t xpos, spt_t ypos, spt_t width, spt_t height)
 {
-  pdf_dev *p = current_device();
   int    len = 0;
   double width_in_bp;
 
@@ -1422,7 +1483,7 @@ pdf_dev_set_rule (spt_t xpos, spt_t ypos, spt_t width, spt_t height)
     rect.lly =  p->unit.dvi2pts * ypos;
     rect.urx =  p->unit.dvi2pts * width;
     rect.ury =  p->unit.dvi2pts * height;
-    len += pdf_sprint_rect(p->format_buffer+len, &rect);
+    len += pdf_dev_sprint_rect(p, p->format_buffer+len, &rect);
     p->format_buffer[len++] = ' ';
     p->format_buffer[len++] = 'r';
     p->format_buffer[len++] = 'e';
@@ -1435,7 +1496,7 @@ pdf_dev_set_rule (spt_t xpos, spt_t ypos, spt_t width, spt_t height)
        *  device resolution. See, PDF Reference Manual 4th ed., sec. 4.3.2,
        *  "Details of Graphics State Parameters", p. 185.
        */
-      if (height < p->unit.min_bp_val) {
+      if (!p->render_output && height < p->unit.min_bp_val) {
         dpx_warning("Too thin line: height=%d (%g bp)", height, width_in_bp);
         dpx_warning("Please consider using \"-d\" option.");
       }
@@ -1446,7 +1507,7 @@ pdf_dev_set_rule (spt_t xpos, spt_t ypos, spt_t width, spt_t height)
                              xpos + width,
                              ypos + height/2);
     } else {
-      if (width < p->unit.min_bp_val) {
+      if (!p->render_output && width < p->unit.min_bp_val) {
         dpx_warning("Too thin line: width=%d (%g bp)", width, width_in_bp);
         dpx_warning("Please consider using \"-d\" option.");
       }
@@ -1461,6 +1522,28 @@ pdf_dev_set_rule (spt_t xpos, spt_t ypos, spt_t width, spt_t height)
   p->format_buffer[len++] = ' ';
   p->format_buffer[len++] = 'Q';
   dev_out(p, p->format_buffer, len);  /* op: q re f Q */
+}
+
+void
+pdf_dev_set_rule (spt_t xpos, spt_t ypos, spt_t width, spt_t height)
+{
+  pdf_dev *p = current_device();
+  if (p->recording_page) {
+    double thickness = MIN(width, height) * p->unit.dvi2pts;
+    if (thickness >= 0.0 && thickness <= PDF_LINE_THICKNESS_MAX &&
+        MIN(width, height) < p->unit.min_bp_val) {
+      dpx_warning("Too thin line: %s=%d (%g bp)", width > height ? "height" : "width",
+                  MIN(width, height), thickness);
+      dpx_warning("Please consider using \"-d\" option.");
+    }
+    tt_pdf_page_command(TT_PDF_RULE, xpos, ypos, width, height);
+    p->motion_state = GRAPHICS_MODE;
+    p->text_state.font_id = -1;
+    p->text_state.bold_param = 0.0;
+    p->text_state.force_reset = 0;
+    return;
+  }
+  dev_set_rule(p, xpos, ypos, width, height);
 }
 
 /* Rectangle in device space coordinate. */
@@ -1532,10 +1615,9 @@ pdf_dev_get_dirmode (void)
   return p->text_state.dir_mode;
 }
 
-void
-pdf_dev_set_dirmode (int text_dir)
+static void
+dev_set_dirmode (pdf_dev *p, int text_dir)
 {
-  pdf_dev *p = current_device();
   struct dev_font *font;
   int text_rotate;
   int vert_dir, vert_font;
@@ -1557,6 +1639,14 @@ pdf_dev_set_dirmode (int text_dir)
 
   p->text_state.matrix.rotate = text_rotate;
   p->text_state.dir_mode      = text_dir;
+}
+
+void
+pdf_dev_set_dirmode (int text_dir)
+{
+  if (pdev.recording_page && text_dir != pdev.text_state.dir_mode)
+    tt_pdf_page_command(TT_PDF_DIRECTION, text_dir, 0, 0, 0);
+  dev_set_dirmode(current_device(), text_dir);
 }
 
 static void
@@ -1853,4 +1943,95 @@ pdf_dev_reset_global_state(void)
   p->fonts = NULL;
   p->num_dev_fonts   = 0;
   p->max_dev_fonts   = 0;
+}
+
+void
+pdf_dev_begin_page_plan(void)
+{
+  pdf_dev *p = current_device();
+  p->recording_page = tt_pdf_page_begin(p->unit.dvi2pts, p->unit.precision, p->param.autorotate,
+                    p->text_state.dir_mode);
+}
+
+void
+pdf_dev_end_page_plan(void)
+{
+  pdev.recording_page = 0;
+}
+
+int
+tt_pdf_render_page(const tt_pdf_render_command *commands, size_t count,
+                   const tt_pdf_render_font *fonts, size_t font_count,
+                   double unit, int precision, int autorotate, int direction, void *output)
+{
+  pdf_dev device = {0};
+  size_t i, j;
+  device.render_output = output;
+  device.unit.dvi2pts = unit;
+  device.unit.precision = precision;
+  device.unit.min_bp_val = (int) ROUND(1.0 / (ten_pow[precision] * unit), 1);
+  device.param.autorotate = autorotate;
+  device.text_state.font_id = -1;
+  device.text_state.matrix.extend = 1.0;
+  device.text_state.dir_mode = direction;
+  device.motion_state = GRAPHICS_MODE;
+  device.num_dev_fonts = (int) font_count;
+  device.fonts = calloc(font_count ? font_count : 1, sizeof(struct dev_font));
+  if (!device.fonts)
+    return -1;
+  for (i = 0; i < font_count; i++) {
+    struct dev_font *font = &device.fonts[i];
+    memcpy(font->short_name, fonts[i].name, sizeof(font->short_name));
+    font->sptsize = fonts[i].size;
+    font->format = fonts[i].format;
+    font->wmode = fonts[i].wmode;
+    font->extend = fonts[i].extend;
+    font->slant = fonts[i].slant;
+    font->bold = fonts[i].bold;
+  }
+  for (i = 0; i < count; i++) {
+    const tt_pdf_render_command *command = &commands[i];
+    switch (command->kind) {
+    case TT_PDF_RAW_BYTES:
+      dev_out(&device, (const char *) command->data, command->length);
+      break;
+    case TT_PDF_TEXT:
+      if (command->font < 0 || (size_t) command->font >= font_count)
+        goto invalid;
+      if (fonts[command->font].format == PDF_FONTTYPE_COMPOSITE) {
+        if (command->length > FORMAT_BUF_SIZE / 2 || command->length % 2)
+          goto invalid;
+      } else {
+        size_t escaped = 0;
+        for (j = 0; j < command->length; j++) {
+          unsigned char c = command->data[j];
+          if (escaped > FORMAT_BUF_SIZE - 4)
+            goto invalid;
+          escaped += c < 32 || c > 126 ? 4 : c == '(' || c == ')' || c == '\\' ? 2 : 1;
+        }
+      }
+      dev_set_string(&device, command->x, command->y, command->data,
+                      command->length, command->width, command->font, 1);
+      break;
+    case TT_PDF_RULE:
+      dev_set_rule(&device, command->x, command->y, command->width, command->height);
+      break;
+    case TT_PDF_GRAPHICS_MODE:
+      pdf_dev_graphics_mode(&device);
+      break;
+    case TT_PDF_DIRECTION:
+      dev_set_dirmode(&device, command->x);
+      break;
+    case TT_PDF_RESET_FONTS:
+      dev_reset_fonts(&device, command->x);
+      break;
+    default:
+      goto invalid;
+    }
+  }
+  free(device.fonts);
+  return 0;
+invalid:
+  free(device.fonts);
+  return -1;
 }

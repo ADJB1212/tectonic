@@ -15,20 +15,19 @@
 
 use crate::errors::EngineError;
 use crate::{
-    ctry,
+    BibtexEngine, PdfBuildOptions, Spx2HtmlEngine, TexEngine, TexOutcome, XdvipdfmxEngine, ctry,
     io::{
+        InputOrigin,
         format_cache::FormatCache,
         memory::{MemoryFileCollection, MemoryIo},
-        InputOrigin,
     },
     status::StatusBackend,
     tt_error, tt_note, tt_warning,
     unstable_opts::UnstableOptions,
-    BibtexEngine, Spx2HtmlEngine, TexEngine, TexOutcome, XdvipdfmxEngine,
 };
 use anyhow::Context;
 use byte_unit::{Byte, UnitType};
-use quick_xml::{events::Event, NsReader};
+use quick_xml::{NsReader, events::Event};
 use std::{
     collections::{HashMap, HashSet},
     fs::File,
@@ -45,10 +44,10 @@ use tectonic_bundles::Bundle;
 use tectonic_engine_spx2html::AssetSpecification;
 use tectonic_errors::{Error, Result};
 use tectonic_io_base::{
+    InputHandle, IoProvider, OpenResult, OutputHandle,
     digest::DigestData,
     filesystem::{FilesystemIo, FilesystemPrimaryInputIo},
     stdstreams::{BufferedPrimaryIo, GenuineStdoutIo},
-    InputHandle, IoProvider, OpenResult, OutputHandle,
 };
 use which::which;
 
@@ -388,25 +387,26 @@ impl BridgeState {
             }
 
             if let Some(basename) = entry.file_name().to_str()
-                && !self.mem.files.borrow().contains_key(basename) {
-                    let path = entry.path();
-                    let mut data = Vec::new();
+                && !self.mem.files.borrow().contains_key(basename)
+            {
+                let path = entry.path();
+                let mut data = Vec::new();
 
-                    let mut f = ctry!(
-                        File::open(&path);
-                        "failed to open tool-created file `{}`", path.display()
-                    );
-                    ctry!(
-                        f.read_to_end(&mut data);
-                        "failed to read tool-created file `{}`", path.display()
-                    );
+                let mut f = ctry!(
+                    File::open(&path);
+                    "failed to open tool-created file `{}`", path.display()
+                );
+                ctry!(
+                    f.read_to_end(&mut data);
+                    "failed to read tool-created file `{}`", path.display()
+                );
 
-                    self.mem.create_entry(basename, data);
-                    self.events.insert(
-                        basename.to_owned(),
-                        FileSummary::new(AccessPattern::Written, InputOrigin::NotInput),
-                    );
-                }
+                self.mem.create_entry(basename, data);
+                self.events.insert(
+                    basename.to_owned(),
+                    FileSummary::new(AccessPattern::Written, InputOrigin::NotInput),
+                );
+            }
         }
 
         // Mark the input files as having been read, and we're done.
@@ -799,6 +799,7 @@ struct ExternalToolPass {
 /// option to enable potentially-insecure features such as shell-escape.
 #[derive(Default)]
 pub struct ProcessingSessionBuilder {
+    pdf_options: PdfBuildOptions,
     security: SecuritySettings,
     primary_input: PrimaryInputMode,
     tex_input_name: Option<String>,
@@ -916,6 +917,12 @@ impl ProcessingSessionBuilder {
     /// The type of output to create.
     pub fn output_format(&mut self, f: OutputFormat) -> &mut Self {
         self.output_format = f;
+        self
+    }
+
+    /// Set the worker and queue limits for PDF generation.
+    pub fn pdf_build_options(&mut self, options: PdfBuildOptions) -> &mut Self {
+        self.pdf_options = options;
         self
     }
 
@@ -1244,6 +1251,7 @@ impl ProcessingSessionBuilder {
         };
 
         Ok(ProcessingSession {
+            pdf_options: self.pdf_options,
             security: self.security,
             bs,
             pass: self.pass,
@@ -1282,6 +1290,7 @@ enum RerunReason {
 /// processing a file. It understands, for example, the need to re-run the TeX
 /// engine if the `.aux` file changed.
 pub struct ProcessingSession {
+    pdf_options: PdfBuildOptions,
     // Security settings.
     security: SecuritySettings,
 
@@ -1811,10 +1820,16 @@ impl ProcessingSession {
         match result {
             Ok(TexOutcome::Spotless) => {}
             Ok(TexOutcome::Warnings) => {
-                tt_warning!(status, "warnings were issued by the TeX engine; use --print and/or --keep-logs for details.");
+                tt_warning!(
+                    status,
+                    "warnings were issued by the TeX engine; use --print and/or --keep-logs for details."
+                );
             }
             Ok(TexOutcome::Errors) => {
-                tt_error!(status, "errors were issued by the TeX engine; use --print and/or --keep-logs for details.");
+                tt_error!(
+                    status,
+                    "errors were issued by the TeX engine; use --print and/or --keep-logs for details."
+                );
                 return Err(Error::msg("unhandled TeX engine error".to_owned()));
             }
             Err(e) => {
@@ -1891,14 +1906,14 @@ impl ProcessingSession {
 
         let warnings = match result {
             Ok(TexOutcome::Spotless) => None,
-            Ok(TexOutcome::Warnings) =>
-                    Some("warnings were issued by the TeX engine; use --print and/or --keep-logs for details."),
-            Ok(TexOutcome::Errors) =>
-                    Some("errors were issued by the TeX engine, but were ignored; \
-                         use --print and/or --keep-logs for details."),
-            Err(e) =>
-                return Err(e)
-                    .with_context(|| EngineError::new("XeTeX")),
+            Ok(TexOutcome::Warnings) => Some(
+                "warnings were issued by the TeX engine; use --print and/or --keep-logs for details.",
+            ),
+            Ok(TexOutcome::Errors) => Some(
+                "errors were issued by the TeX engine, but were ignored; \
+                         use --print and/or --keep-logs for details.",
+            ),
+            Err(e) => return Err(e).with_context(|| EngineError::new("XeTeX")),
         };
 
         if !self.bs.mem.files.borrow().contains_key(&self.tex_xdv_path) {
@@ -1975,7 +1990,9 @@ impl ProcessingSession {
                 CoreBridgeLauncher::new_with_security(&mut self.bs, status, self.security.clone());
             let mut engine = XdvipdfmxEngine::default();
 
-            engine.build_date(self.build_date);
+            engine
+                .build_date(self.build_date)
+                .pdf_build_options(self.pdf_options.clone());
 
             if let Some(ref ps) = self.unstables.paper_size {
                 engine.paper_spec(ps.clone());
@@ -1998,7 +2015,7 @@ impl ProcessingSession {
                 (true, Some(p)) => engine.output_base(p),
                 (false, _) => engine.do_not_emit_files(),
                 (true, None) => {
-                    return Err(Error::msg("HTML output must be saved directly to disk"))
+                    return Err(Error::msg("HTML output must be saved directly to disk"));
                 }
             };
 
@@ -2087,9 +2104,10 @@ impl ProcessingSession {
         // also be invoked with `tectonic -X biber`.
         let find_by = |binary_name: &str| -> Option<String> {
             if let Ok(pathbuf) = which(binary_name)
-                && let Some(biber_path) = pathbuf.to_str() {
-                    return Some(biber_path.to_owned());
-                }
+                && let Some(biber_path) = pathbuf.to_str()
+            {
+                return Some(biber_path.to_owned());
+            }
             None
         };
 

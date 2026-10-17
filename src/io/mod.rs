@@ -11,12 +11,13 @@ pub mod memory;
 // Convenience re-exports.
 
 pub use tectonic_io_base::{
+    InputFeatures, InputHandle, InputOrigin, IoProvider, OpenResult, OutputHandle,
     digest::{self, DigestData},
     filesystem::{FilesystemIo, FilesystemPrimaryInputIo},
     normalize_tex_path,
     stack::IoStack,
     stdstreams::GenuineStdoutIo,
-    try_open_file, InputFeatures, InputHandle, InputOrigin, IoProvider, OpenResult, OutputHandle,
+    try_open_file,
 };
 
 // Internal Reexports

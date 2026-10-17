@@ -9,8 +9,8 @@
 //! enable the reproducibility options used in the `tex-outputs` test rig.
 
 use tectonic::{
-    config::PersistentConfig, driver::ProcessingSessionBuilder,
-    status::termcolor::TermcolorStatusBackend, status::ChatterLevel, test_util::TestBundle,
+    config::PersistentConfig, driver::ProcessingSessionBuilder, status::ChatterLevel,
+    status::termcolor::TermcolorStatusBackend, test_util::TestBundle,
 };
 
 mod util;
@@ -58,7 +58,8 @@ fn html_templates_preserve_content_and_update_variables_between_outputs() {
     std::fs::write(
         tempdir.path().join("base.txt"),
         "<title>{{ title | escape_html }}</title>{% block content %}{% endblock content %}",
-    ).unwrap();
+    )
+    .unwrap();
     std::fs::write(
         tempdir.path().join("page.html"),
         "{% extends \"base.txt\" %}{% block content %}<main>{{ tduxContent }}</main><a href=\"{{ tduxRelTop }}index.html\">Home</a>{% endblock content %}",
@@ -87,7 +88,11 @@ fn html_templates_preserve_content_and_update_variables_between_outputs() {
         .output_dir(tempdir.path())
         .output_format(tectonic::driver::OutputFormat::Html)
         .bundle(Box::<TestBundle>::default());
-    builder.create(&mut status).unwrap().run(&mut status).unwrap();
+    builder
+        .create(&mut status)
+        .unwrap()
+        .run(&mut status)
+        .unwrap();
 
     assert_eq!(
         std::fs::read_to_string(tempdir.path().join("nested/chapter.html")).unwrap(),

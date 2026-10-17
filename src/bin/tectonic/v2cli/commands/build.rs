@@ -1,7 +1,8 @@
 use clap::Args;
+use std::num::NonZeroUsize;
 use tectonic::{
-    config::is_config_test_mode_activated,
     config::PersistentConfig,
+    config::is_config_test_mode_activated,
     docmodel::{DocumentExt, DocumentSetupOptions},
     tt_error, tt_note,
 };
@@ -15,6 +16,13 @@ use crate::v2cli::{CommandCustomizations, TectonicCommand};
 /// `build`: Build a document
 #[derive(Debug, Eq, PartialEq, Args, Clone)]
 pub struct BuildCommand {
+    /// Number of PDF workers [default: available CPU count]
+    #[arg(long)]
+    pdf_workers: Option<NonZeroUsize>,
+
+    /// Maximum queued PDF payload in MiB
+    #[arg(long, default_value = "64", value_parser = crate::compile::parse_pdf_queue_mib)]
+    pdf_queue_mib: NonZeroUsize,
     /// Document is untrusted -- disable all known-insecure features
     #[arg(long)]
     untrusted: bool,
@@ -77,11 +85,16 @@ impl TectonicCommand for BuildCommand {
 
         for output_name in doc.output_names() {
             if let Some(out) = self.target.as_ref()
-                && out != output_name {
-                    continue;
-                }
+                && out != output_name
+            {
+                continue;
+            }
 
             let mut builder = doc.setup_session(output_name, &setup_options, status)?;
+            builder.pdf_build_options(tectonic::PdfBuildOptions {
+                workers: self.pdf_workers,
+                queued_bytes: NonZeroUsize::new(self.pdf_queue_mib.get() * 1024 * 1024).unwrap(),
+            });
 
             builder
                 .format_cache_path(config.format_cache_path()?)

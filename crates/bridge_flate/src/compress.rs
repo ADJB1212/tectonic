@@ -4,7 +4,38 @@
 use crate::FlateResult;
 use flate2::{Compress, Compression, FlushCompress, Status};
 use rayon::prelude::*;
-use std::{sync::OnceLock, thread};
+use std::{
+    cell::RefCell,
+    marker::PhantomData,
+    rc::Rc,
+    sync::{Arc, OnceLock},
+    thread,
+};
+
+thread_local! {
+    static OVERRIDE_POOL: RefCell<Option<Option<Arc<rayon::ThreadPool>>>> = const { RefCell::new(None) };
+}
+
+/// Restores the calling thread's compression executor when dropped.
+pub struct CompressionPoolGuard {
+    previous: Option<Option<Arc<rayon::ThreadPool>>>,
+    _thread: PhantomData<Rc<()>>,
+}
+
+/// Use the PDF executor for compression; None forces serial compression.
+pub fn use_compression_pool(pool: Option<Arc<rayon::ThreadPool>>) -> CompressionPoolGuard {
+    let previous = OVERRIDE_POOL.with(|current| current.replace(Some(pool)));
+    CompressionPoolGuard {
+        previous,
+        _thread: PhantomData,
+    }
+}
+
+impl Drop for CompressionPoolGuard {
+    fn drop(&mut self) {
+        OVERRIDE_POOL.with(|current| current.replace(self.previous.take()));
+    }
+}
 
 const CHUNK_SIZE: usize = 256 * 1024;
 const PARALLEL_THRESHOLD: usize = 4 * CHUNK_SIZE;
@@ -35,15 +66,35 @@ pub(super) fn compress(input: &[u8], output: &mut [u8], level: u32) -> Result<us
         return Err(FlateResult::OtherError);
     }
     if input.len() >= PARALLEL_THRESHOLD {
+        let required = input.chunks(CHUNK_SIZE).try_fold(4usize, |size, chunk| {
+            size.checked_add(chunk_bound(chunk.len()))
+        });
+        let configured = OVERRIDE_POOL.with(|current| current.borrow().clone());
+        if let Some(pool) = configured {
+            if required.is_some_and(|size| size <= output.len()) {
+                return match pool {
+                    Some(pool) => compress_parallel(input, output, level, &pool),
+                    None => compress_chunks(input, output, level, false),
+                };
+            }
+            return compress_serial(input, output, level);
+        }
+        if rayon::current_thread_index().is_some() {
+            if required.is_some_and(|size| size <= output.len()) {
+                return compress_chunks(input, output, level, true);
+            }
+            return compress_serial(input, output, level);
+        }
         if let Some(pool) = pool() {
-            let required = input.chunks(CHUNK_SIZE).try_fold(4usize, |size, chunk| {
-                size.checked_add(chunk_bound(chunk.len()))
-            });
             if required.is_some_and(|size| size <= output.len()) {
                 return compress_parallel(input, output, level, pool);
             }
         }
     }
+    compress_serial(input, output, level)
+}
+
+fn compress_serial(input: &[u8], output: &mut [u8], level: u32) -> Result<usize, FlateResult> {
     let mut compressor = Compress::new(Compression::new(level), true);
     match compressor.compress(input, output, FlushCompress::Finish) {
         Ok(Status::StreamEnd) => Ok(compressor.total_out() as usize),
@@ -97,6 +148,15 @@ fn compress_parallel(
     level: u32,
     pool: &rayon::ThreadPool,
 ) -> Result<usize, FlateResult> {
+    pool.install(|| compress_chunks(input, output, level, true))
+}
+
+fn compress_chunks(
+    input: &[u8],
+    output: &mut [u8],
+    level: u32,
+    parallel: bool,
+) -> Result<usize, FlateResult> {
     if input.len() <= CHUNK_SIZE {
         return compress(input, output, level);
     }
@@ -118,11 +178,12 @@ fn compress_parallel(
     }
 
     // Sync flushes align chunk boundaries; the previous 32 KiB preserves history.
-    pool.install(|| {
-        chunks.par_iter_mut().for_each(|chunk| {
-            chunk.result = chunk.compress(level);
-        });
-    });
+    let compress = |chunk: &mut Chunk<'_>| chunk.result = chunk.compress(level);
+    if parallel {
+        chunks.par_iter_mut().for_each(compress);
+    } else {
+        chunks.iter_mut().for_each(compress);
+    }
 
     let mut checksum = 1;
     let mut lengths = Vec::with_capacity(count);

@@ -7,7 +7,7 @@ use std::{
     io::{BufReader, Write},
     path::PathBuf,
 };
-use tectonic_errors::{anyhow::bail, Result};
+use tectonic_errors::{Result, anyhow::bail};
 
 use super::{InputHandle, InputOrigin, IoProvider, OpenResult};
 use crate::{digest::DigestData, status::StatusBackend};

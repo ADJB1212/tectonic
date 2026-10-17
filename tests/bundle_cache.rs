@@ -5,12 +5,12 @@ use std::{
     rc::Rc,
 };
 use tectonic_bundles::{
+    Bundle, CachableBundle, FileIndex, FileInfo,
     cache::BundleCache,
     itar::{ItarFileIndex, ItarFileInfo},
-    Bundle, CachableBundle, FileIndex, FileInfo,
 };
 use tectonic_errors::Result;
-use tectonic_io_base::{digest::DigestData, InputHandle, InputOrigin, IoProvider, OpenResult};
+use tectonic_io_base::{InputHandle, InputOrigin, IoProvider, OpenResult, digest::DigestData};
 use tectonic_status_base::{NoopStatusBackend, StatusBackend};
 
 const INDEX: &[u8] = b"file.tex 0 8\nnested/missing.tex 8 8\n";

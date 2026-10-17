@@ -7,13 +7,13 @@ use tectonic_status_base::StatusBackend;
 use tokio::runtime;
 use watchexec::command::Program;
 use watchexec::{
-    command::{Command, Shell},
     Id, Watchexec,
+    command::{Command, Shell},
 };
 use watchexec_filterer_globset::GlobsetFilterer;
 use watchexec_signals::Signal;
-use watchexec_supervisor::job::{CommandState, Job, Ticket};
 use watchexec_supervisor::ProcessEnd;
+use watchexec_supervisor::job::{CommandState, Job, Ticket};
 
 use crate::v2cli::{CommandCustomizations, TectonicCommand};
 

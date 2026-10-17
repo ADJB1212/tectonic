@@ -23,6 +23,7 @@
 */
 
 #include "dpx-dvi.h"
+#include "tectonic-pipeline.h"
 
 #include <fcntl.h>
 #include <inttypes.h>
@@ -2710,6 +2711,8 @@ scan_special (double *wd, double *ht, double *xo, double *yo, int *lm,
 }
 
 static int buffered_page = -1;
+static int eligibility_only = 0;
+static int parallel_eligible = 1;
 void
 dvi_scan_specials (int page_no,
                    double *page_width, double *page_height,
@@ -2762,7 +2765,10 @@ dvi_scan_specials (int page_no,
 #define buf ((char*)(dvi_page_buffer + dvi_page_buf_index))
             if (ttstub_input_read(dvi_handle, buf, size) != size)
                 _tt_abort("Reading DVI file failed!");
-            if (scan_special(page_width, page_height, x_offset, y_offset, landscape,
+            if (eligibility_only) {
+                if (!tt_pdf_special_supported((const unsigned char *) buf, size))
+                    parallel_eligible = 0;
+            } else if (scan_special(page_width, page_height, x_offset, y_offset, landscape,
                              majorversion, minorversion,
                              compression_level,
                              annot_grow_x, annot_grow_y,
@@ -2854,10 +2860,39 @@ dvi_scan_specials (int page_no,
     return;
 }
 
+int
+dvi_parallel_eligible(void)
+{
+    unsigned int i;
+    if (linear)
+        return 0;
+    for (i = 0; i < num_def_fonts; i++) {
+        if (!def_fonts[i].native) {
+            rust_input_handle_t vf = ttstub_input_open(def_fonts[i].font_name, TTBC_FILE_FORMAT_VF, 0);
+            if (vf != INVALID_HANDLE) {
+                ttstub_input_close(vf);
+                return 0;
+            }
+        }
+    }
+    eligibility_only = 1;
+    parallel_eligible = 1;
+    for (i = 0; i < num_pages && parallel_eligible; i++) {
+        dvi_scan_specials(i, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+    }
+    eligibility_only = 0;
+    buffered_page = -1;
+    return parallel_eligible;
+}
+
 void
 dvi_reset_global_state(void)
 {
     buffered_page = -1;
+    eligibility_only = 0;
+    parallel_eligible = 1;
+    processing_page = 0;
     num_def_fonts = 0;
     max_def_fonts = 0;
     compute_boxes = 0;

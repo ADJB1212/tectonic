@@ -6,8 +6,8 @@
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-use tectonic::io::{FilesystemIo, IoProvider, IoStack, MemoryIo};
 use tectonic::BibtexEngine;
+use tectonic::io::{FilesystemIo, IoProvider, IoStack, MemoryIo};
 use tectonic_bridge_core::{CoreBridgeLauncher, MinimalDriver};
 use tectonic_engine_xetex::TexOutcome;
 use tectonic_errors::Result;
@@ -15,7 +15,7 @@ use tectonic_status_base::NoopStatusBackend;
 
 #[path = "util/mod.rs"]
 mod util;
-use crate::util::{test_path, Expected, ExpectedFile};
+use crate::util::{Expected, ExpectedFile, test_path};
 
 struct TestCase {
     parts: &'static [&'static str],

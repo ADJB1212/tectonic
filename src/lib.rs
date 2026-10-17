@@ -98,6 +98,7 @@ pub use crate::engines::spx2html::Spx2HtmlEngine;
 pub use crate::engines::tex::{TexEngine, TexOutcome};
 pub use crate::engines::xdvipdfmx::XdvipdfmxEngine;
 pub use crate::errors::Error;
+pub use tectonic_engine_xdvipdfmx::{PdfBuildOptions, PdfBuildStatistics};
 pub use tectonic_errors::Result;
 
 // Convenienece re-exports for migration into our multi-crate setup
@@ -136,12 +137,10 @@ pub use tectonic_status_base::{tt_error, tt_note, tt_warning};
 /// high-level interface for driving the typesetting engines with much more
 /// control over their behavior.
 ///
-/// Note that the current engine implementations use lots of global state, so
-/// they are not thread-safe. This crate uses a global mutex to serialize
-/// invocations of the engines. This means that if you call this function from
-/// multiple threads simultaneously, the bulk of the work will be done in
-/// serial. The aim is to lift this limitation one day, but it will require
-/// extensive work on the underlying C/C++ code.
+/// Engine invocations share native global state and remain serialized by a
+/// process-wide mutex. Within each PDF invocation, eligible pages, image filters,
+/// and compression run on isolated workers. Use [`PdfBuildOptions`] through the
+/// session builder to control PDF worker and queue limits.
 pub fn latex_to_pdf<T: AsRef<str>>(latex: T) -> Result<Vec<u8>> {
     let mut status = status::NoopStatusBackend::default();
 

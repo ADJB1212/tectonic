@@ -16,6 +16,8 @@ tectonic -X build
   [--keep-logs]
   [--only-cached] [-C]
   [--open]
+  [--pdf-workers <count>]
+  [--pdf-queue-mib <size>]
   [--print] [-p]
   [--target <target>]
   [--untrusted]
@@ -49,6 +51,14 @@ unnecessary network connections, referencing a new file in your document will
 cause it to look for that file in the online support bundle.
 
 The `--open` option will open the built document using the system handler.
+
+`--pdf-workers N` limits the workers used to generate each PDF. The default is
+the available CPU count; `1` runs the same pipeline synchronously.
+`--pdf-queue-mib N` limits queued input payloads, defaulting to 64 MiB.
+Both values must be positive. Active-job working memory and document storage
+are separate from this limit; one oversized page or resource can run alone.
+Unsupported specials and virtual fonts select serial page rendering automatically.
+Independent resource filtering and compression can still run concurrently.
 
 The `--print` option (or `-p` for short) will cause the engine to print the
 regular terminal output of the TeX engine. This output is similar to, but not

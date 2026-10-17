@@ -15,8 +15,8 @@ use tectonic_errors::Result;
 use tectonic_status_base::StatusBackend;
 
 use super::{
-    normalize_tex_path, InputFeatures, InputHandle, InputOrigin, IoProvider, OpenResult,
-    OutputHandle,
+    InputFeatures, InputHandle, InputOrigin, IoProvider, OpenResult, OutputHandle,
+    normalize_tex_path,
 };
 
 /// Information about a file created or used inside the memory-backed I/O

@@ -278,6 +278,30 @@ pdf_init_fonts (void)
   // Tectonic: no random number seeding
 }
 
+void
+pdf_abort_fonts(void)
+{
+  int i;
+  if (!font_cache.fonts)
+    return;
+  for (i = 0; i < font_cache.count; i++) {
+    pdf_font *font = &font_cache.fonts[i];
+    if (!(font->flags & (PDF_FONT_FLAG_IS_ALIAS | PDF_FONT_FLAG_IS_REENCODE))) {
+      pdf_release_obj(font->resource);
+      pdf_release_obj(font->descriptor);
+      pdf_release_obj(font->reference);
+    }
+    font->resource = font->descriptor = font->reference = NULL;
+    pdf_clean_font_struct(font);
+  }
+  free(font_cache.fonts);
+  font_cache.fonts = NULL;
+  font_cache.count = font_cache.capacity = 0;
+  CMap_cache_close();
+  pdf_close_encodings();
+  agl_close_map();
+}
+
 #define CHECK_ID(n) do {\
   if ((n) < 0 || (n) >= font_cache.count) {\
     _tt_abort("Invalid font ID: %d", (n));\

@@ -71,6 +71,7 @@ void dvi_z0    (void);
 void dvi_dirchg(unsigned char dir);
 
 void  dvi_do_page  (double paper_height, double x_offset, double y_offset);
+int dvi_parallel_eligible(void);
 void  dvi_scan_specials (int page_no,
                                 double *width, double *height,
                                 double *x_offset, double *y_offset, int *landscape,
