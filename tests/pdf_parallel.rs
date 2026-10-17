@@ -375,12 +375,13 @@ fn malformed_dvi_preflight_keeps_native_diagnostics_and_allows_another_build() {
     xdv[page_start + 45] = 247;
     memory.create_entry("batch.xdv", xdv);
     let mut assets = FilesystemIo::new(&util::test_path(&["assets"]), false, false, HashSet::new());
-    {
+    for legacy in [false, true] {
         let io = IoStack::new(vec![&mut memory, &mut assets]);
         let mut hooks = MinimalDriver::new(io);
         let mut status = NoopStatusBackend {};
         let mut launcher = CoreBridgeLauncher::new(&mut hooks, &mut status);
         let error = XdvipdfmxEngine::default()
+            .legacy_backend(legacy)
             .process(&mut launcher, "batch.xdv", "batch.pdf")
             .unwrap_err();
         assert!(

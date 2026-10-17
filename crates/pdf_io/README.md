@@ -87,9 +87,14 @@ local to each build, and the runtime releases Rust storage after native aborts.
 Rust also scans DVI pages for worker eligibility, reading one page at a time
 directly through the input provider and reusing its buffer. It skips font
 definitions and glyph runs without decoding or allocating their contents, and
-shares the special classifier with the native entry point. Malformed input and
-pTeX direction commands return to the native scanner for validation and state
-updates. Linear input retains its existing scanner.
+shares the special classifier with the native entry point. The same decoder
+builds playback buffers for both PDF backends: it validates complete pages,
+removes font definitions, and records special-command spans. C receives a copy
+of the compacted page and applies specials in source order after Rust returns.
+Malformed input and pTeX direction commands return to the native scanner for
+validation and state updates. Linear input retains its existing scanner.
+The engine releases Rust input buffers after success or native abort, including
+when the legacy backend is selected.
 
 TIFF horizontal differencing supports 1, 2, 4, 8, and 16 bits per component.
 This includes PNG transparency masks. Packed rows retain their byte alignment
@@ -138,6 +143,20 @@ Separate text-only processes measured peak RSS of 190 MB for the C baseline and
 195 MB for the Rust ports, including fixtures and repeated builds. The lazy map
 index retains source buffers until the build ends. Reduce workers or the queue
 budget when memory is constrained.
+
+The subsequent playback-buffer port was measured separately against the Rust
+font-map/preflight implementation, using the same five-warm-run procedure.
+For 200 text pages, PDF-stage medians were:
+
+| Backend | Native playback scan | Rust playback scan |
+| --- | ---: | ---: |
+| Legacy | 36.41 ms | 33.47 ms |
+| One worker | 38.69 ms | 37.94 ms |
+| Automatic workers | 31.59 ms | 31.48 ms |
+
+The legacy backend improved about 8%; automatic-worker timing was effectively
+unchanged. All 15 workload/backend PDFs remained byte-identical. These figures
+isolate page loading and scanning; text interpretation still runs in C.
 
 
 ## Cargo features

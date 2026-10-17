@@ -41,12 +41,26 @@ typedef struct {
     void *handle;
 } tt_pdf_task_result;
 
+typedef struct {
+    size_t offset, length;
+} tt_pdf_special_span;
+
+typedef struct {
+    const unsigned char *data;
+    size_t length;
+    const tt_pdf_special_span *specials;
+    size_t special_count;
+} tt_pdf_scanned_page;
+
 int tt_pdf_pipeline_active(void);
 void tt_pdf_phase_start(int phase);
 void tt_pdf_phase_end(void);
 int tt_pdf_special_supported(const unsigned char *data, size_t length);
 int tt_pdf_preflight_pages(rust_input_handle_t handle, const uint32_t *offsets,
                            size_t count, uint32_t file_size, int xdv);
+/* Zero requests the native scanner. Output is borrowed until the next scan or cleanup. */
+int tt_pdf_scan_page(rust_input_handle_t handle, uint32_t start, uint32_t end,
+                     int xdv, tt_pdf_scanned_page *output);
 void tt_pdf_pipeline_enable_pages(int enabled);
 int tt_pdf_page_begin(double unit, int precision, int autorotate, int direction);
 int tt_pdf_page_recording(void);

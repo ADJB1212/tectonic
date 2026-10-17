@@ -159,6 +159,8 @@ impl XdvipdfmxEngine {
             let r = unsafe {
                 c_api::tt_engine_xdvipdfmx_main(state, &config, cdvi.as_ptr(), cpdf.as_ptr())
             };
+            // SAFETY: The native invocation has returned, including on abort.
+            unsafe { tectonic_pdf_io::clear_input_state(); }
             self.statistics = runtime
                 .as_ref()
                 .map(tectonic_pdf_io::PdfRuntime::statistics);

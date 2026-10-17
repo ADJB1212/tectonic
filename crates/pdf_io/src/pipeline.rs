@@ -289,7 +289,8 @@ impl Drop for PdfRuntime {
         for pending in self.runtime.pending.drain(..) {
             let _ = pending.receiver.recv();
         }
-        crate::fontmap::tt_fontmap_clear();
+        // SAFETY: Native execution has returned and all worker jobs have finished.
+        unsafe { crate::clear_input_state(); }
     }
 }
 

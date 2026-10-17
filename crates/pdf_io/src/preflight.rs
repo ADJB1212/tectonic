@@ -5,7 +5,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 use std::{
+    cell::RefCell,
     io::{Read, Seek, SeekFrom},
+    ops::Range,
     slice,
 };
 use tectonic_bridge_core::{CoreBridgeState, InputId};
@@ -13,6 +15,13 @@ use tectonic_bridge_core::{CoreBridgeState, InputId};
 struct Page<'a> {
     bytes: &'a [u8],
     position: usize,
+}
+
+enum Command {
+    Data,
+    FontDefinition,
+    Special(Range<usize>),
+    End,
 }
 
 impl<'a> Page<'a> {
@@ -30,64 +39,174 @@ impl<'a> Page<'a> {
             .fold(0, |value, byte| value * 256 + usize::from(*byte)))
     }
 
-    fn eligible(&mut self, xdv: bool) -> Result<bool, ()> {
+    fn begin(&mut self) -> Result<(), ()> {
         if self.unsigned(1)? != 139 {
             return Err(());
         }
         self.take(44)?;
+        Ok(())
+    }
+
+    fn command(&mut self, xdv: bool) -> Result<Command, ()> {
+        let opcode = self.unsigned(1)?;
+        let mut command = Command::Data;
+        let skip = match opcode {
+            0..=127 | 138 | 141 | 142 | 147 | 152 | 161 | 166 | 171..=234 => 0,
+            128..=131 => opcode - 127,
+            132 | 137 => 8,
+            133..=136 => opcode - 132,
+            140 => return Ok(Command::End),
+            143..=146 => opcode - 142,
+            148..=151 => opcode - 147,
+            153..=156 => opcode - 152,
+            157..=160 => opcode - 156,
+            162..=165 => opcode - 161,
+            167..=170 => opcode - 166,
+            235..=238 => opcode - 234,
+            239..=242 => {
+                let length = self.unsigned(opcode - 238)?;
+                // Let the native scanner diagnose oversized special lengths.
+                if length > i32::MAX as usize {
+                    return Err(());
+                }
+                let start = self.position;
+                self.take(length)?;
+                return Ok(Command::Special(start..self.position));
+            }
+            243..=246 => {
+                self.take(opcode - 242 + 12)?;
+                let area = self.unsigned(1)?;
+                let name = self.unsigned(1)?;
+                command = Command::FontDefinition;
+                area + name
+            }
+            250 | 251 if xdv => 0,
+            252 if xdv => {
+                self.take(8)?;
+                let flags = self.unsigned(2)?;
+                let name = self.unsigned(1)?;
+                command = Command::FontDefinition;
+                name + 4 + (flags & 0x7200).count_ones() as usize * 4
+            }
+            253 | 254 if xdv => {
+                if opcode == 254 {
+                    let count = self.unsigned(2)?;
+                    self.take(count * 2)?;
+                }
+                self.take(4)?;
+                self.unsigned(2)? * 10
+            }
+            // pTeX direction changes also update native document state.
+            _ => return Err(()),
+        };
+        self.take(skip)?;
+        Ok(command)
+    }
+
+    fn eligible(&mut self, xdv: bool) -> Result<bool, ()> {
+        self.begin()?;
         loop {
-            let opcode = self.unsigned(1)?;
-            let skip = match opcode {
-                0..=127 | 138 | 141 | 142 | 147 | 152 | 161 | 166 | 171..=234 => 0,
-                128..=131 => opcode - 127,
-                132 | 137 => 8,
-                133..=136 => opcode - 132,
-                140 => return Ok(true),
-                143..=146 => opcode - 142,
-                148..=151 => opcode - 147,
-                153..=156 => opcode - 152,
-                157..=160 => opcode - 156,
-                162..=165 => opcode - 161,
-                167..=170 => opcode - 166,
-                235..=238 => opcode - 234,
-                239..=242 => {
-                    let length = self.unsigned(opcode - 238)?;
-                    // Let the native scanner diagnose oversized special lengths.
-                    if length > i32::MAX as usize {
-                        return Err(());
-                    }
-                    if !crate::pipeline::special_supported(self.take(length)?) {
+            match self.command(xdv)? {
+                Command::End => return Ok(true),
+                Command::Special(span) => {
+                    if !crate::pipeline::special_supported(&self.bytes[span]) {
                         return Ok(false);
                     }
-                    0
                 }
-                243..=246 => {
-                    self.take(opcode - 242 + 12)?;
-                    let area = self.unsigned(1)?;
-                    let name = self.unsigned(1)?;
-                    area + name
-                }
-                250 | 251 if xdv => 0,
-                252 if xdv => {
-                    self.take(8)?;
-                    let flags = self.unsigned(2)?;
-                    let name = self.unsigned(1)?;
-                    name + 4 + (flags & 0x7200).count_ones() as usize * 4
-                }
-                253 | 254 if xdv => {
-                    if opcode == 254 {
-                        let count = self.unsigned(2)?;
-                        self.take(count * 2)?;
-                    }
-                    self.take(4)?;
-                    self.unsigned(2)? * 10
-                }
-                // pTeX direction changes also update native document state.
-                _ => return Err(()),
-            };
-            self.take(skip)?;
+                _ => (),
+            }
         }
     }
+}
+
+#[repr(C)]
+struct Special {
+    offset: usize,
+    length: usize,
+}
+
+#[repr(C)]
+struct ScannedPage {
+    data: *const u8,
+    length: usize,
+    specials: *const Special,
+    special_count: usize,
+}
+
+#[derive(Default)]
+struct PageScanner {
+    bytes: Vec<u8>,
+    definitions: Vec<Range<usize>>,
+    specials: Vec<Special>,
+}
+
+impl PageScanner {
+    fn scan(&mut self, xdv: bool) -> Result<(), ()> {
+        self.definitions.clear();
+        self.specials.clear();
+        let mut page = Page { bytes: &self.bytes, position: 0 };
+        page.begin()?;
+        let mut removed = 0;
+        loop {
+            let start = page.position;
+            match page.command(xdv)? {
+                Command::End => break,
+                Command::FontDefinition => {
+                    self.definitions.push(start..page.position);
+                    removed += page.position - start;
+                }
+                Command::Special(span) => self.specials.push(Special {
+                    offset: span.start - removed,
+                    length: span.len(),
+                }),
+                Command::Data => (),
+            }
+        }
+        let length = page.position;
+        let mut read = 0;
+        let mut write = 0;
+        for span in &self.definitions {
+            self.bytes.copy_within(read..span.start, write);
+            write += span.start - read;
+            read = span.end;
+        }
+        self.bytes.copy_within(read..length, write);
+        self.bytes.truncate(length - removed);
+        Ok(())
+    }
+}
+
+thread_local! {
+    static PAGE_SCANNER: RefCell<PageScanner> = RefCell::default();
+}
+
+pub(crate) fn clear_page_scanner() {
+    PAGE_SCANNER.with(|scanner| *scanner.borrow_mut() = PageScanner::default());
+}
+
+#[no_mangle]
+unsafe extern "C" fn tt_pdf_scan_page(handle: Option<InputId>, start: u32, end: u32,
+                                      xdv: i32, output: *mut ScannedPage) -> i32 {
+    let Some(length) = end.checked_sub(start).filter(|&length| length > 0) else {
+        return 0;
+    };
+    PAGE_SCANNER.with(|scanner| {
+        let mut scanner = scanner.borrow_mut();
+        scanner.bytes.resize(length as usize, 0);
+        let result = CoreBridgeState::with_global_state(|state| {
+            let input = state.get_input(handle.expect("open DVI handle"));
+            input.seek(SeekFrom::Start(u64::from(start)))?;
+            input.read_exact(&mut scanner.bytes)
+        });
+        if result.is_err() || scanner.scan(xdv != 0).is_err() {
+            return 0;
+        }
+        *output = ScannedPage {
+            data: scanner.bytes.as_ptr(), length: scanner.bytes.len(),
+            specials: scanner.specials.as_ptr(), special_count: scanner.specials.len(),
+        };
+        1
+    })
 }
 
 fn preflight(
@@ -156,6 +275,64 @@ mod tests {
         bytes.extend_from_slice(commands);
         bytes.push(140);
         bytes
+    }
+
+    #[test]
+    fn playback_buffer_removes_all_font_definitions_and_preserves_special_offsets() {
+        let mut commands = vec![65];
+        let mut expected = vec![65];
+        let mut payloads = Vec::new();
+        for opcode in 243..=246 {
+            commands.push(opcode);
+            commands.extend(std::iter::repeat_n(0, usize::from(opcode - 242) + 12));
+            commands.extend_from_slice(&[1, 2, 239, 140, 247]);
+            let payload = format!("pdf:dest (page{opcode}) [ @thispage /Fit ]").into_bytes();
+            let mut special = vec![239, payload.len() as u8];
+            special.extend_from_slice(&payload);
+            commands.extend_from_slice(&special);
+            expected.extend_from_slice(&special);
+            payloads.push(payload);
+        }
+        commands.push(252);
+        commands.extend_from_slice(&[0; 8]);
+        commands.extend_from_slice(&[0x73, 0x00, 3]);
+        commands.extend_from_slice(&[239; 3 + 4 + 16]);
+        commands.extend_from_slice(&[239, 0, 66]);
+        expected.extend_from_slice(&[239, 0, 66]);
+        payloads.push(Vec::new());
+        let mut scanner = PageScanner { bytes: page(&commands), ..Default::default() };
+        scanner.bytes.extend_from_slice(b"ignored postamble bytes");
+        scanner.scan(true).unwrap();
+        assert_eq!(scanner.bytes, page(&expected));
+        assert_eq!(scanner.specials.len(), payloads.len());
+        for (span, payload) in scanner.specials.iter().zip(payloads) {
+            assert_eq!(&scanner.bytes[span.offset..span.offset + span.length], payload);
+        }
+    }
+
+    #[test]
+    fn playback_scan_validates_unknown_specials_and_rejects_truncation_before_compacting() {
+        let payload = b"pdf:literal direct /Unknown BMC";
+        let mut commands = vec![239, payload.len() as u8];
+        commands.extend_from_slice(payload);
+        commands.extend_from_slice(&[243]);
+        commands.extend_from_slice(&[0; 13]);
+        commands.extend_from_slice(&[0, 1, 65, 66]);
+        let original = page(&commands);
+        let mut scanner = PageScanner::default();
+        for end in 0..original.len() {
+            scanner.bytes = original[..end].to_vec();
+            assert!(scanner.scan(true).is_err(), "truncation at {end}");
+            assert_eq!(scanner.bytes, original[..end]);
+        }
+        scanner.bytes = original;
+        scanner.scan(true).unwrap();
+        assert_eq!(scanner.specials.len(), 1);
+        assert_eq!(scanner.definitions.len(), 1);
+        scanner.bytes = page(b"next page");
+        scanner.scan(true).unwrap();
+        assert!(scanner.specials.is_empty());
+        assert!(scanner.definitions.is_empty());
     }
 
     #[test]

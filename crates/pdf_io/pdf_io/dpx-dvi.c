@@ -2740,6 +2740,33 @@ dvi_scan_specials (int page_no,
             _tt_abort("Invalid page number: %u", page_no);
         offset = page_loc[page_no];
 
+        if (!eligibility_only) {
+            uint32_t end = page_no + 1 < num_pages ? page_loc[page_no + 1] : dvi_file_size;
+            tt_pdf_scanned_page page;
+            if (end <= dvi_file_size && tt_pdf_scan_page(dvi_handle, offset, end,
+                    dpx_conf.compat_mode == dpx_mode_xdv_mode, &page)) {
+                size_t i;
+                if (page.length > UINT_MAX - DVI_PAGE_BUF_CHUNK)
+                    _tt_abort("DVI page is too large!");
+                if (page.length >= dvi_page_buf_size) {
+                    dvi_page_buf_size = (unsigned int) page.length + DVI_PAGE_BUF_CHUNK;
+                    dvi_page_buffer = RENEW(dvi_page_buffer, dvi_page_buf_size, unsigned char);
+                }
+                memcpy(dvi_page_buffer, page.data, page.length);
+                dvi_page_buf_index = (unsigned int) page.length;
+                for (i = 0; i < page.special_count; i++) {
+                    const tt_pdf_special_span *span = &page.specials[i];
+                    const char *buf = (const char *) dvi_page_buffer + span->offset;
+                    if (scan_special(page_width, page_height, x_offset, y_offset, landscape,
+                            majorversion, minorversion, compression_level, annot_grow_x, annot_grow_y,
+                            do_enc, key_bits, permission, owner_pw, user_pw, has_id, id1, id2, opt_flags,
+                            buf, (int) span->length))
+                        dpx_warning("Reading special command failed: \"%.*s\"", (int) span->length, buf);
+                }
+                return;
+            }
+        }
+
         ttstub_input_seek (dvi_handle, offset, SEEK_SET);
     }
 
