@@ -98,6 +98,8 @@ fn compress_serial(input: &[u8], output: &mut [u8], level: u32) -> Result<usize,
     let mut compressor = Compress::new(Compression::new(level), true);
     match compressor.compress(input, output, FlushCompress::Finish) {
         Ok(Status::StreamEnd) => Ok(compressor.total_out() as usize),
+        // zlib-rs level 1 can exceed the traditional zlib output bound.
+        Ok(_) if level == 1 => compress_serial(input, output, 0),
         Ok(_) => Err(FlateResult::BufError),
         Err(_) => Err(FlateResult::OtherError),
     }
@@ -132,6 +134,9 @@ impl Chunk<'_> {
             || compressor.total_out() as usize == self.output.len()
             || (self.last && status != Status::StreamEnd)
         {
+            if level == 1 {
+                return self.compress(0);
+            }
             return Err(FlateResult::BufError);
         }
         // SAFETY: Every chunk fits in uInt and the input slice is valid.
@@ -272,6 +277,15 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn level_one_compression_fits_traditional_zlib_bound() {
+        let input = input_data(CHUNK_SIZE - 1);
+        let mut output = vec![0; input.len() + input.len() / 1000 + 14];
+        let size = compress_serial(&input, &mut output, 1)
+            .unwrap_or_else(|_| panic!("compression failed"));
+        check_stream(&output[..size], &input);
     }
 
     #[test]
