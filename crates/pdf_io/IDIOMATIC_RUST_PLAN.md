@@ -255,6 +255,15 @@ container operations, and writer integration into separate PRs.
 shared references, indirect cycles, replacement, deferred worker results, and
 failure cleanup. Object numbering and serialized bytes remain stable.
 
+Implemented with concrete values and typed IDs in `src/objects.rs`, stable
+document-owned slots in `src/compat/objects.rs`, ordered owned array/dictionary
+containers, and owned name/resource registries. Writer and worker-result paths
+use the new representations. Compatibility leases preserve release-triggered
+serialization without owning graph allocations. Forward-reference identities
+survive placeholder retirement. See [object ownership](OBJECT_OWNERSHIP.md) for
+the C handle contract and the stream-buffer/writer boundaries retained for
+Stages 8 and 9, and [validation](STAGE_6_VALIDATION.md) for checks and measurements.
+
 ## Stage 7: Checked parsers and owned font data
 
 The Stage 1 cursor can be adopted early. Object-producing PDF parsing should

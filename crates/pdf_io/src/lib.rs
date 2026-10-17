@@ -21,6 +21,7 @@ mod fontmap;
 mod input;
 mod line;
 mod numbers;
+mod objects;
 mod options;
 mod pipeline;
 mod predictor;

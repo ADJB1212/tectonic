@@ -28,6 +28,11 @@
 )]
 use crate::backend::dpx_pdfdev::pdf_sprint_number;
 use crate::compat::allocation::free;
+use crate::compat::objects as handles;
+use crate::objects::{
+    Boolean, Bytes, DictionaryEntry, FileId, IndirectReference, Number, ObjectId, ObjectNumber,
+    Stream, Value,
+};
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -312,16 +317,7 @@ pub struct completed_object {
     pub object: *mut pdf_obj,
     pub next: *mut completed_object,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_obj {
-    pub type_0: ::core::ffi::c_int,
-    pub label: uint32_t,
-    pub generation: uint16_t,
-    pub refcount: ::core::ffi::c_int,
-    pub flags: int32_t,
-    pub data: *mut ::core::ffi::c_void,
-}
+pub(crate) use crate::objects::Object as pdf_obj;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct xref_entry {
@@ -392,14 +388,6 @@ pub struct tt_pdf_task_result {
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
-pub struct pdf_indirect {
-    pub pf: *mut pdf_file,
-    pub obj: *mut pdf_obj,
-    pub label: uint32_t,
-    pub generation: uint16_t,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
 pub struct pdf_stream {
     pub dict: *mut pdf_obj,
     pub stream: *mut ::core::ffi::c_uchar,
@@ -417,46 +405,11 @@ pub struct decode_parms {
     pub bits_per_component: ::core::ffi::c_int,
     pub columns: int32_t,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_dict {
-    pub key: *mut pdf_obj,
-    pub value: *mut pdf_obj,
-    pub next: *mut pdf_dict,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_array {
-    pub max: size_t,
-    pub size: size_t,
-    pub values: *mut *mut pdf_obj,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_name {
-    pub name: *mut ::core::ffi::c_char,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_string {
-    pub string: *mut ::core::ffi::c_uchar,
-    pub length: size_t,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_number {
-    pub value: ::core::ffi::c_double,
-}
 pub type FlateResult = ::core::ffi::c_int;
 pub const FlateResult_OtherError: FlateResult = -2;
 pub const FlateResult_BufError: FlateResult = -1;
 pub const FlateResult_StreamEnd: FlateResult = 1;
 pub const FlateResult_Success: FlateResult = 0;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_boolean {
-    pub value: ::core::ffi::c_char,
-}
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct tt_pdf_compression_job {
@@ -971,7 +924,7 @@ unsafe extern "C-unwind" fn dump_trailer(mut p: *mut pdf_out) {
         8 as size_t,
     );
     (*p).state.enc_mode = false_0;
-    write_dict(p, (*(*p).trailer).data as *mut pdf_dict);
+    write_dict(p, dict_data((*p).trailer));
     pdf_release_obj((*p).trailer);
     (*p).trailer = ::core::ptr::null_mut::<pdf_obj>();
     pdf_out_char(p, '\n' as i32 as ::core::ffi::c_char);
@@ -1311,34 +1264,15 @@ unsafe extern "C-unwind" fn pdf_out_white(mut p: *mut pdf_out) {
         pdf_out_char(p, ' ' as i32 as ::core::ffi::c_char);
     };
 }
-unsafe extern "C-unwind" fn pdf_new_obj(mut type_0: ::core::ffi::c_int) -> *mut pdf_obj {
-    let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    if type_0 > PDF_UNDEFINED || type_0 < 0 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"Invalid object type: %d\0" as *const u8 as *const ::core::ffi::c_char,
-            type_0,
-        );
-    }
-    result = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_obj>() as usize) as uint32_t)
-        as *mut pdf_obj;
-    (*result).type_0 = type_0;
-    (*result).data = NULL;
-    (*result).label = 0 as uint32_t;
-    (*result).generation = 0 as uint16_t;
-    (*result).refcount = 1 as ::core::ffi::c_int;
-    (*result).flags = 0 as ::core::ffi::c_int as int32_t;
-    return result;
-}
 #[unsafe(export_name = "__pdf_impl_pdf_obj_typeof")]
 pub unsafe extern "C-unwind" fn pdf_obj_typeof(mut object: *mut pdf_obj) -> ::core::ffi::c_int {
     if object.is_null()
-        || (*object).type_0 <= 0 as ::core::ffi::c_int
-        || (*object).type_0 > PDF_UNDEFINED
+        || (*object).kind() <= 0 as ::core::ffi::c_int
+        || (*object).kind() > PDF_UNDEFINED
     {
         return PDF_OBJ_INVALID;
     }
-    return (*object).type_0;
+    return (*object).kind();
 }
 unsafe extern "C-unwind" fn pdf_label_obj(mut p: *mut pdf_out, mut object: *mut pdf_obj) {
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -1349,8 +1283,8 @@ unsafe extern "C-unwind" fn pdf_label_obj(mut p: *mut pdf_out, mut object: *mut 
     } else {
     };
     if object.is_null()
-        || (*object).type_0 <= 0 as ::core::ffi::c_int
-        || (*object).type_0 > PDF_UNDEFINED
+        || (*object).kind() <= 0 as ::core::ffi::c_int
+        || (*object).kind() > PDF_UNDEFINED
     {
         pdf_abort!(
             b"pdf_label_obj(): passed invalid object.\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1383,34 +1317,35 @@ pub unsafe extern "C-unwind" fn pdf_transfer_label(mut dst: *mut pdf_obj, mut sr
     };
     (*dst).label = (*src).label;
     (*dst).generation = (*src).generation;
+    handles::transfer((*src).id, (*dst).id);
     (*src).label = 0 as uint32_t;
     (*src).generation = 0 as uint16_t;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_link_obj")]
 pub unsafe extern "C-unwind" fn pdf_link_obj(mut object: *mut pdf_obj) -> *mut pdf_obj {
     if object.is_null()
-        || (*object).type_0 <= 0 as ::core::ffi::c_int
-        || (*object).type_0 > PDF_UNDEFINED
+        || (*object).kind() <= 0 as ::core::ffi::c_int
+        || (*object).kind() > PDF_UNDEFINED
     {
         pdf_abort!(
             b"pdf_link_obj(): passed invalid object.\0" as *const u8 as *const ::core::ffi::c_char,
         );
     }
-    (*object).refcount += 1 as ::core::ffi::c_int;
+    handles::retain(object);
     return object;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_ref_obj")]
 pub unsafe extern "C-unwind" fn pdf_ref_obj(mut object: *mut pdf_obj) -> *mut pdf_obj {
     let mut p: *mut pdf_out = current_output();
     if object.is_null()
-        || (*object).type_0 <= 0 as ::core::ffi::c_int
-        || (*object).type_0 > PDF_UNDEFINED
+        || (*object).kind() <= 0 as ::core::ffi::c_int
+        || (*object).kind() > PDF_UNDEFINED
     {
         pdf_abort!(
             b"pdf_ref_obj(): passed invalid object.\0" as *const u8 as *const ::core::ffi::c_char,
         );
     }
-    if (*object).refcount == 0 as ::core::ffi::c_int {
+    if handles::count(object) == 0 {
         pdf_message!(
             b"\nTrying to refer already released object!!!\n\0" as *const u8
                 as *const ::core::ffi::c_char,
@@ -1423,51 +1358,26 @@ pub unsafe extern "C-unwind" fn pdf_ref_obj(mut object: *mut pdf_obj) -> *mut pd
         return pdf_new_ref(p, object);
     };
 }
-unsafe extern "C-unwind" fn release_indirect(mut data: *mut pdf_indirect) {
-    free(data as *mut ::core::ffi::c_void);
-}
-unsafe extern "C-unwind" fn write_indirect(mut p: *mut pdf_out, mut indirect: *mut pdf_indirect) {
-    let mut length: ::core::ffi::c_int = 0;
-    let mut buf: [::core::ffi::c_char; 64] = [0; 64];
-    if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
-    } else {
-    };
-    if !(*indirect).pf.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"!indirect->pf\0" as *const u8 as *const ::core::ffi::c_char
-        );
-    } else {
-    };
-    length = sprintf(
-        &raw mut buf as *mut ::core::ffi::c_char,
-        b"%u %hu R\0" as *const u8 as *const ::core::ffi::c_char,
-        (*indirect).label,
-        (*indirect).generation as ::core::ffi::c_int,
+
+unsafe extern "C-unwind" fn write_indirect(mut p: *mut pdf_out, mut indirect: *mut pdf_obj) {
+    let reference = *indirect_data(indirect);
+    assert!(reference.source.is_none());
+    let mut buffer = [0; 64];
+    let length = sprintf(
+        buffer.as_mut_ptr(),
+        c"%u %hu R".as_ptr(),
+        reference.number.0,
+        reference.generation as ::core::ffi::c_int,
     );
-    pdf_out_str(
-        p,
-        &raw mut buf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-        length as size_t,
-    );
+    pdf_out_str(p, buffer.as_ptr().cast(), length as usize);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_new_undefined")]
 pub unsafe extern "C-unwind" fn pdf_new_undefined() -> *mut pdf_obj {
-    let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    result = pdf_new_obj(PDF_UNDEFINED);
-    (*result).data = NULL;
-    return result;
+    handles::allocate(Value::Undefined)
 }
 #[unsafe(export_name = "__pdf_impl_pdf_new_null")]
 pub unsafe extern "C-unwind" fn pdf_new_null() -> *mut pdf_obj {
-    let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    result = pdf_new_obj(PDF_NULL);
-    (*result).data = NULL;
-    return result;
+    handles::allocate(Value::Null)
 }
 unsafe extern "C-unwind" fn write_null(mut p: *mut pdf_out) {
     pdf_out_str(
@@ -1478,20 +1388,10 @@ unsafe extern "C-unwind" fn write_null(mut p: *mut pdf_out) {
 }
 #[unsafe(export_name = "__pdf_impl_pdf_new_boolean")]
 pub unsafe extern "C-unwind" fn pdf_new_boolean(mut value: ::core::ffi::c_char) -> *mut pdf_obj {
-    let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut data: *mut pdf_boolean = ::core::ptr::null_mut::<pdf_boolean>();
-    result = pdf_new_obj(PDF_BOOLEAN);
-    data = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_boolean>() as usize) as uint32_t)
-        as *mut pdf_boolean;
-    (*data).value = value;
-    (*result).data = data as *mut ::core::ffi::c_void;
-    return result;
+    handles::allocate(Value::Boolean(Boolean { value }))
 }
-unsafe extern "C-unwind" fn release_boolean(mut data: *mut pdf_obj) {
-    free(data as *mut ::core::ffi::c_void);
-}
-unsafe extern "C-unwind" fn write_boolean(mut p: *mut pdf_out, mut data: *mut pdf_boolean) {
+
+unsafe extern "C-unwind" fn write_boolean(mut p: *mut pdf_out, mut data: *mut Boolean) {
     if (*data).value != 0 {
         pdf_out_str(
             p,
@@ -1508,13 +1408,13 @@ unsafe extern "C-unwind" fn write_boolean(mut p: *mut pdf_out, mut data: *mut pd
 }
 #[unsafe(export_name = "__pdf_impl_pdf_boolean_value")]
 pub unsafe extern "C-unwind" fn pdf_boolean_value(mut object: *mut pdf_obj) -> ::core::ffi::c_char {
-    let mut data: *mut pdf_boolean = ::core::ptr::null_mut::<pdf_boolean>();
-    if object.is_null() || (*object).type_0 != 1 as ::core::ffi::c_int {
+    let mut data: *mut Boolean = core::ptr::null_mut();
+    if object.is_null() || (*object).kind() != 1 as ::core::ffi::c_int {
         pdf_abort!(
             b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
                 as *const ::core::ffi::c_char,
             if !object.is_null() {
-                (*object).type_0
+                (*object).kind()
             } else {
                 -(1 as ::core::ffi::c_int)
             },
@@ -1522,25 +1422,15 @@ pub unsafe extern "C-unwind" fn pdf_boolean_value(mut object: *mut pdf_obj) -> :
             1057 as ::core::ffi::c_int,
         );
     }
-    data = (*object).data as *mut pdf_boolean;
+    data = boolean_data(object);
     return (*data).value;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_new_number")]
 pub unsafe extern "C-unwind" fn pdf_new_number(mut value: ::core::ffi::c_double) -> *mut pdf_obj {
-    let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut data: *mut pdf_number = ::core::ptr::null_mut::<pdf_number>();
-    result = pdf_new_obj(PDF_NUMBER);
-    data = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_number>() as usize) as uint32_t)
-        as *mut pdf_number;
-    (*data).value = value;
-    (*result).data = data as *mut ::core::ffi::c_void;
-    return result;
+    handles::allocate(Value::Number(Number { value }))
 }
-unsafe extern "C-unwind" fn release_number(mut data: *mut pdf_number) {
-    free(data as *mut ::core::ffi::c_void);
-}
-unsafe extern "C-unwind" fn write_number(mut p: *mut pdf_out, mut number: *mut pdf_number) {
+
+unsafe extern "C-unwind" fn write_number(mut p: *mut pdf_out, mut number: *mut Number) {
     let mut count: ::core::ffi::c_int = 0;
     let mut buf: [::core::ffi::c_char; 512] = [0; 512];
     count = pdf_sprint_number(&raw mut buf as *mut ::core::ffi::c_char, (*number).value);
@@ -1555,13 +1445,13 @@ pub unsafe extern "C-unwind" fn pdf_set_number(
     mut object: *mut pdf_obj,
     mut value: ::core::ffi::c_double,
 ) {
-    let mut data: *mut pdf_number = ::core::ptr::null_mut::<pdf_number>();
-    if object.is_null() || (*object).type_0 != 2 as ::core::ffi::c_int {
+    let mut data: *mut Number = core::ptr::null_mut();
+    if object.is_null() || (*object).kind() != 2 as ::core::ffi::c_int {
         pdf_abort!(
             b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
                 as *const ::core::ffi::c_char,
             if !object.is_null() {
-                (*object).type_0
+                (*object).kind()
             } else {
                 -(1 as ::core::ffi::c_int)
             },
@@ -1569,20 +1459,20 @@ pub unsafe extern "C-unwind" fn pdf_set_number(
             1101 as ::core::ffi::c_int,
         );
     }
-    data = (*object).data as *mut pdf_number;
+    data = number_data(object);
     (*data).value = value;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_number_value")]
 pub unsafe extern "C-unwind" fn pdf_number_value(
     mut object: *mut pdf_obj,
 ) -> ::core::ffi::c_double {
-    let mut data: *mut pdf_number = ::core::ptr::null_mut::<pdf_number>();
-    if object.is_null() || (*object).type_0 != 2 as ::core::ffi::c_int {
+    let mut data: *mut Number = core::ptr::null_mut();
+    if object.is_null() || (*object).kind() != 2 as ::core::ffi::c_int {
         pdf_abort!(
             b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
                 as *const ::core::ffi::c_char,
             if !object.is_null() {
-                (*object).type_0
+                (*object).kind()
             } else {
                 -(1 as ::core::ffi::c_int)
             },
@@ -1590,7 +1480,7 @@ pub unsafe extern "C-unwind" fn pdf_number_value(
             1112 as ::core::ffi::c_int,
         );
     }
-    data = (*object).data as *mut pdf_number;
+    data = number_data(object);
     return (*data).value;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_new_string")]
@@ -1598,71 +1488,24 @@ pub unsafe extern "C-unwind" fn pdf_new_string(
     mut str: *const ::core::ffi::c_void,
     mut length: size_t,
 ) -> *mut pdf_obj {
-    let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut data: *mut pdf_string = ::core::ptr::null_mut::<pdf_string>();
-    if str.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"str\0" as *const u8 as *const ::core::ffi::c_char
-        );
-    } else {
-    };
-    result = pdf_new_obj(PDF_STRING);
-    data = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_string>() as usize) as uint32_t)
-        as *mut pdf_string;
-    (*result).data = data as *mut ::core::ffi::c_void;
-    (*data).length = length;
-    if length != 0 {
-        (*data).string = new((length.wrapping_add(1 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_uchar;
-        memcpy((*data).string as *mut ::core::ffi::c_void, str, length);
-        *(*data).string.offset(length as isize) = '\0' as i32 as ::core::ffi::c_uchar;
-    } else {
-        (*data).string = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    }
-    return result;
+    assert!(!str.is_null());
+    let bytes = core::slice::from_raw_parts(str.cast::<u8>(), length);
+    handles::allocate(Value::String(Bytes::new(bytes)))
 }
 #[unsafe(export_name = "__pdf_impl_pdf_string_value")]
 pub unsafe extern "C-unwind" fn pdf_string_value(
     mut object: *mut pdf_obj,
 ) -> *mut ::core::ffi::c_void {
-    let mut data: *mut pdf_string = ::core::ptr::null_mut::<pdf_string>();
-    if object.is_null() || (*object).type_0 != 3 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
-                as *const ::core::ffi::c_char,
-            if !object.is_null() {
-                (*object).type_0
-            } else {
-                -(1 as ::core::ffi::c_int)
-            },
-            3 as ::core::ffi::c_int,
-            1149 as ::core::ffi::c_int,
-        );
+    let data = &mut *string_data(object);
+    if data.as_bytes().is_empty() {
+        core::ptr::null_mut()
+    } else {
+        data.as_mut_ptr().cast()
     }
-    data = (*object).data as *mut pdf_string;
-    return (*data).string as *mut ::core::ffi::c_void;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_string_length")]
 pub unsafe extern "C-unwind" fn pdf_string_length(mut object: *mut pdf_obj) -> ::core::ffi::c_uint {
-    let mut data: *mut pdf_string = ::core::ptr::null_mut::<pdf_string>();
-    if object.is_null() || (*object).type_0 != 3 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
-                as *const ::core::ffi::c_char,
-            if !object.is_null() {
-                (*object).type_0
-            } else {
-                -(1 as ::core::ffi::c_int)
-            },
-            3 as ::core::ffi::c_int,
-            1161 as ::core::ffi::c_int,
-        );
-    }
-    data = (*object).data as *mut pdf_string;
-    return (*data).length as ::core::ffi::c_uint;
+    (*string_data(object)).as_bytes().len() as ::core::ffi::c_uint
 }
 #[unsafe(export_name = "__pdf_impl_pdfobj_escape_str")]
 pub unsafe extern "C-unwind" fn pdfobj_escape_str(
@@ -1730,7 +1573,7 @@ pub unsafe extern "C-unwind" fn pdfobj_escape_str(
     }
     return result;
 }
-unsafe extern "C-unwind" fn write_string(mut p: *mut pdf_out, mut str: *mut pdf_string) {
+unsafe extern "C-unwind" fn write_string(mut p: *mut pdf_out, mut str: *mut Bytes) {
     let mut s: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
     let mut i: size_t = 0;
     let mut nescc: size_t = 0 as size_t;
@@ -1745,14 +1588,14 @@ unsafe extern "C-unwind" fn write_string(mut p: *mut pdf_out, mut str: *mut pdf_
     if (*p).state.enc_mode != 0 {
         pdf_encrypt_data(
             (*p).sec_data,
-            (*str).string,
-            (*str).length,
+            (*str).as_mut_ptr(),
+            (*str).as_bytes().len(),
             &raw mut s,
             &raw mut len,
         );
     } else {
-        s = (*str).string;
-        len = (*str).length;
+        s = (*str).as_mut_ptr();
+        len = (*str).as_bytes().len();
     }
     i = 0 as size_t;
     while i < len {
@@ -1796,77 +1639,27 @@ unsafe extern "C-unwind" fn write_string(mut p: *mut pdf_out, mut str: *mut pdf_
         free(s as *mut ::core::ffi::c_void);
     }
 }
-unsafe extern "C-unwind" fn release_string(mut data: *mut pdf_string) {
-    (*data).string = mfree((*data).string as *mut ::core::ffi::c_void) as *mut ::core::ffi::c_uchar;
-    free(data as *mut ::core::ffi::c_void);
-}
+
 #[unsafe(export_name = "__pdf_impl_pdf_set_string")]
 pub unsafe extern "C-unwind" fn pdf_set_string(
     mut object: *mut pdf_obj,
     mut str: *mut ::core::ffi::c_uchar,
     mut length: size_t,
 ) {
-    let mut data: *mut pdf_string = ::core::ptr::null_mut::<pdf_string>();
-    if object.is_null() || (*object).type_0 != 3 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
-                as *const ::core::ffi::c_char,
-            if !object.is_null() {
-                (*object).type_0
-            } else {
-                -(1 as ::core::ffi::c_int)
-            },
-            3 as ::core::ffi::c_int,
-            1288 as ::core::ffi::c_int,
-        );
-    }
-    data = (*object).data as *mut pdf_string;
-    if !(*data).string.is_null() {
-        free((*data).string as *mut ::core::ffi::c_void);
-    }
-    if length != 0 as size_t {
-        (*data).length = length;
-        (*data).string = new((length.wrapping_add(1 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_uchar;
-        memcpy(
-            (*data).string as *mut ::core::ffi::c_void,
-            str as *const ::core::ffi::c_void,
-            length,
-        );
-        *(*data).string.offset(length as isize) = '\0' as i32 as ::core::ffi::c_uchar;
+    let bytes = if length == 0 {
+        &[]
     } else {
-        (*data).length = 0 as size_t;
-        (*data).string = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
+        core::slice::from_raw_parts(str, length)
     };
+    let replacement = Bytes::new(bytes);
+    *string_data(object) = replacement;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_new_name")]
 pub unsafe extern "C-unwind" fn pdf_new_name(mut name: *const ::core::ffi::c_char) -> *mut pdf_obj {
-    let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut length: size_t = 0;
-    let mut data: *mut pdf_name = ::core::ptr::null_mut::<pdf_name>();
-    result = pdf_new_obj(PDF_NAME);
-    data = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_name>() as usize) as uint32_t)
-        as *mut pdf_name;
-    (*result).data = data as *mut ::core::ffi::c_void;
-    length = strlen(name);
-    if length != 0 as size_t {
-        (*data).name = new((length.wrapping_add(1 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_char;
-        memcpy(
-            (*data).name as *mut ::core::ffi::c_void,
-            name as *const ::core::ffi::c_void,
-            length,
-        );
-        *(*data).name.offset(length as isize) = '\0' as i32 as ::core::ffi::c_char;
-    } else {
-        (*data).name = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    }
-    return result;
+    let bytes = std::ffi::CStr::from_ptr(name).to_bytes();
+    handles::allocate(Value::Name(Bytes::new(bytes)))
 }
-unsafe extern "C-unwind" fn write_name(mut p: *mut pdf_out, mut name: *mut pdf_name) {
+unsafe extern "C-unwind" fn write_name(mut p: *mut pdf_out, mut name: *mut Bytes) {
     let mut s: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut i: size_t = 0;
     let mut length: size_t = 0;
@@ -1877,9 +1670,9 @@ unsafe extern "C-unwind" fn write_name(mut p: *mut pdf_out, mut name: *mut pdf_n
         );
     } else {
     };
-    s = (*name).name;
-    length = if !(*name).name.is_null() {
-        strlen((*name).name)
+    s = (*name).as_mut_ptr().cast::<::core::ffi::c_char>();
+    length = if !(*name).as_mut_ptr().cast::<::core::ffi::c_char>().is_null() {
+        strlen((*name).as_mut_ptr().cast::<::core::ffi::c_char>())
     } else {
         0 as size_t
     };
@@ -1908,361 +1701,132 @@ unsafe extern "C-unwind" fn write_name(mut p: *mut pdf_out, mut name: *mut pdf_n
         i = i.wrapping_add(1);
     }
 }
-unsafe extern "C-unwind" fn release_name(mut data: *mut pdf_name) {
-    (*data).name = mfree((*data).name as *mut ::core::ffi::c_void) as *mut ::core::ffi::c_char;
-    free(data as *mut ::core::ffi::c_void);
-}
+
 #[unsafe(export_name = "__pdf_impl_pdf_name_value")]
 pub unsafe extern "C-unwind" fn pdf_name_value(
     mut object: *mut pdf_obj,
 ) -> *mut ::core::ffi::c_char {
-    let mut data: *mut pdf_name = ::core::ptr::null_mut::<pdf_name>();
-    if object.is_null() || (*object).type_0 != 4 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
-                as *const ::core::ffi::c_char,
-            if !object.is_null() {
-                (*object).type_0
-            } else {
-                -(1 as ::core::ffi::c_int)
-            },
-            4 as ::core::ffi::c_int,
-            1382 as ::core::ffi::c_int,
-        );
+    let data = &mut *name_data(object);
+    if data.as_bytes().is_empty() {
+        core::ptr::null_mut()
+    } else {
+        data.as_mut_ptr().cast()
     }
-    data = (*object).data as *mut pdf_name;
-    return (*data).name;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_new_array")]
 pub unsafe extern "C-unwind" fn pdf_new_array() -> *mut pdf_obj {
-    let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut data: *mut pdf_array = ::core::ptr::null_mut::<pdf_array>();
-    result = pdf_new_obj(PDF_ARRAY);
-    data = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_array>() as usize) as uint32_t)
-        as *mut pdf_array;
-    (*data).values = ::core::ptr::null_mut::<*mut pdf_obj>();
-    (*data).max = 0 as size_t;
-    (*data).size = 0 as size_t;
-    (*result).data = data as *mut ::core::ffi::c_void;
-    return result;
+    handles::allocate(Value::Array(Vec::new()))
 }
-unsafe extern "C-unwind" fn write_array(mut p: *mut pdf_out, mut array: *mut pdf_array) {
-    if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
-    } else {
-    };
-    pdf_out_char(p, '[' as i32 as ::core::ffi::c_char);
-    if (*array).size > 0 as size_t {
-        let mut i: size_t = 0;
-        let mut type1: ::core::ffi::c_int = PDF_UNDEFINED;
-        let mut type2: ::core::ffi::c_int = 0;
-        i = 0 as size_t;
-        while i < (*array).size {
-            if !(*(*array).values.offset(i as isize)).is_null() {
-                type2 = (**(*array).values.offset(i as isize)).type_0;
-                if type1 != PDF_UNDEFINED && pdf_need_white(type1, type2) != 0 {
-                    pdf_out_white(p);
-                }
-                type1 = type2;
-                pdf_write_obj(p, *(*array).values.offset(i as isize) as *mut pdf_obj);
-            } else {
-                pdf_warning!(
-                    b"PDF array element %zu undefined.\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                    i,
-                );
+unsafe extern "C-unwind" fn write_array(
+    mut p: *mut pdf_out,
+    mut array: *mut Vec<Option<ObjectId>>,
+) {
+    pdf_out_char(p, b'[' as _);
+    let mut previous = PDF_UNDEFINED;
+    let mut index = 0;
+    while index < (*array).len() {
+        let object = handles::pointer((*array)[index]);
+        if !object.is_null() {
+            let next = (*object).kind();
+            if previous != PDF_UNDEFINED && pdf_need_white(previous, next) != 0 {
+                pdf_out_white(p);
             }
-            i = i.wrapping_add(1);
+            previous = next;
+            pdf_write_obj(p, object);
+        } else {
+            pdf_warning!(c"PDF array element %zu undefined.".as_ptr(), index);
         }
+        index += 1;
     }
-    pdf_out_char(p, ']' as i32 as ::core::ffi::c_char);
+    pdf_out_char(p, b']' as _);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_get_array")]
 pub unsafe extern "C-unwind" fn pdf_get_array(
     mut array: *mut pdf_obj,
     mut idx: ::core::ffi::c_int,
 ) -> *mut pdf_obj {
-    let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut data: *mut pdf_array = ::core::ptr::null_mut::<pdf_array>();
-    if array.is_null() || (*array).type_0 != 5 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
-                as *const ::core::ffi::c_char,
-            if !array.is_null() {
-                (*array).type_0
-            } else {
-                -(1 as ::core::ffi::c_int)
-            },
-            5 as ::core::ffi::c_int,
-            1440 as ::core::ffi::c_int,
-        );
-    }
-    data = (*array).data as *mut pdf_array;
-    if idx < 0 as ::core::ffi::c_int {
-        result = *(*data)
-            .values
-            .offset((idx as size_t).wrapping_add((*data).size) as isize)
-            as *mut pdf_obj;
-    } else if (idx as size_t) < (*data).size {
-        result = *(*data).values.offset(idx as isize) as *mut pdf_obj;
-    }
-    return result;
+    let data = &*array_data(array);
+    let index = if idx < 0 {
+        data.len().checked_add_signed(idx as isize)
+    } else {
+        Some(idx as usize)
+    };
+    handles::pointer(index.and_then(|index| data.get(index)).copied().flatten())
 }
 #[unsafe(export_name = "__pdf_impl_pdf_array_length")]
 pub unsafe extern "C-unwind" fn pdf_array_length(mut array: *mut pdf_obj) -> ::core::ffi::c_uint {
-    let mut data: *mut pdf_array = ::core::ptr::null_mut::<pdf_array>();
-    if array.is_null() || (*array).type_0 != 5 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
-                as *const ::core::ffi::c_char,
-            if !array.is_null() {
-                (*array).type_0
-            } else {
-                -(1 as ::core::ffi::c_int)
-            },
-            5 as ::core::ffi::c_int,
-            1457 as ::core::ffi::c_int,
-        );
-    }
-    data = (*array).data as *mut pdf_array;
-    return (*data).size as ::core::ffi::c_uint;
+    (*array_data(array)).len() as ::core::ffi::c_uint
 }
-unsafe extern "C-unwind" fn release_array(mut data: *mut pdf_array) {
-    let mut i: size_t = 0;
-    if !(*data).values.is_null() {
-        i = 0 as size_t;
-        while i < (*data).size {
-            pdf_release_obj(*(*data).values.offset(i as isize) as *mut pdf_obj);
-            let ref mut fresh2 = *(*data).values.offset(i as isize);
-            *fresh2 = ::core::ptr::null_mut::<pdf_obj>();
-            i = i.wrapping_add(1);
-        }
-        (*data).values = mfree((*data).values as *mut ::core::ffi::c_void) as *mut *mut pdf_obj;
-    }
-    free(data as *mut ::core::ffi::c_void);
-}
+
 #[unsafe(export_name = "__pdf_impl_pdf_add_array")]
 pub unsafe extern "C-unwind" fn pdf_add_array(mut array: *mut pdf_obj, mut object: *mut pdf_obj) {
-    let mut data: *mut pdf_array = ::core::ptr::null_mut::<pdf_array>();
-    if array.is_null() || (*array).type_0 != 5 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
-                as *const ::core::ffi::c_char,
-            if !array.is_null() {
-                (*array).type_0
-            } else {
-                -(1 as ::core::ffi::c_int)
-            },
-            5 as ::core::ffi::c_int,
-            1488 as ::core::ffi::c_int,
-        );
-    }
-    data = (*array).data as *mut pdf_array;
-    if (*data).size >= (*data).max {
-        (*data).max = (*data).max.wrapping_add(ARRAY_ALLOC_SIZE as size_t);
-        (*data).values = renew(
-            (*data).values as *mut ::core::ffi::c_void,
-            ((*data).max as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<*mut pdf_obj>() as usize)
-                as uint32_t,
-        ) as *mut *mut pdf_obj as *mut *mut pdf_obj;
-    }
-    let ref mut fresh20 = *(*data).values.offset((*data).size as isize);
-    *fresh20 = object as *mut pdf_obj;
-    (*data).size = (*data).size.wrapping_add(1);
+    (*array_data(array)).push(handles::id(object));
 }
 unsafe extern "C-unwind" fn pdf_unshift_array(mut array: *mut pdf_obj, mut object: *mut pdf_obj) {
-    let mut data: *mut pdf_array = ::core::ptr::null_mut::<pdf_array>();
-    if array.is_null() || (*array).type_0 != 5 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
-                as *const ::core::ffi::c_char,
-            if !array.is_null() {
-                (*array).type_0
-            } else {
-                -(1 as ::core::ffi::c_int)
-            },
-            5 as ::core::ffi::c_int,
-            1508 as ::core::ffi::c_int,
-        );
-    }
-    data = (*array).data as *mut pdf_array;
-    if (*data).size >= (*data).max {
-        (*data).max = (*data).max.wrapping_add(ARRAY_ALLOC_SIZE as size_t);
-        (*data).values = renew(
-            (*data).values as *mut ::core::ffi::c_void,
-            ((*data).max as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<*mut pdf_obj>() as usize)
-                as uint32_t,
-        ) as *mut *mut pdf_obj as *mut *mut pdf_obj;
-    }
-    memmove(
-        (*data).values.offset(1 as ::core::ffi::c_int as isize) as *mut *mut pdf_obj
-            as *mut ::core::ffi::c_void,
-        (*data).values as *const ::core::ffi::c_void,
-        (*data)
-            .size
-            .wrapping_mul(::core::mem::size_of::<*mut pdf_obj>() as size_t),
-    );
-    let ref mut fresh6 = *(*data).values.offset(0 as ::core::ffi::c_int as isize);
-    *fresh6 = object as *mut pdf_obj;
-    (*data).size = (*data).size.wrapping_add(1);
+    (*array_data(array)).insert(0, handles::id(object));
 }
-unsafe extern "C-unwind" fn write_dict(mut p: *mut pdf_out, mut dict: *mut pdf_dict) {
-    pdf_out_str(
-        p,
-        b"<<\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-        2 as size_t,
-    );
-    while !(*dict).key.is_null() {
-        pdf_write_obj(p, (*dict).key as *mut pdf_obj);
-        if pdf_need_white(PDF_NAME, (*(*dict).value).type_0) != 0 {
+unsafe extern "C-unwind" fn write_dict(mut p: *mut pdf_out, mut dict: *mut Vec<DictionaryEntry>) {
+    pdf_out_str(p, c"<<".as_ptr().cast(), 2);
+    let mut index = 0;
+    while index < (*dict).len() {
+        let entry = (*dict)[index];
+        let key = handles::pointer(Some(entry.key));
+        let value = handles::pointer(entry.value);
+        pdf_write_obj(p, key);
+        if !value.is_null() && pdf_need_white(PDF_NAME, (*value).kind()) != 0 {
             pdf_out_white(p);
         }
-        pdf_write_obj(p, (*dict).value as *mut pdf_obj);
-        dict = (*dict).next as *mut pdf_dict;
+        pdf_write_obj(p, value);
+        index += 1;
     }
-    pdf_out_str(
-        p,
-        b">>\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-        2 as size_t,
-    );
+    pdf_out_str(p, c">>".as_ptr().cast(), 2);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_new_dict")]
 pub unsafe extern "C-unwind" fn pdf_new_dict() -> *mut pdf_obj {
-    let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut data: *mut pdf_dict = ::core::ptr::null_mut::<pdf_dict>();
-    result = pdf_new_obj(PDF_DICT);
-    data = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_dict>() as usize) as uint32_t)
-        as *mut pdf_dict;
-    (*data).key = ::core::ptr::null_mut::<pdf_obj>();
-    (*data).value = ::core::ptr::null_mut::<pdf_obj>();
-    (*data).next = ::core::ptr::null_mut::<pdf_dict>();
-    (*result).data = data as *mut ::core::ffi::c_void;
-    return result;
+    handles::allocate(Value::Dictionary(Vec::new()))
 }
-unsafe extern "C-unwind" fn release_dict(mut data: *mut pdf_dict) {
-    let mut next: *mut pdf_dict = ::core::ptr::null_mut::<pdf_dict>();
-    while !data.is_null() && !(*data).key.is_null() {
-        pdf_release_obj((*data).key as *mut pdf_obj);
-        pdf_release_obj((*data).value as *mut pdf_obj);
-        (*data).key = ::core::ptr::null_mut::<pdf_obj>();
-        (*data).value = ::core::ptr::null_mut::<pdf_obj>();
-        next = (*data).next as *mut pdf_dict;
-        free(data as *mut ::core::ffi::c_void);
-        data = next;
-    }
-    free(data as *mut ::core::ffi::c_void);
-}
+
 #[unsafe(export_name = "__pdf_impl_pdf_add_dict")]
 pub unsafe extern "C-unwind" fn pdf_add_dict(
     mut dict: *mut pdf_obj,
     mut key: *mut pdf_obj,
     mut value: *mut pdf_obj,
 ) -> ::core::ffi::c_int {
-    let mut data: *mut pdf_dict = ::core::ptr::null_mut::<pdf_dict>();
-    let mut new_node: *mut pdf_dict = ::core::ptr::null_mut::<pdf_dict>();
-    if dict.is_null() || (*dict).type_0 != 6 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
-                as *const ::core::ffi::c_char,
-            if !dict.is_null() {
-                (*dict).type_0
-            } else {
-                -(1 as ::core::ffi::c_int)
-            },
-            6 as ::core::ffi::c_int,
-            1577 as ::core::ffi::c_int,
-        );
-    }
-    if key.is_null() || (*key).type_0 != 4 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
-                as *const ::core::ffi::c_char,
-            if !key.is_null() {
-                (*key).type_0
-            } else {
-                -(1 as ::core::ffi::c_int)
-            },
-            4 as ::core::ffi::c_int,
-            1578 as ::core::ffi::c_int,
-        );
-    }
-    if !value.is_null()
-        && (value.is_null()
-            || (*value).type_0 <= 0 as ::core::ffi::c_int
-            || (*value).type_0 > PDF_UNDEFINED)
-    {
-        pdf_abort!(
-            b"pdf_add_dict(): Passed invalid value\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    }
-    data = (*dict).data as *mut pdf_dict;
-    while !(*data).key.is_null() {
-        if streq_ptr(
-            pdf_name_value(key),
-            pdf_name_value((*data).key as *mut pdf_obj),
-        ) {
-            pdf_release_obj((*data).value as *mut pdf_obj);
-            pdf_release_obj(key);
-            (*data).value = value as *mut pdf_obj;
-            return 1 as ::core::ffi::c_int;
+    let key_id = handles::id(key).expect("PDF dictionary key");
+    let name = pdf_name_value(key);
+    let mut found = None;
+    for (index, entry) in (&*dict_data(dict)).iter().enumerate() {
+        if streq_ptr(name, pdf_name_value(handles::pointer(Some(entry.key)))) {
+            found = Some(index);
+            break;
         }
-        data = (*data).next as *mut pdf_dict;
     }
-    new_node = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_dict>() as usize) as uint32_t)
-        as *mut pdf_dict;
-    (*new_node).key = ::core::ptr::null_mut::<pdf_obj>();
-    (*new_node).value = ::core::ptr::null_mut::<pdf_obj>();
-    (*new_node).next = ::core::ptr::null_mut::<pdf_dict>();
-    (*data).next = new_node as *mut pdf_dict;
-    (*data).key = key as *mut pdf_obj;
-    (*data).value = value as *mut pdf_obj;
-    return 0 as ::core::ffi::c_int;
+    let entry = DictionaryEntry {
+        key: key_id,
+        value: handles::id(value),
+    };
+    if let Some(index) = found {
+        let old = (*dict_data(dict))[index];
+        pdf_release_obj(handles::pointer(old.value));
+        pdf_release_obj(key);
+        (*dict_data(dict))[index].value = entry.value;
+        1
+    } else {
+        (*dict_data(dict)).push(entry);
+        0
+    }
 }
 #[unsafe(export_name = "__pdf_impl_pdf_merge_dict")]
 pub unsafe extern "C-unwind" fn pdf_merge_dict(mut dict1: *mut pdf_obj, mut dict2: *mut pdf_obj) {
-    let mut data: *mut pdf_dict = ::core::ptr::null_mut::<pdf_dict>();
-    if dict1.is_null() || (*dict1).type_0 != 6 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
-                as *const ::core::ffi::c_char,
-            if !dict1.is_null() {
-                (*dict1).type_0
-            } else {
-                -(1 as ::core::ffi::c_int)
-            },
-            6 as ::core::ffi::c_int,
-            1616 as ::core::ffi::c_int,
-        );
-    }
-    if dict2.is_null() || (*dict2).type_0 != 6 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
-                as *const ::core::ffi::c_char,
-            if !dict2.is_null() {
-                (*dict2).type_0
-            } else {
-                -(1 as ::core::ffi::c_int)
-            },
-            6 as ::core::ffi::c_int,
-            1617 as ::core::ffi::c_int,
-        );
-    }
-    data = (*dict2).data as *mut pdf_dict;
-    while !(*data).key.is_null() {
+    let mut index = 0;
+    while index < (*dict_data(dict2)).len() {
+        let entry = (*dict_data(dict2))[index];
         pdf_add_dict(
             dict1,
-            pdf_link_obj((*data).key as *mut pdf_obj),
-            pdf_link_obj((*data).value as *mut pdf_obj),
+            pdf_link_obj(handles::pointer(Some(entry.key))),
+            pdf_link_obj(handles::pointer(entry.value)),
         );
-        data = (*data).next as *mut pdf_dict;
+        index += 1;
     }
 }
 #[unsafe(export_name = "__pdf_impl_pdf_foreach_dict")]
@@ -2277,162 +1841,86 @@ pub unsafe extern "C-unwind" fn pdf_foreach_dict(
     >,
     mut pdata: *mut ::core::ffi::c_void,
 ) -> ::core::ffi::c_int {
-    let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut data: *mut pdf_dict = ::core::ptr::null_mut::<pdf_dict>();
-    if proc_0.is_none() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"proc\0" as *const u8 as *const ::core::ffi::c_char
-        );
-    } else {
-    };
-    if dict.is_null() || (*dict).type_0 != 6 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
-                as *const ::core::ffi::c_char,
-            if !dict.is_null() {
-                (*dict).type_0
-            } else {
-                -(1 as ::core::ffi::c_int)
-            },
-            6 as ::core::ffi::c_int,
-            1635 as ::core::ffi::c_int,
-        );
-    }
-    data = (*dict).data as *mut pdf_dict;
-    while error == 0 && !(*data).key.is_null() {
-        error = proc_0.expect("non-null function pointer")(
-            (*data).key as *mut pdf_obj,
-            (*data).value as *mut pdf_obj,
+    let callback = proc_0.expect("non-null dictionary callback");
+    let mut index = 0;
+    while index < (*dict_data(dict)).len() {
+        let entry = (*dict_data(dict))[index];
+        let error = callback(
+            handles::pointer(Some(entry.key)),
+            handles::pointer(entry.value),
             pdata,
         );
-        data = (*data).next as *mut pdf_dict;
+        if error != 0 {
+            return error;
+        }
+        index += 1;
     }
-    return error;
+    0
 }
 #[unsafe(export_name = "__pdf_impl_pdf_lookup_dict")]
 pub unsafe extern "C-unwind" fn pdf_lookup_dict(
     mut dict: *mut pdf_obj,
     mut name: *const ::core::ffi::c_char,
 ) -> *mut pdf_obj {
-    let mut data: *mut pdf_dict = ::core::ptr::null_mut::<pdf_dict>();
-    if name.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"name\0" as *const u8 as *const ::core::ffi::c_char
-        );
-    } else {
-    };
-    if dict.is_null() || (*dict).type_0 != 6 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
-                as *const ::core::ffi::c_char,
-            if !dict.is_null() {
-                (*dict).type_0
-            } else {
-                -(1 as ::core::ffi::c_int)
-            },
-            6 as ::core::ffi::c_int,
-            1655 as ::core::ffi::c_int,
-        );
-    }
-    data = (*dict).data as *mut pdf_dict;
-    while !(*data).key.is_null() {
-        if streq_ptr(name, pdf_name_value((*data).key as *mut pdf_obj)) {
-            return (*data).value as *mut pdf_obj;
+    assert!(!name.is_null());
+    for entry in &*dict_data(dict) {
+        if streq_ptr(name, pdf_name_value(handles::pointer(Some(entry.key)))) {
+            return handles::pointer(entry.value);
         }
-        data = (*data).next as *mut pdf_dict;
     }
-    return ::core::ptr::null_mut::<pdf_obj>();
+    core::ptr::null_mut()
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dict_keys")]
 pub unsafe extern "C-unwind" fn pdf_dict_keys(mut dict: *mut pdf_obj) -> *mut pdf_obj {
-    let mut keys: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut data: *mut pdf_dict = ::core::ptr::null_mut::<pdf_dict>();
-    if dict.is_null() || (*dict).type_0 != 6 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
-                as *const ::core::ffi::c_char,
-            if !dict.is_null() {
-                (*dict).type_0
-            } else {
-                -(1 as ::core::ffi::c_int)
-            },
-            6 as ::core::ffi::c_int,
-            1675 as ::core::ffi::c_int,
-        );
-    }
-    keys = pdf_new_array();
-    data = (*dict).data as *mut pdf_dict;
-    while !data.is_null() && !(*data).key.is_null() {
+    let keys = pdf_new_array();
+    let mut index = 0;
+    while index < (*dict_data(dict)).len() {
+        let entry = (*dict_data(dict))[index];
         pdf_add_array(
             keys,
-            pdf_new_name(pdf_name_value((*data).key as *mut pdf_obj)),
+            pdf_new_name(pdf_name_value(handles::pointer(Some(entry.key)))),
         );
-        data = (*data).next as *mut pdf_dict;
+        index += 1;
     }
-    return keys;
+    keys
 }
 #[unsafe(export_name = "__pdf_impl_pdf_remove_dict")]
 pub unsafe extern "C-unwind" fn pdf_remove_dict(
     mut dict: *mut pdf_obj,
     mut name: *const ::core::ffi::c_char,
 ) {
-    let mut data: *mut pdf_dict = ::core::ptr::null_mut::<pdf_dict>();
-    let mut data_p: *mut *mut pdf_dict = ::core::ptr::null_mut::<*mut pdf_dict>();
-    if dict.is_null() || (*dict).type_0 != 6 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
-                as *const ::core::ffi::c_char,
-            if !dict.is_null() {
-                (*dict).type_0
-            } else {
-                -(1 as ::core::ffi::c_int)
-            },
-            6 as ::core::ffi::c_int,
-            1694 as ::core::ffi::c_int,
-        );
-    }
-    data = (*dict).data as *mut pdf_dict;
-    data_p = &raw mut (*dict).data as *mut ::core::ffi::c_void as *mut *mut pdf_dict;
-    while !(*data).key.is_null() {
-        if !(*data).key.is_null()
-            && !name.is_null()
-            && streq_ptr((*((*(*data).key).data as *mut pdf_name)).name, name) as ::core::ffi::c_int
-                != 0
-        {
-            pdf_release_obj((*data).key as *mut pdf_obj);
-            pdf_release_obj((*data).value as *mut pdf_obj);
-            *data_p = (*data).next as *mut pdf_dict;
-            free(data as *mut ::core::ffi::c_void);
-            break;
-        } else {
-            data_p = &raw mut (*data).next as *mut *mut pdf_dict;
-            data = (*data).next as *mut pdf_dict;
-        }
+    let index = (&*dict_data(dict)).iter().position(|entry| {
+        !name.is_null() && streq_ptr(name, pdf_name_value(handles::pointer(Some(entry.key))))
+    });
+    if let Some(index) = index {
+        let entry = (*dict_data(dict)).remove(index);
+        pdf_release_obj(handles::pointer(Some(entry.key)));
+        pdf_release_obj(handles::pointer(entry.value));
     }
 }
 #[unsafe(export_name = "__pdf_impl_pdf_new_stream")]
 pub unsafe extern "C-unwind" fn pdf_new_stream(mut flags: ::core::ffi::c_int) -> *mut pdf_obj {
-    let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut data: *mut pdf_stream = ::core::ptr::null_mut::<pdf_stream>();
-    result = pdf_new_obj(PDF_STREAM);
-    data = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_stream>() as usize) as uint32_t)
-        as *mut pdf_stream;
-    (*data).dict = pdf_new_dict() as *mut pdf_obj;
-    (*data)._flags = flags as int32_t;
-    (*data).stream = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    (*data).stream_length = 0 as size_t;
-    (*data).max_length = 0 as size_t;
-    (*data).objstm_data = ::core::ptr::null_mut::<::core::ffi::c_int>();
-    (*data).decodeparms.predictor = 2 as ::core::ffi::c_int;
-    (*data).decodeparms.columns = 0 as ::core::ffi::c_int as int32_t;
-    (*data).decodeparms.bits_per_component = 0 as ::core::ffi::c_int;
-    (*data).decodeparms.colors = 0 as ::core::ffi::c_int;
-    (*result).data = data as *mut ::core::ffi::c_void;
-    (*result).flags = ((*result).flags as ::core::ffi::c_int | OBJ_NO_OBJSTM) as int32_t;
-    return result;
+    let dictionary = pdf_new_dict();
+    let storage = handles::insert_stream(pdf_stream {
+        dict: dictionary,
+        stream: core::ptr::null_mut(),
+        objstm_data: core::ptr::null_mut(),
+        stream_length: 0,
+        max_length: 0,
+        _flags: flags,
+        decodeparms: decode_parms {
+            predictor: 2,
+            colors: 0,
+            bits_per_component: 0,
+            columns: 0,
+        },
+    });
+    let object = handles::allocate(Value::Stream(Stream {
+        dictionary: (*dictionary).id,
+        storage,
+    }));
+    (*object).flags = OBJ_NO_OBJSTM;
+    object
 }
 #[unsafe(export_name = "__pdf_impl_pdf_stream_set_predictor")]
 pub unsafe extern "C-unwind" fn pdf_stream_set_predictor(
@@ -2451,7 +1939,7 @@ pub unsafe extern "C-unwind" fn pdf_stream_set_predictor(
     {
         return;
     }
-    data = (*stream).data as *mut pdf_stream;
+    data = handles::stream(stream);
     (*data).decodeparms.predictor = predictor;
     (*data).decodeparms.columns = columns;
     (*data).decodeparms.bits_per_component = bpc;
@@ -2952,23 +2440,21 @@ unsafe extern "C-unwind" fn write_stream(mut p: *mut pdf_out, mut stream: *mut p
     );
 }
 unsafe extern "C-unwind" fn release_stream(mut stream: *mut pdf_stream) {
-    pdf_release_obj((*stream).dict as *mut pdf_obj);
     (*stream).dict = ::core::ptr::null_mut::<pdf_obj>();
     (*stream).stream =
         mfree((*stream).stream as *mut ::core::ffi::c_void) as *mut ::core::ffi::c_uchar;
     (*stream).objstm_data =
         mfree((*stream).objstm_data as *mut ::core::ffi::c_void) as *mut ::core::ffi::c_int;
-    free(stream as *mut ::core::ffi::c_void);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_stream_dict")]
 pub unsafe extern "C-unwind" fn pdf_stream_dict(mut stream: *mut pdf_obj) -> *mut pdf_obj {
     let mut data: *mut pdf_stream = ::core::ptr::null_mut::<pdf_stream>();
-    if stream.is_null() || (*stream).type_0 != 7 as ::core::ffi::c_int {
+    if stream.is_null() || (*stream).kind() != 7 as ::core::ffi::c_int {
         pdf_abort!(
             b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
                 as *const ::core::ffi::c_char,
             if !stream.is_null() {
-                (*stream).type_0
+                (*stream).kind()
             } else {
                 -(1 as ::core::ffi::c_int)
             },
@@ -2976,20 +2462,23 @@ pub unsafe extern "C-unwind" fn pdf_stream_dict(mut stream: *mut pdf_obj) -> *mu
             2099 as ::core::ffi::c_int,
         );
     }
-    data = (*stream).data as *mut pdf_stream;
-    return (*data).dict as *mut pdf_obj;
+    data = handles::stream(stream);
+    let Value::Stream(value) = (*stream).value else {
+        unreachable!();
+    };
+    return handles::pointer(Some(value.dictionary));
 }
 #[unsafe(export_name = "__pdf_impl_pdf_stream_dataptr")]
 pub unsafe extern "C-unwind" fn pdf_stream_dataptr(
     mut stream: *mut pdf_obj,
 ) -> *const ::core::ffi::c_void {
     let mut data: *mut pdf_stream = ::core::ptr::null_mut::<pdf_stream>();
-    if stream.is_null() || (*stream).type_0 != 7 as ::core::ffi::c_int {
+    if stream.is_null() || (*stream).kind() != 7 as ::core::ffi::c_int {
         pdf_abort!(
             b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
                 as *const ::core::ffi::c_char,
             if !stream.is_null() {
-                (*stream).type_0
+                (*stream).kind()
             } else {
                 -(1 as ::core::ffi::c_int)
             },
@@ -2997,18 +2486,18 @@ pub unsafe extern "C-unwind" fn pdf_stream_dataptr(
             2111 as ::core::ffi::c_int,
         );
     }
-    data = (*stream).data as *mut pdf_stream;
+    data = handles::stream(stream);
     return (*data).stream as *const ::core::ffi::c_void;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_stream_length")]
 pub unsafe extern "C-unwind" fn pdf_stream_length(mut stream: *mut pdf_obj) -> ::core::ffi::c_int {
     let mut data: *mut pdf_stream = ::core::ptr::null_mut::<pdf_stream>();
-    if stream.is_null() || (*stream).type_0 != 7 as ::core::ffi::c_int {
+    if stream.is_null() || (*stream).kind() != 7 as ::core::ffi::c_int {
         pdf_abort!(
             b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
                 as *const ::core::ffi::c_char,
             if !stream.is_null() {
-                (*stream).type_0
+                (*stream).kind()
             } else {
                 -(1 as ::core::ffi::c_int)
             },
@@ -3016,19 +2505,19 @@ pub unsafe extern "C-unwind" fn pdf_stream_length(mut stream: *mut pdf_obj) -> :
             2123 as ::core::ffi::c_int,
         );
     }
-    data = (*stream).data as *mut pdf_stream;
+    data = handles::stream(stream);
     return (*data).stream_length as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn set_objstm_data(
     mut objstm: *mut pdf_obj,
     mut data: *mut ::core::ffi::c_int,
 ) {
-    if objstm.is_null() || (*objstm).type_0 != 7 as ::core::ffi::c_int {
+    if objstm.is_null() || (*objstm).kind() != 7 as ::core::ffi::c_int {
         pdf_abort!(
             b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
                 as *const ::core::ffi::c_char,
             if !objstm.is_null() {
-                (*objstm).type_0
+                (*objstm).kind()
             } else {
                 -(1 as ::core::ffi::c_int)
             },
@@ -3036,16 +2525,16 @@ unsafe extern "C-unwind" fn set_objstm_data(
             2132 as ::core::ffi::c_int,
         );
     }
-    let ref mut fresh18 = (*((*objstm).data as *mut pdf_stream)).objstm_data;
+    let ref mut fresh18 = (*(handles::stream(objstm))).objstm_data;
     *fresh18 = data;
 }
 unsafe extern "C-unwind" fn get_objstm_data(mut objstm: *mut pdf_obj) -> *mut ::core::ffi::c_int {
-    if objstm.is_null() || (*objstm).type_0 != 7 as ::core::ffi::c_int {
+    if objstm.is_null() || (*objstm).kind() != 7 as ::core::ffi::c_int {
         pdf_abort!(
             b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
                 as *const ::core::ffi::c_char,
             if !objstm.is_null() {
-                (*objstm).type_0
+                (*objstm).kind()
             } else {
                 -(1 as ::core::ffi::c_int)
             },
@@ -3053,7 +2542,7 @@ unsafe extern "C-unwind" fn get_objstm_data(mut objstm: *mut pdf_obj) -> *mut ::
             2139 as ::core::ffi::c_int,
         );
     }
-    return (*((*objstm).data as *mut pdf_stream)).objstm_data;
+    return (*(handles::stream(objstm))).objstm_data;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_add_stream")]
 pub unsafe extern "C-unwind" fn pdf_add_stream(
@@ -3062,12 +2551,12 @@ pub unsafe extern "C-unwind" fn pdf_add_stream(
     mut length: ::core::ffi::c_int,
 ) {
     let mut data: *mut pdf_stream = ::core::ptr::null_mut::<pdf_stream>();
-    if stream.is_null() || (*stream).type_0 != 7 as ::core::ffi::c_int {
+    if stream.is_null() || (*stream).kind() != 7 as ::core::ffi::c_int {
         pdf_abort!(
             b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
                 as *const ::core::ffi::c_char,
             if !stream.is_null() {
-                (*stream).type_0
+                (*stream).kind()
             } else {
                 -(1 as ::core::ffi::c_int)
             },
@@ -3078,7 +2567,7 @@ pub unsafe extern "C-unwind" fn pdf_add_stream(
     if length < 1 as ::core::ffi::c_int {
         return;
     }
-    data = (*stream).data as *mut pdf_stream;
+    data = handles::stream(stream);
     if (*data).stream_length.wrapping_add(length as size_t) > (*data).max_length {
         (*data).max_length = (*data).max_length.wrapping_add(
             (length as ::core::ffi::c_uint).wrapping_add(STREAM_ALLOC_SIZE) as size_t,
@@ -4007,12 +3496,12 @@ pub unsafe extern "C-unwind" fn pdf_concat_stream(
 }
 unsafe extern "C-unwind" fn pdf_stream_uncompress(mut src: *mut pdf_obj) -> *mut pdf_obj {
     let mut dst: *mut pdf_obj = pdf_new_stream(0 as ::core::ffi::c_int);
-    if src.is_null() || (*src).type_0 != 7 as ::core::ffi::c_int {
+    if src.is_null() || (*src).kind() != 7 as ::core::ffi::c_int {
         pdf_abort!(
             b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
                 as *const ::core::ffi::c_char,
             if !src.is_null() {
-                (*src).type_0
+                (*src).kind()
             } else {
                 -(1 as ::core::ffi::c_int)
             },
@@ -4041,43 +3530,43 @@ unsafe extern "C-unwind" fn pdf_write_obj(mut p: *mut pdf_out, mut object: *mut 
         return;
     }
     if object.is_null()
-        || (*object).type_0 <= 0 as ::core::ffi::c_int
-        || (*object).type_0 > PDF_UNDEFINED
+        || (*object).kind() <= 0 as ::core::ffi::c_int
+        || (*object).kind() > PDF_UNDEFINED
         || !object.is_null() && pdf_obj_typeof(object) == PDF_UNDEFINED
     {
         pdf_abort!(
             b"pdf_write_obj: Invalid object, type = %d\n\0" as *const u8
                 as *const ::core::ffi::c_char,
-            (*object).type_0,
+            (*object).kind(),
         );
     }
-    match (*object).type_0 {
+    match (*object).kind() {
         PDF_BOOLEAN => {
-            write_boolean(p, (*object).data as *mut pdf_boolean);
+            write_boolean(p, boolean_data(object));
         }
         PDF_NUMBER => {
-            write_number(p, (*object).data as *mut pdf_number);
+            write_number(p, number_data(object));
         }
         PDF_STRING => {
-            write_string(p, (*object).data as *mut pdf_string);
+            write_string(p, string_data(object));
         }
         PDF_NAME => {
-            write_name(p, (*object).data as *mut pdf_name);
+            write_name(p, name_data(object));
         }
         PDF_ARRAY => {
-            write_array(p, (*object).data as *mut pdf_array);
+            write_array(p, array_data(object));
         }
         PDF_DICT => {
-            write_dict(p, (*object).data as *mut pdf_dict);
+            write_dict(p, dict_data(object));
         }
         PDF_STREAM => {
-            write_stream(p, (*object).data as *mut pdf_stream);
+            write_stream(p, handles::stream(object));
         }
         PDF_NULL => {
             write_null(p);
         }
         PDF_INDIRECT => {
-            write_indirect(p, (*object).data as *mut pdf_indirect);
+            write_indirect(p, object);
         }
         _ => {}
     };
@@ -4127,12 +3616,12 @@ unsafe extern "C-unwind" fn pdf_add_objstm(
 ) -> ::core::ffi::c_int {
     let mut data: *mut ::core::ffi::c_int = ::core::ptr::null_mut::<::core::ffi::c_int>();
     let mut pos: ::core::ffi::c_int = 0;
-    if objstm.is_null() || (*objstm).type_0 != 7 as ::core::ffi::c_int {
+    if objstm.is_null() || (*objstm).kind() != 7 as ::core::ffi::c_int {
         pdf_abort!(
             b"typecheck: Invalid object type: %d %d (line %d)\0" as *const u8
                 as *const ::core::ffi::c_char,
             if !objstm.is_null() {
-                (*objstm).type_0
+                (*objstm).kind()
             } else {
                 -(1 as ::core::ffi::c_int)
             },
@@ -4175,7 +3664,7 @@ unsafe extern "C-unwind" fn release_objstm(mut objstm: *mut pdf_obj) {
     let mut stream: *mut pdf_stream = ::core::ptr::null_mut::<pdf_stream>();
     let mut old_buf: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
     let mut old_length: size_t = 0;
-    stream = (*objstm).data as *mut pdf_stream;
+    stream = handles::stream(objstm);
     old_buf = (*stream).stream;
     old_length = (*stream).stream_length;
     (*stream).stream = new(
@@ -4276,7 +3765,7 @@ pub unsafe extern "C-unwind" fn pdf_pipeline_drain(mut all: ::core::ffi::c_int) 
                     result.length as ::core::ffi::c_int,
                 );
             } else {
-                let mut stream: *mut pdf_stream = (*object).data as *mut pdf_stream;
+                let mut stream: *mut pdf_stream = handles::stream(object);
                 let mut filters: *mut pdf_obj = pdf_lookup_dict(
                     (*stream).dict as *mut pdf_obj,
                     b"Filter\0" as *const u8 as *const ::core::ffi::c_char,
@@ -4356,8 +3845,7 @@ unsafe extern "C-unwind" fn flush_compression_batch(mut p: *mut pdf_out) {
     (*p).flushing_compression_batch = 1 as ::core::ffi::c_int;
     i = 0 as size_t;
     while i < count {
-        let mut stream: *mut pdf_stream =
-            (*(*p).compression_batch[i as usize]).data as *mut pdf_stream;
+        let mut stream: *mut pdf_stream = handles::stream((*p).compression_batch[i as usize]);
         let mut capacity: size_t = (*stream)
             .stream_length
             .wrapping_add((*stream).stream_length.wrapping_div(1000 as size_t))
@@ -4391,8 +3879,7 @@ unsafe extern "C-unwind" fn flush_compression_batch(mut p: *mut pdf_out) {
     }
     i = 0 as size_t;
     while i < count {
-        let mut stream_0: *mut pdf_stream =
-            (*(*p).compression_batch[i as usize]).data as *mut pdf_stream;
+        let mut stream_0: *mut pdf_stream = handles::stream((*p).compression_batch[i as usize]);
         let mut filters: *mut pdf_obj = pdf_lookup_dict(
             (*stream_0).dict as *mut pdf_obj,
             b"Filter\0" as *const u8 as *const ::core::ffi::c_char,
@@ -4452,14 +3939,14 @@ unsafe extern "C-unwind" fn defer_stream_compression(
     let mut type_0: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     if (*p).defer_compression == 0
         || (*p).flushing_compression_batch != 0
-        || (*object).type_0 != PDF_STREAM
+        || (*object).kind() != PDF_STREAM
         || (*object).label == 0
         || (*p).output.handle == INVALID_HANDLE
         || (*p).options.compression.level <= 0 as ::core::ffi::c_int
     {
         return 0 as ::core::ffi::c_int;
     }
-    stream = (*object).data as *mut pdf_stream;
+    stream = handles::stream(object);
     if tt_pdf_pipeline_active() != 0
         && (*stream)._flags & STREAM_COMPRESS as int32_t != 0
         && (*stream).stream_length > 0 as size_t
@@ -4507,7 +3994,7 @@ unsafe extern "C-unwind" fn defer_stream_compression(
                 parms,
             );
         }
-        (*object).refcount = 1 as ::core::ffi::c_int;
+        handles::retain(object);
         if tt_pdf_stream_submit(
             object as *mut ::core::ffi::c_void,
             (*stream).stream,
@@ -4564,7 +4051,7 @@ unsafe extern "C-unwind" fn defer_stream_compression(
     {
         flush_compression_batch(p);
     }
-    (*object).refcount = 1 as ::core::ffi::c_int;
+    handles::retain(object);
     let fresh19 = (*p).compression_batch_count;
     (*p).compression_batch_count = (*p).compression_batch_count.wrapping_add(1);
     (*p).compression_batch[fresh19 as usize] = object;
@@ -4585,24 +4072,23 @@ pub unsafe extern "C-unwind" fn pdf_release_obj(mut object: *mut pdf_obj) {
         return;
     }
     if object.is_null()
-        || (*object).type_0 <= 0 as ::core::ffi::c_int
-        || (*object).type_0 > PDF_UNDEFINED
-        || (*object).refcount <= 0 as ::core::ffi::c_int
+        || (*object).kind() <= 0 as ::core::ffi::c_int
+        || (*object).kind() > PDF_UNDEFINED
+        || handles::count(object) == 0
     {
         pdf_message!(
             b"\npdf_release_obj: object=%p, type=%d, refcount=%d\n\0" as *const u8
                 as *const ::core::ffi::c_char,
             object,
-            (*object).type_0,
-            (*object).refcount,
+            (*object).kind(),
+            handles::count(object),
         );
         pdf_abort!(
             b"pdf_release_obj:  Called with invalid object.\0" as *const u8
                 as *const ::core::ffi::c_char,
         );
     }
-    (*object).refcount -= 1 as ::core::ffi::c_int;
-    if (*object).refcount == 0 as ::core::ffi::c_int {
+    if handles::release(object) {
         if defer_stream_compression(p, object) != 0 {
             return;
         }
@@ -4644,36 +4130,26 @@ pub unsafe extern "C-unwind" fn pdf_release_obj(mut object: *mut pdf_obj) {
                 }
             }
         }
-        match (*object).type_0 {
-            PDF_BOOLEAN => {
-                release_boolean((*object).data as *mut pdf_obj);
+        let value = handles::retire(object);
+        match value {
+            Value::Array(values) => {
+                for id in values {
+                    pdf_release_obj(handles::pointer(id));
+                }
             }
-            PDF_NUMBER => {
-                release_number((*object).data as *mut pdf_number);
+            Value::Dictionary(entries) => {
+                for entry in entries {
+                    pdf_release_obj(handles::pointer(Some(entry.key)));
+                    pdf_release_obj(handles::pointer(entry.value));
+                }
             }
-            PDF_STRING => {
-                release_string((*object).data as *mut pdf_string);
+            Value::Stream(stream) => {
+                pdf_release_obj(handles::pointer(Some(stream.dictionary)));
+                let storage = handles::stream_storage(stream.storage);
+                release_stream(storage);
             }
-            PDF_NAME => {
-                release_name((*object).data as *mut pdf_name);
-            }
-            PDF_ARRAY => {
-                release_array((*object).data as *mut pdf_array);
-            }
-            PDF_DICT => {
-                release_dict((*object).data as *mut pdf_dict);
-            }
-            PDF_STREAM => {
-                release_stream((*object).data as *mut pdf_stream);
-            }
-            PDF_INDIRECT => {
-                release_indirect((*object).data as *mut pdf_indirect);
-            }
-            PDF_NULL | _ => {}
+            _ => {}
         }
-        (*object).type_0 = -(1 as ::core::ffi::c_int);
-        (*object).data = NULL;
-        free(object as *mut ::core::ffi::c_void);
     }
 }
 unsafe extern "C-unwind" fn tt_mfreadln(
@@ -4880,18 +4356,16 @@ pub unsafe extern "C-unwind" fn pdf_new_indirect(
     mut obj_num: uint32_t,
     mut obj_gen: uint16_t,
 ) -> *mut pdf_obj {
-    let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut indirect: *mut pdf_indirect = ::core::ptr::null_mut::<pdf_indirect>();
-    indirect = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_indirect>() as usize)
-        as uint32_t) as *mut pdf_indirect;
-    (*indirect).pf = pf;
-    (*indirect).obj = ::core::ptr::null_mut::<pdf_obj>();
-    (*indirect).label = obj_num;
-    (*indirect).generation = obj_gen;
-    result = pdf_new_obj(PDF_INDIRECT);
-    (*result).data = indirect as *mut ::core::ffi::c_void;
-    return result;
+    handles::allocate(Value::Indirect(IndirectReference {
+        source: if pf.is_null() {
+            None
+        } else {
+            Some(FileId(pf as usize))
+        },
+        target: None,
+        number: ObjectNumber(obj_num),
+        generation: obj_gen,
+    }))
 }
 unsafe extern "C-unwind" fn pdf_read_object(
     mut obj_num: uint32_t,
@@ -5223,63 +4697,50 @@ unsafe extern "C-unwind" fn pdf_new_ref(
         (*object).label,
         (*object).generation,
     );
-    let ref mut fresh21 = (*((*result).data as *mut pdf_indirect)).obj;
-    *fresh21 = object;
+    (*indirect_data(result)).target = handles::id(object);
     return result;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_deref_obj")]
 pub unsafe extern "C-unwind" fn pdf_deref_obj(mut obj: *mut pdf_obj) -> *mut pdf_obj {
-    let mut count: ::core::ffi::c_int = PDF_OBJ_MAX_DEPTH;
+    let mut count = PDF_OBJ_MAX_DEPTH;
     if !obj.is_null() {
         obj = pdf_link_obj(obj);
     }
-    while !obj.is_null() && pdf_obj_typeof(obj) == PDF_INDIRECT && {
+    while !obj.is_null() && pdf_obj_typeof(obj) == PDF_INDIRECT {
         count -= 1;
-        count != 0
-    } {
-        let mut pf: *mut pdf_file = (*((*obj).data as *mut pdf_indirect)).pf;
-        if !pf.is_null() {
-            let mut obj_num: uint32_t = (*((*obj).data as *mut pdf_indirect)).label;
-            let mut obj_gen: uint16_t = (*((*obj).data as *mut pdf_indirect)).generation;
+        if count == 0 {
+            pdf_abort!(c"Loop in object hierarchy detected. Broken PDF file?".as_ptr());
+        }
+        let reference = *indirect_data(obj);
+        if let Some(file) = reference.source {
             pdf_release_obj(obj);
-            obj = pdf_get_object(pf, obj_num, obj_gen);
+            obj = pdf_get_object(
+                file.0 as *mut pdf_file,
+                reference.number.0,
+                reference.generation,
+            );
         } else {
-            let mut p: *mut pdf_out = current_output();
-            let mut data: *mut pdf_indirect = (*obj).data as *mut pdf_indirect;
-            if *(*p)
-                .free_list
-                .offset((*data).label.wrapping_div(8 as uint32_t) as isize)
-                as ::core::ffi::c_int
-                & (1 as ::core::ffi::c_int)
-                    << (7 as uint32_t).wrapping_sub((*data).label.wrapping_rem(8 as uint32_t))
-                != 0
+            let output = current_output();
+            let number = reference.number.0;
+            if *(*output).free_list.add((number / 8) as usize) as i32 & (1 << (7 - number % 8)) != 0
             {
                 pdf_release_obj(obj);
-                return ::core::ptr::null_mut::<pdf_obj>();
-            } else {
-                let mut next_obj: *mut pdf_obj = (*((*obj).data as *mut pdf_indirect)).obj;
-                if next_obj.is_null() {
-                    pdf_abort!(
-                        b"Undefined object reference\0" as *const u8 as *const ::core::ffi::c_char,
-                    );
-                }
-                pdf_release_obj(obj);
-                obj = pdf_link_obj(next_obj);
+                return core::ptr::null_mut();
             }
+            let next = handles::pointer(reference.target.map(|id| handles::resolve(id)));
+            if next.is_null() {
+                pdf_abort!(c"Undefined object reference".as_ptr());
+            }
+            pdf_release_obj(obj);
+            obj = pdf_link_obj(next);
         }
-    }
-    if count == 0 {
-        pdf_abort!(
-            b"Loop in object hierarchy detected. Broken PDF file?\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
     }
     if !obj.is_null() && pdf_obj_typeof(obj) == PDF_NULL {
         pdf_release_obj(obj);
-        return ::core::ptr::null_mut::<pdf_obj>();
+        core::ptr::null_mut()
     } else {
-        return obj;
-    };
+        obj
+    }
 }
 unsafe extern "C-unwind" fn extend_xref(mut pf: *mut pdf_file, mut new_size: size_t) {
     let mut i: size_t = 0;
@@ -6138,9 +5599,11 @@ unsafe extern "C-unwind" fn import_dict(
 }
 unsafe extern "C-unwind" fn pdf_import_indirect(mut object: *mut pdf_obj) -> *mut pdf_obj {
     let mut p: *mut pdf_out = current_output();
-    let mut pf: *mut pdf_file = (*((*object).data as *mut pdf_indirect)).pf;
-    let mut obj_num: uint32_t = (*((*object).data as *mut pdf_indirect)).label;
-    let mut obj_gen: uint16_t = (*((*object).data as *mut pdf_indirect)).generation;
+    let mut pf = (*indirect_data(object))
+        .source
+        .map_or(core::ptr::null_mut(), |id| id.0 as *mut pdf_file);
+    let mut obj_num = (*indirect_data(object)).number.0;
+    let mut obj_gen = (*indirect_data(object)).generation;
     let mut ref_0: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     if pf.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
@@ -6193,8 +5656,7 @@ unsafe extern "C-unwind" fn pdf_import_indirect(mut object: *mut pdf_obj) -> *mu
                     (*imported).label,
                 );
             }
-            let ref mut fresh42 = (*((*ref_0).data as *mut pdf_indirect)).obj;
-            *fresh42 = imported;
+            (*indirect_data(ref_0)).target = handles::id(imported);
             (*imported).label = (*reserved).label;
             (*imported).generation = (*reserved).generation;
             (*reserved).label = 0 as uint32_t;
@@ -6213,7 +5675,7 @@ pub unsafe extern "C-unwind" fn pdf_import_object(mut object: *mut pdf_obj) -> *
     let mut i: size_t = 0;
     match pdf_obj_typeof(object) {
         PDF_INDIRECT => {
-            if !(*((*object).data as *mut pdf_indirect)).pf.is_null() {
+            if (*indirect_data(object)).source.is_some() {
                 imported = pdf_import_indirect(object);
             } else {
                 imported = pdf_link_obj(object);
@@ -6279,27 +5741,13 @@ pub unsafe extern "C-unwind" fn pdf_compare_reference(
     mut ref1: *mut pdf_obj,
     mut ref2: *mut pdf_obj,
 ) -> ::core::ffi::c_int {
-    let mut data1: *mut pdf_indirect = ::core::ptr::null_mut::<pdf_indirect>();
-    let mut data2: *mut pdf_indirect = ::core::ptr::null_mut::<pdf_indirect>();
-    if !(!ref1.is_null()
-        && pdf_obj_typeof(ref1) == 9 as ::core::ffi::c_int
-        && (!ref2.is_null() && pdf_obj_typeof(ref2) == 9 as ::core::ffi::c_int))
-        as ::core::ffi::c_int as ::core::ffi::c_long
-        != 0
-    {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"PDF_OBJ_INDIRECTTYPE(ref1) && PDF_OBJ_INDIRECTTYPE(ref2)\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
-    } else {
-    };
-    data1 = (*ref1).data as *mut pdf_indirect;
-    data2 = (*ref2).data as *mut pdf_indirect;
-    return ((*data1).pf != (*data2).pf
-        || (*data1).label != (*data2).label
-        || (*data1).generation as ::core::ffi::c_int != (*data2).generation as ::core::ffi::c_int)
-        as ::core::ffi::c_int;
+    let first = *indirect_data(ref1);
+    let second = *indirect_data(ref2);
+    i32::from(
+        first.source != second.source
+            || first.number != second.number
+            || first.generation != second.generation,
+    )
 }
 #[unsafe(export_name = "__pdf_impl_pdf_compare_object")]
 pub unsafe extern "C-unwind" fn pdf_compare_object(
@@ -7486,3 +6934,30 @@ unsafe fn document_state() -> *mut DocumentState {
             .pointer
     }
 }
+
+macro_rules! payload {
+    ($function:ident, $variant:ident, $type:ty) => {
+        unsafe fn $function(object: *mut pdf_obj) -> *mut $type {
+            if object.is_null() {
+                crate::backend::runtime::raise_error(crate::error::PdfError::new(
+                    crate::error::PdfErrorKind::InvalidState,
+                    c"Missing PDF object".to_owned(),
+                ));
+            }
+            match &mut (*object).value {
+                Value::$variant(value) => value,
+                _ => crate::backend::runtime::raise_error(crate::error::PdfError::new(
+                    crate::error::PdfErrorKind::MalformedInput,
+                    c"Invalid PDF object type".to_owned(),
+                )),
+            }
+        }
+    };
+}
+payload!(boolean_data, Boolean, Boolean);
+payload!(number_data, Number, Number);
+payload!(string_data, String, Bytes);
+payload!(name_data, Name, Bytes);
+payload!(array_data, Array, Vec<Option<ObjectId>>);
+payload!(dict_data, Dictionary, Vec<DictionaryEntry>);
+payload!(indirect_data, Indirect, IndirectReference);

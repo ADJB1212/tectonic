@@ -2,6 +2,219 @@ use super::{dpx_dpxcrypt::*, runtime};
 use std::{ffi::CStr, fmt::Write, mem::zeroed};
 
 #[test]
+fn object_containers_preserve_shared_identity_replacement_and_order() {
+    use super::dpx_pdfobj::*;
+    let _document = crate::compat::document::DocumentScope::new().unwrap();
+    unsafe {
+        let shared = pdf_new_number(12.0);
+        let array = pdf_new_array();
+        pdf_add_array(array, shared);
+        let dict = pdf_new_dict();
+        pdf_add_dict(dict, pdf_new_name(c"a".as_ptr()), pdf_link_obj(shared));
+        pdf_add_dict(dict, pdf_new_name(c"b".as_ptr()), array);
+        assert_eq!(
+            pdf_add_dict(dict, pdf_new_name(c"a".as_ptr()), pdf_new_number(42.0)),
+            1
+        );
+        assert_eq!(pdf_number_value(pdf_get_array(array, -1)), 12.0);
+        assert!(pdf_get_array(array, -2).is_null());
+        let keys = pdf_dict_keys(dict);
+        assert_eq!(CStr::from_ptr(pdf_name_value(pdf_get_array(keys, 0))), c"a");
+        assert_eq!(CStr::from_ptr(pdf_name_value(pdf_get_array(keys, 1))), c"b");
+        pdf_release_obj(keys);
+        for _ in 0..3000 {
+            pdf_add_array(array, pdf_new_null());
+        }
+        assert_eq!(pdf_get_array(array, 0), shared);
+        assert_eq!(pdf_number_value(shared), 12.0);
+        pdf_remove_dict(dict, c"a".as_ptr());
+        pdf_add_dict(dict, pdf_new_name(c"a".as_ptr()), pdf_new_boolean(1));
+        let keys = pdf_dict_keys(dict);
+        assert_eq!(CStr::from_ptr(pdf_name_value(pdf_get_array(keys, 0))), c"b");
+        assert_eq!(CStr::from_ptr(pdf_name_value(pdf_get_array(keys, 1))), c"a");
+        pdf_release_obj(keys);
+        pdf_release_obj(dict);
+        assert_eq!(pdf_obj_typeof(shared), PDF_OBJ_INVALID);
+        assert_eq!(pdf_obj_typeof(array), PDF_OBJ_INVALID);
+        assert_ne!(pdf_new_null(), shared);
+    }
+}
+
+#[test]
+fn indirect_cycles_have_no_ownership_cycle_and_released_targets_are_detected() {
+    use super::dpx_pdfobj::*;
+    let _document = crate::compat::document::DocumentScope::new().unwrap();
+    unsafe {
+        let first = pdf_new_dict();
+        let second = pdf_new_dict();
+        let external = pdf_ref_obj(first);
+        let next = pdf_ref_obj(second);
+        pdf_add_dict(first, pdf_new_name(c"Next".as_ptr()), next);
+        let back = pdf_ref_obj(first);
+        pdf_add_dict(second, pdf_new_name(c"Prev".as_ptr()), back);
+        let resolved = pdf_deref_obj(back);
+        assert_eq!(resolved, first);
+        pdf_release_obj(resolved);
+        pdf_release_obj(first);
+        assert!(pdf_deref_obj(external).is_null());
+        assert_eq!(pdf_obj_typeof(first), PDF_OBJ_INVALID);
+        assert_eq!(pdf_obj_typeof(second), PDF_DICT);
+        pdf_release_obj(second);
+        pdf_release_obj(external);
+        assert_eq!(pdf_obj_typeof(back), PDF_OBJ_INVALID);
+        assert_eq!(pdf_obj_typeof(next), PDF_OBJ_INVALID);
+    }
+}
+
+#[test]
+fn object_leases_preserve_queued_targets_until_the_last_owner_releases() {
+    use super::dpx_pdfobj::*;
+    let _document = crate::compat::document::DocumentScope::new().unwrap();
+    unsafe {
+        let contents = pdf_new_stream(0);
+        pdf_add_stream(contents, b"pending".as_ptr().cast(), 7);
+        let queued = pdf_link_obj(contents);
+        pdf_release_obj(contents);
+        assert_eq!(pdf_stream_length(queued), 7);
+        assert_eq!(
+            std::slice::from_raw_parts(pdf_stream_dataptr(queued).cast::<u8>(), 7),
+            b"pending"
+        );
+        pdf_release_obj(queued);
+        assert_eq!(pdf_obj_typeof(contents), PDF_OBJ_INVALID);
+    }
+}
+
+#[test]
+fn name_tree_sorting_preserves_binary_keys_and_c_table_queries() {
+    use super::{dpx_pdfnames::*, dpx_pdfobj::*};
+    let _document = crate::compat::document::DocumentScope::new().unwrap();
+    unsafe {
+        let mut names = pdf_new_name_tree();
+        for (index, key) in [b"z".as_slice(), b"a\0b", b"a\xff", b"a"]
+            .into_iter()
+            .enumerate()
+        {
+            let number = pdf_new_number(index as f64);
+            assert_eq!(
+                pdf_names_add_object(names, key.as_ptr().cast(), key.len() as i32, number),
+                0
+            );
+            assert_eq!(
+                pdf_names_lookup_object(names, key.as_ptr().cast(), key.len() as i32),
+                number
+            );
+        }
+        assert_eq!((*names).count, 4);
+        let mut count = 0;
+        let tree = pdf_names_create_tree(names, &mut count, std::ptr::null_mut());
+        assert_eq!(count, 4);
+        let entries = pdf_lookup_dict(tree, c"Names".as_ptr());
+        for (index, expected) in [b"a".as_slice(), b"a\0b", b"a\xff", b"z"]
+            .into_iter()
+            .enumerate()
+        {
+            let key = pdf_get_array(entries, index as i32 * 2);
+            assert_eq!(
+                std::slice::from_raw_parts(
+                    pdf_string_value(key).cast::<u8>(),
+                    pdf_string_length(key) as usize
+                ),
+                expected
+            );
+        }
+        pdf_release_obj(tree);
+        pdf_delete_name_tree(&mut names);
+        assert!(names.is_null());
+    }
+}
+
+#[test]
+fn name_reservations_resolve_after_definition_without_recycling_placeholder_handles() {
+    use super::{dpx_pdfnames::*, dpx_pdfobj::*};
+    let _document = crate::compat::document::DocumentScope::new().unwrap();
+    unsafe {
+        let mut names = pdf_new_name_tree();
+        let reference = pdf_names_reserve(names, b"later".as_ptr().cast(), 5);
+        let number = pdf_new_number(17.0);
+        assert_eq!(
+            pdf_names_add_object(names, b"later".as_ptr().cast(), 5, number),
+            0
+        );
+        let resolved = pdf_deref_obj(reference);
+        assert_eq!(resolved, number);
+        pdf_release_obj(resolved);
+        pdf_release_obj(reference);
+        pdf_delete_name_tree(&mut names);
+    }
+}
+
+#[test]
+fn resource_ids_and_references_survive_replacement_and_registry_growth() {
+    use super::{dpx_pdfobj::*, dpx_pdfresource::*};
+    let _document = crate::compat::document::DocumentScope::new().unwrap();
+    crate::compat::document::with_diagnostics(|state| state.quiet = 2);
+    unsafe {
+        pdf_init_resources();
+        let first = pdf_new_number(5.0);
+        let id = pdf_defineresource(c"Font".as_ptr(), c"Shared".as_ptr(), first, 0);
+        let old_reference = pdf_get_resource_reference(id);
+        let replacement = pdf_new_number(6.0);
+        assert_eq!(
+            pdf_defineresource(c"Font".as_ptr(), c"Shared".as_ptr(), replacement, 0),
+            id
+        );
+        assert_eq!(pdf_findresource(c"Font".as_ptr(), c"Shared".as_ptr()), id);
+        assert_eq!(pdf_obj_typeof(first), PDF_OBJ_INVALID);
+        assert!(pdf_deref_obj(old_reference).is_null());
+        let new_reference = pdf_get_resource_reference(id);
+        assert_ne!(pdf_compare_reference(old_reference, new_reference), 0);
+        for index in 1..300 {
+            let object = pdf_new_null();
+            assert_eq!(
+                pdf_defineresource(c"Font".as_ptr(), std::ptr::null(), object, 0),
+                index
+            );
+        }
+        let resolved = pdf_deref_obj(new_reference);
+        assert_eq!(resolved, replacement);
+        pdf_release_obj(resolved);
+        pdf_close_resources();
+        assert_eq!(pdf_obj_typeof(replacement), PDF_OBJ_INVALID);
+        assert_eq!(pdf_findresource(c"Font".as_ptr(), c"Shared".as_ptr()), -1);
+        pdf_release_obj(old_reference);
+        pdf_release_obj(new_reference);
+    }
+}
+
+#[test]
+fn invalid_object_operations_return_errors_and_leave_handles_usable() {
+    use super::dpx_pdfobj::*;
+    let _document = crate::compat::document::DocumentScope::new().unwrap();
+    unsafe {
+        let number = pdf_new_number(7.0);
+        assert_eq!(__pdf_entry_pdf_add_array(std::ptr::null_mut(), number), -1);
+        assert_eq!(
+            CStr::from_ptr(runtime::tt_pdf_last_error()),
+            c"Missing PDF object"
+        );
+        assert_eq!(
+            __pdf_entry_pdf_set_string(number, b"bad".as_ptr().cast_mut(), 3),
+            -1
+        );
+        assert_eq!(
+            CStr::from_ptr(runtime::tt_pdf_last_error()),
+            c"Invalid PDF object type"
+        );
+        assert_eq!(pdf_number_value(number), 7.0);
+        let array = pdf_new_array();
+        pdf_add_array(array, number);
+        assert_eq!(pdf_get_array(array, 0), number);
+        pdf_release_obj(array);
+    }
+}
+
+#[test]
 fn c_allocator_handoffs_remain_c_owned_across_document_completion() {
     let document = crate::compat::document::DocumentScope::new().unwrap();
     unsafe {
@@ -74,6 +287,15 @@ fn document_failure_reclaims_state_and_resets_abi_configuration_and_diagnostics(
             state.last_warning = true;
         });
         unsafe {
+            use super::dpx_pdfobj::*;
+            let cycle = pdf_new_array();
+            let dictionary = pdf_new_dict();
+            pdf_add_dict(
+                dictionary,
+                pdf_new_name(c"cycle".as_ptr()),
+                pdf_link_obj(cycle),
+            );
+            pdf_add_array(cycle, dictionary);
             super::dpx_dpxconf::dpx_conf.verbose_level = 7;
             super::dpx_dpxconf::dpx_conf.file.keep_cache = 1;
             super::dpx_cid::opt_flags_cidfont = 123;

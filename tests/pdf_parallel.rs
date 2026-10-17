@@ -14,6 +14,63 @@ use tectonic_status_base::NoopStatusBackend;
 
 mod util;
 
+#[test]
+fn imported_pdf_preserves_shared_resources_and_indirect_cycles_across_workers() {
+    let mut memory = MemoryIo::new(true);
+    let original = r"\nopagenumbers
+\special{pdf:obj @first << /Next @second >>}
+\special{pdf:obj @second << /Prev @first >>}
+\special{pdf:put @resources << /Cycle @first >>}
+Shared resources and cycles.\bye";
+    let (included, _, _) = compile_pdf(&mut memory, original, true);
+    memory.create_entry("included.pdf", included);
+    let source = r"\nopagenumbers
+\special{pdf:image width 100pt (included.pdf)}
+\special{pdf:image width 100pt (included.pdf)}
+Imported twice.\bye";
+    let mut expected: Option<Vec<u8>> = None;
+    for (workers, legacy) in [(Some(1), false), (None, false), (None, true)] {
+        let (pdf, _, _, _) =
+            compile_pdf_with_backend(&mut memory, source, true, workers, legacy, 1024);
+        check_cross_references(&pdf);
+        let streams = decoded_streams_with_objects(&pdf, true);
+        assert!(pdf.windows(6).any(|bytes| bytes == b"/Cycle"));
+        assert!(
+            streams
+                .iter()
+                .any(|stream| stream.windows(5).any(|bytes| bytes == b"/Next"))
+        );
+        assert!(
+            streams
+                .iter()
+                .any(|stream| stream.windows(5).any(|bytes| bytes == b"/Prev"))
+        );
+        if let Some(root) = std::env::var_os("TECTONIC_PDF_BENCH_DIR") {
+            let backend = if legacy {
+                "legacy"
+            } else if workers == Some(1) {
+                "one"
+            } else {
+                "auto"
+            };
+            std::fs::create_dir_all(&root).unwrap();
+            std::fs::write(
+                std::path::Path::new(&root).join(format!("imported-{backend}.pdf")),
+                &pdf,
+            )
+            .unwrap();
+        }
+        if let Some(expected) = &expected {
+            assert_eq!(decoded_streams(&pdf), decoded_streams(expected));
+            if !legacy {
+                assert!(pdf == *expected, "worker count changed imported PDF bytes");
+            }
+        } else {
+            expected = Some(pdf);
+        }
+    }
+}
+
 fn compile_pdf(
     memory: &mut MemoryIo,
     source: &str,
@@ -70,6 +127,10 @@ fn compile_pdf_with_backend(
 }
 
 fn decoded_streams(pdf: &[u8]) -> Vec<Vec<u8>> {
+    decoded_streams_with_objects(pdf, false)
+}
+
+fn decoded_streams_with_objects(pdf: &[u8], include_objects: bool) -> Vec<Vec<u8>> {
     let mut streams = Vec::new();
     let mut cursor = 0;
     while let Some(start) = pdf[cursor..]
@@ -84,7 +145,9 @@ fn decoded_streams(pdf: &[u8]) -> Vec<Vec<u8>> {
             + 5;
         let (dictionary, data) = read_stream(&pdf[object_start..]);
         cursor = start + 8 + data.len();
-        if dictionary.contains("/Type/ObjStm") || dictionary.contains("/Type/XRef") {
+        if !include_objects
+            && (dictionary.contains("/Type/ObjStm") || dictionary.contains("/Type/XRef"))
+        {
             continue;
         }
         let mut decoded = Vec::new();

@@ -22,6 +22,8 @@ static CURRENT_ENGINE_DOCUMENT: AtomicPtr<Document> = AtomicPtr::new(core::ptr::
 static TEST_DOCUMENT_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 pub(crate) struct Document {
+    pub(crate) objects: super::objects::State,
+    pub(crate) names: backend::dpx_pdfnames::Storage,
     pub(crate) backend: backend::DocumentStates,
     pub(crate) allocations: super::allocation::AllocationSet,
     pub(crate) diagnostics: diagnostics::State,
@@ -50,6 +52,8 @@ impl DocumentScope {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         let mut document = Box::new(Document {
+            objects: super::objects::State::default(),
+            names: backend::dpx_pdfnames::Storage::default(),
             backend: backend::DocumentStates::new(),
             allocations: super::allocation::AllocationSet::default(),
             diagnostics: diagnostics::State::default(),
