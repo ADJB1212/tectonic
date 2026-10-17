@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::backend::dpx_pdfdev::transform_info_clear;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -55,8 +56,6 @@ unsafe extern "C-unwind" {
         is_gz: ::core::ffi::c_int,
     ) -> rust_input_handle_t;
     fn ttstub_input_close(handle: rust_input_handle_t) -> ::core::ffi::c_int;
-    #[link_name = "__pdf_impl_transform_info_clear"]
-    fn transform_info_clear(info: *mut transform_info);
     fn spc_warn(spe: *mut spc_env, fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_spc_put_image"]
     fn spc_put_image(
@@ -137,40 +136,10 @@ pub const TTBC_FILE_FORMAT_CMAP: ttbc_file_format = 45;
 pub const TTBC_FILE_FORMAT_BST: ttbc_file_format = 7;
 pub const TTBC_FILE_FORMAT_BIB: ttbc_file_format = 6;
 pub const TTBC_FILE_FORMAT_AFM: ttbc_file_format = 4;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_tmatrix {
-    pub a: ::core::ffi::c_double,
-    pub b: ::core::ffi::c_double,
-    pub c: ::core::ffi::c_double,
-    pub d: ::core::ffi::c_double,
-    pub e: ::core::ffi::c_double,
-    pub f: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_rect {
-    pub llx: ::core::ffi::c_double,
-    pub lly: ::core::ffi::c_double,
-    pub urx: ::core::ffi::c_double,
-    pub ury: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_coord {
-    pub x: ::core::ffi::c_double,
-    pub y: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct transform_info {
-    pub width: ::core::ffi::c_double,
-    pub height: ::core::ffi::c_double,
-    pub depth: ::core::ffi::c_double,
-    pub matrix: pdf_tmatrix,
-    pub bbox: pdf_rect,
-    pub flags: ::core::ffi::c_int,
-}
+use crate::compat::renderer::pdf_coord;
+use crate::compat::renderer::pdf_rect;
+use crate::compat::renderer::pdf_tmatrix;
+use crate::compat::renderer::transform_info;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct spc_env {

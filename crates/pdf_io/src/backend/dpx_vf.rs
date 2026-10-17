@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::numbers::scaled_fixword as sqxfw;
 unsafe extern "C-unwind" {
     fn strcmp(
         __s1: *const ::core::ffi::c_char,
@@ -63,8 +64,6 @@ unsafe extern "C-unwind" {
         type_0: *const ::core::ffi::c_char,
         name: *const ::core::ffi::c_char,
     ) -> uint32_t;
-    #[link_name = "__pdf_impl_sqxfw"]
-    fn sqxfw(sq: int32_t, fw: fixword) -> int32_t;
     static mut dpx_conf: _dpx_conf;
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_dvi_vf_init"]

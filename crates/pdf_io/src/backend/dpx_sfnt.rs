@@ -145,10 +145,7 @@ pub unsafe extern "C-unwind" fn sfnt_open(mut handle: rust_input_handle_t) -> *m
     let mut sfont: *mut sfnt = ::core::ptr::null_mut::<sfnt>();
     let mut type_0: SFNT_ULONG = 0;
     if (handle == 0) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"handle\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!("assertion failed: handle");
     } else {
     };
     crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
@@ -189,10 +186,7 @@ pub unsafe extern "C-unwind" fn dfont_open(
     let mut types_num: USHORT = 0;
     let mut i: USHORT = 0;
     if (handle == 0) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"handle\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!("assertion failed: handle");
     } else {
     };
     crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
@@ -226,10 +220,7 @@ pub unsafe extern "C-unwind" fn dfont_open(
     }
     crate::backend::runtime::input_seek((*sfont).handle, types_pos as ssize_t, SEEK_SET);
     if index > types_num as ::core::ffi::c_int {
-        pdf_abort!(
-            b"Invalid index %d for dfont.\0" as *const u8 as *const ::core::ffi::c_char,
-            index,
-        );
+        pdf_abort!("Invalid index {index} for dfont.");
     }
     i = 0 as USHORT;
     while i as ::core::ffi::c_int <= types_num as ::core::ffi::c_int {
@@ -355,10 +346,7 @@ pub unsafe extern "C-unwind" fn sfnt_set_table(
     let mut td: *mut sfnt_table_directory = ::core::ptr::null_mut::<sfnt_table_directory>();
     let mut idx: ::core::ffi::c_int = 0;
     if sfont.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"sfont\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!("assertion failed: sfont");
     } else {
     };
     td = (*sfont).directory;
@@ -394,10 +382,7 @@ pub unsafe extern "C-unwind" fn sfnt_find_table_len(
     let mut td: *mut sfnt_table_directory = ::core::ptr::null_mut::<sfnt_table_directory>();
     let mut idx: ::core::ffi::c_int = 0;
     if !(!sfont.is_null() && !tag.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"sfont && tag\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!("assertion failed: sfont && tag");
     } else {
     };
     td = (*sfont).directory;
@@ -418,10 +403,7 @@ pub unsafe extern "C-unwind" fn sfnt_find_table_pos(
     let mut td: *mut sfnt_table_directory = ::core::ptr::null_mut::<sfnt_table_directory>();
     let mut idx: ::core::ffi::c_int = 0;
     if !(!sfont.is_null() && !tag.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"sfont && tag\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!("assertion failed: sfont && tag");
     } else {
     };
     td = (*sfont).directory;
@@ -440,10 +422,7 @@ pub unsafe extern "C-unwind" fn sfnt_locate_table(
 ) -> SFNT_ULONG {
     let mut offset: SFNT_ULONG = 0;
     if !(!sfont.is_null() && !tag.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"sfont && tag\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!("assertion failed: sfont && tag");
     } else {
     };
     offset = sfnt_find_table_pos(sfont, tag);
@@ -461,29 +440,30 @@ pub unsafe extern "C-unwind" fn sfnt_read_table_directory(
     let mut td: *mut sfnt_table_directory = ::core::ptr::null_mut::<sfnt_table_directory>();
     let mut i: ::core::ffi::c_uint = 0;
     if sfont.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"sfont\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!("assertion failed: sfont");
     } else {
     };
     if !(*sfont).directory.is_null() {
         release_directory((*sfont).directory);
+        (*sfont).directory = core::ptr::null_mut();
     }
     td = new((1 as ::core::ffi::c_int as uint32_t as usize)
         .wrapping_mul(::core::mem::size_of::<sfnt_table_directory>() as usize)
         as uint32_t) as *mut sfnt_table_directory;
+    core::ptr::write_bytes(td, 0, 1);
     (*sfont).directory = td;
     if ((*sfont).handle == 0) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"sfont->handle\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!("assertion failed: sfont->handle");
     } else {
     };
     crate::backend::runtime::input_seek((*sfont).handle, offset as ssize_t, SEEK_SET);
-    let header =
-        crate::sfnt::DirectoryHeader::parse(&read_directory_bytes::<12>((*sfont).handle)).unwrap();
+    let mut input = crate::compat::input::DirectoryInput {
+        handle: (*sfont).handle,
+    };
+    let header = crate::backend::runtime::legacy_result(crate::sfnt::DirectoryHeader::read(
+        &mut input,
+        u64::from(offset),
+    ));
     (*td).version = header.version;
     (*td).num_tables = header.num_tables;
     (*td).search_range = header.search_range;
@@ -495,10 +475,13 @@ pub unsafe extern "C-unwind" fn sfnt_read_table_directory(
     (*td).tables = new(((*td).num_tables as uint32_t as usize)
         .wrapping_mul(::core::mem::size_of::<sfnt_table>() as usize)
         as uint32_t) as *mut sfnt_table;
+    core::ptr::write_bytes((*td).tables, 0, usize::from((*td).num_tables));
     i = 0 as ::core::ffi::c_uint;
     while i < (*td).num_tables as ::core::ffi::c_uint {
-        let record =
-            crate::sfnt::TableRecord::parse(&read_directory_bytes::<16>((*sfont).handle)).unwrap();
+        let record = crate::backend::runtime::legacy_result(crate::sfnt::TableRecord::read(
+            &mut input,
+            u64::from(offset) + 12 + u64::from(i) * 16,
+        ));
         (*(*td).tables.offset(i as isize)).tag = record.tag.map(|byte| byte as ::core::ffi::c_char);
         (*(*td).tables.offset(i as isize)).check_sum = record.checksum;
         (*(*td).tables.offset(i as isize)).offset = record.offset.wrapping_add((*sfont).offset);
@@ -510,13 +493,6 @@ pub unsafe extern "C-unwind" fn sfnt_read_table_directory(
     }
     (*td).num_kept_tables = 0 as USHORT;
     return 0 as ::core::ffi::c_int;
-}
-unsafe fn read_directory_bytes<const N: usize>(handle: rust_input_handle_t) -> [u8; N] {
-    let mut bytes = [0; N];
-    for byte in &mut bytes {
-        *byte = unsafe { super::dpx_numbers::tt_get_unsigned_byte(handle) };
-    }
-    bytes
 }
 #[unsafe(export_name = "__pdf_impl_sfnt_require_table")]
 pub unsafe extern "C-unwind" fn sfnt_require_table(
@@ -530,10 +506,7 @@ pub unsafe extern "C-unwind" fn sfnt_require_table(
         as ::core::ffi::c_long
         != 0
     {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"sfont && sfont->directory\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!("assertion failed: sfont && sfont->directory");
     } else {
     };
     td = (*sfont).directory;
@@ -571,10 +544,7 @@ pub unsafe extern "C-unwind" fn sfnt_create_FontFile_stream(mut sfont: *mut sfnt
         as ::core::ffi::c_long
         != 0
     {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"sfont && sfont->directory\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!("assertion failed: sfont && sfont->directory");
     } else {
     };
     stream = pdf_new_stream(STREAM_COMPRESS);

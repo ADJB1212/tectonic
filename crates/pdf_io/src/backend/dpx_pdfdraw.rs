@@ -26,6 +26,9 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::backend::dpx_pdfdev::{
+    pdf_dev_get_param, pdf_sprint_coord, pdf_sprint_length, pdf_sprint_matrix, pdf_sprint_rect,
+};
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -86,22 +89,6 @@ unsafe extern "C-unwind" {
         buff_len: size_t,
         mask: ::core::ffi::c_char,
     ) -> ::core::ffi::c_int;
-    #[link_name = "__pdf_impl_pdf_sprint_matrix"]
-    fn pdf_sprint_matrix(
-        buf: *mut ::core::ffi::c_char,
-        p: *const pdf_tmatrix,
-    ) -> ::core::ffi::c_int;
-    #[link_name = "__pdf_impl_pdf_sprint_rect"]
-    fn pdf_sprint_rect(buf: *mut ::core::ffi::c_char, p: *const pdf_rect) -> ::core::ffi::c_int;
-    #[link_name = "__pdf_impl_pdf_sprint_coord"]
-    fn pdf_sprint_coord(buf: *mut ::core::ffi::c_char, p: *const pdf_coord) -> ::core::ffi::c_int;
-    #[link_name = "__pdf_impl_pdf_sprint_length"]
-    fn pdf_sprint_length(
-        buf: *mut ::core::ffi::c_char,
-        value: ::core::ffi::c_double,
-    ) -> ::core::ffi::c_int;
-    #[link_name = "__pdf_impl_pdf_dev_get_param"]
-    fn pdf_dev_get_param(param_type: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_reset_fonts"]
     fn pdf_dev_reset_fonts(newpage: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_graphics_mode"]
@@ -149,30 +136,9 @@ pub struct pdf_color {
     pub values: [::core::ffi::c_double; 32],
     pub pattern_id: ::core::ffi::c_int,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_tmatrix {
-    pub a: ::core::ffi::c_double,
-    pub b: ::core::ffi::c_double,
-    pub c: ::core::ffi::c_double,
-    pub d: ::core::ffi::c_double,
-    pub e: ::core::ffi::c_double,
-    pub f: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_rect {
-    pub llx: ::core::ffi::c_double,
-    pub lly: ::core::ffi::c_double,
-    pub urx: ::core::ffi::c_double,
-    pub ury: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_coord {
-    pub x: ::core::ffi::c_double,
-    pub y: ::core::ffi::c_double,
-}
+use crate::compat::renderer::pdf_coord;
+use crate::compat::renderer::pdf_rect;
+use crate::compat::renderer::pdf_tmatrix;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct dpx_stack {
@@ -2074,11 +2040,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_idtransform(
         },
     );
 }
-#[unsafe(export_name = "__pdf_impl_pdf_dev_transform")]
-pub unsafe extern "C-unwind" fn pdf_dev_transform(
-    mut p: *mut pdf_coord,
-    mut M: *const pdf_tmatrix,
-) {
+pub(crate) unsafe fn pdf_dev_transform(mut p: *mut pdf_coord, mut M: *const pdf_tmatrix) {
     let mut gss: *mut dpx_stack = &raw mut gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
     let mut CTM: *mut pdf_tmatrix = &raw mut (*gs).matrix;
@@ -2771,19 +2733,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_idtransform(
         Err(()) => -1,
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_transform(
-    mut p: *mut pdf_coord,
-    mut M: *const pdf_tmatrix,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { pdf_dev_transform(p, M) }) {
-        Ok(value) => {
-            let _ = value;
-            0
-        }
-        Err(()) => -1,
-    }
-}
+
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_itransform(
     mut p: *mut pdf_coord,

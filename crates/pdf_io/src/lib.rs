@@ -13,14 +13,19 @@ compile_error!(
 #[macro_use]
 mod backend;
 mod byte_cursor;
+mod compat;
 mod compress;
+mod diagnostics;
+mod error;
 mod fontmap;
+mod input;
 mod line;
 mod numbers;
 mod options;
 mod pipeline;
 mod predictor;
 mod preflight;
+mod renderer;
 mod sfnt;
 mod tfm;
 mod unicode;

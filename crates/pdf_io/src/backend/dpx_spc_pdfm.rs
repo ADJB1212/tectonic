@@ -26,6 +26,9 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::backend::dpx_pdfdev::{pdf_sprint_matrix, transform_info_clear};
+use crate::backend::dpx_pdfdraw::pdf_dev_transform;
+use crate::unicode::is_valid as UC_is_valid;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -133,13 +136,6 @@ unsafe extern "C-unwind" {
     fn pdf_color_pop();
     #[link_name = "__pdf_impl_pdf_color_get_current"]
     fn pdf_color_get_current(sc: *mut *mut pdf_color, fc: *mut *mut pdf_color);
-    #[link_name = "__pdf_impl_transform_info_clear"]
-    fn transform_info_clear(info: *mut transform_info);
-    #[link_name = "__pdf_impl_pdf_sprint_matrix"]
-    fn pdf_sprint_matrix(
-        buf: *mut ::core::ffi::c_char,
-        p: *const pdf_tmatrix,
-    ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_reset_color"]
     fn pdf_dev_reset_color(force: ::core::ffi::c_int);
     fn spc_warn(spe: *mut spc_env, fmt: *const ::core::ffi::c_char, ...);
@@ -301,8 +297,6 @@ unsafe extern "C-unwind" {
     fn pdf_doc_set_bgcolor(color: *const pdf_color);
     #[link_name = "__pdf_impl_pdf_dev_concat"]
     fn pdf_dev_concat(M: *const pdf_tmatrix) -> ::core::ffi::c_int;
-    #[link_name = "__pdf_impl_pdf_dev_transform"]
-    fn pdf_dev_transform(p: *mut pdf_coord, M: *const pdf_tmatrix);
     #[link_name = "__pdf_impl_pdf_dev_gsave"]
     fn pdf_dev_gsave() -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_grestore"]
@@ -409,8 +403,6 @@ unsafe extern "C-unwind" {
         args: *mut spc_arg,
         defaultcolor: *mut pdf_color,
     ) -> ::core::ffi::c_int;
-    #[link_name = "__pdf_impl_UC_is_valid"]
-    fn UC_is_valid(ucv: int32_t) -> bool;
     #[link_name = "__pdf_impl_UC_UTF8_is_valid_string"]
     fn UC_UTF8_is_valid_string(
         p: *const ::core::ffi::c_uchar,
@@ -482,40 +474,10 @@ pub struct pdf_color {
     pub values: [::core::ffi::c_double; 32],
     pub pattern_id: ::core::ffi::c_int,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_tmatrix {
-    pub a: ::core::ffi::c_double,
-    pub b: ::core::ffi::c_double,
-    pub c: ::core::ffi::c_double,
-    pub d: ::core::ffi::c_double,
-    pub e: ::core::ffi::c_double,
-    pub f: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_rect {
-    pub llx: ::core::ffi::c_double,
-    pub lly: ::core::ffi::c_double,
-    pub urx: ::core::ffi::c_double,
-    pub ury: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_coord {
-    pub x: ::core::ffi::c_double,
-    pub y: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct transform_info {
-    pub width: ::core::ffi::c_double,
-    pub height: ::core::ffi::c_double,
-    pub depth: ::core::ffi::c_double,
-    pub matrix: pdf_tmatrix,
-    pub bbox: pdf_rect,
-    pub flags: ::core::ffi::c_int,
-}
+use crate::compat::renderer::pdf_coord;
+use crate::compat::renderer::pdf_rect;
+use crate::compat::renderer::pdf_tmatrix;
+use crate::compat::renderer::transform_info;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct spc_env {

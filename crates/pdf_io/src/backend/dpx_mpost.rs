@@ -26,6 +26,10 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::backend::dpx_pdfdev::{
+    dev_unit_dviunit, pdf_dev_get_dirmode, pdf_dev_get_param, pdf_dev_set_dirmode,
+    pdf_dev_set_param, transform_info_clear,
+};
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -123,10 +127,6 @@ unsafe extern "C-unwind" {
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_color_graycolor"]
     fn pdf_color_graycolor(color: *mut pdf_color, g: ::core::ffi::c_double) -> ::core::ffi::c_int;
-    #[link_name = "__pdf_impl_transform_info_clear"]
-    fn transform_info_clear(info: *mut transform_info);
-    #[link_name = "__pdf_impl_dev_unit_dviunit"]
-    fn dev_unit_dviunit() -> ::core::ffi::c_double;
     #[link_name = "__pdf_impl_pdf_dev_set_string"]
     fn pdf_dev_set_string(
         xpos: spt_t,
@@ -151,14 +151,6 @@ unsafe extern "C-unwind" {
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_get_font_wmode"]
     fn pdf_dev_get_font_wmode(font_id: ::core::ffi::c_int) -> ::core::ffi::c_int;
-    #[link_name = "__pdf_impl_pdf_dev_get_dirmode"]
-    fn pdf_dev_get_dirmode() -> ::core::ffi::c_int;
-    #[link_name = "__pdf_impl_pdf_dev_set_dirmode"]
-    fn pdf_dev_set_dirmode(dir_mode: ::core::ffi::c_int);
-    #[link_name = "__pdf_impl_pdf_dev_get_param"]
-    fn pdf_dev_get_param(param_type: ::core::ffi::c_int) -> ::core::ffi::c_int;
-    #[link_name = "__pdf_impl_pdf_dev_set_param"]
-    fn pdf_dev_set_param(param_type: ::core::ffi::c_int, value: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_graphics_mode"]
     fn graphics_mode();
     #[link_name = "__pdf_impl_pdf_doc_current_page_number"]
@@ -404,40 +396,10 @@ pub struct pdf_color {
     pub pattern_id: ::core::ffi::c_int,
 }
 pub type spt_t = ::core::ffi::c_int;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_tmatrix {
-    pub a: ::core::ffi::c_double,
-    pub b: ::core::ffi::c_double,
-    pub c: ::core::ffi::c_double,
-    pub d: ::core::ffi::c_double,
-    pub e: ::core::ffi::c_double,
-    pub f: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_rect {
-    pub llx: ::core::ffi::c_double,
-    pub lly: ::core::ffi::c_double,
-    pub urx: ::core::ffi::c_double,
-    pub ury: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_coord {
-    pub x: ::core::ffi::c_double,
-    pub y: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct transform_info {
-    pub width: ::core::ffi::c_double,
-    pub height: ::core::ffi::c_double,
-    pub depth: ::core::ffi::c_double,
-    pub matrix: pdf_tmatrix,
-    pub bbox: pdf_rect,
-    pub flags: ::core::ffi::c_int,
-}
+use crate::compat::renderer::pdf_coord;
+use crate::compat::renderer::pdf_rect;
+use crate::compat::renderer::pdf_tmatrix;
+use crate::compat::renderer::transform_info;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct mp_font {

@@ -172,30 +172,9 @@ pub struct pdf_color {
     pub values: [::core::ffi::c_double; 32],
     pub pattern_id: ::core::ffi::c_int,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_tmatrix {
-    pub a: ::core::ffi::c_double,
-    pub b: ::core::ffi::c_double,
-    pub c: ::core::ffi::c_double,
-    pub d: ::core::ffi::c_double,
-    pub e: ::core::ffi::c_double,
-    pub f: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_rect {
-    pub llx: ::core::ffi::c_double,
-    pub lly: ::core::ffi::c_double,
-    pub urx: ::core::ffi::c_double,
-    pub ury: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_coord {
-    pub x: ::core::ffi::c_double,
-    pub y: ::core::ffi::c_double,
-}
+use crate::compat::renderer::pdf_coord;
+use crate::compat::renderer::pdf_rect;
+use crate::compat::renderer::pdf_tmatrix;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct spc_env {

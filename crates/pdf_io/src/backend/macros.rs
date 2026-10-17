@@ -1,4 +1,7 @@
 macro_rules! pdf_format {
+    ($format:literal $(, $arg:expr)* $(,)?) => {
+        crate::diagnostics::format_message(format_args!($format $(, $arg)*))
+    };
     ($format:expr $(, $arg:expr)* $(,)?) => {{
         let mut __tectonic_pdf_message_buffer = [0u8; 1024];
         unsafe {
@@ -17,6 +20,10 @@ macro_rules! pdf_warning {
     ($($arg:expr),* $(,)?) => { pdf_log!(true, $($arg),*) };
 }
 macro_rules! pdf_log {
+    ($warning:expr, $format:literal $(, $arg:expr)* $(,)?) => {{
+        let message = crate::diagnostics::format_message(format_args!($format $(, $arg)*));
+        crate::backend::runtime::emit(&message, $warning);
+    }};
     ($warning:expr, $format:expr $(, $arg:expr)* $(,)?) => {{
         let mut __tectonic_pdf_message_buffer = [0u8; 1024];
         unsafe {

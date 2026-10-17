@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::backend::dpx_pdfdev::pdf_sprint_number;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -107,11 +108,6 @@ unsafe extern "C-unwind" {
         name: *const ::core::ffi::c_char,
     ) -> uint32_t;
     static mut work_buffer: [::core::ffi::c_char; 0];
-    #[link_name = "__pdf_impl_pdf_sprint_number"]
-    fn pdf_sprint_number(
-        buf: *mut ::core::ffi::c_char,
-        value: ::core::ffi::c_double,
-    ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_encoding_used_by_type3"]
     fn pdf_encoding_used_by_type3(enc_id: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_encoding_get_name"]
@@ -184,14 +180,7 @@ pub struct C2RustUnnamed_0 {
     pub descendant: ::core::ffi::c_int,
     pub wmode: ::core::ffi::c_int,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_rect {
-    pub llx: ::core::ffi::c_double,
-    pub lly: ::core::ffi::c_double,
-    pub urx: ::core::ffi::c_double,
-    pub ury: ::core::ffi::c_double,
-}
+use crate::compat::renderer::pdf_rect;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct pk_header_ {

@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::backend::dpx_pdfdev::pdf_dev_get_param;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -181,8 +182,6 @@ unsafe extern "C-unwind" {
     );
     #[link_name = "__pdf_impl_pdf_close_device"]
     fn pdf_close_device();
-    #[link_name = "__pdf_impl_pdf_dev_get_param"]
-    fn pdf_dev_get_param(param_type: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_reset_fonts"]
     fn pdf_dev_reset_fonts(newpage: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_dev_reset_color"]
@@ -360,24 +359,8 @@ pub struct pdf_color {
     pub values: [::core::ffi::c_double; 32],
     pub pattern_id: ::core::ffi::c_int,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_tmatrix {
-    pub a: ::core::ffi::c_double,
-    pub b: ::core::ffi::c_double,
-    pub c: ::core::ffi::c_double,
-    pub d: ::core::ffi::c_double,
-    pub e: ::core::ffi::c_double,
-    pub f: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_rect {
-    pub llx: ::core::ffi::c_double,
-    pub lly: ::core::ffi::c_double,
-    pub urx: ::core::ffi::c_double,
-    pub ury: ::core::ffi::c_double,
-}
+use crate::compat::renderer::pdf_rect;
+use crate::compat::renderer::pdf_tmatrix;
 pub type pdf_page_boundary = ::core::ffi::c_uint;
 pub const pdf_page_boundary_bleedbox: pdf_page_boundary = 5;
 pub const pdf_page_boundary_trimbox: pdf_page_boundary = 4;

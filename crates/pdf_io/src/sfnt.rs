@@ -1,6 +1,8 @@
 //! Checked SFNT directory primitives. Table ownership remains with the caller.
 
 use crate::byte_cursor::{ByteCursor, ReadError};
+use crate::error::{PdfError, PdfErrorKind};
+use std::io::Read;
 
 #[derive(Debug, Eq, PartialEq)]
 pub(crate) struct DirectoryHeader {
@@ -12,6 +14,16 @@ pub(crate) struct DirectoryHeader {
 }
 
 impl DirectoryHeader {
+    pub(crate) fn read(input: &mut impl Read, offset: u64) -> Result<Self, PdfError> {
+        let bytes = crate::input::read_array::<12>(input, offset)?;
+        Self::parse(&bytes).map_err(|_| {
+            PdfError::new(
+                PdfErrorKind::MalformedInput,
+                c"File ended prematurely\n".to_owned(),
+            )
+            .at(offset)
+        })
+    }
     pub(crate) fn parse(bytes: &[u8]) -> Result<Self, ReadError> {
         let mut cursor = ByteCursor::new(bytes);
         Ok(Self {
@@ -33,6 +45,16 @@ pub(crate) struct TableRecord {
 }
 
 impl TableRecord {
+    pub(crate) fn read(input: &mut impl Read, offset: u64) -> Result<Self, PdfError> {
+        let bytes = crate::input::read_array::<16>(input, offset)?;
+        Self::parse(&bytes).map_err(|_| {
+            PdfError::new(
+                PdfErrorKind::MalformedInput,
+                c"File ended prematurely\n".to_owned(),
+            )
+            .at(offset)
+        })
+    }
     pub(crate) fn parse(bytes: &[u8]) -> Result<Self, ReadError> {
         let mut cursor = ByteCursor::new(bytes);
         Ok(Self {
@@ -59,6 +81,21 @@ pub(crate) fn checksum(bytes: &[u8]) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn typed_directory_reads_report_truncated_offsets_and_allow_retry() {
+        for length in 0..12 {
+            let error = DirectoryHeader::read(&mut &vec![0; length][..], 100).unwrap_err();
+            assert_eq!(error.kind, PdfErrorKind::MalformedInput);
+            assert_eq!(error.offset, Some(100 + length as u64));
+        }
+        for length in 0..16 {
+            let error = TableRecord::read(&mut &vec![0; length][..], 112).unwrap_err();
+            assert_eq!(error.offset, Some(112 + length as u64));
+        }
+        assert!(DirectoryHeader::read(&mut &[0; 12][..], 0).is_ok());
+        assert!(TableRecord::read(&mut &[0; 16][..], 12).is_ok());
+    }
 
     #[test]
     fn parses_directory_fields_without_alignment_assumptions() {

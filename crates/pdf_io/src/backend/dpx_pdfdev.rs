@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::backend::dpx_pdfdraw::pdf_dev_transform;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -135,8 +136,6 @@ unsafe extern "C-unwind" {
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_concat"]
     fn pdf_dev_concat(M: *const pdf_tmatrix) -> ::core::ffi::c_int;
-    #[link_name = "__pdf_impl_pdf_dev_transform"]
-    fn pdf_dev_transform(p: *mut pdf_coord, M: *const pdf_tmatrix);
     #[link_name = "__pdf_impl_pdf_dev_gsave"]
     fn pdf_dev_gsave() -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_grestore"]
@@ -164,33 +163,7 @@ unsafe extern "C-unwind" {
         r: *mut pdf_rect,
         p: *mut transform_info,
     ) -> ::core::ffi::c_int;
-    fn tt_pdf_page_begin(
-        unit: ::core::ffi::c_double,
-        precision: ::core::ffi::c_int,
-        autorotate: ::core::ffi::c_int,
-        direction: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
-    fn tt_pdf_page_text(
-        font: *const tt_pdf_render_font,
-        id: ::core::ffi::c_int,
-        x: int32_t,
-        y: int32_t,
-        width: int32_t,
-        data: *const ::core::ffi::c_uchar,
-        length: size_t,
-    );
-    fn tt_pdf_page_command(
-        kind: ::core::ffi::c_int,
-        x: int32_t,
-        y: int32_t,
-        width: int32_t,
-        height: int32_t,
-    );
-    fn tt_pdf_render_output(
-        output: *mut ::core::ffi::c_void,
-        data: *const ::core::ffi::c_char,
-        length: size_t,
-    );
+
 }
 pub type __darwin_size_t = usize;
 pub type size_t = __darwin_size_t;
@@ -274,52 +247,12 @@ pub struct dev_param {
     pub autorotate: ::core::ffi::c_int,
     pub colormode: ::core::ffi::c_int,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_tmatrix {
-    pub a: ::core::ffi::c_double,
-    pub b: ::core::ffi::c_double,
-    pub c: ::core::ffi::c_double,
-    pub d: ::core::ffi::c_double,
-    pub e: ::core::ffi::c_double,
-    pub f: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_rect {
-    pub llx: ::core::ffi::c_double,
-    pub lly: ::core::ffi::c_double,
-    pub urx: ::core::ffi::c_double,
-    pub ury: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_coord {
-    pub x: ::core::ffi::c_double,
-    pub y: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct transform_info {
-    pub width: ::core::ffi::c_double,
-    pub height: ::core::ffi::c_double,
-    pub depth: ::core::ffi::c_double,
-    pub matrix: pdf_tmatrix,
-    pub bbox: pdf_rect,
-    pub flags: ::core::ffi::c_int,
-}
+use crate::compat::renderer::pdf_coord;
+use crate::compat::renderer::pdf_rect;
+use crate::compat::renderer::pdf_tmatrix;
+use crate::compat::renderer::transform_info;
 pub const TT_PDF_GRAPHICS_MODE: C2RustUnnamed_4 = 3;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct tt_pdf_render_font {
-    pub name: [::core::ffi::c_char; 16],
-    pub size: int32_t,
-    pub format: ::core::ffi::c_int,
-    pub wmode: ::core::ffi::c_int,
-    pub extend: ::core::ffi::c_double,
-    pub slant: ::core::ffi::c_double,
-    pub bold: ::core::ffi::c_double,
-}
+use crate::compat::renderer::tt_pdf_render_font;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct CMap {
@@ -435,18 +368,7 @@ pub const TT_PDF_RESET_FONTS: C2RustUnnamed_4 = 5;
 pub type C2RustUnnamed_4 = ::core::ffi::c_uint;
 pub const TT_PDF_TEXT: C2RustUnnamed_4 = 1;
 pub const TT_PDF_RAW_BYTES: C2RustUnnamed_4 = 0;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct tt_pdf_render_command {
-    pub kind: ::core::ffi::c_int,
-    pub font: ::core::ffi::c_int,
-    pub x: int32_t,
-    pub y: int32_t,
-    pub width: int32_t,
-    pub height: int32_t,
-    pub data: *const ::core::ffi::c_uchar,
-    pub length: size_t,
-}
+use crate::compat::renderer::tt_pdf_render_command;
 pub const __DARWIN_NULL: *mut ::core::ffi::c_void = ::core::ptr::null_mut::<::core::ffi::c_void>();
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
@@ -528,7 +450,7 @@ unsafe extern "C-unwind" fn dev_out(
     mut len: size_t,
 ) {
     if !(*p).render_output.is_null() {
-        tt_pdf_render_output((*p).render_output, str, len);
+        crate::compat::renderer::append_output((*p).render_output, str, len);
     } else {
         pdf_doc_add_page_content(str, len as ::core::ffi::c_uint);
     };
@@ -893,7 +815,7 @@ unsafe extern "C-unwind" fn pdf_dev_text_mode(mut p: *mut pdf_dev) {
 }
 unsafe extern "C-unwind" fn pdf_dev_graphics_mode(mut p: *mut pdf_dev) {
     if (*p).recording_page != 0 {
-        tt_pdf_page_command(
+        crate::pipeline::page_command(
             TT_PDF_GRAPHICS_MODE as ::core::ffi::c_int,
             0 as int32_t,
             0 as int32_t,
@@ -1501,14 +1423,13 @@ unsafe extern "C-unwind" fn dev_set_string(
         snapshot.extend = (*font).extend;
         snapshot.slant = (*font).slant;
         snapshot.bold = (*font).bold;
-        tt_pdf_page_text(
-            &raw mut snapshot,
+        crate::pipeline::page_text(
+            &snapshot,
             font_id,
             xpos as int32_t,
             ypos as int32_t,
             width as int32_t,
-            str_ptr,
-            length,
+            core::slice::from_raw_parts(str_ptr, length),
         );
         (*p).text_state.font_id = font_id;
         return;
@@ -1743,7 +1664,7 @@ unsafe extern "C-unwind" fn dev_reset_fonts(mut p: *mut pdf_dev, mut newpage: ::
 #[unsafe(export_name = "__pdf_impl_pdf_dev_reset_fonts")]
 pub unsafe extern "C-unwind" fn pdf_dev_reset_fonts(mut newpage: ::core::ffi::c_int) {
     if pdev.recording_page != 0 {
-        tt_pdf_page_command(
+        crate::pipeline::page_command(
             TT_PDF_RESET_FONTS as ::core::ffi::c_int,
             newpage as int32_t,
             0 as int32_t,
@@ -2176,7 +2097,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_set_rule(
                     as *const ::core::ffi::c_char,
             );
         }
-        tt_pdf_page_command(
+        crate::pipeline::page_command(
             TT_PDF_RULE as ::core::ffi::c_int,
             xpos as int32_t,
             ypos as int32_t,
@@ -2191,8 +2112,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_set_rule(
     }
     dev_set_rule(p, xpos, ypos, width, height);
 }
-#[unsafe(export_name = "__pdf_impl_pdf_dev_set_rect")]
-pub unsafe extern "C-unwind" fn pdf_dev_set_rect(
+pub(crate) unsafe fn pdf_dev_set_rect(
     mut rect: *mut pdf_rect,
     mut x_user: spt_t,
     mut y_user: spt_t,
@@ -2253,8 +2173,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_set_rect(
     (*rect).urx = max_x;
     (*rect).ury = max_y;
 }
-#[unsafe(export_name = "__pdf_impl_pdf_dev_get_dirmode")]
-pub unsafe extern "C-unwind" fn pdf_dev_get_dirmode() -> ::core::ffi::c_int {
+pub(crate) unsafe fn pdf_dev_get_dirmode() -> ::core::ffi::c_int {
     let mut p: *mut pdf_dev = current_device();
     return (*p).text_state.dir_mode;
 }
@@ -2293,10 +2212,9 @@ unsafe extern "C-unwind" fn dev_set_dirmode(mut p: *mut pdf_dev, mut text_dir: :
     (*p).text_state.matrix.rotate = text_rotate;
     (*p).text_state.dir_mode = text_dir;
 }
-#[unsafe(export_name = "__pdf_impl_pdf_dev_set_dirmode")]
-pub unsafe extern "C-unwind" fn pdf_dev_set_dirmode(mut text_dir: ::core::ffi::c_int) {
+pub(crate) unsafe fn pdf_dev_set_dirmode(mut text_dir: ::core::ffi::c_int) {
     if pdev.recording_page != 0 && text_dir != pdev.text_state.dir_mode {
-        tt_pdf_page_command(
+        crate::pipeline::page_command(
             TT_PDF_DIRECTION as ::core::ffi::c_int,
             text_dir as int32_t,
             0 as int32_t,
@@ -2350,10 +2268,7 @@ unsafe extern "C-unwind" fn dev_set_param_autorotate(
     (*p).text_state.matrix.rotate = text_rotate;
     (*p).param.autorotate = auto_rotate;
 }
-#[unsafe(export_name = "__pdf_impl_pdf_dev_get_param")]
-pub unsafe extern "C-unwind" fn pdf_dev_get_param(
-    mut param_type: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+pub(crate) unsafe fn pdf_dev_get_param(mut param_type: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut p: *mut pdf_dev = current_device();
     let mut value: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     match param_type {
@@ -2372,8 +2287,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_get_param(
     }
     return value;
 }
-#[unsafe(export_name = "__pdf_impl_pdf_dev_set_param")]
-pub unsafe extern "C-unwind" fn pdf_dev_set_param(
+pub(crate) unsafe fn pdf_dev_set_param(
     mut param_type: ::core::ffi::c_int,
     mut value: ::core::ffi::c_int,
 ) {
@@ -2506,8 +2420,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_put_image(
     );
     return 0 as ::core::ffi::c_int;
 }
-#[unsafe(export_name = "__pdf_impl_transform_info_clear")]
-pub unsafe extern "C-unwind" fn transform_info_clear(mut info: *mut transform_info) {
+pub(crate) unsafe fn transform_info_clear(mut info: *mut transform_info) {
     (*info).width = 0.0f64;
     (*info).height = 0.0f64;
     (*info).depth = 0.0f64;
@@ -2620,45 +2533,39 @@ pub unsafe extern "C-unwind" fn graphics_mode() {
     let mut p: *mut pdf_dev = current_device();
     pdf_dev_graphics_mode(p);
 }
-#[unsafe(export_name = "__pdf_impl_dev_unit_dviunit")]
-pub unsafe extern "C-unwind" fn dev_unit_dviunit() -> ::core::ffi::c_double {
+pub(crate) unsafe fn dev_unit_dviunit() -> ::core::ffi::c_double {
     let mut p: *mut pdf_dev = current_device();
     return pdf_dev_unit_dviunit(p);
 }
-#[unsafe(export_name = "__pdf_impl_pdf_sprint_matrix")]
-pub unsafe extern "C-unwind" fn pdf_sprint_matrix(
+pub(crate) unsafe fn pdf_sprint_matrix(
     mut buf: *mut ::core::ffi::c_char,
     mut M: *const pdf_tmatrix,
 ) -> ::core::ffi::c_int {
     let mut p: *mut pdf_dev = current_device();
     return pdf_dev_sprint_matrix(p, buf, M) as ::core::ffi::c_int;
 }
-#[unsafe(export_name = "__pdf_impl_pdf_sprint_rect")]
-pub unsafe extern "C-unwind" fn pdf_sprint_rect(
+pub(crate) unsafe fn pdf_sprint_rect(
     mut buf: *mut ::core::ffi::c_char,
     mut rect: *const pdf_rect,
 ) -> ::core::ffi::c_int {
     let mut p: *mut pdf_dev = current_device();
     return pdf_dev_sprint_rect(p, buf, rect) as ::core::ffi::c_int;
 }
-#[unsafe(export_name = "__pdf_impl_pdf_sprint_coord")]
-pub unsafe extern "C-unwind" fn pdf_sprint_coord(
+pub(crate) unsafe fn pdf_sprint_coord(
     mut buf: *mut ::core::ffi::c_char,
     mut c: *const pdf_coord,
 ) -> ::core::ffi::c_int {
     let mut p: *mut pdf_dev = current_device();
     return pdf_dev_sprint_coord(p, buf, c) as ::core::ffi::c_int;
 }
-#[unsafe(export_name = "__pdf_impl_pdf_sprint_length")]
-pub unsafe extern "C-unwind" fn pdf_sprint_length(
+pub(crate) unsafe fn pdf_sprint_length(
     mut buf: *mut ::core::ffi::c_char,
     mut value: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let mut p: *mut pdf_dev = current_device();
     return pdf_dev_sprint_length(p, buf, value) as ::core::ffi::c_int;
 }
-#[unsafe(export_name = "__pdf_impl_pdf_sprint_number")]
-pub unsafe extern "C-unwind" fn pdf_sprint_number(
+pub(crate) unsafe fn pdf_sprint_number(
     mut buf: *mut ::core::ffi::c_char,
     mut value: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
@@ -2702,7 +2609,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_reset_global_state() {
 #[unsafe(export_name = "__pdf_impl_pdf_dev_begin_page_plan")]
 pub unsafe extern "C-unwind" fn pdf_dev_begin_page_plan() {
     let mut p: *mut pdf_dev = current_device();
-    (*p).recording_page = tt_pdf_page_begin(
+    (*p).recording_page = crate::pipeline::page_begin(
         (*p).unit.dvi2pts,
         (*p).unit.precision,
         (*p).param.autorotate,
@@ -2713,8 +2620,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_begin_page_plan() {
 pub unsafe extern "C-unwind" fn pdf_dev_end_page_plan() {
     pdev.recording_page = 0 as ::core::ffi::c_int;
 }
-#[unsafe(export_name = "__pdf_impl_tt_pdf_render_page")]
-pub unsafe extern "C-unwind" fn tt_pdf_render_page(
+pub(crate) unsafe fn render_page(
     mut commands: *const tt_pdf_render_command,
     mut count: size_t,
     mut fonts: *const tt_pdf_render_font,
@@ -3043,75 +2949,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_set_rule(
         Err(()) => -1,
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_set_rect(
-    mut rect: *mut pdf_rect,
-    mut x_user: spt_t,
-    mut y_user: spt_t,
-    mut width: spt_t,
-    mut height: spt_t,
-    mut depth: spt_t,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_dev_set_rect(rect, x_user, y_user, width, height, depth)
-    }) {
-        Ok(value) => {
-            let _ = value;
-            0
-        }
-        Err(()) => -1,
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_get_dirmode(_result: *mut ::core::ffi::c_int) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { pdf_dev_get_dirmode() }) {
-        Ok(value) => {
-            unsafe {
-                _result.write(value);
-            }
-            0
-        }
-        Err(()) => -1,
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_set_dirmode(mut text_dir: ::core::ffi::c_int) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { pdf_dev_set_dirmode(text_dir) }) {
-        Ok(value) => {
-            let _ = value;
-            0
-        }
-        Err(()) => -1,
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_get_param(
-    mut param_type: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { pdf_dev_get_param(param_type) }) {
-        Ok(value) => {
-            unsafe {
-                _result.write(value);
-            }
-            0
-        }
-        Err(()) => -1,
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_set_param(
-    mut param_type: ::core::ffi::c_int,
-    mut value: ::core::ffi::c_int,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { pdf_dev_set_param(param_type, value) }) {
-        Ok(value) => {
-            let _ = value;
-            0
-        }
-        Err(()) => -1,
-    }
-}
+
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_put_image(
     mut id: ::core::ffi::c_int,
@@ -3133,16 +2971,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_put_image(
         Err(()) => -1,
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_transform_info_clear(mut info: *mut transform_info) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { transform_info_clear(info) }) {
-        Ok(value) => {
-            let _ = value;
-            0
-        }
-        Err(()) => -1,
-    }
-}
+
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_begin_actualtext(
     mut unicodes: *mut uint16_t,
@@ -3177,98 +3006,7 @@ pub unsafe extern "C" fn __pdf_entry_graphics_mode() -> i32 {
         Err(()) => -1,
     }
 }
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_dev_unit_dviunit(_result: *mut ::core::ffi::c_double) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { dev_unit_dviunit() }) {
-        Ok(value) => {
-            unsafe {
-                _result.write(value);
-            }
-            0
-        }
-        Err(()) => -1,
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_sprint_matrix(
-    mut buf: *mut ::core::ffi::c_char,
-    mut M: *const pdf_tmatrix,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { pdf_sprint_matrix(buf, M) }) {
-        Ok(value) => {
-            unsafe {
-                _result.write(value);
-            }
-            0
-        }
-        Err(()) => -1,
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_sprint_rect(
-    mut buf: *mut ::core::ffi::c_char,
-    mut rect: *const pdf_rect,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { pdf_sprint_rect(buf, rect) }) {
-        Ok(value) => {
-            unsafe {
-                _result.write(value);
-            }
-            0
-        }
-        Err(()) => -1,
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_sprint_coord(
-    mut buf: *mut ::core::ffi::c_char,
-    mut c: *const pdf_coord,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { pdf_sprint_coord(buf, c) }) {
-        Ok(value) => {
-            unsafe {
-                _result.write(value);
-            }
-            0
-        }
-        Err(()) => -1,
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_sprint_length(
-    mut buf: *mut ::core::ffi::c_char,
-    mut value: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { pdf_sprint_length(buf, value) }) {
-        Ok(value) => {
-            unsafe {
-                _result.write(value);
-            }
-            0
-        }
-        Err(()) => -1,
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_sprint_number(
-    mut buf: *mut ::core::ffi::c_char,
-    mut value: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { pdf_sprint_number(buf, value) }) {
-        Ok(value) => {
-            unsafe {
-                _result.write(value);
-            }
-            0
-        }
-        Err(()) => -1,
-    }
-}
+
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_get_font_wmode(
     mut font_id: ::core::ffi::c_int,
@@ -3324,33 +3062,6 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_end_page_plan() -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_end_page_plan() }) {
         Ok(value) => {
             let _ = value;
-            0
-        }
-        Err(()) => -1,
-    }
-}
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_pdf_render_page(
-    mut commands: *const tt_pdf_render_command,
-    mut count: size_t,
-    mut fonts: *const tt_pdf_render_font,
-    mut font_count: size_t,
-    mut unit: ::core::ffi::c_double,
-    mut precision: ::core::ffi::c_int,
-    mut autorotate: ::core::ffi::c_int,
-    mut direction: ::core::ffi::c_int,
-    mut output: *mut ::core::ffi::c_void,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        tt_pdf_render_page(
-            commands, count, fonts, font_count, unit, precision, autorotate, direction, output,
-        )
-    }) {
-        Ok(value) => {
-            unsafe {
-                _result.write(value);
-            }
             0
         }
         Err(()) => -1,

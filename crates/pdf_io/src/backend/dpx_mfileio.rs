@@ -94,44 +94,15 @@ pub const __DARWIN_NULL: *mut ::core::ffi::c_void = ::core::ptr::null_mut::<::co
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 pub const SEEK_CUR: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const SEEK_END: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn os_error() {
-    pdf_abort!(
-        b"io:  An OS command failed that should not have.\n\0" as *const u8
-            as *const ::core::ffi::c_char,
-    );
-}
 #[unsafe(export_name = "__pdf_impl_seek_relative")]
-pub unsafe extern "C-unwind" fn seek_relative(mut file: *mut FILE, mut pos: int32_t) {
-    if fseek(file, pos as ::core::ffi::c_long, SEEK_CUR) != 0 {
-        os_error();
-    }
-}
-unsafe extern "C-unwind" fn seek_end(mut file: *mut FILE) {
-    if fseek(file, 0 as ::core::ffi::c_long, SEEK_END) != 0 {
-        os_error();
-    }
-}
-unsafe extern "C-unwind" fn tell_position(mut file: *mut FILE) -> int32_t {
-    let mut size: ::core::ffi::c_long = ftell(file);
-    if size < 0 as ::core::ffi::c_long {
-        os_error();
-    }
-    if size > 0x7fffffff as ::core::ffi::c_long {
-        pdf_abort!(
-            b"ftell: file size %ld exceeds 0x7fffffff.\n\0" as *const u8
-                as *const ::core::ffi::c_char,
-            size,
-        );
-    }
-    return size as int32_t;
+pub unsafe extern "C-unwind" fn seek_relative(file: *mut FILE, pos: int32_t) {
+    let mut input = unsafe { crate::compat::input::BorrowedFile::from_raw(file.cast()) };
+    crate::backend::runtime::legacy_result(crate::input::seek_relative(&mut input, pos));
 }
 #[unsafe(export_name = "__pdf_impl_file_size")]
-pub unsafe extern "C-unwind" fn file_size(mut file: *mut FILE) -> int32_t {
-    let mut size: int32_t = 0;
-    seek_end(file);
-    size = tell_position(file);
-    rewind(file);
-    return size;
+pub unsafe extern "C-unwind" fn file_size(file: *mut FILE) -> int32_t {
+    let mut input = unsafe { crate::compat::input::BorrowedFile::from_raw(file.cast()) };
+    crate::backend::runtime::legacy_result(crate::input::file_size(&mut input))
 }
 #[unsafe(export_name = "__pdf_impl_mfgets")]
 pub unsafe extern "C-unwind" fn mfgets(
@@ -198,7 +169,10 @@ pub struct __sFILEX {
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_seek_relative(mut file: *mut FILE, mut pos: int32_t) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { seek_relative(file, pos) }) {
+    match crate::backend::runtime::result_boundary(|| unsafe {
+        let mut input = crate::compat::input::BorrowedFile::from_raw(file.cast());
+        crate::input::seek_relative(&mut input, pos)
+    }) {
         Ok(value) => {
             let _ = value;
             0
@@ -208,7 +182,10 @@ pub unsafe extern "C" fn __pdf_entry_seek_relative(mut file: *mut FILE, mut pos:
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_file_size(mut file: *mut FILE, _result: *mut int32_t) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { file_size(file) }) {
+    match crate::backend::runtime::result_boundary(|| unsafe {
+        let mut input = crate::compat::input::BorrowedFile::from_raw(file.cast());
+        crate::input::file_size(&mut input)
+    }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);

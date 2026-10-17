@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::backend::dpx_pdfdraw::pdf_dev_transform;
 unsafe extern "C-unwind" {
     fn strcmp(
         __s1: *const ::core::ffi::c_char,
@@ -135,8 +136,6 @@ unsafe extern "C-unwind" {
     fn new(size: uint32_t) -> *mut ::core::ffi::c_void;
     #[link_name = "__pdf_impl_renew"]
     fn renew(p: *mut ::core::ffi::c_void, size: uint32_t) -> *mut ::core::ffi::c_void;
-    #[link_name = "__pdf_impl_pdf_dev_transform"]
-    fn pdf_dev_transform(p: *mut pdf_coord, M: *const pdf_tmatrix);
     #[link_name = "__pdf_impl_pdf_names_add_object"]
     fn pdf_names_add_object(
         names: *mut ht_table,
@@ -201,40 +200,10 @@ pub const TTBC_FILE_FORMAT_CMAP: ttbc_file_format = 45;
 pub const TTBC_FILE_FORMAT_BST: ttbc_file_format = 7;
 pub const TTBC_FILE_FORMAT_BIB: ttbc_file_format = 6;
 pub const TTBC_FILE_FORMAT_AFM: ttbc_file_format = 4;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_tmatrix {
-    pub a: ::core::ffi::c_double,
-    pub b: ::core::ffi::c_double,
-    pub c: ::core::ffi::c_double,
-    pub d: ::core::ffi::c_double,
-    pub e: ::core::ffi::c_double,
-    pub f: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_rect {
-    pub llx: ::core::ffi::c_double,
-    pub lly: ::core::ffi::c_double,
-    pub urx: ::core::ffi::c_double,
-    pub ury: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_coord {
-    pub x: ::core::ffi::c_double,
-    pub y: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct transform_info {
-    pub width: ::core::ffi::c_double,
-    pub height: ::core::ffi::c_double,
-    pub depth: ::core::ffi::c_double,
-    pub matrix: pdf_tmatrix,
-    pub bbox: pdf_rect,
-    pub flags: ::core::ffi::c_int,
-}
+use crate::compat::renderer::pdf_coord;
+use crate::compat::renderer::pdf_rect;
+use crate::compat::renderer::pdf_tmatrix;
+use crate::compat::renderer::transform_info;
 pub type pdf_page_boundary = ::core::ffi::c_uint;
 pub const pdf_page_boundary_bleedbox: pdf_page_boundary = 5;
 pub const pdf_page_boundary_trimbox: pdf_page_boundary = 4;

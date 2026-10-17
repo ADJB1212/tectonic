@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::backend::dpx_pdfdev::pdf_sprint_number;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -124,11 +125,6 @@ unsafe extern "C-unwind" {
         length: ::core::ffi::c_int,
         file: rust_input_handle_t,
     ) -> *mut ::core::ffi::c_char;
-    #[link_name = "__pdf_impl_pdf_sprint_number"]
-    fn pdf_sprint_number(
-        buf: *mut ::core::ffi::c_char,
-        value: ::core::ffi::c_double,
-    ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_doc_get_dictionary"]
     fn pdf_doc_get_dictionary(category: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_enc_init"]

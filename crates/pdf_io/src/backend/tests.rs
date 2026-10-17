@@ -1,6 +1,120 @@
 use super::{dpx_dpxcrypt::*, runtime};
 use std::{ffi::CStr, fmt::Write, mem::zeroed};
 
+#[test]
+fn typed_errors_cross_only_the_compatibility_boundary() {
+    use crate::error::{PdfError, PdfErrorKind};
+    let error = runtime::catch_backend::<()>(|| {
+        runtime::raise(c"legacy failure".to_owned());
+    })
+    .unwrap_err();
+    assert_eq!(error.kind, PdfErrorKind::Backend);
+    assert_eq!(error.message.as_c_str(), c"legacy failure");
+
+    let dropped = std::cell::Cell::new(false);
+    struct Guard<'a>(&'a std::cell::Cell<bool>);
+    impl Drop for Guard<'_> {
+        fn drop(&mut self) {
+            self.0.set(true);
+        }
+    }
+    let error = runtime::catch_backend::<()>(|| {
+        let _guard = Guard(&dropped);
+        runtime::legacy_result(Err(PdfError::new(
+            PdfErrorKind::MalformedInput,
+            c"malformed".to_owned(),
+        )
+        .at(19)
+        .in_file(b"bad\xff.tex")))
+    })
+    .unwrap_err();
+    assert!(dropped.get());
+    assert_eq!(error.kind, PdfErrorKind::MalformedInput);
+    assert_eq!(error.offset, Some(19));
+    assert_eq!(error.file.as_deref(), Some(&b"bad\xff.tex"[..]));
+    assert!(runtime::result_boundary::<()>(|| Err(error)).is_err());
+    assert_eq!(
+        unsafe { CStr::from_ptr(runtime::tt_pdf_last_error()) },
+        c"malformed"
+    );
+    assert_eq!(runtime::result_boundary(|| Ok(42)), Ok(42));
+
+    let panic = std::panic::catch_unwind(|| {
+        let _ = runtime::catch_backend::<()>(|| panic!("unexpected bug"));
+    })
+    .unwrap_err();
+    assert_eq!(panic.downcast_ref::<&str>(), Some(&"unexpected bug"));
+}
+
+#[test]
+fn rust_diagnostic_macros_match_legacy_formatting_and_truncation() {
+    let rust = pdf_format!("Invalid index {} for dfont.", -3);
+    let legacy = pdf_format!(c"Invalid index %d for dfont.".as_ptr(), -3);
+    assert_eq!(rust, legacy);
+    let rust = pdf_format!("{}", "a".repeat(1100));
+    let input = std::ffi::CString::new("a".repeat(1100)).unwrap();
+    let legacy = pdf_format!(c"%s".as_ptr(), input.as_ptr());
+    assert_eq!(rust, legacy);
+}
+
+#[test]
+fn stdio_errors_return_through_c_status_and_allow_another_operation() {
+    struct File(*mut libc::FILE);
+    impl Drop for File {
+        fn drop(&mut self) {
+            unsafe {
+                libc::fclose(self.0);
+            }
+        }
+    }
+    unsafe {
+        let file = File(libc::tmpfile());
+        assert!(!file.0.is_null());
+        assert_eq!(libc::fwrite(b"abc".as_ptr().cast(), 1, 3, file.0), 3);
+        let mut size = -1;
+        assert_eq!(
+            super::dpx_mfileio::__pdf_entry_file_size(file.0.cast(), &mut size),
+            0
+        );
+        assert_eq!(size, 3);
+        assert_eq!(libc::ftell(file.0), 0);
+        assert_eq!(
+            super::dpx_mfileio::__pdf_entry_seek_relative(file.0.cast(), -1),
+            -1
+        );
+        assert_eq!(
+            CStr::from_ptr(runtime::tt_pdf_last_error()),
+            c"io:  An OS command failed that should not have.\n"
+        );
+        assert_eq!(
+            super::dpx_mfileio::__pdf_entry_file_size(file.0.cast(), &mut size),
+            0
+        );
+        assert_eq!(size, 3);
+    }
+}
+
+#[test]
+fn sfnt_directory_initialization_can_be_cleaned_up_after_failure() {
+    unsafe {
+        let font = runtime::allocate(std::mem::size_of::<super::dpx_sfnt::sfnt>())
+            .cast::<super::dpx_sfnt::sfnt>();
+        font.write(super::dpx_sfnt::sfnt {
+            type_0: 0,
+            directory: std::ptr::null_mut(),
+            handle: 0,
+            offset: 0,
+        });
+        assert!(runtime::boundary(|| super::dpx_sfnt::sfnt_read_table_directory(font, 0)).is_err());
+        assert_eq!(
+            CStr::from_ptr(runtime::tt_pdf_last_error()),
+            c"assertion failed: sfont->handle"
+        );
+        super::dpx_sfnt::sfnt_close(font);
+    }
+    assert_eq!(runtime::boundary(|| 42), Ok(42));
+}
+
 fn hex(bytes: &[u8]) -> String {
     bytes
         .iter()

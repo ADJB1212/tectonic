@@ -129,107 +129,29 @@ unsafe extern "C-unwind" fn mfree(mut ptr: *mut ::core::ffi::c_void) -> *mut ::c
     free(ptr);
     return NULL;
 }
-static mut _sbuf: [::core::ffi::c_char; 128] = [0; 128];
-unsafe extern "C-unwind" fn check_stream_is_truetype(mut handle: rust_input_handle_t) -> bool {
-    let mut n: ::core::ffi::c_int = 0;
-    crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-    n = ttstub_input_read(
-        handle,
-        &raw mut _sbuf as *mut ::core::ffi::c_char,
-        4 as size_t,
-    ) as ::core::ffi::c_int;
-    crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-    if n != 4 as ::core::ffi::c_int {
-        return false_0 != 0;
-    }
-    if memcmp(
-        &raw mut _sbuf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-        b"true\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-        4 as size_t,
-    ) == 0
-        || memcmp(
-            &raw mut _sbuf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-            b"\0\x01\0\0\0" as *const u8 as *const ::core::ffi::c_char
-                as *const ::core::ffi::c_void,
-            4 as size_t,
-        ) == 0
-    {
-        return true_0 != 0;
-    }
-    if memcmp(
-        &raw mut _sbuf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-        b"ttcf\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-        4 as size_t,
-    ) == 0
-    {
-        return true_0 != 0;
-    }
-    return false_0 != 0;
+unsafe fn check_stream_is_truetype(
+    handle: rust_input_handle_t,
+    filename: *const ::core::ffi::c_char,
+) -> bool {
+    let result = crate::compat::input::probe_font(handle, crate::input::FontKind::TrueType)
+        .map_err(|error| error.in_file(unsafe { core::ffi::CStr::from_ptr(filename) }.to_bytes()));
+    crate::backend::runtime::legacy_result(result)
 }
-unsafe extern "C-unwind" fn check_stream_is_opentype(mut handle: rust_input_handle_t) -> bool {
-    let mut n: ::core::ffi::c_int = 0;
-    crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-    n = ttstub_input_read(
-        handle,
-        &raw mut _sbuf as *mut ::core::ffi::c_char,
-        4 as size_t,
-    ) as ::core::ffi::c_int;
-    crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-    if n != 4 as ::core::ffi::c_int {
-        return false_0 != 0;
-    }
-    if memcmp(
-        &raw mut _sbuf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-        b"OTTO\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-        4 as size_t,
-    ) == 0
-    {
-        return true_0 != 0;
-    }
-    return false_0 != 0;
+unsafe fn check_stream_is_opentype(
+    handle: rust_input_handle_t,
+    filename: *const ::core::ffi::c_char,
+) -> bool {
+    let result = crate::compat::input::probe_font(handle, crate::input::FontKind::OpenType)
+        .map_err(|error| error.in_file(unsafe { core::ffi::CStr::from_ptr(filename) }.to_bytes()));
+    crate::backend::runtime::legacy_result(result)
 }
-unsafe extern "C-unwind" fn check_stream_is_type1(mut handle: rust_input_handle_t) -> bool {
-    let mut p: *mut ::core::ffi::c_char = &raw mut _sbuf as *mut ::core::ffi::c_char;
-    let mut n: ::core::ffi::c_int = 0;
-    crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-    n = ttstub_input_read(handle, p, 21 as size_t) as ::core::ffi::c_int;
-    crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-    if n != 21 as ::core::ffi::c_int {
-        return false_0 != 0;
-    }
-    if *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-        != 0x80 as ::core::ffi::c_int as ::core::ffi::c_char as ::core::ffi::c_int
-        || (*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            < 0 as ::core::ffi::c_int
-        || *p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-            > 3 as ::core::ffi::c_int
-    {
-        return false_0 != 0;
-    }
-    if memcmp(
-        p.offset(6 as ::core::ffi::c_int as isize) as *const ::core::ffi::c_void,
-        b"%!PS-AdobeFont\0" as *const u8 as *const ::core::ffi::c_char
-            as *const ::core::ffi::c_void,
-        14 as size_t,
-    ) == 0
-        || memcmp(
-            p.offset(6 as ::core::ffi::c_int as isize) as *const ::core::ffi::c_void,
-            b"%!FontType1\0" as *const u8 as *const ::core::ffi::c_char
-                as *const ::core::ffi::c_void,
-            11 as size_t,
-        ) == 0
-    {
-        return true_0 != 0;
-    }
-    if memcmp(
-        p.offset(6 as ::core::ffi::c_int as isize) as *const ::core::ffi::c_void,
-        b"%!PS\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-        4 as size_t,
-    ) == 0
-    {
-        return true_0 != 0;
-    }
-    return false_0 != 0;
+unsafe fn check_stream_is_type1(
+    handle: rust_input_handle_t,
+    filename: *const ::core::ffi::c_char,
+) -> bool {
+    let result = crate::compat::input::probe_font(handle, crate::input::FontKind::Type1)
+        .map_err(|error| error.in_file(unsafe { core::ffi::CStr::from_ptr(filename) }.to_bytes()));
+    crate::backend::runtime::legacy_result(result)
 }
 unsafe extern "C-unwind" fn check_stream_is_dfont(mut handle: rust_input_handle_t) -> bool {
     let mut i: ::core::ffi::c_int = 0;
@@ -301,7 +223,7 @@ pub unsafe extern "C-unwind" fn dpx_open_type1_file(
     if handle == INVALID_HANDLE {
         return INVALID_HANDLE;
     }
-    if !check_stream_is_type1(handle) {
+    if !check_stream_is_type1(handle, filename) {
         crate::backend::runtime::input_close(handle);
         return INVALID_HANDLE;
     }
@@ -320,7 +242,7 @@ pub unsafe extern "C-unwind" fn dpx_open_truetype_file(
     if handle == INVALID_HANDLE {
         return INVALID_HANDLE;
     }
-    if !check_stream_is_truetype(handle) {
+    if !check_stream_is_truetype(handle, filename) {
         crate::backend::runtime::input_close(handle);
         return INVALID_HANDLE;
     }
@@ -341,7 +263,7 @@ pub unsafe extern "C-unwind" fn dpx_open_opentype_file(
     if handle == INVALID_HANDLE {
         return INVALID_HANDLE;
     }
-    if !check_stream_is_opentype(handle) {
+    if !check_stream_is_opentype(handle, filename) {
         crate::backend::runtime::input_close(handle);
         return INVALID_HANDLE;
     }

@@ -26,6 +26,8 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::backend::dpx_pdfdev::{pdf_sprint_coord, pdf_sprint_length};
+use crate::backend::dpx_pdfdraw::pdf_dev_transform;
 unsafe extern "C-unwind" {
     fn strcmp(
         __s1: *const ::core::ffi::c_char,
@@ -84,13 +86,6 @@ unsafe extern "C-unwind" {
     fn pdf_deref_obj(object: *mut pdf_obj) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_import_object"]
     fn pdf_import_object(object: *mut pdf_obj) -> *mut pdf_obj;
-    #[link_name = "__pdf_impl_pdf_sprint_coord"]
-    fn pdf_sprint_coord(buf: *mut ::core::ffi::c_char, p: *const pdf_coord) -> ::core::ffi::c_int;
-    #[link_name = "__pdf_impl_pdf_sprint_length"]
-    fn pdf_sprint_length(
-        buf: *mut ::core::ffi::c_char,
-        value: ::core::ffi::c_double,
-    ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_doc_get_page"]
     fn pdf_doc_get_page(
         pf: *mut pdf_file,
@@ -113,8 +108,6 @@ unsafe extern "C-unwind" {
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_pdf_dev_currentmatrix"]
     fn pdf_dev_currentmatrix(M: *mut pdf_tmatrix) -> ::core::ffi::c_int;
-    #[link_name = "__pdf_impl_pdf_dev_transform"]
-    fn pdf_dev_transform(p: *mut pdf_coord, M: *const pdf_tmatrix);
     #[link_name = "__pdf_impl_pdf_invertmatrix"]
     fn pdf_invertmatrix(M: *mut pdf_tmatrix);
     #[link_name = "__pdf_impl_skip_white"]
@@ -162,30 +155,9 @@ pub type __darwin_size_t = usize;
 pub type size_t = __darwin_size_t;
 pub type uintptr_t = usize;
 pub type rust_input_handle_t = uintptr_t;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_tmatrix {
-    pub a: ::core::ffi::c_double,
-    pub b: ::core::ffi::c_double,
-    pub c: ::core::ffi::c_double,
-    pub d: ::core::ffi::c_double,
-    pub e: ::core::ffi::c_double,
-    pub f: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_rect {
-    pub llx: ::core::ffi::c_double,
-    pub lly: ::core::ffi::c_double,
-    pub urx: ::core::ffi::c_double,
-    pub ury: ::core::ffi::c_double,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_coord {
-    pub x: ::core::ffi::c_double,
-    pub y: ::core::ffi::c_double,
-}
+use crate::compat::renderer::pdf_coord;
+use crate::compat::renderer::pdf_rect;
+use crate::compat::renderer::pdf_tmatrix;
 pub type pdf_page_boundary = ::core::ffi::c_uint;
 pub const pdf_page_boundary_bleedbox: pdf_page_boundary = 5;
 pub const pdf_page_boundary_trimbox: pdf_page_boundary = 4;

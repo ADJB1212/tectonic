@@ -114,6 +114,20 @@ imports one dependency cluster at a time.
 Internal Rust code does not call their C adapters. Existing C consumers retain
 their calling conventions and pointer-lifetime guarantees.
 
+Implemented for the renderer/geometry cluster in `src/renderer.rs` and
+`src/compat/renderer.rs`. Page plans pass borrowed command bytes and copied
+font snapshots through Rust calls. Geometry types have one Rust definition
+across the translated modules; the C headers remain unchanged. Renderer and
+geometry entry points stay in compatibility code, while their implementations
+and translated callers use normal module calls. Unicode validity and fixed-word
+scaling callers use the Stage 1 functions directly.
+
+`compat/renderer_layout.c` and its Rust test compare sizes, alignments, every
+field offset, primitive widths, and character signedness against the published
+headers on the build target. Borrowed inputs remain live until synchronous
+rendering returns; recorded text and fonts are copied into the owned page plan.
+The remaining dependency clusters migrate incrementally in later changes.
+
 ## Stage 3: Typed errors and explicit I/O
 
 Target `runtime.rs`, `macros.rs`, `dpx_dpxfile`, `dpx_mfileio`, and leaf parsers.
@@ -136,6 +150,28 @@ catch failures around every primitive operation.
 release owned values. No native `longjmp` crosses Rust. Keep outer panic
 containment and the unwind requirement until all error paths and engine
 boundaries have been audited; their removal is a separate decision.
+
+Implemented for the migrated renderer and leaf I/O paths. `src/error.rs`
+provides typed error kinds, byte-preserving diagnostics and filenames, offsets,
+I/O operation context, and underlying I/O errors. Font-header probes, stdio
+size/seek helpers, and SFNT directory reads accept explicit `Read`/`Seek`
+inputs and return `Result`. Bridge and FILE adapters stay in `src/compat/input.rs`;
+legacy header rejection, read diagnostics, and seek behavior are preserved.
+Compatibility SFNT directory allocations are initialized before fallible reads,
+so cleanup after partial initialization cannot traverse uninitialized pointers.
+
+Worker channels retain typed failures through ordered result collection and
+release. `runtime::catch_backend` translates expected failures from remaining
+translated code at operation boundaries and rethrows unexpected panics; outer
+compatibility and worker boundaries still contain them. Compatibility entry
+points translate typed results to legacy status/error storage.
+
+Migrated SFNT diagnostics use Rust formatting through `src/diagnostics.rs`.
+The formatter retains the 1023-byte payload limit and embedded-NUL handling.
+Emission accepts explicit bridge state while the compatibility wrapper retains
+quietness and warning ordering. Printf support remains for untranslated callers;
+document-global state, raw font-directory ownership, and further parser
+migrations remain in their later stages.
 
 ## Stage 4: An owned page renderer
 

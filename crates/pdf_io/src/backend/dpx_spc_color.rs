@@ -72,14 +72,7 @@ pub struct pdf_color {
     pub values: [::core::ffi::c_double; 32],
     pub pattern_id: ::core::ffi::c_int,
 }
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_rect {
-    pub llx: ::core::ffi::c_double,
-    pub lly: ::core::ffi::c_double,
-    pub urx: ::core::ffi::c_double,
-    pub ury: ::core::ffi::c_double,
-}
+use crate::compat::renderer::pdf_rect;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct spc_env {

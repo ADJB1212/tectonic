@@ -24,6 +24,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::unicode::is_valid as UC_is_valid;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -207,8 +208,6 @@ unsafe extern "C-unwind" {
     fn tt_release_post_table(post: *mut tt_post_table);
     #[link_name = "__pdf_impl_tt_get_glyphname"]
     fn tt_get_glyphname(post: *mut tt_post_table, gid: USHORT) -> *mut ::core::ffi::c_char;
-    #[link_name = "__pdf_impl_UC_is_valid"]
-    fn UC_is_valid(ucv: int32_t) -> bool;
     #[link_name = "__pdf_impl_UC_UTF16BE_encode_char"]
     fn UC_UTF16BE_encode_char(
         ucv: int32_t,

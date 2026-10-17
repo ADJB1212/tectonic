@@ -24,6 +24,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::unicode::is_valid as UC_is_valid;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -127,8 +128,6 @@ unsafe extern "C-unwind" {
         key: *mut pdf_obj,
         value: *mut pdf_obj,
     ) -> ::core::ffi::c_int;
-    #[link_name = "__pdf_impl_UC_is_valid"]
-    fn UC_is_valid(ucv: int32_t) -> bool;
     #[link_name = "__pdf_impl_UC_UTF8_decode_char"]
     fn UC_UTF8_decode_char(
         pp: *mut *const ::core::ffi::c_uchar,

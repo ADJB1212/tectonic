@@ -26,6 +26,7 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::backend::dpx_pdfdev::pdf_dev_get_param;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -95,8 +96,6 @@ unsafe extern "C-unwind" {
     fn renew(p: *mut ::core::ffi::c_void, size: uint32_t) -> *mut ::core::ffi::c_void;
     #[link_name = "__pdf_impl_sget_unsigned_pair"]
     fn sget_unsigned_pair(_: *mut ::core::ffi::c_uchar) -> ::core::ffi::c_ushort;
-    #[link_name = "__pdf_impl_pdf_dev_get_param"]
-    fn pdf_dev_get_param(param_type: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_reset_color"]
     fn pdf_dev_reset_color(force: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_doc_add_page_resource"]

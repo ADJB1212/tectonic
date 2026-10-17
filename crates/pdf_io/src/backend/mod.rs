@@ -30,9 +30,9 @@ mod dpx_mt19937ar;
 mod dpx_numbers;
 mod dpx_otl_opt;
 mod dpx_pdfcolor;
-mod dpx_pdfdev;
+pub(crate) mod dpx_pdfdev;
 mod dpx_pdfdoc;
-mod dpx_pdfdraw;
+pub(crate) mod dpx_pdfdraw;
 mod dpx_pdfencoding;
 mod dpx_pdfencrypt;
 mod dpx_pdffont;
@@ -74,9 +74,7 @@ mod dpx_unicode;
 mod dpx_vf;
 pub mod runtime;
 
-pub(crate) use dpx_pdfdev::{
-    tt_pdf_render_command as RenderCommand, tt_pdf_render_font as RenderFont, tt_pdf_render_page,
-};
+pub(crate) use dpx_pdfdev::render_page;
 
 #[cfg(test)]
 mod tests;

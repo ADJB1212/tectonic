@@ -28,6 +28,8 @@
     static_mut_refs,
     dangerous_implicit_autorefs
 )]
+use crate::backend::dpx_pdfdev::{pdf_dev_set_dirmode, pdf_dev_set_rect};
+use crate::numbers::scaled_fixword as sqxfw;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -122,8 +124,6 @@ unsafe extern "C-unwind" {
         type_0: *const ::core::ffi::c_char,
         name: *const ::core::ffi::c_char,
     ) -> uint32_t;
-    #[link_name = "__pdf_impl_sqxfw"]
-    fn sqxfw(sq: int32_t, fw: fixword) -> int32_t;
     #[link_name = "__pdf_impl_pdf_release_obj"]
     fn pdf_release_obj(object: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_obj_typeof"]
@@ -177,17 +177,6 @@ unsafe extern "C-unwind" {
         font_name: *const ::core::ffi::c_char,
         ptsize: spt_t,
     ) -> ::core::ffi::c_int;
-    #[link_name = "__pdf_impl_pdf_dev_set_dirmode"]
-    fn pdf_dev_set_dirmode(dir_mode: ::core::ffi::c_int);
-    #[link_name = "__pdf_impl_pdf_dev_set_rect"]
-    fn pdf_dev_set_rect(
-        rect: *mut pdf_rect,
-        x_pos: spt_t,
-        y_pos: spt_t,
-        width: spt_t,
-        height: spt_t,
-        depth: spt_t,
-    );
     #[link_name = "__pdf_impl_graphics_mode"]
     fn graphics_mode();
     #[link_name = "__pdf_impl_pdf_dev_begin_actualtext"]
@@ -506,14 +495,7 @@ pub struct pdf_color {
     pub pattern_id: ::core::ffi::c_int,
 }
 pub type spt_t = ::core::ffi::c_int;
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct pdf_rect {
-    pub llx: ::core::ffi::c_double,
-    pub lly: ::core::ffi::c_double,
-    pub urx: ::core::ffi::c_double,
-    pub ury: ::core::ffi::c_double,
-}
+use crate::compat::renderer::pdf_rect;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct dvi_registers {
