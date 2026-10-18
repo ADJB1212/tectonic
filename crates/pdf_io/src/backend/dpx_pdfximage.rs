@@ -28,6 +28,55 @@
 )]
 use crate::backend::dpx_pdfdraw::pdf_dev_transform;
 use crate::compat::allocation::free;
+
+#[cfg(test)]
+mod performance_tests {
+    use super::*;
+
+    #[test]
+    fn repeated_pdf_pages_and_options_hit_cache_without_opening_input() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
+        unsafe {
+            pdf_init_images();
+            let cache = &mut (*document_state())._ic;
+            cache.count = 4;
+            cache.capacity = 4;
+            cache.ximages = new((4 * core::mem::size_of::<pdf_ximage>()) as u32).cast();
+            for index in 0..4 {
+                let image = cache.ximages.add(index);
+                pdf_init_ximage_struct(image);
+                (*image).filename = crate::backend::runtime::duplicate(c"same.pdf".as_ptr());
+                (*image).attr.page_no = if index == 0 { 1 } else { 2 };
+                (*image).attr.bbox_type = i32::from(index >= 2);
+                (*image).attr.dict = super::super::dpx_pdfobj::pdf_new_dict().cast();
+                pdf_add_dict(
+                    (*image).attr.dict,
+                    pdf_new_name(c"Scale".as_ptr()),
+                    pdf_new_number(if index == 3 { 2.0 } else { 1.0 }),
+                );
+            }
+            for index in 0..4 {
+                let dict = super::super::dpx_pdfobj::pdf_new_dict().cast();
+                pdf_add_dict(
+                    dict,
+                    pdf_new_name(c"Scale".as_ptr()),
+                    pdf_new_number(if index == 3 { 2.0 } else { 1.0 }),
+                );
+                let options = load_options {
+                    page_no: if index == 0 { 1 } else { 2 },
+                    bbox_type: u32::from(index >= 2),
+                    dict,
+                };
+                assert_eq!(
+                    pdf_ximage_load_image(core::ptr::null(), c"same.pdf".as_ptr(), options),
+                    index
+                );
+                pdf_release_obj(dict);
+            }
+            pdf_close_images();
+        }
+    }
+}
 unsafe extern "C-unwind" {
     fn strcmp(
         __s1: *const ::core::ffi::c_char,
@@ -487,7 +536,12 @@ unsafe extern "C-unwind" fn load_image(
     let id = reserved.unwrap_or_else(|| {
         let id = (*cache).count;
         if (*cache).count >= (*cache).capacity {
-            (*cache).capacity += 16;
+            (*cache).capacity = crate::compat::allocation::grow_capacity(
+                (*cache).capacity as usize,
+                (*cache).count as usize + 1,
+                core::mem::size_of::<pdf_ximage>(),
+                16,
+            ) as i32;
             (*cache).ximages = renew(
                 (*cache).ximages.cast(),
                 ((*cache).capacity as usize * core::mem::size_of::<pdf_ximage>()) as u32,
@@ -582,22 +636,16 @@ pub unsafe extern "C-unwind" fn pdf_ximage_load_image(
     i = 0 as ::core::ffi::c_int;
     while i < (*ic).count {
         I = (*ic).ximages.offset(i as isize) as *mut pdf_ximage;
-        if !(*I).filename.is_null() && streq_ptr(filename, (*I).filename) as ::core::ffi::c_int != 0
-        {
-            id = i;
-            break;
-        } else {
-            i += 1;
-        }
-    }
-    if id >= 0 as ::core::ffi::c_int {
-        if (*I).attr.page_no == options.page_no
-            && pdf_compare_object((*I).attr.dict, options.dict) == 0
+        if !(*I).filename.is_null()
+            && streq_ptr(filename, (*I).filename)
+            && (*I).attr.page_no == options.page_no
             && (*I).attr.bbox_type as ::core::ffi::c_uint
                 == options.bbox_type as ::core::ffi::c_uint
+            && pdf_compare_object((*I).attr.dict, options.dict) == 0
         {
-            return id;
+            return i;
         }
+        i += 1;
     }
     handle = ttstub_input_open(filename, TTBC_FILE_FORMAT_PICT, 0 as ::core::ffi::c_int);
     if handle == INVALID_HANDLE {
@@ -897,7 +945,12 @@ pub unsafe extern "C-unwind" fn pdf_ximage_defineresource(
     if reserved == 0 {
         id = (*ic).count;
         if (*ic).count >= (*ic).capacity {
-            (*ic).capacity += 16 as ::core::ffi::c_int;
+            (*ic).capacity = crate::compat::allocation::grow_capacity(
+                (*ic).capacity as usize,
+                (*ic).count as usize + 1,
+                core::mem::size_of::<pdf_ximage>(),
+                16,
+            ) as i32;
             (*ic).ximages = renew(
                 (*ic).ximages as *mut ::core::ffi::c_void,
                 ((*ic).capacity as uint32_t as usize)
@@ -965,7 +1018,12 @@ pub unsafe extern "C-unwind" fn pdf_ximage_reserve(
     }
     id = (*ic).count;
     if (*ic).count >= (*ic).capacity {
-        (*ic).capacity += 16 as ::core::ffi::c_int;
+        (*ic).capacity = crate::compat::allocation::grow_capacity(
+            (*ic).capacity as usize,
+            (*ic).count as usize + 1,
+            core::mem::size_of::<pdf_ximage>(),
+            16,
+        ) as i32;
         (*ic).ximages = renew(
             (*ic).ximages as *mut ::core::ffi::c_void,
             ((*ic).capacity as uint32_t as usize)

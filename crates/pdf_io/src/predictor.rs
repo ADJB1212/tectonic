@@ -244,7 +244,7 @@ unsafe extern "C" fn tt_pdf_filter_tiff_parallel(
 }
 
 pub(crate) fn filter_owned(
-    source: Vec<u8>,
+    mut source: Vec<u8>,
     predictor: i32,
     columns: i32,
     bpc: i32,
@@ -275,16 +275,47 @@ pub(crate) fn filter_owned(
     }
     match predictor {
         2 => {
-            let mut destination = vec![0; source.len()];
-            filter_tiff(
-                &source,
-                &mut destination,
-                columns,
-                bpc,
-                colors,
-                pool.filter(|_| source.len() >= PARALLEL_THRESHOLD),
-            );
-            Ok(destination)
+            let filter = |row: &mut [u8]| {
+                if bpc == 8 {
+                    for index in (colors..row.len()).rev() {
+                        row[index] = row[index].wrapping_sub(row[index - colors]);
+                    }
+                } else if bpc == 16 {
+                    for index in (colors..row.len() / 2).rev() {
+                        let offset = index * 2;
+                        let previous = offset - colors * 2;
+                        let value = u16::from_be_bytes([row[offset], row[offset + 1]])
+                            .wrapping_sub(u16::from_be_bytes([row[previous], row[previous + 1]]));
+                        row[offset..offset + 2].copy_from_slice(&value.to_be_bytes());
+                    }
+                } else {
+                    let mask = (1u8 << bpc) - 1;
+                    for index in (colors..columns * colors).rev() {
+                        let bit = index * bpc;
+                        let previous = (index - colors) * bpc;
+                        let shift = 8 - bpc - bit % 8;
+                        let current = (row[bit / 8] >> shift) & mask;
+                        let previous = (row[previous / 8] >> (8 - bpc - previous % 8)) & mask;
+                        let difference = current.wrapping_sub(previous) & mask;
+                        row[bit / 8] = (row[bit / 8] & !(mask << shift)) | (difference << shift);
+                    }
+                    let padding = (8 - columns * colors * bpc % 8) % 8;
+                    if padding != 0 {
+                        row[row_bytes - 1] &= 255u8 << padding;
+                    }
+                }
+            };
+            if let Some(pool) = pool.filter(|_| source.len() >= PARALLEL_THRESHOLD) {
+                let rows_per_chunk = rows.div_ceil(pool.current_num_threads() * 4);
+                pool.install(|| {
+                    source
+                        .par_chunks_mut(rows_per_chunk * row_bytes)
+                        .for_each(|chunk| chunk.chunks_exact_mut(row_bytes).for_each(filter))
+                });
+            } else {
+                source.chunks_exact_mut(row_bytes).for_each(filter);
+            }
+            Ok(source)
         }
         15 => {
             let mut destination = vec![0; source.len().checked_add(rows).ok_or(())?];
@@ -370,6 +401,19 @@ mod tests {
                                 actual, expected,
                                 "bpc={bpc}, colors={colors}, columns={columns}, rows={rows}"
                             );
+                            let owned = source.clone();
+                            let pointer = owned.as_ptr();
+                            let filtered = filter_owned(
+                                owned,
+                                2,
+                                columns as i32,
+                                bpc as i32,
+                                colors as i32,
+                                pool,
+                            )
+                            .unwrap();
+                            assert_eq!(filtered, expected);
+                            assert_eq!(filtered.as_ptr(), pointer);
                         }
                         // SAFETY: Buffers are nonoverlapping and match the raster dimensions.
                         unsafe {

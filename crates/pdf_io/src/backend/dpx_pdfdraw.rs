@@ -374,14 +374,15 @@ unsafe extern "C-unwind" fn pdf_path__growpath(
     mut p: *mut pdf_path,
     mut max_pe: ::core::ffi::c_uint,
 ) -> ::core::ffi::c_int {
-    if max_pe < (*p).max_paths {
+    if max_pe <= (*p).max_paths {
         return 0 as ::core::ffi::c_int;
     }
-    (*p).max_paths = if (*p).max_paths.wrapping_add(8 as ::core::ffi::c_uint) > max_pe {
-        (*p).max_paths.wrapping_add(8 as ::core::ffi::c_uint)
-    } else {
-        max_pe
-    };
+    (*p).max_paths = crate::compat::allocation::grow_capacity(
+        (*p).max_paths as usize,
+        max_pe as usize,
+        core::mem::size_of::<pa_elem>(),
+        8,
+    ) as u32;
     (*p).path = renew(
         (*p).path as *mut ::core::ffi::c_void,
         ((*p).max_paths as uint32_t as usize)

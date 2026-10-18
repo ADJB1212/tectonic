@@ -24,6 +24,9 @@ static TEST_DOCUMENT_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 pub(crate) struct Document {
     pub(crate) objects: super::objects::State,
     pub(crate) names: backend::dpx_pdfnames::Storage,
+    pub(crate) glyphs: backend::GlyphCaches,
+    pub(crate) cff_strings: backend::StringCaches,
+    pub(crate) post_names: backend::PostCaches,
     pub(crate) backend: backend::DocumentStates,
     pub(crate) allocations: super::allocation::AllocationSet,
     pub(crate) diagnostics: diagnostics::State,
@@ -54,6 +57,9 @@ impl DocumentScope {
         let mut document = Box::new(Document {
             objects: super::objects::State::default(),
             names: backend::dpx_pdfnames::Storage::default(),
+            glyphs: backend::GlyphCaches::default(),
+            cff_strings: backend::StringCaches::default(),
+            post_names: backend::PostCaches::default(),
             backend: backend::DocumentStates::new(),
             allocations: super::allocation::AllocationSet::default(),
             diagnostics: diagnostics::State::default(),

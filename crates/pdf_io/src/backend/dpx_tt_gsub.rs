@@ -26,6 +26,51 @@
 )]
 use crate::compat::allocation::free;
 use crate::unicode::is_valid as UC_is_valid;
+
+#[cfg(test)]
+mod performance_tests {
+    use super::*;
+
+    #[test]
+    fn coverage_search_handles_boundaries_gaps_and_both_formats() {
+        let mut list: Vec<u16> = (0..8192).map(|index| index * 7).collect();
+        let mut ranges: Vec<clt_range> = (0..4096)
+            .map(|index| clt_range {
+                Start: index * 16 + 3,
+                End: index * 16 + 7,
+                StartCoverageIndex: index * 5,
+            })
+            .collect();
+        let mut coverage = clt_coverage {
+            format: 1,
+            count: list.len() as u16,
+            list: list.as_mut_ptr(),
+            range: core::ptr::null_mut(),
+        };
+        for gid in 0..=u16::MAX {
+            let expected = if gid % 7 == 0 && gid / 7 < 8192 {
+                i32::from(gid / 7)
+            } else {
+                -1
+            };
+            assert_eq!(unsafe { clt_lookup_coverage(&mut coverage, gid) }, expected);
+        }
+        coverage.format = 2;
+        coverage.count = ranges.len() as u16;
+        coverage.range = ranges.as_mut_ptr();
+        for gid in 0..=u16::MAX {
+            let expected = if (3..=7).contains(&(gid % 16)) {
+                i32::from(gid / 16) * 5 + i32::from(gid % 16) - 3
+            } else {
+                -1
+            };
+            assert_eq!(unsafe { clt_lookup_coverage(&mut coverage, gid) }, expected);
+        }
+        coverage.count = 0;
+        coverage.range = core::ptr::null_mut();
+        assert_eq!(unsafe { clt_lookup_coverage(&mut coverage, 0) }, -1);
+    }
+}
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -672,39 +717,23 @@ unsafe extern "C-unwind" fn clt_lookup_coverage(
         );
     } else {
     };
+    if (*cov).count == 0 && matches!((*cov).format, 1 | 2) {
+        return -1;
+    }
     match (*cov).format as ::core::ffi::c_int {
         1 => {
-            i = 0 as ::core::ffi::c_int;
-            while i < (*cov).count as ::core::ffi::c_int {
-                if *(*cov).list.offset(i as isize) as ::core::ffi::c_int > gid as ::core::ffi::c_int
-                {
-                    break;
-                }
-                if *(*cov).list.offset(i as isize) as ::core::ffi::c_int
-                    == gid as ::core::ffi::c_int
-                {
-                    return i;
-                }
-                i += 1;
+            let list = core::slice::from_raw_parts((*cov).list, (*cov).count as usize);
+            let index = list.partition_point(|&value| value < gid);
+            if list.get(index) == Some(&gid) {
+                return index as i32;
             }
         }
         2 => {
-            i = 0 as ::core::ffi::c_int;
-            while i < (*cov).count as ::core::ffi::c_int {
-                if (gid as ::core::ffi::c_int)
-                    < (*(*cov).range.offset(i as isize)).Start as ::core::ffi::c_int
-                {
-                    break;
-                }
-                if gid as ::core::ffi::c_int
-                    <= (*(*cov).range.offset(i as isize)).End as ::core::ffi::c_int
-                {
-                    return (*(*cov).range.offset(i as isize)).StartCoverageIndex
-                        as ::core::ffi::c_int
-                        + gid as ::core::ffi::c_int
-                        - (*(*cov).range.offset(i as isize)).Start as ::core::ffi::c_int;
-                }
-                i += 1;
+            let ranges = core::slice::from_raw_parts((*cov).range, (*cov).count as usize);
+            let index = ranges.partition_point(|range| range.End < gid);
+            if let Some(range) = ranges.get(index).filter(|range| range.Start <= gid) {
+                return i32::from(range.StartCoverageIndex) + i32::from(gid)
+                    - i32::from(range.Start);
             }
         }
         _ => {
@@ -1118,6 +1147,7 @@ unsafe extern "C-unwind" fn otl_gsub_read_feat(
     };
     let mut subtab: *mut otl_gsub_subtab = ::core::ptr::null_mut::<otl_gsub_subtab>();
     let mut num_subtabs: USHORT = 0 as USHORT;
+    let mut subtab_capacity = 0usize;
     let mut feat_bits: [::core::ffi::c_uchar; 8192] = [0; 8192];
     let mut feature_list: clt_record_list = clt_record_list {
         count: 0,
@@ -1452,14 +1482,23 @@ unsafe extern "C-unwind" fn otl_gsub_read_feat(
                         );
                     }
                 } else {
-                    subtab = renew(
-                        subtab as *mut ::core::ffi::c_void,
-                        ((num_subtabs as ::core::ffi::c_int
-                            + lookup_table.SubTableList.count as ::core::ffi::c_int)
-                            as uint32_t as usize)
-                            .wrapping_mul(::core::mem::size_of::<otl_gsub_subtab>() as usize)
-                            as uint32_t,
-                    ) as *mut otl_gsub_subtab;
+                    let required = num_subtabs as usize + lookup_table.SubTableList.count as usize;
+                    if required > u16::MAX as usize {
+                        pdf_abort!("Too many GSUB subtables");
+                    }
+                    if required > subtab_capacity {
+                        subtab_capacity = crate::compat::allocation::grow_capacity(
+                            subtab_capacity,
+                            required,
+                            core::mem::size_of::<otl_gsub_subtab>(),
+                            16,
+                        );
+                        subtab = renew(
+                            subtab.cast(),
+                            (subtab_capacity * core::mem::size_of::<otl_gsub_subtab>()) as u32,
+                        )
+                        .cast();
+                    }
                     n_st = 0 as ::core::ffi::c_int;
                     st_idx = 0 as ::core::ffi::c_int;
                     while st_idx < lookup_table.SubTableList.count as ::core::ffi::c_int {

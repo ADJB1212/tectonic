@@ -34,7 +34,6 @@ impl ResourceId {
 }
 
 pub(crate) struct Resource {
-    pub(crate) name: Option<Box<[u8]>>,
     pub(crate) object: Option<ObjectId>,
     pub(crate) reference: Option<ObjectId>,
 }

@@ -27,6 +27,44 @@
     dangerous_implicit_autorefs
 )]
 use crate::compat::allocation::free;
+
+#[cfg(test)]
+mod performance_tests {
+    use super::*;
+
+    #[test]
+    fn font_aliases_keep_source_metadata_across_cache_growth() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
+        unsafe {
+            let cache = core::ptr::addr_of_mut!((*document_state()).font_cache);
+            (*cache).capacity = 1;
+            (*cache).count = 1;
+            (*cache).fonts = new(core::mem::size_of::<pdf_font>() as u32).cast();
+            pdf_init_font_struct((*cache).fonts);
+            (*(*cache).fonts).subtype = PDF_FONT_FONTTYPE_TRUETYPE;
+            (*(*cache).fonts).encoding_id = 42;
+            let mut growths = 0;
+            let mut capacity = (*cache).capacity;
+            for index in 1..4096 {
+                let name = std::ffi::CString::new(format!("alias{index}")).unwrap();
+                assert_eq!(create_font_alias(name.as_ptr(), 0), index);
+                let font = (*cache).fonts.add(index as usize);
+                assert_eq!((*font).subtype, PDF_FONT_FONTTYPE_TRUETYPE);
+                assert_eq!((*font).encoding_id, 42);
+                growths += usize::from(capacity != (*cache).capacity);
+                capacity = (*cache).capacity;
+            }
+            assert!(growths <= 12, "{growths} reallocations");
+            for index in 0..(*cache).count {
+                pdf_clean_font_struct((*cache).fonts.add(index as usize));
+            }
+            free((*cache).fonts.cast());
+            (*cache).fonts = core::ptr::null_mut();
+            (*cache).count = 0;
+            (*cache).capacity = 0;
+        }
+    }
+}
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -1232,16 +1270,19 @@ unsafe extern "C-unwind" fn create_font_alias(
     src = (*__pdf_state).font_cache.fonts.offset(font_id as isize) as *mut pdf_font;
     this_id = (*__pdf_state).font_cache.count;
     if (*__pdf_state).font_cache.count >= (*__pdf_state).font_cache.capacity {
-        (*__pdf_state).font_cache.capacity =
-            ((*__pdf_state).font_cache.capacity as ::core::ffi::c_uint)
-                .wrapping_add(CACHE_ALLOC_SIZE) as ::core::ffi::c_int
-                as ::core::ffi::c_int;
+        (*__pdf_state).font_cache.capacity = crate::compat::allocation::grow_capacity(
+            (*__pdf_state).font_cache.capacity as usize,
+            (*__pdf_state).font_cache.count as usize + 2,
+            core::mem::size_of::<pdf_font>(),
+            CACHE_ALLOC_SIZE as usize,
+        ) as i32;
         (*__pdf_state).font_cache.fonts = renew(
             (*__pdf_state).font_cache.fonts as *mut ::core::ffi::c_void,
             ((*__pdf_state).font_cache.capacity as uint32_t as usize)
                 .wrapping_mul(::core::mem::size_of::<pdf_font>() as usize) as uint32_t,
         ) as *mut pdf_font;
     }
+    src = (*__pdf_state).font_cache.fonts.offset(font_id as isize);
     font = (*__pdf_state).font_cache.fonts.offset(this_id as isize) as *mut pdf_font;
     pdf_init_font_struct(font);
     (*font).ident = new(
@@ -1268,10 +1309,12 @@ unsafe extern "C-unwind" fn create_font_reencoded(
     if (*__pdf_state).font_cache.count + 1 as ::core::ffi::c_int
         >= (*__pdf_state).font_cache.capacity
     {
-        (*__pdf_state).font_cache.capacity =
-            ((*__pdf_state).font_cache.capacity as ::core::ffi::c_uint)
-                .wrapping_add(CACHE_ALLOC_SIZE) as ::core::ffi::c_int
-                as ::core::ffi::c_int;
+        (*__pdf_state).font_cache.capacity = crate::compat::allocation::grow_capacity(
+            (*__pdf_state).font_cache.capacity as usize,
+            (*__pdf_state).font_cache.count as usize + 2,
+            core::mem::size_of::<pdf_font>(),
+            CACHE_ALLOC_SIZE as usize,
+        ) as i32;
         (*__pdf_state).font_cache.fonts = renew(
             (*__pdf_state).font_cache.fonts as *mut ::core::ffi::c_void,
             ((*__pdf_state).font_cache.capacity as uint32_t as usize)
@@ -1452,10 +1495,12 @@ pub unsafe extern "C-unwind" fn pdf_font_load_font(
         if (*__pdf_state).font_cache.count + 1 as ::core::ffi::c_int
             >= (*__pdf_state).font_cache.capacity
         {
-            (*__pdf_state).font_cache.capacity =
-                ((*__pdf_state).font_cache.capacity as ::core::ffi::c_uint)
-                    .wrapping_add(CACHE_ALLOC_SIZE) as ::core::ffi::c_int
-                    as ::core::ffi::c_int;
+            (*__pdf_state).font_cache.capacity = crate::compat::allocation::grow_capacity(
+                (*__pdf_state).font_cache.capacity as usize,
+                (*__pdf_state).font_cache.count as usize + 2,
+                core::mem::size_of::<pdf_font>(),
+                CACHE_ALLOC_SIZE as usize,
+            ) as i32;
             (*__pdf_state).font_cache.fonts = renew(
                 (*__pdf_state).font_cache.fonts as *mut ::core::ffi::c_void,
                 ((*__pdf_state).font_cache.capacity as uint32_t as usize)
@@ -1562,10 +1607,12 @@ pub unsafe extern "C-unwind" fn pdf_font_load_font(
         }
         font_id = (*__pdf_state).font_cache.count;
         if (*__pdf_state).font_cache.count >= (*__pdf_state).font_cache.capacity {
-            (*__pdf_state).font_cache.capacity =
-                ((*__pdf_state).font_cache.capacity as ::core::ffi::c_uint)
-                    .wrapping_add(CACHE_ALLOC_SIZE) as ::core::ffi::c_int
-                    as ::core::ffi::c_int;
+            (*__pdf_state).font_cache.capacity = crate::compat::allocation::grow_capacity(
+                (*__pdf_state).font_cache.capacity as usize,
+                (*__pdf_state).font_cache.count as usize + 2,
+                core::mem::size_of::<pdf_font>(),
+                CACHE_ALLOC_SIZE as usize,
+            ) as i32;
             (*__pdf_state).font_cache.fonts = renew(
                 (*__pdf_state).font_cache.fonts as *mut ::core::ffi::c_void,
                 ((*__pdf_state).font_cache.capacity as uint32_t as usize)

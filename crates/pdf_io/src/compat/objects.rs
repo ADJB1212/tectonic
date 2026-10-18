@@ -112,24 +112,32 @@ pub(crate) unsafe fn stream_storage(id: StreamId) -> *mut pdf_stream {
     unsafe { (*state()).streams.pointer(id.0) }
 }
 
-use std::{cell::UnsafeCell, mem::MaybeUninit};
+use std::{
+    cell::{Cell, UnsafeCell},
+    mem::MaybeUninit,
+};
 
 const CHUNK_SIZE: usize = 128;
 type Chunk<T> = Vec<UnsafeCell<MaybeUninit<T>>>;
+
+fn chunk_size<T>() -> usize {
+    let slots = (16 * 1024 / core::mem::size_of::<T>().max(1)).clamp(1, CHUNK_SIZE);
+    1usize << slots.ilog2()
+}
 
 // Each chunk is filled to its final length before publication and never resized.
 // Moving its Vec descriptor does not borrow the published slots mutably.
 // Only the engine thread accesses initialized slots.
 pub(crate) struct StableStore<T> {
     chunks: UnsafeCell<Vec<Chunk<T>>>,
-    pointers: UnsafeCell<Vec<*mut T>>,
+    len: Cell<usize>,
 }
 
 impl<T> Default for StableStore<T> {
     fn default() -> Self {
         Self {
             chunks: UnsafeCell::default(),
-            pointers: UnsafeCell::default(),
+            len: Cell::new(0),
         }
     }
 }
@@ -137,34 +145,38 @@ impl<T> Default for StableStore<T> {
 impl<T> StableStore<T> {
     pub(crate) unsafe fn insert(&self, value: T) -> usize {
         unsafe {
-            let pointers = &mut *self.pointers.get();
-            pointers.reserve(1);
-            let index = pointers.len();
+            let index = self.len.get();
+            let chunk_size = chunk_size::<T>();
             let chunks = &mut *self.chunks.get();
-            if index.is_multiple_of(CHUNK_SIZE) {
+            if index.is_multiple_of(chunk_size) {
                 chunks.push(
-                    (0..CHUNK_SIZE)
+                    (0..chunk_size)
                         .map(|_| UnsafeCell::new(MaybeUninit::uninit()))
                         .collect(),
                 );
             }
-            let pointer = chunks[index / CHUNK_SIZE][index % CHUNK_SIZE]
+            let pointer = chunks[index / chunk_size][index % chunk_size]
                 .get()
                 .cast::<T>();
             pointer.write(value);
-            pointers.push(pointer);
+            self.len.set(index + 1);
             index
         }
     }
 
     #[inline]
     pub(crate) unsafe fn pointer(&self, index: usize) -> *mut T {
-        unsafe { (&*self.pointers.get())[index] }
+        assert!(index < self.len.get());
+        let chunk_size = chunk_size::<T>();
+        unsafe {
+            (&*self.chunks.get())[index / chunk_size][index % chunk_size]
+                .get()
+                .cast()
+        }
     }
 
     pub(crate) fn len(&self) -> usize {
-        // SAFETY: Metadata access is synchronous on the engine thread.
-        unsafe { (&*self.pointers.get()).len() }
+        self.len.get()
     }
 }
 
@@ -172,8 +184,13 @@ impl<T> Drop for StableStore<T> {
     fn drop(&mut self) {
         // SAFETY: Published slots were initialized once and are still owned here.
         unsafe {
-            for &pointer in self.pointers.get_mut().iter() {
-                pointer.drop_in_place();
+            let mut remaining = self.len.get();
+            let chunk_size = chunk_size::<T>();
+            for chunk in self.chunks.get_mut() {
+                for slot in chunk.iter().take(remaining.min(chunk_size)) {
+                    slot.get().cast::<T>().drop_in_place();
+                }
+                remaining = remaining.saturating_sub(chunk_size);
             }
         }
     }
@@ -183,6 +200,23 @@ impl<T> Drop for StableStore<T> {
 mod tests {
     use super::*;
     use std::{cell::Cell, rc::Rc};
+
+    #[test]
+    fn large_slots_use_small_chunks_and_preserve_published_addresses() {
+        let store = StableStore::<[u8; 4096]>::default();
+        unsafe {
+            store.insert([7; 4096]);
+            let first = store.pointer(0);
+            assert_eq!((&*store.chunks.get())[0].len(), 4);
+            for byte in 1..10 {
+                store.insert([byte; 4096]);
+            }
+            assert_eq!(store.pointer(0), first);
+            assert_eq!(*first, [7; 4096]);
+            assert_eq!(*store.pointer(9), [9; 4096]);
+            assert_eq!((&*store.chunks.get()).len(), 3);
+        }
+    }
 
     struct Tracked {
         drops: Rc<Cell<usize>>,

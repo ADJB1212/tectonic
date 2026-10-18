@@ -6,7 +6,7 @@
 use std::{
     borrow::Cow,
     cell::RefCell,
-    collections::VecDeque,
+    collections::{HashMap, VecDeque},
     ffi::{CStr, CString, c_char},
     io::Read,
     ptr, slice,
@@ -49,9 +49,10 @@ struct CharMap {
     depth: Vec<usize>,
 }
 
-struct Font {
-    name: Box<[u8]>,
-    metrics: Metrics,
+#[derive(Default)]
+struct Fonts {
+    names: HashMap<Box<[u8]>, i32>,
+    metrics: Vec<Metrics>,
 }
 
 struct Diagnostic {
@@ -61,7 +62,7 @@ struct Diagnostic {
 
 #[derive(Default)]
 pub(crate) struct DocumentState {
-    fonts: RefCell<Vec<Font>>,
+    fonts: RefCell<Fonts>,
     diagnostics: RefCell<VecDeque<Diagnostic>>,
     held_diagnostic: RefCell<Option<CString>>,
     last_error: RefCell<Option<CString>>,
@@ -491,7 +492,11 @@ fn parse(
 }
 
 fn clear_fonts() {
-    with_fonts(|fonts| fonts.borrow_mut().clear());
+    with_fonts(|fonts| {
+        let mut fonts = fonts.borrow_mut();
+        fonts.names.clear();
+        fonts.metrics.clear();
+    });
 }
 
 fn clear_diagnostics() {
@@ -541,27 +546,19 @@ fn finish<T: Default>(result: Result<T, String>, error: *mut *const c_char) -> T
 }
 
 fn find_font(name: &[u8]) -> Option<i32> {
-    with_fonts(|fonts| {
-        fonts
-            .borrow()
-            .iter()
-            .position(|font| font.name.as_ref() == name)
-            .and_then(|index| i32::try_from(index).ok())
-    })
+    with_fonts(|fonts| fonts.borrow().names.get(name).copied())
 }
 
 fn intern(name: &[u8], metrics: Metrics) -> i32 {
     with_fonts(|fonts| {
         let mut fonts = fonts.borrow_mut();
-        if let Some(index) = fonts.iter().position(|font| font.name.as_ref() == name) {
-            return i32::try_from(index).unwrap_or(-1);
+        if let Some(&id) = fonts.names.get(name) {
+            return id;
         }
-        let id = i32::try_from(fonts.len()).unwrap_or(-1);
+        let id = i32::try_from(fonts.metrics.len()).unwrap_or(-1);
         if id >= 0 {
-            fonts.push(Font {
-                name: Box::from(name),
-                metrics,
-            });
+            fonts.metrics.push(metrics);
+            fonts.names.insert(Box::from(name), id);
         }
         id
     })
@@ -585,9 +582,9 @@ fn with_metrics<T>(
         let fonts = fonts.borrow();
         let font = usize::try_from(id)
             .ok()
-            .and_then(|index| fonts.get(index))
+            .and_then(|index| fonts.metrics.get(index))
             .ok_or_else(|| format!("TFM: Invalid TFM ID: {id}"))?;
-        select(&font.metrics)
+        select(font)
     })
 }
 
@@ -821,7 +818,7 @@ unsafe extern "C" fn tt_tfm_exists(name: *const c_char) -> bool {
     file_available(&name, FileFormat::Ofm) || file_available(&name, FileFormat::Tfm)
 }
 
-fn with_fonts<T>(callback: impl FnOnce(&RefCell<Vec<Font>>) -> T) -> T {
+fn with_fonts<T>(callback: impl FnOnce(&RefCell<Fonts>) -> T) -> T {
     crate::compat::document::with_tfm(|state| callback(&state.fonts))
 }
 
@@ -907,6 +904,35 @@ mod tests {
                     .into_owned(),
             )
         }
+    }
+
+    #[test]
+    fn font_cache_preserves_ids_and_first_metrics_across_growth_and_reset() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
+        let make_metrics = |width| Metrics {
+            design_size: 10,
+            first: 0,
+            last: 0,
+            widths: vec![width],
+            heights: vec![0],
+            depths: vec![0],
+        };
+        for index in 0..2048 {
+            let name = format!("font{index}");
+            assert_eq!(intern(name.as_bytes(), make_metrics(index)), index);
+        }
+        for index in 0..2048 {
+            let name = format!("font{index}");
+            assert_eq!(find_font(name.as_bytes()), Some(index));
+            assert_eq!(intern(name.as_bytes(), make_metrics(-1)), index);
+            assert_eq!(
+                with_metrics(index, |metrics| Ok(metrics.widths[0])).unwrap(),
+                index
+            );
+        }
+        clear_fonts();
+        assert_eq!(find_font(b"font0"), None);
+        assert_eq!(intern(b"font0", make_metrics(42)), 0);
     }
 
     #[test]

@@ -60,6 +60,7 @@ pub(crate) fn scan(
     };
     let mut count = 0;
     let mut passthrough = None;
+    let mut bytes = Vec::new();
     loop {
         if count == 1024 {
             passthrough = Some(input.stream_position().map_err(io)?);
@@ -87,7 +88,7 @@ pub(crate) fn scan(
         if length < 2 {
             return Err(error("JPEG: Invalid segment length.", count));
         }
-        let mut bytes = vec![0; length as usize - 2];
+        bytes.resize(length as usize - 2, 0);
         input.read_exact(&mut bytes).map_err(io)?;
         let mut skip = false;
         match marker {

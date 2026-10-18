@@ -25,6 +25,103 @@
     dangerous_implicit_autorefs
 )]
 use crate::compat::allocation::free;
+use std::{collections::HashMap, ffi::CStr, sync::LazyLock};
+
+static STANDARD_SIDS: LazyLock<HashMap<&'static [u8], u16>> = LazyLock::new(|| {
+    cff_stdstr
+        .iter()
+        .enumerate()
+        .map(|(id, &name)| (unsafe { CStr::from_ptr(name) }.to_bytes(), id as u16))
+        .collect()
+});
+
+#[derive(Default)]
+struct StringIndex {
+    names: HashMap<Box<[u8]>, u16>,
+    offset_capacity: usize,
+    data_capacity: usize,
+}
+
+#[derive(Default)]
+pub(crate) struct StringCaches(HashMap<usize, StringIndex>);
+
+#[cfg(test)]
+mod performance_tests {
+    use super::*;
+
+    #[test]
+    fn string_indices_preserve_first_matches_and_grow_geometrically() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
+        unsafe {
+            let mut font: cff_font = core::mem::zeroed();
+            assert_eq!(cff_add_string(&mut font, c"space".as_ptr(), 1), 1);
+            assert_eq!((*font._string).count, 0);
+            let mut growths = 0;
+            let mut capacity = (0, 0);
+            for index in 0..8192 {
+                let name = std::ffi::CString::new(format!("custom{index}")).unwrap();
+                assert_eq!(cff_add_string(&mut font, name.as_ptr(), 1), index + 391);
+                let cache = &*string_index(font._string);
+                let current = (cache.offset_capacity, cache.data_capacity);
+                growths += usize::from(capacity != current);
+                capacity = current;
+            }
+            assert!(growths <= 24, "{growths} reallocations");
+            assert_eq!(
+                cff_add_string(&mut font, c"custom0".as_ptr(), 0),
+                8192 + 391
+            );
+            assert_eq!(cff_add_string(&mut font, c"custom0".as_ptr(), 1), 391);
+            assert_eq!(cff_add_string(&mut font, c"space".as_ptr(), 0), 8193 + 391);
+            cff_update_string(&mut font);
+            (*string_caches()).0.remove(&(font.string as usize));
+            for index in 0..8192 {
+                let name = std::ffi::CString::new(format!("custom{index}")).unwrap();
+                assert_eq!(cff_get_sid(&mut font, name.as_ptr()), index + 391);
+                let stored = cff_get_string(&mut font, (index + 391) as u16);
+                assert_eq!(CStr::from_ptr(stored), name.as_c_str());
+                free(stored.cast());
+            }
+            assert_eq!(cff_get_sid(&mut font, c"space".as_ptr()), 8193 + 391);
+            assert_eq!(cff_get_seac_sid(&mut font, c"space".as_ptr()), 1);
+            assert_eq!(cff_get_sid(&mut font, c"missing".as_ptr()), -1);
+            cff_release_index(font.string);
+            assert!((*string_caches()).0.is_empty());
+        }
+    }
+}
+
+unsafe fn string_caches() -> *mut StringCaches {
+    core::ptr::addr_of_mut!((*crate::compat::document::current()).cff_strings)
+}
+
+unsafe fn string_index(strings: *mut cff_index) -> *mut StringIndex {
+    (*string_caches())
+        .0
+        .entry(strings as usize)
+        .or_insert_with(|| {
+            let count = (*strings).count as usize;
+            let mut index = StringIndex::default();
+            if count != 0 {
+                let offsets = core::slice::from_raw_parts((*strings).offset, count + 1);
+                index.offset_capacity = count + 1;
+                index.data_capacity = offsets[count] as usize - 1;
+                for (id, pair) in offsets.windows(2).enumerate() {
+                    let length = (pair[1] - pair[0]) as usize;
+                    let bytes = if length == 0 {
+                        &[]
+                    } else {
+                        core::slice::from_raw_parts(
+                            (*strings).data.add(pair[0] as usize - 1),
+                            length,
+                        )
+                    };
+                    index.names.entry(Box::from(bytes)).or_insert(id as u16);
+                }
+            }
+            index
+        })
+}
 unsafe extern "C-unwind" {
     fn strcmp(
         __s1: *const ::core::ffi::c_char,
@@ -1202,6 +1299,7 @@ pub unsafe extern "C-unwind" fn cff_new_index(mut count: card16) -> *mut cff_ind
 #[unsafe(export_name = "__pdf_impl_cff_release_index")]
 pub unsafe extern "C-unwind" fn cff_release_index(mut idx: *mut cff_index) {
     if !idx.is_null() {
+        (*string_caches()).0.remove(&(idx as usize));
         if !(*idx).data.is_null() {
             free((*idx).data as *mut ::core::ffi::c_void);
         }
@@ -1260,60 +1358,28 @@ pub unsafe extern "C-unwind" fn cff_get_sid(
     mut cff: *mut cff_font,
     mut str: *const ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
-    let mut i: card16 = 0;
     if cff.is_null() || str.is_null() {
         return -(1 as ::core::ffi::c_int);
     }
-    if !cff.is_null() && !(*cff).string.is_null() {
-        let mut idx: *mut cff_index = (*cff).string;
-        i = 0 as card16;
-        while (i as ::core::ffi::c_int) < (*idx).count as ::core::ffi::c_int {
-            if strlen(str)
-                == (*(*idx)
-                    .offset
-                    .offset((i as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as isize))
-                .wrapping_sub(*(*idx).offset.offset(i as isize)) as size_t
-                && memcmp(
-                    str as *const ::core::ffi::c_void,
-                    (*idx)
-                        .data
-                        .offset(*(*idx).offset.offset(i as isize) as isize)
-                        .offset(-(1 as ::core::ffi::c_int as isize))
-                        as *const ::core::ffi::c_void,
-                    strlen(str),
-                ) == 0
-            {
-                return i as ::core::ffi::c_int + CFF_STDSTR_MAX;
-            }
-            i = i.wrapping_add(1);
+    let bytes = CStr::from_ptr(str).to_bytes();
+    if !(*cff).string.is_null() {
+        if let Some(&id) = (*string_index((*cff).string)).names.get(bytes) {
+            return i32::from(id) + CFF_STDSTR_MAX;
         }
     }
-    i = 0 as card16;
-    while (i as ::core::ffi::c_int) < CFF_STDSTR_MAX {
-        if streq_ptr(str, cff_stdstr[i as usize]) {
-            return i as ::core::ffi::c_int;
-        }
-        i = i.wrapping_add(1);
-    }
-    return -(1 as ::core::ffi::c_int);
+    STANDARD_SIDS.get(bytes).map_or(-1, |&id| i32::from(id))
 }
 #[unsafe(export_name = "__pdf_impl_cff_get_seac_sid")]
 pub unsafe extern "C-unwind" fn cff_get_seac_sid(
     mut cff: *mut cff_font,
     mut str: *const ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
-    let mut i: card16 = 0;
     if cff.is_null() || str.is_null() {
         return -(1 as ::core::ffi::c_int);
     }
-    i = 0 as card16;
-    while (i as ::core::ffi::c_int) < CFF_STDSTR_MAX {
-        if streq_ptr(str, cff_stdstr[i as usize]) {
-            return i as ::core::ffi::c_int;
-        }
-        i = i.wrapping_add(1);
-    }
-    return -(1 as ::core::ffi::c_int);
+    STANDARD_SIDS
+        .get(CStr::from_ptr(str).to_bytes())
+        .map_or(-1, |&id| i32::from(id))
 }
 unsafe extern "C-unwind" fn cff_match_string(
     mut cff: *mut cff_font,
@@ -1376,82 +1442,71 @@ pub unsafe extern "C-unwind" fn cff_add_string(
     mut str: *const ::core::ffi::c_char,
     mut unique: ::core::ffi::c_int,
 ) -> s_SID {
-    let mut idx: card16 = 0;
-    let mut strings: *mut cff_index = ::core::ptr::null_mut::<cff_index>();
-    let mut offset: l_offset = 0;
-    let mut size: l_offset = 0;
-    let mut len: size_t = strlen(str);
+    let bytes = CStr::from_ptr(str).to_bytes();
     if cff.is_null() {
         pdf_abort!(b"CFF font not opened.\0" as *const u8 as *const ::core::ffi::c_char);
     }
     if (*cff)._string.is_null() {
         (*cff)._string = cff_new_index(0 as card16);
     }
-    strings = (*cff)._string;
+    let strings = (*cff)._string;
+    let cache = string_index(strings);
     if unique != 0 {
-        idx = 0 as card16;
-        while (idx as ::core::ffi::c_int) < CFF_STDSTR_MAX {
-            if streq_ptr(cff_stdstr[idx as usize], str) {
-                return idx as s_SID;
-            }
-            idx = idx.wrapping_add(1);
+        if let Some(&id) = STANDARD_SIDS.get(bytes) {
+            return id;
         }
-        idx = 0 as card16;
-        while (idx as ::core::ffi::c_int) < (*strings).count as ::core::ffi::c_int {
-            size = (*(*strings)
-                .offset
-                .offset((idx as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as isize))
-            .wrapping_sub(*(*strings).offset.offset(idx as isize));
-            offset = *(*strings).offset.offset(idx as isize);
-            if size as size_t == len
-                && memcmp(
-                    (*strings)
-                        .data
-                        .offset(offset as isize)
-                        .offset(-(1 as ::core::ffi::c_int as isize))
-                        as *const ::core::ffi::c_void,
-                    str as *const ::core::ffi::c_void,
-                    len,
-                ) == 0
-            {
-                return (idx as ::core::ffi::c_int + CFF_STDSTR_MAX) as s_SID;
-            }
-            idx = idx.wrapping_add(1);
+        if let Some(&id) = (*cache).names.get(bytes) {
+            return id + CFF_STDSTR_MAX as u16;
         }
     }
-    offset = if (*strings).count as ::core::ffi::c_int > 0 as ::core::ffi::c_int {
-        *(*strings).offset.offset((*strings).count as isize)
+    let count = (*strings).count as usize;
+    if count > u16::MAX as usize - CFF_STDSTR_MAX as usize {
+        pdf_abort!("Too many CFF strings");
+    }
+    let offset = if count == 0 {
+        1
     } else {
-        1 as l_offset
+        *(*strings).offset.add(count) as usize
     };
-    (*strings).offset = renew(
-        (*strings).offset as *mut ::core::ffi::c_void,
-        (((*strings).count as ::core::ffi::c_int + 2 as ::core::ffi::c_int) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<l_offset>() as usize) as uint32_t,
-    ) as *mut l_offset;
-    if (*strings).count as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
-        *(*strings).offset.offset(0 as ::core::ffi::c_int as isize) = 1 as l_offset;
+    let end = offset
+        .checked_add(bytes.len())
+        .filter(|&end| end <= u32::MAX as usize)
+        .unwrap_or_else(|| pdf_abort!("CFF strings are too large"));
+    if count + 2 > (*cache).offset_capacity {
+        (*cache).offset_capacity = crate::compat::allocation::grow_capacity(
+            (*cache).offset_capacity,
+            count + 2,
+            core::mem::size_of::<l_offset>(),
+            16,
+        );
+        (*strings).offset = renew(
+            (*strings).offset.cast(),
+            ((*cache).offset_capacity * core::mem::size_of::<l_offset>()) as u32,
+        )
+        .cast();
     }
-    idx = (*strings).count;
-    (*strings).count = ((*strings).count as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as card16;
-    *(*strings).offset.offset((*strings).count as isize) =
-        (offset as size_t).wrapping_add(len) as l_offset;
-    (*strings).data = renew(
-        (*strings).data as *mut ::core::ffi::c_void,
-        ((offset as size_t)
-            .wrapping_add(len)
-            .wrapping_sub(1 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<card8>() as usize) as uint32_t,
-    ) as *mut card8;
-    memcpy(
-        (*strings)
-            .data
-            .offset(offset as isize)
-            .offset(-(1 as ::core::ffi::c_int as isize)) as *mut ::core::ffi::c_void,
-        str as *const ::core::ffi::c_void,
-        len,
-    );
-    return (idx as ::core::ffi::c_int + CFF_STDSTR_MAX) as s_SID;
+    if end - 1 > (*cache).data_capacity {
+        (*cache).data_capacity =
+            crate::compat::allocation::grow_capacity((*cache).data_capacity, end - 1, 1, 256);
+        (*strings).data = renew((*strings).data.cast(), (*cache).data_capacity as u32).cast();
+    }
+    if count == 0 {
+        *(*strings).offset = 1;
+    }
+    if !bytes.is_empty() {
+        core::ptr::copy_nonoverlapping(
+            bytes.as_ptr(),
+            (*strings).data.add(offset - 1),
+            bytes.len(),
+        );
+    }
+    *(*strings).offset.add(count + 1) = end as u32;
+    (*strings).count += 1;
+    (*cache)
+        .names
+        .entry(Box::from(bytes))
+        .or_insert(count as u16);
+    (count + CFF_STDSTR_MAX as usize) as u16
 }
 unsafe fn copy_font_array<T: Copy>(values: &[T]) -> *mut T {
     if values.is_empty() {

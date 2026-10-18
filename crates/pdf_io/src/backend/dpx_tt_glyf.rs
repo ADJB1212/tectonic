@@ -25,6 +25,76 @@
     dangerous_implicit_autorefs
 )]
 use crate::compat::allocation::free;
+use std::collections::HashMap;
+
+#[derive(Default)]
+struct GlyphIndex {
+    original: HashMap<u16, u16>,
+    subset: HashMap<u16, u16>,
+    first_empty: u16,
+}
+
+#[derive(Default)]
+pub(crate) struct GlyphCaches(HashMap<usize, GlyphIndex>);
+
+#[cfg(test)]
+mod performance_tests {
+    use super::*;
+
+    #[test]
+    fn glyph_indices_survive_sparse_slots_duplicates_growth_and_sorting() {
+        let _document = crate::compat::document::DocumentScope::new().unwrap();
+        unsafe {
+            let glyphs = tt_build_init();
+            for original in 1..8192u16 {
+                let subset = 16384 - original;
+                tt_add_glyph(glyphs, original, subset);
+                assert_eq!(tt_find_glyph(glyphs, original), subset);
+                assert_eq!(tt_get_index(glyphs, subset), original);
+            }
+            assert_eq!(find_empty_slot(glyphs), 1);
+            tt_add_glyph(glyphs, 1, 1);
+            assert_eq!(tt_find_glyph(glyphs, 1), 16383);
+            assert_eq!(find_empty_slot(glyphs), 2);
+            core::slice::from_raw_parts_mut((*glyphs).gd, (*glyphs).num_glyphs as usize)
+                .sort_unstable_by_key(|glyph| glyph.gid);
+            index_glyphs(glyphs);
+            assert_eq!(tt_find_glyph(glyphs, 1), 1);
+            for (slot, glyph) in
+                core::slice::from_raw_parts((*glyphs).gd, (*glyphs).num_glyphs as usize)
+                    .iter()
+                    .enumerate()
+            {
+                assert_eq!(tt_get_index(glyphs, glyph.gid), slot as u16);
+            }
+            assert_eq!(tt_get_index(glyphs, 65535), 0);
+            assert_eq!(tt_find_glyph(glyphs, 65535), 0);
+            tt_build_finish(glyphs);
+            assert!((*glyph_caches()).0.is_empty());
+            let next = tt_build_init();
+            assert_eq!(tt_find_glyph(next, 1), 0);
+            tt_build_finish(next);
+        }
+    }
+}
+
+unsafe fn glyph_caches() -> *mut GlyphCaches {
+    core::ptr::addr_of_mut!((*crate::compat::document::current()).glyphs)
+}
+
+unsafe fn index_glyphs(g: *mut tt_glyphs) {
+    if let Some(index) = (*glyph_caches()).0.get_mut(&(g as usize)) {
+        index.original.clear();
+        index.subset.clear();
+        for (slot, glyph) in core::slice::from_raw_parts((*g).gd, (*g).num_glyphs as usize)
+            .iter()
+            .enumerate()
+        {
+            index.original.entry(glyph.ogid).or_insert(glyph.gid);
+            index.subset.insert(glyph.gid, slot as u16);
+        }
+    }
+}
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -329,7 +399,10 @@ unsafe extern "C-unwind" fn find_empty_slot(mut g: *mut tt_glyphs) -> USHORT {
         );
     } else {
     };
-    gid = 0 as USHORT;
+    gid = (*glyph_caches())
+        .0
+        .get(&(g as usize))
+        .map_or(0, |index| index.first_empty);
     while (gid as ::core::ffi::c_int) < NUM_GLYPH_LIMIT {
         if *(*g)
             .used_slot
@@ -346,10 +419,16 @@ unsafe extern "C-unwind" fn find_empty_slot(mut g: *mut tt_glyphs) -> USHORT {
     if gid as ::core::ffi::c_int == NUM_GLYPH_LIMIT {
         pdf_abort!(b"No empty glyph slot available.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
+    if let Some(index) = (*glyph_caches()).0.get_mut(&(g as usize)) {
+        index.first_empty = gid;
+    }
     return gid;
 }
 #[unsafe(export_name = "__pdf_impl_tt_find_glyph")]
 pub unsafe extern "C-unwind" fn tt_find_glyph(mut g: *mut tt_glyphs, mut gid: USHORT) -> USHORT {
+    if let Some(index) = (*glyph_caches()).0.get(&(g as usize)) {
+        return index.original.get(&gid).copied().unwrap_or(0);
+    }
     let mut idx: USHORT = 0;
     let mut new_gid: USHORT = 0 as USHORT;
     if g.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -372,6 +451,9 @@ pub unsafe extern "C-unwind" fn tt_find_glyph(mut g: *mut tt_glyphs, mut gid: US
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_index")]
 pub unsafe extern "C-unwind" fn tt_get_index(mut g: *mut tt_glyphs, mut gid: USHORT) -> USHORT {
+    if let Some(index) = (*glyph_caches()).0.get(&(g as usize)) {
+        return index.subset.get(&gid).copied().unwrap_or(0);
+    }
     let mut idx: USHORT = 0;
     if g.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
@@ -422,8 +504,9 @@ pub unsafe extern "C-unwind" fn tt_add_glyph(
             pdf_abort!(b"Too many glyphs.\0" as *const u8 as *const ::core::ffi::c_char);
         }
         if (*g).num_glyphs as ::core::ffi::c_int >= (*g).max_glyphs as ::core::ffi::c_int {
-            (*g).max_glyphs =
-                ((*g).max_glyphs as ::core::ffi::c_int + GLYPH_ARRAY_ALLOC_SIZE) as USHORT;
+            (*g).max_glyphs = ((*g).max_glyphs as usize * 2)
+                .max(GLYPH_ARRAY_ALLOC_SIZE as usize)
+                .min(NUM_GLYPH_LIMIT as usize) as u16;
             (*g).gd = renew(
                 (*g).gd as *mut ::core::ffi::c_void,
                 ((*g).max_glyphs as uint32_t as usize)
@@ -444,6 +527,10 @@ pub unsafe extern "C-unwind" fn tt_add_glyph(
                 << 7 as ::core::ffi::c_int
                     - new_gid as ::core::ffi::c_int % 8 as ::core::ffi::c_int)
             as ::core::ffi::c_uchar;
+        if let Some(index) = (*glyph_caches()).0.get_mut(&(g as usize)) {
+            index.original.entry(gid).or_insert(new_gid);
+            index.subset.insert(new_gid, (*g).num_glyphs);
+        }
         (*g).num_glyphs =
             ((*g).num_glyphs as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as USHORT;
     }
@@ -473,12 +560,16 @@ pub unsafe extern "C-unwind" fn tt_build_init() -> *mut tt_glyphs {
         0 as ::core::ffi::c_int,
         8192 as size_t,
     );
+    (*glyph_caches())
+        .0
+        .insert(g as usize, GlyphIndex::default());
     tt_add_glyph(g, 0 as USHORT, 0 as USHORT);
     return g;
 }
 #[unsafe(export_name = "__pdf_impl_tt_build_finish")]
 pub unsafe extern "C-unwind" fn tt_build_finish(mut g: *mut tt_glyphs) {
     if !g.is_null() {
+        (*glyph_caches()).0.remove(&(g as usize));
         if !(*g).gd.is_null() {
             let mut idx: USHORT = 0;
             idx = 0 as USHORT;
@@ -821,6 +912,7 @@ pub unsafe extern "C-unwind" fn tt_build_tables(
                 ) -> ::core::ffi::c_int,
         ),
     );
+    index_glyphs(g);
     let mut prev: USHORT = 0;
     let mut last_advw: USHORT = 0;
     let mut p_0: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();

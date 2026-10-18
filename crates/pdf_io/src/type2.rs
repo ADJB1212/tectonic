@@ -418,7 +418,7 @@ pub(crate) fn copy(
         width: None,
         warning,
     };
-    parser.parse(bytes, global, local, 1)?;
+    parser.parse(bytes, global, local, 0)?;
     Ok(Output {
         length: parser.written,
         width: parser.width,
@@ -453,6 +453,39 @@ mod tests {
             expand(&[255, 255, 255, 128, 0, 22, 14], 7).unwrap(),
             [255, 255, 255, 128, 0, 22, 14]
         );
+    }
+    #[test]
+    fn allows_ten_nested_subroutines_and_rejects_eleven() {
+        for depth in [10, 11] {
+            let mut bytes = Vec::new();
+            let mut offsets = vec![1];
+            for index in 0..depth {
+                if index + 1 < depth {
+                    bytes.extend_from_slice(&[33 + index, if index % 2 == 0 { 29 } else { 10 }]);
+                }
+                bytes.push(11);
+                offsets.push(bytes.len() as u32 + 1);
+            }
+            let subroutines = Subroutines {
+                offsets: &offsets,
+                bytes: &bytes,
+            };
+            let mut output = [0; 100];
+            let result = copy(
+                &[32, 10, 14],
+                &mut output,
+                Some(&subroutines),
+                Some(&subroutines),
+                &mut [0.0; 32],
+                &mut Vec::new(),
+                |_| {},
+            );
+            if depth == 10 {
+                assert_eq!(&output[..result.unwrap().length], &[14]);
+            } else {
+                assert!(result.is_err());
+            }
+        }
     }
     #[test]
     fn checks_truncations_stack_indices_and_subroutine_bounds() {

@@ -1026,9 +1026,10 @@ unsafe extern "C-unwind" fn preproc_password(
     );
     match V {
         1 | 2 | 3 | 4 => {
+            let passwd_len = strlen(passwd);
             let mut i: size_t = 0;
             i = 0 as size_t;
-            while i < strlen(passwd) {
+            while i < passwd_len {
                 if (*passwd.offset(i as isize) as ::core::ffi::c_int) < 0x20 as ::core::ffi::c_int
                     || *passwd.offset(i as isize) as ::core::ffi::c_int > 0x7e as ::core::ffi::c_int
                 {
@@ -1042,11 +1043,7 @@ unsafe extern "C-unwind" fn preproc_password(
             memcpy(
                 outbuf as *mut ::core::ffi::c_void,
                 passwd as *const ::core::ffi::c_void,
-                if (127 as size_t) < strlen(passwd) {
-                    127 as size_t
-                } else {
-                    strlen(passwd)
-                },
+                passwd_len.min(127),
             );
         }
         5 => {

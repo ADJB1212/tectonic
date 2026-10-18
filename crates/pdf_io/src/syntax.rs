@@ -3,6 +3,9 @@
 
 use crate::error::{PdfError, PdfErrorKind};
 
+static DECIMAL_DIVISORS: std::sync::LazyLock<[f64; 310]> =
+    std::sync::LazyLock::new(|| std::array::from_fn(|power| 10.0f64.powf(power as f64)));
+
 pub(crate) fn error(message: &'static str, offset: usize) -> PdfError {
     PdfError::new(
         PdfErrorKind::MalformedInput,
@@ -81,15 +84,15 @@ pub(crate) fn number(bytes: &[u8]) -> Result<(f64, usize), PdfError> {
         }
     }
     let mut value = 0.0;
-    let mut decimals = 0.0;
+    let mut decimals = 0usize;
     let mut dot = false;
     while let Some(&b) = bytes.get(pos).filter(|&&b| !delimiter(b)) {
         if b == b'.' && !dot {
             dot = true;
         } else if b.is_ascii_digit() {
             if dot {
-                decimals += 1.0;
-                value += f64::from(b - b'0') / 10.0f64.powf(decimals);
+                decimals = (decimals + 1).min(309);
+                value += f64::from(b - b'0') / DECIMAL_DIVISORS[decimals];
             } else {
                 value = value * 10.0 + f64::from(b) - f64::from(b'0');
             }
@@ -408,6 +411,22 @@ pub(crate) fn literal(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cached_decimal_divisors_preserve_fraction_bits_including_underflow() {
+        for length in [1, 2, 7, 17, 100, 308, 309, 400, 1100] {
+            let mut input = b"12.".to_vec();
+            let mut expected = 12.0;
+            for index in 1..=length {
+                let digit = (index % 10) as u8;
+                input.push(b'0' + digit);
+                expected += f64::from(digit) / 10.0f64.powf(index as f64);
+            }
+            let (actual, consumed) = number(&input).unwrap();
+            assert_eq!(actual.to_bits(), expected.to_bits());
+            assert_eq!(consumed, input.len());
+        }
+    }
 
     #[test]
     fn truncated_tokens_and_escapes_are_checked() {

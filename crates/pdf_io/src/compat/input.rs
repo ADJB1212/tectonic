@@ -8,7 +8,9 @@ use std::{
     io::{self, Read, Seek, SeekFrom},
     marker::PhantomData,
 };
-use tectonic_bridge_core::{CoreBridgeState, ttbc_input_getc, ttbc_input_read, ttbc_input_seek};
+use tectonic_bridge_core::{
+    CoreBridgeState, ttbc_input_read, ttbc_input_read_partial, ttbc_input_seek,
+};
 
 pub(crate) struct ProbeInput {
     pub(crate) handle: usize,
@@ -23,14 +25,15 @@ impl Read for DirectoryInput {
         if buffer.is_empty() {
             return Ok(0);
         }
-        let byte = CoreBridgeState::with_global_state(|state| {
-            ttbc_input_getc(state, runtime::input_id(self.handle))
+        let length = CoreBridgeState::with_global_state(|state| unsafe {
+            ttbc_input_read_partial(
+                state,
+                runtime::input_id(self.handle),
+                buffer.as_mut_ptr(),
+                buffer.len(),
+            )
         });
-        if byte < 0 {
-            return Ok(0);
-        }
-        buffer[0] = byte as u8;
-        Ok(1)
+        usize::try_from(length).map_err(|_| io::Error::other("PDF input read failed"))
     }
 }
 

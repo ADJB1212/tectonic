@@ -230,8 +230,17 @@ pub(crate) fn decode(
             }
             let count = run.min(width - x);
             if !color {
-                for bit in x..x + count {
-                    row[bit / 8] &= !(128 >> (bit % 8));
+                let end = x + count;
+                let first_byte = x / 8;
+                let last_byte = (end - 1) / 8;
+                let first_mask = 255u8 >> (x % 8);
+                let last_mask = 255u8 << (7 - (end - 1) % 8);
+                if first_byte == last_byte {
+                    row[first_byte] &= !(first_mask & last_mask);
+                } else {
+                    row[first_byte] &= !first_mask;
+                    row[first_byte + 1..last_byte].fill(0);
+                    row[last_byte] &= !last_mask;
                 }
             }
             run -= count;
@@ -251,6 +260,49 @@ pub(crate) fn decode(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn packed_runs_clear_partial_and_full_bytes() {
+        for prefix in 1..=13 {
+            for run in 1..=13 {
+                for suffix in 1..=13 {
+                    let bytes = [(prefix << 4) | run, suffix << 4];
+                    let width = usize::from(prefix + run + suffix);
+                    let mut expected = vec![255; width.div_ceil(8)];
+                    for bit in usize::from(prefix)..usize::from(prefix + run) {
+                        expected[bit / 8] &= !(128 >> (bit % 8));
+                    }
+                    let mut actual = Vec::new();
+                    decode(
+                        &bytes,
+                        width as u32,
+                        1,
+                        13,
+                        false,
+                        |row| actual.extend_from_slice(row),
+                        |_| {},
+                    )
+                    .unwrap();
+                    assert_eq!(
+                        actual, expected,
+                        "prefix={prefix}, run={run}, suffix={suffix}"
+                    );
+                }
+            }
+        }
+        let mut actual = Vec::new();
+        decode(
+            &[0x00, 0x01, 0x00, 0x20],
+            4096,
+            1,
+            13,
+            true,
+            |row| actual.extend_from_slice(row),
+            |_| {},
+        )
+        .unwrap();
+        assert_eq!(actual, vec![0; 512]);
+    }
+
     #[test]
     fn packed_runs_and_repeat_rows_preserve_output() {
         let mut output = Vec::new();

@@ -26,6 +26,22 @@ impl Hasher for AddressHasher {
 
 pub(crate) type AllocationSet = HashSet<usize, BuildHasherDefault<AddressHasher>>;
 
+pub(crate) fn grow_capacity(
+    current: usize,
+    required: usize,
+    item_size: usize,
+    minimum: usize,
+) -> usize {
+    let limit = u32::MAX as usize / item_size;
+    if required > limit {
+        crate::backend::runtime::raise_error(crate::error::PdfError::new(
+            crate::error::PdfErrorKind::Unsupported,
+            c"PDF allocation is too large".to_owned(),
+        ));
+    }
+    required.max(current.saturating_mul(2).max(minimum).min(limit))
+}
+
 unsafe fn retain(pointer: *mut c_void) {
     let document = document::try_current();
     if !pointer.is_null() && !document.is_null() {

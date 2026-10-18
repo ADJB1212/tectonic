@@ -25,6 +25,85 @@
     dangerous_implicit_autorefs
 )]
 use crate::compat::allocation::free;
+
+#[cfg(test)]
+mod performance_tests {
+    use super::*;
+
+    #[test]
+    fn format_four_search_preserves_deltas_gaps_and_glyph_array_offsets() {
+        let mut starts = [10, 20, 65535];
+        let mut ends = [12, 22, 65535];
+        let mut deltas = [1, 65535, 1];
+        let mut offsets = [6, 10, 0];
+        let mut glyphs = [1, 0, 65535, 7, 8, 9];
+        let mut map = cmap4 {
+            segCountX2: 6,
+            searchRange: 0,
+            entrySelector: 0,
+            rangeShift: 0,
+            endCount: ends.as_mut_ptr(),
+            reservedPad: 0,
+            startCount: starts.as_mut_ptr(),
+            idDelta: deltas.as_mut_ptr(),
+            idRangeOffset: offsets.as_mut_ptr(),
+            glyphIndexArray: glyphs.as_mut_ptr(),
+        };
+        for code in 0..=u16::MAX {
+            let expected = match code {
+                10 => 2,
+                20..=22 => code - 14,
+                _ => 0,
+            };
+            assert_eq!(unsafe { lookup_cmap4(&mut map, code) }, expected);
+        }
+        offsets.fill(0);
+        for code in 0..=u16::MAX {
+            let expected = match code {
+                10..=12 => code + 1,
+                20..=22 => code - 1,
+                _ => 0,
+            };
+            assert_eq!(unsafe { lookup_cmap4(&mut map, code) }, expected);
+        }
+        map.segCountX2 = 0;
+        map.startCount = core::ptr::null_mut();
+        assert_eq!(unsafe { lookup_cmap4(&mut map, 0) }, 0);
+    }
+
+    #[test]
+    fn format_twelve_search_handles_supplementary_ranges_gaps_and_wrapping() {
+        let mut groups: Vec<charGroup> = (0..4096)
+            .map(|index| charGroup {
+                startCharCode: 65536 + index * 128,
+                endCharCode: 65551 + index * 128,
+                startGlyphID: index * 17,
+            })
+            .collect();
+        let mut map = cmap12 {
+            nGroups: groups.len() as u32,
+            groups: groups.as_mut_ptr(),
+        };
+        for group in &groups {
+            for offset in [0, 1, 15, 16, 127] {
+                let expected = if offset <= 15 {
+                    (group.startGlyphID + offset) as u16
+                } else {
+                    0
+                };
+                assert_eq!(
+                    unsafe { lookup_cmap12(&mut map, group.startCharCode + offset) },
+                    expected
+                );
+            }
+        }
+        assert_eq!(unsafe { lookup_cmap12(&mut map, 0) }, 0);
+        assert_eq!(unsafe { lookup_cmap12(&mut map, u32::MAX) }, 0);
+        map.nGroups = 0;
+        map.groups = core::ptr::null_mut();
+        assert_eq!(unsafe { lookup_cmap12(&mut map, 0) }, 0);
+    }
+}
 use crate::unicode::is_valid as UC_is_valid;
 unsafe extern "C-unwind" {
     fn __assert_rtn(
@@ -840,46 +919,37 @@ unsafe extern "C-unwind" fn lookup_cmap4(mut map: *mut cmap4, mut cc: USHORT) ->
     let mut j: USHORT = 0;
     let mut segCount: USHORT = 0;
     segCount = ((*map).segCountX2 as ::core::ffi::c_int / 2 as ::core::ffi::c_int) as USHORT;
-    i = segCount;
-    loop {
-        let fresh2 = i;
-        i = i.wrapping_sub(1);
-        if !(fresh2 as ::core::ffi::c_int > 0 as ::core::ffi::c_int
-            && cc as ::core::ffi::c_int
-                <= *(*map).endCount.offset(i as isize) as ::core::ffi::c_int)
-        {
-            break;
-        }
-        if !(cc as ::core::ffi::c_int
-            >= *(*map).startCount.offset(i as isize) as ::core::ffi::c_int)
-        {
-            continue;
-        }
-        if *(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int == 0 as ::core::ffi::c_int
-        {
-            gid = (cc as ::core::ffi::c_int
+    if segCount == 0 {
+        return 0;
+    }
+    let starts = core::slice::from_raw_parts((*map).startCount, segCount as usize);
+    let Some(index) = starts.partition_point(|&start| start <= cc).checked_sub(1) else {
+        return 0;
+    };
+    i = index as u16;
+    if cc > *(*map).endCount.add(index) {
+        return 0;
+    }
+    if *(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
+        gid = (cc as ::core::ffi::c_int + *(*map).idDelta.offset(i as isize) as ::core::ffi::c_int
+            & 0xffff as ::core::ffi::c_int) as USHORT;
+    } else if cc as ::core::ffi::c_int == 0xffff as ::core::ffi::c_int
+        && *(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int
+            == 0xffff as ::core::ffi::c_int
+    {
+        gid = 0 as USHORT;
+    } else {
+        j = (*(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int
+            - (segCount as ::core::ffi::c_int - i as ::core::ffi::c_int) * 2 as ::core::ffi::c_int)
+            as USHORT;
+        j = (cc as ::core::ffi::c_int - *(*map).startCount.offset(i as isize) as ::core::ffi::c_int
+            + j as ::core::ffi::c_int / 2 as ::core::ffi::c_int) as USHORT;
+        gid = *(*map).glyphIndexArray.offset(j as isize);
+        if gid as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
+            gid = (gid as ::core::ffi::c_int
                 + *(*map).idDelta.offset(i as isize) as ::core::ffi::c_int
                 & 0xffff as ::core::ffi::c_int) as USHORT;
-        } else if cc as ::core::ffi::c_int == 0xffff as ::core::ffi::c_int
-            && *(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int
-                == 0xffff as ::core::ffi::c_int
-        {
-            gid = 0 as USHORT;
-        } else {
-            j = (*(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int
-                - (segCount as ::core::ffi::c_int - i as ::core::ffi::c_int)
-                    * 2 as ::core::ffi::c_int) as USHORT;
-            j = (cc as ::core::ffi::c_int
-                - *(*map).startCount.offset(i as isize) as ::core::ffi::c_int
-                + j as ::core::ffi::c_int / 2 as ::core::ffi::c_int) as USHORT;
-            gid = *(*map).glyphIndexArray.offset(j as isize);
-            if gid as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
-                gid = (gid as ::core::ffi::c_int
-                    + *(*map).idDelta.offset(i as isize) as ::core::ffi::c_int
-                    & 0xffff as ::core::ffi::c_int) as USHORT;
-            }
         }
-        break;
     }
     return gid;
 }
@@ -953,27 +1023,22 @@ unsafe extern "C-unwind" fn release_cmap12(mut map: *mut cmap12) {
     }
 }
 unsafe extern "C-unwind" fn lookup_cmap12(mut map: *mut cmap12, mut cccc: SFNT_ULONG) -> USHORT {
-    let mut gid: USHORT = 0 as USHORT;
-    let mut i: ::core::ffi::c_int = 0;
-    i = (*map).nGroups as ::core::ffi::c_int;
-    loop {
-        let fresh1 = i;
-        i = i - 1;
-        if !(fresh1 > 0 as ::core::ffi::c_int
-            && cccc <= (*(*map).groups.offset(i as isize)).endCharCode)
-        {
-            break;
-        }
-        if !(cccc >= (*(*map).groups.offset(i as isize)).startCharCode) {
-            continue;
-        }
-        gid = (cccc
-            .wrapping_sub((*(*map).groups.offset(i as isize)).startCharCode)
-            .wrapping_add((*(*map).groups.offset(i as isize)).startGlyphID)
-            & 0xffff as SFNT_ULONG) as USHORT;
-        break;
+    if (*map).nGroups == 0 {
+        return 0;
     }
-    return gid;
+    let groups = core::slice::from_raw_parts((*map).groups, (*map).nGroups as usize);
+    let Some(index) = groups
+        .partition_point(|group| group.startCharCode <= cccc)
+        .checked_sub(1)
+    else {
+        return 0;
+    };
+    let group = &groups[index];
+    if cccc > group.endCharCode {
+        return 0;
+    }
+    cccc.wrapping_sub(group.startCharCode)
+        .wrapping_add(group.startGlyphID) as u16
 }
 #[unsafe(export_name = "__pdf_impl_tt_cmap_read")]
 pub unsafe extern "C-unwind" fn tt_cmap_read(

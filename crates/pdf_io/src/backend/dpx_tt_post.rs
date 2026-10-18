@@ -25,6 +25,14 @@
     dangerous_implicit_autorefs
 )]
 use crate::compat::allocation::free;
+use std::{collections::HashMap, ffi::CStr};
+
+#[derive(Default)]
+pub(crate) struct PostCaches(HashMap<usize, HashMap<Box<[u8]>, u16>>);
+
+unsafe fn post_caches() -> *mut PostCaches {
+    unsafe { core::ptr::addr_of_mut!((*crate::compat::document::current()).post_names) }
+}
 unsafe extern "C-unwind" {
     fn __assert_rtn(
         _: *const ::core::ffi::c_char,
@@ -247,7 +255,17 @@ pub unsafe extern "C-unwind" fn tt_read_post_table(sfont: *mut sfnt) -> *mut tt_
         names: unsafe { copy_post_array(&custom) },
         count: custom.len() as u16,
     };
-    unsafe { copy_post_array(core::slice::from_ref(&post)) }
+    let output = unsafe { copy_post_array(core::slice::from_ref(&post)) };
+    let mut index = HashMap::with_capacity(pointers.len());
+    for (gid, &name) in pointers.iter().enumerate() {
+        if !name.is_null() {
+            index
+                .entry(Box::from(unsafe { CStr::from_ptr(name) }.to_bytes()))
+                .or_insert(gid as u16);
+        }
+    }
+    unsafe { (*post_caches()).0.insert(output as usize, index) };
+    output
 }
 
 #[unsafe(export_name = "__pdf_impl_tt_lookup_post_table")]
@@ -257,6 +275,12 @@ pub unsafe extern "C-unwind" fn tt_lookup_post_table(
 ) -> USHORT {
     if post.is_null() || glyphname.is_null() {
         pdf_abort!("assertion failed: post && glyphname");
+    }
+    if let Some(index) = unsafe { (*post_caches()).0.get(&(post as usize)) } {
+        return index
+            .get(unsafe { CStr::from_ptr(glyphname) }.to_bytes())
+            .copied()
+            .unwrap_or(0);
     }
     let post = unsafe { &*post };
     if post.numberOfGlyphs == 0 {
@@ -293,6 +317,7 @@ pub unsafe extern "C-unwind" fn tt_release_post_table(post: *mut tt_post_table) 
     if post.is_null() {
         pdf_abort!("assertion failed: post");
     }
+    unsafe { (*post_caches()).0.remove(&(post as usize)) };
     let table = unsafe { &*post };
     if table.count != 0 {
         let names = unsafe { core::slice::from_raw_parts(table.names, table.count as usize) };

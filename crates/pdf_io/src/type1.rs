@@ -10,6 +10,7 @@ fn io(e: std::io::Error) -> PdfError {
 
 pub(crate) fn segment(input: &mut (impl Read + Seek), expected: u8) -> Result<Vec<u8>, PdfError> {
     let mut output = Vec::new();
+    let mut file_end = None;
     loop {
         let start = input.stream_position().map_err(io)?;
         let mut marker = [0];
@@ -34,8 +35,15 @@ pub(crate) fn segment(input: &mut (impl Read + Seek), expected: u8) -> Result<Ve
             .filter(|&n| n < i32::MAX as usize)
             .ok_or_else(|| error("PFB segment is too large.", start as usize))?;
         let position = input.stream_position().map_err(io)?;
-        let end = input.seek(SeekFrom::End(0)).map_err(io)?;
-        input.seek(SeekFrom::Start(position)).map_err(io)?;
+        let end = match file_end {
+            Some(end) => end,
+            None => {
+                let end = input.seek(SeekFrom::End(0)).map_err(io)?;
+                input.seek(SeekFrom::Start(position)).map_err(io)?;
+                file_end = Some(end);
+                end
+            }
+        };
         if length as u64 > end.saturating_sub(position) {
             return Err(error("Reading PFB segment failed.", position as usize));
         }
@@ -102,6 +110,39 @@ pub(crate) fn decrypt_in_place(
 mod tests {
     use super::*;
     use std::io::Cursor;
+    #[test]
+    fn coalescing_many_segments_checks_file_end_once() {
+        struct Input {
+            cursor: Cursor<Vec<u8>>,
+            end_seeks: usize,
+        }
+        impl Read for Input {
+            fn read(&mut self, bytes: &mut [u8]) -> std::io::Result<usize> {
+                self.cursor.read(bytes)
+            }
+        }
+        impl Seek for Input {
+            fn seek(&mut self, position: SeekFrom) -> std::io::Result<u64> {
+                if matches!(position, SeekFrom::End(_)) {
+                    self.end_seeks += 1;
+                }
+                self.cursor.seek(position)
+            }
+        }
+        let mut bytes = Vec::new();
+        for _ in 0..128 {
+            bytes.extend_from_slice(b"\x80\x01\x01\0\0\0a");
+        }
+        bytes.extend_from_slice(b"\x80\x03");
+        let mut input = Input {
+            cursor: Cursor::new(bytes),
+            end_seeks: 0,
+        };
+        assert_eq!(segment(&mut input, 1).unwrap(), vec![b'a'; 128]);
+        assert_eq!(input.end_seeks, 1);
+        assert_eq!(input.cursor.position(), 128 * 7);
+    }
+
     #[test]
     fn pfb_segments_coalesce_and_leave_the_next_header_unread() {
         let bytes = b"\x80\x01\x02\0\0\0ab\x80\x01\x01\0\0\0c\x80\x02\x01\0\0\0d\x80\x03";

@@ -895,10 +895,12 @@ pub unsafe extern "C-unwind" fn CMap_add_codespacerange(
         (*cmap).profile.maxBytesIn = dim;
     }
     if (*cmap).codespace.num.wrapping_add(1 as ::core::ffi::c_uint) > (*cmap).codespace.max {
-        (*cmap).codespace.max = (*cmap)
-            .codespace
-            .max
-            .wrapping_add(10 as ::core::ffi::c_uint);
+        (*cmap).codespace.max = crate::compat::allocation::grow_capacity(
+            (*cmap).codespace.max as usize,
+            (*cmap).codespace.num as usize + 1,
+            core::mem::size_of::<rangeDef>(),
+            10,
+        ) as u32;
         (*cmap).codespace.ranges = renew(
             (*cmap).codespace.ranges as *mut ::core::ffi::c_void,
             ((*cmap).codespace.max as uint32_t as usize)
@@ -1532,9 +1534,12 @@ pub unsafe extern "C-unwind" fn CMap_cache_find(
         );
     }
     if (*(*__pdf_state).__cache).num >= (*(*__pdf_state).__cache).max {
-        (*(*__pdf_state).__cache).max = ((*(*__pdf_state).__cache).max as ::core::ffi::c_uint)
-            .wrapping_add(CMAP_CACHE_ALLOC_SIZE)
-            as ::core::ffi::c_int as ::core::ffi::c_int;
+        (*(*__pdf_state).__cache).max = crate::compat::allocation::grow_capacity(
+            (*(*__pdf_state).__cache).max as usize,
+            (*(*__pdf_state).__cache).num as usize + 1,
+            core::mem::size_of::<*mut CMap>(),
+            CMAP_CACHE_ALLOC_SIZE as usize,
+        ) as i32;
         (*(*__pdf_state).__cache).cmaps = renew(
             (*(*__pdf_state).__cache).cmaps as *mut ::core::ffi::c_void,
             ((*(*__pdf_state).__cache).max as uint32_t as usize)
@@ -1585,9 +1590,12 @@ pub unsafe extern "C-unwind" fn CMap_cache_add(mut cmap: *mut CMap) -> ::core::f
         id += 1;
     }
     if (*(*__pdf_state).__cache).num >= (*(*__pdf_state).__cache).max {
-        (*(*__pdf_state).__cache).max = ((*(*__pdf_state).__cache).max as ::core::ffi::c_uint)
-            .wrapping_add(CMAP_CACHE_ALLOC_SIZE)
-            as ::core::ffi::c_int as ::core::ffi::c_int;
+        (*(*__pdf_state).__cache).max = crate::compat::allocation::grow_capacity(
+            (*(*__pdf_state).__cache).max as usize,
+            (*(*__pdf_state).__cache).num as usize + 1,
+            core::mem::size_of::<*mut CMap>(),
+            CMAP_CACHE_ALLOC_SIZE as usize,
+        ) as i32;
         (*(*__pdf_state).__cache).cmaps = renew(
             (*(*__pdf_state).__cache).cmaps as *mut ::core::ffi::c_void,
             ((*(*__pdf_state).__cache).max as uint32_t as usize)

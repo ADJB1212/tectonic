@@ -664,10 +664,12 @@ unsafe extern "C-unwind" fn add_xref_entry(
     } else {
     };
     if label >= (*p).obj.max_ind_objects {
-        (*p).obj.max_ind_objects = label
-            .wrapping_div(IND_OBJECTS_ALLOC_SIZE as uint32_t)
-            .wrapping_add(1 as uint32_t)
-            .wrapping_mul(IND_OBJECTS_ALLOC_SIZE as uint32_t);
+        (*p).obj.max_ind_objects = crate::compat::allocation::grow_capacity(
+            (*p).obj.max_ind_objects as usize,
+            label as usize + 1,
+            core::mem::size_of::<xref_entry>(),
+            IND_OBJECTS_ALLOC_SIZE as usize,
+        ) as u32;
         (*p).xref_table = renew(
             (*p).xref_table as *mut ::core::ffi::c_void,
             ((*p).obj.max_ind_objects as usize)
@@ -2470,9 +2472,16 @@ pub unsafe extern "C-unwind" fn pdf_add_stream(
         return;
     }
     data = handles::stream(stream);
-    if (*data).stream_length.wrapping_add(length as size_t) > (*data).max_length {
-        (*data).max_length = (*data).max_length.wrapping_add(
-            (length as ::core::ffi::c_uint).wrapping_add(STREAM_ALLOC_SIZE) as size_t,
+    let required = (*data)
+        .stream_length
+        .checked_add(length as usize)
+        .unwrap_or_else(|| pdf_abort!("PDF stream is too large"));
+    if required > (*data).max_length {
+        (*data).max_length = crate::compat::allocation::grow_capacity(
+            (*data).max_length,
+            required,
+            1,
+            STREAM_ALLOC_SIZE as usize,
         );
         (*data).stream = renew(
             (*data).stream as *mut ::core::ffi::c_void,
@@ -2486,7 +2495,7 @@ pub unsafe extern "C-unwind" fn pdf_add_stream(
         stream_data,
         length as size_t,
     );
-    (*data).stream_length = (*data).stream_length.wrapping_add(length as size_t);
+    (*data).stream_length = required;
 }
 unsafe extern "C-unwind" fn filter_get_DecodeParms_FlateDecode(
     mut parms: *mut decode_parms,
@@ -5592,29 +5601,35 @@ pub unsafe extern "C-unwind" fn pdf_compare_object(
             }
         }
         PDF_DICT => {
-            let mut keys1: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-            let mut keys2: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-            keys1 = pdf_dict_keys(obj1);
-            keys2 = pdf_dict_keys(obj2);
-            r = pdf_compare_object(keys1, keys2);
-            if r == 0 as ::core::ffi::c_int {
-                let mut i_0: ::core::ffi::c_int = 0;
-                i_0 = 0 as ::core::ffi::c_int;
-                while r == 0 as ::core::ffi::c_int
-                    && (i_0 as ::core::ffi::c_uint) < pdf_array_length(keys1)
-                {
-                    let mut key: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-                    let mut v1_0: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-                    let mut v2_0: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-                    key = pdf_get_array(keys1, i_0);
-                    v1_0 = pdf_lookup_dict(obj1, pdf_name_value(key));
-                    v2_0 = pdf_lookup_dict(obj2, pdf_name_value(key));
-                    r = pdf_compare_object(v1_0, v2_0);
-                    i_0 += 1;
+            let first = &*dict_data(obj1);
+            let second = &*dict_data(obj2);
+            r = match first.len().cmp(&second.len()) {
+                core::cmp::Ordering::Less => -1,
+                core::cmp::Ordering::Equal => 0,
+                core::cmp::Ordering::Greater => 1,
+            };
+            if r == 0 {
+                for (first, second) in first.iter().zip(second) {
+                    r = pdf_compare_object(
+                        handles::pointer(Some(first.key)),
+                        handles::pointer(Some(second.key)),
+                    );
+                    if r != 0 {
+                        break;
+                    }
                 }
             }
-            pdf_release_obj(keys1);
-            pdf_release_obj(keys2);
+            if r == 0 {
+                for (first, second) in first.iter().zip(second) {
+                    r = pdf_compare_object(
+                        handles::pointer(first.value),
+                        handles::pointer(second.value),
+                    );
+                    if r != 0 {
+                        break;
+                    }
+                }
+            }
         }
         PDF_STREAM => {
             r = pdf_compare_object(pdf_stream_dict(obj1), pdf_stream_dict(obj2));

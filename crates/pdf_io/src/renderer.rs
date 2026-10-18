@@ -453,11 +453,9 @@ impl<'a> PageRenderer<'a> {
             self.output.push(if self.multibyte { b'<' } else { b'(' });
         }
         if self.multibyte {
-            const HEX: &[u8; 16] = b"0123456789abcdef";
-            for &byte in run.data {
-                self.output.push(HEX[usize::from(byte >> 4)]);
-                self.output.push(HEX[usize::from(byte & 15)]);
-            }
+            let start = self.output.len();
+            self.output.resize(start + run.data.len() * 2, 0);
+            faster_hex::hex_encode(run.data, &mut self.output[start..]).unwrap();
         } else {
             for &byte in run.data {
                 match byte {

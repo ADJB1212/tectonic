@@ -84,8 +84,86 @@ pub struct __sFILE {
 }
 pub type FILE = __sFILE;
 pub type fixword = int32_t;
-fn read_unsigned(width: usize, mut read_byte: impl FnMut() -> u8) -> u32 {
-    (0..width).fold(0, |value, _| (value << 8) | u32::from(read_byte()))
+fn read_unsigned(input: &mut impl std::io::Read, width: usize) -> u32 {
+    let mut bytes = [0; 4];
+    if input.read_exact(&mut bytes[4 - width..]).is_err() {
+        pdf_abort!("File ended prematurely\n");
+    }
+    u32::from_be_bytes(bytes)
+}
+
+fn skip(input: &mut impl std::io::Read, n: u32) {
+    let mut buffer = [0; 4096];
+    let mut remaining = n as usize;
+    while remaining != 0 {
+        let length = remaining.min(buffer.len());
+        if input.read_exact(&mut buffer[..length]).is_err() {
+            pdf_abort!("File ended prematurely\n");
+        }
+        remaining -= length;
+    }
+}
+
+unsafe fn read_file_unsigned(file: *mut FILE, width: usize) -> u32 {
+    read_unsigned(
+        &mut unsafe { crate::compat::input::BorrowedFile::from_raw(file.cast()) },
+        width,
+    )
+}
+
+fn read_input_unsigned(handle: rust_input_handle_t, width: usize) -> u32 {
+    read_unsigned(&mut crate::compat::input::DirectoryInput { handle }, width)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::{Cursor, Read};
+
+    struct Input {
+        data: Cursor<Vec<u8>>,
+        calls: usize,
+        max_read: usize,
+    }
+
+    impl Read for Input {
+        fn read(&mut self, bytes: &mut [u8]) -> std::io::Result<usize> {
+            self.calls += 1;
+            let length = bytes.len().min(self.max_read);
+            self.data.read(&mut bytes[..length])
+        }
+    }
+
+    #[test]
+    fn numeric_reads_handle_short_reads_and_skips_use_bounded_blocks() {
+        for width in 1..=4 {
+            for max_read in [1, 2, 4096] {
+                let mut input = Input {
+                    data: Cursor::new(vec![0x12, 0x34, 0x56, 0x78]),
+                    calls: 0,
+                    max_read,
+                };
+                let expected = 0x12345678u32 >> (8 * (4 - width));
+                assert_eq!(read_unsigned(&mut input, width), expected);
+                assert_eq!(input.data.position(), width as u64);
+                assert_eq!(input.calls, width.div_ceil(max_read));
+            }
+        }
+        let mut input = Input {
+            data: Cursor::new(vec![0; 16385]),
+            calls: 0,
+            max_read: 4096,
+        };
+        skip(&mut input, 16385);
+        assert_eq!(input.calls, 5);
+        assert_eq!(input.data.position(), 16385);
+        assert!(crate::backend::runtime::boundary(|| skip(&mut input, 1)).is_err());
+        for width in 1..=4 {
+            assert!(
+                crate::backend::runtime::boundary(|| read_unsigned(&mut input, width)).is_err()
+            );
+        }
+    }
 }
 
 #[unsafe(export_name = "__pdf_impl_get_unsigned_byte")]
@@ -98,9 +176,10 @@ pub unsafe extern "C-unwind" fn get_unsigned_byte(file: *mut FILE) -> u8 {
 }
 #[unsafe(export_name = "__pdf_impl_skip_bytes")]
 pub unsafe extern "C-unwind" fn skip_bytes(n: u32, file: *mut FILE) {
-    for _ in 0..n {
-        get_unsigned_byte(file);
-    }
+    skip(
+        &mut crate::compat::input::BorrowedFile::from_raw(file.cast()),
+        n,
+    );
 }
 #[unsafe(export_name = "__pdf_impl_get_signed_byte")]
 pub unsafe extern "C-unwind" fn get_signed_byte(file: *mut FILE) -> i8 {
@@ -108,7 +187,7 @@ pub unsafe extern "C-unwind" fn get_signed_byte(file: *mut FILE) -> i8 {
 }
 #[unsafe(export_name = "__pdf_impl_get_unsigned_pair")]
 pub unsafe extern "C-unwind" fn get_unsigned_pair(file: *mut FILE) -> u16 {
-    read_unsigned(2, || unsafe { get_unsigned_byte(file) }) as u16
+    read_file_unsigned(file, 2) as u16
 }
 #[unsafe(export_name = "__pdf_impl_sget_unsigned_pair")]
 pub unsafe extern "C-unwind" fn sget_unsigned_pair(
@@ -126,7 +205,7 @@ pub unsafe extern "C-unwind" fn get_signed_pair(file: *mut FILE) -> i16 {
 }
 #[unsafe(export_name = "__pdf_impl_get_unsigned_triple")]
 pub unsafe extern "C-unwind" fn get_unsigned_triple(file: *mut FILE) -> u32 {
-    read_unsigned(3, || unsafe { get_unsigned_byte(file) })
+    read_file_unsigned(file, 3)
 }
 #[unsafe(export_name = "__pdf_impl_get_signed_triple")]
 pub unsafe extern "C-unwind" fn get_signed_triple(file: *mut FILE) -> i32 {
@@ -138,7 +217,7 @@ pub unsafe extern "C-unwind" fn get_signed_quad(file: *mut FILE) -> i32 {
 }
 #[unsafe(export_name = "__pdf_impl_get_unsigned_quad")]
 pub unsafe extern "C-unwind" fn get_unsigned_quad(file: *mut FILE) -> u32 {
-    read_unsigned(4, || unsafe { get_unsigned_byte(file) })
+    read_file_unsigned(file, 4)
 }
 #[unsafe(export_name = "__pdf_impl_get_unsigned_num")]
 pub unsafe extern "C-unwind" fn get_unsigned_num(file: *mut FILE, num: u8) -> u32 {
@@ -146,7 +225,7 @@ pub unsafe extern "C-unwind" fn get_unsigned_num(file: *mut FILE, num: u8) -> u3
         1..=3 => usize::from(num) + 1,
         _ => 1,
     };
-    read_unsigned(width, || unsafe { get_unsigned_byte(file) })
+    read_file_unsigned(file, width)
 }
 #[unsafe(export_name = "__pdf_impl_get_positive_quad")]
 pub unsafe extern "C-unwind" fn get_positive_quad(
@@ -171,9 +250,7 @@ pub extern "C-unwind" fn sqxfw(mut sq: int32_t, mut fw: fixword) -> int32_t {
 }
 #[unsafe(export_name = "__pdf_impl_tt_skip_bytes")]
 pub unsafe extern "C-unwind" fn tt_skip_bytes(n: u32, handle: rust_input_handle_t) {
-    for _ in 0..n {
-        tt_get_unsigned_byte(handle);
-    }
+    skip(&mut crate::compat::input::DirectoryInput { handle }, n);
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_unsigned_byte")]
 pub unsafe extern "C-unwind" fn tt_get_unsigned_byte(handle: rust_input_handle_t) -> u8 {
@@ -189,7 +266,7 @@ pub unsafe extern "C-unwind" fn tt_get_signed_byte(handle: rust_input_handle_t) 
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_unsigned_pair")]
 pub unsafe extern "C-unwind" fn tt_get_unsigned_pair(handle: rust_input_handle_t) -> u16 {
-    read_unsigned(2, || unsafe { tt_get_unsigned_byte(handle) }) as u16
+    read_input_unsigned(handle, 2) as u16
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_signed_pair")]
 pub unsafe extern "C-unwind" fn tt_get_signed_pair(handle: rust_input_handle_t) -> i16 {
@@ -197,11 +274,11 @@ pub unsafe extern "C-unwind" fn tt_get_signed_pair(handle: rust_input_handle_t) 
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_unsigned_triple")]
 pub unsafe extern "C-unwind" fn tt_get_unsigned_triple(handle: rust_input_handle_t) -> u32 {
-    read_unsigned(3, || unsafe { tt_get_unsigned_byte(handle) })
+    read_input_unsigned(handle, 3)
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_unsigned_quad")]
 pub unsafe extern "C-unwind" fn tt_get_unsigned_quad(handle: rust_input_handle_t) -> u32 {
-    read_unsigned(4, || unsafe { tt_get_unsigned_byte(handle) })
+    read_input_unsigned(handle, 4)
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_signed_quad")]
 pub unsafe extern "C-unwind" fn tt_get_signed_quad(handle: rust_input_handle_t) -> i32 {
@@ -213,7 +290,7 @@ pub unsafe extern "C-unwind" fn tt_get_unsigned_num(handle: rust_input_handle_t,
         1..=3 => usize::from(num) + 1,
         _ => 1,
     };
-    read_unsigned(width, || unsafe { tt_get_unsigned_byte(handle) })
+    read_input_unsigned(handle, width)
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_positive_quad")]
 pub unsafe extern "C-unwind" fn tt_get_positive_quad(

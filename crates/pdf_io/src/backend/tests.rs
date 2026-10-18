@@ -46,6 +46,136 @@ fn pdf_parser_checks_container_depth_truncated_tokens_and_recovers() {
 }
 
 #[test]
+fn dictionary_comparison_preserves_order_and_does_not_allocate_objects() {
+    use super::dpx_pdfobj::*;
+    let _document = crate::compat::document::DocumentScope::new().unwrap();
+    unsafe {
+        let first = pdf_new_dict();
+        let second = pdf_new_dict();
+        for index in 0..4096 {
+            let key = std::ffi::CString::new(format!("key{index}")).unwrap();
+            pdf_add_dict(
+                first,
+                pdf_new_name(key.as_ptr()),
+                pdf_new_number(index as f64),
+            );
+            pdf_add_dict(
+                second,
+                pdf_new_name(key.as_ptr()),
+                pdf_new_number(index as f64),
+            );
+        }
+        let before = pdf_new_null();
+        assert_eq!(pdf_compare_object(first, second), 0);
+        let after = pdf_new_null();
+        assert_eq!((*after).id.0, (*before).id.0 + 1);
+        pdf_add_dict(
+            second,
+            pdf_new_name(c"key4095".as_ptr()),
+            pdf_new_number(-1.0),
+        );
+        assert!(pdf_compare_object(first, second) > 0);
+        pdf_remove_dict(second, c"key0".as_ptr());
+        pdf_add_dict(second, pdf_new_name(c"key0".as_ptr()), pdf_new_number(0.0));
+        assert!(pdf_compare_object(first, second) < 0);
+        pdf_release_obj(first);
+        pdf_release_obj(second);
+        pdf_release_obj(before);
+        pdf_release_obj(after);
+    }
+}
+
+#[test]
+fn incremental_stream_appends_use_geometric_capacity_and_preserve_bytes() {
+    use super::dpx_pdfobj::*;
+    let _document = crate::compat::document::DocumentScope::new().unwrap();
+    unsafe {
+        let stream = pdf_new_stream(0);
+        let mut growths = 0;
+        let mut capacity = 0;
+        let mut expected = Vec::new();
+        for index in 0..8192 {
+            let bytes = [index as u8; 97];
+            pdf_add_stream(stream, bytes.as_ptr().cast(), bytes.len() as i32);
+            expected.extend_from_slice(&bytes);
+            let current = (*crate::compat::objects::stream(stream)).max_length;
+            growths += usize::from(current != capacity);
+            capacity = current;
+        }
+        assert!(growths <= 12, "{growths} reallocations");
+        assert_eq!(pdf_stream_length(stream), expected.len() as _);
+        assert_eq!(
+            std::slice::from_raw_parts(pdf_stream_dataptr(stream).cast::<u8>(), expected.len()),
+            expected
+        );
+        pdf_release_obj(stream);
+    }
+}
+
+#[test]
+fn name_tree_index_handles_collisions_and_preserves_bucket_order() {
+    use super::{dpx_pdfnames::*, dpx_pdfobj::*};
+    let _document = crate::compat::document::DocumentScope::new().unwrap();
+    unsafe {
+        let mut table = pdf_new_name_tree();
+        let keys: Vec<Vec<u8>> = (0..2048)
+            .map(|index| {
+                (0..11)
+                    .flat_map(|bit| {
+                        if index & (1 << bit) == 0 {
+                            *b"aA"
+                        } else {
+                            *b"b "
+                        }
+                    })
+                    .collect()
+            })
+            .collect();
+        for (index, key) in keys.iter().enumerate() {
+            assert_eq!(
+                pdf_names_add_object(
+                    table,
+                    key.as_ptr().cast(),
+                    key.len() as i32,
+                    pdf_new_number(index as f64)
+                ),
+                0
+            );
+        }
+        let nonempty: Vec<_> = (*table)
+            .table
+            .iter()
+            .filter(|entry| !entry.is_null())
+            .collect();
+        assert_eq!(nonempty.len(), 1);
+        let mut entry = *nonempty[0];
+        for key in &keys {
+            assert_eq!(
+                std::slice::from_raw_parts((*entry).key.cast::<u8>(), (*entry).keylen as usize),
+                key
+            );
+            entry = (*entry).next;
+        }
+        assert!(entry.is_null());
+        for (index, key) in keys.iter().enumerate().rev() {
+            let object = pdf_names_lookup_object(table, key.as_ptr().cast(), key.len() as i32);
+            assert_eq!(pdf_number_value(object), index as f64);
+            let indexed = super::dpx_pdfnames::lookup_index(table as usize, key).unwrap();
+            assert_eq!(
+                super::dpx_dpxutil::ht_lookup_table(
+                    table.cast(),
+                    key.as_ptr().cast(),
+                    key.len() as i32
+                ),
+                indexed
+            );
+        }
+        assert!(pdf_names_lookup_object(table, b"missing".as_ptr().cast(), 7).is_null());
+        pdf_delete_name_tree(&mut table);
+    }
+}
+
+#[test]
 fn object_containers_preserve_shared_identity_replacement_and_order() {
     use super::dpx_pdfobj::*;
     let _document = crate::compat::document::DocumentScope::new().unwrap();
@@ -215,17 +345,33 @@ fn resource_ids_and_references_survive_replacement_and_registry_growth() {
         assert_ne!(pdf_compare_reference(old_reference, new_reference), 0);
         for index in 1..300 {
             let object = pdf_new_null();
+            let name = std::ffi::CString::new(format!("resource{index}")).unwrap();
             assert_eq!(
-                pdf_defineresource(c"Font".as_ptr(), std::ptr::null(), object, 0),
+                pdf_defineresource(c"Font".as_ptr(), name.as_ptr(), object, 0),
                 index
             );
+            assert_eq!(pdf_findresource(c"Font".as_ptr(), name.as_ptr()), index);
         }
+        let other = pdf_defineresource(c"XObject".as_ptr(), c"Shared".as_ptr(), pdf_new_null(), 0);
+        assert_ne!(id, other);
+        assert_eq!(
+            pdf_findresource(c"XObject".as_ptr(), c"Shared".as_ptr()),
+            other
+        );
+        let unnamed = pdf_defineresource(c"Font".as_ptr(), std::ptr::null(), pdf_new_null(), 0);
+        let empty = pdf_defineresource(c"Font".as_ptr(), c"".as_ptr(), pdf_new_null(), 0);
+        assert_ne!(unnamed, empty);
+        assert_eq!(pdf_findresource(c"Font".as_ptr(), c"".as_ptr()), -1);
         let resolved = pdf_deref_obj(new_reference);
         assert_eq!(resolved, replacement);
         pdf_release_obj(resolved);
         pdf_close_resources();
         assert_eq!(pdf_obj_typeof(replacement), PDF_OBJ_INVALID);
         assert_eq!(pdf_findresource(c"Font".as_ptr(), c"Shared".as_ptr()), -1);
+        assert_eq!(
+            pdf_defineresource(c"Font".as_ptr(), c"Shared".as_ptr(), pdf_new_null(), 0),
+            0
+        );
         pdf_release_obj(old_reference);
         pdf_release_obj(new_reference);
     }

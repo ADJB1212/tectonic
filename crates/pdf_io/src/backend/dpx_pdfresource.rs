@@ -8,7 +8,7 @@ use crate::{
     objects::{Resource, ResourceId},
 };
 use core::ffi::c_char;
-use std::ffi::CStr;
+use std::{collections::HashMap, ffi::CStr};
 
 const CATEGORIES: [&[u8]; 9] = [
     b"Font",
@@ -24,12 +24,14 @@ const CATEGORIES: [&[u8]; 9] = [
 
 pub(crate) struct DocumentState {
     resources: [Vec<Resource>; 9],
+    names: [HashMap<Box<[u8]>, usize>; 9],
 }
 
 impl DocumentState {
     pub(crate) fn new() -> Self {
         Self {
             resources: std::array::from_fn(|_| Vec::new()),
+            names: std::array::from_fn(|_| HashMap::new()),
         }
     }
 }
@@ -51,11 +53,10 @@ unsafe fn category_id(category: *const c_char) -> usize {
         .unwrap_or_else(|| pdf_abort!(c"Unknown resource category: %s".as_ptr(), category))
 }
 
-unsafe fn flush(resource: Resource) {
+unsafe fn flush(resource: &Resource) {
     unsafe {
         pdf_release_obj(handles::pointer(resource.reference));
         pdf_release_obj(handles::pointer(resource.object));
-        drop(resource.name);
     }
 }
 
@@ -79,9 +80,10 @@ pub unsafe extern "C-unwind" fn pdf_close_resources() {
     for category in 0..CATEGORIES.len() {
         // Release in category and insertion order, without holding a container borrow.
         let entries = unsafe { std::mem::take(&mut (*document_state()).resources[category]) };
+        unsafe { (*document_state()).names[category].clear() };
         for entry in entries {
             unsafe {
-                flush(entry);
+                flush(&entry);
             }
         }
     }
@@ -103,11 +105,8 @@ pub unsafe extern "C-unwind" fn pdf_defineresource(
             Some(CStr::from_ptr(resname).to_bytes())
         };
         let entries = &(*document_state()).resources[category_index];
-        let found = name.and_then(|name| {
-            entries
-                .iter()
-                .position(|entry| entry.name.as_deref() == Some(name))
-        });
+        let found =
+            name.and_then(|name| (*document_state()).names[category_index].get(name).copied());
         let index = found.unwrap_or(entries.len());
         let id = ResourceId::new(category_index, index)
             .unwrap_or_else(|| pdf_abort!("Too many PDF resources"));
@@ -116,15 +115,13 @@ pub unsafe extern "C-unwind" fn pdf_defineresource(
             let old = std::mem::replace(
                 &mut (&mut (*document_state()).resources[category_index])[index],
                 Resource {
-                    name: None,
                     object: None,
                     reference: None,
                 },
             );
-            flush(old);
+            flush(&old);
         }
         let mut entry = Resource {
-            name: name.filter(|name| !name.is_empty()).map(Box::from),
             object: handles::id(object),
             reference: None,
         };
@@ -138,6 +135,9 @@ pub unsafe extern "C-unwind" fn pdf_defineresource(
             entries[index] = entry;
         } else {
             entries.push(entry);
+            if let Some(name) = name.filter(|name| !name.is_empty()) {
+                (*document_state()).names[category_index].insert(Box::from(name), index);
+            }
         }
         id.0 as i32
     }
@@ -152,9 +152,9 @@ pub unsafe extern "C-unwind" fn pdf_findresource(
         assert!(!category.is_null() && !resname.is_null());
         let category = category_id(category);
         let name = CStr::from_ptr(resname).to_bytes();
-        (*document_state()).resources[category]
-            .iter()
-            .position(|entry| entry.name.as_deref() == Some(name))
+        (*document_state()).names[category]
+            .get(name)
+            .copied()
             .and_then(|index| ResourceId::new(category, index))
             .map_or(-1, |id| id.0 as i32)
     }

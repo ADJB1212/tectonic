@@ -503,6 +503,12 @@ pub unsafe extern "C-unwind" fn ht_lookup_table(
     key: *const ::core::ffi::c_void,
     keylen: i32,
 ) -> *mut ::core::ffi::c_void {
+    if !ht.is_null() && !key.is_null() && keylen >= 0 {
+        let bytes = core::slice::from_raw_parts(key.cast::<u8>(), keylen as usize);
+        if let Some(value) = super::dpx_pdfnames::lookup_index(ht as usize, bytes) {
+            return value;
+        }
+    }
     let slot = find_hash_slot(hash_bucket(ht, key, keylen), key, keylen);
     (*slot)
         .as_ref()

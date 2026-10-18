@@ -177,7 +177,9 @@ pub unsafe extern "C-unwind" fn pdf_new_name_tree() -> *mut ht_table {
         hval_free_fn: Some(hval_free),
         table: [core::ptr::null_mut(); 503],
     });
-    (*storage).tables.pointer(index)
+    let table = (*storage).tables.pointer(index);
+    (*(*storage).indices.get()).insert(table as usize, NameIndex::default());
+    table
 }
 unsafe extern "C-unwind" fn check_objects_defined(mut ht_tab: *mut ht_table) {
     let mut iter: ht_iter = ht_iter {
@@ -225,6 +227,7 @@ pub unsafe extern "C-unwind" fn pdf_delete_name_tree(mut names: *mut *mut ht_tab
         *bucket = core::ptr::null_mut();
     }
     (**names).count = 0;
+    (*(*storage()).indices.get()).remove(&(*names as usize));
     *names = core::ptr::null_mut();
 }
 #[unsafe(export_name = "__pdf_impl_pdf_names_add_object")]
@@ -527,7 +530,7 @@ unsafe fn flat_table(
     num_entries: *mut i32,
     filter: *mut ht_table,
 ) -> Vec<named_object> {
-    let mut objects = Vec::new();
+    let mut objects = Vec::with_capacity((*ht_tab).count as usize);
     for bucket in (*ht_tab).table {
         let mut entry = bucket;
         while !entry.is_null() {
@@ -730,7 +733,32 @@ pub(crate) struct Storage {
     tables: crate::compat::objects::StableStore<ht_table>,
     entries: crate::compat::objects::StableStore<ht_entry>,
     values: crate::compat::objects::StableStore<obj_data>,
-    keys: std::cell::UnsafeCell<Vec<Vec<u8>>>,
+    indices: std::cell::UnsafeCell<std::collections::HashMap<usize, NameIndex>>,
+}
+
+struct NameIndex {
+    values: std::collections::HashMap<Box<[u8]>, *mut obj_data>,
+    tails: [*mut ht_entry; 503],
+}
+
+impl Default for NameIndex {
+    fn default() -> Self {
+        Self {
+            values: std::collections::HashMap::new(),
+            tails: [core::ptr::null_mut(); 503],
+        }
+    }
+}
+
+pub(crate) unsafe fn lookup_index(table: usize, key: &[u8]) -> Option<*mut core::ffi::c_void> {
+    (*(*storage()).indices.get()).get(&table).map(|index| {
+        index
+            .values
+            .get(key)
+            .copied()
+            .unwrap_or(core::ptr::null_mut())
+            .cast()
+    })
 }
 
 unsafe fn storage() -> *mut Storage {
@@ -758,9 +786,8 @@ unsafe fn append_name(
         hash.wrapping_mul(33)
             .wrapping_add(byte as core::ffi::c_char as u32)
     }) % 503;
-    let mut owned = bytes.to_vec();
+    let mut owned = Box::<[u8]>::from(bytes);
     let key = owned.as_mut_ptr().cast();
-    (*(*storage()).keys.get()).push(owned);
     let storage = storage();
     let index = (*storage).entries.insert(ht_entry {
         key,
@@ -769,10 +796,16 @@ unsafe fn append_name(
         next: core::ptr::null_mut(),
     });
     let entry = (*storage).entries.pointer(index);
-    let mut destination = core::ptr::addr_of_mut!((*names).table[hash as usize]);
-    while !(*destination).is_null() {
-        destination = core::ptr::addr_of_mut!((**destination).next);
+    let index = (*(*storage).indices.get())
+        .get_mut(&(names as usize))
+        .expect("PDF name index");
+    let tail = &mut index.tails[hash as usize];
+    if tail.is_null() {
+        (*names).table[hash as usize] = entry;
+    } else {
+        (**tail).next = entry;
     }
-    *destination = entry;
+    *tail = entry;
+    index.values.insert(owned, value);
     (*names).count += 1;
 }
