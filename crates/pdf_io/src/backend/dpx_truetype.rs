@@ -639,7 +639,7 @@ pub unsafe extern "C-unwind" fn pdf_font_open_truetype(
     }
     return error;
 }
-static mut required_table: [C2RustUnnamed_2; 13] = [
+const REQUIRED_TABLE: [C2RustUnnamed_2; 13] = [
     C2RustUnnamed_2 {
         name: b"OS/2\0" as *const u8 as *const ::core::ffi::c_char,
         must_exist: 0 as ::core::ffi::c_int,
@@ -1783,11 +1783,11 @@ pub unsafe extern "C-unwind" fn pdf_font_load_truetype(
         );
     }
     i = 0 as ::core::ffi::c_int;
-    while !required_table[i as usize].name.is_null() {
+    while !REQUIRED_TABLE[i as usize].name.is_null() {
         if sfnt_require_table(
             sfont,
-            required_table[i as usize].name,
-            required_table[i as usize].must_exist,
+            REQUIRED_TABLE[i as usize].name,
+            REQUIRED_TABLE[i as usize].must_exist,
         ) < 0 as ::core::ffi::c_int
         {
             sfnt_close(sfont);
@@ -1795,7 +1795,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_truetype(
             pdf_abort!(
                 b"Required TrueType table \"%s\" does not exist in font: %s\0" as *const u8
                     as *const ::core::ffi::c_char,
-                required_table[i as usize].name,
+                REQUIRED_TABLE[i as usize].name,
                 ident,
             );
         }

@@ -683,9 +683,8 @@ unsafe extern "C-unwind" fn add_xref_entry(
     let ref mut fresh16 = (*(*p).xref_table.offset(label as isize)).indirect;
     *fresh16 = ::core::ptr::null_mut::<pdf_obj>();
 }
-pub const BINARY_MARKER: [::core::ffi::c_char; 7] = unsafe {
-    ::core::mem::transmute::<[u8; 7], [::core::ffi::c_char; 7]>(*b"%\xE4\xF0\xED\xF8\n\0")
-};
+pub const BINARY_MARKER: [::core::ffi::c_char; 7] =
+    crate::backend::c_char_array(*b"%\xE4\xF0\xED\xF8\n\0");
 #[unsafe(export_name = "__pdf_impl_pdf_out_init")]
 pub unsafe extern "C-unwind" fn pdf_out_init(
     mut filename: *const ::core::ffi::c_char,
@@ -1184,26 +1183,10 @@ unsafe extern "C-unwind" fn pdf_out_char(mut p: *mut pdf_out, mut c: ::core::ffi
         }
     };
 }
-static mut xchar: [::core::ffi::c_char; 17] = unsafe {
-    ::core::mem::transmute::<[u8; 17], [::core::ffi::c_char; 17]>(*b"0123456789abcdef\0")
-};
-unsafe extern "C-unwind" fn pdf_out_xchar(mut p: *mut pdf_out, mut c: ::core::ffi::c_char) {
-    if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
-    } else {
-    };
-    pdf_out_char(
-        p,
-        xchar[(c as ::core::ffi::c_int >> 4 as ::core::ffi::c_int & 0xf as ::core::ffi::c_int)
-            as usize],
-    );
-    pdf_out_char(
-        p,
-        xchar[(c as ::core::ffi::c_int & 0xf as ::core::ffi::c_int) as usize],
-    );
+unsafe extern "C-unwind" fn pdf_out_xchar(p: *mut pdf_out, c: ::core::ffi::c_char) {
+    let mut output = [0; 2];
+    faster_hex::hex_encode(&[c as u8], &mut output).unwrap();
+    unsafe { pdf_out_str(p, output.as_ptr().cast(), output.len()) };
 }
 unsafe extern "C-unwind" fn pdf_out_str(
     mut p: *mut pdf_out,
@@ -1507,136 +1490,84 @@ pub unsafe extern "C-unwind" fn pdf_string_value(
 pub unsafe extern "C-unwind" fn pdf_string_length(mut object: *mut pdf_obj) -> ::core::ffi::c_uint {
     (*string_data(object)).as_bytes().len() as ::core::ffi::c_uint
 }
+fn escape_pdf_byte(byte: u8, buffer: &mut [u8; 4]) -> &[u8] {
+    let len = match byte {
+        b'(' | b')' | b'\\' => {
+            buffer[..2].copy_from_slice(&[b'\\', byte]);
+            2
+        }
+        b' '..=b'~' => {
+            buffer[0] = byte;
+            1
+        }
+        _ => {
+            *buffer = [
+                b'\\',
+                b'0' + (byte >> 6),
+                b'0' + ((byte >> 3) & 7),
+                b'0' + (byte & 7),
+            ];
+            4
+        }
+    };
+    &buffer[..len]
+}
+
 #[unsafe(export_name = "__pdf_impl_pdfobj_escape_str")]
 pub unsafe extern "C-unwind" fn pdfobj_escape_str(
-    mut buffer: *mut ::core::ffi::c_char,
-    mut bufsize: size_t,
-    mut s: *const ::core::ffi::c_uchar,
-    mut len: size_t,
+    buffer: *mut ::core::ffi::c_char,
+    bufsize: size_t,
+    s: *const u8,
+    len: size_t,
 ) -> size_t {
-    let mut result: size_t = 0 as size_t;
-    let mut i: size_t = 0;
-    i = 0 as size_t;
-    while i < len {
-        let mut ch: ::core::ffi::c_uchar = 0;
-        ch = *s.offset(i as isize);
-        if result > bufsize.wrapping_sub(4 as size_t) {
-            pdf_abort!(
-                b"pdfobj_escape_str: Buffer overflow\0" as *const u8 as *const ::core::ffi::c_char,
-            );
+    let mut written = 0;
+    let mut scratch = [0; 4];
+    for i in 0..len {
+        let escaped = escape_pdf_byte(*s.add(i), &mut scratch);
+        if escaped.len() > bufsize - written {
+            pdf_abort!(c"pdfobj_escape_str: Buffer overflow".as_ptr());
         }
-        if (ch as ::core::ffi::c_int) < 32 as ::core::ffi::c_int
-            || ch as ::core::ffi::c_int > 126 as ::core::ffi::c_int
-        {
-            let fresh7 = result;
-            result = result.wrapping_add(1);
-            *buffer.offset(fresh7 as isize) = '\\' as i32 as ::core::ffi::c_char;
-            result = result.wrapping_add(sprintf(
-                buffer.offset(result as isize),
-                b"%03o\0" as *const u8 as *const ::core::ffi::c_char,
-                ch as ::core::ffi::c_int,
-            ) as size_t);
-        } else {
-            match ch as ::core::ffi::c_int {
-                40 => {
-                    let fresh8 = result;
-                    result = result.wrapping_add(1);
-                    *buffer.offset(fresh8 as isize) = '\\' as i32 as ::core::ffi::c_char;
-                    let fresh9 = result;
-                    result = result.wrapping_add(1);
-                    *buffer.offset(fresh9 as isize) = '(' as i32 as ::core::ffi::c_char;
-                }
-                41 => {
-                    let fresh10 = result;
-                    result = result.wrapping_add(1);
-                    *buffer.offset(fresh10 as isize) = '\\' as i32 as ::core::ffi::c_char;
-                    let fresh11 = result;
-                    result = result.wrapping_add(1);
-                    *buffer.offset(fresh11 as isize) = ')' as i32 as ::core::ffi::c_char;
-                }
-                92 => {
-                    let fresh12 = result;
-                    result = result.wrapping_add(1);
-                    *buffer.offset(fresh12 as isize) = '\\' as i32 as ::core::ffi::c_char;
-                    let fresh13 = result;
-                    result = result.wrapping_add(1);
-                    *buffer.offset(fresh13 as isize) = '\\' as i32 as ::core::ffi::c_char;
-                }
-                _ => {
-                    let fresh14 = result;
-                    result = result.wrapping_add(1);
-                    *buffer.offset(fresh14 as isize) = ch as ::core::ffi::c_char;
-                }
-            }
-        }
-        i = i.wrapping_add(1);
+        core::ptr::copy_nonoverlapping(escaped.as_ptr(), buffer.add(written).cast(), escaped.len());
+        written += escaped.len();
     }
-    return result;
+    written
 }
-unsafe extern "C-unwind" fn write_string(mut p: *mut pdf_out, mut str: *mut Bytes) {
-    let mut s: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    let mut i: size_t = 0;
-    let mut nescc: size_t = 0 as size_t;
-    let mut len: size_t = 0 as size_t;
-    if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+
+unsafe extern "C-unwind" fn write_string(p: *mut pdf_out, string: *mut Bytes) {
+    if p.is_null() {
+        pdf_abort!(c"assertion failed: %s".as_ptr(), c"p".as_ptr());
+    }
+    let encrypted = (*p).state.enc_mode != 0;
+    let mut data = (*string).as_mut_ptr();
+    let mut len = (*string).as_bytes().len();
+    if encrypted {
+        pdf_encrypt_data((*p).sec_data, data, len, &mut data, &mut len);
+    }
+    let bytes = if len == 0 {
+        &[]
     } else {
+        core::slice::from_raw_parts(data, len)
     };
-    if (*p).state.enc_mode != 0 {
-        pdf_encrypt_data(
-            (*p).sec_data,
-            (*str).as_mut_ptr(),
-            (*str).as_bytes().len(),
-            &raw mut s,
-            &raw mut len,
-        );
+    let nonprintable = bytes
+        .iter()
+        .filter(|&&byte| unsafe { isprint(byte.into()) } == 0)
+        .count();
+    if nonprintable > len / 3 {
+        pdf_out_char(p, b'<' as _);
+        let encoded = faster_hex::hex_string(bytes);
+        pdf_out_str(p, encoded.as_ptr().cast(), encoded.len());
+        pdf_out_char(p, b'>' as _);
     } else {
-        s = (*str).as_mut_ptr();
-        len = (*str).as_bytes().len();
-    }
-    i = 0 as size_t;
-    while i < len {
-        if isprint(*s.offset(i as isize) as ::core::ffi::c_int) == 0 {
-            nescc = nescc.wrapping_add(1);
+        let mut scratch = [0; 4];
+        pdf_out_char(p, b'(' as _);
+        for &byte in bytes {
+            let escaped = escape_pdf_byte(byte, &mut scratch);
+            pdf_out_str(p, escaped.as_ptr().cast(), escaped.len());
         }
-        i = i.wrapping_add(1);
+        pdf_out_char(p, b')' as _);
     }
-    if nescc > len.wrapping_div(3 as size_t) {
-        pdf_out_char(p, '<' as i32 as ::core::ffi::c_char);
-        i = 0 as size_t;
-        while i < len {
-            pdf_out_xchar(p, *s.offset(i as isize) as ::core::ffi::c_char);
-            i = i.wrapping_add(1);
-        }
-        pdf_out_char(p, '>' as i32 as ::core::ffi::c_char);
-    } else {
-        let mut buf: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-        let mut size: size_t = 0;
-        let mut count: size_t = 0;
-        size = len.wrapping_mul(2 as size_t).wrapping_add(3 as size_t);
-        buf = new((size as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_char;
-        pdf_out_char(p, '(' as i32 as ::core::ffi::c_char);
-        i = 0 as size_t;
-        while i < len {
-            count = pdfobj_escape_str(
-                buf,
-                size,
-                s.offset(i as isize) as *mut ::core::ffi::c_uchar,
-                1 as size_t,
-            );
-            pdf_out_str(p, buf as *const ::core::ffi::c_void, count);
-            i = i.wrapping_add(1);
-        }
-        pdf_out_char(p, ')' as i32 as ::core::ffi::c_char);
-        free(buf as *mut ::core::ffi::c_void);
-    }
-    if (*p).state.enc_mode != 0 && !s.is_null() {
-        free(s as *mut ::core::ffi::c_void);
+    if encrypted {
+        free(data.cast());
     }
 }
 
@@ -1659,46 +1590,18 @@ pub unsafe extern "C-unwind" fn pdf_new_name(mut name: *const ::core::ffi::c_cha
     let bytes = std::ffi::CStr::from_ptr(name).to_bytes();
     handles::allocate(Value::Name(Bytes::new(bytes)))
 }
-unsafe extern "C-unwind" fn write_name(mut p: *mut pdf_out, mut name: *mut Bytes) {
-    let mut s: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    let mut i: size_t = 0;
-    let mut length: size_t = 0;
-    if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
-    } else {
-    };
-    s = (*name).as_mut_ptr().cast::<::core::ffi::c_char>();
-    length = if !(*name).as_mut_ptr().cast::<::core::ffi::c_char>().is_null() {
-        strlen((*name).as_mut_ptr().cast::<::core::ffi::c_char>())
-    } else {
-        0 as size_t
-    };
-    pdf_out_char(p, '/' as i32 as ::core::ffi::c_char);
-    i = 0 as size_t;
-    while i < length {
-        if (*s.offset(i as isize) as ::core::ffi::c_int) < '!' as i32
-            || *s.offset(i as isize) as ::core::ffi::c_int > '~' as i32
-            || *s.offset(i as isize) as ::core::ffi::c_int == '#' as i32
-            || (*s.offset(i as isize) as ::core::ffi::c_int == '(' as i32
-                || *s.offset(i as isize) as ::core::ffi::c_int == ')' as i32
-                || *s.offset(i as isize) as ::core::ffi::c_int == '/' as i32
-                || *s.offset(i as isize) as ::core::ffi::c_int == '<' as i32
-                || *s.offset(i as isize) as ::core::ffi::c_int == '>' as i32
-                || *s.offset(i as isize) as ::core::ffi::c_int == '[' as i32
-                || *s.offset(i as isize) as ::core::ffi::c_int == ']' as i32
-                || *s.offset(i as isize) as ::core::ffi::c_int == '{' as i32
-                || *s.offset(i as isize) as ::core::ffi::c_int == '}' as i32
-                || *s.offset(i as isize) as ::core::ffi::c_int == '%' as i32)
-        {
-            pdf_out_char(p, '#' as i32 as ::core::ffi::c_char);
-            pdf_out_xchar(p, *s.offset(i as isize));
+unsafe extern "C-unwind" fn write_name(p: *mut pdf_out, name: *mut Bytes) {
+    if p.is_null() {
+        pdf_abort!(c"assertion failed: %s".as_ptr(), c"p".as_ptr());
+    }
+    pdf_out_char(p, b'/' as _);
+    for &byte in (*name).as_bytes().iter().take_while(|&&byte| byte != 0) {
+        if !(b'!'..=b'~').contains(&byte) || b"#()/<>[]{}%".contains(&byte) {
+            pdf_out_char(p, b'#' as _);
+            pdf_out_xchar(p, byte as _);
         } else {
-            pdf_out_char(p, *s.offset(i as isize));
+            pdf_out_char(p, byte as _);
         }
-        i = i.wrapping_add(1);
     }
 }
 
@@ -3049,251 +2952,124 @@ unsafe extern "C-unwind" fn filter_stream_decode_FlateDecode(
     pdf_release_obj(tmp);
     return dst;
 }
-unsafe extern "C-unwind" fn filter_stream_decode_ASCIIHexDecode(
-    mut data: *const ::core::ffi::c_void,
-    mut len: size_t,
-) -> *mut pdf_obj {
-    let mut dst: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut eod: ::core::ffi::c_int = 0;
-    let mut error: ::core::ffi::c_int = 0;
-    let mut p: *const ::core::ffi::c_char = data as *const ::core::ffi::c_char;
-    let mut endptr: *const ::core::ffi::c_char = p.offset(len as isize);
-    let mut buf: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    let mut ch: ::core::ffi::c_uchar = 0;
-    let mut pos: size_t = 0;
-    let mut n: size_t = 0;
-    buf = new(
-        (len.wrapping_add(1 as size_t).wrapping_div(2 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-            as uint32_t,
-    ) as *mut ::core::ffi::c_uchar;
-    skip_white(&raw mut p, endptr);
-    ch = 0 as ::core::ffi::c_uchar;
-    n = 0 as size_t;
-    pos = 0 as size_t;
-    eod = 0 as ::core::ffi::c_int;
-    error = 0 as ::core::ffi::c_int;
-    while p < endptr && error == 0 && eod == 0 {
-        let mut c1: ::core::ffi::c_char = 0;
-        let mut val: ::core::ffi::c_char = 0;
-        c1 = *p.offset(0 as ::core::ffi::c_int as isize);
-        if c1 as ::core::ffi::c_int >= 'A' as i32 && c1 as ::core::ffi::c_int <= 'F' as i32 {
-            val = (c1 as ::core::ffi::c_int - 'A' as i32 + 10 as ::core::ffi::c_int)
-                as ::core::ffi::c_char;
-        } else if c1 as ::core::ffi::c_int >= 'a' as i32 && c1 as ::core::ffi::c_int <= 'f' as i32 {
-            val = (c1 as ::core::ffi::c_int - 'a' as i32 + 10 as ::core::ffi::c_int)
-                as ::core::ffi::c_char;
-        } else if c1 as ::core::ffi::c_int >= '0' as i32 && c1 as ::core::ffi::c_int <= '9' as i32 {
-            val = (c1 as ::core::ffi::c_int - '0' as i32) as ::core::ffi::c_char;
-        } else if c1 as ::core::ffi::c_int == '>' as i32 {
-            val = 0 as ::core::ffi::c_char;
-            eod = 1 as ::core::ffi::c_int;
-            if pos.wrapping_rem(2 as size_t) == 0 as size_t {
+fn decode_pdf_asciihex(input: &[u8]) -> Result<Vec<u8>, &'static str> {
+    let mut encoded = Vec::new();
+    let mut cursor = 0;
+    let mut terminated = false;
+    while let Some(&byte) = input.get(cursor) {
+        cursor += 1;
+        match byte {
+            b'>' => {
+                terminated = true;
                 break;
             }
-        } else {
-            error = -(1 as ::core::ffi::c_int);
-            break;
-        }
-        if pos.wrapping_rem(2 as size_t) != 0 {
-            *buf.offset(n as isize) =
-                (ch as ::core::ffi::c_int + val as ::core::ffi::c_int) as ::core::ffi::c_uchar;
-            n = n.wrapping_add(1);
-            ch = 0 as ::core::ffi::c_uchar;
-        } else {
-            ch = ((val as ::core::ffi::c_int) << 4 as ::core::ffi::c_int) as ::core::ffi::c_uchar;
-        }
-        pos = pos.wrapping_add(1);
-        p = p.offset(1);
-        skip_white(&raw mut p, endptr);
-    }
-    if error != 0 || eod == 0 {
-        pdf_warning!(
-            b"Invalid ASCIIHex data seen: %s\0" as *const u8 as *const ::core::ffi::c_char,
-            if error != 0 {
-                b"Invalid character\0" as *const u8 as *const ::core::ffi::c_char
-            } else {
-                b"No EOD marker\0" as *const u8 as *const ::core::ffi::c_char
-            },
-        );
-        dst = ::core::ptr::null_mut::<pdf_obj>();
-    } else {
-        dst = pdf_new_stream(0 as ::core::ffi::c_int);
-        pdf_add_stream(
-            dst,
-            buf as *const ::core::ffi::c_void,
-            n as ::core::ffi::c_int,
-        );
-    }
-    free(buf as *mut ::core::ffi::c_void);
-    return dst;
-}
-unsafe extern "C-unwind" fn skip_white_a85(
-    mut p: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
-) {
-    while *p < endptr
-        && (**p as ::core::ffi::c_int == ' ' as i32
-            || **p as ::core::ffi::c_int == '\t' as i32
-            || **p as ::core::ffi::c_int == '\u{c}' as i32
-            || **p as ::core::ffi::c_int == '\r' as i32
-            || **p as ::core::ffi::c_int == '\n' as i32
-            || **p as ::core::ffi::c_int == '\0' as i32)
-    {
-        *p = (*p).offset(1);
-    }
-}
-unsafe extern "C-unwind" fn filter_stream_decode_ASCII85Decode(
-    mut data: *const ::core::ffi::c_void,
-    mut len: size_t,
-) -> *mut pdf_obj {
-    let mut dst: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut eod: ::core::ffi::c_int = 0;
-    let mut error: ::core::ffi::c_int = 0;
-    let mut p: *const ::core::ffi::c_char = data as *const ::core::ffi::c_char;
-    let mut endptr: *const ::core::ffi::c_char = p.offset(len as isize);
-    let mut buf: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    let mut n: size_t = 0;
-    buf = new((len
-        .wrapping_add(4 as size_t)
-        .wrapping_div(5 as size_t)
-        .wrapping_mul(4 as size_t) as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_uchar;
-    skip_white_a85(&raw mut p, endptr);
-    n = 0 as size_t;
-    eod = 0 as ::core::ffi::c_int;
-    error = 0 as ::core::ffi::c_int;
-    while p < endptr && error == 0 && eod == 0 {
-        let mut q: [::core::ffi::c_char; 5] = [
-            'u' as i32 as ::core::ffi::c_char,
-            'u' as i32 as ::core::ffi::c_char,
-            'u' as i32 as ::core::ffi::c_char,
-            'u' as i32 as ::core::ffi::c_char,
-            'u' as i32 as ::core::ffi::c_char,
-        ];
-        let mut m: ::core::ffi::c_int = 0;
-        let mut ch: ::core::ffi::c_char = 0;
-        ch = *p.offset(0 as ::core::ffi::c_int as isize);
-        p = p.offset(1);
-        skip_white_a85(&raw mut p, endptr);
-        if ch as ::core::ffi::c_int == 'z' as i32 {
-            memset(
-                buf.offset(n as isize) as *mut ::core::ffi::c_void,
-                0 as ::core::ffi::c_int,
-                4 as size_t,
-            );
-            n = n.wrapping_add(4 as size_t);
-        } else if ch as ::core::ffi::c_int == '~' as i32 {
-            if p < endptr
-                && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '>' as i32
-            {
-                eod = 1 as ::core::ffi::c_int;
-                p = p.offset(1);
-            } else {
-                error = -(1 as ::core::ffi::c_int);
-            }
-            break;
-        } else {
-            q[0 as ::core::ffi::c_int as usize] = ch;
-            m = 1 as ::core::ffi::c_int;
-            while m < 5 as ::core::ffi::c_int && p < endptr {
-                ch = *p.offset(0 as ::core::ffi::c_int as isize);
-                p = p.offset(1);
-                skip_white_a85(&raw mut p, endptr);
-                if ch as ::core::ffi::c_int == '~' as i32 {
-                    if p < endptr
-                        && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                            == '>' as i32
-                    {
-                        eod = 1 as ::core::ffi::c_int;
-                        p = p.offset(1);
-                    } else {
-                        error = -(1 as ::core::ffi::c_int);
-                    }
-                    break;
-                } else if (ch as ::core::ffi::c_int) < '!' as i32
-                    || ch as ::core::ffi::c_int > 'u' as i32
+            0 | b' ' | b'\t' | b'\x0c' | b'\r' | b'\n' => {}
+            b'%' => {
+                while input
+                    .get(cursor)
+                    .is_some_and(|byte| !matches!(byte, b'\r' | b'\n'))
                 {
-                    error = -(1 as ::core::ffi::c_int);
-                    break;
-                } else {
-                    q[m as usize] = ch;
-                    m += 1;
+                    cursor += 1;
                 }
             }
-            if !(error == 0) {
-                continue;
-            }
-            let mut val: uint32_t = 0 as uint32_t;
-            let mut i: ::core::ffi::c_int = 0;
-            if m <= 1 as ::core::ffi::c_int {
-                error = -(1 as ::core::ffi::c_int);
-                break;
-            } else {
-                val = (85 as ::core::ffi::c_int
-                    * 85 as ::core::ffi::c_int
-                    * 85 as ::core::ffi::c_int
-                    * (q[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_int - '!' as i32)
-                    + 85 as ::core::ffi::c_int
-                        * 85 as ::core::ffi::c_int
-                        * (q[1 as ::core::ffi::c_int as usize] as ::core::ffi::c_int - '!' as i32)
-                    + 85 as ::core::ffi::c_int
-                        * (q[2 as ::core::ffi::c_int as usize] as ::core::ffi::c_int - '!' as i32)
-                    + (q[3 as ::core::ffi::c_int as usize] as ::core::ffi::c_int - '!' as i32))
-                    as uint32_t;
-                if val > (UINT32_MAX as uint32_t).wrapping_div(85 as uint32_t) {
-                    error = -(1 as ::core::ffi::c_int);
-                    break;
-                } else {
-                    val = (85 as uint32_t).wrapping_mul(val);
-                    if val
-                        > (UINT32_MAX as uint32_t).wrapping_sub(
-                            (q[4 as ::core::ffi::c_int as usize] as ::core::ffi::c_int - '!' as i32)
-                                as uint32_t,
-                        )
-                    {
-                        error = -(1 as ::core::ffi::c_int);
-                        break;
-                    } else {
-                        val = val.wrapping_add(
-                            (q[4 as ::core::ffi::c_int as usize] as ::core::ffi::c_int - '!' as i32)
-                                as uint32_t,
-                        );
-                        if error == 0 {
-                            i = 3 as ::core::ffi::c_int;
-                            while i >= 0 as ::core::ffi::c_int {
-                                *buf.offset(n.wrapping_add(i as size_t) as isize) =
-                                    (val & 0xff as uint32_t) as ::core::ffi::c_uchar;
-                                val = val.wrapping_div(256 as uint32_t);
-                                i -= 1;
-                            }
-                            n = n.wrapping_add((m - 1 as ::core::ffi::c_int) as size_t);
-                        }
-                    }
-                }
-            }
+            _ => encoded.push(byte),
         }
     }
-    if error != 0 {
-        pdf_warning!(
-            b"Error in reading ASCII85 data.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else if eod == 0 {
-        pdf_warning!(
-            b"Error in reading ASCII85 data: No EOD\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-        dst = ::core::ptr::null_mut::<pdf_obj>();
-    } else {
-        dst = pdf_new_stream(0 as ::core::ffi::c_int);
-        pdf_add_stream(
-            dst,
-            buf as *const ::core::ffi::c_void,
-            n as ::core::ffi::c_int,
-        );
+    if encoded.len() % 2 != 0 {
+        encoded.push(b'0');
     }
-    free(buf as *mut ::core::ffi::c_void);
-    return dst;
+    let mut decoded = vec![0; encoded.len() / 2];
+    faster_hex::hex_decode(&encoded, &mut decoded).map_err(|_| "Invalid character")?;
+    if !terminated {
+        return Err("No EOD marker");
+    }
+    Ok(decoded)
+}
+
+unsafe extern "C-unwind" fn filter_stream_decode_ASCIIHexDecode(
+    data: *const ::core::ffi::c_void,
+    len: size_t,
+) -> *mut pdf_obj {
+    let input = if len == 0 {
+        &[]
+    } else {
+        core::slice::from_raw_parts(data.cast::<u8>(), len)
+    };
+    match decode_pdf_asciihex(input) {
+        Ok(decoded) => {
+            let length = i32::try_from(decoded.len())
+                .unwrap_or_else(|_| pdf_abort!(c"Decoded stream too long".as_ptr()));
+            let stream = pdf_new_stream(0);
+            pdf_add_stream(stream, decoded.as_ptr().cast(), length);
+            stream
+        }
+        Err(error) => {
+            pdf_warning!("Invalid ASCIIHex data seen: {error}");
+            core::ptr::null_mut()
+        }
+    }
+}
+fn decode_pdf_ascii85(input: &[u8]) -> Result<Vec<u8>, &'static str> {
+    let normalized: Vec<u8> = input
+        .iter()
+        .copied()
+        .filter(|byte| !matches!(byte, 0 | b' ' | b'\t' | b'\x0c' | b'\r' | b'\n'))
+        .collect();
+    let end = normalized
+        .iter()
+        .position(|&byte| byte == b'~')
+        .unwrap_or(normalized.len());
+    let payload = &normalized[..end];
+    let invalid = "Error in reading ASCII85 data.";
+    if payload
+        .iter()
+        .any(|&byte| !(b'!'..=b'u').contains(&byte) && byte != b'z')
+    {
+        return Err(invalid);
+    }
+    if payload
+        .rsplit(|&byte| byte == b'z')
+        .next()
+        .unwrap_or_default()
+        .len()
+        % 5
+        == 1
+    {
+        return Err(invalid);
+    }
+    let text = core::str::from_utf8(payload).map_err(|_| invalid)?;
+    let decoded = btoa::decode(text).map_err(|_| invalid)?;
+    if end == normalized.len() {
+        return Err("Error in reading ASCII85 data: No EOD");
+    }
+    if normalized.get(end + 1) != Some(&b'>') {
+        return Err(invalid);
+    }
+    Ok(decoded)
+}
+
+unsafe extern "C-unwind" fn filter_stream_decode_ASCII85Decode(
+    data: *const ::core::ffi::c_void,
+    len: size_t,
+) -> *mut pdf_obj {
+    let input = if len == 0 {
+        &[]
+    } else {
+        core::slice::from_raw_parts(data.cast::<u8>(), len)
+    };
+    match decode_pdf_ascii85(input) {
+        Ok(decoded) => {
+            let length = i32::try_from(decoded.len())
+                .unwrap_or_else(|_| pdf_abort!(c"Decoded stream too long".as_ptr()));
+            let stream = pdf_new_stream(0);
+            pdf_add_stream(stream, decoded.as_ptr().cast(), length);
+            stream
+        }
+        Err(error) => {
+            pdf_warning!("{error}");
+            core::ptr::null_mut()
+        }
+    }
 }
 unsafe extern "C-unwind" fn filter_stream_decode(
     mut filter_name: *const ::core::ffi::c_char,
@@ -5330,21 +5106,17 @@ unsafe extern "C-unwind" fn pdf_file_free(mut pf: *mut pdf_file) {
     pdf_release_obj((*pf).catalog);
     free(pf as *mut ::core::ffi::c_void);
 }
+unsafe extern "C-unwind" fn release_pdf_file(value: *mut ::core::ffi::c_void) {
+    unsafe { pdf_file_free(value.cast()) };
+}
+
 #[unsafe(export_name = "__pdf_impl_pdf_files_init")]
 pub unsafe extern "C-unwind" fn pdf_files_init() {
     let __pdf_state = unsafe { document_state() };
     (*__pdf_state).pdf_files = new((1 as ::core::ffi::c_int as uint32_t as usize)
         .wrapping_mul(::core::mem::size_of::<ht_table>() as usize)
         as uint32_t) as *mut ht_table;
-    ht_init_table(
-        (*__pdf_state).pdf_files,
-        ::core::mem::transmute::<
-            Option<unsafe extern "C-unwind" fn(*mut pdf_file) -> ()>,
-            hval_free_func,
-        >(Some(
-            pdf_file_free as unsafe extern "C-unwind" fn(*mut pdf_file) -> (),
-        )),
-    );
+    ht_init_table((*__pdf_state).pdf_files, Some(release_pdf_file));
 }
 #[unsafe(export_name = "__pdf_impl_pdf_file_get_version")]
 pub unsafe extern "C-unwind" fn pdf_file_get_version(mut pf: *mut pdf_file) -> ::core::ffi::c_int {
@@ -5541,7 +5313,7 @@ unsafe extern "C-unwind" fn check_for_pdf_version(
     mut handle: rust_input_handle_t,
 ) -> ::core::ffi::c_int {
     let mut buffer: [::core::ffi::c_char; 10] =
-        ::core::mem::transmute::<[u8; 10], [::core::ffi::c_char; 10]>(*b"\0\0\0\0\0\0\0\0\0\0");
+        crate::backend::c_char_array(*b"\0\0\0\0\0\0\0\0\0\0");
     let mut major: ::core::ffi::c_uint = 0;
     let mut minor: ::core::ffi::c_uint = 0;
     crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);

@@ -323,8 +323,7 @@ unsafe extern "C-unwind" fn dpx_get_tmpdir() -> *mut ::core::ffi::c_char {
     }
     return ret;
 }
-pub const __TMPDIR: [::core::ffi::c_char; 5] =
-    unsafe { ::core::mem::transmute::<[u8; 5], [::core::ffi::c_char; 5]>(*b"/tmp\0") };
+pub const __TMPDIR: [::core::ffi::c_char; 5] = crate::backend::c_char_array(*b"/tmp\0");
 #[unsafe(export_name = "__pdf_impl_dpx_create_temp_file")]
 pub unsafe extern "C-unwind" fn dpx_create_temp_file() -> *mut ::core::ffi::c_char {
     let mut tmpdir: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -348,9 +347,8 @@ pub unsafe extern "C-unwind" fn dpx_create_temp_file() -> *mut ::core::ffi::c_ch
     }
     return tmp;
 }
-pub const TEMPLATE: [::core::ffi::c_char; 17] = unsafe {
-    ::core::mem::transmute::<[u8; 17], [::core::ffi::c_char; 17]>(*b"/dvipdfmx.XXXXXX\0")
-};
+pub const TEMPLATE: [::core::ffi::c_char; 17] =
+    crate::backend::c_char_array(*b"/dvipdfmx.XXXXXX\0");
 #[unsafe(export_name = "__pdf_impl_dpx_delete_old_cache")]
 pub unsafe extern "C-unwind" fn dpx_delete_old_cache(mut life: ::core::ffi::c_int) {
     if life == -(2 as ::core::ffi::c_int) {

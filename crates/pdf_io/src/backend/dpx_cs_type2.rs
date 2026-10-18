@@ -75,9 +75,8 @@ pub struct C2RustUnnamed_0 {
 pub const __DARWIN_NULL: *mut ::core::ffi::c_void = ::core::ptr::null_mut::<::core::ffi::c_void>();
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 pub const CS_SUBR_NEST_MAX: ::core::ffi::c_int = 10 as ::core::ffi::c_int;
-pub const CS_TYPE2_DEBUG_STR: [::core::ffi::c_char; 24] = unsafe {
-    ::core::mem::transmute::<[u8; 24], [::core::ffi::c_char; 24]>(*b"Type2 Charstring Parser\0")
-};
+pub const CS_TYPE2_DEBUG_STR: [::core::ffi::c_char; 24] =
+    crate::backend::c_char_array(*b"Type2 Charstring Parser\0");
 pub const CS_BUFFER_ERROR: ::core::ffi::c_int = -(3 as ::core::ffi::c_int);
 pub const CS_STACK_ERROR: ::core::ffi::c_int = -(2 as ::core::ffi::c_int);
 pub const CS_PARSE_ERROR: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);

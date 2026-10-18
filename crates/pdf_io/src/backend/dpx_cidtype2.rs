@@ -472,7 +472,7 @@ pub const TT_MAC_JAPANESE: ::core::ffi::c_uint = 1 as ::core::ffi::c_uint;
 pub const TT_MAC_TRADITIONAL_CHINESE: ::core::ffi::c_uint = 2 as ::core::ffi::c_uint;
 pub const TT_MAC_KOREAN: ::core::ffi::c_uint = 3 as ::core::ffi::c_uint;
 pub const TT_MAC_SIMPLIFIED_CHINESE: ::core::ffi::c_uint = 25 as ::core::ffi::c_uint;
-static mut required_table: [C2RustUnnamed_2; 12] = [
+const REQUIRED_TABLE: [C2RustUnnamed_2; 12] = [
     C2RustUnnamed_2 {
         name: b"OS/2\0" as *const u8 as *const ::core::ffi::c_char,
         must_exist: 0 as ::core::ffi::c_int,
@@ -529,7 +529,7 @@ unsafe extern "C-unwind" fn validate_name(
     let mut i: ::core::ffi::c_int = 0;
     let mut count: ::core::ffi::c_int = 0;
     let mut p: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    static mut badstrlist: [*const ::core::ffi::c_char; 5] = [
+    const BADSTRLIST: [*const ::core::ffi::c_char; 5] = [
         b"-WIN-RKSJ-H\0" as *const u8 as *const ::core::ffi::c_char,
         b"-WINP-RKSJ-H\0" as *const u8 as *const ::core::ffi::c_char,
         b"-WING-RKSJ-H\0" as *const u8 as *const ::core::ffi::c_char,
@@ -563,13 +563,13 @@ unsafe extern "C-unwind" fn validate_name(
     }
     *fontname.offset(len as isize) = '\0' as i32 as ::core::ffi::c_char;
     i = 0 as ::core::ffi::c_int;
-    while !badstrlist[i as usize].is_null() {
-        p = strstr(fontname, badstrlist[i as usize]);
+    while !BADSTRLIST[i as usize].is_null() {
+        p = strstr(fontname, BADSTRLIST[i as usize]);
         if !p.is_null() && p > fontname {
             pdf_warning!(
                 b"Removed string \"%s\" from fontname \"%s\".\0" as *const u8
                     as *const ::core::ffi::c_char,
-                badstrlist[i as usize],
+                BADSTRLIST[i as usize],
                 fontname,
             );
             *p.offset(0 as ::core::ffi::c_int as isize) = '\0' as i32 as ::core::ffi::c_char;
@@ -590,7 +590,7 @@ unsafe extern "C-unwind" fn validate_name(
 }
 pub const WIN_UCS_INDEX_MAX: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const KNOWN_ENCODINGS_MAX: ::core::ffi::c_int = 10 as ::core::ffi::c_int;
-static mut known_encodings: [C2RustUnnamed_7; 12] = [
+const KNOWN_ENCODINGS: [C2RustUnnamed_7; 12] = [
     C2RustUnnamed_7 {
         platform: TT_WIN as ::core::ffi::c_ushort,
         encoding: TT_WIN_UCS4 as ::core::ffi::c_ushort,
@@ -749,7 +749,7 @@ unsafe extern "C-unwind" fn find_tocode_cmap(
     }
     i = 0 as ::core::ffi::c_int;
     while cmap_id < 0 as ::core::ffi::c_int && i < 5 as ::core::ffi::c_int {
-        append = known_encodings[select as usize].pdfnames[i as usize];
+        append = KNOWN_ENCODINGS[select as usize].pdfnames[i as usize];
         if append.is_null() {
             break;
         }
@@ -783,7 +783,7 @@ unsafe extern "C-unwind" fn find_tocode_cmap(
         );
         i = 0 as ::core::ffi::c_int;
         while i < 5 as ::core::ffi::c_int {
-            append = known_encodings[select as usize].pdfnames[i as usize];
+            append = KNOWN_ENCODINGS[select as usize].pdfnames[i as usize];
             if append.is_null() {
                 break;
             }
@@ -1013,11 +1013,9 @@ unsafe extern "C-unwind" fn add_TTCIDVMetrics(
     }
     pdf_release_obj(w2_array);
 }
-unsafe extern "C-unwind" fn fix_CJK_symbols(
-    mut code: ::core::ffi::c_ushort,
-) -> ::core::ffi::c_ushort {
+extern "C-unwind" fn fix_CJK_symbols(mut code: ::core::ffi::c_ushort) -> ::core::ffi::c_ushort {
     let mut alt_code: ::core::ffi::c_ushort = 0;
-    static mut CJK_Uni_symbols: [C2RustUnnamed_3; 10] = [
+    const CJK_UNI_SYMBOLS: [C2RustUnnamed_3; 10] = [
         C2RustUnnamed_3 {
             alt1: 0x2014 as ::core::ffi::c_ushort,
             alt2: 0x2015 as ::core::ffi::c_ushort,
@@ -1063,13 +1061,13 @@ unsafe extern "C-unwind" fn fix_CJK_symbols(
     alt_code = code;
     i = 0 as ::core::ffi::c_uint;
     while (i as usize) < NUM_CJK_SYMBOLS {
-        if CJK_Uni_symbols[i as usize].alt1 as ::core::ffi::c_int == code as ::core::ffi::c_int {
-            alt_code = CJK_Uni_symbols[i as usize].alt2;
+        if CJK_UNI_SYMBOLS[i as usize].alt1 as ::core::ffi::c_int == code as ::core::ffi::c_int {
+            alt_code = CJK_UNI_SYMBOLS[i as usize].alt2;
             break;
-        } else if CJK_Uni_symbols[i as usize].alt2 as ::core::ffi::c_int
+        } else if CJK_UNI_SYMBOLS[i as usize].alt2 as ::core::ffi::c_int
             == code as ::core::ffi::c_int
         {
-            alt_code = CJK_Uni_symbols[i as usize].alt1;
+            alt_code = CJK_UNI_SYMBOLS[i as usize].alt1;
             break;
         } else {
             i = i.wrapping_add(1);
@@ -1364,8 +1362,8 @@ pub unsafe extern "C-unwind" fn CIDFont_type2_dofont(
             while i <= KNOWN_ENCODINGS_MAX {
                 ttcmap = tt_cmap_read(
                     sfont,
-                    known_encodings[i as usize].platform as USHORT,
-                    known_encodings[i as usize].encoding as USHORT,
+                    KNOWN_ENCODINGS[i as usize].platform as USHORT,
+                    KNOWN_ENCODINGS[i as usize].encoding as USHORT,
                 );
                 if !ttcmap.is_null() {
                     break;
@@ -1817,17 +1815,17 @@ pub unsafe extern "C-unwind" fn CIDFont_type2_dofont(
         return 0 as ::core::ffi::c_int;
     }
     i = 0 as ::core::ffi::c_int;
-    while !required_table[i as usize].name.is_null() {
+    while !REQUIRED_TABLE[i as usize].name.is_null() {
         if sfnt_require_table(
             sfont,
-            required_table[i as usize].name,
-            required_table[i as usize].must_exist,
+            REQUIRED_TABLE[i as usize].name,
+            REQUIRED_TABLE[i as usize].must_exist,
         ) < 0 as ::core::ffi::c_int
         {
             pdf_warning!(
                 b"Some required TrueType table (%s) does not exist.\0" as *const u8
                     as *const ::core::ffi::c_char,
-                required_table[i as usize].name,
+                REQUIRED_TABLE[i as usize].name,
             );
             free(cidtogidmap as *mut ::core::ffi::c_void);
             sfnt_close(sfont);

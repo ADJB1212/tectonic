@@ -1148,21 +1148,21 @@ pub unsafe extern "C-unwind" fn tt_cmap_lookup(
     }
     return gid;
 }
-static mut srange_min: [::core::ffi::c_uchar; 2] = [
+const SRANGE_MIN: [::core::ffi::c_uchar; 2] = [
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
 ];
-static mut srange_max: [::core::ffi::c_uchar; 2] = [
+const SRANGE_MAX: [::core::ffi::c_uchar; 2] = [
     0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
     0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
 ];
-static mut lrange_min: [::core::ffi::c_uchar; 4] = [
+const LRANGE_MIN: [::core::ffi::c_uchar; 4] = [
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
 ];
-static mut lrange_max: [::core::ffi::c_uchar; 4] = [
+const LRANGE_MAX: [::core::ffi::c_uchar; 4] = [
     0x7f as ::core::ffi::c_int as ::core::ffi::c_uchar,
     0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
     0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
@@ -1285,7 +1285,7 @@ unsafe extern "C-unwind" fn create_GIDToCIDMap(
         }
     };
 }
-unsafe extern "C-unwind" fn is_PUA_or_presentation(mut uni: ::core::ffi::c_uint) -> bool {
+extern "C-unwind" fn is_PUA_or_presentation(mut uni: ::core::ffi::c_uint) -> bool {
     return uni >= 0x2e80 as ::core::ffi::c_uint && uni <= 0x2ef3 as ::core::ffi::c_uint
         || uni >= 0x2f00 as ::core::ffi::c_uint && uni <= 0x2fd5 as ::core::ffi::c_uint
         || uni >= 0xe000 as ::core::ffi::c_uint && uni <= 0xf8ff as ::core::ffi::c_uint
@@ -1628,12 +1628,7 @@ unsafe extern "C-unwind" fn create_ToUnicode_cmap(
     CMap_set_wmode(cmap, 0 as ::core::ffi::c_int);
     CMap_set_type(cmap, CMAP_TYPE_TO_UNICODE);
     CMap_set_CIDSysInfo(cmap, &raw mut CSI_UNICODE);
-    CMap_add_codespacerange(
-        cmap,
-        &raw mut srange_min as *mut ::core::ffi::c_uchar,
-        &raw mut srange_max as *mut ::core::ffi::c_uchar,
-        2 as size_t,
-    );
+    CMap_add_codespacerange(cmap, SRANGE_MIN.as_ptr(), SRANGE_MAX.as_ptr(), 2 as size_t);
     count = 0 as ::core::ffi::c_int as int32_t;
     used_chars_copy = new((8192 as ::core::ffi::c_int as uint32_t as usize)
         .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
@@ -1795,7 +1790,7 @@ unsafe extern "C-unwind" fn create_ToUnicode_cmap(
     free(map_sub as *mut ::core::ffi::c_void);
     return stream;
 }
-static mut cmap_plat_encs: [cmap_plat_enc_rec; 6] = [
+const CMAP_PLAT_ENCS: [cmap_plat_enc_rec; 6] = [
     cmap_plat_enc_rec {
         platform: 3 as ::core::ffi::c_short,
         encoding: 10 as ::core::ffi::c_short,
@@ -1959,8 +1954,8 @@ pub unsafe extern "C-unwind" fn otf_create_ToUnicode_stream(
     {
         ttcmap = tt_cmap_read(
             sfont,
-            cmap_plat_encs[i as usize].platform as USHORT,
-            cmap_plat_encs[i as usize].encoding as USHORT,
+            CMAP_PLAT_ENCS[i as usize].platform as USHORT,
+            CMAP_PLAT_ENCS[i as usize].encoding as USHORT,
         );
         if !ttcmap.is_null() {
             if (*ttcmap).format as ::core::ffi::c_int == 4 as ::core::ffi::c_int
@@ -2505,12 +2500,7 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
         CMap_set_name(cmap, cmap_name);
         CMap_set_type(cmap, CMAP_TYPE_CODE_TO_CID);
         CMap_set_wmode(cmap, wmode);
-        CMap_add_codespacerange(
-            cmap,
-            &raw mut lrange_min as *mut ::core::ffi::c_uchar,
-            &raw mut lrange_max as *mut ::core::ffi::c_uchar,
-            4 as size_t,
-        );
+        CMap_add_codespacerange(cmap, LRANGE_MIN.as_ptr(), LRANGE_MAX.as_ptr(), 4 as size_t);
         CMap_set_CIDSysInfo(cmap, &raw mut csi);
         map_base = new((num_glyphs as uint32_t as usize)
             .wrapping_mul(::core::mem::size_of::<int32_t>() as usize)
@@ -2591,16 +2581,16 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
                 CMap_set_wmode(tounicode, 0 as ::core::ffi::c_int);
                 CMap_add_codespacerange(
                     tounicode,
-                    &raw mut srange_min as *mut ::core::ffi::c_uchar,
-                    &raw mut srange_max as *mut ::core::ffi::c_uchar,
+                    SRANGE_MIN.as_ptr(),
+                    SRANGE_MAX.as_ptr(),
                     2 as size_t,
                 );
                 CMap_set_CIDSysInfo(tounicode, &raw mut CSI_UNICODE);
                 CMap_add_bfchar(
                     tounicode,
-                    &raw mut srange_min as *mut ::core::ffi::c_uchar,
+                    SRANGE_MIN.as_ptr(),
                     2 as size_t,
-                    &raw mut srange_max as *mut ::core::ffi::c_uchar,
+                    SRANGE_MAX.as_ptr(),
                     2 as size_t,
                 );
                 tounicode_id = CMap_cache_add(tounicode);

@@ -220,13 +220,11 @@ unsafe extern "C-unwind" fn strstartswith(
     return ::core::ptr::null::<::core::ffi::c_char>();
 }
 pub const AGL_DEFAULT_LISTFILE: [::core::ffi::c_char; 14] =
-    unsafe { ::core::mem::transmute::<[u8; 14], [::core::ffi::c_char; 14]>(*b"glyphlist.txt\0") };
-pub const AGL_PREDEF_LISTFILE: [::core::ffi::c_char; 17] = unsafe {
-    ::core::mem::transmute::<[u8; 17], [::core::ffi::c_char; 17]>(*b"pdfglyphlist.txt\0")
-};
-pub const AGL_EXTRA_LISTFILE: [::core::ffi::c_char; 17] = unsafe {
-    ::core::mem::transmute::<[u8; 17], [::core::ffi::c_char; 17]>(*b"texglyphlist.txt\0")
-};
+    crate::backend::c_char_array(*b"glyphlist.txt\0");
+pub const AGL_PREDEF_LISTFILE: [::core::ffi::c_char; 17] =
+    crate::backend::c_char_array(*b"pdfglyphlist.txt\0");
+pub const AGL_EXTRA_LISTFILE: [::core::ffi::c_char; 17] =
+    crate::backend::c_char_array(*b"texglyphlist.txt\0");
 pub const AGL_MAX_UNICODES: ::core::ffi::c_int = 16 as ::core::ffi::c_int;
 unsafe extern "C-unwind" fn agl_new_name() -> *mut agl_name {
     let mut agln: *mut agl_name = ::core::ptr::null_mut::<agl_name>();
@@ -304,7 +302,7 @@ pub unsafe extern "C-unwind" fn agl_chop_suffix(
     }
     return name;
 }
-static mut modifiers: [*const ::core::ffi::c_char; 21] = [
+const modifiers: [*const ::core::ffi::c_char; 21] = [
     b"acute\0" as *const u8 as *const ::core::ffi::c_char,
     b"breve\0" as *const u8 as *const ::core::ffi::c_char,
     b"caron\0" as *const u8 as *const ::core::ffi::c_char,
@@ -437,7 +435,7 @@ unsafe extern "C-unwind" fn is_smallcap(mut glyphname: *const ::core::ffi::c_cha
     return true_0 != 0;
 }
 pub const AGL_VAR_SMCP_IDX: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-static mut var_list: [C2RustUnnamed_0; 14] = [
+const var_list: [C2RustUnnamed_0; 14] = [
     C2RustUnnamed_0 {
         key: b"small\0" as *const u8 as *const ::core::ffi::c_char,
         otl_tag: b"smcp\0" as *const u8 as *const ::core::ffi::c_char,

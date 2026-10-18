@@ -178,30 +178,22 @@ unsafe extern "C-unwind" fn spc_handler_dvipdfmx_catch_phantom(
     }
     return 0 as ::core::ffi::c_int;
 }
-static mut dvipdfmx_handlers: [spc_handler; 2] = unsafe {
-    [
-        spc_handler {
-            key: b"config\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_null
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"catch_phantom\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_dvipdfmx_catch_phantom
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-    ]
-};
+const DVIPDFMX_HANDLERS: [spc_handler; 2] = [
+    spc_handler {
+        key: b"config\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_null
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"catch_phantom\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_dvipdfmx_catch_phantom
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+];
 #[unsafe(export_name = "__pdf_impl_spc_dvipdfmx_check_special")]
 pub unsafe extern "C-unwind" fn spc_dvipdfmx_check_special(
     mut buf: *const ::core::ffi::c_char,
@@ -268,10 +260,10 @@ pub unsafe extern "C-unwind" fn spc_dvipdfmx_setup_handler(
             < (::core::mem::size_of::<[spc_handler; 2]>() as usize)
                 .wrapping_div(::core::mem::size_of::<spc_handler>() as usize)
         {
-            if streq_ptr(q, dvipdfmx_handlers[i as usize].key) {
-                (*ap).command = dvipdfmx_handlers[i as usize].key;
+            if streq_ptr(q, DVIPDFMX_HANDLERS[i as usize].key) {
+                (*ap).command = DVIPDFMX_HANDLERS[i as usize].key;
                 (*sph).key = b"dvipdfmx:\0" as *const u8 as *const ::core::ffi::c_char;
-                (*sph).exec = dvipdfmx_handlers[i as usize].exec;
+                (*sph).exec = DVIPDFMX_HANDLERS[i as usize].exec;
                 skip_white(&raw mut (*ap).curptr, (*ap).endptr);
                 error = 0 as ::core::ffi::c_int;
                 break;

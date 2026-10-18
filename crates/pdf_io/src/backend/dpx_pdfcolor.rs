@@ -35,7 +35,6 @@ unsafe extern "C-unwind" {
         _: ::core::ffi::c_int,
         _: *const ::core::ffi::c_char,
     ) -> !;
-    fn isprint(_: ::core::ffi::c_int) -> ::core::ffi::c_int;
     fn floor(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn strcmp(
         __s1: *const ::core::ffi::c_char,
@@ -107,16 +106,6 @@ unsafe extern "C-unwind" {
     );
     #[link_name = "__pdf_impl_pdf_get_resource_reference"]
     fn pdf_get_resource_reference(res_id: ::core::ffi::c_int) -> *mut pdf_obj;
-    #[link_name = "__pdf_impl_MD5_init"]
-    fn MD5_init(ctx: *mut MD5_CONTEXT);
-    #[link_name = "__pdf_impl_MD5_write"]
-    fn MD5_write(
-        ctx: *mut MD5_CONTEXT,
-        inbuf: *const ::core::ffi::c_uchar,
-        inlen: ::core::ffi::c_uint,
-    );
-    #[link_name = "__pdf_impl_MD5_final"]
-    fn MD5_final(outbuf: *mut ::core::ffi::c_uchar, ctx: *mut MD5_CONTEXT);
 }
 pub type __darwin_size_t = usize;
 pub type size_t = __darwin_size_t;
@@ -203,17 +192,6 @@ pub struct iccXYZNumber {
     pub X: int32_t,
     pub Y: int32_t,
     pub Z: int32_t,
-}
-#[derive(Copy, Clone)]
-#[repr(C)]
-pub struct MD5_CONTEXT {
-    pub A: uint32_t,
-    pub B: uint32_t,
-    pub C: uint32_t,
-    pub D: uint32_t,
-    pub nblocks: size_t,
-    pub buf: [::core::ffi::c_uchar; 64],
-    pub count: ::core::ffi::c_int,
 }
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -931,7 +909,7 @@ pub unsafe extern "C-unwind" fn pdf_color_get_current(
     *fc = (&raw mut (*__pdf_state).color_stack.fill as *mut pdf_color)
         .offset((*__pdf_state).color_stack.current as isize) as *mut pdf_color;
 }
-static mut nullbytes16: [::core::ffi::c_uchar; 16] = [
+const NULLBYTES16: [::core::ffi::c_uchar; 16] = [
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
@@ -949,7 +927,7 @@ static mut nullbytes16: [::core::ffi::c_uchar; 16] = [
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
 ];
-static mut icc_versions: [C2RustUnnamed_1; 11] = [
+const ICC_VERSIONS: [C2RustUnnamed_1; 11] = [
     C2RustUnnamed_1 {
         major: 0 as ::core::ffi::c_int,
         minor: 0 as ::core::ffi::c_int,
@@ -995,82 +973,39 @@ static mut icc_versions: [C2RustUnnamed_1; 11] = [
         minor: 0x20 as ::core::ffi::c_int,
     },
 ];
-unsafe extern "C-unwind" fn iccp_version_supported(
-    mut major: ::core::ffi::c_int,
-    mut minor: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
-    let mut idx: ::core::ffi::c_int = 0;
-    idx = pdf_get_version() - 10 as ::core::ffi::c_int;
-    if idx < 11 as ::core::ffi::c_int {
-        if icc_versions[idx as usize].major < major {
-            return 0 as ::core::ffi::c_int;
-        } else if icc_versions[idx as usize].major == major
-            && icc_versions[idx as usize].minor < minor
-        {
-            return 0 as ::core::ffi::c_int;
-        } else {
-            return 1 as ::core::ffi::c_int;
-        }
-    }
-    return 0 as ::core::ffi::c_int;
+fn iccp_version_supported(major: i32, minor: i32, pdf_version: i32) -> i32 {
+    let index = (pdf_version - 10) as usize;
+    i32::from(
+        ICC_VERSIONS
+            .get(index)
+            .is_some_and(|version| (major, minor) <= (version.major, version.minor)),
+    )
 }
-unsafe extern "C-unwind" fn str2iccSig(mut s: *const ::core::ffi::c_void) -> iccSig {
-    let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-    p = s as *const ::core::ffi::c_char;
-    return ((*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-        << 24 as ::core::ffi::c_int
-        | (*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 16 as ::core::ffi::c_int
-        | (*p.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 8 as ::core::ffi::c_int
-        | *p.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int) as iccSig;
+
+const fn str2iccSig(bytes: [u8; 4]) -> iccSig {
+    u32::from_be_bytes(bytes)
 }
 pub const iccNullSig: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn iccp_init_iccHeader(mut icch: *mut iccHeader) {
-    if icch.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"icch\0" as *const u8 as *const ::core::ffi::c_char
-        );
-    } else {
-    };
-    (*icch).size = 0 as ::core::ffi::c_int;
-    (*icch).CMMType = iccNullSig as iccSig;
-    (*icch).version = 0xffffff as ::core::ffi::c_int as int32_t;
-    (*icch).devClass = iccNullSig as iccSig;
-    (*icch).colorSpace = iccNullSig as iccSig;
-    (*icch).PCS = iccNullSig as iccSig;
-    memset(
-        &raw mut (*icch).creationDate as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
-        0 as ::core::ffi::c_int,
-        12 as size_t,
-    );
-    (*icch).acsp = str2iccSig(
-        b"ascp\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-    );
-    (*icch).platform = iccNullSig as iccSig;
-    memset(
-        &raw mut (*icch).flags as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
-        0 as ::core::ffi::c_int,
-        4 as size_t,
-    );
-    (*icch).devMnfct = iccNullSig as iccSig;
-    (*icch).devModel = iccNullSig as iccSig;
-    memset(
-        &raw mut (*icch).devAttr as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
-        0 as ::core::ffi::c_int,
-        8 as size_t,
-    );
-    (*icch).intent = 0 as ::core::ffi::c_int as int32_t;
-    (*icch).illuminant.X = 0 as ::core::ffi::c_int as int32_t;
-    (*icch).illuminant.Y = 0 as ::core::ffi::c_int as int32_t;
-    (*icch).illuminant.Z = 0 as ::core::ffi::c_int as int32_t;
-    (*icch).creator = iccNullSig as iccSig;
-    memset(
-        &raw mut (*icch).ID as *mut ::core::ffi::c_uchar as *mut ::core::ffi::c_void,
-        0 as ::core::ffi::c_int,
-        16 as size_t,
-    );
+fn iccp_init_iccHeader(icch: &mut iccHeader) {
+    icch.size = 0 as ::core::ffi::c_int;
+    icch.CMMType = iccNullSig as iccSig;
+    icch.version = 0xffffff as ::core::ffi::c_int as int32_t;
+    icch.devClass = iccNullSig as iccSig;
+    icch.colorSpace = iccNullSig as iccSig;
+    icch.PCS = iccNullSig as iccSig;
+    icch.creationDate = [0; 12];
+    icch.acsp = str2iccSig(*b"ascp");
+    icch.platform = iccNullSig as iccSig;
+    icch.flags = [0; 4];
+    icch.devMnfct = iccNullSig as iccSig;
+    icch.devModel = iccNullSig as iccSig;
+    icch.devAttr = [0; 8];
+    icch.intent = 0 as ::core::ffi::c_int as int32_t;
+    icch.illuminant.X = 0 as ::core::ffi::c_int as int32_t;
+    icch.illuminant.Y = 0 as ::core::ffi::c_int as int32_t;
+    icch.illuminant.Z = 0 as ::core::ffi::c_int as int32_t;
+    icch.creator = iccNullSig as iccSig;
+    icch.ID = [0; 16];
 }
 pub const ICC_INTENT_PERCEPTUAL: ::core::ffi::c_int = 0;
 pub const ICC_INTENT_RELATIVE: ::core::ffi::c_int = 1;
@@ -1188,13 +1123,13 @@ unsafe extern "C-unwind" fn compare_iccbased(
         if memcmp(
             &raw const (*cdata1).checksum as *const ::core::ffi::c_uchar
                 as *const ::core::ffi::c_void,
-            &raw mut nullbytes16 as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
+            NULLBYTES16.as_ptr() as *const ::core::ffi::c_void,
             16 as size_t,
         ) != 0
             && memcmp(
                 &raw const (*cdata2).checksum as *const ::core::ffi::c_uchar
                     as *const ::core::ffi::c_void,
-                &raw mut nullbytes16 as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
+                NULLBYTES16.as_ptr() as *const ::core::ffi::c_void,
                 16 as size_t,
             ) != 0
         {
@@ -1217,253 +1152,102 @@ unsafe extern "C-unwind" fn compare_iccbased(
 }
 #[unsafe(export_name = "__pdf_impl_iccp_check_colorspace")]
 pub unsafe extern "C-unwind" fn iccp_check_colorspace(
-    mut colortype: ::core::ffi::c_int,
-    mut profile: *const ::core::ffi::c_void,
-    mut proflen: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
-    let mut colorspace: iccSig = 0;
-    let mut p: *const ::core::ffi::c_uchar = ::core::ptr::null::<::core::ffi::c_uchar>();
-    if profile.is_null() || proflen < 128 as ::core::ffi::c_int {
-        return -(1 as ::core::ffi::c_int);
+    colortype: i32,
+    profile: *const ::core::ffi::c_void,
+    proflen: i32,
+) -> i32 {
+    if profile.is_null() || proflen < 128 {
+        return -1;
     }
-    p = profile as *const ::core::ffi::c_uchar;
-    colorspace =
-        str2iccSig(p.offset(16 as ::core::ffi::c_int as isize) as *const ::core::ffi::c_void);
-    match colortype {
-        PDF_COLORSPACE_TYPE_CALRGB | PDF_COLORSPACE_TYPE_RGB => {
-            if colorspace
-                != str2iccSig(
-                    b"RGB \0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
-                )
-            {
-                return -(1 as ::core::ffi::c_int);
-            }
-        }
-        PDF_COLORSPACE_TYPE_CALGRAY | PDF_COLORSPACE_TYPE_GRAY => {
-            if colorspace
-                != str2iccSig(
-                    b"GRAY\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
-                )
-            {
-                return -(1 as ::core::ffi::c_int);
-            }
-        }
-        PDF_COLORSPACE_TYPE_CMYK => {
-            if colorspace
-                != str2iccSig(
-                    b"CMYK\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
-                )
-            {
-                return -(1 as ::core::ffi::c_int);
-            }
-        }
-        _ => return -(1 as ::core::ffi::c_int),
-    }
-    return 0 as ::core::ffi::c_int;
+    let header = unsafe { &*profile.cast::<[u8; 128]>() };
+    let colorspace = u32::from_be_bytes(header[16..20].try_into().unwrap());
+    let expected = match colortype {
+        PDF_COLORSPACE_TYPE_CALRGB | PDF_COLORSPACE_TYPE_RGB => str2iccSig(*b"RGB "),
+        PDF_COLORSPACE_TYPE_CALGRAY | PDF_COLORSPACE_TYPE_GRAY => str2iccSig(*b"GRAY"),
+        PDF_COLORSPACE_TYPE_CMYK => str2iccSig(*b"CMYK"),
+        _ => return -1,
+    };
+    if colorspace == expected { 0 } else { -1 }
 }
 #[unsafe(export_name = "__pdf_impl_iccp_get_rendering_intent")]
 pub unsafe extern "C-unwind" fn iccp_get_rendering_intent(
-    mut profile: *const ::core::ffi::c_void,
-    mut proflen: ::core::ffi::c_int,
+    profile: *const ::core::ffi::c_void,
+    proflen: i32,
 ) -> *mut pdf_obj {
-    let mut ri: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut p: *const ::core::ffi::c_uchar = ::core::ptr::null::<::core::ffi::c_uchar>();
-    let mut intent: int32_t = 0;
-    if profile.is_null() || proflen < 128 as ::core::ffi::c_int {
-        return ::core::ptr::null_mut::<pdf_obj>();
+    if profile.is_null() || proflen < 128 {
+        return core::ptr::null_mut();
     }
-    p = profile as *const ::core::ffi::c_uchar;
-    intent = ((*p.offset(64 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-        << 24 as ::core::ffi::c_int
-        | (*p.offset(65 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 16 as ::core::ffi::c_int
-        | (*p.offset(66 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 8 as ::core::ffi::c_int
-        | *p.offset(67 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-        as int32_t;
-    match (intent >> 16 as ::core::ffi::c_int & 0xff as int32_t) as ::core::ffi::c_int {
-        ICC_INTENT_SATURATION => {
-            ri = pdf_new_name(b"Saturation\0" as *const u8 as *const ::core::ffi::c_char);
-        }
-        ICC_INTENT_PERCEPTUAL => {
-            ri = pdf_new_name(b"Perceptual\0" as *const u8 as *const ::core::ffi::c_char);
-        }
-        ICC_INTENT_ABSOLUTE => {
-            ri = pdf_new_name(b"AbsoluteColorimetric\0" as *const u8 as *const ::core::ffi::c_char);
-        }
-        ICC_INTENT_RELATIVE => {
-            ri = pdf_new_name(b"RelativeColorimetric\0" as *const u8 as *const ::core::ffi::c_char);
-        }
+    let header = unsafe { &*profile.cast::<[u8; 128]>() };
+    let intent = (u32::from_be_bytes(header[64..68].try_into().unwrap()) >> 16) & 0xff;
+    let name = match intent as i32 {
+        ICC_INTENT_SATURATION => c"Saturation",
+        ICC_INTENT_PERCEPTUAL => c"Perceptual",
+        ICC_INTENT_ABSOLUTE => c"AbsoluteColorimetric",
+        ICC_INTENT_RELATIVE => c"RelativeColorimetric",
         _ => {
-            pdf_warning!(
-                b"Invalid rendering intent type: %d\0" as *const u8 as *const ::core::ffi::c_char,
-                (intent >> 16 as ::core::ffi::c_int & 0xff as int32_t) as ::core::ffi::c_int,
-            );
-            ri = ::core::ptr::null_mut::<pdf_obj>();
+            pdf_warning!("Invalid rendering intent type: {intent}");
+            return core::ptr::null_mut();
         }
-    }
-    return ri;
+    };
+    unsafe { pdf_new_name(name.as_ptr()) }
 }
-unsafe extern "C-unwind" fn iccp_unpack_header(
-    mut icch: *mut iccHeader,
-    mut profile: *const ::core::ffi::c_void,
-    mut proflen: ::core::ffi::c_int,
-    mut check_size: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
-    let mut p: *const ::core::ffi::c_uchar = ::core::ptr::null::<::core::ffi::c_uchar>();
-    let mut endptr: *const ::core::ffi::c_uchar = ::core::ptr::null::<::core::ffi::c_uchar>();
-    if check_size != 0 {
-        if profile.is_null()
-            || proflen < 128 as ::core::ffi::c_int
-            || proflen % 4 as ::core::ffi::c_int != 0 as ::core::ffi::c_int
-        {
-            pdf_warning!(
-                b"Profile size: %d\0" as *const u8 as *const ::core::ffi::c_char,
-                proflen,
-            );
-            return -(1 as ::core::ffi::c_int);
-        }
+fn iccp_unpack_header(icch: &mut iccHeader, profile: &[u8]) -> i32 {
+    if profile.len() < 128 || profile.len() % 4 != 0 {
+        pdf_warning!("Profile size: {}", profile.len());
+        return -1;
     }
-    p = profile as *const ::core::ffi::c_uchar;
-    endptr = p.offset(128 as ::core::ffi::c_int as isize);
-    (*icch).size = ((*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-        << 24 as ::core::ffi::c_int
-        | (*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 16 as ::core::ffi::c_int
-        | (*p.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 8 as ::core::ffi::c_int
-        | *p.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-        as int32_t as ::core::ffi::c_int;
-    if check_size != 0 {
-        if (*icch).size != proflen {
-            pdf_warning!(
-                b"ICC Profile size: %d(header) != %d\0" as *const u8 as *const ::core::ffi::c_char,
-                (*icch).size,
-                proflen,
-            );
-            return -(1 as ::core::ffi::c_int);
-        }
-    }
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    (*icch).CMMType = str2iccSig(p as *const ::core::ffi::c_void);
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    (*icch).version = ((*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-        << 24 as ::core::ffi::c_int
-        | (*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 16 as ::core::ffi::c_int
-        | (*p.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 8 as ::core::ffi::c_int
-        | *p.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-        as int32_t;
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    (*icch).devClass = str2iccSig(p as *const ::core::ffi::c_void);
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    (*icch).colorSpace = str2iccSig(p as *const ::core::ffi::c_void);
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    (*icch).PCS = str2iccSig(p as *const ::core::ffi::c_void);
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    memcpy(
-        &raw mut (*icch).creationDate as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
-        p as *const ::core::ffi::c_void,
-        12 as size_t,
-    );
-    p = p.offset(12 as ::core::ffi::c_int as isize);
-    (*icch).acsp = str2iccSig(p as *const ::core::ffi::c_void);
-    if (*icch).acsp
-        != str2iccSig(
-            b"acsp\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-        )
-    {
+    let word = |offset| u32::from_be_bytes(profile[offset..offset + 4].try_into().unwrap());
+    icch.size = word(0) as i32;
+    if icch.size as usize != profile.len() {
         pdf_warning!(
-            b"Invalid ICC profile: not \"acsp\" - %c%c%c%c \0" as *const u8
-                as *const ::core::ffi::c_char,
-            *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int,
-            *p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int,
-            *p.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int,
-            *p.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int,
+            "ICC Profile size: {}(header) != {}",
+            icch.size,
+            profile.len()
         );
-        return -(1 as ::core::ffi::c_int);
+        return -1;
     }
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    (*icch).platform = str2iccSig(p as *const ::core::ffi::c_void);
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    memcpy(
-        &raw mut (*icch).flags as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
-        p as *const ::core::ffi::c_void,
-        4 as size_t,
-    );
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    (*icch).devMnfct = str2iccSig(p as *const ::core::ffi::c_void);
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    (*icch).devModel = str2iccSig(p as *const ::core::ffi::c_void);
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    memcpy(
-        &raw mut (*icch).devAttr as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
-        p as *const ::core::ffi::c_void,
-        8 as size_t,
-    );
-    p = p.offset(8 as ::core::ffi::c_int as isize);
-    (*icch).intent = ((*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-        << 24 as ::core::ffi::c_int
-        | (*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 16 as ::core::ffi::c_int
-        | (*p.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 8 as ::core::ffi::c_int
-        | *p.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-        as int32_t;
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    (*icch).illuminant.X = ((*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-        << 24 as ::core::ffi::c_int
-        | (*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 16 as ::core::ffi::c_int
-        | (*p.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 8 as ::core::ffi::c_int
-        | *p.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-        as int32_t;
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    (*icch).illuminant.Y = ((*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-        << 24 as ::core::ffi::c_int
-        | (*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 16 as ::core::ffi::c_int
-        | (*p.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 8 as ::core::ffi::c_int
-        | *p.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-        as int32_t;
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    (*icch).illuminant.Z = ((*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-        << 24 as ::core::ffi::c_int
-        | (*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 16 as ::core::ffi::c_int
-        | (*p.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 8 as ::core::ffi::c_int
-        | *p.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-        as int32_t;
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    (*icch).creator = str2iccSig(p as *const ::core::ffi::c_void);
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    memcpy(
-        &raw mut (*icch).ID as *mut ::core::ffi::c_uchar as *mut ::core::ffi::c_void,
-        p as *const ::core::ffi::c_void,
-        16 as size_t,
-    );
-    p = p.offset(16 as ::core::ffi::c_int as isize);
-    while p < endptr {
-        if *p as ::core::ffi::c_int != '\0' as i32 {
+    icch.CMMType = word(4);
+    icch.version = word(8) as i32;
+    icch.devClass = word(12);
+    icch.colorSpace = word(16);
+    icch.PCS = word(20);
+    icch.creationDate = core::array::from_fn(|i| profile[24 + i] as ::core::ffi::c_char);
+    icch.acsp = word(36);
+    if icch.acsp != str2iccSig(*b"acsp") {
+        pdf_warning!(
+            b"Invalid ICC profile: not \"acsp\" - %c%c%c%c \0"
+                .as_ptr()
+                .cast(),
+            profile[36] as i32,
+            profile[37] as i32,
+            profile[38] as i32,
+            profile[39] as i32,
+        );
+        return -1;
+    }
+    icch.platform = word(40);
+    icch.flags = core::array::from_fn(|i| profile[44 + i] as ::core::ffi::c_char);
+    icch.devMnfct = word(48);
+    icch.devModel = word(52);
+    icch.devAttr = core::array::from_fn(|i| profile[56 + i] as ::core::ffi::c_char);
+    icch.intent = word(64) as i32;
+    icch.illuminant = iccXYZNumber {
+        X: word(68) as i32,
+        Y: word(72) as i32,
+        Z: word(76) as i32,
+    };
+    icch.creator = word(80);
+    icch.ID.copy_from_slice(&profile[84..100]);
+    for (offset, &byte) in profile[100..128].iter().enumerate() {
+        if byte != 0 {
             pdf_warning!(
-                b"Reserved pad not zero: %02x (at offset %d in ICC profile header.)\0" as *const u8
-                    as *const ::core::ffi::c_char,
-                *p as ::core::ffi::c_int,
-                128 as ::core::ffi::c_int
-                    - endptr.offset_from(p) as ::core::ffi::c_long as ::core::ffi::c_int,
+                "Reserved pad not zero: {byte:02x} (at offset {} in ICC profile header.)",
+                offset + 100,
             );
-            return -(1 as ::core::ffi::c_int);
+            return -1;
         }
-        p = p.offset(1);
     }
-    return 0 as ::core::ffi::c_int;
+    0
 }
 pub const ICC_HEAD_SECT1_START: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const ICC_HEAD_SECT1_LENGTH: ::core::ffi::c_int = 56 as ::core::ffi::c_int;
@@ -1471,470 +1255,100 @@ pub const ICC_HEAD_SECT2_START: ::core::ffi::c_int = 68 as ::core::ffi::c_int;
 pub const ICC_HEAD_SECT2_LENGTH: ::core::ffi::c_int = 16 as ::core::ffi::c_int;
 pub const ICC_HEAD_SECT3_START: ::core::ffi::c_int = 100 as ::core::ffi::c_int;
 pub const ICC_HEAD_SECT3_LENGTH: ::core::ffi::c_int = 28 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn iccp_get_checksum(
-    mut checksum: *mut ::core::ffi::c_uchar,
-    mut profile: *const ::core::ffi::c_void,
-    mut proflen: ::core::ffi::c_int,
-) {
-    let mut p: *const ::core::ffi::c_uchar = ::core::ptr::null::<::core::ffi::c_uchar>();
-    let mut md5: MD5_CONTEXT = MD5_CONTEXT {
-        A: 0,
-        B: 0,
-        C: 0,
-        D: 0,
-        nblocks: 0,
-        buf: [0; 64],
-        count: 0,
-    };
-    p = profile as *const ::core::ffi::c_uchar;
-    MD5_init(&raw mut md5);
-    MD5_write(
-        &raw mut md5,
-        p.offset(ICC_HEAD_SECT1_START as isize),
-        ICC_HEAD_SECT1_LENGTH as ::core::ffi::c_uint,
-    );
-    MD5_write(
-        &raw mut md5,
-        &raw mut nullbytes16 as *mut ::core::ffi::c_uchar,
-        12 as ::core::ffi::c_uint,
-    );
-    MD5_write(
-        &raw mut md5,
-        p.offset(ICC_HEAD_SECT2_START as isize),
-        ICC_HEAD_SECT2_LENGTH as ::core::ffi::c_uint,
-    );
-    MD5_write(
-        &raw mut md5,
-        &raw mut nullbytes16 as *mut ::core::ffi::c_uchar,
-        16 as ::core::ffi::c_uint,
-    );
-    MD5_write(
-        &raw mut md5,
-        p.offset(ICC_HEAD_SECT3_START as isize),
-        ICC_HEAD_SECT3_LENGTH as ::core::ffi::c_uint,
-    );
-    MD5_write(
-        &raw mut md5,
-        p.offset(128 as ::core::ffi::c_int as isize),
-        (proflen - 128 as ::core::ffi::c_int) as ::core::ffi::c_uint,
-    );
-    MD5_final(checksum, &raw mut md5);
+fn iccp_get_checksum(profile: &[u8]) -> [u8; 16] {
+    use md5::{Digest, Md5};
+    let mut digest = Md5::new();
+    digest.update(&profile[..56]);
+    digest.update([0; 12]);
+    digest.update(&profile[68..84]);
+    digest.update([0; 16]);
+    digest.update(&profile[100..]);
+    digest.finalize().into()
 }
-unsafe extern "C-unwind" fn print_iccp_header(
-    mut icch: *mut iccHeader,
-    mut checksum: *mut ::core::ffi::c_uchar,
-) {
-    let mut i: ::core::ffi::c_int = 0;
-    if icch.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"icch\0" as *const u8 as *const ::core::ffi::c_char
-        );
+fn print_icc_signature(label: &str, signature: iccSig) {
+    let bytes = signature.to_be_bytes();
+    let value = if signature == 0 {
+        "(null)"
+    } else if bytes.iter().all(|byte| (32..=126).contains(byte)) {
+        core::str::from_utf8(&bytes).unwrap()
     } else {
+        "(invalid)"
     };
-    pdf_message!(b"\n\0" as *const u8 as *const ::core::ffi::c_char);
-    pdf_message!(b"pdf_color>> ICC Profile Info\n\0" as *const u8 as *const ::core::ffi::c_char,);
-    pdf_message!(
-        b"pdf_color>> Profile Size:\t%d bytes\n\0" as *const u8 as *const ::core::ffi::c_char,
-        (*icch).size,
-    );
-    if (*icch).CMMType == 0 as iccSig {
-        pdf_message!(
-            b"pdf_color>> %s:\t(null)\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"CMM Type\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else if isprint(
-        ((*icch).CMMType >> 24 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-    ) == 0
-        || isprint(
-            ((*icch).CMMType >> 16 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-        ) == 0
-        || isprint(
-            ((*icch).CMMType >> 8 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-        ) == 0
-        || isprint(((*icch).CMMType & 0xff as iccSig) as ::core::ffi::c_int) == 0
-    {
-        pdf_message!(
-            b"pdf_color>> %s:\t(invalid)\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"CMM Type\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else {
-        pdf_message!(
-            b"pdf_color>> %s:\t%c%c%c%c\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"CMM Type\0" as *const u8 as *const ::core::ffi::c_char,
-            (*icch).CMMType >> 24 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).CMMType >> 16 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).CMMType >> 8 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).CMMType & 0xff as iccSig,
-        );
-    }
-    pdf_message!(
-        b"pdf_color>> Profile Version:\t%d.%01d.%01d\n\0" as *const u8
-            as *const ::core::ffi::c_char,
-        (*icch).version >> 24 as ::core::ffi::c_int & 0xff as int32_t,
-        (*icch).version >> 20 as ::core::ffi::c_int & 0xf as int32_t,
-        (*icch).version >> 16 as ::core::ffi::c_int & 0xf as int32_t,
-    );
-    if (*icch).devClass == 0 as iccSig {
-        pdf_message!(
-            b"pdf_color>> %s:\t(null)\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Device Class\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else if isprint(
-        ((*icch).devClass >> 24 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-    ) == 0
-        || isprint(
-            ((*icch).devClass >> 16 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-        ) == 0
-        || isprint(
-            ((*icch).devClass >> 8 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-        ) == 0
-        || isprint(((*icch).devClass & 0xff as iccSig) as ::core::ffi::c_int) == 0
-    {
-        pdf_message!(
-            b"pdf_color>> %s:\t(invalid)\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Device Class\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else {
-        pdf_message!(
-            b"pdf_color>> %s:\t%c%c%c%c\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Device Class\0" as *const u8 as *const ::core::ffi::c_char,
-            (*icch).devClass >> 24 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).devClass >> 16 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).devClass >> 8 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).devClass & 0xff as iccSig,
-        );
-    }
-    if (*icch).colorSpace == 0 as iccSig {
-        pdf_message!(
-            b"pdf_color>> %s:\t(null)\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Color Space\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else if isprint(
-        ((*icch).colorSpace >> 24 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-    ) == 0
-        || isprint(
-            ((*icch).colorSpace >> 16 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-        ) == 0
-        || isprint(
-            ((*icch).colorSpace >> 8 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-        ) == 0
-        || isprint(((*icch).colorSpace & 0xff as iccSig) as ::core::ffi::c_int) == 0
-    {
-        pdf_message!(
-            b"pdf_color>> %s:\t(invalid)\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Color Space\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else {
-        pdf_message!(
-            b"pdf_color>> %s:\t%c%c%c%c\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Color Space\0" as *const u8 as *const ::core::ffi::c_char,
-            (*icch).colorSpace >> 24 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).colorSpace >> 16 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).colorSpace >> 8 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).colorSpace & 0xff as iccSig,
-        );
-    }
-    if (*icch).PCS == 0 as iccSig {
-        pdf_message!(
-            b"pdf_color>> %s:\t(null)\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Connection Space\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else if isprint(
-        ((*icch).PCS >> 24 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-    ) == 0
-        || isprint(((*icch).PCS >> 16 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int)
-            == 0
-        || isprint(((*icch).PCS >> 8 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int)
-            == 0
-        || isprint(((*icch).PCS & 0xff as iccSig) as ::core::ffi::c_int) == 0
-    {
-        pdf_message!(
-            b"pdf_color>> %s:\t(invalid)\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Connection Space\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else {
-        pdf_message!(
-            b"pdf_color>> %s:\t%c%c%c%c\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Connection Space\0" as *const u8 as *const ::core::ffi::c_char,
-            (*icch).PCS >> 24 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).PCS >> 16 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).PCS >> 8 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).PCS & 0xff as iccSig,
-        );
-    }
-    pdf_message!(b"pdf_color>> Creation Date:\t\0" as *const u8 as *const ::core::ffi::c_char,);
-    i = 0 as ::core::ffi::c_int;
-    while i < 12 as ::core::ffi::c_int {
-        if i == 0 as ::core::ffi::c_int {
-            pdf_message!(
-                b"%04u\0" as *const u8 as *const ::core::ffi::c_char,
-                sget_unsigned_pair(
-                    &raw mut (*icch).creationDate as *mut ::core::ffi::c_char
-                        as *mut ::core::ffi::c_uchar,
-                ) as ::core::ffi::c_int,
-            );
-        } else {
-            pdf_message!(
-                b":%02u\0" as *const u8 as *const ::core::ffi::c_char,
-                sget_unsigned_pair(
-                    (&raw mut (*icch).creationDate as *mut ::core::ffi::c_char).offset(i as isize)
-                        as *mut ::core::ffi::c_char
-                        as *mut ::core::ffi::c_uchar,
-                ) as ::core::ffi::c_int,
-            );
-        }
-        i += 2 as ::core::ffi::c_int;
-    }
-    pdf_message!(b"\n\0" as *const u8 as *const ::core::ffi::c_char);
-    if (*icch).platform == 0 as iccSig {
-        pdf_message!(
-            b"pdf_color>> %s:\t(null)\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Primary Platform\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else if isprint(
-        ((*icch).platform >> 24 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-    ) == 0
-        || isprint(
-            ((*icch).platform >> 16 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-        ) == 0
-        || isprint(
-            ((*icch).platform >> 8 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-        ) == 0
-        || isprint(((*icch).platform & 0xff as iccSig) as ::core::ffi::c_int) == 0
-    {
-        pdf_message!(
-            b"pdf_color>> %s:\t(invalid)\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Primary Platform\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else {
-        pdf_message!(
-            b"pdf_color>> %s:\t%c%c%c%c\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Primary Platform\0" as *const u8 as *const ::core::ffi::c_char,
-            (*icch).platform >> 24 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).platform >> 16 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).platform >> 8 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).platform & 0xff as iccSig,
-        );
-    }
-    pdf_message!(
-        b"pdf_color>> Profile Flags:\t%02x:%02x:%02x:%02x\n\0" as *const u8
-            as *const ::core::ffi::c_char,
-        (*icch).flags[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
-        (*icch).flags[1 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
-        (*icch).flags[2 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
-        (*icch).flags[3 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
-    );
-    if (*icch).devMnfct == 0 as iccSig {
-        pdf_message!(
-            b"pdf_color>> %s:\t(null)\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Device Mnfct\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else if isprint(
-        ((*icch).devMnfct >> 24 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-    ) == 0
-        || isprint(
-            ((*icch).devMnfct >> 16 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-        ) == 0
-        || isprint(
-            ((*icch).devMnfct >> 8 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-        ) == 0
-        || isprint(((*icch).devMnfct & 0xff as iccSig) as ::core::ffi::c_int) == 0
-    {
-        pdf_message!(
-            b"pdf_color>> %s:\t(invalid)\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Device Mnfct\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else {
-        pdf_message!(
-            b"pdf_color>> %s:\t%c%c%c%c\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Device Mnfct\0" as *const u8 as *const ::core::ffi::c_char,
-            (*icch).devMnfct >> 24 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).devMnfct >> 16 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).devMnfct >> 8 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).devMnfct & 0xff as iccSig,
-        );
-    }
-    if (*icch).devModel == 0 as iccSig {
-        pdf_message!(
-            b"pdf_color>> %s:\t(null)\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Device Model\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else if isprint(
-        ((*icch).devModel >> 24 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-    ) == 0
-        || isprint(
-            ((*icch).devModel >> 16 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-        ) == 0
-        || isprint(
-            ((*icch).devModel >> 8 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-        ) == 0
-        || isprint(((*icch).devModel & 0xff as iccSig) as ::core::ffi::c_int) == 0
-    {
-        pdf_message!(
-            b"pdf_color>> %s:\t(invalid)\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Device Model\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else {
-        pdf_message!(
-            b"pdf_color>> %s:\t%c%c%c%c\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Device Model\0" as *const u8 as *const ::core::ffi::c_char,
-            (*icch).devModel >> 24 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).devModel >> 16 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).devModel >> 8 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).devModel & 0xff as iccSig,
-        );
-    }
-    pdf_message!(b"pdf_color>> Device Attr:\t\0" as *const u8 as *const ::core::ffi::c_char,);
-    i = 0 as ::core::ffi::c_int;
-    while i < 8 as ::core::ffi::c_int {
-        if i == 0 as ::core::ffi::c_int {
-            pdf_message!(
-                b"%02x\0" as *const u8 as *const ::core::ffi::c_char,
-                (*icch).devAttr[i as usize] as ::core::ffi::c_int,
-            );
-        } else {
-            pdf_message!(
-                b":%02x\0" as *const u8 as *const ::core::ffi::c_char,
-                (*icch).devAttr[i as usize] as ::core::ffi::c_int,
-            );
-        }
-        i += 1;
-    }
-    pdf_message!(b"\n\0" as *const u8 as *const ::core::ffi::c_char);
-    pdf_message!(b"pdf_color>> Rendering Intent:\t\0" as *const u8 as *const ::core::ffi::c_char,);
-    match ((*icch).intent >> 16 as ::core::ffi::c_int & 0xff as int32_t) as ::core::ffi::c_int {
-        ICC_INTENT_SATURATION => {
-            pdf_message!(b"Saturation\0" as *const u8 as *const ::core::ffi::c_char);
-        }
-        ICC_INTENT_PERCEPTUAL => {
-            pdf_message!(b"Perceptual\0" as *const u8 as *const ::core::ffi::c_char);
-        }
-        ICC_INTENT_ABSOLUTE => {
-            pdf_message!(b"Absolute Colorimetric\0" as *const u8 as *const ::core::ffi::c_char,);
-        }
-        ICC_INTENT_RELATIVE => {
-            pdf_message!(b"Relative Colorimetric\0" as *const u8 as *const ::core::ffi::c_char,);
-        }
-        _ => {
-            pdf_message!(b"(invalid)\0" as *const u8 as *const ::core::ffi::c_char);
-        }
-    }
-    pdf_message!(b"\n\0" as *const u8 as *const ::core::ffi::c_char);
-    if (*icch).creator == 0 as iccSig {
-        pdf_message!(
-            b"pdf_color>> %s:\t(null)\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Creator\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else if isprint(
-        ((*icch).creator >> 24 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-    ) == 0
-        || isprint(
-            ((*icch).creator >> 16 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-        ) == 0
-        || isprint(
-            ((*icch).creator >> 8 as ::core::ffi::c_int & 0xff as iccSig) as ::core::ffi::c_int,
-        ) == 0
-        || isprint(((*icch).creator & 0xff as iccSig) as ::core::ffi::c_int) == 0
-    {
-        pdf_message!(
-            b"pdf_color>> %s:\t(invalid)\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Creator\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else {
-        pdf_message!(
-            b"pdf_color>> %s:\t%c%c%c%c\n\0" as *const u8 as *const ::core::ffi::c_char,
-            b"Creator\0" as *const u8 as *const ::core::ffi::c_char,
-            (*icch).creator >> 24 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).creator >> 16 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).creator >> 8 as ::core::ffi::c_int & 0xff as iccSig,
-            (*icch).creator & 0xff as iccSig,
-        );
-    }
-    pdf_message!(b"pdf_color>> Illuminant (XYZ):\t\0" as *const u8 as *const ::core::ffi::c_char,);
-    pdf_message!(
-        b"%.3f %.3f %.3f\n\0" as *const u8 as *const ::core::ffi::c_char,
-        (*icch).illuminant.X as ::core::ffi::c_double
-            / 0x10000 as ::core::ffi::c_int as ::core::ffi::c_double,
-        (*icch).illuminant.Y as ::core::ffi::c_double
-            / 0x10000 as ::core::ffi::c_int as ::core::ffi::c_double,
-        (*icch).illuminant.Z as ::core::ffi::c_double
-            / 0x10000 as ::core::ffi::c_int as ::core::ffi::c_double,
-    );
-    pdf_message!(b"pdf_color>> Checksum:\t\0" as *const u8 as *const ::core::ffi::c_char);
-    if memcmp(
-        &raw mut (*icch).ID as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
-        &raw mut nullbytes16 as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
-        16 as size_t,
-    ) == 0
-    {
-        pdf_message!(b"(null)\0" as *const u8 as *const ::core::ffi::c_char);
-    } else {
-        i = 0 as ::core::ffi::c_int;
-        while i < 16 as ::core::ffi::c_int {
-            if i == 0 as ::core::ffi::c_int {
-                pdf_message!(
-                    b"%02x\0" as *const u8 as *const ::core::ffi::c_char,
-                    (*icch).ID[i as usize] as ::core::ffi::c_int,
-                );
-            } else {
-                pdf_message!(
-                    b":%02x\0" as *const u8 as *const ::core::ffi::c_char,
-                    (*icch).ID[i as usize] as ::core::ffi::c_int,
-                );
-            }
-            i += 1;
-        }
-    }
-    pdf_message!(b"\n\0" as *const u8 as *const ::core::ffi::c_char);
-    if !checksum.is_null() {
-        pdf_message!(b"pdf_color>> Calculated:\t\0" as *const u8 as *const ::core::ffi::c_char,);
-        i = 0 as ::core::ffi::c_int;
-        while i < 16 as ::core::ffi::c_int {
-            if i == 0 as ::core::ffi::c_int {
-                pdf_message!(
-                    b"%02x\0" as *const u8 as *const ::core::ffi::c_char,
-                    *checksum.offset(i as isize) as ::core::ffi::c_int,
-                );
-            } else {
-                pdf_message!(
-                    b":%02x\0" as *const u8 as *const ::core::ffi::c_char,
-                    *checksum.offset(i as isize) as ::core::ffi::c_int,
-                );
-            }
-            i += 1;
-        }
-        pdf_message!(b"\n\0" as *const u8 as *const ::core::ffi::c_char);
+    pdf_message!("pdf_color>> {label}:\t{value}\n");
+}
+
+fn print_icc_bytes(bytes: &[u8]) {
+    for (index, byte) in bytes.iter().enumerate() {
+        let separator = if index == 0 { "" } else { ":" };
+        pdf_message!("{separator}{byte:02x}");
     }
 }
-unsafe extern "C-unwind" fn iccp_devClass_allowed(
-    mut dev_class: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
-    let mut colormode: ::core::ffi::c_int = 0;
-    colormode = pdf_dev_get_param(PDF_DEV_PARAM_COLORMODE);
-    match colormode {
-        _ => {}
+
+fn print_iccp_header(icch: &iccHeader, checksum: Option<&[u8; 16]>) {
+    pdf_message!("\npdf_color>> ICC Profile Info\n");
+    pdf_message!("pdf_color>> Profile Size:\t{} bytes\n", icch.size);
+    print_icc_signature("CMM Type", icch.CMMType);
+    pdf_message!(
+        "pdf_color>> Profile Version:\t{}.{}.{}\n",
+        (icch.version >> 24) & 0xff,
+        (icch.version >> 20) & 0xf,
+        (icch.version >> 16) & 0xf,
+    );
+    print_icc_signature("Device Class", icch.devClass);
+    print_icc_signature("Color Space", icch.colorSpace);
+    print_icc_signature("Connection Space", icch.PCS);
+    pdf_message!("pdf_color>> Creation Date:\t");
+    for (index, pair) in icch.creationDate.chunks_exact(2).enumerate() {
+        let value = u16::from_be_bytes([pair[0] as u8, pair[1] as u8]);
+        if index == 0 {
+            pdf_message!("{value:04}");
+        } else {
+            pdf_message!(":{value:02}");
+        }
     }
-    if dev_class as iccSig
-        != str2iccSig(
-            b"scnr\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-        )
-        && dev_class as iccSig
-            != str2iccSig(
-                b"mntr\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-            )
-        && dev_class as iccSig
-            != str2iccSig(
-                b"prtr\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-            )
-        && dev_class as iccSig
-            != str2iccSig(
-                b"spac\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-            )
-    {
-        return 0 as ::core::ffi::c_int;
+    pdf_message!("\n");
+    print_icc_signature("Primary Platform", icch.platform);
+    pdf_message!("pdf_color>> Profile Flags:\t");
+    print_icc_bytes(&icch.flags.map(|byte| byte as u8));
+    pdf_message!("\n");
+    print_icc_signature("Device Mnfct", icch.devMnfct);
+    print_icc_signature("Device Model", icch.devModel);
+    pdf_message!("pdf_color>> Device Attr:\t");
+    print_icc_bytes(&icch.devAttr.map(|byte| byte as u8));
+    let intent = match (icch.intent >> 16) & 0xff {
+        ICC_INTENT_SATURATION => "Saturation",
+        ICC_INTENT_PERCEPTUAL => "Perceptual",
+        ICC_INTENT_ABSOLUTE => "Absolute Colorimetric",
+        ICC_INTENT_RELATIVE => "Relative Colorimetric",
+        _ => "(invalid)",
+    };
+    pdf_message!("\npdf_color>> Rendering Intent:\t{intent}\n");
+    print_icc_signature("Creator", icch.creator);
+    pdf_message!(
+        "pdf_color>> Illuminant (XYZ):\t{:.3} {:.3} {:.3}\n",
+        icch.illuminant.X as f64 / 65536.0,
+        icch.illuminant.Y as f64 / 65536.0,
+        icch.illuminant.Z as f64 / 65536.0,
+    );
+    pdf_message!("pdf_color>> Checksum:\t");
+    if icch.ID == [0; 16] {
+        pdf_message!("(null)");
+    } else {
+        print_icc_bytes(&icch.ID);
     }
-    return 1 as ::core::ffi::c_int;
+    pdf_message!("\n");
+    if let Some(checksum) = checksum {
+        pdf_message!("pdf_color>> Calculated:\t");
+        print_icc_bytes(checksum);
+        pdf_message!("\n");
+    }
+}
+fn iccp_devClass_allowed(dev_class: iccSig) -> i32 {
+    i32::from(
+        [*b"scnr", *b"mntr", *b"prtr", *b"spac"]
+            .iter()
+            .any(|signature| dev_class == str2iccSig(*signature)),
+    )
 }
 #[unsafe(export_name = "__pdf_impl_iccp_load_profile")]
 pub unsafe extern "C-unwind" fn iccp_load_profile(
@@ -1968,23 +1382,24 @@ pub unsafe extern "C-unwind" fn iccp_load_profile(
     let mut colorspace: ::core::ffi::c_int = 0;
     let mut checksum: [::core::ffi::c_uchar; 16] = [0; 16];
     let mut cdata: *mut iccbased_cdata = ::core::ptr::null_mut::<iccbased_cdata>();
-    iccp_init_iccHeader(&raw mut icch);
-    if iccp_unpack_header(&raw mut icch, profile, proflen, 1 as ::core::ffi::c_int)
-        < 0 as ::core::ffi::c_int
-    {
+    iccp_init_iccHeader(&mut icch);
+    let profile_bytes = if profile.is_null() || proflen <= 0 {
+        &[]
+    } else {
+        unsafe { core::slice::from_raw_parts(profile.cast::<u8>(), proflen as usize) }
+    };
+    if iccp_unpack_header(&mut icch, profile_bytes) < 0 as ::core::ffi::c_int {
         pdf_warning!(
             b"Invalid ICC profile header in \"%s\"\0" as *const u8 as *const ::core::ffi::c_char,
             ident,
         );
-        print_iccp_header(
-            &raw mut icch,
-            ::core::ptr::null_mut::<::core::ffi::c_uchar>(),
-        );
+        print_iccp_header(&icch, None);
         return -(1 as ::core::ffi::c_int);
     }
     if iccp_version_supported(
         icch.version as ::core::ffi::c_int >> 24 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int,
         icch.version as ::core::ffi::c_int >> 16 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int,
+        pdf_get_version(),
     ) == 0
     {
         pdf_warning!(
@@ -1995,74 +1410,36 @@ pub unsafe extern "C-unwind" fn iccp_load_profile(
             & 0xf as int32_t,
         );
         pdf_warning!(b"ICC profile not embedded.\0" as *const u8 as *const ::core::ffi::c_char,);
-        print_iccp_header(
-            &raw mut icch,
-            ::core::ptr::null_mut::<::core::ffi::c_uchar>(),
-        );
+        print_iccp_header(&icch, None);
         return -(1 as ::core::ffi::c_int);
     }
-    if iccp_devClass_allowed(icch.devClass as ::core::ffi::c_int) == 0 {
+    if iccp_devClass_allowed(icch.devClass) == 0 {
         pdf_warning!(
             b"Unsupported ICC Profile Device Class:\0" as *const u8 as *const ::core::ffi::c_char,
         );
-        print_iccp_header(
-            &raw mut icch,
-            ::core::ptr::null_mut::<::core::ffi::c_uchar>(),
-        );
+        print_iccp_header(&icch, None);
         return -(1 as ::core::ffi::c_int);
     }
-    if icch.colorSpace
-        == str2iccSig(
-            b"RGB \0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-        )
-    {
+    if icch.colorSpace == str2iccSig(*b"RGB ") {
         colorspace = PDF_COLORSPACE_TYPE_RGB;
-    } else if icch.colorSpace
-        == str2iccSig(
-            b"GRAY\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-        )
-    {
+    } else if icch.colorSpace == str2iccSig(*b"GRAY") {
         colorspace = PDF_COLORSPACE_TYPE_GRAY;
-    } else if icch.colorSpace
-        == str2iccSig(
-            b"CMYK\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-        )
-    {
+    } else if icch.colorSpace == str2iccSig(*b"CMYK") {
         colorspace = PDF_COLORSPACE_TYPE_CMYK;
     } else {
         pdf_warning!(
             b"Unsupported input color space.\0" as *const u8 as *const ::core::ffi::c_char,
         );
-        print_iccp_header(
-            &raw mut icch,
-            ::core::ptr::null_mut::<::core::ffi::c_uchar>(),
-        );
+        print_iccp_header(&icch, None);
         return -(1 as ::core::ffi::c_int);
     }
-    iccp_get_checksum(
-        &raw mut checksum as *mut ::core::ffi::c_uchar,
-        profile,
-        proflen,
-    );
-    if memcmp(
-        &raw mut icch.ID as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
-        &raw mut nullbytes16 as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
-        16 as size_t,
-    ) != 0
-        && memcmp(
-            &raw mut icch.ID as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
-            &raw mut checksum as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
-            16 as size_t,
-        ) != 0
-    {
+    checksum = iccp_get_checksum(profile_bytes);
+    if icch.ID != [0; 16] && icch.ID != checksum {
         pdf_warning!(
             b"Invalid ICC profile: Inconsistent checksum.\0" as *const u8
                 as *const ::core::ffi::c_char,
         );
-        print_iccp_header(
-            &raw mut icch,
-            &raw mut checksum as *mut ::core::ffi::c_uchar,
-        );
+        print_iccp_header(&icch, Some(&checksum));
         return -(1 as ::core::ffi::c_int);
     }
     cdata = new((1 as ::core::ffi::c_int as uint32_t as usize)
@@ -2091,10 +1468,7 @@ pub unsafe extern "C-unwind" fn iccp_load_profile(
         return cspc_id;
     }
     if dpx_conf.verbose_level > 1 as ::core::ffi::c_int {
-        print_iccp_header(
-            &raw mut icch,
-            &raw mut checksum as *mut ::core::ffi::c_uchar,
-        );
+        print_iccp_header(&icch, Some(&checksum));
     }
     resource = pdf_new_array();
     stream = pdf_new_stream(STREAM_COMPRESS);
@@ -2659,72 +2033,64 @@ pub(crate) struct DocumentState {
 
 impl DocumentState {
     pub(crate) fn new() -> Self {
-        unsafe {
-            Self {
-                current_fill: pdf_color {
-                    res_id: -(1 as ::core::ffi::c_int),
-                    type_0: PDF_COLORSPACE_TYPE_GRAY,
-                    num_components: 1 as ::core::ffi::c_int,
-                    spot_color_name: ::core::ptr::null::<::core::ffi::c_char>()
-                        as *mut ::core::ffi::c_char,
-                    values: [
-                        0.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                    ],
-                    pattern_id: -(1 as ::core::ffi::c_int),
-                },
-                current_stroke: pdf_color {
-                    res_id: -(1 as ::core::ffi::c_int),
-                    type_0: PDF_COLORSPACE_TYPE_GRAY,
-                    num_components: 1 as ::core::ffi::c_int,
-                    spot_color_name: ::core::ptr::null::<::core::ffi::c_char>()
-                        as *mut ::core::ffi::c_char,
-                    values: [
-                        0.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                    ],
-                    pattern_id: -(1 as ::core::ffi::c_int),
-                },
-                default_color: pdf_color {
-                    res_id: -(1 as ::core::ffi::c_int),
-                    type_0: PDF_COLORSPACE_TYPE_GRAY,
-                    num_components: 1 as ::core::ffi::c_int,
-                    spot_color_name: ::core::ptr::null::<::core::ffi::c_char>()
-                        as *mut ::core::ffi::c_char,
-                    values: [
-                        0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0., 0., 0.,
-                        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                        0., 0.,
-                    ],
-                    pattern_id: -(1 as ::core::ffi::c_int),
-                },
-                color_stack: C2RustUnnamed_2 {
-                    current: 0,
-                    stroke: [pdf_color {
-                        res_id: 0,
-                        type_0: 0,
-                        num_components: 0,
-                        spot_color_name: ::core::ptr::null::<::core::ffi::c_char>()
-                            as *mut ::core::ffi::c_char,
-                        values: [0.; 32],
-                        pattern_id: 0,
-                    }; 128],
-                    fill: [pdf_color {
-                        res_id: 0,
-                        type_0: 0,
-                        num_components: 0,
-                        spot_color_name: ::core::ptr::null::<::core::ffi::c_char>()
-                            as *mut ::core::ffi::c_char,
-                        values: [0.; 32],
-                        pattern_id: 0,
-                    }; 128],
-                },
-                cspc_cache: C2RustUnnamed {
-                    count: 0 as ::core::ffi::c_uint,
-                    capacity: 0 as ::core::ffi::c_uint,
-                    colorspaces: ::core::ptr::null::<pdf_colorspace>() as *mut pdf_colorspace,
-                },
-            }
+        Self {
+            current_fill: pdf_color {
+                res_id: -(1 as ::core::ffi::c_int),
+                type_0: PDF_COLORSPACE_TYPE_GRAY,
+                num_components: 1 as ::core::ffi::c_int,
+                spot_color_name: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+                values: [
+                    0.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                    0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                ],
+                pattern_id: -(1 as ::core::ffi::c_int),
+            },
+            current_stroke: pdf_color {
+                res_id: -(1 as ::core::ffi::c_int),
+                type_0: PDF_COLORSPACE_TYPE_GRAY,
+                num_components: 1 as ::core::ffi::c_int,
+                spot_color_name: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+                values: [
+                    0.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                    0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                ],
+                pattern_id: -(1 as ::core::ffi::c_int),
+            },
+            default_color: pdf_color {
+                res_id: -(1 as ::core::ffi::c_int),
+                type_0: PDF_COLORSPACE_TYPE_GRAY,
+                num_components: 1 as ::core::ffi::c_int,
+                spot_color_name: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+                values: [
+                    0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0., 0., 0., 0.,
+                    0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                ],
+                pattern_id: -(1 as ::core::ffi::c_int),
+            },
+            color_stack: C2RustUnnamed_2 {
+                current: 0,
+                stroke: [pdf_color {
+                    res_id: 0,
+                    type_0: 0,
+                    num_components: 0,
+                    spot_color_name: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+                    values: [0.; 32],
+                    pattern_id: 0,
+                }; 128],
+                fill: [pdf_color {
+                    res_id: 0,
+                    type_0: 0,
+                    num_components: 0,
+                    spot_color_name: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+                    values: [0.; 32],
+                    pattern_id: 0,
+                }; 128],
+            },
+            cspc_cache: C2RustUnnamed {
+                count: 0 as ::core::ffi::c_uint,
+                capacity: 0 as ::core::ffi::c_uint,
+                colorspaces: ::core::ptr::null_mut::<pdf_colorspace>(),
+            },
         }
     }
 }

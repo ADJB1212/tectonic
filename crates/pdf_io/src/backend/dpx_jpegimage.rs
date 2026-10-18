@@ -251,8 +251,7 @@ pub const STREAM_COMPRESS: ::core::ffi::c_int =
 pub const PDF_COLORSPACE_TYPE_CMYK: ::core::ffi::c_int = -4;
 pub const PDF_COLORSPACE_TYPE_RGB: ::core::ffi::c_int = -3;
 pub const PDF_COLORSPACE_TYPE_GRAY: ::core::ffi::c_int = -1;
-pub const JPEG_DEBUG_STR: [::core::ffi::c_char; 5] =
-    unsafe { ::core::mem::transmute::<[u8; 5], [::core::ffi::c_char; 5]>(*b"JPEG\0") };
+pub const JPEG_DEBUG_STR: [::core::ffi::c_char; 5] = crate::backend::c_char_array(*b"JPEG\0");
 pub const MAX_COUNT: ::core::ffi::c_int = 1024 as ::core::ffi::c_int;
 pub const HAVE_APPn_JFIF: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const HAVE_APPn_ADOBE: ::core::ffi::c_int =

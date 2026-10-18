@@ -641,134 +641,39 @@ pub unsafe extern "C-unwind" fn vf_locate_font(
     crate::backend::runtime::input_close(vf_handle);
     return thisfont;
 }
-unsafe extern "C-unwind" fn unsigned_byte(
-    mut start: *mut *mut ::core::ffi::c_uchar,
-    mut end: *mut ::core::ffi::c_uchar,
-) -> ::core::ffi::c_int {
-    let mut byte: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    if *start < end {
-        let fresh11 = *start;
-        *start = (*start).offset(1);
-        byte = *fresh11 as ::core::ffi::c_int;
-    } else {
-        pdf_abort!(
-            b"Premature end of DVI byte stream in VF font\n\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+unsafe fn read_packet_number(start: *mut *mut u8, end: *mut u8, num: u8, signed: bool) -> i32 {
+    if end.offset_from(*start) <= isize::from(num) {
+        pdf_abort!(c"Premature end of DVI byte stream in VF font\n".as_ptr());
     }
-    return byte;
-}
-unsafe extern "C-unwind" fn get_pkt_signed_num(
-    mut start: *mut *mut ::core::ffi::c_uchar,
-    mut end: *mut ::core::ffi::c_uchar,
-    mut num: ::core::ffi::c_uchar,
-) -> int32_t {
-    let mut val: int32_t = 0 as int32_t;
-    if end.offset_from(*start) as ::core::ffi::c_long > num as ::core::ffi::c_long {
-        let fresh16 = *start;
-        *start = (*start).offset(1);
-        val = *fresh16 as int32_t;
-        if val > 0x7f as int32_t {
-            val = (val as ::core::ffi::c_int - 0x100 as ::core::ffi::c_int) as int32_t;
-        }
-        let mut current_block_5: u64;
-        match num as ::core::ffi::c_int {
-            3 => {
-                let fresh17 = *start;
-                *start = (*start).offset(1);
-                val = val << 8 as ::core::ffi::c_int | *fresh17 as int32_t;
-                current_block_5 = 426399902127340518;
-            }
-            2 => {
-                current_block_5 = 426399902127340518;
-            }
-            1 => {
-                current_block_5 = 3356221950756584563;
-            }
-            _ => {
-                current_block_5 = 7815301370352969686;
-            }
-        }
-        match current_block_5 {
-            426399902127340518 => {
-                let fresh18 = *start;
-                *start = (*start).offset(1);
-                val = val << 8 as ::core::ffi::c_int | *fresh18 as int32_t;
-                current_block_5 = 3356221950756584563;
-            }
-            _ => {}
-        }
-        match current_block_5 {
-            3356221950756584563 => {
-                let fresh19 = *start;
-                *start = (*start).offset(1);
-                val = val << 8 as ::core::ffi::c_int | *fresh19 as int32_t;
-            }
-            _ => {}
-        }
+    let width = match num {
+        1..=3 => usize::from(num) + 1,
+        _ => 1,
+    };
+    let input = core::slice::from_raw_parts(*start, width);
+    let mut cursor = crate::byte_cursor::ByteCursor::new(input);
+    let value = if signed {
+        cursor.read_signed(width).unwrap()
     } else {
-        pdf_abort!(
-            b"Premature end of DVI byte stream in VF font\n\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
-    }
-    return val;
+        cursor.read_unsigned(width).unwrap() as i32
+    };
+    *start = (*start).add(width);
+    value
 }
+
+unsafe extern "C-unwind" fn unsigned_byte(start: *mut *mut u8, end: *mut u8) -> i32 {
+    read_packet_number(start, end, 0, false)
+}
+
+unsafe extern "C-unwind" fn get_pkt_signed_num(start: *mut *mut u8, end: *mut u8, num: u8) -> i32 {
+    read_packet_number(start, end, num, true)
+}
+
 unsafe extern "C-unwind" fn get_pkt_unsigned_num(
-    mut start: *mut *mut ::core::ffi::c_uchar,
-    mut end: *mut ::core::ffi::c_uchar,
-    mut num: ::core::ffi::c_uchar,
-) -> int32_t {
-    let mut val: int32_t = 0 as int32_t;
-    if end.offset_from(*start) as ::core::ffi::c_long > num as ::core::ffi::c_long {
-        let fresh12 = *start;
-        *start = (*start).offset(1);
-        val = *fresh12 as int32_t;
-        let mut current_block_5: u64;
-        match num as ::core::ffi::c_int {
-            3 => {
-                if val > 0x7f as int32_t {
-                    val = (val as ::core::ffi::c_int - 0x100 as ::core::ffi::c_int) as int32_t;
-                }
-                let fresh13 = *start;
-                *start = (*start).offset(1);
-                val = val << 8 as ::core::ffi::c_int | *fresh13 as int32_t;
-                current_block_5 = 7042427548161126177;
-            }
-            2 => {
-                current_block_5 = 7042427548161126177;
-            }
-            1 => {
-                current_block_5 = 16243942682322371836;
-            }
-            _ => {
-                current_block_5 = 7815301370352969686;
-            }
-        }
-        match current_block_5 {
-            7042427548161126177 => {
-                let fresh14 = *start;
-                *start = (*start).offset(1);
-                val = val << 8 as ::core::ffi::c_int | *fresh14 as int32_t;
-                current_block_5 = 16243942682322371836;
-            }
-            _ => {}
-        }
-        match current_block_5 {
-            16243942682322371836 => {
-                let fresh15 = *start;
-                *start = (*start).offset(1);
-                val = val << 8 as ::core::ffi::c_int | *fresh15 as int32_t;
-            }
-            _ => {}
-        }
-    } else {
-        pdf_abort!(
-            b"Premature end of DVI byte stream in VF font\n\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
-    }
-    return val;
+    start: *mut *mut u8,
+    end: *mut u8,
+    num: u8,
+) -> i32 {
+    read_packet_number(start, end, num, false)
 }
 unsafe extern "C-unwind" fn vf_putrule(
     mut start: *mut *mut ::core::ffi::c_uchar,

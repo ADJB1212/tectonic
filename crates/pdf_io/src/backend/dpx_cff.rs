@@ -230,7 +230,7 @@ pub const HAVE_STANDARD_ENCODING: ::core::ffi::c_int = ENCODING_STANDARD | ENCOD
 pub const HAVE_STANDARD_CHARSETS: ::core::ffi::c_int =
     CHARSETS_ISOADOBE | CHARSETS_EXPERT | CHARSETS_EXPSUB;
 pub const CFF_STDSTR_MAX: ::core::ffi::c_int = 391 as ::core::ffi::c_int;
-static mut cff_stdstr: [*const ::core::ffi::c_char; 391] = [
+const cff_stdstr: [*const ::core::ffi::c_char; 391] = [
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
     b"space\0" as *const u8 as *const ::core::ffi::c_char,
     b"exclam\0" as *const u8 as *const ::core::ffi::c_char,
@@ -623,8 +623,7 @@ static mut cff_stdstr: [*const ::core::ffi::c_char; 391] = [
     b"Roman\0" as *const u8 as *const ::core::ffi::c_char,
     b"Semibold\0" as *const u8 as *const ::core::ffi::c_char,
 ];
-pub const CFF_DEBUG_STR: [::core::ffi::c_char; 4] =
-    unsafe { ::core::mem::transmute::<[u8; 4], [::core::ffi::c_char; 4]>(*b"CFF\0") };
+pub const CFF_DEBUG_STR: [::core::ffi::c_char; 4] = crate::backend::c_char_array(*b"CFF\0");
 unsafe extern "C-unwind" fn get_unsigned(
     mut handle: rust_input_handle_t,
     mut n: ::core::ffi::c_int,

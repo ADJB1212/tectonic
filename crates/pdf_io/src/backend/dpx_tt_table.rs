@@ -26,26 +26,15 @@
 )]
 unsafe extern "C-unwind" {
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
-    fn ttstub_input_seek(
-        handle: rust_input_handle_t,
-        offset: ssize_t,
-        whence: ::core::ffi::c_int,
-    ) -> size_t;
     fn ttstub_input_read(
         handle: rust_input_handle_t,
         data: *mut ::core::ffi::c_char,
         len: size_t,
     ) -> ssize_t;
-    #[link_name = "__pdf_impl_tt_get_unsigned_byte"]
-    fn tt_get_unsigned_byte(handle: rust_input_handle_t) -> ::core::ffi::c_uchar;
-    #[link_name = "__pdf_impl_tt_get_signed_byte"]
-    fn tt_get_signed_byte(handle: rust_input_handle_t) -> ::core::ffi::c_schar;
     #[link_name = "__pdf_impl_tt_get_unsigned_pair"]
     fn tt_get_unsigned_pair(handle: rust_input_handle_t) -> ::core::ffi::c_ushort;
     #[link_name = "__pdf_impl_tt_get_signed_pair"]
     fn tt_get_signed_pair(handle: rust_input_handle_t) -> ::core::ffi::c_short;
-    #[link_name = "__pdf_impl_tt_get_unsigned_quad"]
-    fn tt_get_unsigned_quad(handle: rust_input_handle_t) -> uint32_t;
     #[link_name = "__pdf_impl_put_big_endian"]
     fn put_big_endian(
         s: *mut ::core::ffi::c_void,
@@ -186,7 +175,7 @@ pub struct tt_maxp_table {
     pub maxComponentElements: USHORT,
     pub maxComponentDepth: USHORT,
 }
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 #[repr(C)]
 pub struct tt_os2__table {
     pub version: USHORT,
@@ -249,6 +238,29 @@ pub struct tt_longMetrics {
 pub const __DARWIN_NULL: *mut ::core::ffi::c_void = ::core::ptr::null_mut::<::core::ffi::c_void>();
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 pub const SEEK_SET: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
+unsafe fn read_sfnt_table(sfont: *mut sfnt, tag: &std::ffi::CStr) -> Vec<u8> {
+    let len = sfnt_find_table_len(sfont, tag.as_ptr()) as usize;
+    sfnt_locate_table(sfont, tag.as_ptr());
+    let mut data = vec![0; len];
+    if ttstub_input_read((*sfont).handle, data.as_mut_ptr().cast(), len) != len as isize {
+        pdf_abort!("File ended prematurely\n");
+    }
+    data
+}
+
+fn parse_table<'a, T: read_fonts::FontRead<'a, Args = ()>>(data: &'a [u8], tag: &str) -> T {
+    T::read(data.into()).unwrap_or_else(|_| pdf_abort!("Invalid TrueType {tag} table"))
+}
+
+fn alloc_table<T: Copy>(value: T) -> *mut T {
+    let size = u32::try_from(core::mem::size_of::<T>()).expect("font table fits in u32");
+    unsafe {
+        let result = new(size).cast::<T>();
+        result.write(value);
+        result
+    }
+}
+
 #[unsafe(export_name = "__pdf_impl_tt_pack_head_table")]
 pub unsafe extern "C-unwind" fn tt_pack_head_table(
     mut table: *mut tt_head_table,
@@ -355,38 +367,34 @@ pub unsafe extern "C-unwind" fn tt_pack_head_table(
     return data;
 }
 #[unsafe(export_name = "__pdf_impl_tt_read_head_table")]
-pub unsafe extern "C-unwind" fn tt_read_head_table(mut sfont: *mut sfnt) -> *mut tt_head_table {
-    let mut i: ::core::ffi::c_int = 0;
-    let mut table: *mut tt_head_table = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<tt_head_table>() as usize)
-        as uint32_t) as *mut tt_head_table;
-    sfnt_locate_table(sfont, b"head\0" as *const u8 as *const ::core::ffi::c_char);
-    (*table).version = tt_get_unsigned_quad((*sfont).handle) as Fixed;
-    (*table).fontRevision = tt_get_unsigned_quad((*sfont).handle) as Fixed;
-    (*table).checkSumAdjustment = tt_get_unsigned_quad((*sfont).handle);
-    (*table).magicNumber = tt_get_unsigned_quad((*sfont).handle);
-    (*table).flags = tt_get_unsigned_pair((*sfont).handle);
-    (*table).unitsPerEm = tt_get_unsigned_pair((*sfont).handle);
-    i = 0 as ::core::ffi::c_int;
-    while i < 8 as ::core::ffi::c_int {
-        (*table).created[i as usize] = tt_get_unsigned_byte((*sfont).handle);
-        i += 1;
-    }
-    i = 0 as ::core::ffi::c_int;
-    while i < 8 as ::core::ffi::c_int {
-        (*table).modified[i as usize] = tt_get_unsigned_byte((*sfont).handle);
-        i += 1;
-    }
-    (*table).xMin = tt_get_signed_pair((*sfont).handle) as FWord;
-    (*table).yMin = tt_get_signed_pair((*sfont).handle) as FWord;
-    (*table).xMax = tt_get_signed_pair((*sfont).handle) as FWord;
-    (*table).yMax = tt_get_signed_pair((*sfont).handle) as FWord;
-    (*table).macStyle = tt_get_signed_pair((*sfont).handle) as USHORT;
-    (*table).lowestRecPPEM = tt_get_signed_pair((*sfont).handle) as USHORT;
-    (*table).fontDirectionHint = tt_get_signed_pair((*sfont).handle);
-    (*table).indexToLocFormat = tt_get_signed_pair((*sfont).handle);
-    (*table).glyphDataFormat = tt_get_signed_pair((*sfont).handle);
-    return table;
+pub unsafe extern "C-unwind" fn tt_read_head_table(sfont: *mut sfnt) -> *mut tt_head_table {
+    let data = read_sfnt_table(sfont, c"head");
+    let header: read_fonts::tables::head::Head<'_> = parse_table(&data, "head");
+    alloc_table(tt_head_table {
+        version: u32::from_be_bytes(header.version().to_be_bytes()),
+        fontRevision: header.font_revision().to_bits() as u32,
+        checkSumAdjustment: header.checksum_adjustment(),
+        magicNumber: header.magic_number(),
+        flags: header
+            .offset_data()
+            .read_at(header.flags_byte_range().start)
+            .unwrap(),
+        unitsPerEm: header.units_per_em(),
+        created: header.created().to_be_bytes(),
+        modified: header.modified().to_be_bytes(),
+        xMin: header.x_min(),
+        yMin: header.y_min(),
+        xMax: header.x_max(),
+        yMax: header.y_max(),
+        macStyle: header
+            .offset_data()
+            .read_at(header.mac_style_byte_range().start)
+            .unwrap(),
+        lowestRecPPEM: header.lowest_rec_ppem(),
+        fontDirectionHint: header.font_direction_hint(),
+        indexToLocFormat: header.index_to_loc_format(),
+        glyphDataFormat: header.glyph_data_format(),
+    })
 }
 #[unsafe(export_name = "__pdf_impl_tt_pack_maxp_table")]
 pub unsafe extern "C-unwind" fn tt_pack_maxp_table(
@@ -476,27 +484,30 @@ pub unsafe extern "C-unwind" fn tt_pack_maxp_table(
     return data;
 }
 #[unsafe(export_name = "__pdf_impl_tt_read_maxp_table")]
-pub unsafe extern "C-unwind" fn tt_read_maxp_table(mut sfont: *mut sfnt) -> *mut tt_maxp_table {
-    let mut table: *mut tt_maxp_table = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<tt_maxp_table>() as usize)
-        as uint32_t) as *mut tt_maxp_table;
-    sfnt_locate_table(sfont, b"maxp\0" as *const u8 as *const ::core::ffi::c_char);
-    (*table).version = tt_get_unsigned_quad((*sfont).handle) as Fixed;
-    (*table).numGlyphs = tt_get_unsigned_pair((*sfont).handle);
-    (*table).maxPoints = tt_get_unsigned_pair((*sfont).handle);
-    (*table).maxContours = tt_get_unsigned_pair((*sfont).handle);
-    (*table).maxComponentPoints = tt_get_unsigned_pair((*sfont).handle);
-    (*table).maxComponentContours = tt_get_unsigned_pair((*sfont).handle);
-    (*table).maxZones = tt_get_unsigned_pair((*sfont).handle);
-    (*table).maxTwilightPoints = tt_get_unsigned_pair((*sfont).handle);
-    (*table).maxStorage = tt_get_unsigned_pair((*sfont).handle);
-    (*table).maxFunctionDefs = tt_get_unsigned_pair((*sfont).handle);
-    (*table).maxInstructionDefs = tt_get_unsigned_pair((*sfont).handle);
-    (*table).maxStackElements = tt_get_unsigned_pair((*sfont).handle);
-    (*table).maxSizeOfInstructions = tt_get_unsigned_pair((*sfont).handle);
-    (*table).maxComponentElements = tt_get_unsigned_pair((*sfont).handle);
-    (*table).maxComponentDepth = tt_get_unsigned_pair((*sfont).handle);
-    return table;
+pub unsafe extern "C-unwind" fn tt_read_maxp_table(sfont: *mut sfnt) -> *mut tt_maxp_table {
+    let data = read_sfnt_table(sfont, c"maxp");
+    let header: read_fonts::tables::maxp::Maxp<'_> = parse_table(&data, "maxp");
+    let version = u32::from_be_bytes(header.version().to_be_bytes());
+    if version == 0x10000 && data.len() < 32 {
+        pdf_abort!("Invalid TrueType maxp table");
+    }
+    alloc_table(tt_maxp_table {
+        version,
+        numGlyphs: header.num_glyphs(),
+        maxPoints: header.max_points().unwrap_or(0),
+        maxContours: header.max_contours().unwrap_or(0),
+        maxComponentPoints: header.max_composite_points().unwrap_or(0),
+        maxComponentContours: header.max_composite_contours().unwrap_or(0),
+        maxZones: header.max_zones().unwrap_or(0),
+        maxTwilightPoints: header.max_twilight_points().unwrap_or(0),
+        maxStorage: header.max_storage().unwrap_or(0),
+        maxFunctionDefs: header.max_function_defs().unwrap_or(0),
+        maxInstructionDefs: header.max_instruction_defs().unwrap_or(0),
+        maxStackElements: header.max_stack_elements().unwrap_or(0),
+        maxSizeOfInstructions: header.max_size_of_instructions().unwrap_or(0),
+        maxComponentElements: header.max_component_elements().unwrap_or(0),
+        maxComponentDepth: header.max_component_depth().unwrap_or(0),
+    })
 }
 #[unsafe(export_name = "__pdf_impl_tt_pack_hhea_table")]
 pub unsafe extern "C-unwind" fn tt_pack_hhea_table(
@@ -586,112 +597,97 @@ pub unsafe extern "C-unwind" fn tt_pack_hhea_table(
     return data;
 }
 #[unsafe(export_name = "__pdf_impl_tt_read_hhea_table")]
-pub unsafe extern "C-unwind" fn tt_read_hhea_table(mut sfont: *mut sfnt) -> *mut tt_hhea_table {
-    let mut i: ::core::ffi::c_int = 0;
-    let mut len: SFNT_ULONG = 0;
-    let mut table: *mut tt_hhea_table = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<tt_hhea_table>() as usize)
-        as uint32_t) as *mut tt_hhea_table;
-    sfnt_locate_table(sfont, b"hhea\0" as *const u8 as *const ::core::ffi::c_char);
-    (*table).version = tt_get_unsigned_quad((*sfont).handle) as Fixed;
-    (*table).ascent = tt_get_signed_pair((*sfont).handle) as FWord;
-    (*table).descent = tt_get_signed_pair((*sfont).handle) as FWord;
-    (*table).lineGap = tt_get_signed_pair((*sfont).handle) as FWord;
-    (*table).advanceWidthMax = tt_get_unsigned_pair((*sfont).handle) as uFWord;
-    (*table).minLeftSideBearing = tt_get_signed_pair((*sfont).handle) as FWord;
-    (*table).minRightSideBearing = tt_get_signed_pair((*sfont).handle) as FWord;
-    (*table).xMaxExtent = tt_get_signed_pair((*sfont).handle) as FWord;
-    (*table).caretSlopeRise = tt_get_signed_pair((*sfont).handle);
-    (*table).caretSlopeRun = tt_get_signed_pair((*sfont).handle);
-    (*table).caretOffset = tt_get_signed_pair((*sfont).handle) as FWord;
-    i = 0 as ::core::ffi::c_int;
-    while i < 4 as ::core::ffi::c_int {
-        (*table).reserved[i as usize] = tt_get_signed_pair((*sfont).handle);
-        i += 1;
+pub unsafe extern "C-unwind" fn tt_read_hhea_table(sfont: *mut sfnt) -> *mut tt_hhea_table {
+    let data = read_sfnt_table(sfont, c"hhea");
+    let header: read_fonts::tables::hhea::Hhea<'_> = parse_table(&data, "hhea");
+    if header.metric_data_format() != 0 {
+        pdf_abort!("unknown metricDataFormat");
     }
-    (*table).metricDataFormat = tt_get_signed_pair((*sfont).handle);
-    if (*table).metricDataFormat as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
-        pdf_abort!(b"unknown metricDataFormat\0" as *const u8 as *const ::core::ffi::c_char,);
-    }
-    (*table).numOfLongHorMetrics = tt_get_unsigned_pair((*sfont).handle);
-    len = sfnt_find_table_len(sfont, b"hmtx\0" as *const u8 as *const ::core::ffi::c_char);
-    (*table).numOfExSideBearings = len
-        .wrapping_sub(
-            ((*table).numOfLongHorMetrics as ::core::ffi::c_int * 4 as ::core::ffi::c_int)
-                as SFNT_ULONG,
-        )
-        .wrapping_div(2 as SFNT_ULONG) as USHORT;
-    return table;
+    let num_metrics = header.number_of_h_metrics();
+    let metrics_len = sfnt_find_table_len(sfont, c"hmtx".as_ptr());
+    alloc_table(tt_hhea_table {
+        version: u32::from_be_bytes(header.version().to_be_bytes()),
+        ascent: header.ascender().to_i16(),
+        descent: header.descender().to_i16(),
+        lineGap: header.line_gap().to_i16(),
+        advanceWidthMax: header.advance_width_max().to_u16(),
+        minLeftSideBearing: header.min_left_side_bearing().to_i16(),
+        minRightSideBearing: header.min_right_side_bearing().to_i16(),
+        xMaxExtent: header.x_max_extent().to_i16(),
+        caretSlopeRise: header.caret_slope_rise(),
+        caretSlopeRun: header.caret_slope_run(),
+        caretOffset: header.caret_offset(),
+        reserved: core::array::from_fn(|i| {
+            header
+                .offset_data()
+                .read_at(header.reserved1_byte_range().start + i * 2)
+                .unwrap()
+        }),
+        metricDataFormat: header.metric_data_format(),
+        numOfLongHorMetrics: num_metrics,
+        numOfExSideBearings: metrics_len
+            .wrapping_sub(u32::from(num_metrics) * 4)
+            .wrapping_div(2) as u16,
+    })
 }
 #[unsafe(export_name = "__pdf_impl_tt_read_vhea_table")]
-pub unsafe extern "C-unwind" fn tt_read_vhea_table(mut sfont: *mut sfnt) -> *mut tt_vhea_table {
-    let mut i: ::core::ffi::c_int = 0;
-    let mut len: SFNT_ULONG = 0;
-    let mut table: *mut tt_vhea_table = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<tt_vhea_table>() as usize)
-        as uint32_t) as *mut tt_vhea_table;
-    sfnt_locate_table(sfont, b"vhea\0" as *const u8 as *const ::core::ffi::c_char);
-    (*table).version = tt_get_unsigned_quad((*sfont).handle) as Fixed;
-    (*table).vertTypoAscender = tt_get_signed_pair((*sfont).handle);
-    (*table).vertTypoDescender = tt_get_signed_pair((*sfont).handle);
-    (*table).vertTypoLineGap = tt_get_signed_pair((*sfont).handle);
-    (*table).advanceHeightMax = tt_get_signed_pair((*sfont).handle);
-    (*table).minTopSideBearing = tt_get_signed_pair((*sfont).handle);
-    (*table).minBottomSideBearing = tt_get_signed_pair((*sfont).handle);
-    (*table).yMaxExtent = tt_get_signed_pair((*sfont).handle);
-    (*table).caretSlopeRise = tt_get_signed_pair((*sfont).handle);
-    (*table).caretSlopeRun = tt_get_signed_pair((*sfont).handle);
-    (*table).caretOffset = tt_get_signed_pair((*sfont).handle);
-    i = 0 as ::core::ffi::c_int;
-    while i < 4 as ::core::ffi::c_int {
-        (*table).reserved[i as usize] = tt_get_signed_pair((*sfont).handle);
-        i += 1;
-    }
-    (*table).metricDataFormat = tt_get_signed_pair((*sfont).handle);
-    (*table).numOfLongVerMetrics = tt_get_unsigned_pair((*sfont).handle);
-    len = sfnt_find_table_len(sfont, b"vmtx\0" as *const u8 as *const ::core::ffi::c_char);
-    (*table).numOfExSideBearings = len
-        .wrapping_sub(
-            ((*table).numOfLongVerMetrics as ::core::ffi::c_int * 4 as ::core::ffi::c_int)
-                as SFNT_ULONG,
-        )
-        .wrapping_div(2 as SFNT_ULONG) as USHORT;
-    return table;
+pub unsafe extern "C-unwind" fn tt_read_vhea_table(sfont: *mut sfnt) -> *mut tt_vhea_table {
+    let data = read_sfnt_table(sfont, c"vhea");
+    let header: read_fonts::tables::vhea::Vhea<'_> = parse_table(&data, "vhea");
+    let num_metrics = header.number_of_long_ver_metrics();
+    let metrics_len = sfnt_find_table_len(sfont, c"vmtx".as_ptr());
+    alloc_table(tt_vhea_table {
+        version: u32::from_be_bytes(header.version().to_be_bytes()),
+        vertTypoAscender: header.ascender().to_i16(),
+        vertTypoDescender: header.descender().to_i16(),
+        vertTypoLineGap: header.line_gap().to_i16(),
+        advanceHeightMax: header.advance_height_max().to_u16() as i16,
+        minTopSideBearing: header.min_top_side_bearing().to_i16(),
+        minBottomSideBearing: header.min_bottom_side_bearing().to_i16(),
+        yMaxExtent: header.y_max_extent().to_i16(),
+        caretSlopeRise: header.caret_slope_rise(),
+        caretSlopeRun: header.caret_slope_run(),
+        caretOffset: header.caret_offset(),
+        reserved: core::array::from_fn(|i| {
+            header
+                .offset_data()
+                .read_at(header.reserved1_byte_range().start + i * 2)
+                .unwrap()
+        }),
+        metricDataFormat: header.metric_data_format(),
+        numOfLongVerMetrics: num_metrics,
+        numOfExSideBearings: metrics_len
+            .wrapping_sub(u32::from(num_metrics) * 4)
+            .wrapping_div(2) as u16,
+    })
 }
 #[unsafe(export_name = "__pdf_impl_tt_read_VORG_table")]
-pub unsafe extern "C-unwind" fn tt_read_VORG_table(mut sfont: *mut sfnt) -> *mut tt_VORG_table {
-    let mut vorg: *mut tt_VORG_table = ::core::ptr::null_mut::<tt_VORG_table>();
-    let mut offset: SFNT_ULONG = 0;
-    let mut i: USHORT = 0;
-    offset = sfnt_find_table_pos(sfont, b"VORG\0" as *const u8 as *const ::core::ffi::c_char);
-    if offset > 0 as SFNT_ULONG {
-        vorg = new((1 as ::core::ffi::c_int as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<tt_VORG_table>() as usize)
-            as uint32_t) as *mut tt_VORG_table;
-        sfnt_locate_table(sfont, b"VORG\0" as *const u8 as *const ::core::ffi::c_char);
-        if tt_get_unsigned_pair((*sfont).handle) as ::core::ffi::c_int != 1 as ::core::ffi::c_int
-            || tt_get_unsigned_pair((*sfont).handle) as ::core::ffi::c_int
-                != 0 as ::core::ffi::c_int
-        {
-            pdf_abort!(b"Unsupported VORG version.\0" as *const u8 as *const ::core::ffi::c_char,);
-        }
-        (*vorg).defaultVertOriginY = tt_get_signed_pair((*sfont).handle);
-        (*vorg).numVertOriginYMetrics = tt_get_unsigned_pair((*sfont).handle);
-        (*vorg).vertOriginYMetrics = new(((*vorg).numVertOriginYMetrics as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<tt_vertOriginYMetrics>() as usize)
-            as uint32_t) as *mut tt_vertOriginYMetrics;
-        i = 0 as USHORT;
-        while (i as ::core::ffi::c_int) < (*vorg).numVertOriginYMetrics as ::core::ffi::c_int {
-            (*(*vorg).vertOriginYMetrics.offset(i as isize)).glyphIndex =
-                tt_get_unsigned_pair((*sfont).handle);
-            (*(*vorg).vertOriginYMetrics.offset(i as isize)).vertOriginY =
-                tt_get_signed_pair((*sfont).handle);
-            i = i.wrapping_add(1);
-        }
-    } else {
-        vorg = ::core::ptr::null_mut::<tt_VORG_table>();
+pub unsafe extern "C-unwind" fn tt_read_VORG_table(sfont: *mut sfnt) -> *mut tt_VORG_table {
+    if sfnt_find_table_pos(sfont, c"VORG".as_ptr()) == 0 {
+        return core::ptr::null_mut();
     }
-    return vorg;
+    let data = read_sfnt_table(sfont, c"VORG");
+    let header: read_fonts::tables::vorg::Vorg<'_> = parse_table(&data, "VORG");
+    if header.version().to_be_bytes() != [0, 1, 0, 0] {
+        pdf_abort!("Unsupported VORG version.");
+    }
+    let records = header.vert_origin_y_metrics();
+    if records.len() != usize::from(header.num_vert_origin_y_metrics()) {
+        pdf_abort!("Invalid TrueType VORG table");
+    }
+    let metrics = new((records.len() * core::mem::size_of::<tt_vertOriginYMetrics>()) as u32)
+        .cast::<tt_vertOriginYMetrics>();
+    for (i, record) in records.iter().enumerate() {
+        metrics.add(i).write(tt_vertOriginYMetrics {
+            glyphIndex: record.glyph_index().to_u16(),
+            vertOriginY: record.vert_origin_y(),
+        });
+    }
+    alloc_table(tt_VORG_table {
+        defaultVertOriginY: header.default_vert_origin_y(),
+        numVertOriginYMetrics: header.num_vert_origin_y_metrics(),
+        vertOriginYMetrics: metrics,
+    })
 }
 #[unsafe(export_name = "__pdf_impl_tt_read_longMetrics")]
 pub unsafe extern "C-unwind" fn tt_read_longMetrics(
@@ -724,248 +720,133 @@ pub unsafe extern "C-unwind" fn tt_read_longMetrics(
     return m;
 }
 #[unsafe(export_name = "__pdf_impl_tt_read_os2__table")]
-pub unsafe extern "C-unwind" fn tt_read_os2__table(mut sfont: *mut sfnt) -> *mut tt_os2__table {
-    let mut table: *mut tt_os2__table = ::core::ptr::null_mut::<tt_os2__table>();
-    let mut i: ::core::ffi::c_int = 0;
-    table = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<tt_os2__table>() as usize) as uint32_t)
-        as *mut tt_os2__table;
-    if sfnt_find_table_pos(sfont, b"OS/2\0" as *const u8 as *const ::core::ffi::c_char)
-        > 0 as SFNT_ULONG
-    {
-        sfnt_locate_table(sfont, b"OS/2\0" as *const u8 as *const ::core::ffi::c_char);
-        (*table).version = tt_get_unsigned_pair((*sfont).handle);
-        (*table).xAvgCharWidth = tt_get_signed_pair((*sfont).handle);
-        (*table).usWeightClass = tt_get_unsigned_pair((*sfont).handle);
-        (*table).usWidthClass = tt_get_unsigned_pair((*sfont).handle);
-        (*table).fsType = tt_get_signed_pair((*sfont).handle);
-        (*table).ySubscriptXSize = tt_get_signed_pair((*sfont).handle);
-        (*table).ySubscriptYSize = tt_get_signed_pair((*sfont).handle);
-        (*table).ySubscriptXOffset = tt_get_signed_pair((*sfont).handle);
-        (*table).ySubscriptYOffset = tt_get_signed_pair((*sfont).handle);
-        (*table).ySuperscriptXSize = tt_get_signed_pair((*sfont).handle);
-        (*table).ySuperscriptYSize = tt_get_signed_pair((*sfont).handle);
-        (*table).ySuperscriptXOffset = tt_get_signed_pair((*sfont).handle);
-        (*table).ySuperscriptYOffset = tt_get_signed_pair((*sfont).handle);
-        (*table).yStrikeoutSize = tt_get_signed_pair((*sfont).handle);
-        (*table).yStrikeoutPosition = tt_get_signed_pair((*sfont).handle);
-        (*table).sFamilyClass = tt_get_signed_pair((*sfont).handle);
-        i = 0 as ::core::ffi::c_int;
-        while i < 10 as ::core::ffi::c_int {
-            (*table).panose[i as usize] = tt_get_unsigned_byte((*sfont).handle);
-            i += 1;
-        }
-        (*table).ulUnicodeRange1 = tt_get_unsigned_quad((*sfont).handle);
-        (*table).ulUnicodeRange2 = tt_get_unsigned_quad((*sfont).handle);
-        (*table).ulUnicodeRange3 = tt_get_unsigned_quad((*sfont).handle);
-        (*table).ulUnicodeRange4 = tt_get_unsigned_quad((*sfont).handle);
-        i = 0 as ::core::ffi::c_int;
-        while i < 4 as ::core::ffi::c_int {
-            (*table).achVendID[i as usize] = tt_get_signed_byte((*sfont).handle);
-            i += 1;
-        }
-        (*table).fsSelection = tt_get_unsigned_pair((*sfont).handle);
-        (*table).usFirstCharIndex = tt_get_unsigned_pair((*sfont).handle);
-        (*table).usLastCharIndex = tt_get_unsigned_pair((*sfont).handle);
-        if sfnt_find_table_len(sfont, b"OS/2\0" as *const u8 as *const ::core::ffi::c_char)
-            >= 78 as SFNT_ULONG
-        {
-            (*table).sTypoAscender = tt_get_signed_pair((*sfont).handle);
-            (*table).sTypoDescender = tt_get_signed_pair((*sfont).handle);
-            (*table).sTypoLineGap = tt_get_signed_pair((*sfont).handle);
-            (*table).usWinAscent = tt_get_unsigned_pair((*sfont).handle);
-            (*table).usWinDescent = tt_get_unsigned_pair((*sfont).handle);
-            if (*table).version as ::core::ffi::c_int > 0 as ::core::ffi::c_int {
-                (*table).ulCodePageRange1 = tt_get_unsigned_quad((*sfont).handle);
-                (*table).ulCodePageRange2 = tt_get_unsigned_quad((*sfont).handle);
-                if (*table).version as ::core::ffi::c_int > 1 as ::core::ffi::c_int {
-                    (*table).sxHeight = tt_get_signed_pair((*sfont).handle);
-                    (*table).sCapHeight = tt_get_signed_pair((*sfont).handle);
-                    (*table).usDefaultChar = tt_get_unsigned_pair((*sfont).handle);
-                    (*table).usBreakChar = tt_get_unsigned_pair((*sfont).handle);
-                    (*table).usMaxContext = tt_get_unsigned_pair((*sfont).handle);
-                }
-            }
-        }
-    } else {
-        (*table).sTypoAscender = 880 as SHORT;
-        (*table).sTypoDescender = -(120 as ::core::ffi::c_int) as SHORT;
-        (*table).usWeightClass = 400 as USHORT;
-        (*table).xAvgCharWidth = 0 as SHORT;
-        (*table).version = 0 as USHORT;
-        (*table).fsType = 0 as SHORT;
-        (*table).fsSelection = 0 as USHORT;
-        (*table).sFamilyClass = 0 as SHORT;
-        i = 0 as ::core::ffi::c_int;
-        while i < 10 as ::core::ffi::c_int {
-            (*table).panose[i as usize] = 0 as BYTE;
-            i += 1;
-        }
+pub unsafe extern "C-unwind" fn tt_read_os2__table(sfont: *mut sfnt) -> *mut tt_os2__table {
+    if sfnt_find_table_pos(sfont, c"OS/2".as_ptr()) == 0 {
+        return alloc_table(tt_os2__table {
+            sTypoAscender: 880,
+            sTypoDescender: -120,
+            usWeightClass: 400,
+            ..Default::default()
+        });
     }
-    return table;
+    let mut data = read_sfnt_table(sfont, c"OS/2");
+    if data.len() < 68 {
+        pdf_abort!("Invalid TrueType OS/2 table");
+    }
+    // Early Mac fonts omit the final ten bytes of the version 0 table.
+    data.resize(data.len().max(78), 0);
+    let header: read_fonts::tables::os2::Os2<'_> = parse_table(&data, "OS/2");
+    alloc_table(tt_os2__table {
+        version: header.version(),
+        xAvgCharWidth: header.x_avg_char_width(),
+        usWeightClass: header.us_weight_class(),
+        usWidthClass: header.us_width_class(),
+        fsType: header.fs_type() as i16,
+        ySubscriptXSize: header.y_subscript_x_size(),
+        ySubscriptYSize: header.y_subscript_y_size(),
+        ySubscriptXOffset: header.y_subscript_x_offset(),
+        ySubscriptYOffset: header.y_subscript_y_offset(),
+        ySuperscriptXSize: header.y_superscript_x_size(),
+        ySuperscriptYSize: header.y_superscript_y_size(),
+        ySuperscriptXOffset: header.y_superscript_x_offset(),
+        ySuperscriptYOffset: header.y_superscript_y_offset(),
+        yStrikeoutSize: header.y_strikeout_size(),
+        yStrikeoutPosition: header.y_strikeout_position(),
+        sFamilyClass: header.s_family_class(),
+        panose: header.panose_10().try_into().unwrap(),
+        ulUnicodeRange1: header.ul_unicode_range_1(),
+        ulUnicodeRange2: header.ul_unicode_range_2(),
+        ulUnicodeRange3: header.ul_unicode_range_3(),
+        ulUnicodeRange4: header.ul_unicode_range_4(),
+        achVendID: header.ach_vend_id().to_be_bytes().map(|byte| byte as i8),
+        fsSelection: header
+            .offset_data()
+            .read_at(header.fs_selection_byte_range().start)
+            .unwrap(),
+        usFirstCharIndex: header.us_first_char_index(),
+        usLastCharIndex: header.us_last_char_index(),
+        sTypoAscender: header.s_typo_ascender(),
+        sTypoDescender: header.s_typo_descender(),
+        sTypoLineGap: header.s_typo_line_gap(),
+        usWinAscent: header.us_win_ascent(),
+        usWinDescent: header.us_win_descent(),
+        ulCodePageRange1: header.ul_code_page_range_1().unwrap_or(0),
+        ulCodePageRange2: header.ul_code_page_range_2().unwrap_or(0),
+        sxHeight: header.sx_height().unwrap_or(0),
+        sCapHeight: header.s_cap_height().unwrap_or(0),
+        usDefaultChar: header.us_default_char().unwrap_or(0),
+        usBreakChar: header.us_break_char().unwrap_or(0),
+        usMaxContext: header.us_max_context().unwrap_or(0),
+    })
 }
-unsafe extern "C-unwind" fn tt_get_name(
-    mut sfont: *mut sfnt,
-    mut dest: *mut ::core::ffi::c_char,
-    mut destlen: USHORT,
-    mut plat_id: USHORT,
-    mut enco_id: USHORT,
-    mut lang_id: USHORT,
-    mut name_id: USHORT,
-) -> USHORT {
-    let mut length: USHORT = 0 as USHORT;
-    let mut num_names: USHORT = 0;
-    let mut string_offset: USHORT = 0;
-    let mut name_offset: SFNT_ULONG = 0;
-    let mut i: ::core::ffi::c_int = 0;
-    let mut j: ::core::ffi::c_int = 0;
-    let mut is_utf16_be: ::core::ffi::c_int = 0;
-    name_offset = sfnt_locate_table(sfont, b"name\0" as *const u8 as *const ::core::ffi::c_char);
-    is_utf16_be = (plat_id as ::core::ffi::c_int == 3 as ::core::ffi::c_int
-        && enco_id as ::core::ffi::c_int == 1 as ::core::ffi::c_int
-        && lang_id as ::core::ffi::c_uint == 0x409 as ::core::ffi::c_uint
-        && name_id as ::core::ffi::c_int == 6 as ::core::ffi::c_int)
-        as ::core::ffi::c_int;
-    if tt_get_unsigned_pair((*sfont).handle) != 0 {
-        pdf_abort!(b"Expecting zero\0" as *const u8 as *const ::core::ffi::c_char);
-    }
-    num_names = tt_get_unsigned_pair((*sfont).handle);
-    string_offset = tt_get_unsigned_pair((*sfont).handle);
-    i = 0 as ::core::ffi::c_int;
-    while i < num_names as ::core::ffi::c_int {
-        let mut p_id: USHORT = 0;
-        let mut e_id: USHORT = 0;
-        let mut n_id: USHORT = 0;
-        let mut l_id: USHORT = 0;
-        let mut offset: USHORT = 0;
-        p_id = tt_get_unsigned_pair((*sfont).handle);
-        e_id = tt_get_unsigned_pair((*sfont).handle);
-        l_id = tt_get_unsigned_pair((*sfont).handle);
-        n_id = tt_get_unsigned_pair((*sfont).handle);
-        length = tt_get_unsigned_pair((*sfont).handle);
-        offset = tt_get_unsigned_pair((*sfont).handle);
-        if p_id as ::core::ffi::c_int == plat_id as ::core::ffi::c_int
-            && e_id as ::core::ffi::c_int == enco_id as ::core::ffi::c_int
-            && (lang_id as ::core::ffi::c_uint == 0xffff as ::core::ffi::c_uint
-                || l_id as ::core::ffi::c_int == lang_id as ::core::ffi::c_int)
-            && n_id as ::core::ffi::c_int == name_id as ::core::ffi::c_int
-        {
-            if is_utf16_be != 0 {
-                length = (length as ::core::ffi::c_int / 2 as ::core::ffi::c_int) as USHORT;
-            }
-            if length as ::core::ffi::c_int
-                > destlen as ::core::ffi::c_int - 1 as ::core::ffi::c_int
-            {
-                pdf_warning!(
-                    b"Name string too long (%u), truncating to %u\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                    length as ::core::ffi::c_int,
-                    destlen as ::core::ffi::c_int,
-                );
-                length = (destlen as ::core::ffi::c_int - 1 as ::core::ffi::c_int) as USHORT;
-            }
-            crate::backend::runtime::input_seek(
-                (*sfont).handle,
-                name_offset
-                    .wrapping_add(string_offset as SFNT_ULONG)
-                    .wrapping_add(offset as SFNT_ULONG) as ssize_t,
-                SEEK_SET,
-            );
-            if is_utf16_be != 0 {
-                j = 0 as ::core::ffi::c_int;
-                while j < length as ::core::ffi::c_int {
-                    *dest.offset(j as isize) =
-                        (tt_get_unsigned_pair((*sfont).handle) as ::core::ffi::c_int
-                            & 0xff as ::core::ffi::c_int)
-                            as ::core::ffi::c_uchar as ::core::ffi::c_char;
-                    j += 1;
-                }
-            } else {
-                ttstub_input_read(
-                    (*sfont).handle,
-                    dest as *mut ::core::ffi::c_uchar as *mut ::core::ffi::c_char,
-                    length as size_t,
-                );
-            }
-            *dest.offset(length as isize) = '\0' as i32 as ::core::ffi::c_char;
-            break;
-        } else {
-            i += 1;
-        }
-    }
-    if i == num_names as ::core::ffi::c_int {
-        length = 0 as USHORT;
-    }
-    return length;
-}
-#[unsafe(export_name = "__pdf_impl_tt_get_ps_fontname")]
-pub unsafe extern "C-unwind" fn tt_get_ps_fontname(
-    mut sfont: *mut sfnt,
-    mut dest: *mut ::core::ffi::c_char,
-    mut destlen: USHORT,
-) -> USHORT {
-    let mut namelen: USHORT = 0 as USHORT;
-    namelen = tt_get_name(
-        sfont,
-        dest,
-        destlen,
-        1 as USHORT,
-        0 as USHORT,
-        0 as USHORT,
-        6 as USHORT,
-    );
-    if namelen as ::core::ffi::c_int != 0 as ::core::ffi::c_int
-        || {
-            namelen = tt_get_name(
-                sfont,
-                dest,
-                destlen,
-                3 as USHORT,
-                1 as USHORT,
-                0x409 as USHORT,
-                6 as USHORT,
-            );
-            namelen as ::core::ffi::c_int != 0 as ::core::ffi::c_int
-        }
-        || {
-            namelen = tt_get_name(
-                sfont,
-                dest,
-                destlen,
-                3 as USHORT,
-                5 as USHORT,
-                0x412 as USHORT,
-                6 as USHORT,
-            );
-            namelen as ::core::ffi::c_int != 0 as ::core::ffi::c_int
-        }
-    {
-        return namelen;
-    }
-    pdf_warning!(
-        b"No valid PostScript name available\0" as *const u8 as *const ::core::ffi::c_char,
-    );
-    namelen = tt_get_name(
-        sfont,
-        dest,
-        destlen,
-        1 as USHORT,
-        0 as USHORT,
-        0xffff as USHORT,
-        6 as USHORT,
-    );
-    if namelen as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
-        namelen = tt_get_name(
-            sfont,
-            dest,
-            destlen,
-            1 as USHORT,
-            0 as USHORT,
-            0 as USHORT,
-            1 as USHORT,
+fn tt_get_name(
+    table: &read_fonts::tables::name::Name<'_>,
+    output: &mut [u8],
+    ids: (u16, u16, u16, u16),
+) -> usize {
+    use read_fonts::Offset;
+    let (platform, encoding, language, name_id) = ids;
+    let Some(record) = table.name_record().iter().find(|record| {
+        record.platform_id() == platform
+            && record.encoding_id() == encoding
+            && (language == 0xffff || record.language_id() == language)
+            && record.name_id().to_u16() == name_id
+    }) else {
+        return 0;
+    };
+    let start = record.string_offset().non_null().unwrap_or(0);
+    let end = start + record.length() as usize;
+    let data = table.string_data();
+    let bytes = data.as_bytes().get(start..end).unwrap_or_else(|| {
+        pdf_abort!("Invalid TrueType name table");
+    });
+    let utf16 = ids == (3, 1, 0x409, 6);
+    let length = if utf16 { bytes.len() / 2 } else { bytes.len() };
+    let copied = length.min(output.len() - 1);
+    if copied < length {
+        pdf_warning!(
+            "Name string too long ({length}), truncating to {}",
+            output.len()
         );
     }
-    return namelen;
+    if utf16 {
+        for (output, pair) in output.iter_mut().zip(bytes.as_chunks::<2>().0).take(copied) {
+            *output = pair[1];
+        }
+    } else {
+        output[..copied].copy_from_slice(&bytes[..copied]);
+    }
+    output[copied] = 0;
+    copied
+}
+
+#[unsafe(export_name = "__pdf_impl_tt_get_ps_fontname")]
+pub unsafe extern "C-unwind" fn tt_get_ps_fontname(
+    sfont: *mut sfnt,
+    dest: *mut ::core::ffi::c_char,
+    destlen: USHORT,
+) -> USHORT {
+    use read_fonts::{FontRead, tables::name::Name};
+    if destlen == 0 {
+        return 0;
+    }
+    let data = read_sfnt_table(sfont, c"name");
+    let table: Name<'_> = parse_table(&data, "name");
+    let mut output = vec![0; destlen as usize];
+    for ids in [(1, 0, 0, 6), (3, 1, 0x409, 6), (3, 5, 0x412, 6)] {
+        let length = tt_get_name(&table, &mut output, ids);
+        if length != 0 {
+            unsafe { core::ptr::copy_nonoverlapping(output.as_ptr().cast(), dest, length + 1) };
+            return length as u16;
+        }
+    }
+    pdf_warning!("No valid PostScript name available");
+    let mut length = tt_get_name(&table, &mut output, (1, 0, 0xffff, 6));
+    if length == 0 {
+        length = tt_get_name(&table, &mut output, (1, 0, 0, 1));
+    }
+    unsafe { core::ptr::copy_nonoverlapping(output.as_ptr().cast(), dest, length + 1) };
+    length as u16
 }
 unsafe extern "C" {}
 #[unsafe(no_mangle)]

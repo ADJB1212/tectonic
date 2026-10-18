@@ -465,187 +465,106 @@ unsafe extern "C-unwind" fn source_image_type(
     return format;
 }
 unsafe extern "C-unwind" fn load_image(
-    mut ident: *const ::core::ffi::c_char,
-    mut filename: *const ::core::ffi::c_char,
-    mut fullname: *const ::core::ffi::c_char,
-    mut format: ::core::ffi::c_int,
-    mut handle: rust_input_handle_t,
-    mut options: load_options,
+    ident: *const ::core::ffi::c_char,
+    filename: *const ::core::ffi::c_char,
+    fullname: *const ::core::ffi::c_char,
+    format: ::core::ffi::c_int,
+    handle: rust_input_handle_t,
+    options: load_options,
 ) -> ::core::ffi::c_int {
-    let __pdf_state = unsafe { document_state() };
-    let mut current_block: u64;
-    let mut ic: *mut ic_ = &raw mut (*__pdf_state)._ic;
-    let mut id: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
-    let mut reserved: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut I: *mut pdf_ximage = ::core::ptr::null_mut::<pdf_ximage>();
-    if !ident.is_null() {
-        id = 0 as ::core::ffi::c_int;
-        while id < (*ic).count {
-            I = (*ic).ximages.offset(id as isize) as *mut pdf_ximage;
-            if !(*I).ident.is_null() && strcmp(ident, (*I).ident) == 0 {
-                if (*I).reserved != 0 {
-                    reserved = 1 as ::core::ffi::c_int;
-                    break;
-                }
-            }
-            id += 1;
+    let state = document_state();
+    let cache = &raw mut (*state)._ic;
+    let reserved = if ident.is_null() {
+        None
+    } else {
+        (0..(*cache).count).find(|&id| {
+            let image = (*cache).ximages.add(id as usize);
+            (*image).reserved != 0
+                && !(*image).ident.is_null()
+                && strcmp(ident, (*image).ident) == 0
+        })
+    };
+    let id = reserved.unwrap_or_else(|| {
+        let id = (*cache).count;
+        if (*cache).count >= (*cache).capacity {
+            (*cache).capacity += 16;
+            (*cache).ximages = renew(
+                (*cache).ximages.cast(),
+                ((*cache).capacity as usize * core::mem::size_of::<pdf_ximage>()) as u32,
+            )
+            .cast();
         }
-    }
-    if reserved == 0 {
-        id = (*ic).count;
-        if (*ic).count >= (*ic).capacity {
-            (*ic).capacity += 16 as ::core::ffi::c_int;
-            (*ic).ximages = renew(
-                (*ic).ximages as *mut ::core::ffi::c_void,
-                ((*ic).capacity as uint32_t as usize)
-                    .wrapping_mul(::core::mem::size_of::<pdf_ximage>() as usize)
-                    as uint32_t,
-            ) as *mut pdf_ximage;
-        }
-        I = (*ic).ximages.offset(id as isize) as *mut pdf_ximage;
-        pdf_init_ximage_struct(I);
+        let image = (*cache).ximages.add(id as usize);
+        pdf_init_ximage_struct(image);
         if !ident.is_null() {
-            (*I).ident = new(
-                (strlen(ident).wrapping_add(1 as size_t) as uint32_t as usize)
-                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                    as uint32_t,
-            ) as *mut ::core::ffi::c_char;
-            strcpy((*I).ident, ident);
+            (*image).ident =
+                super::dpx_dpxutil::copy_c_string(std::ffi::CStr::from_ptr(ident).to_bytes());
         }
-        (*ic).count += 1;
-    }
-    if !filename.is_null() {
-        (*I).filename = new(
-            (strlen(filename).wrapping_add(1 as size_t) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t,
-        ) as *mut ::core::ffi::c_char;
-        strcpy((*I).filename, filename);
-    }
-    if !fullname.is_null() {
-        (*I).fullname = new(
-            (strlen(fullname).wrapping_add(1 as size_t) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t,
-        ) as *mut ::core::ffi::c_char;
-        strcpy((*I).fullname, fullname);
-    }
-    (*I).attr.page_no = options.page_no;
-    (*I).attr.bbox_type = options.bbox_type as ::core::ffi::c_int;
-    (*I).attr.dict = options.dict;
-    match format {
-        IMAGE_TYPE_JPEG => {
-            if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
-                pdf_message!(b"[JPEG]\0" as *const u8 as *const ::core::ffi::c_char);
-            }
-            if jpeg_include_image(I, handle) < 0 as ::core::ffi::c_int {
-                current_block = 8486807620883072581;
-            } else {
-                (*I).subtype = PDF_XOBJECT_TYPE_IMAGE;
-                current_block = 8347882395825654554;
-            }
+        (*cache).count += 1;
+        id
+    });
+    let image = (*cache).ximages.add(id as usize);
+    for (source, target) in [
+        (filename, &raw mut (*image).filename),
+        (fullname, &raw mut (*image).fullname),
+    ] {
+        if !source.is_null() {
+            *target =
+                super::dpx_dpxutil::copy_c_string(std::ffi::CStr::from_ptr(source).to_bytes());
         }
+    }
+    (*image).attr.page_no = options.page_no;
+    (*image).attr.bbox_type = options.bbox_type as ::core::ffi::c_int;
+    (*image).attr.dict = options.dict;
+    if dpx_conf.verbose_level > 0 {
+        let label = match format {
+            IMAGE_TYPE_JPEG => c"JPEG",
+            IMAGE_TYPE_JP2 => c"JP2",
+            IMAGE_TYPE_PNG => c"PNG",
+            IMAGE_TYPE_BMP => c"BMP",
+            IMAGE_TYPE_PDF => c"PDF",
+            IMAGE_TYPE_EPS => c"EPS",
+            _ => c"UNKNOWN",
+        };
+        pdf_message!(c"[%s]".as_ptr(), label.as_ptr());
+    }
+    let loaded = match format {
+        IMAGE_TYPE_JPEG => jpeg_include_image(image, handle) >= 0,
+        IMAGE_TYPE_PNG => png_include_image(image, handle) >= 0,
+        IMAGE_TYPE_BMP => bmp_include_image(image, handle) >= 0,
+        IMAGE_TYPE_PDF => pdf_include_page(image, handle, fullname, options) == 0,
         IMAGE_TYPE_JP2 => {
-            if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
-                pdf_message!(b"[JP2]\0" as *const u8 as *const ::core::ffi::c_char);
-            }
-            pdf_warning!(
-                b"Tectonic: JP2 not yet supported\0" as *const u8 as *const ::core::ffi::c_char,
-            );
-            current_block = 8486807620883072581;
-        }
-        IMAGE_TYPE_PNG => {
-            if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
-                pdf_message!(b"[PNG]\0" as *const u8 as *const ::core::ffi::c_char);
-            }
-            if png_include_image(I, handle) < 0 as ::core::ffi::c_int {
-                current_block = 8486807620883072581;
-            } else {
-                (*I).subtype = PDF_XOBJECT_TYPE_IMAGE;
-                current_block = 8347882395825654554;
-            }
-        }
-        IMAGE_TYPE_BMP => {
-            if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
-                pdf_message!(b"[BMP]\0" as *const u8 as *const ::core::ffi::c_char);
-            }
-            if bmp_include_image(I, handle) < 0 as ::core::ffi::c_int {
-                current_block = 8486807620883072581;
-            } else {
-                (*I).subtype = PDF_XOBJECT_TYPE_IMAGE;
-                current_block = 8347882395825654554;
-            }
-        }
-        IMAGE_TYPE_PDF => {
-            if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
-                pdf_message!(b"[PDF]\0" as *const u8 as *const ::core::ffi::c_char);
-            }
-            let mut result: ::core::ffi::c_int = pdf_include_page(I, handle, fullname, options);
-            if result != 0 as ::core::ffi::c_int {
-                current_block = 8486807620883072581;
-            } else {
-                if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
-                    pdf_message!(
-                        b",Page:%d\0" as *const u8 as *const ::core::ffi::c_char,
-                        (*I).attr.page_no,
-                    );
-                }
-                (*I).subtype = PDF_XOBJECT_TYPE_FORM;
-                current_block = 8347882395825654554;
-            }
+            pdf_warning!(c"Tectonic: JP2 not yet supported".as_ptr());
+            false
         }
         IMAGE_TYPE_EPS => {
-            if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
-                pdf_message!(b"[EPS]\0" as *const u8 as *const ::core::ffi::c_char);
-            }
-            pdf_warning!(
-                b"sorry, PostScript images are not supported by Tectonic\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
-            pdf_warning!(
-                b"for details, please see https://github.com/tectonic-typesetting/tectonic/issues/27\0"
-                as * const u8 as * const ::core::ffi::c_char,
-            );
-            current_block = 8486807620883072581;
+            pdf_warning!(c"sorry, PostScript images are not supported by Tectonic".as_ptr());
+            pdf_warning!(c"for details, please see https://github.com/tectonic-typesetting/tectonic/issues/27".as_ptr());
+            false
         }
-        _ => {
-            if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
-                pdf_message!(b"[UNKNOWN]\0" as *const u8 as *const ::core::ffi::c_char);
-            }
-            current_block = 8486807620883072581;
-        }
-    }
-    match current_block {
-        8486807620883072581 => {
-            pdf_clean_ximage_struct(I);
-            return -(1 as ::core::ffi::c_int);
-        }
-        _ => {
-            match (*I).subtype {
-                PDF_XOBJECT_TYPE_IMAGE => {
-                    sprintf(
-                        &raw mut (*I).res_name as *mut ::core::ffi::c_char,
-                        b"Im%d\0" as *const u8 as *const ::core::ffi::c_char,
-                        id,
-                    );
-                }
-                PDF_XOBJECT_TYPE_FORM => {
-                    sprintf(
-                        &raw mut (*I).res_name as *mut ::core::ffi::c_char,
-                        b"Fm%d\0" as *const u8 as *const ::core::ffi::c_char,
-                        id,
-                    );
-                }
-                _ => {
-                    pdf_abort!(
-                        b"Unknown XObject subtype: %d\0" as *const u8 as *const ::core::ffi::c_char,
-                        (*I).subtype,
-                    );
-                }
-            }
-            return id;
-        }
+        _ => false,
     };
+    if !loaded {
+        pdf_clean_ximage_struct(image);
+        return -1;
+    }
+    let prefix = if format == IMAGE_TYPE_PDF {
+        if dpx_conf.verbose_level > 0 {
+            pdf_message!(c",Page:%d".as_ptr(), (*image).attr.page_no);
+        }
+        (*image).subtype = PDF_XOBJECT_TYPE_FORM;
+        c"Fm"
+    } else {
+        (*image).subtype = PDF_XOBJECT_TYPE_IMAGE;
+        c"Im"
+    };
+    sprintf(
+        (*image).res_name.as_mut_ptr(),
+        c"%s%d".as_ptr(),
+        prefix.as_ptr(),
+        id,
+    );
+    id
 }
 #[unsafe(export_name = "__pdf_impl_pdf_ximage_load_image")]
 pub unsafe extern "C-unwind" fn pdf_ximage_load_image(

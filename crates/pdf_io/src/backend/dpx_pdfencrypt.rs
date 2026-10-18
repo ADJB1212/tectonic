@@ -230,7 +230,7 @@ pub type Stringprep_profile_flags = ::core::ffi::c_int;
 pub const __DARWIN_NULL: *mut ::core::ffi::c_void = ::core::ptr::null_mut::<::core::ffi::c_void>();
 pub const AES_BLOCKSIZE: ::core::ffi::c_int = 16 as ::core::ffi::c_int;
 pub const INVALID_EPOCH_VALUE: time_t = -(1 as ::core::ffi::c_int) as time_t;
-static mut padding_bytes: [::core::ffi::c_uchar; 32] = [
+const PADDING_BYTES: [::core::ffi::c_uchar; 32] = [
     0x28 as ::core::ffi::c_int as ::core::ffi::c_uchar,
     0xbf as ::core::ffi::c_int as ::core::ffi::c_uchar,
     0x4e as ::core::ffi::c_int as ::core::ffi::c_uchar,
@@ -330,7 +330,7 @@ unsafe extern "C-unwind" fn passwd_padding(
     );
     memcpy(
         dst.offset(len as isize) as *mut ::core::ffi::c_void,
-        &raw const padding_bytes as *const ::core::ffi::c_uchar as *const ::core::ffi::c_void,
+        PADDING_BYTES.as_ptr() as *const ::core::ffi::c_void,
         (32 as ::core::ffi::c_int - len) as size_t,
     );
 }
@@ -537,7 +537,7 @@ unsafe extern "C-unwind" fn compute_user_password(
             ARC4(
                 &raw mut arc4,
                 32 as ::core::ffi::c_uint,
-                &raw const padding_bytes as *const ::core::ffi::c_uchar,
+                PADDING_BYTES.as_ptr(),
                 &raw mut upasswd as *mut ::core::ffi::c_uchar,
             );
         }
@@ -548,7 +548,7 @@ unsafe extern "C-unwind" fn compute_user_password(
             MD5_init(&raw mut md5);
             MD5_write(
                 &raw mut md5,
-                &raw const padding_bytes as *const ::core::ffi::c_uchar,
+                PADDING_BYTES.as_ptr(),
                 32 as ::core::ffi::c_uint,
             );
             MD5_write(
@@ -1087,8 +1087,7 @@ unsafe extern "C-unwind" fn pdf_enc_set_password(
     let mut opasswd: [::core::ffi::c_char; 128] = [0; 128];
     let mut upasswd: [::core::ffi::c_char; 128] = [0; 128];
     let mut version: ::core::ffi::c_int = 0;
-    let mut empty_passwd: [::core::ffi::c_char; 1] =
-        ::core::mem::transmute::<[u8; 1], [::core::ffi::c_char; 1]>(*b"\0");
+    let mut empty_passwd: [::core::ffi::c_char; 1] = crate::backend::c_char_array(*b"\0");
     version = pdf_get_version();
     (*p_sec).key_size = bits.wrapping_div(8 as ::core::ffi::c_uint) as ::core::ffi::c_int;
     if (*p_sec).key_size == 5 as ::core::ffi::c_int {

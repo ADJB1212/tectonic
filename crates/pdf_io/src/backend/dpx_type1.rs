@@ -538,7 +538,7 @@ pub const FONT_FLAG_SMALLCAP: ::core::ffi::c_int =
 pub const FONT_FLAG_FORCEBOLD: ::core::ffi::c_int =
     (1 as ::core::ffi::c_int) << 18 as ::core::ffi::c_int;
 unsafe extern "C-unwind" fn is_basefont(mut name: *const ::core::ffi::c_char) -> bool {
-    static mut basefonts: [*const ::core::ffi::c_char; 14] = [
+    const basefonts: [*const ::core::ffi::c_char; 14] = [
         b"Courier\0" as *const u8 as *const ::core::ffi::c_char,
         b"Courier-Bold\0" as *const u8 as *const ::core::ffi::c_char,
         b"Courier-Oblique\0" as *const u8 as *const ::core::ffi::c_char,
@@ -650,21 +650,21 @@ unsafe extern "C-unwind" fn get_font_attr(mut font: *mut pdf_font, mut cffont: *
     let mut flags: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut gid: ::core::ffi::c_int = 0;
     let mut i: ::core::ffi::c_int = 0;
-    static mut L_c: [*const ::core::ffi::c_char; 5] = [
+    const L_c: [*const ::core::ffi::c_char; 5] = [
         b"H\0" as *const u8 as *const ::core::ffi::c_char,
         b"P\0" as *const u8 as *const ::core::ffi::c_char,
         b"Pi\0" as *const u8 as *const ::core::ffi::c_char,
         b"Rho\0" as *const u8 as *const ::core::ffi::c_char,
         ::core::ptr::null::<::core::ffi::c_char>(),
     ];
-    static mut L_d: [*const ::core::ffi::c_char; 5] = [
+    const L_d: [*const ::core::ffi::c_char; 5] = [
         b"p\0" as *const u8 as *const ::core::ffi::c_char,
         b"q\0" as *const u8 as *const ::core::ffi::c_char,
         b"mu\0" as *const u8 as *const ::core::ffi::c_char,
         b"eta\0" as *const u8 as *const ::core::ffi::c_char,
         ::core::ptr::null::<::core::ffi::c_char>(),
     ];
-    static mut L_a: [*const ::core::ffi::c_char; 4] = [
+    const L_a: [*const ::core::ffi::c_char; 4] = [
         b"b\0" as *const u8 as *const ::core::ffi::c_char,
         b"h\0" as *const u8 as *const ::core::ffi::c_char,
         b"lambda\0" as *const u8 as *const ::core::ffi::c_char,

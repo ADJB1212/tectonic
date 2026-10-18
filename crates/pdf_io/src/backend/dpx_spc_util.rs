@@ -904,120 +904,52 @@ pub unsafe extern "C-unwind" fn spc_util_read_pdfcolor(
     return error;
 }
 unsafe extern "C-unwind" fn spc_util_read_length(
-    mut spe: *mut spc_env,
-    mut vp: *mut ::core::ffi::c_double,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
-    let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    let mut v: ::core::ffi::c_double = 0.;
-    let mut u: ::core::ffi::c_double = 1.0f64;
-    let mut ukeys: [*const ::core::ffi::c_char; 10] = [
-        b"pt\0" as *const u8 as *const ::core::ffi::c_char,
-        b"in\0" as *const u8 as *const ::core::ffi::c_char,
-        b"cm\0" as *const u8 as *const ::core::ffi::c_char,
-        b"mm\0" as *const u8 as *const ::core::ffi::c_char,
-        b"bp\0" as *const u8 as *const ::core::ffi::c_char,
-        b"pc\0" as *const u8 as *const ::core::ffi::c_char,
-        b"dd\0" as *const u8 as *const ::core::ffi::c_char,
-        b"cc\0" as *const u8 as *const ::core::ffi::c_char,
-        b"sp\0" as *const u8 as *const ::core::ffi::c_char,
-        ::core::ptr::null::<::core::ffi::c_char>(),
-    ];
-    let mut k: ::core::ffi::c_int = 0;
-    let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    q = parse_float_decimal(&raw mut (*ap).curptr, (*ap).endptr);
-    if q.is_null() {
-        return -(1 as ::core::ffi::c_int);
+    spe: *mut spc_env,
+    vp: *mut f64,
+    ap: *mut spc_arg,
+) -> i32 {
+    let number = parse_float_decimal(&raw mut (*ap).curptr, (*ap).endptr);
+    if number.is_null() {
+        return -1;
     }
-    v = atof(q);
-    free(q as *mut ::core::ffi::c_void);
+    let value = atof(number);
+    free(number.cast());
+    let mut scale = 1.0;
+    let mut error = 0;
     skip_white(&raw mut (*ap).curptr, (*ap).endptr);
-    q = parse_c_ident(&raw mut (*ap).curptr, (*ap).endptr);
-    if !q.is_null() {
-        let mut qq: *mut ::core::ffi::c_char = q;
-        if strlen(q) >= strlen(b"true\0" as *const u8 as *const ::core::ffi::c_char)
-            && memcmp(
-                q as *const ::core::ffi::c_void,
-                b"true\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-                strlen(b"true\0" as *const u8 as *const ::core::ffi::c_char),
-            ) == 0
+    let mut allocation = parse_c_ident(&raw mut (*ap).curptr, (*ap).endptr);
+    if !allocation.is_null() {
+        let mut unit = allocation;
+        if std::ffi::CStr::from_ptr(unit)
+            .to_bytes()
+            .starts_with(b"true")
         {
-            u /= if (*spe).mag != 0.0f64 {
-                (*spe).mag
-            } else {
-                1.0f64
-            };
-            q = q.offset(strlen(b"true\0" as *const u8 as *const ::core::ffi::c_char) as isize);
-            if *q == 0 {
-                free(qq as *mut ::core::ffi::c_void);
+            scale /= if (*spe).mag != 0.0 { (*spe).mag } else { 1.0 };
+            unit = unit.add(4);
+            if *unit == 0 {
+                free(allocation.cast());
                 skip_white(&raw mut (*ap).curptr, (*ap).endptr);
-                q = parse_c_ident(&raw mut (*ap).curptr, (*ap).endptr);
-                qq = q;
+                allocation = parse_c_ident(&raw mut (*ap).curptr, (*ap).endptr);
+                unit = allocation;
             }
         }
-        if !q.is_null() {
-            k = 0 as ::core::ffi::c_int;
-            while !ukeys[k as usize].is_null() && strcmp(ukeys[k as usize], q) != 0 {
-                k += 1;
-            }
-            match k {
-                K_UNIT__PT => {
-                    u *= 72.0f64 / 72.27f64;
-                }
-                K_UNIT__IN => {
-                    u *= 72.0f64;
-                }
-                K_UNIT__CM => {
-                    u *= 72.0f64 / 2.54f64;
-                }
-                K_UNIT__MM => {
-                    u *= 72.0f64 / 25.4f64;
-                }
-                K_UNIT__BP => {
-                    u *= 1.0f64;
-                }
-                K_UNIT__PC => {
-                    u *= 12.0f64 * 72.0f64 / 72.27f64;
-                }
-                K_UNIT__DD => {
-                    u *= 1238.0f64 / 1157.0f64 * 72.0f64 / 72.27f64;
-                }
-                K_UNIT__CC => {
-                    u *= 12.0f64 * 1238.0f64 / 1157.0f64 * 72.0f64 / 72.27f64;
-                }
-                K_UNIT__SP => {
-                    u *=
-                        72.0f64 / (72.27f64 * 65536 as ::core::ffi::c_int as ::core::ffi::c_double);
-                }
-                _ => {
-                    pdf_warning!(
-                        b"Unknown unit of measure: %s\0" as *const u8 as *const ::core::ffi::c_char,
-                        q
-                    );
-                    error = -(1 as ::core::ffi::c_int);
-                }
-            }
-            free(qq as *mut ::core::ffi::c_void);
+        if unit.is_null() {
+            pdf_warning!(c"Missing unit of measure after \"true\"".as_ptr());
+            error = -1;
         } else {
-            pdf_warning!(
-                b"Missing unit of measure after \"true\"\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
-            error = -(1 as ::core::ffi::c_int);
+            match super::dpx_dpxutil::unit_to_bp(std::ffi::CStr::from_ptr(unit).to_bytes()) {
+                Some(factor) => scale *= factor,
+                None => {
+                    pdf_warning!(c"Unknown unit of measure: %s".as_ptr(), unit);
+                    error = -1;
+                }
+            }
+            free(allocation.cast());
         }
     }
-    *vp = v * u;
-    return error;
+    *vp = value * scale;
+    error
 }
-pub const K_UNIT__PT: ::core::ffi::c_int = 0;
-pub const K_UNIT__IN: ::core::ffi::c_int = 1;
-pub const K_UNIT__CM: ::core::ffi::c_int = 2;
-pub const K_UNIT__MM: ::core::ffi::c_int = 3;
-pub const K_UNIT__BP: ::core::ffi::c_int = 4;
-pub const K_UNIT__PC: ::core::ffi::c_int = 5;
-pub const K_UNIT__DD: ::core::ffi::c_int = 6;
-pub const K_UNIT__CC: ::core::ffi::c_int = 7;
-pub const K_UNIT__SP: ::core::ffi::c_int = 8;
 unsafe extern "C-unwind" fn make_transmatrix(
     mut M: *mut pdf_tmatrix,
     mut xoffset: ::core::ffi::c_double,
@@ -1042,7 +974,7 @@ unsafe extern "C-unwind" fn spc_read_dimtrns_dvips(
     mut t: *mut transform_info,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
-    static mut _dtkeys: [*const ::core::ffi::c_char; 15] = [
+    const DTKEYS: [*const ::core::ffi::c_char; 15] = [
         b"hoffset\0" as *const u8 as *const ::core::ffi::c_char,
         b"voffset\0" as *const u8 as *const ::core::ffi::c_char,
         b"hsize\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1080,10 +1012,10 @@ unsafe extern "C-unwind" fn spc_read_dimtrns_dvips(
             break;
         }
         k = 0 as ::core::ffi::c_int;
-        while !_dtkeys[k as usize].is_null() && strcmp(kp, _dtkeys[k as usize]) != 0 {
+        while !DTKEYS[k as usize].is_null() && strcmp(kp, DTKEYS[k as usize]) != 0 {
             k += 1;
         }
-        if _dtkeys[k as usize].is_null() {
+        if DTKEYS[k as usize].is_null() {
             pdf_warning!(
                 b"Unrecognized dimension/transformation key: %s\0" as *const u8
                     as *const ::core::ffi::c_char,
@@ -1729,7 +1661,7 @@ pub unsafe extern "C-unwind" fn spc_util_read_blahblah(
 }
 pub const K__PAGE: ::core::ffi::c_int = 11;
 pub const K__PAGEBOX: ::core::ffi::c_int = 12;
-static mut colordefs: [colordef_; 69] = [
+const COLORDEFS: [colordef_; 69] = [
     colordef_ {
         key: b"GreenYellow\0" as *const u8 as *const ::core::ffi::c_char,
         color: pdf_color {
@@ -2700,12 +2632,9 @@ unsafe extern "C-unwind" fn pdf_color_namedcolor(
 ) -> ::core::ffi::c_int {
     let mut i: ::core::ffi::c_int = 0;
     i = 0 as ::core::ffi::c_int;
-    while !colordefs[i as usize].key.is_null() {
-        if streq_ptr(colordefs[i as usize].key, name) {
-            pdf_color_copycolor(
-                color,
-                &raw mut (*(&raw mut colordefs as *mut colordef_).offset(i as isize)).color,
-            );
+    while !COLORDEFS[i as usize].key.is_null() {
+        if streq_ptr(COLORDEFS[i as usize].key, name) {
+            pdf_color_copycolor(color, &COLORDEFS[i as usize].color as *const pdf_color);
             return 0 as ::core::ffi::c_int;
         }
         i += 1;

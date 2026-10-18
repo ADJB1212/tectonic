@@ -318,10 +318,9 @@ pub const STREAM_COMPRESS: ::core::ffi::c_int =
     (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const PDF_COLORSPACE_TYPE_RGB: ::core::ffi::c_int = -(3 as ::core::ffi::c_int);
 pub const PDF_COLORSPACE_TYPE_GRAY: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
-pub const PNG_DEBUG_STR: [::core::ffi::c_char; 4] =
-    unsafe { ::core::mem::transmute::<[u8; 4], [::core::ffi::c_char; 4]>(*b"PNG\0") };
+pub const PNG_DEBUG_STR: [::core::ffi::c_char; 4] = crate::backend::c_char_array(*b"PNG\0");
 pub const PNG_LIBPNG_VER_STRING: [::core::ffi::c_char; 7] =
-    unsafe { ::core::mem::transmute::<[u8; 7], [::core::ffi::c_char; 7]>(*b"1.6.59\0") };
+    crate::backend::c_char_array(*b"1.6.59\0");
 pub const PNG_ITXT_COMPRESSION_NONE: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const PNG_COLOR_MASK_PALETTE: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const PNG_COLOR_MASK_COLOR: ::core::ffi::c_int = 2 as ::core::ffi::c_int;

@@ -286,7 +286,7 @@ pub unsafe extern "C-unwind" fn put_big_endian(
     }
     n
 }
-unsafe extern "C-unwind" fn max2floor(mut n: ::core::ffi::c_uint) -> ::core::ffi::c_uint {
+extern "C-unwind" fn max2floor(mut n: ::core::ffi::c_uint) -> ::core::ffi::c_uint {
     let mut val: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
     while n > 1 as ::core::ffi::c_uint {
         n = n.wrapping_div(2 as ::core::ffi::c_uint);
@@ -294,7 +294,7 @@ unsafe extern "C-unwind" fn max2floor(mut n: ::core::ffi::c_uint) -> ::core::ffi
     }
     return val as ::core::ffi::c_uint;
 }
-unsafe extern "C-unwind" fn log2floor(mut n: ::core::ffi::c_uint) -> ::core::ffi::c_uint {
+extern "C-unwind" fn log2floor(mut n: ::core::ffi::c_uint) -> ::core::ffi::c_uint {
     let mut val: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
     while n > 1 as ::core::ffi::c_uint {
         n = n.wrapping_div(2 as ::core::ffi::c_uint);
@@ -524,7 +524,7 @@ pub unsafe extern "C-unwind" fn sfnt_require_table(
     return 0 as ::core::ffi::c_int;
 }
 
-static mut padbytes: [::core::ffi::c_uchar; 4] = [
+const PADBYTES: [::core::ffi::c_uchar; 4] = [
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
@@ -636,7 +636,7 @@ pub unsafe extern "C-unwind" fn sfnt_create_FontFile_stream(mut sfont: *mut sfnt
                 length = 4 as ::core::ffi::c_int - offset % 4 as ::core::ffi::c_int;
                 pdf_add_stream(
                     stream,
-                    &raw mut padbytes as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
+                    PADBYTES.as_ptr() as *const ::core::ffi::c_void,
                     length,
                 );
                 offset += length;
@@ -900,7 +900,7 @@ pub(crate) struct DocumentState {
 
 impl DocumentState {
     pub(crate) fn new() -> Self {
-        unsafe { Self { wbuf: [0; 1024] } }
+        Self { wbuf: [0; 1024] }
     }
 }
 

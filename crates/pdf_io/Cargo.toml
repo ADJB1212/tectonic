@@ -21,8 +21,15 @@ edition = "2024"
 links = "tectonic_pdf_io"
 
 [dependencies]
+aes = "0.9"
+btoa = "0.1"
+faster-hex = { version = "0.10", default-features = false, features = ["std"] }
 libc = "0.2"
+md-5 = "0.11"
 rayon = "1.12"
+rand_mt = { version = "6.1", default-features = false }
+read-fonts = "0.45"
+sha2 = "0.11"
 tectonic_bridge_core = { path = "../bridge_core", version = "0.0.0-dev.0" }
 tectonic_bridge_flate = { path = "../bridge_flate", version = "0.0.0-dev.0" }
 tectonic_bridge_png = { path = "../bridge_png", version = "0.0.0-dev.0" }

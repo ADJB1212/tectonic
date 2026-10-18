@@ -172,8 +172,7 @@ pub const MAP_IS_UNDEF: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const MAP_TYPE_MASK: ::core::ffi::c_int = 0xf as ::core::ffi::c_int;
 pub const MAP_LOOKUP_CONTINUE: ::core::ffi::c_int =
     (1 as ::core::ffi::c_int) << 4 as ::core::ffi::c_int;
-pub const CMAP_DEBUG_STR: [::core::ffi::c_char; 5] =
-    unsafe { ::core::mem::transmute::<[u8; 5], [::core::ffi::c_char; 5]>(*b"CMap\0") };
+pub const CMAP_DEBUG_STR: [::core::ffi::c_char; 5] = crate::backend::c_char_array(*b"CMap\0");
 pub const CMAP_TYPE_IDENTITY: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const CMAP_TYPE_TO_UNICODE: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
 pub const PDF_RES_FLUSH_IMMEDIATE: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
@@ -615,16 +614,12 @@ unsafe extern "C-unwind" fn write_name(
     }
     *outptr = p;
 }
-pub const CMAP_BEGIN: [::core::ffi::c_char; 62] = unsafe {
-    ::core::mem::transmute::<[u8; 62], [::core::ffi::c_char; 62]>(
-        *b"/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n\0",
-    )
-};
-pub const CMAP_END: [::core::ffi::c_char; 63] = unsafe {
-    ::core::mem::transmute::<[u8; 63], [::core::ffi::c_char; 63]>(
-        *b"endcmap\nCMapName currentdict /CMap defineresource pop\nend\nend\n\0",
-    )
-};
+pub const CMAP_BEGIN: [::core::ffi::c_char; 62] = crate::backend::c_char_array(
+    *b"/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n\0",
+);
+pub const CMAP_END: [::core::ffi::c_char; 63] = crate::backend::c_char_array(
+    *b"endcmap\nCMapName currentdict /CMap defineresource pop\nend\nend\n\0",
+);
 #[unsafe(export_name = "__pdf_impl_CMap_create_stream")]
 pub unsafe extern "C-unwind" fn CMap_create_stream(mut cmap: *mut CMap) -> *mut pdf_obj {
     let mut stream: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();

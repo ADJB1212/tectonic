@@ -1,5 +1,15 @@
 #![allow(unused_mut)]
 
+const fn c_char_array<const N: usize>(bytes: [u8; N]) -> [core::ffi::c_char; N] {
+    let mut output = [0; N];
+    let mut index = 0;
+    while index < N {
+        output[index] = bytes[index] as core::ffi::c_char;
+        index += 1;
+    }
+    output
+}
+
 pub(crate) unsafe fn reset_abi_state() {
     unsafe {
         dpx_dpxconf::dpx_conf = dpx_dpxconf::_dpx_conf {

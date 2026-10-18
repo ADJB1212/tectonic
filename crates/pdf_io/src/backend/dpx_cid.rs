@@ -288,7 +288,7 @@ pub const FONT_STYLE_ITALIC: ::core::ffi::c_int = FONTMAP_STYLE_ITALIC;
 pub const FONT_STYLE_BOLDITALIC: ::core::ffi::c_int = FONTMAP_STYLE_BOLDITALIC;
 pub const CIDFONT_FORCE_FIXEDPITCH: ::core::ffi::c_int =
     (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
-static mut CIDFont_stdcc_def: [C2RustUnnamed_1; 7] = [
+const CIDFont_stdcc_def: [C2RustUnnamed_1; 7] = [
     C2RustUnnamed_1 {
         registry: b"Adobe\0" as *const u8 as *const ::core::ffi::c_char,
         ordering: b"UCS\0" as *const u8 as *const ::core::ffi::c_char,
@@ -482,12 +482,9 @@ static mut CIDFont_stdcc_def: [C2RustUnnamed_1; 7] = [
 pub const SUP_IDX_MAX: ::core::ffi::c_int = 20 as ::core::ffi::c_int;
 pub const ACC_START: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const ACC_END: ::core::ffi::c_int = 4 as ::core::ffi::c_int;
-static mut registry_Adobe: [::core::ffi::c_char; 6] =
-    unsafe { ::core::mem::transmute::<[u8; 6], [::core::ffi::c_char; 6]>(*b"Adobe\0") };
-static mut ordering_Identity: [::core::ffi::c_char; 9] =
-    unsafe { ::core::mem::transmute::<[u8; 9], [::core::ffi::c_char; 9]>(*b"Identity\0") };
-static mut ordering_UCS: [::core::ffi::c_char; 4] =
-    unsafe { ::core::mem::transmute::<[u8; 4], [::core::ffi::c_char; 4]>(*b"UCS\0") };
+static registry_Adobe: [::core::ffi::c_char; 6] = crate::backend::c_char_array(*b"Adobe\0");
+static ordering_Identity: [::core::ffi::c_char; 9] = crate::backend::c_char_array(*b"Identity\0");
+static ordering_UCS: [::core::ffi::c_char; 4] = crate::backend::c_char_array(*b"UCS\0");
 #[unsafe(no_mangle)]
 pub static mut CSI_IDENTITY: CIDSysInfo = unsafe {
     CIDSysInfo {
@@ -504,7 +501,7 @@ pub static mut CSI_UNICODE: CIDSysInfo = unsafe {
         supplement: 0 as ::core::ffi::c_int,
     }
 };
-static mut CIDFont_stdcc_alias: [C2RustUnnamed_2; 19] = [
+const CIDFont_stdcc_alias: [C2RustUnnamed_2; 19] = [
     C2RustUnnamed_2 {
         name: b"AU\0" as *const u8 as *const ::core::ffi::c_char,
         index: 0 as ::core::ffi::c_int,
@@ -733,7 +730,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_cidfont(mut font: *mut pdf_font) {
         );
     }
 }
-static mut cid_basefont: [C2RustUnnamed_3; 21] = [
+const cid_basefont: [C2RustUnnamed_3; 21] = [
     C2RustUnnamed_3 {
         fontname: b"Ryumin-Light\0" as *const u8 as *const ::core::ffi::c_char,
         fontdict: b"<< /Subtype/CIDFontType0 /CIDSystemInfo << /Registry (Adobe) /Ordering (Japan1) /Supplement 2 >> /DW 1000 /W [  231   632 500  8718 [500 500] ]>>\0"

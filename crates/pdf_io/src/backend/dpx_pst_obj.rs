@@ -111,9 +111,9 @@ pub const PST_TYPE_NAME: ::core::ffi::c_int = 6;
 pub const PST_TYPE_MARK: ::core::ffi::c_int = 7;
 pub const PST_NAME_LEN_MAX: ::core::ffi::c_int = 127 as ::core::ffi::c_int;
 pub const PST_STRING_LEN_MAX: ::core::ffi::c_int = 4096 as ::core::ffi::c_int;
-static mut pst_const_null: *const ::core::ffi::c_char =
+const pst_const_null: *const ::core::ffi::c_char =
     b"null\0" as *const u8 as *const ::core::ffi::c_char;
-static mut pst_const_mark: *const ::core::ffi::c_char =
+const pst_const_mark: *const ::core::ffi::c_char =
     b"mark\0" as *const u8 as *const ::core::ffi::c_char;
 #[unsafe(export_name = "__pdf_impl_pst_new_obj")]
 pub unsafe extern "C-unwind" fn pst_new_obj(

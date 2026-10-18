@@ -609,19 +609,19 @@ pub unsafe extern "C-unwind" fn pdf_init_encodings() {
     pdf_encoding_new_encoding(
         b"WinAnsiEncoding\0" as *const u8 as *const ::core::ffi::c_char,
         b"WinAnsiEncoding\0" as *const u8 as *const ::core::ffi::c_char,
-        &raw mut WinAnsiEncoding as *mut *const ::core::ffi::c_char,
+        WinAnsiEncoding.as_ptr() as *mut *const ::core::ffi::c_char,
         FLAG_IS_PREDEFINED,
     );
     pdf_encoding_new_encoding(
         b"MacRomanEncoding\0" as *const u8 as *const ::core::ffi::c_char,
         b"MacRomanEncoding\0" as *const u8 as *const ::core::ffi::c_char,
-        &raw mut MacRomanEncoding as *mut *const ::core::ffi::c_char,
+        MacRomanEncoding.as_ptr() as *mut *const ::core::ffi::c_char,
         FLAG_IS_PREDEFINED,
     );
     pdf_encoding_new_encoding(
         b"MacExpertEncoding\0" as *const u8 as *const ::core::ffi::c_char,
         b"MacExpertEncoding\0" as *const u8 as *const ::core::ffi::c_char,
-        &raw mut MacExpertEncoding as *mut *const ::core::ffi::c_char,
+        MacExpertEncoding.as_ptr() as *mut *const ::core::ffi::c_char,
         FLAG_IS_PREDEFINED,
     );
 }
@@ -722,10 +722,10 @@ pub unsafe extern "C-unwind" fn pdf_encoding_complete() {
             if (*encoding).flags & FLAG_IS_PREDEFINED == 0 && with_base != 0 {
                 if is_similar_charset(
                     &raw mut (*encoding).glyphs as *mut *mut ::core::ffi::c_char,
-                    &raw mut WinAnsiEncoding as *mut *const ::core::ffi::c_char,
+                    WinAnsiEncoding.as_ptr() as *mut *const ::core::ffi::c_char,
                 ) {
                     baseenc_name = b"WinAnsiEncoding\0" as *const u8 as *const ::core::ffi::c_char;
-                    baseenc_vec = &raw mut WinAnsiEncoding as *mut *const ::core::ffi::c_char;
+                    baseenc_vec = WinAnsiEncoding.as_ptr() as *mut *const ::core::ffi::c_char;
                 }
             }
             (*encoding).resource = create_encoding_resource(
@@ -875,10 +875,8 @@ pub unsafe extern "C-unwind" fn pdf_encoding_get_name(
 pub const CMAP_TYPE_TO_UNICODE: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
 pub const WBUF_SIZE: ::core::ffi::c_int = 1024 as ::core::ffi::c_int;
 
-static mut range_min: [::core::ffi::c_uchar; 1] =
-    [0 as ::core::ffi::c_uint as ::core::ffi::c_uchar];
-static mut range_max: [::core::ffi::c_uchar; 1] =
-    [0xff as ::core::ffi::c_uint as ::core::ffi::c_uchar];
+const RANGE_MIN: [::core::ffi::c_uchar; 1] = [0 as ::core::ffi::c_uint as ::core::ffi::c_uchar];
+const RANGE_MAX: [::core::ffi::c_uchar; 1] = [0xff as ::core::ffi::c_uint as ::core::ffi::c_uchar];
 #[unsafe(export_name = "__pdf_impl_pdf_encoding_add_usedchars")]
 pub unsafe extern "C-unwind" fn pdf_encoding_add_usedchars(
     mut encoding_id: ::core::ffi::c_int,
@@ -970,12 +968,7 @@ pub unsafe extern "C-unwind" fn pdf_create_ToUnicode_CMap(
     CMap_set_type(cmap, CMAP_TYPE_TO_UNICODE);
     CMap_set_wmode(cmap, 0 as ::core::ffi::c_int);
     CMap_set_CIDSysInfo(cmap, &raw mut CSI_UNICODE);
-    CMap_add_codespacerange(
-        cmap,
-        &raw mut range_min as *mut ::core::ffi::c_uchar,
-        &raw mut range_max as *mut ::core::ffi::c_uchar,
-        1 as size_t,
-    );
+    CMap_add_codespacerange(cmap, RANGE_MIN.as_ptr(), RANGE_MAX.as_ptr(), 1 as size_t);
     count = 0 as ::core::ffi::c_int;
     total_fail = 0 as ::core::ffi::c_int;
     code = 0 as ::core::ffi::c_int;
@@ -1074,7 +1067,7 @@ pub unsafe extern "C-unwind" fn pdf_load_ToUnicode_stream(
     crate::backend::runtime::input_close(handle);
     return stream;
 }
-static mut MacRomanEncoding: [*const ::core::ffi::c_char; 256] = [
+const MacRomanEncoding: [*const ::core::ffi::c_char; 256] = [
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1332,7 +1325,7 @@ static mut MacRomanEncoding: [*const ::core::ffi::c_char; 256] = [
     b"ogonek\0" as *const u8 as *const ::core::ffi::c_char,
     b"caron\0" as *const u8 as *const ::core::ffi::c_char,
 ];
-static mut MacExpertEncoding: [*const ::core::ffi::c_char; 256] = [
+const MacExpertEncoding: [*const ::core::ffi::c_char; 256] = [
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1590,7 +1583,7 @@ static mut MacExpertEncoding: [*const ::core::ffi::c_char; 256] = [
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
 ];
-static mut WinAnsiEncoding: [*const ::core::ffi::c_char; 256] = [
+const WinAnsiEncoding: [*const ::core::ffi::c_char; 256] = [
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
@@ -2055,15 +2048,13 @@ pub(crate) struct DocumentState {
 
 impl DocumentState {
     pub(crate) fn new() -> Self {
-        unsafe {
-            Self {
-                enc_cache: C2RustUnnamed {
-                    count: 0 as ::core::ffi::c_int,
-                    capacity: 0 as ::core::ffi::c_int,
-                    encodings: ::core::ptr::null::<pdf_encoding>() as *mut pdf_encoding,
-                },
-                wbuf: [0; 1024],
-            }
+        Self {
+            enc_cache: C2RustUnnamed {
+                count: 0 as ::core::ffi::c_int,
+                capacity: 0 as ::core::ffi::c_int,
+                encodings: ::core::ptr::null_mut::<pdf_encoding>(),
+            },
+            wbuf: [0; 1024],
         }
     }
 }

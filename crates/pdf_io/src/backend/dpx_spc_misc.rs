@@ -966,100 +966,71 @@ unsafe extern "C-unwind" fn spc_handler_null(
     (*args).curptr = (*args).endptr;
     return 0 as ::core::ffi::c_int;
 }
-static mut misc_handlers: [spc_handler; 9] = unsafe {
-    [
-        spc_handler {
-            key: b"postscriptbox\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_postscriptbox
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"pdfcolorstackinit\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfcolorstackinit
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"pdfcolorstack\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfcolorstack
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"pdffontattr\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdffontattr
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"landscape\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_null
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"papersize\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_null
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"src:\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_null
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"pos:\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_null
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"om:\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_null
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-    ]
-};
+const MISC_HANDLERS: [spc_handler; 9] = [
+    spc_handler {
+        key: b"postscriptbox\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_postscriptbox
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"pdfcolorstackinit\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfcolorstackinit
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"pdfcolorstack\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfcolorstack
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"pdffontattr\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdffontattr
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"landscape\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_null
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"papersize\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_null
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"src:\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_null
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"pos:\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_null
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"om:\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_null
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+];
 #[unsafe(export_name = "__pdf_impl_spc_misc_check_special")]
 pub unsafe extern "C-unwind" fn spc_misc_check_special(
     mut buffer: *const ::core::ffi::c_char,
@@ -1077,11 +1048,11 @@ pub unsafe extern "C-unwind" fn spc_misc_check_special(
         < (::core::mem::size_of::<[spc_handler; 9]>() as usize)
             .wrapping_div(::core::mem::size_of::<spc_handler>() as usize)
     {
-        if size as size_t >= strlen(misc_handlers[i as usize].key)
+        if size as size_t >= strlen(MISC_HANDLERS[i as usize].key)
             && strncmp(
                 p,
-                misc_handlers[i as usize].key,
-                strlen(misc_handlers[i as usize].key),
+                MISC_HANDLERS[i as usize].key,
+                strlen(MISC_HANDLERS[i as usize].key),
             ) == 0
         {
             return true_0 != 0;
@@ -1134,13 +1105,13 @@ pub unsafe extern "C-unwind" fn spc_misc_setup_handler(
         < (::core::mem::size_of::<[spc_handler; 9]>() as usize)
             .wrapping_div(::core::mem::size_of::<spc_handler>() as usize)
     {
-        if keylen as size_t == strlen(misc_handlers[i as usize].key)
-            && strncmp(key, misc_handlers[i as usize].key, keylen as size_t) == 0
+        if keylen as size_t == strlen(MISC_HANDLERS[i as usize].key)
+            && strncmp(key, MISC_HANDLERS[i as usize].key, keylen as size_t) == 0
         {
             skip_white(&raw mut (*args).curptr, (*args).endptr);
-            (*args).command = misc_handlers[i as usize].key;
+            (*args).command = MISC_HANDLERS[i as usize].key;
             (*handle).key = b"???:\0" as *const u8 as *const ::core::ffi::c_char;
-            (*handle).exec = misc_handlers[i as usize].exec;
+            (*handle).exec = MISC_HANDLERS[i as usize].exec;
             return 0 as ::core::ffi::c_int;
         }
         i = i.wrapping_add(1);
@@ -1277,23 +1248,21 @@ pub(crate) struct DocumentState {
 
 impl DocumentState {
     pub(crate) fn new() -> Self {
-        unsafe {
-            Self {
-                spc_stack: spc_stack {
-                    stacks: [stack {
-                        page: 0,
-                        direct: 0,
-                        stack: dpx_stack {
-                            size: 0,
-                            top: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
-                            bottom: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
-                        },
-                    }; 256],
-                },
-                fontattrs: ::core::ptr::null::<fontattr>() as *mut fontattr,
-                num_fontattrs: 0 as ::core::ffi::c_int,
-                max_fontattrs: 0 as ::core::ffi::c_int,
-            }
+        Self {
+            spc_stack: spc_stack {
+                stacks: [stack {
+                    page: 0,
+                    direct: 0,
+                    stack: dpx_stack {
+                        size: 0,
+                        top: ::core::ptr::null_mut::<stack_elem>(),
+                        bottom: ::core::ptr::null_mut::<stack_elem>(),
+                    },
+                }; 256],
+            },
+            fontattrs: ::core::ptr::null_mut::<fontattr>(),
+            num_fontattrs: 0 as ::core::ffi::c_int,
+            max_fontattrs: 0 as ::core::ffi::c_int,
         }
     }
 }

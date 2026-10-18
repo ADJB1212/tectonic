@@ -218,160 +218,88 @@ pub const PDF_DEV_PARAM_COLORMODE: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
 pub const PDF_FILL_RULE_NONZERO: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const PDF_FILL_RULE_EVENODD: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const OUR_EPSILON: ::core::ffi::c_double = 2.5e-16f64;
-unsafe extern "C-unwind" fn inversematrix(
-    mut W: *mut pdf_tmatrix,
-    mut M: *const pdf_tmatrix,
-) -> ::core::ffi::c_int {
-    let mut det: ::core::ffi::c_double = 0.;
-    det = (*M).a * (*M).d - (*M).b * (*M).c;
-    if fabs(det) < OUR_EPSILON {
-        pdf_warning!(
-            b"Inverting matrix with zero determinant...\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
-        return -(1 as ::core::ffi::c_int);
+fn inverse_matrix(matrix: pdf_tmatrix) -> Option<pdf_tmatrix> {
+    let determinant = matrix.a * matrix.d - matrix.b * matrix.c;
+    if determinant.abs() < OUR_EPSILON {
+        return None;
     }
-    (*W).a = (*M).d / det;
-    (*W).b = -(*M).b / det;
-    (*W).c = -(*M).c / det;
-    (*W).d = (*M).a / det;
-    (*W).e = (*M).c * (*M).f - (*M).d * (*M).e;
-    (*W).f = (*M).b * (*M).e - (*M).a * (*M).f;
-    (*W).e /= det;
-    (*W).f /= det;
-    return 0 as ::core::ffi::c_int;
+    Some(pdf_tmatrix {
+        a: matrix.d / determinant,
+        b: -matrix.b / determinant,
+        c: -matrix.c / determinant,
+        d: matrix.a / determinant,
+        e: (matrix.c * matrix.f - matrix.d * matrix.e) / determinant,
+        f: (matrix.b * matrix.e - matrix.a * matrix.f) / determinant,
+    })
 }
-unsafe extern "C-unwind" fn pdf_coord__equal(
-    mut p1: *const pdf_coord,
-    mut p2: *const pdf_coord,
-) -> ::core::ffi::c_int {
-    if fabs((*p1).x - (*p2).x) < 1.0e-7f64 && fabs((*p1).y - (*p2).y) < 1.0e-7f64 {
-        return 1 as ::core::ffi::c_int;
+
+fn inversematrix(output: &mut pdf_tmatrix, matrix: pdf_tmatrix) -> i32 {
+    if let Some(inverse) = inverse_matrix(matrix) {
+        *output = inverse;
+        0
+    } else {
+        pdf_warning!("Inverting matrix with zero determinant...");
+        -1
     }
-    return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn pdf_coord__transform(
-    mut p: *mut pdf_coord,
-    mut M: *const pdf_tmatrix,
-) -> ::core::ffi::c_int {
-    let mut x: ::core::ffi::c_double = 0.;
-    let mut y: ::core::ffi::c_double = 0.;
-    x = (*p).x;
-    y = (*p).y;
-    (*p).x = x * (*M).a + y * (*M).c + (*M).e;
-    (*p).y = x * (*M).b + y * (*M).d + (*M).f;
-    return 0 as ::core::ffi::c_int;
+
+fn pdf_coord__equal(p1: pdf_coord, p2: pdf_coord) -> i32 {
+    i32::from((p1.x - p2.x).abs() < 1.0e-7 && (p1.y - p2.y).abs() < 1.0e-7)
 }
-unsafe extern "C-unwind" fn pdf_coord__itransform(
-    mut p: *mut pdf_coord,
-    mut M: *const pdf_tmatrix,
-) -> ::core::ffi::c_int {
-    let mut W: pdf_tmatrix = pdf_tmatrix {
-        a: 0.,
-        b: 0.,
-        c: 0.,
-        d: 0.,
-        e: 0.,
-        f: 0.,
-    };
-    let mut x: ::core::ffi::c_double = 0.;
-    let mut y: ::core::ffi::c_double = 0.;
-    let mut error: ::core::ffi::c_int = 0;
-    error = inversematrix(&raw mut W, M);
-    if error != 0 {
-        return error;
+
+fn pdf_coord__transform(point: &mut pdf_coord, matrix: pdf_tmatrix) -> i32 {
+    let pdf_coord { x, y } = *point;
+    point.x = x * matrix.a + y * matrix.c + matrix.e;
+    point.y = x * matrix.b + y * matrix.d + matrix.f;
+    0
+}
+
+fn pdf_coord__itransform(point: &mut pdf_coord, matrix: pdf_tmatrix) -> i32 {
+    match inverse_matrix(matrix) {
+        Some(inverse) => pdf_coord__transform(point, inverse),
+        None => {
+            pdf_warning!("Inverting matrix with zero determinant...");
+            -1
+        }
     }
-    x = (*p).x;
-    y = (*p).y;
-    (*p).x = x * W.a + y * W.c + W.e;
-    (*p).y = x * W.b + y * W.d + W.f;
-    return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn pdf_coord__dtransform(
-    mut p: *mut pdf_coord,
-    mut M: *const pdf_tmatrix,
-) -> ::core::ffi::c_int {
-    let mut x: ::core::ffi::c_double = 0.;
-    let mut y: ::core::ffi::c_double = 0.;
-    x = (*p).x;
-    y = (*p).y;
-    (*p).x = x * (*M).a + y * (*M).c;
-    (*p).y = x * (*M).b + y * (*M).d;
-    return 0 as ::core::ffi::c_int;
+
+fn pdf_coord__dtransform(point: &mut pdf_coord, matrix: pdf_tmatrix) -> i32 {
+    let pdf_coord { x, y } = *point;
+    point.x = x * matrix.a + y * matrix.c;
+    point.y = x * matrix.b + y * matrix.d;
+    0
 }
-unsafe extern "C-unwind" fn pdf_coord__idtransform(
-    mut p: *mut pdf_coord,
-    mut M: *const pdf_tmatrix,
-) -> ::core::ffi::c_int {
-    let mut W: pdf_tmatrix = pdf_tmatrix {
-        a: 0.,
-        b: 0.,
-        c: 0.,
-        d: 0.,
-        e: 0.,
-        f: 0.,
-    };
-    let mut x: ::core::ffi::c_double = 0.;
-    let mut y: ::core::ffi::c_double = 0.;
-    let mut error: ::core::ffi::c_int = 0;
-    error = inversematrix(&raw mut W, M);
-    if error != 0 {
-        return error;
+
+fn pdf_coord__idtransform(point: &mut pdf_coord, matrix: pdf_tmatrix) -> i32 {
+    match inverse_matrix(matrix) {
+        Some(inverse) => pdf_coord__dtransform(point, inverse),
+        None => {
+            pdf_warning!("Inverting matrix with zero determinant...");
+            -1
+        }
     }
-    x = (*p).x;
-    y = (*p).y;
-    (*p).x = x * W.a + y * W.c;
-    (*p).y = x * W.b + y * W.d;
-    return 0 as ::core::ffi::c_int;
 }
+
 #[unsafe(export_name = "__pdf_impl_pdf_invertmatrix")]
-pub unsafe extern "C-unwind" fn pdf_invertmatrix(mut M: *mut pdf_tmatrix) {
-    let mut W: pdf_tmatrix = pdf_tmatrix {
-        a: 0.,
-        b: 0.,
-        c: 0.,
-        d: 0.,
-        e: 0.,
-        f: 0.,
-    };
-    let mut det: ::core::ffi::c_double = 0.;
-    if M.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"M\0" as *const u8 as *const ::core::ffi::c_char
-        );
-    } else {
-    };
-    det = (*M).a * (*M).d - (*M).b * (*M).c;
-    if fabs(det) < OUR_EPSILON {
-        pdf_warning!(
-            b"Inverting matrix with zero determinant...\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
-        W.a = 1.0f64;
-        W.c = 0.0f64;
-        W.b = 0.0f64;
-        W.d = 1.0f64;
-        W.e = 0.0f64;
-        W.f = 0.0f64;
-    } else {
-        W.a = (*M).d / det;
-        W.b = -(*M).b / det;
-        W.c = -(*M).c / det;
-        W.d = (*M).a / det;
-        W.e = (*M).c * (*M).f - (*M).d * (*M).e;
-        W.f = (*M).b * (*M).e - (*M).a * (*M).f;
-        W.e /= det;
-        W.f /= det;
+pub unsafe extern "C-unwind" fn pdf_invertmatrix(matrix: *mut pdf_tmatrix) {
+    if matrix.is_null() {
+        pdf_abort!("assertion failed: M");
     }
-    (*M).a = W.a;
-    (*M).b = W.b;
-    (*M).c = W.c;
-    (*M).d = W.d;
-    (*M).e = W.e;
-    (*M).f = W.f;
+    let matrix = unsafe { &mut *matrix };
+    *matrix = inverse_matrix(*matrix).unwrap_or_else(|| {
+        pdf_warning!("Inverting matrix with zero determinant...");
+        pdf_tmatrix {
+            a: 1.0,
+            b: 0.0,
+            c: 0.0,
+            d: 1.0,
+            e: 0.0,
+            f: 0.0,
+        }
+    });
 }
-static mut petypes: [C2RustUnnamed_0; 7] = [
+const PETYPES: [C2RustUnnamed_0; 7] = [
     C2RustUnnamed_0 {
         opchr: 'm' as i32 as ::core::ffi::c_char,
         n_pts: 1 as ::core::ffi::c_int,
@@ -528,129 +456,71 @@ unsafe extern "C-unwind" fn pdf_path__moveto(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn pdf_path__next_pe(
-    mut pa: *mut pdf_path,
-    mut cp: *const pdf_coord,
+    pa: *mut pdf_path,
+    cp: *const pdf_coord,
 ) -> *mut pa_elem {
-    let mut pe: *mut pa_elem = ::core::ptr::null_mut::<pa_elem>();
-    pdf_path__growpath(pa, (*pa).num_paths.wrapping_add(2 as ::core::ffi::c_uint));
-    if (*pa).num_paths == 0 as ::core::ffi::c_uint {
-        let fresh8 = (*pa).num_paths;
-        (*pa).num_paths = (*pa).num_paths.wrapping_add(1);
-        pe = (*pa).path.offset(fresh8 as isize) as *mut pa_elem;
-        (*pe).type_0 = PE_TYPE__MOVETO;
-        (*pe).p[0 as ::core::ffi::c_int as usize].x = (*cp).x;
-        (*pe).p[0 as ::core::ffi::c_int as usize].y = (*cp).y;
-        let fresh9 = (*pa).num_paths;
-        (*pa).num_paths = (*pa).num_paths.wrapping_add(1);
-        return (*pa).path.offset(fresh9 as isize) as *mut pa_elem;
+    let needed = unsafe { (*pa).num_paths }
+        .checked_add(2)
+        .unwrap_or_else(|| {
+            pdf_abort!("Too many path elements");
+        });
+    unsafe { pdf_path__growpath(pa, needed) };
+    let cp = unsafe { *cp };
+    let path = unsafe { &mut *pa };
+    let insert_move = if path.num_paths == 0 {
+        true
+    } else {
+        let previous = unsafe { path.path.add(path.num_paths as usize - 1) };
+        match unsafe { (*previous).type_0 } {
+            PE_TYPE__MOVETO => {
+                unsafe { (*previous).p[0] = cp };
+                false
+            }
+            PE_TYPE__LINETO => pdf_coord__equal(unsafe { (*previous).p[0] }, cp) == 0,
+            PE_TYPE__CURVETO => pdf_coord__equal(unsafe { (*previous).p[2] }, cp) == 0,
+            PE_TYPE__CURVETO_Y | PE_TYPE__CURVETO_V => {
+                pdf_coord__equal(unsafe { (*previous).p[1] }, cp) == 0
+            }
+            PE_TYPE__CLOSEPATH => true,
+            _ => false,
+        }
+    };
+    if insert_move {
+        unsafe {
+            path.path.add(path.num_paths as usize).write(pa_elem {
+                type_0: PE_TYPE__MOVETO,
+                p: [cp; 3],
+            });
+        }
+        path.num_paths += 1;
     }
-    pe = (*pa)
-        .path
-        .offset((*pa).num_paths.wrapping_sub(1 as ::core::ffi::c_uint) as isize)
-        as *mut pa_elem;
-    match (*pe).type_0 {
-        PE_TYPE__MOVETO => {
-            (*pe).p[0 as ::core::ffi::c_int as usize].x = (*cp).x;
-            (*pe).p[0 as ::core::ffi::c_int as usize].y = (*cp).y;
-        }
-        PE_TYPE__LINETO => {
-            if pdf_coord__equal(
-                (&raw mut (*pe).p as *mut pdf_coord).offset(0 as ::core::ffi::c_int as isize)
-                    as *mut pdf_coord,
-                cp,
-            ) == 0
-            {
-                let fresh10 = (*pa).num_paths;
-                (*pa).num_paths = (*pa).num_paths.wrapping_add(1);
-                pe = (*pa).path.offset(fresh10 as isize) as *mut pa_elem;
-                (*pe).type_0 = PE_TYPE__MOVETO;
-                (*pe).p[0 as ::core::ffi::c_int as usize].x = (*cp).x;
-                (*pe).p[0 as ::core::ffi::c_int as usize].y = (*cp).y;
-            }
-        }
-        PE_TYPE__CURVETO => {
-            if pdf_coord__equal(
-                (&raw mut (*pe).p as *mut pdf_coord).offset(2 as ::core::ffi::c_int as isize)
-                    as *mut pdf_coord,
-                cp,
-            ) == 0
-            {
-                let fresh11 = (*pa).num_paths;
-                (*pa).num_paths = (*pa).num_paths.wrapping_add(1);
-                pe = (*pa).path.offset(fresh11 as isize) as *mut pa_elem;
-                (*pe).type_0 = PE_TYPE__MOVETO;
-                (*pe).p[0 as ::core::ffi::c_int as usize].x = (*cp).x;
-                (*pe).p[0 as ::core::ffi::c_int as usize].y = (*cp).y;
-            }
-        }
-        PE_TYPE__CURVETO_Y | PE_TYPE__CURVETO_V => {
-            if pdf_coord__equal(
-                (&raw mut (*pe).p as *mut pdf_coord).offset(1 as ::core::ffi::c_int as isize)
-                    as *mut pdf_coord,
-                cp,
-            ) == 0
-            {
-                let fresh12 = (*pa).num_paths;
-                (*pa).num_paths = (*pa).num_paths.wrapping_add(1);
-                pe = (*pa).path.offset(fresh12 as isize) as *mut pa_elem;
-                (*pe).type_0 = PE_TYPE__MOVETO;
-                (*pe).p[0 as ::core::ffi::c_int as usize].x = (*cp).x;
-                (*pe).p[0 as ::core::ffi::c_int as usize].y = (*cp).y;
-            }
-        }
-        PE_TYPE__CLOSEPATH => {
-            let fresh13 = (*pa).num_paths;
-            (*pa).num_paths = (*pa).num_paths.wrapping_add(1);
-            pe = (*pa).path.offset(fresh13 as isize) as *mut pa_elem;
-            (*pe).type_0 = PE_TYPE__MOVETO;
-            (*pe).p[0 as ::core::ffi::c_int as usize].x = (*cp).x;
-            (*pe).p[0 as ::core::ffi::c_int as usize].y = (*cp).y;
-        }
-        _ => {}
-    }
-    let fresh14 = (*pa).num_paths;
-    (*pa).num_paths = (*pa).num_paths.wrapping_add(1);
-    return (*pa).path.offset(fresh14 as isize) as *mut pa_elem;
+    let next = unsafe { path.path.add(path.num_paths as usize) };
+    path.num_paths += 1;
+    next
 }
 unsafe extern "C-unwind" fn pdf_path__transform(
-    mut pa: *mut pdf_path,
-    mut M: *const pdf_tmatrix,
-) -> ::core::ffi::c_int {
-    let mut pe: *mut pa_elem = ::core::ptr::null_mut::<pa_elem>();
-    let mut n: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
-    let mut i: ::core::ffi::c_uint = 0;
-    if !(!pa.is_null() && !M.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"pa && M\0" as *const u8 as *const ::core::ffi::c_char
-        );
-    } else {
-    };
-    i = 0 as ::core::ffi::c_uint;
-    while i < (*pa).num_paths {
-        pe = (*pa).path.offset(i as isize) as *mut pa_elem;
-        n = (if !pe.is_null()
-            && (*pe).type_0 > PE_TYPE__INVALID
-            && (*pe).type_0 < PE_TYPE__TERMINATE
-        {
-            petypes[(*pe).type_0 as usize].n_pts
-        } else {
-            0 as ::core::ffi::c_int
-        }) as ::core::ffi::c_uint;
-        loop {
-            let fresh37 = n;
-            n = n.wrapping_sub(1);
-            if !(fresh37 > 0 as ::core::ffi::c_uint) {
-                break;
-            }
-            pdf_coord__transform(
-                (&raw mut (*pe).p as *mut pdf_coord).offset(n as isize) as *mut pdf_coord,
-                M,
-            );
-        }
-        i = i.wrapping_add(1);
+    pa: *mut pdf_path,
+    matrix: *const pdf_tmatrix,
+) -> i32 {
+    if pa.is_null() || matrix.is_null() {
+        pdf_abort!("assertion failed: pa && M");
     }
-    return 0 as ::core::ffi::c_int;
+    let matrix = unsafe { *matrix };
+    let path = unsafe { &*pa };
+    for index in 0..path.num_paths as usize {
+        let element = unsafe { path.path.add(index) };
+        let kind = unsafe { (*element).type_0 };
+        let count = PETYPES
+            .get(kind as usize)
+            .map_or(0, |kind| kind.n_pts as usize);
+        let points = unsafe {
+            core::slice::from_raw_parts_mut((&raw mut (*element).p).cast::<pdf_coord>(), count)
+        };
+        for point in points.iter_mut().rev() {
+            pdf_coord__transform(point, matrix);
+        }
+    }
+    0
 }
 unsafe extern "C-unwind" fn pdf_path__lineto(
     mut pa: *mut pdf_path,
@@ -675,7 +545,7 @@ unsafe extern "C-unwind" fn pdf_path__curveto(
 ) -> ::core::ffi::c_int {
     let mut pe: *mut pa_elem = ::core::ptr::null_mut::<pa_elem>();
     pe = pdf_path__next_pe(pa, cp);
-    if pdf_coord__equal(cp, p0) != 0 {
+    if pdf_coord__equal(unsafe { *cp }, unsafe { *p0 }) != 0 {
         (*pe).type_0 = PE_TYPE__CURVETO_V;
         (*pe).p[0 as ::core::ffi::c_int as usize].x = (*p1).x;
         (*pe).p[0 as ::core::ffi::c_int as usize].y = (*p1).y;
@@ -683,7 +553,7 @@ unsafe extern "C-unwind" fn pdf_path__curveto(
         (*pe).p[1 as ::core::ffi::c_int as usize].x = (*cp).x;
         (*cp).y = (*p2).y;
         (*pe).p[1 as ::core::ffi::c_int as usize].y = (*cp).y;
-    } else if pdf_coord__equal(p1, p2) != 0 {
+    } else if pdf_coord__equal(unsafe { *p1 }, unsafe { *p2 }) != 0 {
         (*pe).type_0 = PE_TYPE__CURVETO_Y;
         (*pe).p[0 as ::core::ffi::c_int as usize].x = (*p0).x;
         (*pe).p[0 as ::core::ffi::c_int as usize].y = (*p0).y;
@@ -773,12 +643,12 @@ unsafe extern "C-unwind" fn pdf_path__elliptarc(
     b_y = r_y * b;
     p0.x = r_x * cos(a_0);
     p0.y = r_y * sin(a_0);
-    pdf_coord__transform(&raw mut p0, &raw mut T);
+    pdf_coord__transform(&mut p0, T);
     p0.x += (*ca).x;
     p0.y += (*ca).y;
     if (*pa).num_paths == 0 as ::core::ffi::c_uint {
         pdf_path__moveto(pa, cp, &raw mut p0);
-    } else if pdf_coord__equal(cp, &raw mut p0) == 0 {
+    } else if pdf_coord__equal(unsafe { *cp }, p0) == 0 {
         pdf_path__lineto(pa, cp, &raw mut p0);
     }
     i = 0 as ::core::ffi::c_int;
@@ -796,10 +666,10 @@ unsafe extern "C-unwind" fn pdf_path__elliptarc(
         p1.y = b_y * e0.x;
         p2.x = b_x * e1.y;
         p2.y = -b_y * e1.x;
-        pdf_coord__transform(&raw mut p0, &raw mut T);
-        pdf_coord__transform(&raw mut p1, &raw mut T);
-        pdf_coord__transform(&raw mut p2, &raw mut T);
-        pdf_coord__transform(&raw mut p3, &raw mut T);
+        pdf_coord__transform(&mut p0, T);
+        pdf_coord__transform(&mut p1, T);
+        pdf_coord__transform(&mut p2, T);
+        pdf_coord__transform(&mut p3, T);
         p0.x += (*ca).x;
         p0.y += (*ca).y;
         p3.x += (*ca).x;
@@ -902,23 +772,22 @@ unsafe extern "C-unwind" fn pdf_path__isarect(
     }
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn INVERTIBLE_MATRIX(mut M: *const pdf_tmatrix) -> ::core::ffi::c_int {
-    if fabs((*M).a * (*M).d - (*M).b * (*M).c) < OUR_EPSILON {
+fn INVERTIBLE_MATRIX(matrix: pdf_tmatrix) -> i32 {
+    if (matrix.a * matrix.d - matrix.b * matrix.c).abs() < OUR_EPSILON {
+        pdf_warning!("Transformation matrix not invertible.");
         pdf_warning!(
-            b"Transformation matrix not invertible.\0" as *const u8 as *const ::core::ffi::c_char,
+            "--- M = [{} {} {} {} {} {}]",
+            matrix.a,
+            matrix.b,
+            matrix.c,
+            matrix.d,
+            matrix.e,
+            matrix.f,
         );
-        pdf_warning!(
-            b"--- M = [%g %g %g %g %g %g]\0" as *const u8 as *const ::core::ffi::c_char,
-            (*M).a,
-            (*M).b,
-            (*M).c,
-            (*M).d,
-            (*M).e,
-            (*M).f,
-        );
-        return -(1 as ::core::ffi::c_int);
+        -1
+    } else {
+        0
     }
-    return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn pdf_dev__rectshape(
     mut r: *const pdf_rect,
@@ -955,7 +824,7 @@ unsafe extern "C-unwind" fn pdf_dev__rectshape(
     } else {
         0 as ::core::ffi::c_int
     };
-    if !M.is_null() && (isclip != 0 || INVERTIBLE_MATRIX(M) == 0) {
+    if !M.is_null() && (isclip != 0 || INVERTIBLE_MATRIX(unsafe { *M }) == 0) {
         return -(1 as ::core::ffi::c_int);
     }
     graphics_mode();
@@ -1086,7 +955,7 @@ unsafe extern "C-unwind" fn pdf_dev__flushpath(
                 && (*pe).type_0 > PE_TYPE__INVALID
                 && (*pe).type_0 < PE_TYPE__TERMINATE
             {
-                petypes[(*pe).type_0 as usize].n_pts
+                PETYPES[(*pe).type_0 as usize].n_pts
             } else {
                 0 as ::core::ffi::c_int
             };
@@ -1110,7 +979,7 @@ unsafe extern "C-unwind" fn pdf_dev__flushpath(
                 && (*pe).type_0 > PE_TYPE__INVALID
                 && (*pe).type_0 < PE_TYPE__TERMINATE
             {
-                petypes[(*pe).type_0 as usize].opchr as ::core::ffi::c_int
+                PETYPES[(*pe).type_0 as usize].opchr as ::core::ffi::c_int
             } else {
                 ' ' as i32
             }) as ::core::ffi::c_char;
@@ -1141,14 +1010,7 @@ unsafe extern "C-unwind" fn pdf_dev__flushpath(
     return 0 as ::core::ffi::c_int;
 }
 
-static mut default_xgs: [::core::ffi::c_char; 192] = unsafe {
-    ::core::mem::transmute::<
-        [u8; 192],
-        [::core::ffi::c_char; 192],
-    >(
-        *b"<< /Type /ExtGState   /LW 1 /LC 0 /LJ 0 /ML 10 /D [[] 0]   /RI /RelativeColorimetric /SA false /BM /Normal /SMask /None   /AIS false /TK false /CA 1 /ca 1   /OP false /op false /OPM 0 /FL 1>>\0",
-    )
-};
+const DEFAULT_XGS: &[u8] = b"<< /Type /ExtGState   /LW 1 /LC 0 /LJ 0 /ML 10 /D [[] 0]   /RI /RelativeColorimetric /SA false /BM /Normal /SMask /None   /AIS false /TK false /CA 1 /ca 1   /OP false /op false /OPM 0 /FL 1>>\0";
 unsafe extern "C-unwind" fn init_xgstate() {
     let __pdf_state = unsafe { document_state() };
     dpx_stack_init(&raw mut (*__pdf_state).xgs_stack);
@@ -1304,7 +1166,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_reset_xgstate(
         if (*gs).extgstate.is_null() && force == 0 {
             return 0 as ::core::ffi::c_int;
         }
-        ptr = &raw const default_xgs as *const ::core::ffi::c_char;
+        ptr = DEFAULT_XGS.as_ptr() as *const ::core::ffi::c_char;
         endptr = ptr.offset(strlen(ptr) as isize);
         target = parse_pdf_dict(&raw mut ptr, endptr, ::core::ptr::null_mut::<pdf_file>());
     }
@@ -1313,7 +1175,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_reset_xgstate(
     } else {
         let mut ptr_0: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
         let mut endptr_0: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-        ptr_0 = &raw const default_xgs as *const ::core::ffi::c_char;
+        ptr_0 = DEFAULT_XGS.as_ptr() as *const ::core::ffi::c_char;
         endptr_0 = ptr_0.offset(strlen(ptr_0) as isize);
         current = parse_pdf_dict(
             &raw mut ptr_0,
@@ -1362,8 +1224,8 @@ pub unsafe extern "C-unwind" fn pdf_dev_xgstate_push(mut object: *mut pdf_obj) {
     if current.is_null() {
         let mut ptr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
         let mut endptr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-        ptr = &raw const default_xgs as *const ::core::ffi::c_char;
-        endptr = ptr.offset(strlen(&raw const default_xgs as *const ::core::ffi::c_char) as isize);
+        ptr = DEFAULT_XGS.as_ptr() as *const ::core::ffi::c_char;
+        endptr = ptr.offset(strlen(ptr) as isize);
         accumlated = parse_pdf_dict(&raw mut ptr, endptr, ::core::ptr::null_mut::<pdf_file>());
     } else {
         accumlated = pdf_new_dict();
@@ -1397,8 +1259,8 @@ pub unsafe extern "C-unwind" fn pdf_dev_xgstate_pop() {
     if target.is_null() {
         let mut ptr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
         let mut endptr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-        ptr = &raw const default_xgs as *const ::core::ffi::c_char;
-        endptr = ptr.offset(strlen(&raw const default_xgs as *const ::core::ffi::c_char) as isize);
+        ptr = DEFAULT_XGS.as_ptr() as *const ::core::ffi::c_char;
+        endptr = ptr.offset(strlen(ptr) as isize);
         accumlated = parse_pdf_dict(&raw mut ptr, endptr, ::core::ptr::null_mut::<pdf_file>());
     } else {
         accumlated = pdf_link_obj((*target).accumlated);
@@ -1722,9 +1584,9 @@ pub unsafe extern "C-unwind" fn pdf_dev_concat(mut M: *const pdf_tmatrix) -> ::c
         (*CTM).e += (*M).e * _tmp_a + (*M).f * _tmp_c;
         (*CTM).f += (*M).e * _tmp_b + (*M).f * _tmp_d;
     }
-    inversematrix(&raw mut W, M);
+    inversematrix(&mut W, unsafe { *M });
     pdf_path__transform(cpa, &raw mut W);
-    pdf_coord__transform(cpt, &raw mut W);
+    pdf_coord__transform(unsafe { &mut *cpt }, W);
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_setmiterlimit")]
@@ -2054,14 +1916,13 @@ pub unsafe extern "C-unwind" fn pdf_dev_dtransform(
         );
     } else {
     };
-    pdf_coord__dtransform(
-        p,
-        if !M.is_null() {
+    pdf_coord__dtransform(unsafe { &mut *p }, unsafe {
+        *(if !M.is_null() {
             M
         } else {
             CTM as *const pdf_tmatrix
-        },
-    );
+        })
+    });
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_idtransform")]
 pub unsafe extern "C-unwind" fn pdf_dev_idtransform(
@@ -2079,14 +1940,13 @@ pub unsafe extern "C-unwind" fn pdf_dev_idtransform(
         );
     } else {
     };
-    pdf_coord__idtransform(
-        p,
-        if !M.is_null() {
+    pdf_coord__idtransform(unsafe { &mut *p }, unsafe {
+        *(if !M.is_null() {
             M
         } else {
             CTM as *const pdf_tmatrix
-        },
-    );
+        })
+    });
 }
 pub(crate) unsafe fn pdf_dev_transform(mut p: *mut pdf_coord, mut M: *const pdf_tmatrix) {
     let __pdf_state = unsafe { document_state() };
@@ -2100,14 +1960,13 @@ pub(crate) unsafe fn pdf_dev_transform(mut p: *mut pdf_coord, mut M: *const pdf_
         );
     } else {
     };
-    pdf_coord__transform(
-        p,
-        if !M.is_null() {
+    pdf_coord__transform(unsafe { &mut *p }, unsafe {
+        *(if !M.is_null() {
             M
         } else {
             CTM as *const pdf_tmatrix
-        },
-    );
+        })
+    });
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_itransform")]
 pub unsafe extern "C-unwind" fn pdf_dev_itransform(
@@ -2125,14 +1984,13 @@ pub unsafe extern "C-unwind" fn pdf_dev_itransform(
         );
     } else {
     };
-    pdf_coord__itransform(
-        p,
-        if !M.is_null() {
+    pdf_coord__itransform(unsafe { &mut *p }, unsafe {
+        *(if !M.is_null() {
             M
         } else {
             CTM as *const pdf_tmatrix
-        },
-    );
+        })
+    });
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_arc")]
 pub unsafe extern "C-unwind" fn pdf_dev_arc(
@@ -2947,21 +2805,19 @@ pub(crate) struct DocumentState {
 
 impl DocumentState {
     pub(crate) fn new() -> Self {
-        unsafe {
-            Self {
-                fmt_buf: [0; 1024],
-                xgs_stack: dpx_stack {
-                    size: 0,
-                    top: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
-                    bottom: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
-                },
-                xgs_count: 0 as ::core::ffi::c_int,
-                gs_stack: dpx_stack {
-                    size: 0 as ::core::ffi::c_int,
-                    top: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
-                    bottom: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
-                },
-            }
+        Self {
+            fmt_buf: [0; 1024],
+            xgs_stack: dpx_stack {
+                size: 0,
+                top: ::core::ptr::null_mut::<stack_elem>(),
+                bottom: ::core::ptr::null_mut::<stack_elem>(),
+            },
+            xgs_count: 0 as ::core::ffi::c_int,
+            gs_stack: dpx_stack {
+                size: 0 as ::core::ffi::c_int,
+                top: ::core::ptr::null_mut::<stack_elem>(),
+                bottom: ::core::ptr::null_mut::<stack_elem>(),
+            },
         }
     }
 }

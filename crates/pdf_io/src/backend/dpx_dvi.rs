@@ -1264,11 +1264,8 @@ pub unsafe extern "C-unwind" fn dvi_npages() -> ::core::ffi::c_uint {
     let __pdf_state = unsafe { document_state() };
     return (*__pdf_state).num_pages;
 }
-static mut invalid_signature: [::core::ffi::c_char; 53] = unsafe {
-    ::core::mem::transmute::<[u8; 53], [::core::ffi::c_char; 53]>(
-        *b"Something is wrong. Are you sure this is a DVI file?\0",
-    )
-};
+static invalid_signature: [::core::ffi::c_char; 53] =
+    crate::backend::c_char_array(*b"Something is wrong. Are you sure this is a DVI file?\0");
 
 unsafe extern "C-unwind" fn check_id_bytes() {
     let __pdf_state = unsafe { document_state() };

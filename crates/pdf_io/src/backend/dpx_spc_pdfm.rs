@@ -725,7 +725,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm__init(
     mut dp: *mut ::core::ffi::c_void,
 ) -> ::core::ffi::c_int {
     let mut sd: *mut spc_pdf_ = dp as *mut spc_pdf_;
-    static mut default_taintkeys: [*const ::core::ffi::c_char; 12] = [
+    const DEFAULT_TAINTKEYS: [*const ::core::ffi::c_char; 12] = [
         b"Title\0" as *const u8 as *const ::core::ffi::c_char,
         b"Author\0" as *const u8 as *const ::core::ffi::c_char,
         b"Subject\0" as *const u8 as *const ::core::ffi::c_char,
@@ -744,10 +744,10 @@ unsafe extern "C-unwind" fn spc_handler_pdfm__init(
     (*sd).lowest_level = 255 as ::core::ffi::c_int;
     (*sd).cd.taintkeys = pdf_new_array();
     i = 0 as ::core::ffi::c_int;
-    while !default_taintkeys[i as usize].is_null() {
+    while !DEFAULT_TAINTKEYS[i as usize].is_null() {
         pdf_add_array(
             (*sd).cd.taintkeys,
-            pdf_new_name(default_taintkeys[i as usize]),
+            pdf_new_name(DEFAULT_TAINTKEYS[i as usize]),
         );
         i += 1;
     }
@@ -3655,914 +3655,640 @@ unsafe extern "C-unwind" fn spc_handler_pdft_compat_page(
     (*args).curptr = (*args).endptr;
     return 0 as ::core::ffi::c_int;
 }
-static mut pdfm_handlers: [spc_handler; 88] = unsafe {
-    [
-        spc_handler {
-            key: b"annotation\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_annot
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"annotate\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_annot
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"annot\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_annot
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"ann\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_annot
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"outline\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_outline
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"out\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_outline
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"article\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_article
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"art\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_article
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bead\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bead
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"thread\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bead
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"destination\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_dest
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"dest\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_dest
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"object\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_object
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"obj\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_object
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"docinfo\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_docinfo
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"docview\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_docview
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"content\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_content
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"put\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_put
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"close\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_close
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bop\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bop
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"eop\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_eop
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"image\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_image
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"img\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_image
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"epdf\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_image
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"link\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_link
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"nolink\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_nolink
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"begincolor\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bcolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bcolor\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bcolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bc\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bcolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"setcolor\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_scolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"scolor\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_scolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"sc\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_scolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"endcolor\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_ecolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"ecolor\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_ecolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"ec\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_ecolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"begingray\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bcolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bgray\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bcolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bg\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bcolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"endgray\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_ecolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"egray\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_ecolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"eg\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_ecolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bgcolor\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bgcolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bgc\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bgcolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bbc\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bgcolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bbg\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bgcolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"pagesize\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_pagesize
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bannot\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bann
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"beginann\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bann
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bann\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bann
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"eannot\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_eann
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"endann\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_eann
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"eann\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_eann
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"btrans\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_btrans
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"begintransform\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_btrans
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"begintrans\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_btrans
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bt\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_btrans
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"etrans\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_etrans
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"endtransform\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_etrans
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"endtrans\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_etrans
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"et\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_etrans
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bform\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bform
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"beginxobj\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bform
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bxobj\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bform
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"eform\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_eform
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"endxobj\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_eform
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"exobj\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_eform
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"usexobj\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_uxobj
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"uxobj\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_uxobj
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"tounicode\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_tounicode
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"literal\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_literal
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"stream\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_stream
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"fstream\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_fstream
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"names\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_names
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"mapline\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_mapline
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"mapfile\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_mapfile
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bcontent\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bcontent
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"econtent\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_econtent
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"code\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_code
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"minorversion\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_do_nothing
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"majorversion\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_do_nothing
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"encrypt\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_do_nothing
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"pageresources\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_pageresources
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"trailerid\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_do_nothing
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"xannot\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_xann
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"extendann\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_xann
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"xann\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_xann
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bxgstate\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_bxgstate
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"exgstate\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdfm_exgstate
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-    ]
-};
-static mut pdft_compat_handlers: [spc_handler; 2] = unsafe {
-    [
-        spc_handler {
-            key: b"direct\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdft_compat_page
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"page\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_pdft_compat_page
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-    ]
-};
+const PDFM_HANDLERS: [spc_handler; 88] = [
+    spc_handler {
+        key: b"annotation\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_annot
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"annotate\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_annot
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"annot\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_annot
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"ann\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_annot
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"outline\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_outline
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"out\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_outline
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"article\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_article
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"art\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_article
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bead\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bead
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"thread\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bead
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"destination\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_dest
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"dest\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_dest
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"object\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_object
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"obj\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_object
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"docinfo\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_docinfo
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"docview\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_docview
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"content\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_content
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"put\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_put
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"close\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_close
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bop\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bop
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"eop\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_eop
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"image\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_image
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"img\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_image
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"epdf\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_image
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"link\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_link
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"nolink\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_nolink
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"begincolor\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bcolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bcolor\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bcolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bc\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bcolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"setcolor\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_scolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"scolor\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_scolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"sc\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_scolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"endcolor\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_ecolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"ecolor\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_ecolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"ec\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_ecolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"begingray\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bcolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bgray\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bcolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bg\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bcolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"endgray\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_ecolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"egray\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_ecolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"eg\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_ecolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bgcolor\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bgcolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bgc\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bgcolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bbc\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bgcolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bbg\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bgcolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"pagesize\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_pagesize
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bannot\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bann
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"beginann\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bann
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bann\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bann
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"eannot\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_eann
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"endann\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_eann
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"eann\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_eann
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"btrans\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_btrans
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"begintransform\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_btrans
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"begintrans\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_btrans
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bt\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_btrans
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"etrans\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_etrans
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"endtransform\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_etrans
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"endtrans\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_etrans
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"et\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_etrans
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bform\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bform
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"beginxobj\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bform
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bxobj\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bform
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"eform\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_eform
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"endxobj\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_eform
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"exobj\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_eform
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"usexobj\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_uxobj
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"uxobj\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_uxobj
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"tounicode\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_tounicode
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"literal\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_literal
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"stream\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_stream
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"fstream\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_fstream
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"names\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_names
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"mapline\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_mapline
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"mapfile\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_mapfile
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bcontent\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bcontent
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"econtent\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_econtent
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"code\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_code
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"minorversion\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_do_nothing
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"majorversion\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_do_nothing
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"encrypt\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_do_nothing
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"pageresources\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_pageresources
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"trailerid\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_do_nothing
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"xannot\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_xann
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"extendann\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_xann
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"xann\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_xann
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bxgstate\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_bxgstate
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"exgstate\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdfm_exgstate
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+];
+const PDFT_COMPAT_HANDLERS: [spc_handler; 2] = [
+    spc_handler {
+        key: b"direct\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdft_compat_page
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"page\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_pdft_compat_page
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+];
 #[unsafe(export_name = "__pdf_impl_spc_pdfm_check_special")]
 pub unsafe extern "C-unwind" fn spc_pdfm_check_special(
     mut buf: *const ::core::ffi::c_char,
@@ -4638,10 +4364,10 @@ pub unsafe extern "C-unwind" fn spc_pdfm_setup_handler(
                 < (::core::mem::size_of::<[spc_handler; 2]>() as usize)
                     .wrapping_div(::core::mem::size_of::<spc_handler>() as usize)
             {
-                if strcmp(q, pdft_compat_handlers[i as usize].key) == 0 {
-                    (*ap).command = pdft_compat_handlers[i as usize].key;
+                if strcmp(q, PDFT_COMPAT_HANDLERS[i as usize].key) == 0 {
+                    (*ap).command = PDFT_COMPAT_HANDLERS[i as usize].key;
                     (*sph).key = b"pdf:\0" as *const u8 as *const ::core::ffi::c_char;
-                    (*sph).exec = pdft_compat_handlers[i as usize].exec;
+                    (*sph).exec = PDFT_COMPAT_HANDLERS[i as usize].exec;
                     skip_white(&raw mut (*ap).curptr, (*ap).endptr);
                     error = 0 as ::core::ffi::c_int;
                     break;
@@ -4655,10 +4381,10 @@ pub unsafe extern "C-unwind" fn spc_pdfm_setup_handler(
                 < (::core::mem::size_of::<[spc_handler; 88]>() as usize)
                     .wrapping_div(::core::mem::size_of::<spc_handler>() as usize)
             {
-                if strcmp(q, pdfm_handlers[i as usize].key) == 0 {
-                    (*ap).command = pdfm_handlers[i as usize].key;
+                if strcmp(q, PDFM_HANDLERS[i as usize].key) == 0 {
+                    (*ap).command = PDFM_HANDLERS[i as usize].key;
                     (*sph).key = b"pdf:\0" as *const u8 as *const ::core::ffi::c_char;
-                    (*sph).exec = pdfm_handlers[i as usize].exec;
+                    (*sph).exec = PDFM_HANDLERS[i as usize].exec;
                     skip_white(&raw mut (*ap).curptr, (*ap).endptr);
                     error = 0 as ::core::ffi::c_int;
                     break;
@@ -4769,19 +4495,17 @@ pub(crate) struct DocumentState {
 
 impl DocumentState {
     pub(crate) fn new() -> Self {
-        unsafe {
-            Self {
-                _pdf_stat: spc_pdf_ {
-                    annot_dict: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-                    lowest_level: 255 as ::core::ffi::c_int,
-                    cd: tounicode {
-                        cmap_id: -(1 as ::core::ffi::c_int),
-                        unescape_backslash: 0 as ::core::ffi::c_int,
-                        taintkeys: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-                    },
-                    pageresources: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
+        Self {
+            _pdf_stat: spc_pdf_ {
+                annot_dict: ::core::ptr::null_mut::<pdf_obj>(),
+                lowest_level: 255 as ::core::ffi::c_int,
+                cd: tounicode {
+                    cmap_id: -(1 as ::core::ffi::c_int),
+                    unescape_backslash: 0 as ::core::ffi::c_int,
+                    taintkeys: ::core::ptr::null_mut::<pdf_obj>(),
                 },
-            }
+                pageresources: ::core::ptr::null_mut::<pdf_obj>(),
+            },
         }
     }
 }

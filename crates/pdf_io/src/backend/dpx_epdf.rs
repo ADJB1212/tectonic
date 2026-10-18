@@ -428,7 +428,7 @@ pub unsafe extern "C-unwind" fn pdf_include_page(
     pdf_close(pf);
     return -(1 as ::core::ffi::c_int);
 }
-static mut operators: [operator; 22] = [
+const OPERATORS: [operator; 22] = [
     operator {
         token: b"b*\0" as *const u8 as *const ::core::ffi::c_char,
         action: action_clip,
@@ -701,9 +701,9 @@ pub unsafe extern "C-unwind" fn pdf_copy_clip(
                     < (::core::mem::size_of::<[operator; 22]>() as usize)
                         .wrapping_div(::core::mem::size_of::<operator>() as usize)
                 {
-                    if strcmp(token, operators[i as usize].token) == 0 {
-                        action = operators[i as usize].action;
-                        n_args = operators[i as usize].n_args;
+                    if strcmp(token, OPERATORS[i as usize].token) == 0 {
+                        action = OPERATORS[i as usize].action;
+                        n_args = OPERATORS[i as usize].n_args;
                         break;
                     } else {
                         i += 1;

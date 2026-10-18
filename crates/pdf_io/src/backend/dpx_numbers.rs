@@ -84,41 +84,31 @@ pub struct __sFILE {
 }
 pub type FILE = __sFILE;
 pub type fixword = int32_t;
+fn read_unsigned(width: usize, mut read_byte: impl FnMut() -> u8) -> u32 {
+    (0..width).fold(0, |value, _| (value << 8) | u32::from(read_byte()))
+}
+
 #[unsafe(export_name = "__pdf_impl_get_unsigned_byte")]
-pub unsafe extern "C-unwind" fn get_unsigned_byte(mut file: *mut FILE) -> ::core::ffi::c_uchar {
-    let mut ch: ::core::ffi::c_int = 0;
-    ch = fgetc(file);
-    if ch < 0 as ::core::ffi::c_int {
-        pdf_abort!(b"File ended prematurely\n\0" as *const u8 as *const ::core::ffi::c_char,);
+pub unsafe extern "C-unwind" fn get_unsigned_byte(file: *mut FILE) -> u8 {
+    let byte = fgetc(file);
+    if byte < 0 {
+        pdf_abort!(b"File ended prematurely\n\0" as *const u8 as *const ::core::ffi::c_char);
     }
-    return ch as ::core::ffi::c_uchar;
+    byte as u8
 }
 #[unsafe(export_name = "__pdf_impl_skip_bytes")]
-pub unsafe extern "C-unwind" fn skip_bytes(mut n: ::core::ffi::c_uint, mut file: *mut FILE) {
-    loop {
-        let fresh0 = n;
-        n = n.wrapping_sub(1);
-        if !(fresh0 > 0 as ::core::ffi::c_uint) {
-            break;
-        }
+pub unsafe extern "C-unwind" fn skip_bytes(n: u32, file: *mut FILE) {
+    for _ in 0..n {
         get_unsigned_byte(file);
     }
 }
 #[unsafe(export_name = "__pdf_impl_get_signed_byte")]
-pub unsafe extern "C-unwind" fn get_signed_byte(mut file: *mut FILE) -> ::core::ffi::c_schar {
-    let mut byte: ::core::ffi::c_int = 0;
-    byte = get_unsigned_byte(file) as ::core::ffi::c_int;
-    if byte >= 0x80 as ::core::ffi::c_int {
-        byte -= 0x100 as ::core::ffi::c_int;
-    }
-    return byte as ::core::ffi::c_schar;
+pub unsafe extern "C-unwind" fn get_signed_byte(file: *mut FILE) -> i8 {
+    get_unsigned_byte(file) as i8
 }
 #[unsafe(export_name = "__pdf_impl_get_unsigned_pair")]
-pub unsafe extern "C-unwind" fn get_unsigned_pair(mut file: *mut FILE) -> ::core::ffi::c_ushort {
-    let mut pair: ::core::ffi::c_ushort = get_unsigned_byte(file) as ::core::ffi::c_ushort;
-    pair = ((pair as ::core::ffi::c_int) << 8 as ::core::ffi::c_int
-        | get_unsigned_byte(file) as ::core::ffi::c_int) as ::core::ffi::c_ushort;
-    return pair;
+pub unsafe extern "C-unwind" fn get_unsigned_pair(file: *mut FILE) -> u16 {
+    read_unsigned(2, || unsafe { get_unsigned_byte(file) }) as u16
 }
 #[unsafe(export_name = "__pdf_impl_sget_unsigned_pair")]
 pub unsafe extern "C-unwind" fn sget_unsigned_pair(
@@ -131,263 +121,116 @@ pub unsafe extern "C-unwind" fn sget_unsigned_pair(
         .unwrap()
 }
 #[unsafe(export_name = "__pdf_impl_get_signed_pair")]
-pub unsafe extern "C-unwind" fn get_signed_pair(mut file: *mut FILE) -> ::core::ffi::c_short {
-    let mut pair: ::core::ffi::c_short = get_signed_byte(file) as ::core::ffi::c_short;
-    pair = ((pair as ::core::ffi::c_int) << 8 as ::core::ffi::c_int
-        | get_unsigned_byte(file) as ::core::ffi::c_int) as ::core::ffi::c_short;
-    return pair;
+pub unsafe extern "C-unwind" fn get_signed_pair(file: *mut FILE) -> i16 {
+    get_unsigned_pair(file) as i16
 }
 #[unsafe(export_name = "__pdf_impl_get_unsigned_triple")]
-pub unsafe extern "C-unwind" fn get_unsigned_triple(mut file: *mut FILE) -> ::core::ffi::c_uint {
-    let mut i: ::core::ffi::c_int = 0;
-    let mut triple: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
-    i = 0 as ::core::ffi::c_int;
-    while i < 3 as ::core::ffi::c_int {
-        triple = triple << 8 as ::core::ffi::c_int | get_unsigned_byte(file) as ::core::ffi::c_uint;
-        i += 1;
-    }
-    return triple;
+pub unsafe extern "C-unwind" fn get_unsigned_triple(file: *mut FILE) -> u32 {
+    read_unsigned(3, || unsafe { get_unsigned_byte(file) })
 }
 #[unsafe(export_name = "__pdf_impl_get_signed_triple")]
-pub unsafe extern "C-unwind" fn get_signed_triple(mut file: *mut FILE) -> ::core::ffi::c_int {
-    let mut i: ::core::ffi::c_int = 0;
-    let mut triple: ::core::ffi::c_int = get_signed_byte(file) as ::core::ffi::c_int;
-    i = 0 as ::core::ffi::c_int;
-    while i < 2 as ::core::ffi::c_int {
-        triple = triple << 8 as ::core::ffi::c_int | get_unsigned_byte(file) as ::core::ffi::c_int;
-        i += 1;
-    }
-    return triple;
+pub unsafe extern "C-unwind" fn get_signed_triple(file: *mut FILE) -> i32 {
+    ((get_unsigned_triple(file) << 8) as i32) >> 8
 }
 #[unsafe(export_name = "__pdf_impl_get_signed_quad")]
-pub unsafe extern "C-unwind" fn get_signed_quad(mut file: *mut FILE) -> int32_t {
-    let mut i: ::core::ffi::c_int = 0;
-    let mut quad: int32_t = get_signed_byte(file) as int32_t;
-    i = 0 as ::core::ffi::c_int;
-    while i < 3 as ::core::ffi::c_int {
-        quad = quad << 8 as ::core::ffi::c_int | get_unsigned_byte(file) as int32_t;
-        i += 1;
-    }
-    return quad;
+pub unsafe extern "C-unwind" fn get_signed_quad(file: *mut FILE) -> i32 {
+    get_unsigned_quad(file) as i32
 }
 #[unsafe(export_name = "__pdf_impl_get_unsigned_quad")]
-pub unsafe extern "C-unwind" fn get_unsigned_quad(mut file: *mut FILE) -> uint32_t {
-    let mut i: ::core::ffi::c_int = 0;
-    let mut quad: uint32_t = 0 as uint32_t;
-    i = 0 as ::core::ffi::c_int;
-    while i < 4 as ::core::ffi::c_int {
-        quad = quad << 8 as ::core::ffi::c_int | get_unsigned_byte(file) as uint32_t;
-        i += 1;
-    }
-    return quad;
+pub unsafe extern "C-unwind" fn get_unsigned_quad(file: *mut FILE) -> u32 {
+    read_unsigned(4, || unsafe { get_unsigned_byte(file) })
 }
 #[unsafe(export_name = "__pdf_impl_get_unsigned_num")]
-pub unsafe extern "C-unwind" fn get_unsigned_num(
-    mut file: *mut FILE,
-    mut num: ::core::ffi::c_uchar,
-) -> uint32_t {
-    let mut val: uint32_t = get_unsigned_byte(file) as uint32_t;
-    let mut current_block_4: u64;
-    match num as ::core::ffi::c_int {
-        3 => {
-            if val > 0x7f as uint32_t {
-                val = val.wrapping_sub(0x100 as uint32_t);
-            }
-            val = val << 8 as ::core::ffi::c_int | get_unsigned_byte(file) as uint32_t;
-            current_block_4 = 14892530444492967771;
-        }
-        2 => {
-            current_block_4 = 14892530444492967771;
-        }
-        1 => {
-            current_block_4 = 1659277425109653256;
-        }
-        _ => {
-            current_block_4 = 15619007995458559411;
-        }
-    }
-    match current_block_4 {
-        14892530444492967771 => {
-            val = val << 8 as ::core::ffi::c_int | get_unsigned_byte(file) as uint32_t;
-            current_block_4 = 1659277425109653256;
-        }
-        _ => {}
-    }
-    match current_block_4 {
-        1659277425109653256 => {
-            val = val << 8 as ::core::ffi::c_int | get_unsigned_byte(file) as uint32_t;
-        }
-        _ => {}
-    }
-    return val;
+pub unsafe extern "C-unwind" fn get_unsigned_num(file: *mut FILE, num: u8) -> u32 {
+    let width = match num {
+        1..=3 => usize::from(num) + 1,
+        _ => 1,
+    };
+    read_unsigned(width, || unsafe { get_unsigned_byte(file) })
 }
 #[unsafe(export_name = "__pdf_impl_get_positive_quad")]
 pub unsafe extern "C-unwind" fn get_positive_quad(
-    mut file: *mut FILE,
-    mut type_0: *const ::core::ffi::c_char,
-    mut name: *const ::core::ffi::c_char,
-) -> uint32_t {
-    let mut val: int32_t = get_signed_quad(file);
-    if val < 0 as int32_t {
+    file: *mut FILE,
+    type_name: *const ::core::ffi::c_char,
+    name: *const ::core::ffi::c_char,
+) -> u32 {
+    let value = get_signed_quad(file);
+    if value < 0 {
         pdf_abort!(
             b"Bad %s: negative %s: %d\0" as *const u8 as *const ::core::ffi::c_char,
-            type_0,
+            type_name,
             name,
-            val,
+            value,
         );
     }
-    return val as uint32_t;
+    value as u32
 }
 #[unsafe(export_name = "__pdf_impl_sqxfw")]
-pub unsafe extern "C-unwind" fn sqxfw(mut sq: int32_t, mut fw: fixword) -> int32_t {
+pub extern "C-unwind" fn sqxfw(mut sq: int32_t, mut fw: fixword) -> int32_t {
     crate::numbers::scaled_fixword(sq, fw)
 }
 #[unsafe(export_name = "__pdf_impl_tt_skip_bytes")]
-pub unsafe extern "C-unwind" fn tt_skip_bytes(
-    mut n: ::core::ffi::c_uint,
-    mut handle: rust_input_handle_t,
-) {
-    loop {
-        let fresh3 = n;
-        n = n.wrapping_sub(1);
-        if !(fresh3 > 0 as ::core::ffi::c_uint) {
-            break;
-        }
+pub unsafe extern "C-unwind" fn tt_skip_bytes(n: u32, handle: rust_input_handle_t) {
+    for _ in 0..n {
         tt_get_unsigned_byte(handle);
     }
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_unsigned_byte")]
-pub unsafe extern "C-unwind" fn tt_get_unsigned_byte(
-    mut handle: rust_input_handle_t,
-) -> ::core::ffi::c_uchar {
-    let mut ch: ::core::ffi::c_int = 0;
-    ch = ttstub_input_getc(handle);
-    if ch < 0 as ::core::ffi::c_int {
-        pdf_abort!(b"File ended prematurely\n\0" as *const u8 as *const ::core::ffi::c_char,);
+pub unsafe extern "C-unwind" fn tt_get_unsigned_byte(handle: rust_input_handle_t) -> u8 {
+    let byte = ttstub_input_getc(handle);
+    if byte < 0 {
+        pdf_abort!(b"File ended prematurely\n\0" as *const u8 as *const ::core::ffi::c_char);
     }
-    return ch as ::core::ffi::c_uchar;
+    byte as u8
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_signed_byte")]
-pub unsafe extern "C-unwind" fn tt_get_signed_byte(
-    mut handle: rust_input_handle_t,
-) -> ::core::ffi::c_schar {
-    let mut byte: ::core::ffi::c_int = 0;
-    byte = tt_get_unsigned_byte(handle) as ::core::ffi::c_int;
-    if byte >= 0x80 as ::core::ffi::c_int {
-        byte -= 0x100 as ::core::ffi::c_int;
-    }
-    return byte as ::core::ffi::c_schar;
+pub unsafe extern "C-unwind" fn tt_get_signed_byte(handle: rust_input_handle_t) -> i8 {
+    tt_get_unsigned_byte(handle) as i8
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_unsigned_pair")]
-pub unsafe extern "C-unwind" fn tt_get_unsigned_pair(
-    mut handle: rust_input_handle_t,
-) -> ::core::ffi::c_ushort {
-    let mut pair: ::core::ffi::c_ushort = tt_get_unsigned_byte(handle) as ::core::ffi::c_ushort;
-    pair = ((pair as ::core::ffi::c_int) << 8 as ::core::ffi::c_int
-        | tt_get_unsigned_byte(handle) as ::core::ffi::c_int) as ::core::ffi::c_ushort;
-    return pair;
+pub unsafe extern "C-unwind" fn tt_get_unsigned_pair(handle: rust_input_handle_t) -> u16 {
+    read_unsigned(2, || unsafe { tt_get_unsigned_byte(handle) }) as u16
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_signed_pair")]
-pub unsafe extern "C-unwind" fn tt_get_signed_pair(
-    mut handle: rust_input_handle_t,
-) -> ::core::ffi::c_short {
-    let mut pair: ::core::ffi::c_short = tt_get_signed_byte(handle) as ::core::ffi::c_short;
-    pair = ((pair as ::core::ffi::c_int) << 8 as ::core::ffi::c_int
-        | tt_get_unsigned_byte(handle) as ::core::ffi::c_int) as ::core::ffi::c_short;
-    return pair;
+pub unsafe extern "C-unwind" fn tt_get_signed_pair(handle: rust_input_handle_t) -> i16 {
+    tt_get_unsigned_pair(handle) as i16
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_unsigned_triple")]
-pub unsafe extern "C-unwind" fn tt_get_unsigned_triple(
-    mut handle: rust_input_handle_t,
-) -> ::core::ffi::c_uint {
-    let mut i: ::core::ffi::c_int = 0;
-    let mut triple: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
-    i = 0 as ::core::ffi::c_int;
-    while i < 3 as ::core::ffi::c_int {
-        triple =
-            triple << 8 as ::core::ffi::c_int | tt_get_unsigned_byte(handle) as ::core::ffi::c_uint;
-        i += 1;
-    }
-    return triple;
+pub unsafe extern "C-unwind" fn tt_get_unsigned_triple(handle: rust_input_handle_t) -> u32 {
+    read_unsigned(3, || unsafe { tt_get_unsigned_byte(handle) })
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_unsigned_quad")]
-pub unsafe extern "C-unwind" fn tt_get_unsigned_quad(mut handle: rust_input_handle_t) -> uint32_t {
-    let mut i: ::core::ffi::c_int = 0;
-    let mut quad: uint32_t = 0 as uint32_t;
-    i = 0 as ::core::ffi::c_int;
-    while i < 4 as ::core::ffi::c_int {
-        quad = quad << 8 as ::core::ffi::c_int | tt_get_unsigned_byte(handle) as uint32_t;
-        i += 1;
-    }
-    return quad;
+pub unsafe extern "C-unwind" fn tt_get_unsigned_quad(handle: rust_input_handle_t) -> u32 {
+    read_unsigned(4, || unsafe { tt_get_unsigned_byte(handle) })
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_signed_quad")]
-pub unsafe extern "C-unwind" fn tt_get_signed_quad(mut handle: rust_input_handle_t) -> int32_t {
-    let mut i: ::core::ffi::c_int = 0;
-    let mut quad: int32_t = tt_get_signed_byte(handle) as int32_t;
-    i = 0 as ::core::ffi::c_int;
-    while i < 3 as ::core::ffi::c_int {
-        quad = quad << 8 as ::core::ffi::c_int | tt_get_unsigned_byte(handle) as int32_t;
-        i += 1;
-    }
-    return quad;
+pub unsafe extern "C-unwind" fn tt_get_signed_quad(handle: rust_input_handle_t) -> i32 {
+    tt_get_unsigned_quad(handle) as i32
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_unsigned_num")]
-pub unsafe extern "C-unwind" fn tt_get_unsigned_num(
-    mut handle: rust_input_handle_t,
-    mut num: ::core::ffi::c_uchar,
-) -> uint32_t {
-    let mut val: uint32_t = tt_get_unsigned_byte(handle) as uint32_t;
-    let mut current_block_4: u64;
-    match num as ::core::ffi::c_int {
-        3 => {
-            if val > 0x7f as uint32_t {
-                val = val.wrapping_sub(0x100 as uint32_t);
-            }
-            val = val << 8 as ::core::ffi::c_int | tt_get_unsigned_byte(handle) as uint32_t;
-            current_block_4 = 13783502858822981806;
-        }
-        2 => {
-            current_block_4 = 13783502858822981806;
-        }
-        1 => {
-            current_block_4 = 2939615421586548314;
-        }
-        _ => {
-            current_block_4 = 15619007995458559411;
-        }
-    }
-    match current_block_4 {
-        13783502858822981806 => {
-            val = val << 8 as ::core::ffi::c_int | tt_get_unsigned_byte(handle) as uint32_t;
-            current_block_4 = 2939615421586548314;
-        }
-        _ => {}
-    }
-    match current_block_4 {
-        2939615421586548314 => {
-            val = val << 8 as ::core::ffi::c_int | tt_get_unsigned_byte(handle) as uint32_t;
-        }
-        _ => {}
-    }
-    return val;
+pub unsafe extern "C-unwind" fn tt_get_unsigned_num(handle: rust_input_handle_t, num: u8) -> u32 {
+    let width = match num {
+        1..=3 => usize::from(num) + 1,
+        _ => 1,
+    };
+    read_unsigned(width, || unsafe { tt_get_unsigned_byte(handle) })
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_positive_quad")]
 pub unsafe extern "C-unwind" fn tt_get_positive_quad(
-    mut handle: rust_input_handle_t,
-    mut type_0: *const ::core::ffi::c_char,
-    mut name: *const ::core::ffi::c_char,
-) -> uint32_t {
-    let mut val: int32_t = tt_get_signed_quad(handle);
-    if val < 0 as int32_t {
+    handle: rust_input_handle_t,
+    type_name: *const ::core::ffi::c_char,
+    name: *const ::core::ffi::c_char,
+) -> u32 {
+    let value = tt_get_signed_quad(handle);
+    if value < 0 {
         pdf_abort!(
             b"Bad %s: negative %s: %d\0" as *const u8 as *const ::core::ffi::c_char,
-            type_0,
+            type_name,
             name,
-            val,
+            value,
         );
     }
-    return val as uint32_t;
+    value as u32
 }
 unsafe extern "C" {}
 #[repr(C)]
@@ -581,7 +424,7 @@ pub unsafe extern "C" fn __pdf_entry_sqxfw(
     mut fw: fixword,
     _result: *mut int32_t,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { sqxfw(sq, fw) }) {
+    match crate::backend::runtime::boundary(|| sqxfw(sq, fw)) {
         Ok(value) => {
             unsafe {
                 _result.write(value);

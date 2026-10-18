@@ -1407,140 +1407,99 @@ unsafe extern "C-unwind" fn spc_handler_tpic__setopts(
     }
     return error;
 }
-static mut tpic_handlers: [spc_handler; 13] = unsafe {
-    [
-        spc_handler {
-            key: b"pn\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_tpic_pn
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"pa\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_tpic_pa
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"fp\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_tpic_fp
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"ip\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_tpic_ip
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"da\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_tpic_da
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"dt\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_tpic_dt
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"sp\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_tpic_sp
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"ar\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_tpic_ar
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"ia\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_tpic_ia
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"sh\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_tpic_sh
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"wh\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_tpic_wh
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bk\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_tpic_bk
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"tx\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_tpic_tx
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-    ]
-};
+const TPIC_HANDLERS: [spc_handler; 13] = [
+    spc_handler {
+        key: b"pn\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_tpic_pn
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"pa\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_tpic_pa
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"fp\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_tpic_fp
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"ip\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_tpic_ip
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"da\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_tpic_da
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"dt\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_tpic_dt
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"sp\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_tpic_sp
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"ar\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_tpic_ar
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"ia\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_tpic_ia
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"sh\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_tpic_sh
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"wh\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_tpic_wh
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bk\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_tpic_bk
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"tx\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_tpic_tx
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+];
 #[unsafe(export_name = "__pdf_impl_spc_tpic_check_special")]
 pub unsafe extern "C-unwind" fn spc_tpic_check_special(
     mut buf: *const ::core::ffi::c_char,
@@ -1584,7 +1543,7 @@ pub unsafe extern "C-unwind" fn spc_tpic_check_special(
             < (::core::mem::size_of::<[spc_handler; 13]>() as usize)
                 .wrapping_div(::core::mem::size_of::<spc_handler>() as usize)
         {
-            if streq_ptr(q, tpic_handlers[i as usize].key) {
+            if streq_ptr(q, TPIC_HANDLERS[i as usize].key) {
                 istpic = true_0 != 0;
                 break;
             } else {
@@ -1657,10 +1616,10 @@ pub unsafe extern "C-unwind" fn spc_tpic_setup_handler(
             < (::core::mem::size_of::<[spc_handler; 13]>() as usize)
                 .wrapping_div(::core::mem::size_of::<spc_handler>() as usize)
         {
-            if streq_ptr(q, tpic_handlers[i as usize].key) {
-                (*ap).command = tpic_handlers[i as usize].key;
+            if streq_ptr(q, TPIC_HANDLERS[i as usize].key) {
+                (*ap).command = TPIC_HANDLERS[i as usize].key;
                 (*sph).key = b"tpic:\0" as *const u8 as *const ::core::ffi::c_char;
-                (*sph).exec = tpic_handlers[i as usize].exec;
+                (*sph).exec = TPIC_HANDLERS[i as usize].exec;
                 skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
                 error = 0 as ::core::ffi::c_int;
                 break;
@@ -1790,18 +1749,16 @@ pub(crate) struct DocumentState {
 
 impl DocumentState {
     pub(crate) fn new() -> Self {
-        unsafe {
-            Self {
-                _tpic_state: spc_tpic_ {
-                    mode: C2RustUnnamed_0 { fill: 0 },
-                    pen_size: 0.,
-                    fill_shape: false,
-                    fill_color: 0.,
-                    points: ::core::ptr::null::<pdf_coord>() as *mut pdf_coord,
-                    num_points: 0,
-                    max_points: 0,
-                },
-            }
+        Self {
+            _tpic_state: spc_tpic_ {
+                mode: C2RustUnnamed_0 { fill: 0 },
+                pen_size: 0.,
+                fill_shape: false,
+                fill_color: 0.,
+                points: ::core::ptr::null_mut::<pdf_coord>(),
+                num_points: 0,
+                max_points: 0,
+            },
         }
     }
 }

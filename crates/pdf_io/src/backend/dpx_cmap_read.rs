@@ -252,7 +252,7 @@ pub const PST_TYPE_STRING: ::core::ffi::c_int = 5 as ::core::ffi::c_int;
 pub const PST_TYPE_NAME: ::core::ffi::c_int = 6 as ::core::ffi::c_int;
 pub const PST_TYPE_MARK: ::core::ffi::c_int = 7 as ::core::ffi::c_int;
 pub const CMAP_PARSE_DEBUG_STR: [::core::ffi::c_char; 12] =
-    unsafe { ::core::mem::transmute::<[u8; 12], [::core::ffi::c_char; 12]>(*b"CMap_parse:\0") };
+    crate::backend::c_char_array(*b"CMap_parse:\0");
 unsafe extern "C-unwind" fn ifreader_create(
     mut handle: rust_input_handle_t,
     mut size: size_t,

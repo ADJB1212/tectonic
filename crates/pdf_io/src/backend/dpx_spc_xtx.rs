@@ -695,220 +695,155 @@ unsafe extern "C-unwind" fn spc_handler_xtx_unsupported(
     (*args).curptr = (*args).endptr;
     return 0 as ::core::ffi::c_int;
 }
-static mut xtx_handlers: [spc_handler; 21] = unsafe {
-    [
-        spc_handler {
-            key: b"textcolor\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_unsupportedcolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"textcolorpush\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_unsupportedcolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"textcolorpop\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_unsupportedcolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"rulecolor\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_unsupportedcolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"rulecolorpush\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_unsupportedcolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"rulecolorpop\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_unsupportedcolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"papersize\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_papersize
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"backgroundcolor\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_backgroundcolor
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"gsave\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_gsave
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"grestore\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_grestore
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"scale\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_scale
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"bscale\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_bscale
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"escale\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_escale
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"rotate\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_rotate
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"fontmapline\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_fontmapline
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"fontmapfile\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_fontmapfile
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"shadow\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_unsupported
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"colorshadow\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_unsupported
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"renderingmode\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_renderingmode
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"initoverlay\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_initoverlay
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        spc_handler {
-            key: b"clipoverlay\0" as *const u8 as *const ::core::ffi::c_char,
-            exec: Some(
-                spc_handler_xtx_clipoverlay
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-    ]
-};
+const XTX_HANDLERS: [spc_handler; 21] = [
+    spc_handler {
+        key: b"textcolor\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_unsupportedcolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"textcolorpush\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_unsupportedcolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"textcolorpop\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_unsupportedcolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"rulecolor\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_unsupportedcolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"rulecolorpush\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_unsupportedcolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"rulecolorpop\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_unsupportedcolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"papersize\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_papersize
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"backgroundcolor\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_backgroundcolor
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"gsave\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_gsave
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"grestore\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_grestore
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"scale\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_scale
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"bscale\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_bscale
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"escale\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_escale
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"rotate\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_rotate
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"fontmapline\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_fontmapline
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"fontmapfile\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_fontmapfile
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"shadow\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_unsupported
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"colorshadow\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_unsupported
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"renderingmode\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_renderingmode
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"initoverlay\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_initoverlay
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+    spc_handler {
+        key: b"clipoverlay\0" as *const u8 as *const ::core::ffi::c_char,
+        exec: Some(
+            spc_handler_xtx_clipoverlay
+                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
+        ),
+    },
+];
 #[unsafe(export_name = "__pdf_impl_spc_xtx_check_special")]
 pub unsafe extern "C-unwind" fn spc_xtx_check_special(
     mut buf: *const ::core::ffi::c_char,
@@ -974,10 +909,10 @@ pub unsafe extern "C-unwind" fn spc_xtx_setup_handler(
             < (::core::mem::size_of::<[spc_handler; 21]>() as usize)
                 .wrapping_div(::core::mem::size_of::<spc_handler>() as usize)
         {
-            if streq_ptr(q, xtx_handlers[i as usize].key) {
-                (*ap).command = xtx_handlers[i as usize].key;
+            if streq_ptr(q, XTX_HANDLERS[i as usize].key) {
+                (*ap).command = XTX_HANDLERS[i as usize].key;
                 (*sph).key = b"x:\0" as *const u8 as *const ::core::ffi::c_char;
-                (*sph).exec = xtx_handlers[i as usize].exec;
+                (*sph).exec = XTX_HANDLERS[i as usize].exec;
                 skip_white(&raw mut (*ap).curptr, (*ap).endptr);
                 error = 0 as ::core::ffi::c_int;
                 break;
@@ -1099,13 +1034,11 @@ pub(crate) struct DocumentState {
 
 impl DocumentState {
     pub(crate) fn new() -> Self {
-        unsafe {
-            Self {
-                scaleFactors: ::core::ptr::null::<pdf_coord>() as *mut pdf_coord,
-                scaleFactorCount: -(1 as ::core::ffi::c_int),
-                spc_handler_xtx_fontmapline_buffer: [0; 1024],
-                overlay_name: [0; 256],
-            }
+        Self {
+            scaleFactors: ::core::ptr::null_mut::<pdf_coord>(),
+            scaleFactorCount: -(1 as ::core::ffi::c_int),
+            spc_handler_xtx_fontmapline_buffer: [0; 1024],
+            overlay_name: [0; 256],
         }
     }
 }

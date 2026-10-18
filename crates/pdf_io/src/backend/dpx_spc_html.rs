@@ -731,94 +731,36 @@ unsafe extern "C-unwind" fn spc_html__base_empty(
     strcpy((*sd).baseurl, vp);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn atopt(mut a: *const ::core::ffi::c_char) -> ::core::ffi::c_double {
-    let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    let mut p: *const ::core::ffi::c_char = a;
-    let mut v: ::core::ffi::c_double = 0.;
-    let mut u: ::core::ffi::c_double = 1.0f64;
-    let mut _ukeys: [*const ::core::ffi::c_char; 11] = [
-        b"pt\0" as *const u8 as *const ::core::ffi::c_char,
-        b"in\0" as *const u8 as *const ::core::ffi::c_char,
-        b"cm\0" as *const u8 as *const ::core::ffi::c_char,
-        b"mm\0" as *const u8 as *const ::core::ffi::c_char,
-        b"bp\0" as *const u8 as *const ::core::ffi::c_char,
-        b"pc\0" as *const u8 as *const ::core::ffi::c_char,
-        b"dd\0" as *const u8 as *const ::core::ffi::c_char,
-        b"cc\0" as *const u8 as *const ::core::ffi::c_char,
-        b"sp\0" as *const u8 as *const ::core::ffi::c_char,
-        b"px\0" as *const u8 as *const ::core::ffi::c_char,
-        ::core::ptr::null::<::core::ffi::c_char>(),
-    ];
-    let mut k: ::core::ffi::c_int = 0;
-    q = parse_float_decimal(&raw mut p, p.offset(strlen(p) as isize));
-    if q.is_null() {
+unsafe extern "C-unwind" fn atopt(input: *const ::core::ffi::c_char) -> f64 {
+    let mut cursor = input;
+    let end = input.add(strlen(input));
+    let number = parse_float_decimal(&mut cursor, end);
+    if number.is_null() {
         pdf_warning!(
-            b"Invalid length value: %s (%c)\0" as *const u8 as *const ::core::ffi::c_char,
-            a,
-            *p as ::core::ffi::c_int,
+            c"Invalid length value: %s (%c)".as_ptr(),
+            input,
+            *cursor as ::core::ffi::c_int
         );
-        return 0.0f64;
+        return 0.0;
     }
-    v = atof(q);
-    free(q as *mut ::core::ffi::c_void);
-    q = parse_c_ident(&raw mut p, p.offset(strlen(p) as isize));
-    if !q.is_null() {
-        k = 0 as ::core::ffi::c_int;
-        while !_ukeys[k as usize].is_null() && strcmp(_ukeys[k as usize], q) != 0 {
-            k += 1;
-        }
-        match k {
-            K_UNIT__PT => {
-                u *= 72.0f64 / 72.27f64;
-            }
-            K_UNIT__IN => {
-                u *= 72.0f64;
-            }
-            K_UNIT__CM => {
-                u *= 72.0f64 / 2.54f64;
-            }
-            K_UNIT__MM => {
-                u *= 72.0f64 / 25.4f64;
-            }
-            K_UNIT__BP => {
-                u *= 1.0f64;
-            }
-            K_UNIT__PC => {
-                u *= 12.0f64 * 72.0f64 / 72.27f64;
-            }
-            K_UNIT__DD => {
-                u *= 1238.0f64 / 1157.0f64 * 72.0f64 / 72.27f64;
-            }
-            K_UNIT__CC => {
-                u *= 12.0f64 * 1238.0f64 / 1157.0f64 * 72.0f64 / 72.27f64;
-            }
-            K_UNIT__SP => {
-                u *= 72.0f64 / (72.27f64 * 65536 as ::core::ffi::c_int as ::core::ffi::c_double);
-            }
-            K_UNIT__PX => {
-                u *= 1.0f64;
-            }
-            _ => {
-                pdf_warning!(
-                    b"Unknown unit of measure: %s\0" as *const u8 as *const ::core::ffi::c_char,
-                    q,
-                );
-            }
-        }
-        free(q as *mut ::core::ffi::c_void);
+    let value = atof(number);
+    free(number.cast());
+    let unit = parse_c_ident(&mut cursor, end);
+    if unit.is_null() {
+        return value;
     }
-    return v * u;
+    let bytes = std::ffi::CStr::from_ptr(unit).to_bytes();
+    let factor = if bytes == b"px" {
+        1.0
+    } else {
+        super::dpx_dpxutil::unit_to_bp(bytes).unwrap_or_else(|| {
+            pdf_warning!(c"Unknown unit of measure: %s".as_ptr(), unit);
+            1.0
+        })
+    };
+    free(unit.cast());
+    value * factor
 }
-pub const K_UNIT__PT: ::core::ffi::c_int = 0;
-pub const K_UNIT__IN: ::core::ffi::c_int = 1;
-pub const K_UNIT__CM: ::core::ffi::c_int = 2;
-pub const K_UNIT__MM: ::core::ffi::c_int = 3;
-pub const K_UNIT__BP: ::core::ffi::c_int = 4;
-pub const K_UNIT__PC: ::core::ffi::c_int = 5;
-pub const K_UNIT__DD: ::core::ffi::c_int = 6;
-pub const K_UNIT__CC: ::core::ffi::c_int = 7;
-pub const K_UNIT__SP: ::core::ffi::c_int = 8;
-pub const K_UNIT__PX: ::core::ffi::c_int = 9;
 unsafe extern "C-unwind" fn create_xgstate(mut a: ::core::ffi::c_double) -> *mut pdf_obj {
     let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     dict = pdf_new_dict();
@@ -1078,7 +1020,7 @@ unsafe extern "C-unwind" fn cvt_a_to_tmatrix(
     let mut p: *const ::core::ffi::c_char = ptr;
     let mut n: ::core::ffi::c_int = 0;
     let mut v: [::core::ffi::c_double; 6] = [0.; 6];
-    static mut _tkeys: [*const ::core::ffi::c_char; 7] = [
+    const TKEYS: [*const ::core::ffi::c_char; 7] = [
         b"matrix\0" as *const u8 as *const ::core::ffi::c_char,
         b"translate\0" as *const u8 as *const ::core::ffi::c_char,
         b"scale\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1098,7 +1040,7 @@ unsafe extern "C-unwind" fn cvt_a_to_tmatrix(
         return -(1 as ::core::ffi::c_int);
     }
     k = 0 as ::core::ffi::c_int;
-    while !_tkeys[k as usize].is_null() && strcmp(q, _tkeys[k as usize]) != 0 {
+    while !TKEYS[k as usize].is_null() && strcmp(q, TKEYS[k as usize]) != 0 {
         k += 1;
     }
     free(q as *mut ::core::ffi::c_void);
@@ -1469,17 +1411,15 @@ pub(crate) struct DocumentState {
 
 impl DocumentState {
     pub(crate) fn new() -> Self {
-        unsafe {
-            Self {
-                _html_state: spc_html_ {
-                    opts: C2RustUnnamed_0 {
-                        extensions: 0 as ::core::ffi::c_int,
-                    },
-                    link_dict: ::core::ptr::null::<pdf_obj>() as *mut pdf_obj,
-                    baseurl: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
-                    pending_type: -(1 as ::core::ffi::c_int),
+        Self {
+            _html_state: spc_html_ {
+                opts: C2RustUnnamed_0 {
+                    extensions: 0 as ::core::ffi::c_int,
                 },
-            }
+                link_dict: ::core::ptr::null_mut::<pdf_obj>(),
+                baseurl: ::core::ptr::null_mut::<::core::ffi::c_char>(),
+                pending_type: -(1 as ::core::ffi::c_int),
+            },
         }
     }
 }

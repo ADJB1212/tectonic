@@ -315,7 +315,7 @@ unsafe extern "C-unwind" fn fill_black_run(
     mut left: uint32_t,
     mut run_count: uint32_t,
 ) -> uint32_t {
-    static mut mask: [::core::ffi::c_uchar; 8] = [
+    const MASK: [::core::ffi::c_uchar; 8] = [
         127 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
         191 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
         223 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
@@ -329,13 +329,13 @@ unsafe extern "C-unwind" fn fill_black_run(
     while left <= right {
         let ref mut fresh0 = *dp.offset(left.wrapping_div(8 as uint32_t) as isize);
         *fresh0 = (*fresh0 as ::core::ffi::c_int
-            & mask[left.wrapping_rem(8 as uint32_t) as usize] as ::core::ffi::c_int)
+            & MASK[left.wrapping_rem(8 as uint32_t) as usize] as ::core::ffi::c_int)
             as ::core::ffi::c_uchar;
         left = left.wrapping_add(1);
     }
     return run_count;
 }
-unsafe extern "C-unwind" fn fill_white_run(mut run_count: uint32_t) -> uint32_t {
+extern "C-unwind" fn fill_white_run(mut run_count: uint32_t) -> uint32_t {
     return run_count;
 }
 unsafe extern "C-unwind" fn pk_packed_num(
@@ -584,7 +584,7 @@ unsafe extern "C-unwind" fn pk_decode_bitmap(
     let mut i: uint32_t = 0;
     let mut j: uint32_t = 0;
     let mut rowbytes: uint32_t = 0;
-    static mut mask: [::core::ffi::c_uchar; 8] = [
+    const MASK: [::core::ffi::c_uchar; 8] = [
         0x80 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
         0x40 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
         0x20 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
@@ -633,12 +633,12 @@ unsafe extern "C-unwind" fn pk_decode_bitmap(
     j = 0 as uint32_t;
     while i < ht.wrapping_mul(wd) {
         c = (*dp.offset(i.wrapping_div(8 as uint32_t) as isize) as ::core::ffi::c_int
-            & mask[i.wrapping_rem(8 as uint32_t) as usize] as ::core::ffi::c_int)
+            & MASK[i.wrapping_rem(8 as uint32_t) as usize] as ::core::ffi::c_int)
             as ::core::ffi::c_uchar;
         if c as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
             let ref mut fresh2 = *rowptr.offset(j.wrapping_div(8 as uint32_t) as isize);
             *fresh2 = (*fresh2 as ::core::ffi::c_int
-                | mask[i.wrapping_rem(8 as uint32_t) as usize] as ::core::ffi::c_int)
+                | MASK[i.wrapping_rem(8 as uint32_t) as usize] as ::core::ffi::c_int)
                 as ::core::ffi::c_uchar;
         }
         j = j.wrapping_add(1);
@@ -1310,10 +1310,8 @@ pub(crate) struct DocumentState {
 
 impl DocumentState {
     pub(crate) fn new() -> Self {
-        unsafe {
-            Self {
-                base_dpi: PKFONT_DPI_DEFAULT,
-            }
+        Self {
+            base_dpi: PKFONT_DPI_DEFAULT,
         }
     }
 }

@@ -32,7 +32,7 @@ unsafe fn with_input<T>(start: *const u8, end: *const u8, read: impl FnOnce(&[u8
 }
 
 #[unsafe(export_name = "__pdf_impl_UC_is_valid")]
-pub unsafe extern "C-unwind" fn UC_is_valid(ucv: i32) -> bool {
+pub extern "C-unwind" fn UC_is_valid(ucv: i32) -> bool {
     unicode::is_valid(ucv)
 }
 
@@ -126,7 +126,7 @@ unsafe fn encode(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_UC_is_valid(mut ucv: i32, _result: *mut bool) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { UC_is_valid(ucv) }) {
+    match crate::backend::runtime::boundary(|| UC_is_valid(ucv)) {
         Ok(value) => {
             unsafe {
                 _result.write(value);

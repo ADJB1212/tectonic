@@ -609,6 +609,10 @@ pub const __DARWIN_NULL: *mut ::core::ffi::c_void = ::core::ptr::null_mut::<::co
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 pub const INVALID_HANDLE: uintptr_t = 0 as ::core::ffi::c_int as uintptr_t;
 #[inline]
+unsafe extern "C-unwind" fn release_name_object(value: *mut ::core::ffi::c_void) {
+    unsafe { pdf_release_obj(value.cast()) };
+}
+
 unsafe extern "C-unwind" fn mfree(mut ptr: *mut ::core::ffi::c_void) -> *mut ::core::ffi::c_void {
     free(ptr);
     return NULL;
@@ -930,7 +934,7 @@ unsafe extern "C-unwind" fn pdf_doc_close_docinfo(mut p: *mut pdf_doc) {
     .is_null()
     {
         let mut banner: [::core::ffi::c_char; 16] =
-            ::core::mem::transmute::<[u8; 16], [::core::ffi::c_char; 16]>(*b"xdvipdfmx (0.1)\0");
+            crate::backend::c_char_array(*b"xdvipdfmx (0.1)\0");
         pdf_add_dict(
             docinfo,
             pdf_new_name(b"Producer\0" as *const u8 as *const ::core::ffi::c_char),
@@ -2103,13 +2107,10 @@ pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_down() -> ::core::ffi::c_int {
     (*p).outlines.current_depth += 1;
     return 0 as ::core::ffi::c_int;
 }
-pub const TITLE_STRING: [::core::ffi::c_char; 11] =
-    unsafe { ::core::mem::transmute::<[u8; 11], [::core::ffi::c_char; 11]>(*b"<No Title>\0") };
-pub const JS_CODE: [::core::ffi::c_char; 78] = unsafe {
-    ::core::mem::transmute::<[u8; 78], [::core::ffi::c_char; 78]>(
-        *b"app.alert(\"The author of this document made this bookmark item empty!\", 3, 0)\0",
-    )
-};
+pub const TITLE_STRING: [::core::ffi::c_char; 11] = crate::backend::c_char_array(*b"<No Title>\0");
+pub const JS_CODE: [::core::ffi::c_char; 78] = crate::backend::c_char_array(
+    *b"app.alert(\"The author of this document made this bookmark item empty!\", 3, 0)\0",
+);
 #[unsafe(export_name = "__pdf_impl_pdf_doc_bookmarks_depth")]
 pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_depth() -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
@@ -2193,7 +2194,7 @@ unsafe extern "C-unwind" fn pdf_doc_close_bookmarks(mut p: *mut pdf_doc) {
     (*p).outlines.current = ::core::ptr::null_mut::<pdf_olitem>();
     (*p).outlines.current_depth = 0 as ::core::ffi::c_int;
 }
-static mut name_dict_categories: [*const ::core::ffi::c_char; 10] = [
+const name_dict_categories: [*const ::core::ffi::c_char; 10] = [
     b"Dests\0" as *const u8 as *const ::core::ffi::c_char,
     b"AP\0" as *const u8 as *const ::core::ffi::c_char,
     b"JavaScript\0" as *const u8 as *const ::core::ffi::c_char,
@@ -2241,15 +2242,7 @@ unsafe extern "C-unwind" fn pdf_doc_init_names(
     let ref mut fresh3 = (*(*p).names.offset(NUM_NAME_CATEGORY as isize)).data;
     *fresh3 = ::core::ptr::null_mut::<ht_table>();
     (*p).check_gotos = check_gotos;
-    ht_init_table(
-        &raw mut (*p).gotos,
-        ::core::mem::transmute::<
-            Option<unsafe extern "C-unwind" fn(*mut pdf_obj) -> ()>,
-            hval_free_func,
-        >(Some(
-            pdf_release_obj as unsafe extern "C-unwind" fn(*mut pdf_obj) -> (),
-        )),
-    );
+    ht_init_table(&raw mut (*p).gotos, Some(release_name_object));
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_add_names")]
 pub unsafe extern "C-unwind" fn pdf_doc_add_names(

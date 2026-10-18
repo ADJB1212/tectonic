@@ -225,8 +225,7 @@ unsafe extern "C-unwind" fn streq_ptr(
 pub const CFF_INT_MAX: ::core::ffi::c_int = 0x7fffffff as ::core::ffi::c_int;
 pub const CFF_INT_MIN: ::core::ffi::c_int =
     -(0x7fffffff as ::core::ffi::c_int) - 1 as ::core::ffi::c_int;
-pub const CFF_DEBUG_STR: [::core::ffi::c_char; 4] =
-    unsafe { ::core::mem::transmute::<[u8; 4], [::core::ffi::c_char; 4]>(*b"CFF\0") };
+pub const CFF_DEBUG_STR: [::core::ffi::c_char; 4] = crate::backend::c_char_array(*b"CFF\0");
 pub const CFF_TYPE_INTEGER: ::core::ffi::c_int =
     (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const CFF_TYPE_REAL: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
@@ -279,7 +278,7 @@ pub const CFF_DICT_STACK_LIMIT: ::core::ffi::c_int = 64 as ::core::ffi::c_int;
 pub const CFF_LAST_DICT_OP1: ::core::ffi::c_int = 22 as ::core::ffi::c_int;
 pub const CFF_LAST_DICT_OP2: ::core::ffi::c_int = 39 as ::core::ffi::c_int;
 pub const CFF_LAST_DICT_OP: ::core::ffi::c_int = CFF_LAST_DICT_OP1 + CFF_LAST_DICT_OP2;
-static mut dict_operator: [C2RustUnnamed_2; 61] = [
+const dict_operator: [C2RustUnnamed_2; 61] = [
     C2RustUnnamed_2 {
         opname: b"version\0" as *const u8 as *const ::core::ffi::c_char,
         argtype: CFF_TYPE_SID,

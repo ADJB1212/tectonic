@@ -501,7 +501,7 @@ unsafe extern "C-unwind" fn parse_nvalue(
     }
     return argn;
 }
-static mut StandardEncoding: [*const ::core::ffi::c_char; 256] = [
+const StandardEncoding: [*const ::core::ffi::c_char; 256] = [
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
@@ -759,7 +759,7 @@ static mut StandardEncoding: [*const ::core::ffi::c_char; 256] = [
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
 ];
-static mut ISOLatin1Encoding: [*const ::core::ffi::c_char; 256] = [
+const ISOLatin1Encoding: [*const ::core::ffi::c_char; 256] = [
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,

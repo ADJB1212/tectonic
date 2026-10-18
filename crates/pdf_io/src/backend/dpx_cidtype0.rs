@@ -3257,11 +3257,11 @@ unsafe extern "C-unwind" fn create_ToUnicode_stream(
     let mut wbuf: [::core::ffi::c_uchar; 1024] = [0; 1024];
     let mut p: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
     let mut endptr: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    static mut range_min: [::core::ffi::c_uchar; 2] = [
+    const RANGE_MIN: [::core::ffi::c_uchar; 2] = [
         0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
         0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
     ];
-    static mut range_max: [::core::ffi::c_uchar; 2] = [
+    const RANGE_MAX: [::core::ffi::c_uchar; 2] = [
         0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
         0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
     ];
@@ -3286,12 +3286,7 @@ unsafe extern "C-unwind" fn create_ToUnicode_stream(
     CMap_set_wmode(cmap, 0 as ::core::ffi::c_int);
     CMap_set_type(cmap, CMAP_TYPE_TO_UNICODE);
     CMap_set_CIDSysInfo(cmap, &raw mut CSI_UNICODE);
-    CMap_add_codespacerange(
-        cmap,
-        &raw mut range_min as *mut ::core::ffi::c_uchar,
-        &raw mut range_max as *mut ::core::ffi::c_uchar,
-        2 as size_t,
-    );
+    CMap_add_codespacerange(cmap, RANGE_MIN.as_ptr(), RANGE_MAX.as_ptr(), 2 as size_t);
     total_fail_count = 0 as ::core::ffi::c_int;
     glyph_count = total_fail_count;
     p = &raw mut wbuf as *mut ::core::ffi::c_uchar;
@@ -3430,21 +3425,21 @@ unsafe extern "C-unwind" fn get_font_attr(mut font: *mut pdf_font, mut cffont: *
     let mut flags: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut gid: ::core::ffi::c_int = 0;
     let mut i: ::core::ffi::c_int = 0;
-    static mut L_c: [*const ::core::ffi::c_char; 5] = [
+    const L_C: [*const ::core::ffi::c_char; 5] = [
         b"H\0" as *const u8 as *const ::core::ffi::c_char,
         b"P\0" as *const u8 as *const ::core::ffi::c_char,
         b"Pi\0" as *const u8 as *const ::core::ffi::c_char,
         b"Rho\0" as *const u8 as *const ::core::ffi::c_char,
         ::core::ptr::null::<::core::ffi::c_char>(),
     ];
-    static mut L_d: [*const ::core::ffi::c_char; 5] = [
+    const L_D: [*const ::core::ffi::c_char; 5] = [
         b"p\0" as *const u8 as *const ::core::ffi::c_char,
         b"q\0" as *const u8 as *const ::core::ffi::c_char,
         b"mu\0" as *const u8 as *const ::core::ffi::c_char,
         b"eta\0" as *const u8 as *const ::core::ffi::c_char,
         ::core::ptr::null::<::core::ffi::c_char>(),
     ];
-    static mut L_a: [*const ::core::ffi::c_char; 4] = [
+    const L_A: [*const ::core::ffi::c_char; 4] = [
         b"b\0" as *const u8 as *const ::core::ffi::c_char,
         b"h\0" as *const u8 as *const ::core::ffi::c_char,
         b"lambda\0" as *const u8 as *const ::core::ffi::c_char,
@@ -3541,8 +3536,8 @@ unsafe extern "C-unwind" fn get_font_attr(mut font: *mut pdf_font, mut cffont: *
         defaultwidth = gm.wx;
     }
     i = 0 as ::core::ffi::c_int;
-    while !L_c[i as usize].is_null() {
-        gid = cff_glyph_lookup(cffont, L_c[i as usize]) as ::core::ffi::c_int;
+    while !L_C[i as usize].is_null() {
+        gid = cff_glyph_lookup(cffont, L_C[i as usize]) as ::core::ffi::c_int;
         if gid >= 0 as ::core::ffi::c_int && gid < (*(*cffont).cstrings).count as ::core::ffi::c_int
         {
             t1char_get_metrics(
@@ -3565,8 +3560,8 @@ unsafe extern "C-unwind" fn get_font_attr(mut font: *mut pdf_font, mut cffont: *
         }
     }
     i = 0 as ::core::ffi::c_int;
-    while !L_d[i as usize].is_null() {
-        gid = cff_glyph_lookup(cffont, L_d[i as usize]) as ::core::ffi::c_int;
+    while !L_D[i as usize].is_null() {
+        gid = cff_glyph_lookup(cffont, L_D[i as usize]) as ::core::ffi::c_int;
         if gid >= 0 as ::core::ffi::c_int && gid < (*(*cffont).cstrings).count as ::core::ffi::c_int
         {
             t1char_get_metrics(
@@ -3589,8 +3584,8 @@ unsafe extern "C-unwind" fn get_font_attr(mut font: *mut pdf_font, mut cffont: *
         }
     }
     i = 0 as ::core::ffi::c_int;
-    while !L_a[i as usize].is_null() {
-        gid = cff_glyph_lookup(cffont, L_a[i as usize]) as ::core::ffi::c_int;
+    while !L_A[i as usize].is_null() {
+        gid = cff_glyph_lookup(cffont, L_A[i as usize]) as ::core::ffi::c_int;
         if gid >= 0 as ::core::ffi::c_int && gid < (*(*cffont).cstrings).count as ::core::ffi::c_int
         {
             t1char_get_metrics(

@@ -423,7 +423,7 @@ pub unsafe extern "C-unwind" fn spc_set_phantom(
 ) {
     dvi_set_phantom_height(height, depth);
 }
-static mut _rkeys: [*const ::core::ffi::c_char; 11] = [
+const RKEYS: [*const ::core::ffi::c_char; 11] = [
     b"xpos\0" as *const u8 as *const ::core::ffi::c_char,
     b"ypos\0" as *const u8 as *const ::core::ffi::c_char,
     b"thispage\0" as *const u8 as *const ::core::ffi::c_char,
@@ -481,7 +481,7 @@ pub unsafe extern "C-unwind" fn spc_lookup_reference(
         return ::core::ptr::null_mut::<pdf_obj>();
     }
     k = 0 as ::core::ffi::c_int;
-    while !_rkeys[k as usize].is_null() && strcmp(key, _rkeys[k as usize]) != 0 {
+    while !RKEYS[k as usize].is_null() && strcmp(key, RKEYS[k as usize]) != 0 {
         k += 1;
     }
     match k {
@@ -565,7 +565,7 @@ pub unsafe extern "C-unwind" fn spc_lookup_object(
         return ::core::ptr::null_mut::<pdf_obj>();
     }
     k = 0 as ::core::ffi::c_int;
-    while !_rkeys[k as usize].is_null() && strcmp(key, _rkeys[k as usize]) != 0 {
+    while !RKEYS[k as usize].is_null() && strcmp(key, RKEYS[k as usize]) != 0 {
         k += 1;
     }
     match k {
@@ -863,13 +863,7 @@ unsafe extern "C-unwind" fn init_special(
     mut mag: ::core::ffi::c_double,
 ) {
     (*special).key = ::core::ptr::null::<::core::ffi::c_char>();
-    (*special).exec = ::core::mem::transmute::<
-        Option<unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int>,
-        spc_handler_fn_ptr,
-    >(Some(
-        spc_handler_unknown
-            as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-    ));
+    (*special).exec = Some(spc_handler_unknown);
     (*spe).x_user = x_user;
     (*spe).y_user = y_user;
     (*spe).mag = mag;
@@ -904,253 +898,251 @@ unsafe extern "C-unwind" fn check_garbage(mut args: *mut spc_arg) {
         dump((*args).curptr, (*args).endptr);
     }
 }
-static mut known_specials: [C2RustUnnamed_0; 9] = unsafe {
-    [
-        C2RustUnnamed_0 {
-            key: b"pdf:\0" as *const u8 as *const ::core::ffi::c_char,
-            bodhk_func: Some(
-                spc_pdfm_at_begin_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            eodhk_func: Some(
-                spc_pdfm_at_end_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            bophk_func: None,
-            eophk_func: Some(
-                spc_pdfm_at_end_page as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            bofhk_func: None,
-            eofhk_func: None,
-            check_func: Some(
-                spc_pdfm_check_special
-                    as unsafe extern "C-unwind" fn(
-                        *const ::core::ffi::c_char,
-                        ::core::ffi::c_int,
-                    ) -> bool,
-            ),
-            setup_func: Some(
-                spc_pdfm_setup_handler
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_handler,
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        C2RustUnnamed_0 {
-            key: b"x:\0" as *const u8 as *const ::core::ffi::c_char,
-            bodhk_func: None,
-            eodhk_func: None,
-            bophk_func: None,
-            eophk_func: None,
-            bofhk_func: None,
-            eofhk_func: None,
-            check_func: Some(
-                spc_xtx_check_special
-                    as unsafe extern "C-unwind" fn(
-                        *const ::core::ffi::c_char,
-                        ::core::ffi::c_int,
-                    ) -> bool,
-            ),
-            setup_func: Some(
-                spc_xtx_setup_handler
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_handler,
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        C2RustUnnamed_0 {
-            key: b"dvipdfmx:\0" as *const u8 as *const ::core::ffi::c_char,
-            bodhk_func: None,
-            eodhk_func: None,
-            bophk_func: None,
-            eophk_func: None,
-            bofhk_func: None,
-            eofhk_func: None,
-            check_func: Some(
-                spc_dvipdfmx_check_special
-                    as unsafe extern "C-unwind" fn(
-                        *const ::core::ffi::c_char,
-                        ::core::ffi::c_int,
-                    ) -> bool,
-            ),
-            setup_func: Some(
-                spc_dvipdfmx_setup_handler
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_handler,
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        C2RustUnnamed_0 {
-            key: b"ps:\0" as *const u8 as *const ::core::ffi::c_char,
-            bodhk_func: Some(
-                spc_dvips_at_begin_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            eodhk_func: Some(
-                spc_dvips_at_end_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            bophk_func: Some(
-                spc_dvips_at_begin_page as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            eophk_func: Some(
-                spc_dvips_at_end_page as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            bofhk_func: None,
-            eofhk_func: None,
-            check_func: Some(
-                spc_dvips_check_special
-                    as unsafe extern "C-unwind" fn(
-                        *const ::core::ffi::c_char,
-                        ::core::ffi::c_int,
-                    ) -> bool,
-            ),
-            setup_func: Some(
-                spc_dvips_setup_handler
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_handler,
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        C2RustUnnamed_0 {
-            key: b"color\0" as *const u8 as *const ::core::ffi::c_char,
-            bodhk_func: None,
-            eodhk_func: None,
-            bophk_func: None,
-            eophk_func: None,
-            bofhk_func: None,
-            eofhk_func: None,
-            check_func: Some(
-                spc_color_check_special
-                    as unsafe extern "C-unwind" fn(
-                        *const ::core::ffi::c_char,
-                        ::core::ffi::c_int,
-                    ) -> bool,
-            ),
-            setup_func: Some(
-                spc_color_setup_handler
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_handler,
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        C2RustUnnamed_0 {
-            key: b"tpic\0" as *const u8 as *const ::core::ffi::c_char,
-            bodhk_func: Some(
-                spc_tpic_at_begin_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            eodhk_func: Some(
-                spc_tpic_at_end_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            bophk_func: Some(
-                spc_tpic_at_begin_page as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            eophk_func: Some(
-                spc_tpic_at_end_page as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            bofhk_func: None,
-            eofhk_func: None,
-            check_func: Some(
-                spc_tpic_check_special
-                    as unsafe extern "C-unwind" fn(
-                        *const ::core::ffi::c_char,
-                        ::core::ffi::c_int,
-                    ) -> bool,
-            ),
-            setup_func: Some(
-                spc_tpic_setup_handler
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_handler,
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        C2RustUnnamed_0 {
-            key: b"html:\0" as *const u8 as *const ::core::ffi::c_char,
-            bodhk_func: Some(
-                spc_html_at_begin_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            eodhk_func: Some(
-                spc_html_at_end_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            bophk_func: Some(
-                spc_html_at_begin_page as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            eophk_func: Some(
-                spc_html_at_end_page as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            bofhk_func: None,
-            eofhk_func: None,
-            check_func: Some(
-                spc_html_check_special
-                    as unsafe extern "C-unwind" fn(
-                        *const ::core::ffi::c_char,
-                        ::core::ffi::c_int,
-                    ) -> bool,
-            ),
-            setup_func: Some(
-                spc_html_setup_handler
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_handler,
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        C2RustUnnamed_0 {
-            key: b"compat\0" as *const u8 as *const ::core::ffi::c_char,
-            bodhk_func: Some(
-                spc_misc_at_begin_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            eodhk_func: Some(
-                spc_misc_at_end_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            bophk_func: Some(
-                spc_misc_at_begin_page as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            eophk_func: None,
-            bofhk_func: Some(
-                spc_misc_at_begin_form as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            eofhk_func: Some(
-                spc_misc_at_end_form as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
-            ),
-            check_func: Some(
-                spc_misc_check_special
-                    as unsafe extern "C-unwind" fn(
-                        *const ::core::ffi::c_char,
-                        ::core::ffi::c_int,
-                    ) -> bool,
-            ),
-            setup_func: Some(
-                spc_misc_setup_handler
-                    as unsafe extern "C-unwind" fn(
-                        *mut spc_handler,
-                        *mut spc_env,
-                        *mut spc_arg,
-                    ) -> ::core::ffi::c_int,
-            ),
-        },
-        C2RustUnnamed_0 {
-            key: ::core::ptr::null::<::core::ffi::c_char>(),
-            bodhk_func: None,
-            eodhk_func: None,
-            bophk_func: None,
-            eophk_func: None,
-            bofhk_func: None,
-            eofhk_func: None,
-            check_func: None,
-            setup_func: None,
-        },
-    ]
-};
+const KNOWN_SPECIALS: [C2RustUnnamed_0; 9] = [
+    C2RustUnnamed_0 {
+        key: b"pdf:\0" as *const u8 as *const ::core::ffi::c_char,
+        bodhk_func: Some(
+            spc_pdfm_at_begin_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        eodhk_func: Some(
+            spc_pdfm_at_end_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        bophk_func: None,
+        eophk_func: Some(
+            spc_pdfm_at_end_page as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        bofhk_func: None,
+        eofhk_func: None,
+        check_func: Some(
+            spc_pdfm_check_special
+                as unsafe extern "C-unwind" fn(
+                    *const ::core::ffi::c_char,
+                    ::core::ffi::c_int,
+                ) -> bool,
+        ),
+        setup_func: Some(
+            spc_pdfm_setup_handler
+                as unsafe extern "C-unwind" fn(
+                    *mut spc_handler,
+                    *mut spc_env,
+                    *mut spc_arg,
+                ) -> ::core::ffi::c_int,
+        ),
+    },
+    C2RustUnnamed_0 {
+        key: b"x:\0" as *const u8 as *const ::core::ffi::c_char,
+        bodhk_func: None,
+        eodhk_func: None,
+        bophk_func: None,
+        eophk_func: None,
+        bofhk_func: None,
+        eofhk_func: None,
+        check_func: Some(
+            spc_xtx_check_special
+                as unsafe extern "C-unwind" fn(
+                    *const ::core::ffi::c_char,
+                    ::core::ffi::c_int,
+                ) -> bool,
+        ),
+        setup_func: Some(
+            spc_xtx_setup_handler
+                as unsafe extern "C-unwind" fn(
+                    *mut spc_handler,
+                    *mut spc_env,
+                    *mut spc_arg,
+                ) -> ::core::ffi::c_int,
+        ),
+    },
+    C2RustUnnamed_0 {
+        key: b"dvipdfmx:\0" as *const u8 as *const ::core::ffi::c_char,
+        bodhk_func: None,
+        eodhk_func: None,
+        bophk_func: None,
+        eophk_func: None,
+        bofhk_func: None,
+        eofhk_func: None,
+        check_func: Some(
+            spc_dvipdfmx_check_special
+                as unsafe extern "C-unwind" fn(
+                    *const ::core::ffi::c_char,
+                    ::core::ffi::c_int,
+                ) -> bool,
+        ),
+        setup_func: Some(
+            spc_dvipdfmx_setup_handler
+                as unsafe extern "C-unwind" fn(
+                    *mut spc_handler,
+                    *mut spc_env,
+                    *mut spc_arg,
+                ) -> ::core::ffi::c_int,
+        ),
+    },
+    C2RustUnnamed_0 {
+        key: b"ps:\0" as *const u8 as *const ::core::ffi::c_char,
+        bodhk_func: Some(
+            spc_dvips_at_begin_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        eodhk_func: Some(
+            spc_dvips_at_end_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        bophk_func: Some(
+            spc_dvips_at_begin_page as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        eophk_func: Some(
+            spc_dvips_at_end_page as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        bofhk_func: None,
+        eofhk_func: None,
+        check_func: Some(
+            spc_dvips_check_special
+                as unsafe extern "C-unwind" fn(
+                    *const ::core::ffi::c_char,
+                    ::core::ffi::c_int,
+                ) -> bool,
+        ),
+        setup_func: Some(
+            spc_dvips_setup_handler
+                as unsafe extern "C-unwind" fn(
+                    *mut spc_handler,
+                    *mut spc_env,
+                    *mut spc_arg,
+                ) -> ::core::ffi::c_int,
+        ),
+    },
+    C2RustUnnamed_0 {
+        key: b"color\0" as *const u8 as *const ::core::ffi::c_char,
+        bodhk_func: None,
+        eodhk_func: None,
+        bophk_func: None,
+        eophk_func: None,
+        bofhk_func: None,
+        eofhk_func: None,
+        check_func: Some(
+            spc_color_check_special
+                as unsafe extern "C-unwind" fn(
+                    *const ::core::ffi::c_char,
+                    ::core::ffi::c_int,
+                ) -> bool,
+        ),
+        setup_func: Some(
+            spc_color_setup_handler
+                as unsafe extern "C-unwind" fn(
+                    *mut spc_handler,
+                    *mut spc_env,
+                    *mut spc_arg,
+                ) -> ::core::ffi::c_int,
+        ),
+    },
+    C2RustUnnamed_0 {
+        key: b"tpic\0" as *const u8 as *const ::core::ffi::c_char,
+        bodhk_func: Some(
+            spc_tpic_at_begin_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        eodhk_func: Some(
+            spc_tpic_at_end_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        bophk_func: Some(
+            spc_tpic_at_begin_page as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        eophk_func: Some(
+            spc_tpic_at_end_page as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        bofhk_func: None,
+        eofhk_func: None,
+        check_func: Some(
+            spc_tpic_check_special
+                as unsafe extern "C-unwind" fn(
+                    *const ::core::ffi::c_char,
+                    ::core::ffi::c_int,
+                ) -> bool,
+        ),
+        setup_func: Some(
+            spc_tpic_setup_handler
+                as unsafe extern "C-unwind" fn(
+                    *mut spc_handler,
+                    *mut spc_env,
+                    *mut spc_arg,
+                ) -> ::core::ffi::c_int,
+        ),
+    },
+    C2RustUnnamed_0 {
+        key: b"html:\0" as *const u8 as *const ::core::ffi::c_char,
+        bodhk_func: Some(
+            spc_html_at_begin_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        eodhk_func: Some(
+            spc_html_at_end_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        bophk_func: Some(
+            spc_html_at_begin_page as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        eophk_func: Some(
+            spc_html_at_end_page as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        bofhk_func: None,
+        eofhk_func: None,
+        check_func: Some(
+            spc_html_check_special
+                as unsafe extern "C-unwind" fn(
+                    *const ::core::ffi::c_char,
+                    ::core::ffi::c_int,
+                ) -> bool,
+        ),
+        setup_func: Some(
+            spc_html_setup_handler
+                as unsafe extern "C-unwind" fn(
+                    *mut spc_handler,
+                    *mut spc_env,
+                    *mut spc_arg,
+                ) -> ::core::ffi::c_int,
+        ),
+    },
+    C2RustUnnamed_0 {
+        key: b"compat\0" as *const u8 as *const ::core::ffi::c_char,
+        bodhk_func: Some(
+            spc_misc_at_begin_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        eodhk_func: Some(
+            spc_misc_at_end_document as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        bophk_func: Some(
+            spc_misc_at_begin_page as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        eophk_func: None,
+        bofhk_func: Some(
+            spc_misc_at_begin_form as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        eofhk_func: Some(
+            spc_misc_at_end_form as unsafe extern "C-unwind" fn() -> ::core::ffi::c_int,
+        ),
+        check_func: Some(
+            spc_misc_check_special
+                as unsafe extern "C-unwind" fn(
+                    *const ::core::ffi::c_char,
+                    ::core::ffi::c_int,
+                ) -> bool,
+        ),
+        setup_func: Some(
+            spc_misc_setup_handler
+                as unsafe extern "C-unwind" fn(
+                    *mut spc_handler,
+                    *mut spc_env,
+                    *mut spc_arg,
+                ) -> ::core::ffi::c_int,
+        ),
+    },
+    C2RustUnnamed_0 {
+        key: ::core::ptr::null::<::core::ffi::c_char>(),
+        bodhk_func: None,
+        eodhk_func: None,
+        bophk_func: None,
+        eophk_func: None,
+        bofhk_func: None,
+        eofhk_func: None,
+        check_func: None,
+        setup_func: None,
+    },
+];
 #[unsafe(export_name = "__pdf_impl_spc_begin_form")]
 pub unsafe extern "C-unwind" fn spc_begin_form(
     mut spe: *mut spc_env,
@@ -1166,9 +1158,9 @@ pub unsafe extern "C-unwind" fn spc_begin_form(
         error = -(1 as ::core::ffi::c_int);
     } else {
         i = 0 as ::core::ffi::c_int;
-        while !known_specials[i as usize].key.is_null() {
-            if known_specials[i as usize].bofhk_func.is_some() {
-                error = known_specials[i as usize]
+        while !KNOWN_SPECIALS[i as usize].key.is_null() {
+            if KNOWN_SPECIALS[i as usize].bofhk_func.is_some() {
+                error = KNOWN_SPECIALS[i as usize]
                     .bofhk_func
                     .expect("non-null function pointer")();
             }
@@ -1186,9 +1178,9 @@ pub unsafe extern "C-unwind" fn spc_end_form(
     let mut i: ::core::ffi::c_int = 0;
     pdf_doc_end_grabbing(attr);
     i = 0 as ::core::ffi::c_int;
-    while !known_specials[i as usize].key.is_null() {
-        if known_specials[i as usize].eofhk_func.is_some() {
-            error = known_specials[i as usize]
+    while !KNOWN_SPECIALS[i as usize].key.is_null() {
+        if KNOWN_SPECIALS[i as usize].eofhk_func.is_some() {
+            error = KNOWN_SPECIALS[i as usize]
                 .eofhk_func
                 .expect("non-null function pointer")();
         }
@@ -1201,9 +1193,9 @@ pub unsafe extern "C-unwind" fn spc_exec_at_begin_page() -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut i: ::core::ffi::c_uint = 0;
     i = 0 as ::core::ffi::c_uint;
-    while !known_specials[i as usize].key.is_null() {
-        if known_specials[i as usize].bophk_func.is_some() {
-            error = known_specials[i as usize]
+    while !KNOWN_SPECIALS[i as usize].key.is_null() {
+        if KNOWN_SPECIALS[i as usize].bophk_func.is_some() {
+            error = KNOWN_SPECIALS[i as usize]
                 .bophk_func
                 .expect("non-null function pointer")();
         }
@@ -1216,9 +1208,9 @@ pub unsafe extern "C-unwind" fn spc_exec_at_end_page() -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut i: ::core::ffi::c_uint = 0;
     i = 0 as ::core::ffi::c_uint;
-    while !known_specials[i as usize].key.is_null() {
-        if known_specials[i as usize].eophk_func.is_some() {
-            error = known_specials[i as usize]
+    while !KNOWN_SPECIALS[i as usize].key.is_null() {
+        if KNOWN_SPECIALS[i as usize].eophk_func.is_some() {
+            error = KNOWN_SPECIALS[i as usize]
                 .eophk_func
                 .expect("non-null function pointer")();
         }
@@ -1232,9 +1224,9 @@ pub unsafe extern "C-unwind" fn spc_exec_at_begin_document() -> ::core::ffi::c_i
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut i: ::core::ffi::c_uint = 0;
     i = 0 as ::core::ffi::c_uint;
-    while !known_specials[i as usize].key.is_null() {
-        if known_specials[i as usize].bodhk_func.is_some() {
-            error = known_specials[i as usize]
+    while !KNOWN_SPECIALS[i as usize].key.is_null() {
+        if KNOWN_SPECIALS[i as usize].bodhk_func.is_some() {
+            error = KNOWN_SPECIALS[i as usize]
                 .bodhk_func
                 .expect("non-null function pointer")();
         }
@@ -1251,9 +1243,9 @@ pub unsafe extern "C-unwind" fn spc_exec_at_end_document() -> ::core::ffi::c_int
     let mut i: ::core::ffi::c_uint = 0;
     let mut p: *mut pdf_coord = ::core::ptr::null_mut::<pdf_coord>();
     i = 0 as ::core::ffi::c_uint;
-    while !known_specials[i as usize].key.is_null() {
-        if known_specials[i as usize].eodhk_func.is_some() {
-            error = known_specials[i as usize]
+    while !KNOWN_SPECIALS[i as usize].key.is_null() {
+        if KNOWN_SPECIALS[i as usize].eodhk_func.is_some() {
+            error = KNOWN_SPECIALS[i as usize]
                 .eodhk_func
                 .expect("non-null function pointer")();
         }
@@ -1429,12 +1421,12 @@ pub unsafe extern "C-unwind" fn spc_exec_special(
         mag,
     );
     i = 0 as ::core::ffi::c_int;
-    while !known_specials[i as usize].key.is_null() {
-        found = known_specials[i as usize]
+    while !KNOWN_SPECIALS[i as usize].key.is_null() {
+        found = KNOWN_SPECIALS[i as usize]
             .check_func
             .expect("non-null function pointer")(buffer, size as ::core::ffi::c_int);
         if found {
-            error = known_specials[i as usize]
+            error = KNOWN_SPECIALS[i as usize]
                 .setup_func
                 .expect("non-null function pointer")(
                 &raw mut special, &raw mut spe, &raw mut args
@@ -1444,7 +1436,7 @@ pub unsafe extern "C-unwind" fn spc_exec_special(
                     special.exec.expect("non-null function pointer")(&raw mut spe, &raw mut args);
             }
             if error != 0 {
-                print_error(known_specials[i as usize].key, &raw mut spe, &raw mut args);
+                print_error(KNOWN_SPECIALS[i as usize].key, &raw mut spe, &raw mut args);
             } else {
                 if !is_drawable.is_null() {
                     *is_drawable = spe.info.is_drawable;
@@ -1906,19 +1898,17 @@ pub(crate) struct DocumentState {
 
 impl DocumentState {
     pub(crate) fn new() -> Self {
-        unsafe {
-            Self {
-                coords: dpx_stack {
-                    size: 0,
-                    top: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
-                    bottom: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
-                },
-                pt_fixee: dpx_stack {
-                    size: 0,
-                    top: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
-                    bottom: ::core::ptr::null::<stack_elem>() as *mut stack_elem,
-                },
-            }
+        Self {
+            coords: dpx_stack {
+                size: 0,
+                top: ::core::ptr::null_mut::<stack_elem>(),
+                bottom: ::core::ptr::null_mut::<stack_elem>(),
+            },
+            pt_fixee: dpx_stack {
+                size: 0,
+                top: ::core::ptr::null_mut::<stack_elem>(),
+                bottom: ::core::ptr::null_mut::<stack_elem>(),
+            },
         }
     }
 }

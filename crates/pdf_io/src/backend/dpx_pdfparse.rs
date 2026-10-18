@@ -271,7 +271,7 @@ pub unsafe extern "C-unwind" fn parse_ident(
     mut start: *mut *const ::core::ffi::c_char,
     mut end: *const ::core::ffi::c_char,
 ) -> *mut ::core::ffi::c_char {
-    static mut valid_chars: *const ::core::ffi::c_char =
+    const valid_chars: *const ::core::ffi::c_char =
         b"!\"#$&'*+,-.0123456789:;=?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\\^_`abcdefghijklmnopqrstuvwxyz|~\0"
             as *const u8 as *const ::core::ffi::c_char;
     return parse_gen_ident(start, end, valid_chars);
@@ -281,7 +281,7 @@ pub unsafe extern "C-unwind" fn parse_val_ident(
     mut start: *mut *const ::core::ffi::c_char,
     mut end: *const ::core::ffi::c_char,
 ) -> *mut ::core::ffi::c_char {
-    static mut valid_chars: *const ::core::ffi::c_char =
+    const valid_chars: *const ::core::ffi::c_char =
         b"!\"#$&'*+,-./0123456789:;?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\\^_`abcdefghijklmnopqrstuvwxyz|~\0"
             as *const u8 as *const ::core::ffi::c_char;
     return parse_gen_ident(start, end, valid_chars);
@@ -806,64 +806,71 @@ unsafe extern "C-unwind" fn parse_pdf_literal_string(
         len as size_t,
     );
 }
+fn decode_pdf_hex_string(bytes: &[u8]) -> Option<(Vec<u8>, usize)> {
+    if bytes.first() != Some(&b'<') {
+        return None;
+    }
+    let mut encoded = Vec::new();
+    let mut offset = 1;
+    while let Some(&byte) = bytes.get(offset) {
+        match byte {
+            b'>' => break,
+            b' ' | b'\t' | b'\x0c' | b'\r' | b'\n' | 0 => offset += 1,
+            b'%' => {
+                while bytes
+                    .get(offset)
+                    .is_some_and(|byte| !matches!(byte, b'\r' | b'\n'))
+                {
+                    offset += 1;
+                }
+            }
+            _ => {
+                if encoded.len() >= PDF_STRING_LEN_MAX as usize * 2 {
+                    pdf_warning!(
+                        "PDF string length too long. (limit: {})",
+                        PDF_STRING_LEN_MAX
+                    );
+                    return None;
+                }
+                encoded.push(byte);
+                offset += 1;
+            }
+        }
+    }
+    if offset == bytes.len() {
+        pdf_warning!("Premature end of input hex string.");
+        return None;
+    }
+    if encoded.len() % 2 != 0 {
+        encoded.push(b'0');
+    }
+    let mut output = vec![0; encoded.len() / 2];
+    if faster_hex::hex_decode(&encoded, &mut output).is_err() {
+        pdf_warning!("Invalid hexadecimal digit in PDF string.");
+        return None;
+    }
+    Some((output, offset + 1))
+}
+
 unsafe extern "C-unwind" fn parse_pdf_hex_string(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
+    pp: *mut *const ::core::ffi::c_char,
+    endptr: *const ::core::ffi::c_char,
 ) -> *mut pdf_obj {
-    let __pdf_state = unsafe { document_state() };
-    let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-    let mut len: ::core::ffi::c_int = 0;
-    p = *pp;
-    skip_white(&raw mut p, endptr);
-    if p >= endptr
-        || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '<' as i32
-    {
-        return ::core::ptr::null_mut::<pdf_obj>();
+    let mut start = unsafe { *pp };
+    unsafe { skip_white(&mut start, endptr) };
+    if start >= endptr {
+        return core::ptr::null_mut();
     }
-    p = p.offset(1);
-    len = 0 as ::core::ffi::c_int;
-    while p < endptr
-        && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '>' as i32
-        && len < PDF_STRING_LEN_MAX
-    {
-        let mut ch: ::core::ffi::c_int = 0;
-        skip_white(&raw mut p, endptr);
-        if p >= endptr
-            || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '>' as i32
-        {
-            break;
-        }
-        ch = xtoi(*p.offset(0 as ::core::ffi::c_int as isize)) << 4 as ::core::ffi::c_int;
-        p = p.offset(1);
-        skip_white(&raw mut p, endptr);
-        if p < endptr
-            && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '>' as i32
-        {
-            ch += xtoi(*p.offset(0 as ::core::ffi::c_int as isize));
-            p = p.offset(1);
-        }
-        let fresh2 = len;
-        len = len + 1;
-        (*__pdf_state).sbuf[fresh2 as usize] =
-            (ch & 0xff as ::core::ffi::c_int) as ::core::ffi::c_char;
+    let bytes = unsafe {
+        core::slice::from_raw_parts(start.cast::<u8>(), endptr.offset_from(start) as usize)
+    };
+    let Some((decoded, consumed)) = decode_pdf_hex_string(bytes) else {
+        return core::ptr::null_mut();
+    };
+    unsafe {
+        *pp = start.add(consumed);
+        pdf_new_string(decoded.as_ptr().cast(), decoded.len())
     }
-    if p >= endptr {
-        pdf_warning!(
-            b"Premature end of input hex string.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-        return ::core::ptr::null_mut::<pdf_obj>();
-    } else if *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '>' as i32 {
-        pdf_warning!(
-            b"PDF string length too long. (limit: %d)\0" as *const u8 as *const ::core::ffi::c_char,
-            PDF_STRING_LEN_MAX,
-        );
-        return ::core::ptr::null_mut::<pdf_obj>();
-    }
-    *pp = p.offset(1 as ::core::ffi::c_int as isize);
-    return pdf_new_string(
-        &raw mut (*__pdf_state).sbuf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-        len as size_t,
-    );
 }
 #[unsafe(export_name = "__pdf_impl_parse_pdf_string")]
 pub unsafe extern "C-unwind" fn parse_pdf_string(

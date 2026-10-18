@@ -298,10 +298,8 @@ impl Drop for PdfRuntime {
         for pending in self.runtime.pending.drain(..) {
             let _ = pending.receiver.recv();
         }
-        // SAFETY: Native execution has returned and all worker jobs have finished.
-        unsafe {
-            crate::clear_input_state();
-        }
+        // SAFETY: The runtime is being dropped, so native execution has completed.
+        unsafe { crate::clear_input_state() };
     }
 }
 

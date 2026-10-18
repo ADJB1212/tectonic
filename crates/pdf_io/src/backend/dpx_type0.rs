@@ -631,30 +631,9 @@ unsafe extern "C-unwind" fn create_dummy_CMap() -> *mut pdf_obj {
     );
     return stream;
 }
-pub const CMAP_PART0: [::core::ffi::c_char; 250] = unsafe {
-    ::core::mem::transmute::<
-        [u8; 250],
-        [::core::ffi::c_char; 250],
-    >(
-        *b"%!PS-Adobe-3.0 Resource-CMap\n%%DocumentNeededResources: ProcSet (CIDInit)\n%%IncludeResource: ProcSet (CIDInit)\n%%BeginResource: CMap (Adobe-Identity-UCS2)\n%%Title: (Adobe-Identity-UCS2 Adobe UCS2 0)\n%%Version: 1.0\n%%Copyright:\n%% ---\n%%EndComments\n\n\0",
-    )
-};
-pub const CMAP_PART1: [::core::ffi::c_char; 300] = unsafe {
-    ::core::mem::transmute::<
-        [u8; 300],
-        [::core::ffi::c_char; 300],
-    >(
-        *b"/CIDInit /ProcSet findresource begin\n\n12 dict begin\n\nbegincmap\n\n/CIDSystemInfo 3 dict dup begin\n  /Registry (Adobe) def\n  /Ordering (UCS2) def\n  /Supplement 0 def\nend def\n\n/CMapName /Adobe-Identity-UCS2 def\n/CMapVersion 1.0 def\n/CMapType 2 def\n\n2 begincodespacerange\n<0000> <FFFF>\nendcodespacerange\n\0",
-    )
-};
-pub const CMAP_PART3: [::core::ffi::c_char; 86] = unsafe {
-    ::core::mem::transmute::<
-        [u8; 86],
-        [::core::ffi::c_char; 86],
-    >(
-        *b"endcmap\n\nCMapName currentdict /CMap defineresource pop\n\nend\nend\n\n%%EndResource\n%%EOF\n\0",
-    )
-};
+pub const CMAP_PART0: [::core::ffi::c_char; 250] = crate::backend::c_char_array(*b"%!PS-Adobe-3.0 Resource-CMap\n%%DocumentNeededResources: ProcSet (CIDInit)\n%%IncludeResource: ProcSet (CIDInit)\n%%BeginResource: CMap (Adobe-Identity-UCS2)\n%%Title: (Adobe-Identity-UCS2 Adobe UCS2 0)\n%%Version: 1.0\n%%Copyright:\n%% ---\n%%EndComments\n\n\0");
+pub const CMAP_PART1: [::core::ffi::c_char; 300] = crate::backend::c_char_array(*b"/CIDInit /ProcSet findresource begin\n\n12 dict begin\n\nbegincmap\n\n/CIDSystemInfo 3 dict dup begin\n  /Registry (Adobe) def\n  /Ordering (UCS2) def\n  /Supplement 0 def\nend def\n\n/CMapName /Adobe-Identity-UCS2 def\n/CMapVersion 1.0 def\n/CMapType 2 def\n\n2 begincodespacerange\n<0000> <FFFF>\nendcodespacerange\n\0");
+pub const CMAP_PART3: [::core::ffi::c_char; 86] = crate::backend::c_char_array(*b"endcmap\n\nCMapName currentdict /CMap defineresource pop\n\nend\nend\n\n%%EndResource\n%%EOF\n\0");
 unsafe extern "C-unwind" fn pdf_read_ToUnicode_file(
     mut cmap_name: *const ::core::ffi::c_char,
 ) -> *mut pdf_obj {
