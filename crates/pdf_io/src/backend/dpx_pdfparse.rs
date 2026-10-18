@@ -125,146 +125,119 @@ pub const STREAM_COMPRESS: ::core::ffi::c_int =
 
 #[unsafe(export_name = "__pdf_impl_dump")]
 pub unsafe extern "C-unwind" fn dump(
-    mut start: *const ::core::ffi::c_char,
-    mut end: *const ::core::ffi::c_char,
+    start: *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
 ) {
-    let mut p: *const ::core::ffi::c_char = start;
-    pdf_message!(b"\nCurrent input buffer is -->\0" as *const u8 as *const ::core::ffi::c_char,);
-    while p < end && p < start.offset(DUMP_LIMIT as isize) {
-        let fresh0 = p;
-        p = p.offset(1);
-        pdf_message!(
-            b"%c\0" as *const u8 as *const ::core::ffi::c_char,
-            *fresh0 as ::core::ffi::c_int,
-        );
+    let bytes = unsafe { input_bytes(start, end) };
+    pdf_message!("\nCurrent input buffer is -->");
+    for &byte in bytes.iter().take(DUMP_LIMIT as usize) {
+        pdf_message!(c"%c".as_ptr(), byte as i32);
     }
-    if p == start.offset(DUMP_LIMIT as isize) {
-        pdf_message!(b"...\0" as *const u8 as *const ::core::ffi::c_char);
+    if bytes.len() >= DUMP_LIMIT as usize {
+        pdf_message!("...");
     }
-    pdf_message!(b"<--\n\0" as *const u8 as *const ::core::ffi::c_char);
+    pdf_message!("<--\n");
 }
 pub const DUMP_LIMIT: ::core::ffi::c_int = 50 as ::core::ffi::c_int;
+// The caller supplies a live buffer with both pointers in the same allocation.
+unsafe fn input_bytes<'a>(
+    start: *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
+) -> &'a [u8] {
+    if start >= end {
+        return &[];
+    }
+    unsafe { core::slice::from_raw_parts(start.cast(), end.offset_from(start) as usize) }
+}
+
 #[unsafe(export_name = "__pdf_impl_pdfparse_skip_line")]
 pub unsafe extern "C-unwind" fn pdfparse_skip_line(
-    mut start: *mut *const ::core::ffi::c_char,
-    mut end: *const ::core::ffi::c_char,
+    start: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
 ) {
-    while *start < end
-        && **start as ::core::ffi::c_int != '\n' as i32
-        && **start as ::core::ffi::c_int != '\r' as i32
-    {
-        *start = (*start).offset(1);
-    }
-    if *start < end && **start as ::core::ffi::c_int == '\r' as i32 {
-        *start = (*start).offset(1);
-    }
-    if *start < end && **start as ::core::ffi::c_int == '\n' as i32 {
-        *start = (*start).offset(1);
+    let consumed = crate::syntax::skip_line(unsafe { input_bytes(*start, end) });
+    unsafe {
+        *start = (*start).add(consumed);
     }
 }
+
 #[unsafe(export_name = "__pdf_impl_skip_white")]
 pub unsafe extern "C-unwind" fn skip_white(
-    mut start: *mut *const ::core::ffi::c_char,
-    mut end: *const ::core::ffi::c_char,
+    start: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
 ) {
-    while *start < end
-        && (**start as ::core::ffi::c_int == ' ' as i32
-            || **start as ::core::ffi::c_int == '\t' as i32
-            || **start as ::core::ffi::c_int == '\u{c}' as i32
-            || **start as ::core::ffi::c_int == '\r' as i32
-            || **start as ::core::ffi::c_int == '\n' as i32
-            || **start as ::core::ffi::c_int == '\0' as i32
-            || **start as ::core::ffi::c_int == '%' as i32)
-    {
-        if **start as ::core::ffi::c_int == '%' as i32 {
-            pdfparse_skip_line(start, end);
-        } else {
-            *start = (*start).offset(1);
-        }
+    let consumed = crate::syntax::skip_white(unsafe { input_bytes(*start, end) });
+    unsafe {
+        *start = (*start).add(consumed);
     }
 }
 unsafe extern "C-unwind" fn parsed_string(
-    mut start: *const ::core::ffi::c_char,
-    mut end: *const ::core::ffi::c_char,
-) -> *mut ::core::ffi::c_char {
-    let mut result: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    let mut len: ::core::ffi::c_int = 0;
-    len = end.offset_from(start) as ::core::ffi::c_long as ::core::ffi::c_int;
-    if len > 0 as ::core::ffi::c_int {
-        result = new(((len + 1 as ::core::ffi::c_int) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_char;
-        memcpy(
-            result as *mut ::core::ffi::c_void,
-            start as *const ::core::ffi::c_void,
-            len as size_t,
-        );
-        *result.offset(len as isize) = '\0' as i32 as ::core::ffi::c_char;
+    start: *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
+) -> *mut core::ffi::c_char {
+    let bytes = unsafe { input_bytes(start, end) };
+    if bytes.is_empty() {
+        return core::ptr::null_mut();
     }
-    return result;
+    let size = bytes
+        .len()
+        .checked_add(1)
+        .and_then(|len| u32::try_from(len).ok())
+        .unwrap_or_else(|| pdf_abort!("PDF token is too large."));
+    unsafe {
+        let result = new(size).cast::<core::ffi::c_char>();
+        core::ptr::copy_nonoverlapping(start, result, bytes.len());
+        *result.add(bytes.len()) = 0;
+        result
+    }
 }
 #[unsafe(export_name = "__pdf_impl_parse_number")]
 pub unsafe extern "C-unwind" fn parse_number(
-    mut start: *mut *const ::core::ffi::c_char,
-    mut end: *const ::core::ffi::c_char,
-) -> *mut ::core::ffi::c_char {
-    let mut number: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-    skip_white(start, end);
-    p = *start;
-    if p < end && (*p as ::core::ffi::c_int == '+' as i32 || *p as ::core::ffi::c_int == '-' as i32)
-    {
-        p = p.offset(1);
-    }
-    while p < end && isdigit(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0 {
-        p = p.offset(1);
-    }
-    if p < end && *p as ::core::ffi::c_int == '.' as i32 {
-        p = p.offset(1);
-        while p < end && isdigit(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0 {
-            p = p.offset(1);
-        }
-    }
-    number = parsed_string(*start, p);
-    *start = p;
-    return number;
+    start: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
+) -> *mut core::ffi::c_char {
+    unsafe { parse_numeric_token(start, end, false) }
 }
+
 #[unsafe(export_name = "__pdf_impl_parse_unsigned")]
 pub unsafe extern "C-unwind" fn parse_unsigned(
-    mut start: *mut *const ::core::ffi::c_char,
-    mut end: *const ::core::ffi::c_char,
-) -> *mut ::core::ffi::c_char {
-    let mut number: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-    skip_white(start, end);
-    p = *start;
-    while p < end {
-        if isdigit(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) == 0 {
-            break;
-        }
-        p = p.offset(1);
-    }
-    number = parsed_string(*start, p);
-    *start = p;
-    return number;
+    start: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
+) -> *mut core::ffi::c_char {
+    unsafe { parse_numeric_token(start, end, true) }
 }
-unsafe extern "C-unwind" fn parse_gen_ident(
-    mut start: *mut *const ::core::ffi::c_char,
-    mut end: *const ::core::ffi::c_char,
-    mut valid_chars: *const ::core::ffi::c_char,
-) -> *mut ::core::ffi::c_char {
-    let mut ident: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-    p = *start;
-    while p < end {
-        if strchr(valid_chars, *p as ::core::ffi::c_int).is_null() {
-            break;
-        }
-        p = p.offset(1);
+
+unsafe fn parse_numeric_token(
+    start: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
+    unsigned: bool,
+) -> *mut core::ffi::c_char {
+    unsafe {
+        skip_white(start, end);
+        let consumed = crate::syntax::number_length(input_bytes(*start, end), unsigned);
+        let next = (*start).add(consumed);
+        let result = parsed_string(*start, next);
+        *start = next;
+        result
     }
-    ident = parsed_string(*start, p);
-    *start = p;
-    return ident;
+}
+
+unsafe extern "C-unwind" fn parse_gen_ident(
+    start: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
+    valid_chars: *const core::ffi::c_char,
+) -> *mut core::ffi::c_char {
+    unsafe {
+        let valid = std::ffi::CStr::from_ptr(valid_chars).to_bytes_with_nul();
+        let consumed = input_bytes(*start, end)
+            .iter()
+            .take_while(|b| valid.contains(b))
+            .count();
+        let next = (*start).add(consumed);
+        let result = parsed_string(*start, next);
+        *start = next;
+        result
+    }
 }
 #[unsafe(export_name = "__pdf_impl_parse_ident")]
 pub unsafe extern "C-unwind" fn parse_ident(
@@ -299,512 +272,110 @@ pub unsafe extern "C-unwind" fn parse_opt_ident(
 }
 #[unsafe(export_name = "__pdf_impl_parse_pdf_number")]
 pub unsafe extern "C-unwind" fn parse_pdf_number(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
+    pp: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
 ) -> *mut pdf_obj {
-    let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-    let mut v: ::core::ffi::c_double = 0.0f64;
-    let mut nddigits: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut sign: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    let mut has_dot: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    p = *pp;
-    skip_white(&raw mut p, endptr);
-    if p >= endptr
-        || isdigit(
-            *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_uchar
-                as ::core::ffi::c_int,
-        ) == 0
-            && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '.' as i32
-            && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '+' as i32
-            && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '-' as i32
-    {
-        pdf_warning!(
-            b"Could not find a numeric object.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-        return ::core::ptr::null_mut::<pdf_obj>();
-    }
-    if *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '-' as i32 {
-        if p.offset(1 as ::core::ffi::c_int as isize) >= endptr {
-            pdf_warning!(
-                b"Could not find a numeric object.\0" as *const u8 as *const ::core::ffi::c_char,
-            );
-            return ::core::ptr::null_mut::<pdf_obj>();
+    match crate::syntax::number(unsafe { input_bytes(*pp, end) }) {
+        Ok((value, consumed)) => unsafe {
+            *pp = (*pp).add(consumed);
+            pdf_new_number(value)
+        },
+        Err(error) => {
+            pdf_warning!("{}", error.message.to_string_lossy());
+            core::ptr::null_mut()
         }
-        sign = -(1 as ::core::ffi::c_int);
-        p = p.offset(1);
-    } else if *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '+' as i32 {
-        if p.offset(1 as ::core::ffi::c_int as isize) >= endptr {
-            pdf_warning!(
-                b"Could not find a numeric object.\0" as *const u8 as *const ::core::ffi::c_char,
-            );
-            return ::core::ptr::null_mut::<pdf_obj>();
-        }
-        sign = 1 as ::core::ffi::c_int;
-        p = p.offset(1);
     }
-    while p < endptr
-        && !(*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == ' ' as i32
-            || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\t' as i32
-            || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\u{c}' as i32
-            || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\r' as i32
-            || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\n' as i32
-            || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\0' as i32
-            || (*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '(' as i32
-                || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == ')' as i32
-                || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '/' as i32
-                || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '<' as i32
-                || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '>' as i32
-                || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '[' as i32
-                || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == ']' as i32
-                || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '%' as i32))
-    {
-        if *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '.' as i32 {
-            if has_dot != 0 {
-                pdf_warning!(
-                    b"Could not find a numeric object.\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
-                return ::core::ptr::null_mut::<pdf_obj>();
-            } else {
-                has_dot = 1 as ::core::ffi::c_int;
-            }
-        } else if isdigit(
-            *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_uchar
-                as ::core::ffi::c_int,
-        ) != 0
-        {
-            if has_dot != 0 {
-                v += (*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    - '0' as i32) as ::core::ffi::c_double
-                    / pow(
-                        10 as ::core::ffi::c_int as ::core::ffi::c_double,
-                        (nddigits + 1 as ::core::ffi::c_int) as ::core::ffi::c_double,
-                    );
-                nddigits += 1;
-            } else {
-                v = v * 10.0f64
-                    + *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        as ::core::ffi::c_double
-                    - '0' as i32 as ::core::ffi::c_double;
-            }
-        } else {
-            pdf_warning!(
-                b"Could not find a numeric object.\0" as *const u8 as *const ::core::ffi::c_char,
-            );
-            return ::core::ptr::null_mut::<pdf_obj>();
-        }
-        p = p.offset(1);
-    }
-    *pp = p;
-    return pdf_new_number(sign as ::core::ffi::c_double * v);
 }
-unsafe extern "C-unwind" fn pn_getc(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
-    let mut ch: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-    p = *pp;
-    if *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '#' as i32 {
-        if p.offset(2 as ::core::ffi::c_int as isize) >= endptr {
-            *pp = endptr;
-            return -(1 as ::core::ffi::c_int);
-        }
-        if isxdigit(
-            *p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_uchar
-                as ::core::ffi::c_int,
-        ) == 0
-            || isxdigit(
-                *p.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_uchar
-                    as ::core::ffi::c_int,
-            ) == 0
-        {
-            *pp = (*pp).offset(3 as ::core::ffi::c_int as isize);
-            return -(1 as ::core::ffi::c_int);
-        }
-        ch = xtoi(*p.offset(1 as ::core::ffi::c_int as isize)) << 4 as ::core::ffi::c_int;
-        ch += xtoi(*p.offset(2 as ::core::ffi::c_int as isize));
-        *pp = (*pp).offset(3 as ::core::ffi::c_int as isize);
-    } else {
-        ch = *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int;
-        *pp = (*pp).offset(1 as ::core::ffi::c_int as isize);
-    }
-    return ch;
-}
-pub const PDF_NAME_LEN_MAX: ::core::ffi::c_int = 128 as ::core::ffi::c_int;
-pub const PDF_STRING_LEN_MAX: ::core::ffi::c_int = 65535 as ::core::ffi::c_int;
+pub const PDF_NAME_LEN_MAX: core::ffi::c_int = 128;
+pub const PDF_STRING_LEN_MAX: core::ffi::c_int = 65535;
 
 #[unsafe(export_name = "__pdf_impl_parse_pdf_name")]
 pub unsafe extern "C-unwind" fn parse_pdf_name(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
+    pp: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
 ) -> *mut pdf_obj {
-    let mut name: [::core::ffi::c_char; 129] = [0; 129];
-    let mut ch: ::core::ffi::c_int = 0;
-    let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    skip_white(pp, endptr);
-    if *pp >= endptr || **pp as ::core::ffi::c_int != '/' as i32 {
-        pdf_warning!(b"Could not find a name object.\0" as *const u8 as *const ::core::ffi::c_char,);
-        return ::core::ptr::null_mut::<pdf_obj>();
+    unsafe {
+        skip_white(pp, end);
     }
-    *pp = (*pp).offset(1);
-    while *pp < endptr
-        && !(**pp as ::core::ffi::c_int == ' ' as i32
-            || **pp as ::core::ffi::c_int == '\t' as i32
-            || **pp as ::core::ffi::c_int == '\u{c}' as i32
-            || **pp as ::core::ffi::c_int == '\r' as i32
-            || **pp as ::core::ffi::c_int == '\n' as i32
-            || **pp as ::core::ffi::c_int == '\0' as i32
-            || (**pp as ::core::ffi::c_int == '(' as i32
-                || **pp as ::core::ffi::c_int == ')' as i32
-                || **pp as ::core::ffi::c_int == '/' as i32
-                || **pp as ::core::ffi::c_int == '<' as i32
-                || **pp as ::core::ffi::c_int == '>' as i32
-                || **pp as ::core::ffi::c_int == '[' as i32
-                || **pp as ::core::ffi::c_int == ']' as i32
-                || **pp as ::core::ffi::c_int == '%' as i32))
-    {
-        ch = pn_getc(pp, endptr);
-        if ch < 0 as ::core::ffi::c_int || ch > 0xff as ::core::ffi::c_int {
-            pdf_warning!(
-                b"Invalid char in PDF name object. (ignored)\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
-        } else if ch == 0 as ::core::ffi::c_int {
-            pdf_warning!(
-                b"Null char not allowed in PDF name object. (ignored)\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
-        } else if len < PDF_STRING_LEN_MAX + 1 as ::core::ffi::c_int {
-            if len == PDF_NAME_LEN_MAX {
-                pdf_warning!(
-                    b"PDF name length too long. (>= %d bytes)\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                    PDF_NAME_LEN_MAX,
-                );
-            }
-            let fresh1 = len;
-            len = len + 1;
-            name[fresh1 as usize] = ch as ::core::ffi::c_char;
-        } else {
-            pdf_warning!(
-                b"PDF name length too long. (>= %d bytes, truncated)\0" as *const u8
-                    as *const ::core::ffi::c_char,
-                PDF_STRING_LEN_MAX + 1 as ::core::ffi::c_int,
-            );
+    let bytes = unsafe { input_bytes(*pp, end) };
+    let parsed = crate::syntax::name(bytes, |message| {
+        pdf_warning!("{}", message);
+    });
+    match parsed {
+        Ok((mut name, consumed)) => unsafe {
+            name.push(0);
+            *pp = (*pp).add(consumed);
+            pdf_new_name(name.as_ptr().cast())
+        },
+        Err(error) => {
+            pdf_warning!("{}", error.message.to_string_lossy());
+            core::ptr::null_mut()
         }
     }
-    if len < 1 as ::core::ffi::c_int {
-        pdf_warning!(b"No valid name object found.\0" as *const u8 as *const ::core::ffi::c_char,);
-        return ::core::ptr::null_mut::<pdf_obj>();
-    }
-    name[len as usize] = '\0' as i32 as ::core::ffi::c_char;
-    return pdf_new_name(&raw mut name as *mut ::core::ffi::c_char);
 }
+
 #[unsafe(export_name = "__pdf_impl_parse_pdf_boolean")]
 pub unsafe extern "C-unwind" fn parse_pdf_boolean(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
+    pp: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
 ) -> *mut pdf_obj {
-    skip_white(pp, endptr);
-    if (*pp).offset(4 as ::core::ffi::c_int as isize) <= endptr
-        && !strstartswith(*pp, b"true\0" as *const u8 as *const ::core::ffi::c_char).is_null()
-    {
-        if (*pp).offset(4 as ::core::ffi::c_int as isize) == endptr
-            || (*(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == ' ' as i32
-                || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\t' as i32
-                || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\u{c}' as i32
-                || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\r' as i32
-                || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\n' as i32
-                || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\0' as i32
-                || (*(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '(' as i32
-                    || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == ')' as i32
-                    || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == '/' as i32
-                    || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == '<' as i32
-                    || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == '>' as i32
-                    || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == '[' as i32
-                    || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == ']' as i32
-                    || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == '%' as i32))
-        {
-            *pp = (*pp).offset(4 as ::core::ffi::c_int as isize);
-            return pdf_new_boolean(1 as ::core::ffi::c_char);
-        }
-    } else if (*pp).offset(5 as ::core::ffi::c_int as isize) <= endptr
-        && !strstartswith(*pp, b"false\0" as *const u8 as *const ::core::ffi::c_char).is_null()
-    {
-        if (*pp).offset(5 as ::core::ffi::c_int as isize) == endptr
-            || (*(*pp).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == ' ' as i32
-                || *(*pp).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\t' as i32
-                || *(*pp).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\u{c}' as i32
-                || *(*pp).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\r' as i32
-                || *(*pp).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\n' as i32
-                || *(*pp).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\0' as i32
-                || (*(*pp).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '(' as i32
-                    || *(*pp).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == ')' as i32
-                    || *(*pp).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == '/' as i32
-                    || *(*pp).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == '<' as i32
-                    || *(*pp).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == '>' as i32
-                    || *(*pp).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == '[' as i32
-                    || *(*pp).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == ']' as i32
-                    || *(*pp).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == '%' as i32))
-        {
-            *pp = (*pp).offset(5 as ::core::ffi::c_int as isize);
-            return pdf_new_boolean(0 as ::core::ffi::c_char);
+    unsafe {
+        skip_white(pp, end);
+    }
+    let bytes = unsafe { input_bytes(*pp, end) };
+    for (word, value) in [(b"true".as_slice(), 1), (b"false".as_slice(), 0)] {
+        if crate::syntax::keyword(bytes, word) {
+            return unsafe {
+                *pp = (*pp).add(word.len());
+                pdf_new_boolean(value)
+            };
         }
     }
-    pdf_warning!(b"Not a boolean object.\0" as *const u8 as *const ::core::ffi::c_char);
-    return ::core::ptr::null_mut::<pdf_obj>();
+    pdf_warning!("Could not find a boolean object.");
+    core::ptr::null_mut()
 }
+
 #[unsafe(export_name = "__pdf_impl_parse_pdf_null")]
 pub unsafe extern "C-unwind" fn parse_pdf_null(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
+    pp: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
 ) -> *mut pdf_obj {
-    skip_white(pp, endptr);
-    if (*pp).offset(4 as ::core::ffi::c_int as isize) > endptr {
-        pdf_warning!(b"Not a null object.\0" as *const u8 as *const ::core::ffi::c_char);
-        return ::core::ptr::null_mut::<pdf_obj>();
-    } else if (*pp).offset(4 as ::core::ffi::c_int as isize) < endptr
-        && !(*(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == ' ' as i32
-            || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\t' as i32
-            || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                == '\u{c}' as i32
-            || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\r' as i32
-            || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\n' as i32
-            || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\0' as i32
-            || (*(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                == '(' as i32
-                || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == ')' as i32
-                || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '/' as i32
-                || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '<' as i32
-                || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '>' as i32
-                || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '[' as i32
-                || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == ']' as i32
-                || *(*pp).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '%' as i32))
-    {
-        pdf_warning!(b"Not a null object.\0" as *const u8 as *const ::core::ffi::c_char);
-        return ::core::ptr::null_mut::<pdf_obj>();
-    } else if !strstartswith(*pp, b"null\0" as *const u8 as *const ::core::ffi::c_char).is_null() {
-        *pp = (*pp).offset(4 as ::core::ffi::c_int as isize);
-        return pdf_new_null();
+    unsafe {
+        skip_white(pp, end);
     }
-    pdf_warning!(b"Not a null object.\0" as *const u8 as *const ::core::ffi::c_char);
-    return ::core::ptr::null_mut::<pdf_obj>();
-}
-unsafe extern "C-unwind" fn ps_getescc(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
-    let mut ch: ::core::ffi::c_int = 0;
-    let mut i: ::core::ffi::c_int = 0;
-    let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-    p = (*pp).offset(1 as ::core::ffi::c_int as isize);
-    match *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int {
-        110 => {
-            ch = '\n' as i32;
-            p = p.offset(1);
-        }
-        114 => {
-            ch = '\r' as i32;
-            p = p.offset(1);
-        }
-        116 => {
-            ch = '\t' as i32;
-            p = p.offset(1);
-        }
-        98 => {
-            ch = '\u{8}' as i32;
-            p = p.offset(1);
-        }
-        102 => {
-            ch = '\u{c}' as i32;
-            p = p.offset(1);
-        }
-        10 => {
-            ch = -(1 as ::core::ffi::c_int);
-            p = p.offset(1);
-        }
-        13 => {
-            ch = -(1 as ::core::ffi::c_int);
-            p = p.offset(1);
-            if p < endptr
-                && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\n' as i32
-            {
-                p = p.offset(1);
-            }
-        }
-        _ => {
-            if *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\\' as i32
-                || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '(' as i32
-                || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == ')' as i32
-            {
-                ch = *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int;
-                p = p.offset(1);
-            } else if *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                >= '0' as i32
-                && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int <= '7' as i32
-            {
-                ch = 0 as ::core::ffi::c_int;
-                i = 0 as ::core::ffi::c_int;
-                while i < 3 as ::core::ffi::c_int
-                    && p < endptr
-                    && (*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        >= '0' as i32
-                        && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                            <= '7' as i32)
-                {
-                    ch = (ch << 3 as ::core::ffi::c_int)
-                        + (*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                            - '0' as i32);
-                    p = p.offset(1);
-                    i += 1;
-                }
-                ch = ch & 0xff as ::core::ffi::c_int;
-            } else {
-                ch = *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_uchar
-                    as ::core::ffi::c_int;
-                p = p.offset(1);
-            }
-        }
+    if crate::syntax::keyword(unsafe { input_bytes(*pp, end) }, b"null") {
+        return unsafe {
+            *pp = (*pp).add(4);
+            pdf_new_null()
+        };
     }
-    *pp = p;
-    return ch;
+    pdf_warning!("Could not find a null object.");
+    core::ptr::null_mut()
 }
+
 unsafe extern "C-unwind" fn parse_pdf_literal_string(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
+    pp: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
+    tainted: bool,
 ) -> *mut pdf_obj {
-    let __pdf_state = unsafe { document_state() };
-    let mut ch: ::core::ffi::c_int = 0;
-    let mut op_count: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-    p = *pp;
-    skip_white(&raw mut p, endptr);
-    if p >= endptr
-        || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '(' as i32
-    {
-        return ::core::ptr::null_mut::<pdf_obj>();
+    let mut start = unsafe { *pp };
+    unsafe {
+        skip_white(&mut start, end);
     }
-    p = p.offset(1);
-    while p < endptr {
-        ch = *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int;
-        if ch == ')' as i32 && op_count < 1 as ::core::ffi::c_int {
-            break;
-        }
-        if (*__pdf_state).parser_state.tainted != 0 {
-            if p.offset(1 as ::core::ffi::c_int as isize) < endptr
-                && ch & 0x80 as ::core::ffi::c_int != 0
-            {
-                if len + 2 as ::core::ffi::c_int >= PDF_STRING_LEN_MAX {
-                    pdf_warning!(
-                        b"PDF string length too long. (limit: %d)\0" as *const u8
-                            as *const ::core::ffi::c_char,
-                        PDF_STRING_LEN_MAX,
-                    );
-                    return ::core::ptr::null_mut::<pdf_obj>();
-                }
-                let fresh3 = len;
-                len = len + 1;
-                (*__pdf_state).sbuf[fresh3 as usize] = *p.offset(0 as ::core::ffi::c_int as isize);
-                let fresh4 = len;
-                len = len + 1;
-                (*__pdf_state).sbuf[fresh4 as usize] = *p.offset(1 as ::core::ffi::c_int as isize);
-                p = p.offset(2 as ::core::ffi::c_int as isize);
-                continue;
+    match crate::syntax::literal(unsafe { input_bytes(start, end) }, 65533, tainted, false) {
+        Ok((bytes, consumed)) => unsafe {
+            *pp = start.add(consumed);
+            pdf_new_string(bytes.as_ptr().cast(), bytes.len())
+        },
+        Err(error) => {
+            if error.message.to_bytes() == b"PDF string length too long." {
+                pdf_warning!("PDF string length too long. (limit: 65535)");
+            } else {
+                pdf_warning!("{}", error.message.to_string_lossy());
             }
-        }
-        if len + 1 as ::core::ffi::c_int >= PDF_STRING_LEN_MAX {
-            pdf_warning!(
-                b"PDF string length too long. (limit: %d)\0" as *const u8
-                    as *const ::core::ffi::c_char,
-                PDF_STRING_LEN_MAX,
-            );
-            return ::core::ptr::null_mut::<pdf_obj>();
-        }
-        match ch {
-            92 => {
-                ch = ps_getescc(&raw mut p, endptr);
-                if ch >= 0 as ::core::ffi::c_int {
-                    let fresh5 = len;
-                    len = len + 1;
-                    (*__pdf_state).sbuf[fresh5 as usize] =
-                        (ch & 0xff as ::core::ffi::c_int) as ::core::ffi::c_char;
-                }
-            }
-            13 => {
-                p = p.offset(1);
-                if p < endptr
-                    && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == '\n' as i32
-                {
-                    p = p.offset(1);
-                }
-                let fresh6 = len;
-                len = len + 1;
-                (*__pdf_state).sbuf[fresh6 as usize] = '\n' as i32 as ::core::ffi::c_char;
-            }
-            _ => {
-                if ch == '(' as i32 {
-                    op_count += 1;
-                } else if ch == ')' as i32 {
-                    op_count -= 1;
-                }
-                let fresh7 = len;
-                len = len + 1;
-                (*__pdf_state).sbuf[fresh7 as usize] = ch as ::core::ffi::c_char;
-                p = p.offset(1);
-            }
+            core::ptr::null_mut()
         }
     }
-    if op_count > 0 as ::core::ffi::c_int
-        || p >= endptr
-        || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != ')' as i32
-    {
-        pdf_warning!(
-            b"Unbalanced parens/truncated PDF literal string.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
-        return ::core::ptr::null_mut::<pdf_obj>();
-    }
-    *pp = p.offset(1 as ::core::ffi::c_int as isize);
-    return pdf_new_string(
-        &raw mut (*__pdf_state).sbuf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-        len as size_t,
-    );
 }
 fn decode_pdf_hex_string(bytes: &[u8]) -> Option<(Vec<u8>, usize)> {
     if bytes.first() != Some(&b'<') {
@@ -874,402 +445,327 @@ unsafe extern "C-unwind" fn parse_pdf_hex_string(
 }
 #[unsafe(export_name = "__pdf_impl_parse_pdf_string")]
 pub unsafe extern "C-unwind" fn parse_pdf_string(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
+    pp: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
 ) -> *mut pdf_obj {
-    skip_white(pp, endptr);
-    if (*pp).offset(2 as ::core::ffi::c_int as isize) <= endptr {
-        if **pp as ::core::ffi::c_int == '(' as i32 {
-            return parse_pdf_literal_string(pp, endptr);
-        } else if **pp as ::core::ffi::c_int == '<' as i32
-            && (*(*pp).offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '>' as i32
-                || isxdigit(
-                    *(*pp).offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_uchar
-                        as ::core::ffi::c_int,
-                ) != 0)
-        {
-            return parse_pdf_hex_string(pp, endptr);
-        }
+    unsafe {
+        skip_white(pp, end);
     }
-    pdf_warning!(b"Could not find a string object.\0" as *const u8 as *const ::core::ffi::c_char,);
-    return ::core::ptr::null_mut::<pdf_obj>();
+    let bytes = unsafe { input_bytes(*pp, end) };
+    if bytes.first() == Some(&b'(') {
+        return unsafe { parse_pdf_literal_string(pp, end, false) };
+    }
+    if bytes.first() == Some(&b'<')
+        && bytes
+            .get(1)
+            .is_some_and(|b| *b == b'>' || b.is_ascii_hexdigit())
+    {
+        return unsafe { parse_pdf_hex_string(pp, end) };
+    }
+    pdf_warning!("Could not find a string object.");
+    core::ptr::null_mut()
 }
-unsafe extern "C-unwind" fn parse_pdf_dict_extended(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
-    mut pf: *mut pdf_file,
-    mut unknown_handler: Option<
-        unsafe extern "C-unwind" fn(
-            *mut *const ::core::ffi::c_char,
-            *const ::core::ffi::c_char,
-            *mut ::core::ffi::c_void,
-        ) -> *mut pdf_obj,
-    >,
-    mut user_data: *mut ::core::ffi::c_void,
-) -> *mut pdf_obj {
-    let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-    p = *pp;
-    skip_white(&raw mut p, endptr);
-    if p.offset(4 as ::core::ffi::c_int as isize) > endptr
-        || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '<' as i32
-        || *p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '<' as i32
-    {
-        return ::core::ptr::null_mut::<pdf_obj>();
+
+type UnknownHandler = Option<
+    unsafe extern "C-unwind" fn(
+        *mut *const core::ffi::c_char,
+        *const core::ffi::c_char,
+        *mut core::ffi::c_void,
+    ) -> *mut pdf_obj,
+>;
+
+struct ParsedObject(*mut pdf_obj);
+
+impl ParsedObject {
+    fn take(mut self) -> *mut pdf_obj {
+        core::mem::replace(&mut self.0, core::ptr::null_mut())
     }
-    p = p.offset(2 as ::core::ffi::c_int as isize);
-    result = pdf_new_dict();
-    skip_white(&raw mut p, endptr);
-    while p < endptr
-        && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '>' as i32
-    {
-        let mut key: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-        let mut value: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-        skip_white(&raw mut p, endptr);
-        key = parse_pdf_name(&raw mut p, endptr);
-        if key.is_null() {
-            pdf_warning!(
-                b"Could not find a key in dictionary object.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
-            pdf_release_obj(result);
-            return ::core::ptr::null_mut::<pdf_obj>();
-        }
-        skip_white(&raw mut p, endptr);
-        value = parse_pdf_object_extended(&raw mut p, endptr, pf, unknown_handler, user_data);
-        if value.is_null() {
-            pdf_release_obj(key);
-            pdf_release_obj(value);
-            pdf_release_obj(result);
-            pdf_warning!(
-                b"Could not find a value in dictionary object.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
-            return ::core::ptr::null_mut::<pdf_obj>();
-        }
-        pdf_add_dict(result, key, value);
-        skip_white(&raw mut p, endptr);
-    }
-    if p.offset(2 as ::core::ffi::c_int as isize) > endptr
-        || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '>' as i32
-        || *p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '>' as i32
-    {
-        pdf_warning!(
-            b"Syntax error: Dictionary object ended prematurely.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
-        pdf_release_obj(result);
-        return ::core::ptr::null_mut::<pdf_obj>();
-    }
-    *pp = p.offset(2 as ::core::ffi::c_int as isize);
-    return result;
 }
-unsafe extern "C-unwind" fn parse_pdf_array_extended(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
-    mut pf: *mut pdf_file,
-    mut unknown_handler: Option<
-        unsafe extern "C-unwind" fn(
-            *mut *const ::core::ffi::c_char,
-            *const ::core::ffi::c_char,
-            *mut ::core::ffi::c_void,
-        ) -> *mut pdf_obj,
-    >,
-    mut user_data: *mut ::core::ffi::c_void,
-) -> *mut pdf_obj {
-    let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-    p = *pp;
-    skip_white(&raw mut p, endptr);
-    if p.offset(2 as ::core::ffi::c_int as isize) > endptr
-        || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '[' as i32
-    {
-        pdf_warning!(
-            b"Could not find an array object.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-        return ::core::ptr::null_mut::<pdf_obj>();
-    }
-    result = pdf_new_array();
-    p = p.offset(1);
-    skip_white(&raw mut p, endptr);
-    while p < endptr
-        && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != ']' as i32
-    {
-        let mut elem: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-        elem = parse_pdf_object_extended(&raw mut p, endptr, pf, unknown_handler, user_data);
-        if elem.is_null() {
-            pdf_release_obj(result);
-            pdf_warning!(
-                b"Could not find a valid object in array object.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
-            return ::core::ptr::null_mut::<pdf_obj>();
+
+impl Drop for ParsedObject {
+    fn drop(&mut self) {
+        if !self.0.is_null() {
+            unsafe {
+                pdf_release_obj(self.0);
+            }
         }
-        pdf_add_array(result, elem);
-        skip_white(&raw mut p, endptr);
     }
-    if p >= endptr
-        || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != ']' as i32
-    {
-        pdf_warning!(
-            b"Array object ended prematurely.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-        pdf_release_obj(result);
-        return ::core::ptr::null_mut::<pdf_obj>();
-    }
-    *pp = p.offset(1 as ::core::ffi::c_int as isize);
-    return result;
 }
-unsafe extern "C-unwind" fn parse_pdf_stream(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
-    mut dict: *mut pdf_obj,
+
+unsafe fn parse_container(
+    pp: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
+    pf: *mut pdf_file,
+    handler: UnknownHandler,
+    data: *mut core::ffi::c_void,
+    depth: usize,
+    dict: bool,
+    tainted: bool,
 ) -> *mut pdf_obj {
-    let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-    let mut stream_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut stream_length: ::core::ffi::c_int = 0;
-    p = *pp;
-    skip_white(&raw mut p, endptr);
-    if p.offset(6 as ::core::ffi::c_int as isize) > endptr
-        || strstartswith(p, b"stream\0" as *const u8 as *const ::core::ffi::c_char).is_null()
-    {
-        return ::core::ptr::null_mut::<pdf_obj>();
+    if depth >= 256 {
+        pdf_warning!("PDF object nesting too deep.");
+        return core::ptr::null_mut();
     }
-    p = p.offset(6 as ::core::ffi::c_int as isize);
-    if p < endptr
-        && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\n' as i32
-    {
-        p = p.offset(1);
-    } else if p.offset(1 as ::core::ffi::c_int as isize) < endptr
-        && (*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\r' as i32
-            && *p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\n' as i32)
-    {
-        p = p.offset(2 as ::core::ffi::c_int as isize);
+    let mut p = unsafe { *pp };
+    unsafe {
+        skip_white(&mut p, end);
     }
-    let mut tmp: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut tmp2: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    tmp = pdf_lookup_dict(dict, b"Length\0" as *const u8 as *const ::core::ffi::c_char);
-    if !tmp.is_null() {
-        tmp2 = pdf_deref_obj(tmp);
-        if pdf_obj_typeof(tmp2) != PDF_NUMBER {
-            stream_length = -(1 as ::core::ffi::c_int);
+    let opening = if dict {
+        b"<<".as_slice()
+    } else {
+        b"[".as_slice()
+    };
+    if !unsafe { input_bytes(p, end) }.starts_with(opening) {
+        return core::ptr::null_mut();
+    }
+    unsafe {
+        p = p.add(opening.len());
+    }
+    let result = ParsedObject(unsafe {
+        if dict {
+            pdf_new_dict()
         } else {
-            stream_length = pdf_number_value(tmp2) as ::core::ffi::c_int;
+            pdf_new_array()
         }
-        pdf_release_obj(tmp2);
-    } else {
-        return ::core::ptr::null_mut::<pdf_obj>();
+    });
+    loop {
+        unsafe {
+            skip_white(&mut p, end);
+        }
+        let bytes = unsafe { input_bytes(p, end) };
+        let closing = if dict {
+            b">>".as_slice()
+        } else {
+            b"]".as_slice()
+        };
+        if bytes.starts_with(closing) {
+            unsafe {
+                *pp = p.add(closing.len());
+            }
+            return result.take();
+        }
+        if bytes.is_empty() || (dict && bytes.first() == Some(&b'>')) {
+            pdf_warning!(
+                "{}",
+                if dict {
+                    "Syntax error: Dictionary object ended prematurely."
+                } else {
+                    "Array object ended prematurely."
+                }
+            );
+            return core::ptr::null_mut();
+        }
+        let key = ParsedObject(if dict {
+            unsafe { parse_pdf_name(&mut p, end) }
+        } else {
+            core::ptr::null_mut()
+        });
+        if dict && key.0.is_null() {
+            pdf_warning!("Could not find a key in dictionary object.");
+            return core::ptr::null_mut();
+        }
+        let before = p;
+        let value = ParsedObject(unsafe {
+            parse_object(&mut p, end, pf, handler, data, depth + 1, tainted)
+        });
+        if value.0.is_null() || p <= before || p > end {
+            pdf_warning!(
+                "{}",
+                if dict {
+                    "Could not find a value in dictionary object."
+                } else {
+                    "Could not find a valid object in array object."
+                }
+            );
+            return core::ptr::null_mut();
+        }
+        unsafe {
+            if dict {
+                pdf_add_dict(result.0, key.take(), value.take());
+            } else {
+                pdf_add_array(result.0, value.take());
+            }
+        }
     }
-    if stream_length < 0 as ::core::ffi::c_int || p.offset(stream_length as isize) > endptr {
-        return ::core::ptr::null_mut::<pdf_obj>();
+}
+
+unsafe extern "C-unwind" fn parse_pdf_dict_extended(
+    pp: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
+    pf: *mut pdf_file,
+    handler: UnknownHandler,
+    data: *mut core::ffi::c_void,
+) -> *mut pdf_obj {
+    unsafe { parse_container(pp, end, pf, handler, data, 0, true, false) }
+}
+
+unsafe extern "C-unwind" fn parse_pdf_array_extended(
+    pp: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
+    pf: *mut pdf_file,
+    handler: UnknownHandler,
+    data: *mut core::ffi::c_void,
+) -> *mut pdf_obj {
+    unsafe { parse_container(pp, end, pf, handler, data, 0, false, false) }
+}
+
+unsafe extern "C-unwind" fn parse_pdf_stream(
+    pp: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
+    dict: *mut pdf_obj,
+) -> *mut pdf_obj {
+    let start = unsafe { *pp };
+    let bytes = unsafe { input_bytes(start, end) };
+    let mut pos = crate::syntax::skip_white(bytes);
+    if !bytes[pos..].starts_with(b"stream") {
+        return core::ptr::null_mut();
     }
-    let mut filters: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    filters = pdf_lookup_dict(dict, b"Filter\0" as *const u8 as *const ::core::ffi::c_char);
-    if filters.is_null() && stream_length > 10 as ::core::ffi::c_int {
-        result = pdf_new_stream(STREAM_COMPRESS);
-    } else {
-        result = pdf_new_stream(0 as ::core::ffi::c_int);
+    pos += 6;
+    if bytes.get(pos) == Some(&b'\n') {
+        pos += 1;
+    } else if bytes[pos..].starts_with(b"\r\n") {
+        pos += 2;
     }
-    stream_dict = pdf_stream_dict(result);
-    pdf_merge_dict(stream_dict, dict);
-    pdf_add_stream(result, p as *const ::core::ffi::c_void, stream_length);
-    p = p.offset(stream_length as isize);
-    if p < endptr
-        && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\r' as i32
-    {
-        p = p.offset(1);
+    let length = unsafe { pdf_lookup_dict(dict, c"Length".as_ptr()) };
+    if length.is_null() {
+        return core::ptr::null_mut();
     }
-    if p < endptr
-        && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\n' as i32
-    {
-        p = p.offset(1);
+    let length = ParsedObject(unsafe { pdf_deref_obj(length) });
+    if unsafe { pdf_obj_typeof(length.0) } != PDF_NUMBER {
+        return core::ptr::null_mut();
     }
-    if p.offset(9 as ::core::ffi::c_int as isize) > endptr
-        || memcmp(
-            p as *const ::core::ffi::c_void,
-            b"endstream\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-            9 as size_t,
-        ) != 0
-    {
-        pdf_release_obj(result);
-        return ::core::ptr::null_mut::<pdf_obj>();
+    let length = unsafe { pdf_number_value(length.0) };
+    if !length.is_finite() || length < 0.0 || length > i32::MAX as f64 {
+        return core::ptr::null_mut();
     }
-    p = p.offset(9 as ::core::ffi::c_int as isize);
-    *pp = p;
-    return result;
+    let length = length as usize;
+    let Some(stream_end) = pos.checked_add(length).filter(|&n| n <= bytes.len()) else {
+        return core::ptr::null_mut();
+    };
+    let mut next = stream_end;
+    if bytes.get(next) == Some(&b'\r') {
+        next += 1;
+    }
+    if bytes.get(next) == Some(&b'\n') {
+        next += 1;
+    }
+    if !bytes[next..].starts_with(b"endstream") {
+        return core::ptr::null_mut();
+    }
+    let filter = unsafe { pdf_lookup_dict(dict, c"Filter".as_ptr()) };
+    let result = ParsedObject(unsafe {
+        pdf_new_stream(if filter.is_null() && length > 10 {
+            STREAM_COMPRESS
+        } else {
+            0
+        })
+    });
+    unsafe {
+        pdf_merge_dict(pdf_stream_dict(result.0), dict);
+        pdf_add_stream(
+            result.0,
+            bytes[pos..stream_end].as_ptr().cast(),
+            length as i32,
+        );
+        *pp = start.add(next + 9);
+    }
+    result.take()
 }
 unsafe extern "C-unwind" fn try_pdf_reference(
-    mut start: *const ::core::ffi::c_char,
-    mut end: *const ::core::ffi::c_char,
-    mut endptr: *mut *const ::core::ffi::c_char,
-    mut pf: *mut pdf_file,
+    start: *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
+    endptr: *mut *const core::ffi::c_char,
+    pf: *mut pdf_file,
 ) -> *mut pdf_obj {
-    let mut id: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
-    let mut r#gen: ::core::ffi::c_ushort = 0 as ::core::ffi::c_ushort;
-    if pf.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"pf\0" as *const u8 as *const ::core::ffi::c_char
-        );
-    } else {
+    if !endptr.is_null() {
+        unsafe {
+            *endptr = start;
+        }
+    }
+    let Some((id, generation, consumed)) =
+        crate::syntax::reference(unsafe { input_bytes(start, end) })
+    else {
+        return core::ptr::null_mut();
     };
-    if !endptr.is_null() {
-        *endptr = start;
-    }
-    skip_white(&raw mut start, end);
-    if start > end.offset(-(5 as ::core::ffi::c_int as isize))
-        || isdigit(*start as ::core::ffi::c_uchar as ::core::ffi::c_int) == 0
-    {
-        return ::core::ptr::null_mut::<pdf_obj>();
-    }
-    while !(*start as ::core::ffi::c_int == ' ' as i32
-        || *start as ::core::ffi::c_int == '\t' as i32
-        || *start as ::core::ffi::c_int == '\u{c}' as i32
-        || *start as ::core::ffi::c_int == '\r' as i32
-        || *start as ::core::ffi::c_int == '\n' as i32
-        || *start as ::core::ffi::c_int == '\0' as i32)
-    {
-        if start >= end || isdigit(*start as ::core::ffi::c_uchar as ::core::ffi::c_int) == 0 {
-            return ::core::ptr::null_mut::<pdf_obj>();
+    unsafe {
+        if !endptr.is_null() {
+            *endptr = start.add(consumed);
         }
-        id = id
-            .wrapping_mul(10 as ::core::ffi::c_uint)
-            .wrapping_add((*start as ::core::ffi::c_int - '0' as i32) as ::core::ffi::c_uint);
-        start = start.offset(1);
+        pdf_new_indirect(pf, id, generation)
     }
-    skip_white(&raw mut start, end);
-    if start >= end || isdigit(*start as ::core::ffi::c_uchar as ::core::ffi::c_int) == 0 {
-        return ::core::ptr::null_mut::<pdf_obj>();
-    }
-    while !(*start as ::core::ffi::c_int == ' ' as i32
-        || *start as ::core::ffi::c_int == '\t' as i32
-        || *start as ::core::ffi::c_int == '\u{c}' as i32
-        || *start as ::core::ffi::c_int == '\r' as i32
-        || *start as ::core::ffi::c_int == '\n' as i32
-        || *start as ::core::ffi::c_int == '\0' as i32)
-    {
-        if start >= end || isdigit(*start as ::core::ffi::c_uchar as ::core::ffi::c_int) == 0 {
-            return ::core::ptr::null_mut::<pdf_obj>();
-        }
-        r#gen = (r#gen as ::core::ffi::c_int * 10 as ::core::ffi::c_int
-            + (*start as ::core::ffi::c_int - '0' as i32)) as ::core::ffi::c_ushort;
-        start = start.offset(1);
-    }
-    skip_white(&raw mut start, end);
-    if start >= end || *start as ::core::ffi::c_int != 'R' as i32 {
-        return ::core::ptr::null_mut::<pdf_obj>();
-    }
-    start = start.offset(1);
-    if !(start >= end
-        || (*start as ::core::ffi::c_int == ' ' as i32
-            || *start as ::core::ffi::c_int == '\t' as i32
-            || *start as ::core::ffi::c_int == '\u{c}' as i32
-            || *start as ::core::ffi::c_int == '\r' as i32
-            || *start as ::core::ffi::c_int == '\n' as i32
-            || *start as ::core::ffi::c_int == '\0' as i32)
-        || (*start as ::core::ffi::c_int == '(' as i32
-            || *start as ::core::ffi::c_int == ')' as i32
-            || *start as ::core::ffi::c_int == '/' as i32
-            || *start as ::core::ffi::c_int == '<' as i32
-            || *start as ::core::ffi::c_int == '>' as i32
-            || *start as ::core::ffi::c_int == '[' as i32
-            || *start as ::core::ffi::c_int == ']' as i32
-            || *start as ::core::ffi::c_int == '%' as i32))
-    {
-        return ::core::ptr::null_mut::<pdf_obj>();
-    }
-    if !endptr.is_null() {
-        *endptr = start;
-    }
-    return pdf_new_indirect(pf, id as uint32_t, r#gen as uint16_t);
 }
 #[unsafe(export_name = "__pdf_impl_parse_pdf_object_extended")]
 pub unsafe extern "C-unwind" fn parse_pdf_object_extended(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
-    mut pf: *mut pdf_file,
-    mut unknown_handler: Option<
-        unsafe extern "C-unwind" fn(
-            *mut *const ::core::ffi::c_char,
-            *const ::core::ffi::c_char,
-            *mut ::core::ffi::c_void,
-        ) -> *mut pdf_obj,
-    >,
-    mut user_data: *mut ::core::ffi::c_void,
+    pp: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
+    pf: *mut pdf_file,
+    handler: UnknownHandler,
+    data: *mut core::ffi::c_void,
 ) -> *mut pdf_obj {
-    let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut nextptr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-    skip_white(pp, endptr);
-    if *pp >= endptr {
-        pdf_warning!(
-            b"Could not find any valid object.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-        return ::core::ptr::null_mut::<pdf_obj>();
+    unsafe { parse_object(pp, end, pf, handler, data, 0, false) }
+}
+
+unsafe fn parse_object(
+    pp: *mut *const core::ffi::c_char,
+    end: *const core::ffi::c_char,
+    pf: *mut pdf_file,
+    handler: UnknownHandler,
+    data: *mut core::ffi::c_void,
+    depth: usize,
+    tainted: bool,
+) -> *mut pdf_obj {
+    unsafe {
+        skip_white(pp, end);
     }
-    match **pp as ::core::ffi::c_int {
-        60 => {
-            if *(*pp).offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '<' as i32 {
-                result = parse_pdf_hex_string(pp, endptr);
-            } else {
-                let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-                result = parse_pdf_dict_extended(pp, endptr, pf, unknown_handler, user_data);
-                skip_white(pp, endptr);
-                if !result.is_null()
-                    && *pp <= endptr.offset(-(15 as ::core::ffi::c_int as isize))
-                    && memcmp(
-                        *pp as *const ::core::ffi::c_void,
-                        b"stream\0" as *const u8 as *const ::core::ffi::c_char
-                            as *const ::core::ffi::c_void,
-                        6 as size_t,
-                    ) == 0
-                {
-                    dict = result;
-                    result = parse_pdf_stream(pp, endptr, dict);
-                    pdf_release_obj(dict);
+    let bytes = unsafe { input_bytes(*pp, end) };
+    let Some(&first) = bytes.first() else {
+        pdf_warning!("Could not find any valid object.");
+        return core::ptr::null_mut();
+    };
+    unsafe {
+        match first {
+            b'<' if bytes.get(1) == Some(&b'<') => {
+                let dict = ParsedObject(parse_container(
+                    pp, end, pf, handler, data, depth, true, tainted,
+                ));
+                skip_white(pp, end);
+                if !dict.0.is_null() && input_bytes(*pp, end).starts_with(b"stream") {
+                    parse_pdf_stream(pp, end, dict.0)
+                } else {
+                    dict.take()
+                }
+            }
+            b'<' => parse_pdf_hex_string(pp, end),
+            b'(' => parse_pdf_literal_string(pp, end, tainted),
+            b'[' => parse_container(pp, end, pf, handler, data, depth, false, tainted),
+            b'/' => parse_pdf_name(pp, end),
+            b'n' => parse_pdf_null(pp, end),
+            b't' | b'f' => parse_pdf_boolean(pp, end),
+            b'+' | b'-' | b'.' => parse_pdf_number(pp, end),
+            b'0'..=b'9' => {
+                let mut next = *pp;
+                let reference = if pf.is_null() {
+                    core::ptr::null_mut()
+                } else {
+                    try_pdf_reference(*pp, end, &mut next, pf)
+                };
+                if !reference.is_null() {
+                    *pp = next;
+                    reference
+                } else {
+                    parse_pdf_number(pp, end)
+                }
+            }
+            _ => {
+                if let Some(handler) = handler {
+                    handler(pp, end, data)
+                } else {
+                    pdf_warning!("Unknown PDF object type.");
+                    core::ptr::null_mut()
                 }
             }
         }
-        40 => {
-            result = parse_pdf_string(pp, endptr);
-        }
-        91 => {
-            result = parse_pdf_array_extended(pp, endptr, pf, unknown_handler, user_data);
-        }
-        47 => {
-            result = parse_pdf_name(pp, endptr);
-        }
-        110 => {
-            result = parse_pdf_null(pp, endptr);
-        }
-        116 | 102 => {
-            result = parse_pdf_boolean(pp, endptr);
-        }
-        43 | 45 | 46 => {
-            result = parse_pdf_number(pp, endptr);
-        }
-        48 | 49 | 50 | 51 | 52 | 53 | 54 | 55 | 56 | 57 => {
-            if !pf.is_null() && {
-                result = try_pdf_reference(*pp, endptr, &raw mut nextptr, pf);
-                !result.is_null()
-            } {
-                *pp = nextptr;
-            } else {
-                result = parse_pdf_number(pp, endptr);
-            }
-        }
-        _ => {
-            if unknown_handler.is_some() {
-                result = unknown_handler.expect("non-null function pointer")(pp, endptr, user_data);
-            } else {
-                pdf_warning!(
-                    b"Unknown PDF object type.\0" as *const u8 as *const ::core::ffi::c_char,
-                );
-                result = ::core::ptr::null_mut::<pdf_obj>();
-            }
-        }
     }
-    return result;
 }
 #[unsafe(export_name = "__pdf_impl_parse_pdf_dict")]
 pub unsafe extern "C-unwind" fn parse_pdf_dict(
@@ -1308,18 +804,18 @@ pub unsafe extern "C-unwind" fn parse_pdf_tainted_dict(
     >,
     mut user_data: *mut ::core::ffi::c_void,
 ) -> *mut pdf_obj {
-    let __pdf_state = unsafe { document_state() };
-    let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    (*__pdf_state).parser_state.tainted = 1 as ::core::ffi::c_int;
-    result = parse_pdf_dict_extended(
-        pp,
-        endptr,
-        ::core::ptr::null_mut::<pdf_file>(),
-        unknown_handler,
-        user_data,
-    );
-    (*__pdf_state).parser_state.tainted = 0 as ::core::ffi::c_int;
-    return result;
+    unsafe {
+        parse_container(
+            pp,
+            endptr,
+            core::ptr::null_mut(),
+            unknown_handler,
+            user_data,
+            0,
+            true,
+            true,
+        )
+    }
 }
 unsafe extern "C" {
     fn memcmp(
@@ -1650,30 +1146,10 @@ pub unsafe extern "C" fn __pdf_entry_parse_pdf_tainted_dict(
     }
 }
 
-pub(crate) struct DocumentState {
-    parser_state: C2RustUnnamed,
-    sbuf: [::core::ffi::c_char; 65536],
-}
+pub(crate) struct DocumentState;
 
 impl DocumentState {
     pub(crate) fn new() -> Self {
-        unsafe {
-            Self {
-                parser_state: C2RustUnnamed {
-                    tainted: 0 as ::core::ffi::c_int,
-                },
-                sbuf: [0; 65536],
-            }
-        }
-    }
-}
-
-#[inline]
-unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_pdfparse
-            .pointer
+        Self
     }
 }

@@ -23,7 +23,7 @@ links = "tectonic_pdf_io"
 [dependencies]
 aes = "0.9"
 btoa = "0.1"
-faster-hex = { version = "0.10", default-features = false, features = ["std"] }
+faster-hex = { version = "1", default-features = false, features = ["std"] }
 libc = "0.2"
 md-5 = "0.11"
 rayon = "1.12"

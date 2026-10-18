@@ -511,162 +511,49 @@ unsafe extern "C-unwind" fn pst_boolean_data_ptr(
     };
     return &raw mut (*obj).value as *mut ::core::ffi::c_void;
 }
+// Both pointers delimit caller-owned storage and remain live during parsing.
+unsafe fn input_bytes<'a>(start: *const u8, end: *const u8) -> &'a [u8] {
+    if start >= end {
+        return &[];
+    }
+    unsafe { core::slice::from_raw_parts(start, end.offset_from(start) as usize) }
+}
+
+fn keyword(bytes: &[u8], word: &[u8]) -> bool {
+    bytes.starts_with(word)
+        && bytes
+            .get(word.len())
+            .is_none_or(|&b| crate::syntax::ps_delimiter(b))
+}
+
 #[unsafe(export_name = "__pdf_impl_pst_parse_boolean")]
 pub unsafe extern "C-unwind" fn pst_parse_boolean(
-    mut inbuf: *mut *mut ::core::ffi::c_uchar,
-    mut inbufend: *mut ::core::ffi::c_uchar,
+    inbuf: *mut *mut u8,
+    end: *mut u8,
 ) -> *mut pst_obj {
-    if (*inbuf).offset(4 as ::core::ffi::c_int as isize) <= inbufend
-        && memcmp(
-            *inbuf as *const ::core::ffi::c_void,
-            b"true\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-            4 as size_t,
-        ) == 0 as ::core::ffi::c_int
-        && ((*inbuf).offset(4 as ::core::ffi::c_int as isize) == inbufend
-            || (*(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                == '(' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == ')' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '/' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '<' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '>' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '[' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == ']' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '{' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '}' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '%' as i32)
-            || (*(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                == ' ' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\t' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\u{c}' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\r' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\n' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\0' as i32))
-    {
-        *inbuf = (*inbuf).offset(4 as ::core::ffi::c_int as isize);
-        return pst_new_obj(
-            PST_TYPE_BOOLEAN,
-            pst_boolean_new(1 as ::core::ffi::c_char) as *mut ::core::ffi::c_void,
-        );
-    } else if (*inbuf).offset(5 as ::core::ffi::c_int as isize) <= inbufend
-        && memcmp(
-            *inbuf as *const ::core::ffi::c_void,
-            b"false\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-            5 as size_t,
-        ) == 0 as ::core::ffi::c_int
-        && ((*inbuf).offset(5 as ::core::ffi::c_int as isize) == inbufend
-            || (*(*inbuf).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                == '(' as i32
-                || *(*inbuf).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == ')' as i32
-                || *(*inbuf).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '/' as i32
-                || *(*inbuf).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '<' as i32
-                || *(*inbuf).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '>' as i32
-                || *(*inbuf).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '[' as i32
-                || *(*inbuf).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == ']' as i32
-                || *(*inbuf).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '{' as i32
-                || *(*inbuf).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '}' as i32
-                || *(*inbuf).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '%' as i32)
-            || (*(*inbuf).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                == ' ' as i32
-                || *(*inbuf).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\t' as i32
-                || *(*inbuf).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\u{c}' as i32
-                || *(*inbuf).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\r' as i32
-                || *(*inbuf).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\n' as i32
-                || *(*inbuf).offset(5 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\0' as i32))
-    {
-        *inbuf = (*inbuf).offset(5 as ::core::ffi::c_int as isize);
-        return pst_new_obj(
-            PST_TYPE_BOOLEAN,
-            pst_boolean_new(0 as ::core::ffi::c_char) as *mut ::core::ffi::c_void,
-        );
-    } else {
-        return ::core::ptr::null_mut::<pst_obj>();
-    };
+    let bytes = unsafe { input_bytes(*inbuf, end) };
+    for (word, value) in [(b"true".as_slice(), 1), (b"false".as_slice(), 0)] {
+        if keyword(bytes, word) {
+            return unsafe {
+                *inbuf = (*inbuf).add(word.len());
+                pst_new_obj(PST_TYPE_BOOLEAN, pst_boolean_new(value).cast())
+            };
+        }
+    }
+    core::ptr::null_mut()
 }
+
 #[unsafe(export_name = "__pdf_impl_pst_parse_null")]
-pub unsafe extern "C-unwind" fn pst_parse_null(
-    mut inbuf: *mut *mut ::core::ffi::c_uchar,
-    mut inbufend: *mut ::core::ffi::c_uchar,
-) -> *mut pst_obj {
-    if (*inbuf).offset(4 as ::core::ffi::c_int as isize) <= inbufend
-        && memcmp(
-            *inbuf as *const ::core::ffi::c_void,
-            b"null\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
-            4 as size_t,
-        ) == 0 as ::core::ffi::c_int
-        && ((*inbuf).offset(4 as ::core::ffi::c_int as isize) == inbufend
-            || (*(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                == '(' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == ')' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '/' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '<' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '>' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '[' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == ']' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '{' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '}' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '%' as i32)
-            || (*(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                == ' ' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\t' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\u{c}' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\r' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\n' as i32
-                || *(*inbuf).offset(4 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\0' as i32))
-    {
-        let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-        *inbuf = (*inbuf).offset(4 as ::core::ffi::c_int as isize);
-        q = new(
-            (strlen(pst_const_null).wrapping_add(1 as size_t) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t,
-        ) as *mut ::core::ffi::c_char;
+pub unsafe extern "C-unwind" fn pst_parse_null(inbuf: *mut *mut u8, end: *mut u8) -> *mut pst_obj {
+    if !keyword(unsafe { input_bytes(*inbuf, end) }, b"null") {
+        return core::ptr::null_mut();
+    }
+    unsafe {
+        *inbuf = (*inbuf).add(4);
+        let q = new(5).cast::<core::ffi::c_char>();
         strcpy(q, pst_const_null);
-        return pst_new_obj(PST_TYPE_NULL, q as *mut ::core::ffi::c_void);
-    } else {
-        return ::core::ptr::null_mut::<pst_obj>();
-    };
+        pst_new_obj(PST_TYPE_NULL, q.cast())
+    }
 }
 unsafe extern "C-unwind" fn pst_integer_new(mut value: ::core::ffi::c_int) -> *mut pst_integer {
     let mut obj: *mut pst_integer = ::core::ptr::null_mut::<pst_integer>();
@@ -824,122 +711,24 @@ unsafe extern "C-unwind" fn pst_real_length() -> ::core::ffi::c_uint {
 }
 #[unsafe(export_name = "__pdf_impl_pst_parse_number")]
 pub unsafe extern "C-unwind" fn pst_parse_number(
-    mut inbuf: *mut *mut ::core::ffi::c_uchar,
-    mut inbufend: *mut ::core::ffi::c_uchar,
+    inbuf: *mut *mut u8,
+    end: *mut u8,
 ) -> *mut pst_obj {
-    let mut cur: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    let mut lval: ::core::ffi::c_int = 0;
-    let mut dval: ::core::ffi::c_double = 0.;
-    *crate::backend::runtime::errno() = 0 as ::core::ffi::c_int;
-    lval = strtol(
-        *inbuf as *mut ::core::ffi::c_char,
-        &raw mut cur as *mut ::core::ffi::c_void as *mut *mut ::core::ffi::c_char,
-        10 as ::core::ffi::c_int,
-    ) as ::core::ffi::c_int;
-    if *crate::backend::runtime::errno() != 0
-        || *cur as ::core::ffi::c_int == '.' as i32
-        || *cur as ::core::ffi::c_int == 'e' as i32
-        || *cur as ::core::ffi::c_int == 'E' as i32
-    {
-        *crate::backend::runtime::errno() = 0 as ::core::ffi::c_int;
-        dval = strtod(
-            *inbuf as *mut ::core::ffi::c_char,
-            &raw mut cur as *mut ::core::ffi::c_void as *mut *mut ::core::ffi::c_char,
-        );
-        if *crate::backend::runtime::errno() == 0
-            && (cur == inbufend
-                || (*cur as ::core::ffi::c_int == '(' as i32
-                    || *cur as ::core::ffi::c_int == ')' as i32
-                    || *cur as ::core::ffi::c_int == '/' as i32
-                    || *cur as ::core::ffi::c_int == '<' as i32
-                    || *cur as ::core::ffi::c_int == '>' as i32
-                    || *cur as ::core::ffi::c_int == '[' as i32
-                    || *cur as ::core::ffi::c_int == ']' as i32
-                    || *cur as ::core::ffi::c_int == '{' as i32
-                    || *cur as ::core::ffi::c_int == '}' as i32
-                    || *cur as ::core::ffi::c_int == '%' as i32)
-                || (*cur as ::core::ffi::c_int == ' ' as i32
-                    || *cur as ::core::ffi::c_int == '\t' as i32
-                    || *cur as ::core::ffi::c_int == '\u{c}' as i32
-                    || *cur as ::core::ffi::c_int == '\r' as i32
-                    || *cur as ::core::ffi::c_int == '\n' as i32
-                    || *cur as ::core::ffi::c_int == '\0' as i32))
-        {
-            *inbuf = cur;
-            return pst_new_obj(
-                PST_TYPE_REAL,
-                pst_real_new(dval) as *mut ::core::ffi::c_void,
-            );
-        }
-    } else if cur != *inbuf
-        && (cur == inbufend
-            || (*cur as ::core::ffi::c_int == '(' as i32
-                || *cur as ::core::ffi::c_int == ')' as i32
-                || *cur as ::core::ffi::c_int == '/' as i32
-                || *cur as ::core::ffi::c_int == '<' as i32
-                || *cur as ::core::ffi::c_int == '>' as i32
-                || *cur as ::core::ffi::c_int == '[' as i32
-                || *cur as ::core::ffi::c_int == ']' as i32
-                || *cur as ::core::ffi::c_int == '{' as i32
-                || *cur as ::core::ffi::c_int == '}' as i32
-                || *cur as ::core::ffi::c_int == '%' as i32)
-            || (*cur as ::core::ffi::c_int == ' ' as i32
-                || *cur as ::core::ffi::c_int == '\t' as i32
-                || *cur as ::core::ffi::c_int == '\u{c}' as i32
-                || *cur as ::core::ffi::c_int == '\r' as i32
-                || *cur as ::core::ffi::c_int == '\n' as i32
-                || *cur as ::core::ffi::c_int == '\0' as i32))
-    {
-        *inbuf = cur;
-        return pst_new_obj(
-            PST_TYPE_INTEGER,
-            pst_integer_new(lval) as *mut ::core::ffi::c_void,
-        );
-    } else if lval >= 2 as ::core::ffi::c_int
-        && lval <= 36 as ::core::ffi::c_int
-        && *cur as ::core::ffi::c_int == '#' as i32
-        && {
-            cur = cur.offset(1);
-            isalnum(*cur as ::core::ffi::c_int) != 0
-        }
-        && (lval != 16 as ::core::ffi::c_int
-            || *cur.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != 'x' as i32
-                && *cur.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    != 'X' as i32)
-    {
-        *crate::backend::runtime::errno() = 0 as ::core::ffi::c_int;
-        lval = strtol(
-            cur as *mut ::core::ffi::c_char,
-            &raw mut cur as *mut ::core::ffi::c_void as *mut *mut ::core::ffi::c_char,
-            lval,
-        ) as ::core::ffi::c_int;
-        if *crate::backend::runtime::errno() == 0
-            && (cur == inbufend
-                || (*cur as ::core::ffi::c_int == '(' as i32
-                    || *cur as ::core::ffi::c_int == ')' as i32
-                    || *cur as ::core::ffi::c_int == '/' as i32
-                    || *cur as ::core::ffi::c_int == '<' as i32
-                    || *cur as ::core::ffi::c_int == '>' as i32
-                    || *cur as ::core::ffi::c_int == '[' as i32
-                    || *cur as ::core::ffi::c_int == ']' as i32
-                    || *cur as ::core::ffi::c_int == '{' as i32
-                    || *cur as ::core::ffi::c_int == '}' as i32
-                    || *cur as ::core::ffi::c_int == '%' as i32)
-                || (*cur as ::core::ffi::c_int == ' ' as i32
-                    || *cur as ::core::ffi::c_int == '\t' as i32
-                    || *cur as ::core::ffi::c_int == '\u{c}' as i32
-                    || *cur as ::core::ffi::c_int == '\r' as i32
-                    || *cur as ::core::ffi::c_int == '\n' as i32
-                    || *cur as ::core::ffi::c_int == '\0' as i32))
-        {
-            *inbuf = cur;
-            return pst_new_obj(
-                PST_TYPE_INTEGER,
-                pst_integer_new(lval) as *mut ::core::ffi::c_void,
-            );
+    let Some((value, consumed)) = crate::syntax::ps_number(unsafe { input_bytes(*inbuf, end) })
+    else {
+        return core::ptr::null_mut();
+    };
+    unsafe {
+        *inbuf = (*inbuf).add(consumed);
+        match value {
+            crate::syntax::PsNumber::Integer(value) => {
+                pst_new_obj(PST_TYPE_INTEGER, pst_integer_new(value).cast())
+            }
+            crate::syntax::PsNumber::Real(value) => {
+                pst_new_obj(PST_TYPE_REAL, pst_real_new(value).cast())
+            }
         }
     }
-    return ::core::ptr::null_mut::<pst_obj>();
 }
 unsafe extern "C-unwind" fn pst_name_new(mut name: *const ::core::ffi::c_char) -> *mut pst_name {
     let mut obj: *mut pst_name = ::core::ptr::null_mut::<pst_name>();
@@ -965,97 +754,20 @@ unsafe extern "C-unwind" fn pst_name_release(mut obj: *mut pst_name) {
     free((*obj).value as *mut ::core::ffi::c_void);
     free(obj as *mut ::core::ffi::c_void);
 }
-unsafe extern "C-unwind" fn getxpair(mut s: *mut *mut ::core::ffi::c_uchar) -> ::core::ffi::c_int {
-    let mut hi: ::core::ffi::c_int = 0;
-    let mut lo: ::core::ffi::c_int = 0;
-    hi = xtoi(**s as ::core::ffi::c_char);
-    if hi < 0 as ::core::ffi::c_int {
-        return hi;
-    }
-    *s = (*s).offset(1);
-    lo = xtoi(**s as ::core::ffi::c_char);
-    if lo < 0 as ::core::ffi::c_int {
-        return lo;
-    }
-    *s = (*s).offset(1);
-    return hi << 4 as ::core::ffi::c_int | lo;
-}
 #[unsafe(export_name = "__pdf_impl_pst_parse_name")]
-pub unsafe extern "C-unwind" fn pst_parse_name(
-    mut inbuf: *mut *mut ::core::ffi::c_uchar,
-    mut inbufend: *mut ::core::ffi::c_uchar,
-) -> *mut pst_obj {
-    let mut wbuf: [::core::ffi::c_uchar; 128] = [0; 128];
-    let mut c: ::core::ffi::c_uchar = 0;
-    let mut p: *mut ::core::ffi::c_uchar = &raw mut wbuf as *mut ::core::ffi::c_uchar;
-    let mut cur: *mut ::core::ffi::c_uchar = *inbuf;
-    let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    if *cur as ::core::ffi::c_int != '/' as i32 {
-        return ::core::ptr::null_mut::<pst_obj>();
+pub unsafe extern "C-unwind" fn pst_parse_name(inbuf: *mut *mut u8, end: *mut u8) -> *mut pst_obj {
+    let Some((mut name, consumed)) =
+        crate::syntax::ps_name(unsafe { input_bytes(*inbuf, end) }, |message| {
+            pdf_warning!("{}", message);
+        })
+    else {
+        return core::ptr::null_mut();
+    };
+    name.push(0);
+    unsafe {
+        *inbuf = (*inbuf).add(consumed);
+        pst_new_obj(PST_TYPE_NAME, pst_name_new(name.as_ptr().cast()).cast())
     }
-    cur = cur.offset(1);
-    while !(cur == inbufend
-        || (*cur as ::core::ffi::c_int == '(' as i32
-            || *cur as ::core::ffi::c_int == ')' as i32
-            || *cur as ::core::ffi::c_int == '/' as i32
-            || *cur as ::core::ffi::c_int == '<' as i32
-            || *cur as ::core::ffi::c_int == '>' as i32
-            || *cur as ::core::ffi::c_int == '[' as i32
-            || *cur as ::core::ffi::c_int == ']' as i32
-            || *cur as ::core::ffi::c_int == '{' as i32
-            || *cur as ::core::ffi::c_int == '}' as i32
-            || *cur as ::core::ffi::c_int == '%' as i32)
-        || (*cur as ::core::ffi::c_int == ' ' as i32
-            || *cur as ::core::ffi::c_int == '\t' as i32
-            || *cur as ::core::ffi::c_int == '\u{c}' as i32
-            || *cur as ::core::ffi::c_int == '\r' as i32
-            || *cur as ::core::ffi::c_int == '\n' as i32
-            || *cur as ::core::ffi::c_int == '\0' as i32))
-    {
-        let fresh0 = cur;
-        cur = cur.offset(1);
-        c = *fresh0;
-        if c as ::core::ffi::c_int == '#' as i32 {
-            let mut val: ::core::ffi::c_int = 0;
-            if cur.offset(2 as ::core::ffi::c_int as isize) >= inbufend {
-                pdf_warning!(
-                    b"Premature end of input name string.\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
-                break;
-            } else {
-                val = getxpair(&raw mut cur);
-                if val <= 0 as ::core::ffi::c_int {
-                    pdf_warning!(
-                        b"Invalid char for name object. (ignored)\0" as *const u8
-                            as *const ::core::ffi::c_char,
-                    );
-                    continue;
-                } else {
-                    c = val as ::core::ffi::c_uchar;
-                }
-            }
-        }
-        if len < PST_NAME_LEN_MAX {
-            let fresh1 = p;
-            p = p.offset(1);
-            *fresh1 = c;
-        }
-        len += 1;
-    }
-    *p = '\0' as i32 as ::core::ffi::c_uchar;
-    if len > PST_NAME_LEN_MAX {
-        pdf_warning!(
-            b"String too long for name object. Output will be truncated.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
-    }
-    *inbuf = cur;
-    return pst_new_obj(
-        PST_TYPE_NAME,
-        pst_name_new(&raw mut wbuf as *mut ::core::ffi::c_uchar as *mut ::core::ffi::c_char)
-            as *mut ::core::ffi::c_void,
-    );
 }
 unsafe extern "C-unwind" fn pst_name_IV() -> ::core::ffi::c_int {
     pdf_abort!(
@@ -1136,243 +848,30 @@ unsafe extern "C-unwind" fn pst_string_release(mut obj: *mut pst_string) {
 }
 #[unsafe(export_name = "__pdf_impl_pst_parse_string")]
 pub unsafe extern "C-unwind" fn pst_parse_string(
-    mut inbuf: *mut *mut ::core::ffi::c_uchar,
-    mut inbufend: *mut ::core::ffi::c_uchar,
+    inbuf: *mut *mut u8,
+    end: *mut u8,
 ) -> *mut pst_obj {
-    if (*inbuf).offset(2 as ::core::ffi::c_int as isize) >= inbufend {
-        return ::core::ptr::null_mut::<pst_obj>();
-    } else if **inbuf as ::core::ffi::c_int == '(' as i32 {
-        return pst_new_obj(
+    let bytes = unsafe { input_bytes(*inbuf, end) };
+    if bytes.starts_with(b"<~") {
+        pdf_abort!("ASCII85 string not supported yet.");
+    }
+    let parsed = match bytes.first() {
+        Some(b'(') => crate::syntax::literal(bytes, 4096, false, true).ok(),
+        Some(b'<') => crate::syntax::ps_hex(bytes, |byte| {
+            pdf_warning!("Invalid char for hex string <{:x}> treated as <0>.", byte);
+        }),
+        _ => None,
+    };
+    let Some((mut decoded, consumed)) = parsed else {
+        return core::ptr::null_mut();
+    };
+    unsafe {
+        *inbuf = (*inbuf).add(consumed);
+        pst_new_obj(
             PST_TYPE_STRING,
-            pst_string_parse_literal(inbuf, inbufend) as *mut ::core::ffi::c_void,
-        );
-    } else if **inbuf as ::core::ffi::c_int == '<' as i32
-        && *(*inbuf).offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '~' as i32
-    {
-        pdf_abort!(
-            b"ASCII85 string not supported yet.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else if **inbuf as ::core::ffi::c_int == '<' as i32 {
-        return pst_new_obj(
-            PST_TYPE_STRING,
-            pst_string_parse_hex(inbuf, inbufend) as *mut ::core::ffi::c_void,
-        );
+            pst_string_new(decoded.as_mut_ptr(), decoded.len() as u32).cast(),
+        )
     }
-    return ::core::ptr::null_mut::<pst_obj>();
-}
-unsafe extern "C-unwind" fn ostrtouc(
-    mut inbuf: *mut *mut ::core::ffi::c_uchar,
-    mut inbufend: *mut ::core::ffi::c_uchar,
-    mut valid: *mut ::core::ffi::c_uchar,
-) -> ::core::ffi::c_uchar {
-    let mut cur: *mut ::core::ffi::c_uchar = *inbuf;
-    let mut val: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
-    while cur < inbufend
-        && cur < (*inbuf).offset(3 as ::core::ffi::c_int as isize)
-        && (*cur as ::core::ffi::c_int >= '0' as i32 && *cur as ::core::ffi::c_int <= '7' as i32)
-    {
-        val = val << 3 as ::core::ffi::c_int
-            | (*cur as ::core::ffi::c_int - '0' as i32) as ::core::ffi::c_uint;
-        cur = cur.offset(1);
-    }
-    if val > 255 as ::core::ffi::c_uint || cur == *inbuf {
-        *valid = 0 as ::core::ffi::c_uchar;
-    } else {
-        *valid = 1 as ::core::ffi::c_uchar;
-    }
-    *inbuf = cur;
-    return val as ::core::ffi::c_uchar;
-}
-unsafe extern "C-unwind" fn esctouc(
-    mut inbuf: *mut *mut ::core::ffi::c_uchar,
-    mut inbufend: *mut ::core::ffi::c_uchar,
-    mut valid: *mut ::core::ffi::c_uchar,
-) -> ::core::ffi::c_uchar {
-    let mut unescaped: ::core::ffi::c_uchar = 0;
-    let mut escaped: ::core::ffi::c_uchar = 0;
-    escaped = **inbuf;
-    *valid = 1 as ::core::ffi::c_uchar;
-    match escaped as ::core::ffi::c_int {
-        92 | 41 | 40 => {
-            unescaped = escaped;
-            *inbuf = (*inbuf).offset(1);
-        }
-        110 => {
-            unescaped = '\n' as i32 as ::core::ffi::c_uchar;
-            *inbuf = (*inbuf).offset(1);
-        }
-        114 => {
-            unescaped = '\r' as i32 as ::core::ffi::c_uchar;
-            *inbuf = (*inbuf).offset(1);
-        }
-        116 => {
-            unescaped = '\t' as i32 as ::core::ffi::c_uchar;
-            *inbuf = (*inbuf).offset(1);
-        }
-        98 => {
-            unescaped = '\u{8}' as i32 as ::core::ffi::c_uchar;
-            *inbuf = (*inbuf).offset(1);
-        }
-        102 => {
-            unescaped = '\u{c}' as i32 as ::core::ffi::c_uchar;
-            *inbuf = (*inbuf).offset(1);
-        }
-        13 => {
-            unescaped = 0 as ::core::ffi::c_uchar;
-            *valid = 0 as ::core::ffi::c_uchar;
-            *inbuf = (*inbuf).offset(
-                (if *inbuf < inbufend.offset(-(1 as ::core::ffi::c_int as isize))
-                    && *(*inbuf).offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == '\n' as i32
-                {
-                    2 as ::core::ffi::c_int
-                } else {
-                    1 as ::core::ffi::c_int
-                }) as isize,
-            );
-        }
-        10 => {
-            unescaped = 0 as ::core::ffi::c_uchar;
-            *valid = 0 as ::core::ffi::c_uchar;
-            *inbuf = (*inbuf).offset(1);
-        }
-        _ => {
-            unescaped = ostrtouc(inbuf, inbufend, valid);
-        }
-    }
-    return unescaped;
-}
-unsafe extern "C-unwind" fn pst_string_parse_literal(
-    mut inbuf: *mut *mut ::core::ffi::c_uchar,
-    mut inbufend: *mut ::core::ffi::c_uchar,
-) -> *mut pst_string {
-    let mut wbuf: [::core::ffi::c_uchar; 4096] = [0; 4096];
-    let mut cur: *mut ::core::ffi::c_uchar = *inbuf;
-    let mut c: ::core::ffi::c_uchar = 0 as ::core::ffi::c_uchar;
-    let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut balance: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-    if cur.offset(2 as ::core::ffi::c_int as isize) > inbufend
-        || *cur as ::core::ffi::c_int != '(' as i32
-    {
-        return ::core::ptr::null_mut::<pst_string>();
-    }
-    cur = cur.offset(1);
-    while cur < inbufend && len < PST_STRING_LEN_MAX && balance > 0 as ::core::ffi::c_int {
-        let fresh6 = cur;
-        cur = cur.offset(1);
-        c = *fresh6;
-        match c as ::core::ffi::c_int {
-            92 => {
-                let mut unescaped: ::core::ffi::c_uchar = 0;
-                let mut valid: ::core::ffi::c_uchar = 0;
-                unescaped = esctouc(&raw mut cur, inbufend, &raw mut valid);
-                if valid != 0 {
-                    let fresh7 = len;
-                    len = len + 1;
-                    wbuf[fresh7 as usize] = unescaped;
-                }
-            }
-            40 => {
-                balance += 1;
-                let fresh8 = len;
-                len = len + 1;
-                wbuf[fresh8 as usize] = '(' as i32 as ::core::ffi::c_uchar;
-            }
-            41 => {
-                balance -= 1;
-                if balance > 0 as ::core::ffi::c_int {
-                    let fresh9 = len;
-                    len = len + 1;
-                    wbuf[fresh9 as usize] = ')' as i32 as ::core::ffi::c_uchar;
-                }
-            }
-            13 => {
-                if cur < inbufend && *cur as ::core::ffi::c_int == '\n' as i32 {
-                    cur = cur.offset(1);
-                }
-                let fresh10 = len;
-                len = len + 1;
-                wbuf[fresh10 as usize] = '\n' as i32 as ::core::ffi::c_uchar;
-            }
-            _ => {
-                let fresh11 = len;
-                len = len + 1;
-                wbuf[fresh11 as usize] = c;
-            }
-        }
-    }
-    if c as ::core::ffi::c_int != ')' as i32 {
-        return ::core::ptr::null_mut::<pst_string>();
-    }
-    *inbuf = cur;
-    return pst_string_new(
-        &raw mut wbuf as *mut ::core::ffi::c_uchar,
-        len as ::core::ffi::c_uint,
-    );
-}
-unsafe extern "C-unwind" fn pst_string_parse_hex(
-    mut inbuf: *mut *mut ::core::ffi::c_uchar,
-    mut inbufend: *mut ::core::ffi::c_uchar,
-) -> *mut pst_string {
-    let mut wbuf: [::core::ffi::c_uchar; 4096] = [0; 4096];
-    let mut cur: *mut ::core::ffi::c_uchar = *inbuf;
-    let mut len: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
-    if cur.offset(2 as ::core::ffi::c_int as isize) > inbufend
-        || *cur as ::core::ffi::c_int != '<' as i32
-        || *cur as ::core::ffi::c_int == '<' as i32
-            && *cur.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '<' as i32
-    {
-        return ::core::ptr::null_mut::<pst_string>();
-    }
-    cur = cur.offset(1);
-    while cur < inbufend && len < PST_STRING_LEN_MAX as ::core::ffi::c_uint {
-        let mut hi: ::core::ffi::c_int = 0;
-        let mut lo: ::core::ffi::c_int = 0;
-        skip_white_spaces(&raw mut cur, inbufend);
-        if *cur as ::core::ffi::c_int == '>' as i32 {
-            break;
-        }
-        let fresh2 = cur;
-        cur = cur.offset(1);
-        hi = xtoi(*fresh2 as ::core::ffi::c_char);
-        if hi < 0 as ::core::ffi::c_int {
-            pdf_warning!(
-                b"Invalid char for hex string <%x> treated as <0>.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-                *cur.offset(-(1 as ::core::ffi::c_int as isize)) as ::core::ffi::c_int,
-            );
-            hi = 0 as ::core::ffi::c_int;
-        }
-        skip_white_spaces(&raw mut cur, inbufend);
-        if *cur as ::core::ffi::c_int == '>' as i32 {
-            break;
-        }
-        lo = if cur < inbufend {
-            let fresh3 = cur;
-            cur = cur.offset(1);
-            xtoi(*fresh3 as ::core::ffi::c_char)
-        } else {
-            0 as ::core::ffi::c_int
-        };
-        if lo < 0 as ::core::ffi::c_int {
-            pdf_warning!(
-                b"Invalid char for hex string <%x> treated as <0>.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-                *cur.offset(-(1 as ::core::ffi::c_int as isize)) as ::core::ffi::c_int,
-            );
-            lo = 0 as ::core::ffi::c_int;
-        }
-        let fresh4 = len;
-        len = len.wrapping_add(1);
-        wbuf[fresh4 as usize] = (hi << 4 as ::core::ffi::c_int | lo) as ::core::ffi::c_uchar;
-    }
-    let fresh5 = cur;
-    cur = cur.offset(1);
-    if *fresh5 as ::core::ffi::c_int != '>' as i32 {
-        return ::core::ptr::null_mut::<pst_string>();
-    }
-    *inbuf = cur;
-    return pst_string_new(&raw mut wbuf as *mut ::core::ffi::c_uchar, len);
 }
 unsafe extern "C-unwind" fn pst_string_IV(mut obj: *mut pst_string) -> ::core::ffi::c_int {
     return pst_string_RV(obj) as ::core::ffi::c_int;

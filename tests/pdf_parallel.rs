@@ -457,6 +457,48 @@ fn malformed_dvi_preflight_keeps_native_diagnostics_and_allows_another_build() {
 }
 
 #[test]
+fn corrupt_png_errors_return_through_rust_and_allow_another_build() {
+    let mut memory = MemoryIo::new(true);
+    let original = png_alpha_image(8, 8);
+    memory.create_entry("recovery.png", original.clone());
+    let source =
+        "\\nopagenumbers Before\\eject\\special{pdf:image width 20pt (recovery.png)}After\\bye";
+    let (expected, _, _) = compile_pdf(&mut memory, source, true);
+    let idat = original
+        .windows(4)
+        .position(|bytes| bytes == b"IDAT")
+        .unwrap();
+    let mut bad_crc = original.clone();
+    bad_crc[29] ^= 1;
+    for damaged in [
+        bad_crc,
+        original[..idat + 6].to_vec(),
+        original[..original.len() - 5].to_vec(),
+    ] {
+        memory.create_entry("recovery.png", damaged);
+        let mut assets =
+            FilesystemIo::new(&util::test_path(&["assets"]), false, false, HashSet::new());
+        {
+            let io = IoStack::new(vec![&mut memory, &mut assets]);
+            let mut hooks = MinimalDriver::new(io);
+            let mut status = NoopStatusBackend {};
+            let mut launcher = CoreBridgeLauncher::new(&mut hooks, &mut status);
+            let error = XdvipdfmxEngine::default()
+                .process(&mut launcher, "batch.xdv", "batch.pdf")
+                .unwrap_err();
+            assert!(
+                error.to_string().contains("PNG") || error.to_string().contains("CRC"),
+                "{error}"
+            );
+        }
+        memory.create_entry("recovery.png", original.clone());
+        let (pdf, _, _) = compile_pdf(&mut memory, source, true);
+        assert_eq!(pdf, expected);
+        check_cross_references(&pdf);
+    }
+}
+
+#[test]
 fn resource_workers_preserve_metadata_and_large_stream_bytes_across_limits() {
     let mut memory = MemoryIo::new(true);
     let source = attachment_document(

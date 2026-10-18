@@ -524,283 +524,65 @@ const dict_operator: [C2RustUnnamed_2; 61] = [
         argtype: CFF_TYPE_SID,
     },
 ];
-unsafe extern "C-unwind" fn get_integer(
-    mut data: *mut *mut card8,
-    mut endptr: *mut card8,
-    mut status: *mut ::core::ffi::c_int,
-) -> ::core::ffi::c_double {
-    let mut result: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut b0: card8 = 0;
-    let mut b1: card8 = 0;
-    let mut b2: card8 = 0;
-    let fresh4 = *data;
-    *data = (*data).offset(1);
-    b0 = *fresh4;
-    if b0 as ::core::ffi::c_int == 28 as ::core::ffi::c_int
-        && *data < endptr.offset(-(2 as ::core::ffi::c_int as isize))
-    {
-        let fresh5 = *data;
-        *data = (*data).offset(1);
-        b1 = *fresh5;
-        let fresh6 = *data;
-        *data = (*data).offset(1);
-        b2 = *fresh6;
-        result = b1 as ::core::ffi::c_int * 256 as ::core::ffi::c_int + b2 as ::core::ffi::c_int;
-        if result as ::core::ffi::c_long > 0x7fff as ::core::ffi::c_long {
-            result = (result as ::core::ffi::c_long - 0x10000 as ::core::ffi::c_long)
-                as ::core::ffi::c_int;
-        }
-    } else if b0 as ::core::ffi::c_int == 29 as ::core::ffi::c_int
-        && *data < endptr.offset(-(4 as ::core::ffi::c_int as isize))
-    {
-        let mut i: ::core::ffi::c_int = 0;
-        let fresh7 = *data;
-        *data = (*data).offset(1);
-        result = *fresh7 as ::core::ffi::c_int;
-        if result > 0x7f as ::core::ffi::c_int {
-            result -= 0x100 as ::core::ffi::c_int;
-        }
-        i = 0 as ::core::ffi::c_int;
-        while i < 3 as ::core::ffi::c_int {
-            result = result * 256 as ::core::ffi::c_int + **data as ::core::ffi::c_int;
-            *data = (*data).offset(1 as ::core::ffi::c_int as isize);
-            i += 1;
-        }
-    } else if b0 as ::core::ffi::c_int >= 32 as ::core::ffi::c_int
-        && b0 as ::core::ffi::c_int <= 246 as ::core::ffi::c_int
-    {
-        result = b0 as ::core::ffi::c_int - 139 as ::core::ffi::c_int;
-    } else if b0 as ::core::ffi::c_int >= 247 as ::core::ffi::c_int
-        && b0 as ::core::ffi::c_int <= 250 as ::core::ffi::c_int
-    {
-        let fresh8 = *data;
-        *data = (*data).offset(1);
-        b1 = *fresh8;
-        result = (b0 as ::core::ffi::c_int - 247 as ::core::ffi::c_int) * 256 as ::core::ffi::c_int
-            + b1 as ::core::ffi::c_int
-            + 108 as ::core::ffi::c_int;
-    } else if b0 as ::core::ffi::c_int >= 251 as ::core::ffi::c_int
-        && b0 as ::core::ffi::c_int <= 254 as ::core::ffi::c_int
-    {
-        let fresh9 = *data;
-        *data = (*data).offset(1);
-        b1 = *fresh9;
-        result = -(b0 as ::core::ffi::c_int - 251 as ::core::ffi::c_int)
-            * 256 as ::core::ffi::c_int
-            - b1 as ::core::ffi::c_int
-            - 108 as ::core::ffi::c_int;
-    } else {
-        *status = CFF_ERROR_PARSE_ERROR;
-    }
-    return result as ::core::ffi::c_double;
-}
-unsafe extern "C-unwind" fn get_real(
-    mut data: *mut *mut card8,
-    mut endptr: *mut card8,
-    mut status: *mut ::core::ffi::c_int,
-) -> ::core::ffi::c_double {
-    let mut result: ::core::ffi::c_double = 0.0f64;
-    let mut nibble: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut pos: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut fail: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    if **data as ::core::ffi::c_int != 30 as ::core::ffi::c_int
-        || *data >= endptr.offset(-(1 as ::core::ffi::c_int as isize))
-    {
-        *status = CFF_ERROR_PARSE_ERROR;
-        return 0.0f64;
-    }
-    *data = (*data).offset(1 as ::core::ffi::c_int as isize);
-    pos = 0 as ::core::ffi::c_int;
-    while fail == 0 && len < WORK_BUFFER_SIZE - 2 as ::core::ffi::c_int && *data < endptr {
-        if pos % 2 as ::core::ffi::c_int != 0 {
-            nibble = **data as ::core::ffi::c_int & 0xf as ::core::ffi::c_int;
-            *data = (*data).offset(1 as ::core::ffi::c_int as isize);
-        } else {
-            nibble =
-                **data as ::core::ffi::c_int >> 4 as ::core::ffi::c_int & 0xf as ::core::ffi::c_int;
-        }
-        if nibble >= 0 as ::core::ffi::c_int && nibble <= 0x9 as ::core::ffi::c_int {
-            let fresh10 = len;
-            len = len + 1;
-            *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh10 as isize) =
-                (nibble + '0' as i32) as ::core::ffi::c_char;
-        } else if nibble == 0xa as ::core::ffi::c_int {
-            let fresh11 = len;
-            len = len + 1;
-            *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh11 as isize) =
-                '.' as i32 as ::core::ffi::c_char;
-        } else if nibble == 0xb as ::core::ffi::c_int || nibble == 0xc as ::core::ffi::c_int {
-            let fresh12 = len;
-            len = len + 1;
-            *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh12 as isize) =
-                'e' as i32 as ::core::ffi::c_char;
-            if nibble == 0xc as ::core::ffi::c_int {
-                let fresh13 = len;
-                len = len + 1;
-                *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh13 as isize) =
-                    '-' as i32 as ::core::ffi::c_char;
-            }
-        } else if nibble == 0xe as ::core::ffi::c_int {
-            let fresh14 = len;
-            len = len + 1;
-            *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh14 as isize) =
-                '-' as i32 as ::core::ffi::c_char;
-        } else if !(nibble == 0xd as ::core::ffi::c_int) {
-            if nibble == 0xf as ::core::ffi::c_int {
-                let fresh15 = len;
-                len = len + 1;
-                *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh15 as isize) =
-                    '\0' as i32 as ::core::ffi::c_char;
-                if pos % 2 as ::core::ffi::c_int == 0 as ::core::ffi::c_int
-                    && **data as ::core::ffi::c_int != 0xff as ::core::ffi::c_int
-                {
-                    fail = 1 as ::core::ffi::c_int;
-                }
-                break;
-            } else {
-                fail = 1 as ::core::ffi::c_int;
-            }
-        }
-        pos += 1;
-    }
-    if fail != 0 || nibble != 0xf as ::core::ffi::c_int {
-        *status = CFF_ERROR_PARSE_ERROR;
-    } else {
-        let mut s: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-        result = strtod(&raw mut work_buffer as *mut ::core::ffi::c_char, &raw mut s);
-        if *s as ::core::ffi::c_int != 0 as ::core::ffi::c_int
-            || *crate::backend::runtime::errno() == ERANGE
-        {
-            *status = CFF_ERROR_PARSE_ERROR;
-        }
-    }
-    return result;
-}
-unsafe extern "C-unwind" fn add_dict(
-    mut dict: *mut cff_dict,
-    mut data: *mut *mut card8,
-    mut endptr: *mut card8,
-    mut status: *mut ::core::ffi::c_int,
-) {
-    let __pdf_state = unsafe { document_state() };
-    let mut id: ::core::ffi::c_int = 0;
-    let mut argtype: ::core::ffi::c_int = 0;
-    id = **data as ::core::ffi::c_int;
-    if id == 0xc as ::core::ffi::c_int {
-        *data = (*data).offset(1 as ::core::ffi::c_int as isize);
-        if *data >= endptr || {
-            id = **data as ::core::ffi::c_int + CFF_LAST_DICT_OP1;
-            id >= CFF_LAST_DICT_OP
-        } {
-            *status = CFF_ERROR_PARSE_ERROR;
-            return;
-        }
-    } else if id >= CFF_LAST_DICT_OP1 {
-        *status = CFF_ERROR_PARSE_ERROR;
-        return;
-    }
-    argtype = dict_operator[id as usize].argtype;
-    if dict_operator[id as usize].opname.is_null() || argtype < 0 as ::core::ffi::c_int {
-        return;
-    }
-    if (*dict).count >= (*dict).max {
-        (*dict).max += DICT_ENTRY_MAX;
-        (*dict).entries = renew(
-            (*dict).entries as *mut ::core::ffi::c_void,
-            ((*dict).max as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<cff_dict_entry>() as usize)
-                as uint32_t,
-        ) as *mut cff_dict_entry;
-    }
-    (*(*dict).entries.offset((*dict).count as isize)).id = id;
-    let ref mut fresh16 = (*(*dict).entries.offset((*dict).count as isize)).key;
-    *fresh16 = dict_operator[id as usize].opname;
-    if argtype == CFF_TYPE_NUMBER
-        || argtype == CFF_TYPE_BOOLEAN
-        || argtype == CFF_TYPE_SID
-        || argtype == CFF_TYPE_OFFSET
-    {
-        if (*__pdf_state).stack_top < 1 as ::core::ffi::c_int {
-            *status = CFF_ERROR_STACK_UNDERFLOW;
-            return;
-        }
-        (*__pdf_state).stack_top -= 1;
-        (*(*dict).entries.offset((*dict).count as isize)).count = 1 as ::core::ffi::c_int;
-        let ref mut fresh17 = (*(*dict).entries.offset((*dict).count as isize)).values;
-        *fresh17 = new((1 as ::core::ffi::c_int as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_double>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_double;
-        *(*(*dict).entries.offset((*dict).count as isize))
-            .values
-            .offset(0 as ::core::ffi::c_int as isize) =
-            (*__pdf_state).arg_stack[(*__pdf_state).stack_top as usize];
-        (*dict).count += 1 as ::core::ffi::c_int;
-    } else if (*__pdf_state).stack_top > 0 as ::core::ffi::c_int {
-        (*(*dict).entries.offset((*dict).count as isize)).count = (*__pdf_state).stack_top;
-        let ref mut fresh18 = (*(*dict).entries.offset((*dict).count as isize)).values;
-        *fresh18 = new(((*__pdf_state).stack_top as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_double>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_double;
-        while (*__pdf_state).stack_top > 0 as ::core::ffi::c_int {
-            (*__pdf_state).stack_top -= 1;
-            *(*(*dict).entries.offset((*dict).count as isize))
-                .values
-                .offset((*__pdf_state).stack_top as isize) =
-                (*__pdf_state).arg_stack[(*__pdf_state).stack_top as usize];
-        }
-        (*dict).count += 1 as ::core::ffi::c_int;
-    }
-    *data = (*data).offset(1 as ::core::ffi::c_int as isize);
-}
 #[unsafe(export_name = "__pdf_impl_cff_dict_unpack")]
 pub unsafe extern "C-unwind" fn cff_dict_unpack(
-    mut data: *mut card8,
-    mut endptr: *mut card8,
+    data: *mut card8,
+    end: *mut card8,
 ) -> *mut cff_dict {
-    let __pdf_state = unsafe { document_state() };
-    let mut dict: *mut cff_dict = ::core::ptr::null_mut::<cff_dict>();
-    let mut status: ::core::ffi::c_int = CFF_PARSE_OK;
-    (*__pdf_state).stack_top = 0 as ::core::ffi::c_int;
-    dict = cff_new_dict();
-    while data < endptr && status == CFF_PARSE_OK {
-        if (*data as ::core::ffi::c_int) < 22 as ::core::ffi::c_int {
-            add_dict(dict, &raw mut data, endptr, &raw mut status);
-        } else if *data as ::core::ffi::c_int == 30 as ::core::ffi::c_int {
-            if (*__pdf_state).stack_top < CFF_DICT_STACK_LIMIT {
-                (*__pdf_state).arg_stack[(*__pdf_state).stack_top as usize] =
-                    get_real(&raw mut data, endptr, &raw mut status);
-                (*__pdf_state).stack_top += 1;
-            } else {
-                status = CFF_ERROR_STACK_OVERFLOW;
-            }
-        } else if *data as ::core::ffi::c_int == 255 as ::core::ffi::c_int
-            || *data as ::core::ffi::c_int >= 22 as ::core::ffi::c_int
-                && *data as ::core::ffi::c_int <= 27 as ::core::ffi::c_int
-        {
-            data = data.offset(1);
-        } else if (*__pdf_state).stack_top < CFF_DICT_STACK_LIMIT {
-            (*__pdf_state).arg_stack[(*__pdf_state).stack_top as usize] =
-                get_integer(&raw mut data, endptr, &raw mut status);
-            (*__pdf_state).stack_top += 1;
+    let bytes = if data >= end {
+        &[]
+    } else {
+        unsafe { core::slice::from_raw_parts(data, end.offset_from(data) as usize) }
+    };
+    let parsed = crate::cff::dictionary(bytes, |id| {
+        let op = unsafe { &dict_operator[id] };
+        if op.opname.is_null() || op.argtype < 0 {
+            None
         } else {
-            status = CFF_ERROR_STACK_OVERFLOW;
+            Some(matches!(
+                op.argtype,
+                CFF_TYPE_NUMBER | CFF_TYPE_BOOLEAN | CFF_TYPE_SID | CFF_TYPE_OFFSET
+            ))
         }
+    });
+    let (entries, garbage) = parsed.unwrap_or_else(|error| {
+        let status = match error {
+            crate::cff::DictError::Parse => CFF_ERROR_PARSE_ERROR,
+            crate::cff::DictError::Overflow => CFF_ERROR_STACK_OVERFLOW,
+            crate::cff::DictError::Underflow => CFF_ERROR_STACK_UNDERFLOW,
+        };
+        pdf_abort!("CFF: Parsing CFF DICT failed. (error={})", status)
+    });
+    if garbage {
+        pdf_warning!("CFF: Garbage in CFF DICT data.");
     }
-    if status != CFF_PARSE_OK {
-        pdf_abort!(
-            b"%s: Parsing CFF DICT failed. (error=%d)\0" as *const u8 as *const ::core::ffi::c_char,
-            CFF_DEBUG_STR.as_ptr(),
-            status,
-        );
-    } else if (*__pdf_state).stack_top != 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"%s: Garbage in CFF DICT data.\0" as *const u8 as *const ::core::ffi::c_char,
-            CFF_DEBUG_STR.as_ptr(),
-        );
-        (*__pdf_state).stack_top = 0 as ::core::ffi::c_int;
+    unsafe {
+        let dict = cff_new_dict();
+        for entry in entries {
+            if (*dict).count >= (*dict).max {
+                (*dict).max += DICT_ENTRY_MAX;
+                (*dict).entries = renew(
+                    (*dict).entries.cast(),
+                    ((*dict).max as usize * core::mem::size_of::<cff_dict_entry>()) as u32,
+                )
+                .cast();
+            }
+            let values =
+                new((entry.values.len() * core::mem::size_of::<f64>()) as u32).cast::<f64>();
+            core::ptr::copy_nonoverlapping(entry.values.as_ptr(), values, entry.values.len());
+            (*dict)
+                .entries
+                .add((*dict).count as usize)
+                .write(cff_dict_entry {
+                    id: entry.operator as i32,
+                    key: dict_operator[entry.operator].opname,
+                    count: entry.values.len() as i32,
+                    values,
+                });
+            (*dict).count += 1;
+        }
+        dict
     }
-    return dict;
 }
 unsafe extern "C-unwind" fn pack_integer(
     mut dest: *mut card8,

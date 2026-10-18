@@ -898,7 +898,7 @@ unsafe extern "C-unwind" fn do_operator2(
     let __pdf_state = unsafe { document_state() };
     let mut op: card8 = 0;
     *data = (*data).offset(1 as ::core::ffi::c_int as isize);
-    if endptr < (*data).offset(1 as ::core::ffi::c_int as isize) {
+    if *data >= endptr {
         (*__pdf_state).status = CS_PARSE_ERROR;
         return;
     }
@@ -1142,95 +1142,46 @@ unsafe extern "C-unwind" fn put_numbers(
         i += 1;
     }
 }
-unsafe extern "C-unwind" fn get_integer(mut data: *mut *mut card8, mut endptr: *mut card8) {
-    let __pdf_state = unsafe { document_state() };
-    let mut result: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut b0: card8 = **data;
-    let mut b1: card8 = 0;
-    let mut b2: card8 = 0;
-    *data = (*data).offset(1 as ::core::ffi::c_int as isize);
-    if b0 as ::core::ffi::c_int == 28 as ::core::ffi::c_int {
-        if endptr < (*data).offset(2 as ::core::ffi::c_int as isize) {
-            (*__pdf_state).status = CS_PARSE_ERROR;
-            return;
-        }
-        b1 = **data;
-        b2 = *(*data).offset(1 as ::core::ffi::c_int as isize);
-        result = b1 as ::core::ffi::c_int * 256 as ::core::ffi::c_int + b2 as ::core::ffi::c_int;
-        if result > 0x7fff as ::core::ffi::c_int {
-            result = (result as ::core::ffi::c_long - 0x10000 as ::core::ffi::c_long)
-                as ::core::ffi::c_int;
-        }
-        *data = (*data).offset(2 as ::core::ffi::c_int as isize);
-    } else if b0 as ::core::ffi::c_int >= 32 as ::core::ffi::c_int
-        && b0 as ::core::ffi::c_int <= 246 as ::core::ffi::c_int
-    {
-        result = b0 as ::core::ffi::c_int - 139 as ::core::ffi::c_int;
-    } else if b0 as ::core::ffi::c_int >= 247 as ::core::ffi::c_int
-        && b0 as ::core::ffi::c_int <= 250 as ::core::ffi::c_int
-    {
-        if endptr < (*data).offset(1 as ::core::ffi::c_int as isize) {
-            (*__pdf_state).status = CS_PARSE_ERROR;
-            return;
-        }
-        b1 = **data;
-        result = (b0 as ::core::ffi::c_int - 247 as ::core::ffi::c_int) * 256 as ::core::ffi::c_int
-            + b1 as ::core::ffi::c_int
-            + 108 as ::core::ffi::c_int;
-        *data = (*data).offset(1 as ::core::ffi::c_int as isize);
-    } else if b0 as ::core::ffi::c_int >= 251 as ::core::ffi::c_int
-        && b0 as ::core::ffi::c_int <= 254 as ::core::ffi::c_int
-    {
-        if endptr < (*data).offset(1 as ::core::ffi::c_int as isize) {
-            (*__pdf_state).status = CS_PARSE_ERROR;
-            return;
-        }
-        b1 = **data;
-        result = -(b0 as ::core::ffi::c_int - 251 as ::core::ffi::c_int)
-            * 256 as ::core::ffi::c_int
-            - b1 as ::core::ffi::c_int
-            - 108 as ::core::ffi::c_int;
-        *data = (*data).offset(1 as ::core::ffi::c_int as isize);
+unsafe fn read_charstring_operand(data: *mut *mut card8, end: *mut card8, long: bool) {
+    let state = unsafe { &mut *document_state() };
+    let bytes = if unsafe { *data >= end } {
+        &[]
     } else {
-        (*__pdf_state).status = CS_PARSE_ERROR;
+        unsafe { core::slice::from_raw_parts(*data, end.offset_from(*data) as usize) }
+    };
+    let parsed = if long {
+        bytes
+            .get(1..5)
+            .map(|bytes| (i32::from_be_bytes(bytes.try_into().unwrap()) as f64, 5))
+            .ok_or(())
+    } else {
+        crate::cff::integer(bytes).map_err(|_| ())
+    };
+    let Ok((value, consumed)) = parsed else {
+        state.status = CS_PARSE_ERROR;
+        return;
+    };
+    if state.cs_stack_top >= CS_ARG_STACK_MAX {
+        state.status = CS_STACK_ERROR;
         return;
     }
-    if (*__pdf_state).cs_stack_top + 1 as ::core::ffi::c_int > CS_ARG_STACK_MAX {
-        (*__pdf_state).status = CS_STACK_ERROR;
-        return;
+    state.cs_arg_stack[state.cs_stack_top as usize] = value;
+    state.cs_stack_top += 1;
+    unsafe {
+        *data = (*data).add(consumed);
     }
-    let fresh1 = (*__pdf_state).cs_stack_top;
-    (*__pdf_state).cs_stack_top = (*__pdf_state).cs_stack_top + 1;
-    (*__pdf_state).cs_arg_stack[fresh1 as usize] = result as ::core::ffi::c_double;
 }
-unsafe extern "C-unwind" fn get_longint(mut data: *mut *mut card8, mut endptr: *mut card8) {
-    let __pdf_state = unsafe { document_state() };
-    let mut result: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut i: ::core::ffi::c_uint = 0;
-    *data = (*data).offset(1 as ::core::ffi::c_int as isize);
-    if endptr < (*data).offset(4 as ::core::ffi::c_int as isize) {
-        (*__pdf_state).status = CS_PARSE_ERROR;
-        return;
+
+unsafe extern "C-unwind" fn get_integer(data: *mut *mut card8, end: *mut card8) {
+    unsafe {
+        read_charstring_operand(data, end, false);
     }
-    result = **data as ::core::ffi::c_int;
-    if result as ::core::ffi::c_long >= 0x80 as ::core::ffi::c_long {
-        result =
-            (result as ::core::ffi::c_long - 0x100 as ::core::ffi::c_long) as ::core::ffi::c_int;
+}
+
+unsafe extern "C-unwind" fn get_longint(data: *mut *mut card8, end: *mut card8) {
+    unsafe {
+        read_charstring_operand(data, end, true);
     }
-    *data = (*data).offset(1 as ::core::ffi::c_int as isize);
-    i = 1 as ::core::ffi::c_uint;
-    while i < 4 as ::core::ffi::c_uint {
-        result = result * 256 as ::core::ffi::c_int + **data as ::core::ffi::c_int;
-        *data = (*data).offset(1 as ::core::ffi::c_int as isize);
-        i = i.wrapping_add(1);
-    }
-    if (*__pdf_state).cs_stack_top + 1 as ::core::ffi::c_int > CS_ARG_STACK_MAX {
-        (*__pdf_state).status = CS_STACK_ERROR;
-        return;
-    }
-    let fresh9 = (*__pdf_state).cs_stack_top;
-    (*__pdf_state).cs_stack_top = (*__pdf_state).cs_stack_top + 1;
-    (*__pdf_state).cs_arg_stack[fresh9 as usize] = result as ::core::ffi::c_double;
 }
 unsafe extern "C-unwind" fn t1char_build_charpath(
     mut cd: *mut t1_chardesc,
@@ -1260,7 +1211,7 @@ unsafe extern "C-unwind" fn t1char_build_charpath(
                 (*__pdf_state).cs_stack_top -= 1;
                 idx = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize]
                     as ::core::ffi::c_int;
-                if subrs.is_null() || idx >= (*subrs).count as ::core::ffi::c_int {
+                if subrs.is_null() || idx < 0 || idx >= (*subrs).count as ::core::ffi::c_int {
                     pdf_abort!(b"Invalid Subr#.\0" as *const u8 as *const ::core::ffi::c_char,);
                 }
                 subr = (*subrs)

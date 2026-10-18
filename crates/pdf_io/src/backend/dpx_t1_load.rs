@@ -292,42 +292,30 @@ pub const PST_TYPE_MARK: ::core::ffi::c_int = 7 as ::core::ffi::c_int;
 pub const T1_EEKEY: ::core::ffi::c_uint = 55665 as ::core::ffi::c_uint;
 pub const T1_CHARKEY: ::core::ffi::c_uint = 4330 as ::core::ffi::c_uint;
 unsafe extern "C-unwind" fn t1_decrypt(
-    mut key: ::core::ffi::c_ushort,
-    mut dst: *mut ::core::ffi::c_uchar,
-    mut src: *const ::core::ffi::c_uchar,
-    mut skip: ::core::ffi::c_int,
-    mut len: ::core::ffi::c_int,
+    key: u16,
+    dst: *mut u8,
+    src: *const u8,
+    skip: i32,
+    len: i32,
 ) {
-    len -= skip;
-    loop {
-        let fresh4 = skip;
-        skip = skip - 1;
-        if !(fresh4 != 0) {
-            break;
-        }
-        let fresh5 = src;
-        src = src.offset(1);
-        key = ((key as ::core::ffi::c_int + *fresh5 as ::core::ffi::c_int) as ::core::ffi::c_uint)
-            .wrapping_mul(52845 as ::core::ffi::c_uint)
-            .wrapping_add(22719 as ::core::ffi::c_uint) as ::core::ffi::c_ushort;
+    if skip < 0 || len < skip {
+        pdf_abort!("Invalid Type 1 encrypted string length.");
     }
-    loop {
-        let fresh6 = len;
-        len = len - 1;
-        if !(fresh6 != 0) {
-            break;
-        }
-        let fresh7 = src;
-        src = src.offset(1);
-        let mut c: ::core::ffi::c_uchar = *fresh7;
-        let fresh8 = dst;
-        dst = dst.offset(1);
-        *fresh8 = (c as ::core::ffi::c_int ^ key as ::core::ffi::c_int >> 8 as ::core::ffi::c_int)
-            as ::core::ffi::c_uchar;
-        key = ((key as ::core::ffi::c_int + c as ::core::ffi::c_int) as ::core::ffi::c_uint)
-            .wrapping_mul(52845 as ::core::ffi::c_uint)
-            .wrapping_add(22719 as ::core::ffi::c_uint) as ::core::ffi::c_ushort;
+    if len == 0 {
+        return;
     }
+    let result = if core::ptr::eq(dst.cast_const(), src) {
+        crate::type1::decrypt_in_place(
+            unsafe { core::slice::from_raw_parts_mut(dst, len as usize) },
+            key,
+            skip as usize,
+        )
+    } else {
+        let input = unsafe { core::slice::from_raw_parts(src, len as usize) };
+        let output = unsafe { core::slice::from_raw_parts_mut(dst, (len - skip) as usize) };
+        crate::type1::decrypt(input, output, key, skip as usize)
+    };
+    result.unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
 }
 unsafe extern "C-unwind" fn get_next_key(
     mut start: *mut *mut ::core::ffi::c_uchar,
@@ -1513,7 +1501,10 @@ unsafe extern "C-unwind" fn parse_subrs(
     let mut lengths: *mut ::core::ffi::c_int = ::core::ptr::null_mut::<::core::ffi::c_int>();
     let mut data: *mut card8 = ::core::ptr::null_mut::<card8>();
     tok = pst_get_token(start, end);
-    if !(pst_type_of(tok) == PST_TYPE_INTEGER) || pst_getIV(tok) < 0 as ::core::ffi::c_int {
+    if !(pst_type_of(tok) == PST_TYPE_INTEGER)
+        || pst_getIV(tok) < 0
+        || pst_getIV(tok) > u16::MAX as i32
+    {
         pdf_warning!(b"Parsing Subrs failed.\0" as *const u8 as *const ::core::ffi::c_char,);
         if !tok.is_null() {
             pst_release_obj(tok);
@@ -1673,6 +1664,9 @@ unsafe extern "C-unwind" fn parse_subrs(
                 return -(1 as ::core::ffi::c_int);
             }
             len = pst_getIV(tok);
+            if lenIV >= 0 && len < lenIV {
+                return -1;
+            }
             if !tok.is_null() {
                 pst_release_obj(tok);
                 tok = ::core::ptr::null_mut::<pst_obj>();
@@ -1928,6 +1922,9 @@ unsafe extern "C-unwind" fn parse_charstrings(
                 return -(1 as ::core::ffi::c_int);
             }
             len = pst_getIV(tok);
+            if lenIV >= 0 && len < lenIV {
+                return -1;
+            }
             if !tok.is_null() {
                 pst_release_obj(tok);
                 tok = ::core::ptr::null_mut::<pst_obj>();
@@ -2716,79 +2713,22 @@ pub unsafe extern "C-unwind" fn is_pfb(mut handle: rust_input_handle_t) -> bool 
 pub const PFB_SEG_TYPE_ASCII: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const PFB_SEG_TYPE_BINARY: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
 unsafe extern "C-unwind" fn get_pfb_segment(
-    mut handle: rust_input_handle_t,
-    mut expected_type: ::core::ffi::c_int,
-    mut length: *mut ::core::ffi::c_int,
-) -> *mut ::core::ffi::c_uchar {
-    let mut buffer: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    let mut bytesread: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    loop {
-        let mut ch: ::core::ffi::c_int = 0;
-        let mut slen: ::core::ffi::c_int = 0;
-        let mut rlen: ::core::ffi::c_int = 0;
-        let mut i: ::core::ffi::c_int = 0;
-        ch = ttstub_input_getc(handle);
-        if ch < 0 as ::core::ffi::c_int {
-            break;
+    handle: rust_input_handle_t,
+    expected: i32,
+    length: *mut i32,
+) -> *mut u8 {
+    let mut input = crate::compat::input::ProbeInput { handle };
+    let bytes = crate::type1::segment(&mut input, expected as u8)
+        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+    unsafe {
+        let output = new((bytes.len() + 1) as u32).cast::<u8>();
+        core::ptr::copy_nonoverlapping(bytes.as_ptr(), output, bytes.len());
+        *output.add(bytes.len()) = 0;
+        if !length.is_null() {
+            *length = bytes.len() as i32;
         }
-        if ch != 128 as ::core::ffi::c_int {
-            pdf_abort!(b"Not a pfb file?\0" as *const u8 as *const ::core::ffi::c_char);
-        }
-        ch = ttstub_input_getc(handle);
-        if ch < 0 as ::core::ffi::c_int || ch != expected_type {
-            crate::backend::runtime::input_seek(
-                handle,
-                -(2 as ::core::ffi::c_int) as ssize_t,
-                SEEK_CUR,
-            );
-            break;
-        } else {
-            slen = 0 as ::core::ffi::c_int;
-            i = 0 as ::core::ffi::c_int;
-            while i < 4 as ::core::ffi::c_int {
-                ch = ttstub_input_getc(handle);
-                if ch < 0 as ::core::ffi::c_int {
-                    free(buffer as *mut ::core::ffi::c_void);
-                    return ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-                }
-                slen = slen + (ch << 8 as ::core::ffi::c_int * i);
-                i += 1;
-            }
-            buffer = renew(
-                buffer as *mut ::core::ffi::c_void,
-                ((bytesread + slen) as uint32_t as usize)
-                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-                    as uint32_t,
-            ) as *mut ::core::ffi::c_uchar;
-            while slen > 0 as ::core::ffi::c_int {
-                rlen = ttstub_input_read(
-                    handle,
-                    (buffer as *mut ::core::ffi::c_char).offset(bytesread as isize),
-                    slen as size_t,
-                ) as ::core::ffi::c_int;
-                if rlen < 0 as ::core::ffi::c_int {
-                    free(buffer as *mut ::core::ffi::c_void);
-                    return ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-                }
-                slen -= rlen;
-                bytesread += rlen;
-            }
-        }
+        output
     }
-    if bytesread == 0 as ::core::ffi::c_int {
-        pdf_abort!(b"PFB segment length zero?\0" as *const u8 as *const ::core::ffi::c_char,);
-    }
-    buffer = renew(
-        buffer as *mut ::core::ffi::c_void,
-        ((bytesread + 1 as ::core::ffi::c_int) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-            as uint32_t,
-    ) as *mut ::core::ffi::c_uchar;
-    *buffer.offset(bytesread as isize) = 0 as ::core::ffi::c_uchar;
-    if !length.is_null() {
-        *length = bytesread;
-    }
-    return buffer;
 }
 #[unsafe(export_name = "__pdf_impl_t1_get_standard_glyph")]
 pub unsafe extern "C-unwind" fn t1_get_standard_glyph(
@@ -2896,64 +2836,54 @@ unsafe extern "C-unwind" fn init_cff_font(mut cff: *mut cff_font) {
 }
 #[unsafe(export_name = "__pdf_impl_t1_load_font")]
 pub unsafe extern "C-unwind" fn t1_load_font(
-    mut enc_vec: *mut *mut ::core::ffi::c_char,
-    mut mode: ::core::ffi::c_int,
-    mut handle: rust_input_handle_t,
+    enc_vec: *mut *mut core::ffi::c_char,
+    mode: i32,
+    handle: rust_input_handle_t,
 ) -> *mut cff_font {
-    let mut length: ::core::ffi::c_int = 0;
-    let mut cff: *mut cff_font = ::core::ptr::null_mut::<cff_font>();
-    let mut buffer: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    let mut start: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    let mut end: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-    buffer = get_pfb_segment(handle, PFB_SEG_TYPE_ASCII, &raw mut length);
-    if buffer.is_null() || length == 0 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"Reading PFB (ASCII part) file failed.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+    crate::backend::runtime::input_seek(handle, 0, SEEK_SET);
+    let mut input = crate::compat::input::ProbeInput { handle };
+    let mut ascii = crate::type1::segment(&mut input, PFB_SEG_TYPE_ASCII as u8)
+        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+    let ascii_length = ascii.len();
+    // The remaining PostScript token adapter requires a NUL outside its input.
+    ascii.push(0);
+    let cff = unsafe { new(core::mem::size_of::<cff_font>() as u32).cast::<cff_font>() };
+    unsafe {
+        init_cff_font(cff);
     }
-    cff = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<cff_font>() as usize) as uint32_t)
-        as *mut cff_font;
-    init_cff_font(cff);
-    start = buffer;
-    end = buffer.offset(length as isize);
-    if parse_part1(cff, enc_vec, &raw mut start, end) < 0 as ::core::ffi::c_int {
-        cff_close(cff);
-        free(buffer as *mut ::core::ffi::c_void);
-        pdf_abort!(
-            b"Reading PFB (ASCII part) file failed.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+    let mut start = ascii.as_mut_ptr();
+    let end = unsafe { start.add(ascii_length) };
+    if unsafe { parse_part1(cff, enc_vec, &mut start, end) } < 0 {
+        unsafe {
+            cff_close(cff);
+        }
+        pdf_abort!("Reading PFB (ASCII part) file failed.");
     }
-    free(buffer as *mut ::core::ffi::c_void);
-    buffer = get_pfb_segment(handle, PFB_SEG_TYPE_BINARY, &raw mut length);
-    if buffer.is_null() || length == 0 as ::core::ffi::c_int {
-        cff_close(cff);
-        free(buffer as *mut ::core::ffi::c_void);
-        pdf_abort!(
-            b"Reading PFB (BINARY part) file failed.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else {
-        t1_decrypt(
-            T1_EEKEY as ::core::ffi::c_ushort,
-            buffer,
-            buffer,
-            0 as ::core::ffi::c_int,
-            length,
-        );
+    drop(ascii);
+    let mut binary = crate::type1::segment(&mut input, PFB_SEG_TYPE_BINARY as u8)
+        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+    if binary.len() < 4 {
+        unsafe {
+            cff_close(cff);
+        }
+        pdf_abort!("Reading PFB (BINARY part) file failed.");
     }
-    start = buffer.offset(4 as ::core::ffi::c_int as isize);
-    end = buffer.offset(length as isize);
-    if parse_part2(cff, &raw mut start, end, mode) < 0 as ::core::ffi::c_int {
-        cff_close(cff);
-        free(buffer as *mut ::core::ffi::c_void);
-        pdf_abort!(
-            b"Reading PFB (BINARY part) file failed.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+    crate::type1::decrypt_in_place(&mut binary, T1_EEKEY as u16, 0)
+        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+    let binary_length = binary.len();
+    binary.push(0);
+    let end = unsafe { binary.as_mut_ptr().add(binary_length) };
+    let mut start = unsafe { binary.as_mut_ptr().add(4) };
+    if unsafe { parse_part2(cff, &mut start, end, mode) } < 0 {
+        unsafe {
+            cff_close(cff);
+        }
+        pdf_abort!("Reading PFB (BINARY part) file failed.");
     }
-    free(buffer as *mut ::core::ffi::c_void);
-    cff_update_string(cff);
-    return cff;
+    unsafe {
+        cff_update_string(cff);
+    }
+    cff
 }
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;

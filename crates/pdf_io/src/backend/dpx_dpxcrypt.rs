@@ -519,6 +519,13 @@ pub unsafe extern "C-unwind" fn SHA512_final(output: *mut u8, ctx: *mut SHA512_C
     unsafe { core::ptr::copy_nonoverlapping(digest.as_ptr(), output, digest.len()) };
 }
 impl ARC4_CONTEXT {
+    pub(crate) fn encrypt_bytes(&mut self, key: &[u8], input: &[u8], output: &mut [u8]) {
+        self.set_key(key);
+        for (&byte, target) in input.iter().zip(output) {
+            *target = byte ^ self.next_byte();
+        }
+    }
+
     fn next_byte(&mut self) -> u8 {
         let i = (self.idx_i as u8).wrapping_add(1);
         let j = (self.idx_j as u8).wrapping_add(self.sbox[i as usize]);
@@ -624,6 +631,44 @@ fn aes_padded_length(length: usize, padding: bool) -> usize {
     length
         .checked_add(padbytes)
         .unwrap_or_else(|| crate::backend::runtime::raise(c"AES output length overflow".to_owned()))
+}
+
+pub(crate) fn aes_cbc_owned(
+    key: &[u8],
+    plain: &[u8],
+    iv: [u8; 16],
+) -> Result<Vec<u8>, crate::error::PdfError> {
+    use crate::error::{PdfError, PdfErrorKind};
+    if !matches!(key.len(), 16 | 24 | 32) {
+        return Err(PdfError::new(
+            PdfErrorKind::InvalidState,
+            c"Invalid AES key length".into(),
+        ));
+    }
+    let padding = 16 - plain.len() % 16;
+    let length = plain
+        .len()
+        .checked_add(padding)
+        .and_then(|n| n.checked_add(16))
+        .filter(|&n| n <= u32::MAX as usize && n <= isize::MAX as usize)
+        .ok_or_else(|| {
+            PdfError::new(
+                PdfErrorKind::InvalidState,
+                c"AES output is too large".into(),
+            )
+        })?;
+    let aes = AesCipher::new(key);
+    let mut output = Vec::new();
+    output.try_reserve_exact(length).map_err(|_| {
+        PdfError::new(
+            PdfErrorKind::InvalidState,
+            c"AES output is too large".into(),
+        )
+    })?;
+    output.resize(length, 0);
+    output[..16].copy_from_slice(&iv);
+    aes.encrypt(plain, &mut output[16..], Some(iv), padding as u8);
+    Ok(output)
 }
 
 unsafe fn with_ciphertext(

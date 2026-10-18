@@ -708,6 +708,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "faster-hex"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6d8d873f78e1d3e1998ed2084da9147e3cd2bb34b67814cd49a3902b970eb124"
+dependencies = [
+ "defmt 0.3.101",
+ "serde",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1035,7 +1045,7 @@ version = "0.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a22b6febaaee8546eb0c9dd21ecdd93aca269a6cb3897e1250f0f60933c0174"
 dependencies = [
- "faster-hex",
+ "faster-hex 0.10.1",
  "gix-error",
  "gix-features",
  "sha1dc",
@@ -3291,7 +3301,7 @@ dependencies = [
  "aes",
  "btoa",
  "cc",
- "faster-hex",
+ "faster-hex 1.0.0",
  "libc",
  "md-5",
  "rand_mt",

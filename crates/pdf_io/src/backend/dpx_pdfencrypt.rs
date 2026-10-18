@@ -1260,86 +1260,89 @@ unsafe extern "C-unwind" fn calculate_key(
     );
     MD5_final(key, &raw mut md5);
 }
+pub(crate) unsafe fn encrypt_owned(
+    security: *mut pdf_sec,
+    plain: &[u8],
+) -> Result<Vec<u8>, crate::error::PdfError> {
+    use crate::error::{PdfError, PdfErrorKind};
+    let security_ref = unsafe { security.as_ref() }.ok_or_else(|| {
+        PdfError::new(
+            PdfErrorKind::InvalidState,
+            c"Invalid PDF encryption state".into(),
+        )
+    })?;
+    let version = security_ref.V;
+    if !matches!(version, 1 | 2 | 4 | 5) {
+        return Err(PdfError::new(
+            PdfErrorKind::InvalidState,
+            std::ffi::CString::new(format!("pdfencrypt: Unexpected V value: {version}")).unwrap(),
+        ));
+    }
+    let key_size = usize::try_from(security_ref.key_size)
+        .ok()
+        .filter(|&size| size > 0 && size <= if version == 5 { 32 } else { 16 })
+        .ok_or_else(|| {
+            PdfError::new(
+                PdfErrorKind::InvalidState,
+                c"Invalid PDF encryption key size".into(),
+            )
+        })?;
+    let mut key = [0; 32];
+    let key = if version == 5 {
+        &security_ref.key[..key_size]
+    } else {
+        crate::backend::runtime::catch_backend(|| {
+            unsafe {
+                calculate_key(security, key.as_mut_ptr());
+            }
+            Ok(())
+        })?;
+        &key[..(key_size + 5).min(16)]
+    };
+    if matches!(version, 1 | 2) {
+        if plain.len() > u32::MAX as usize {
+            return Err(PdfError::new(
+                PdfErrorKind::InvalidState,
+                c"PDF encrypted data is too large".into(),
+            ));
+        }
+        let mut context = super::dpx_dpxcrypt::ARC4_CONTEXT {
+            idx_i: 0,
+            idx_j: 0,
+            sbox: [0; 256],
+        };
+        let mut output = vec![0; plain.len()];
+        context.encrypt_bytes(key, plain, &mut output);
+        return Ok(output);
+    }
+    let mut iv = [0; 16];
+    for byte in &mut iv {
+        *byte = unsafe { super::dpx_mt19937ar::genrand_int31() } as u8;
+    }
+    super::dpx_dpxcrypt::aes_cbc_owned(key, plain, iv)
+}
+
 #[unsafe(export_name = "__pdf_impl_pdf_encrypt_data")]
 pub unsafe extern "C-unwind" fn pdf_encrypt_data(
-    mut p_sec: *mut pdf_sec,
-    mut plain: *const ::core::ffi::c_uchar,
-    mut plain_len: size_t,
-    mut cipher: *mut *mut ::core::ffi::c_uchar,
-    mut cipher_len: *mut size_t,
+    security: *mut pdf_sec,
+    plain: *const u8,
+    plain_len: usize,
+    cipher: *mut *mut u8,
+    cipher_len: *mut usize,
 ) {
-    let mut key: [::core::ffi::c_uchar; 32] = [0; 32];
-    if p_sec.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p_sec\0" as *const u8 as *const ::core::ffi::c_char
-        );
+    let plain = if plain_len == 0 {
+        &[]
     } else {
+        unsafe { core::slice::from_raw_parts(plain, plain_len) }
     };
-    match (*p_sec).V {
-        1 | 2 => {
-            calculate_key(p_sec, &raw mut key as *mut ::core::ffi::c_uchar);
-            let mut arc4: ARC4_CONTEXT = ARC4_CONTEXT {
-                idx_i: 0,
-                idx_j: 0,
-                sbox: [0; 256],
-            };
-            *cipher_len = plain_len;
-            *cipher = new((*cipher_len as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-                as uint32_t) as *mut ::core::ffi::c_uchar;
-            ARC4_set_key(
-                &raw mut arc4,
-                (if (16 as ::core::ffi::c_int) < (*p_sec).key_size + 5 as ::core::ffi::c_int {
-                    16 as ::core::ffi::c_int
-                } else {
-                    (*p_sec).key_size + 5 as ::core::ffi::c_int
-                }) as ::core::ffi::c_uint,
-                &raw mut key as *mut ::core::ffi::c_uchar,
-            );
-            ARC4(
-                &raw mut arc4,
-                plain_len as ::core::ffi::c_uint,
-                plain,
-                *cipher,
-            );
-        }
-        4 => {
-            calculate_key(p_sec, &raw mut key as *mut ::core::ffi::c_uchar);
-            AES_cbc_encrypt_tectonic(
-                &raw mut key as *mut ::core::ffi::c_uchar,
-                (if (16 as ::core::ffi::c_int) < (*p_sec).key_size + 5 as ::core::ffi::c_int {
-                    16 as ::core::ffi::c_int
-                } else {
-                    (*p_sec).key_size + 5 as ::core::ffi::c_int
-                }) as size_t,
-                ::core::ptr::null::<::core::ffi::c_uchar>(),
-                1 as ::core::ffi::c_int,
-                plain,
-                plain_len,
-                cipher,
-                cipher_len,
-            );
-        }
-        5 => {
-            AES_cbc_encrypt_tectonic(
-                &raw mut (*p_sec).key as *mut ::core::ffi::c_uchar,
-                (*p_sec).key_size as size_t,
-                ::core::ptr::null::<::core::ffi::c_uchar>(),
-                1 as ::core::ffi::c_int,
-                plain,
-                plain_len,
-                cipher,
-                cipher_len,
-            );
-        }
-        _ => {
-            pdf_abort!(
-                b"pdfencrypt: Unexpected V value: %d\0" as *const u8 as *const ::core::ffi::c_char,
-                (*p_sec).V,
-            );
-        }
-    };
+    let output = unsafe { encrypt_owned(security, plain) }
+        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+    unsafe {
+        let bytes = new(output.len() as u32).cast::<u8>();
+        core::ptr::copy_nonoverlapping(output.as_ptr(), bytes, output.len());
+        *cipher = bytes;
+        *cipher_len = output.len();
+    }
 }
 #[unsafe(export_name = "__pdf_impl_pdf_enc_get_encrypt_dict")]
 pub unsafe extern "C-unwind" fn pdf_enc_get_encrypt_dict(mut p_sec: *mut pdf_sec) -> *mut pdf_obj {

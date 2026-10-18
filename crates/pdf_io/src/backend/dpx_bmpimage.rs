@@ -179,745 +179,117 @@ pub unsafe extern "C-unwind" fn check_for_bmp(
     }
     return 1 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn get_density(
-    mut xdensity: *mut ::core::ffi::c_double,
-    mut ydensity: *mut ::core::ffi::c_double,
-    mut hdr: *mut hdr_info,
-) {
-    if dpx_conf.compat_mode as ::core::ffi::c_uint
-        == dpx_mode_compat_mode as ::core::ffi::c_int as ::core::ffi::c_uint
-    {
-        *ydensity = 72.0f64 / 100.0f64;
-        *xdensity = *ydensity;
-    } else if (*hdr).x_pix_per_meter > 0 as ::core::ffi::c_uint
-        && (*hdr).y_pix_per_meter > 0 as ::core::ffi::c_uint
-    {
-        *xdensity = 72.0f64 / ((*hdr).x_pix_per_meter as ::core::ffi::c_double * 0.0254f64);
-        *ydensity = 72.0f64 / ((*hdr).y_pix_per_meter as ::core::ffi::c_double * 0.0254f64);
+fn density(header: &crate::bmp::Header) -> (f64, f64) {
+    if unsafe { dpx_conf.compat_mode } == dpx_mode_compat_mode {
+        (72.0 / 100.0, 72.0 / 100.0)
+    } else if header.x_density > 0 && header.y_density > 0 {
+        (
+            72.0 / (header.x_density as f64 * 0.0254),
+            72.0 / (header.y_density as f64 * 0.0254),
+        )
     } else {
-        *xdensity = 1.0f64;
-        *ydensity = 1.0f64;
-    };
+        (1.0, 1.0)
+    }
 }
+
 #[unsafe(export_name = "__pdf_impl_bmp_get_bbox")]
 pub unsafe extern "C-unwind" fn bmp_get_bbox(
-    mut handle: rust_input_handle_t,
-    mut width: *mut ::core::ffi::c_uint,
-    mut height: *mut ::core::ffi::c_uint,
-    mut xdensity: *mut ::core::ffi::c_double,
-    mut ydensity: *mut ::core::ffi::c_double,
-) -> ::core::ffi::c_int {
-    let mut r: ::core::ffi::c_int = 0;
-    let mut hdr: hdr_info = hdr_info {
-        offset: 0 as ::core::ffi::c_uint,
-        hsize: 0 as ::core::ffi::c_uint,
-        width: 0 as ::core::ffi::c_uint,
-        height: 0 as ::core::ffi::c_int,
-        compression: 0 as ::core::ffi::c_int,
-        bit_count: 0 as ::core::ffi::c_ushort,
-        psize: 0 as ::core::ffi::c_int,
-        x_pix_per_meter: 0 as ::core::ffi::c_uint,
-        y_pix_per_meter: 0 as ::core::ffi::c_uint,
-    };
-    crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-    r = read_header(handle, &raw mut hdr);
-    *width = hdr.width;
-    *height = (if hdr.height < 0 as ::core::ffi::c_int {
-        -hdr.height
-    } else {
-        hdr.height
-    }) as ::core::ffi::c_uint;
-    get_density(xdensity, ydensity, &raw mut hdr);
-    return r;
+    handle: rust_input_handle_t,
+    width: *mut u32,
+    height: *mut u32,
+    xdensity: *mut f64,
+    ydensity: *mut f64,
+) -> core::ffi::c_int {
+    crate::backend::runtime::input_seek(handle, 0, SEEK_SET);
+    let mut input = crate::compat::input::ProbeInput { handle };
+    match crate::bmp::Header::read(&mut input) {
+        Ok(header) => {
+            let (x, y) = density(&header);
+            unsafe {
+                *width = header.width;
+                *height = header.height.unsigned_abs();
+                *xdensity = x;
+                *ydensity = y;
+            }
+            0
+        }
+        Err(error) => {
+            pdf_warning!("{}", error.message.to_string_lossy());
+            -1
+        }
+    }
 }
+
 #[unsafe(export_name = "__pdf_impl_bmp_include_image")]
 pub unsafe extern "C-unwind" fn bmp_include_image(
-    mut ximage: *mut pdf_ximage,
-    mut handle: rust_input_handle_t,
-) -> ::core::ffi::c_int {
-    let mut stream: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut stream_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut colorspace: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut info: ximage_info = ximage_info {
+    ximage: *mut pdf_ximage,
+    handle: rust_input_handle_t,
+) -> core::ffi::c_int {
+    crate::backend::runtime::input_seek(handle, 0, SEEK_SET);
+    let mut input = crate::compat::input::ProbeInput { handle };
+    let raster = match crate::bmp::read_raster(&mut input) {
+        Ok(raster) => raster,
+        Err(error) => {
+            pdf_warning!("{}", error.message.to_string_lossy());
+            return -1;
+        }
+    };
+    let header = &raster.header;
+    let (xdensity, ydensity) = density(header);
+    let mut info = ximage_info {
         flags: 0,
-        width: 0,
-        height: 0,
-        bits_per_component: 0,
-        num_components: 0,
-        min_dpi: 0,
-        xdensity: 0.,
-        ydensity: 0.,
-    };
-    let mut hdr: hdr_info = hdr_info {
-        offset: 0 as ::core::ffi::c_uint,
-        hsize: 0 as ::core::ffi::c_uint,
-        width: 0 as ::core::ffi::c_uint,
-        height: 0 as ::core::ffi::c_int,
-        compression: 0 as ::core::ffi::c_int,
-        bit_count: 0 as ::core::ffi::c_ushort,
-        psize: 0 as ::core::ffi::c_int,
-        x_pix_per_meter: 0 as ::core::ffi::c_uint,
-        y_pix_per_meter: 0 as ::core::ffi::c_uint,
-    };
-    let mut num_palette: ::core::ffi::c_int = 0;
-    let mut flip: ::core::ffi::c_int = 0;
-    let mut i: ::core::ffi::c_int = 0;
-    pdf_ximage_init_image_info(&raw mut info);
-    colorspace = ::core::ptr::null_mut::<pdf_obj>();
-    stream_dict = colorspace;
-    stream = stream_dict;
-    crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-    if read_header(handle, &raw mut hdr) < 0 as ::core::ffi::c_int {
-        return -(1 as ::core::ffi::c_int);
-    }
-    get_density(&raw mut info.xdensity, &raw mut info.ydensity, &raw mut hdr);
-    info.width = hdr.width as ::core::ffi::c_int;
-    info.height = hdr.height;
-    if info.height < 0 as ::core::ffi::c_int {
-        info.height = -info.height;
-        flip = 0 as ::core::ffi::c_int;
-    } else {
-        flip = 1 as ::core::ffi::c_int;
-    }
-    if (hdr.bit_count as ::core::ffi::c_int) < 24 as ::core::ffi::c_int {
-        if hdr.bit_count as ::core::ffi::c_int != 1 as ::core::ffi::c_int
-            && hdr.bit_count as ::core::ffi::c_int != 4 as ::core::ffi::c_int
-            && hdr.bit_count as ::core::ffi::c_int != 8 as ::core::ffi::c_int
-        {
-            pdf_warning!(
-                b"Unsupported palette size: %hu\0" as *const u8 as *const ::core::ffi::c_char,
-                hdr.bit_count as ::core::ffi::c_int,
-            );
-            return -(1 as ::core::ffi::c_int);
-        }
-        num_palette =
-            hdr.offset
-                .wrapping_sub(hdr.hsize)
-                .wrapping_sub(DIB_FILE_HEADER_SIZE as ::core::ffi::c_uint)
-                .wrapping_div(hdr.psize as ::core::ffi::c_uint) as ::core::ffi::c_int;
-        info.bits_per_component = hdr.bit_count as ::core::ffi::c_int;
-        info.num_components = 1 as ::core::ffi::c_int;
-    } else if hdr.bit_count as ::core::ffi::c_int == 24 as ::core::ffi::c_int {
-        num_palette = 1 as ::core::ffi::c_int;
-        info.bits_per_component = 8 as ::core::ffi::c_int;
-        info.num_components = 3 as ::core::ffi::c_int;
-    } else {
-        pdf_warning!(
-            b"Unkown/Unsupported BMP bitCount value: %hu\0" as *const u8
-                as *const ::core::ffi::c_char,
-            hdr.bit_count as ::core::ffi::c_int,
-        );
-        return -(1 as ::core::ffi::c_int);
-    }
-    if info.width == 0 as ::core::ffi::c_int
-        || info.height == 0 as ::core::ffi::c_int
-        || num_palette < 1 as ::core::ffi::c_int
-    {
-        pdf_warning!(
-            b"Invalid BMP file: width=%u, height=%d, #palette=%d\0" as *const u8
-                as *const ::core::ffi::c_char,
-            info.width,
-            info.height,
-            num_palette,
-        );
-        return -(1 as ::core::ffi::c_int);
-    }
-    stream = pdf_new_stream(STREAM_COMPRESS);
-    stream_dict = pdf_stream_dict(stream);
-    if (hdr.bit_count as ::core::ffi::c_int) < 24 as ::core::ffi::c_int {
-        let mut lookup: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-        let mut palette: *mut ::core::ffi::c_uchar =
-            ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-        let mut bgrq: [::core::ffi::c_uchar; 4] = [0; 4];
-        palette = new(
-            ((num_palette * 3 as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-                as uint32_t,
-        ) as *mut ::core::ffi::c_uchar;
-        i = 0 as ::core::ffi::c_int;
-        while i < num_palette {
-            if ttstub_input_read(
-                handle,
-                &raw mut bgrq as *mut ::core::ffi::c_uchar as *mut ::core::ffi::c_char,
-                hdr.psize as size_t,
-            ) != hdr.psize as ssize_t
-            {
-                pdf_warning!(
-                    b"Reading file failed...\0" as *const u8 as *const ::core::ffi::c_char,
-                );
-                free(palette as *mut ::core::ffi::c_void);
-                return -(1 as ::core::ffi::c_int);
-            }
-            *palette.offset((3 as ::core::ffi::c_int * i) as isize) =
-                bgrq[2 as ::core::ffi::c_int as usize];
-            *palette.offset((3 as ::core::ffi::c_int * i + 1 as ::core::ffi::c_int) as isize) =
-                bgrq[1 as ::core::ffi::c_int as usize];
-            *palette.offset((3 as ::core::ffi::c_int * i + 2 as ::core::ffi::c_int) as isize) =
-                bgrq[0 as ::core::ffi::c_int as usize];
-            i += 1;
-        }
-        lookup = pdf_new_string(
-            palette as *const ::core::ffi::c_void,
-            (num_palette * 3 as ::core::ffi::c_int) as size_t,
-        );
-        free(palette as *mut ::core::ffi::c_void);
-        colorspace = pdf_new_array();
-        pdf_add_array(
-            colorspace,
-            pdf_new_name(b"Indexed\0" as *const u8 as *const ::core::ffi::c_char),
-        );
-        pdf_add_array(
-            colorspace,
-            pdf_new_name(b"DeviceRGB\0" as *const u8 as *const ::core::ffi::c_char),
-        );
-        pdf_add_array(
-            colorspace,
-            pdf_new_number((num_palette - 1 as ::core::ffi::c_int) as ::core::ffi::c_double),
-        );
-        pdf_add_array(colorspace, lookup);
-    } else {
-        colorspace = pdf_new_name(b"DeviceRGB\0" as *const u8 as *const ::core::ffi::c_char);
-    }
-    pdf_add_dict(
-        stream_dict,
-        pdf_new_name(b"ColorSpace\0" as *const u8 as *const ::core::ffi::c_char),
-        colorspace,
-    );
-    let mut rowbytes: ::core::ffi::c_int = 0;
-    let mut n: ::core::ffi::c_int = 0;
-    let mut p: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    let mut stream_data_ptr: *mut ::core::ffi::c_uchar =
-        ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    rowbytes = (info.width * hdr.bit_count as ::core::ffi::c_int + 7 as ::core::ffi::c_int)
-        / 8 as ::core::ffi::c_int;
-    crate::backend::runtime::input_seek(handle, hdr.offset as ssize_t, SEEK_SET);
-    if hdr.compression == DIB_COMPRESS_NONE {
-        let mut dib_rowbytes: ::core::ffi::c_int = 0;
-        let mut padding: ::core::ffi::c_int = 0;
-        padding = if rowbytes % 4 as ::core::ffi::c_int != 0 {
-            4 as ::core::ffi::c_int - rowbytes % 4 as ::core::ffi::c_int
+        width: header.width as i32,
+        height: header.height.unsigned_abs() as i32,
+        bits_per_component: if header.bits == 24 {
+            8
         } else {
-            0 as ::core::ffi::c_int
+            header.bits as i32
+        },
+        num_components: if header.bits == 24 { 3 } else { 1 },
+        min_dpi: 0,
+        xdensity,
+        ydensity,
+    };
+    unsafe {
+        let stream = pdf_new_stream(STREAM_COMPRESS);
+        let dict = pdf_stream_dict(stream);
+        let colorspace = if header.bits < 24 {
+            let array = pdf_new_array();
+            pdf_add_array(array, pdf_new_name(c"Indexed".as_ptr()));
+            pdf_add_array(array, pdf_new_name(c"DeviceRGB".as_ptr()));
+            pdf_add_array(array, pdf_new_number((raster.palette.len() / 3 - 1) as f64));
+            pdf_add_array(
+                array,
+                pdf_new_string(raster.palette.as_ptr().cast(), raster.palette.len()),
+            );
+            array
+        } else {
+            pdf_new_name(c"DeviceRGB".as_ptr())
         };
-        dib_rowbytes = rowbytes + padding;
-        stream_data_ptr = new(((rowbytes * info.height + padding) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_uchar;
-        n = 0 as ::core::ffi::c_int;
-        while n < info.height {
-            p = stream_data_ptr.offset((n * rowbytes) as isize);
-            if ttstub_input_read(
-                handle,
-                p as *mut ::core::ffi::c_char,
-                dib_rowbytes as size_t,
-            ) != dib_rowbytes as ssize_t
-            {
-                pdf_warning!(
-                    b"Reading BMP raster data failed...\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
-                pdf_release_obj(stream);
-                free(stream_data_ptr as *mut ::core::ffi::c_void);
-                return -(1 as ::core::ffi::c_int);
+        pdf_add_dict(dict, pdf_new_name(c"ColorSpace".as_ptr()), colorspace);
+        if header.height > 0 {
+            for row in raster.bytes.chunks_exact(raster.row_bytes).rev() {
+                pdf_add_stream(stream, row.as_ptr().cast(), row.len() as i32);
             }
-            n += 1;
-        }
-    } else if hdr.compression == DIB_COMPRESS_RLE8 {
-        stream_data_ptr = new(((rowbytes * info.height) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_uchar;
-        if read_raster_rle8(stream_data_ptr, info.width, info.height, handle)
-            < 0 as ::core::ffi::c_int
-        {
-            pdf_warning!(
-                b"Reading BMP raster data failed...\0" as *const u8 as *const ::core::ffi::c_char,
+        } else {
+            pdf_add_stream(
+                stream,
+                raster.bytes.as_ptr().cast(),
+                raster.bytes.len() as i32,
             );
-            pdf_release_obj(stream);
-            free(stream_data_ptr as *mut ::core::ffi::c_void);
-            return -(1 as ::core::ffi::c_int);
         }
-    } else if hdr.compression == DIB_COMPRESS_RLE4 {
-        stream_data_ptr = new(((rowbytes * info.height) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_uchar;
-        if read_raster_rle4(stream_data_ptr, info.width, info.height, handle)
-            < 0 as ::core::ffi::c_int
-        {
-            pdf_warning!(
-                b"Reading BMP raster data failed...\0" as *const u8 as *const ::core::ffi::c_char,
+        if header.bits >= 24 && info.height > 64 {
+            pdf_stream_set_predictor(
+                stream,
+                15,
+                info.width,
+                info.bits_per_component,
+                info.num_components,
             );
-            pdf_release_obj(stream);
-            free(stream_data_ptr as *mut ::core::ffi::c_void);
-            return -(1 as ::core::ffi::c_int);
         }
-    } else {
-        pdf_warning!(
-            b"Unknown/Unsupported compression type for BMP image: %d\0" as *const u8
-                as *const ::core::ffi::c_char,
-            hdr.compression,
-        );
-        pdf_release_obj(stream);
-        return -(1 as ::core::ffi::c_int);
+        pdf_ximage_set_image(ximage, (&mut info as *mut ximage_info).cast(), stream);
     }
-    if hdr.bit_count as ::core::ffi::c_int == 24 as ::core::ffi::c_int {
-        n = 0 as ::core::ffi::c_int;
-        while n < info.width * info.height * 3 as ::core::ffi::c_int {
-            let mut g: ::core::ffi::c_uchar = 0;
-            g = *stream_data_ptr.offset(n as isize);
-            *stream_data_ptr.offset(n as isize) =
-                *stream_data_ptr.offset((n + 2 as ::core::ffi::c_int) as isize);
-            *stream_data_ptr.offset((n + 2 as ::core::ffi::c_int) as isize) = g;
-            n += 3 as ::core::ffi::c_int;
-        }
-    }
-    if flip != 0 {
-        n = info.height - 1 as ::core::ffi::c_int;
-        while n >= 0 as ::core::ffi::c_int {
-            p = stream_data_ptr.offset((n * rowbytes) as isize);
-            pdf_add_stream(stream, p as *const ::core::ffi::c_void, rowbytes);
-            n -= 1;
-        }
-    } else {
-        pdf_add_stream(
-            stream,
-            stream_data_ptr as *const ::core::ffi::c_void,
-            rowbytes * info.height,
-        );
-    }
-    free(stream_data_ptr as *mut ::core::ffi::c_void);
-    if hdr.bit_count as ::core::ffi::c_int >= 24 as ::core::ffi::c_int
-        && info.bits_per_component >= 8 as ::core::ffi::c_int
-        && info.height > 64 as ::core::ffi::c_int
-    {
-        pdf_stream_set_predictor(
-            stream,
-            15 as ::core::ffi::c_int,
-            info.width as int32_t,
-            info.bits_per_component,
-            info.num_components,
-        );
-    }
-    pdf_ximage_set_image(ximage, &raw mut info as *mut ::core::ffi::c_void, stream);
-    return 0 as ::core::ffi::c_int;
-}
-unsafe extern "C-unwind" fn read_header(
-    mut handle: rust_input_handle_t,
-    mut hdr: *mut hdr_info,
-) -> ::core::ffi::c_int {
-    let mut buf: [::core::ffi::c_uchar; 142] = [0; 142];
-    let mut p: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    p = &raw mut buf as *mut ::core::ffi::c_uchar;
-    if ttstub_input_read(
-        handle,
-        &raw mut buf as *mut ::core::ffi::c_uchar as *mut ::core::ffi::c_char,
-        (DIB_FILE_HEADER_SIZE + 4 as ::core::ffi::c_int) as size_t,
-    ) != (DIB_FILE_HEADER_SIZE + 4 as ::core::ffi::c_int) as ssize_t
-    {
-        pdf_warning!(
-            b"Could not read BMP file header...\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-        return -(1 as ::core::ffi::c_int);
-    }
-    if *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != 'B' as i32
-        || *p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != 'M' as i32
-    {
-        pdf_warning!(
-            b"File not starting with 'B' 'M'... Not a BMP file?\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
-        return -(1 as ::core::ffi::c_int);
-    }
-    p = p.offset(2 as ::core::ffi::c_int as isize);
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    if *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-        + ((*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 8 as ::core::ffi::c_int)
-        + ((*p.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 16 as ::core::ffi::c_int)
-        + ((*p.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 24 as ::core::ffi::c_int)
-        != 0 as ::core::ffi::c_int
-    {
-        pdf_warning!(b"Not a BMP file???\0" as *const u8 as *const ::core::ffi::c_char);
-        return -(1 as ::core::ffi::c_int);
-    }
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    (*hdr).offset = (*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-        + ((*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 8 as ::core::ffi::c_int)
-        + ((*p.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 16 as ::core::ffi::c_int)
-        + ((*p.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 24 as ::core::ffi::c_int)) as ::core::ffi::c_uint;
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    (*hdr).hsize = (*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-        + ((*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 8 as ::core::ffi::c_int)
-        + ((*p.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 16 as ::core::ffi::c_int)
-        + ((*p.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-            << 24 as ::core::ffi::c_int)) as ::core::ffi::c_uint;
-    p = p.offset(4 as ::core::ffi::c_int as isize);
-    if ttstub_input_read(
-        handle,
-        p as *mut ::core::ffi::c_char,
-        (*hdr).hsize.wrapping_sub(4 as ::core::ffi::c_uint) as size_t,
-    ) != (*hdr).hsize.wrapping_sub(4 as ::core::ffi::c_uint) as ssize_t
-    {
-        pdf_warning!(
-            b"Could not read BMP file header...\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-        return -(1 as ::core::ffi::c_int);
-    }
-    match (*hdr).hsize {
-        12 => {
-            (*hdr).width = (*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                + ((*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                    << 8 as ::core::ffi::c_int)) as ::core::ffi::c_uint;
-            p = p.offset(2 as ::core::ffi::c_int as isize);
-            (*hdr).height = *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                + ((*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                    << 8 as ::core::ffi::c_int);
-            p = p.offset(2 as ::core::ffi::c_int as isize);
-            (*hdr).x_pix_per_meter = 0 as ::core::ffi::c_uint;
-            (*hdr).y_pix_per_meter = 0 as ::core::ffi::c_uint;
-            if *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                + ((*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                    << 8 as ::core::ffi::c_int)
-                != 1 as ::core::ffi::c_int
-            {
-                pdf_warning!(
-                    b"Unknown bcPlanes value in BMP COREHEADER.\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
-                return -(1 as ::core::ffi::c_int);
-            }
-            p = p.offset(2 as ::core::ffi::c_int as isize);
-            (*hdr).bit_count = (*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                + ((*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                    << 8 as ::core::ffi::c_int))
-                as ::core::ffi::c_ushort;
-            p = p.offset(2 as ::core::ffi::c_int as isize);
-            (*hdr).compression = DIB_COMPRESS_NONE;
-            (*hdr).psize = 3 as ::core::ffi::c_int;
-        }
-        40 | 64 | 108 | 124 => {
-            (*hdr).width = (*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                + ((*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                    << 8 as ::core::ffi::c_int)
-                + ((*p.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                    << 16 as ::core::ffi::c_int)
-                + ((*p.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                    << 24 as ::core::ffi::c_int)) as ::core::ffi::c_uint;
-            p = p.offset(4 as ::core::ffi::c_int as isize);
-            (*hdr).height = *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                + ((*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                    << 8 as ::core::ffi::c_int)
-                + ((*p.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                    << 16 as ::core::ffi::c_int)
-                + ((*p.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                    << 24 as ::core::ffi::c_int);
-            p = p.offset(4 as ::core::ffi::c_int as isize);
-            if *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                + ((*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                    << 8 as ::core::ffi::c_int)
-                != 1 as ::core::ffi::c_int
-            {
-                pdf_warning!(
-                    b"Unknown biPlanes value in BMP INFOHEADER.\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
-                return -(1 as ::core::ffi::c_int);
-            }
-            p = p.offset(2 as ::core::ffi::c_int as isize);
-            (*hdr).bit_count = (*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                + ((*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                    << 8 as ::core::ffi::c_int))
-                as ::core::ffi::c_ushort;
-            p = p.offset(2 as ::core::ffi::c_int as isize);
-            (*hdr).compression = *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                + ((*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                    << 8 as ::core::ffi::c_int)
-                + ((*p.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                    << 16 as ::core::ffi::c_int)
-                + ((*p.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                    << 24 as ::core::ffi::c_int);
-            p = p.offset(4 as ::core::ffi::c_int as isize);
-            p = p.offset(4 as ::core::ffi::c_int as isize);
-            (*hdr).x_pix_per_meter =
-                (*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    + ((*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                        << 8 as ::core::ffi::c_int)
-                    + ((*p.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                        << 16 as ::core::ffi::c_int)
-                    + ((*p.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                        << 24 as ::core::ffi::c_int)) as ::core::ffi::c_uint;
-            p = p.offset(4 as ::core::ffi::c_int as isize);
-            (*hdr).y_pix_per_meter =
-                (*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    + ((*p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                        << 8 as ::core::ffi::c_int)
-                    + ((*p.offset(2 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                        << 16 as ::core::ffi::c_int)
-                    + ((*p.offset(3 as ::core::ffi::c_int as isize) as ::core::ffi::c_int)
-                        << 24 as ::core::ffi::c_int)) as ::core::ffi::c_uint;
-            p = p.offset(4 as ::core::ffi::c_int as isize);
-            (*hdr).psize = 4 as ::core::ffi::c_int;
-        }
-        _ => {
-            pdf_warning!(b"Unknown BMP header type.\0" as *const u8 as *const ::core::ffi::c_char,);
-            return -(1 as ::core::ffi::c_int);
-        }
-    }
-    return 0 as ::core::ffi::c_int;
-}
-unsafe extern "C-unwind" fn read_raster_rle8(
-    mut data_ptr: *mut ::core::ffi::c_uchar,
-    mut width: ::core::ffi::c_int,
-    mut height: ::core::ffi::c_int,
-    mut handle: rust_input_handle_t,
-) -> ::core::ffi::c_int {
-    let mut count: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut p: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    let mut b0: ::core::ffi::c_uchar = 0;
-    let mut b1: ::core::ffi::c_uchar = 0;
-    let mut h: ::core::ffi::c_int = 0;
-    let mut v: ::core::ffi::c_int = 0;
-    let mut rowbytes: ::core::ffi::c_int = 0;
-    let mut eol: ::core::ffi::c_int = 0;
-    let mut eoi: ::core::ffi::c_int = 0;
-    p = data_ptr;
-    rowbytes = width;
-    memset(
-        data_ptr as *mut ::core::ffi::c_void,
-        0 as ::core::ffi::c_int,
-        (rowbytes * height) as size_t,
-    );
-    v = 0 as ::core::ffi::c_int;
-    eoi = 0 as ::core::ffi::c_int;
-    while v < height && eoi == 0 {
-        h = 0 as ::core::ffi::c_int;
-        eol = 0 as ::core::ffi::c_int;
-        while h < width && eol == 0 {
-            b0 = tt_get_unsigned_byte(handle);
-            b1 = tt_get_unsigned_byte(handle);
-            count += 2 as ::core::ffi::c_int;
-            p = data_ptr.offset((v * rowbytes) as isize).offset(h as isize);
-            if b0 as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
-                match b1 as ::core::ffi::c_int {
-                    0 => {
-                        eol = 1 as ::core::ffi::c_int;
-                    }
-                    1 => {
-                        eoi = 1 as ::core::ffi::c_int;
-                    }
-                    2 => {
-                        h += tt_get_unsigned_byte(handle) as ::core::ffi::c_int;
-                        v += tt_get_unsigned_byte(handle) as ::core::ffi::c_int;
-                        count += 2 as ::core::ffi::c_int;
-                    }
-                    _ => {
-                        h += b1 as ::core::ffi::c_int;
-                        if h > width {
-                            pdf_warning!(
-                                b"RLE decode failed...\0" as *const u8
-                                    as *const ::core::ffi::c_char,
-                            );
-                            return -(1 as ::core::ffi::c_int);
-                        }
-                        if ttstub_input_read(handle, p as *mut ::core::ffi::c_char, b1 as size_t)
-                            != b1 as ssize_t
-                        {
-                            return -(1 as ::core::ffi::c_int);
-                        }
-                        count += b1 as ::core::ffi::c_int;
-                        if b1 as ::core::ffi::c_int % 2 as ::core::ffi::c_int != 0 {
-                            tt_get_unsigned_byte(handle);
-                            count += 1;
-                        }
-                    }
-                }
-            } else {
-                h += b0 as ::core::ffi::c_int;
-                if h > width {
-                    pdf_warning!(
-                        b"RLE decode failed...\0" as *const u8 as *const ::core::ffi::c_char,
-                    );
-                    return -(1 as ::core::ffi::c_int);
-                }
-                memset(
-                    p as *mut ::core::ffi::c_void,
-                    b1 as ::core::ffi::c_int,
-                    b0 as size_t,
-                );
-            }
-        }
-        if eol == 0 && eoi == 0 {
-            b0 = tt_get_unsigned_byte(handle);
-            b1 = tt_get_unsigned_byte(handle);
-            if b0 as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
-                pdf_warning!(b"RLE decode failed...\0" as *const u8 as *const ::core::ffi::c_char,);
-                return -(1 as ::core::ffi::c_int);
-            } else if b1 as ::core::ffi::c_int == 0x1 as ::core::ffi::c_int {
-                eoi = 1 as ::core::ffi::c_int;
-            } else if b1 as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
-                pdf_warning!(b"RLE decode failed...\0" as *const u8 as *const ::core::ffi::c_char,);
-                return -(1 as ::core::ffi::c_int);
-            }
-        }
-        v += 1;
-    }
-    return count;
-}
-unsafe extern "C-unwind" fn read_raster_rle4(
-    mut data_ptr: *mut ::core::ffi::c_uchar,
-    mut width: ::core::ffi::c_int,
-    mut height: ::core::ffi::c_int,
-    mut handle: rust_input_handle_t,
-) -> ::core::ffi::c_int {
-    let mut count: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut p: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    let mut b0: ::core::ffi::c_uchar = 0;
-    let mut b1: ::core::ffi::c_uchar = 0;
-    let mut b: ::core::ffi::c_uchar = 0;
-    let mut h: ::core::ffi::c_int = 0;
-    let mut v: ::core::ffi::c_int = 0;
-    let mut rowbytes: ::core::ffi::c_int = 0;
-    let mut eol: ::core::ffi::c_int = 0;
-    let mut eoi: ::core::ffi::c_int = 0;
-    let mut i: ::core::ffi::c_int = 0;
-    let mut nbytes: ::core::ffi::c_int = 0;
-    p = data_ptr;
-    rowbytes = (width + 1 as ::core::ffi::c_int) / 2 as ::core::ffi::c_int;
-    memset(
-        data_ptr as *mut ::core::ffi::c_void,
-        0 as ::core::ffi::c_int,
-        (rowbytes * height) as size_t,
-    );
-    v = 0 as ::core::ffi::c_int;
-    eoi = 0 as ::core::ffi::c_int;
-    while v < height && eoi == 0 {
-        h = 0 as ::core::ffi::c_int;
-        eol = 0 as ::core::ffi::c_int;
-        while h < width && eol == 0 {
-            b0 = tt_get_unsigned_byte(handle);
-            b1 = tt_get_unsigned_byte(handle);
-            count += 2 as ::core::ffi::c_int;
-            p = data_ptr
-                .offset((v * rowbytes) as isize)
-                .offset((h / 2 as ::core::ffi::c_int) as isize);
-            if b0 as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
-                match b1 as ::core::ffi::c_int {
-                    0 => {
-                        eol = 1 as ::core::ffi::c_int;
-                    }
-                    1 => {
-                        eoi = 1 as ::core::ffi::c_int;
-                    }
-                    2 => {
-                        h += tt_get_unsigned_byte(handle) as ::core::ffi::c_int;
-                        v += tt_get_unsigned_byte(handle) as ::core::ffi::c_int;
-                        count += 2 as ::core::ffi::c_int;
-                    }
-                    _ => {
-                        if h + b1 as ::core::ffi::c_int > width {
-                            pdf_warning!(
-                                b"RLE decode failed...\0" as *const u8
-                                    as *const ::core::ffi::c_char,
-                            );
-                            return -(1 as ::core::ffi::c_int);
-                        }
-                        nbytes = (b1 as ::core::ffi::c_int + 1 as ::core::ffi::c_int)
-                            / 2 as ::core::ffi::c_int;
-                        if h % 2 as ::core::ffi::c_int != 0 {
-                            i = 0 as ::core::ffi::c_int;
-                            while i < nbytes {
-                                b = tt_get_unsigned_byte(handle);
-                                let fresh0 = p;
-                                p = p.offset(1);
-                                *fresh0 = (*fresh0 as ::core::ffi::c_int
-                                    | b as ::core::ffi::c_int >> 4 as ::core::ffi::c_int
-                                        & 0xf as ::core::ffi::c_int)
-                                    as ::core::ffi::c_uchar;
-                                *p = ((b as ::core::ffi::c_int) << 4 as ::core::ffi::c_int
-                                    & 0xf0 as ::core::ffi::c_int)
-                                    as ::core::ffi::c_uchar;
-                                i += 1;
-                            }
-                        } else if ttstub_input_read(
-                            handle,
-                            p as *mut ::core::ffi::c_char,
-                            nbytes as size_t,
-                        ) != nbytes as ssize_t
-                        {
-                            return -(1 as ::core::ffi::c_int);
-                        }
-                        h += b1 as ::core::ffi::c_int;
-                        count += nbytes;
-                        if nbytes % 2 as ::core::ffi::c_int != 0 {
-                            tt_get_unsigned_byte(handle);
-                            count += 1;
-                        }
-                    }
-                }
-            } else {
-                if h + b0 as ::core::ffi::c_int > width {
-                    pdf_warning!(
-                        b"RLE decode failed...\0" as *const u8 as *const ::core::ffi::c_char,
-                    );
-                    return -(1 as ::core::ffi::c_int);
-                }
-                if h % 2 as ::core::ffi::c_int != 0 {
-                    let fresh1 = p;
-                    p = p.offset(1);
-                    *fresh1 = (b1 as ::core::ffi::c_int >> 4 as ::core::ffi::c_int
-                        & 0xf as ::core::ffi::c_int)
-                        as ::core::ffi::c_uchar;
-                    b1 = ((b1 as ::core::ffi::c_int) << 4 as ::core::ffi::c_int
-                        & 0xf0 as ::core::ffi::c_int
-                        | b1 as ::core::ffi::c_int >> 4 as ::core::ffi::c_int
-                            & 0xf as ::core::ffi::c_int)
-                        as ::core::ffi::c_uchar;
-                    b0 = b0.wrapping_sub(1);
-                    h += 1;
-                }
-                nbytes =
-                    (b0 as ::core::ffi::c_int + 1 as ::core::ffi::c_int) / 2 as ::core::ffi::c_int;
-                memset(
-                    p as *mut ::core::ffi::c_void,
-                    b1 as ::core::ffi::c_int,
-                    nbytes as size_t,
-                );
-                h += b0 as ::core::ffi::c_int;
-                if h % 2 as ::core::ffi::c_int != 0 {
-                    let ref mut fresh2 = *p.offset((nbytes - 1 as ::core::ffi::c_int) as isize);
-                    *fresh2 = (*fresh2 as ::core::ffi::c_int & 0xf0 as ::core::ffi::c_int)
-                        as ::core::ffi::c_uchar;
-                }
-            }
-        }
-        if eol == 0 && eoi == 0 {
-            b0 = tt_get_unsigned_byte(handle);
-            b1 = tt_get_unsigned_byte(handle);
-            if b0 as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
-                pdf_warning!(
-                    b"No EOL/EOI marker. RLE decode failed...\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
-                return -(1 as ::core::ffi::c_int);
-            } else if b1 as ::core::ffi::c_int == 0x1 as ::core::ffi::c_int {
-                eoi = 1 as ::core::ffi::c_int;
-            } else if b1 as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
-                pdf_warning!(
-                    b"No EOL/EOI marker. RLE decode failed...\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
-                return -(1 as ::core::ffi::c_int);
-            }
-        }
-        v += 1;
-    }
-    return count;
+    0
 }
 unsafe extern "C" {
     fn memset(

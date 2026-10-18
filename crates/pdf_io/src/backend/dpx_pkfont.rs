@@ -310,350 +310,70 @@ pub unsafe extern "C-unwind" fn pdf_font_open_pkfont(
     }
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn fill_black_run(
-    mut dp: *mut ::core::ffi::c_uchar,
-    mut left: uint32_t,
-    mut run_count: uint32_t,
-) -> uint32_t {
-    const MASK: [::core::ffi::c_uchar; 8] = [
-        127 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
-        191 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
-        223 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
-        239 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
-        247 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
-        251 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
-        253 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
-        254 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
-    ];
-    let mut right: uint32_t = left.wrapping_add(run_count).wrapping_sub(1 as uint32_t);
-    while left <= right {
-        let ref mut fresh0 = *dp.offset(left.wrapping_div(8 as uint32_t) as isize);
-        *fresh0 = (*fresh0 as ::core::ffi::c_int
-            & MASK[left.wrapping_rem(8 as uint32_t) as usize] as ::core::ffi::c_int)
-            as ::core::ffi::c_uchar;
-        left = left.wrapping_add(1);
+unsafe fn decode_pk(
+    stream: *mut pdf_obj,
+    width: u32,
+    height: u32,
+    dynamic: i32,
+    color: i32,
+    data: *mut u8,
+    length: u32,
+) -> i32 {
+    if length > 0 && data.is_null() {
+        pdf_warning!("Insufficient bitmap pk data.");
+        return -1;
     }
-    return run_count;
-}
-extern "C-unwind" fn fill_white_run(mut run_count: uint32_t) -> uint32_t {
-    return run_count;
-}
-unsafe extern "C-unwind" fn pk_packed_num(
-    mut np: *mut uint32_t,
-    mut dyn_f: ::core::ffi::c_int,
-    mut dp: *mut ::core::ffi::c_uchar,
-    mut pl: uint32_t,
-) -> uint32_t {
-    let mut nmbr: uint32_t = 0 as uint32_t;
-    let mut i: uint32_t = *np;
-    let mut nyb: ::core::ffi::c_int = 0;
-    let mut j: ::core::ffi::c_int = 0;
-    if i.wrapping_div(2 as uint32_t) == pl {
-        pdf_warning!(
-            b"EOD reached while unpacking pk_packed_num.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
-        return 0 as uint32_t;
-    }
-    nyb = if i.wrapping_rem(2 as uint32_t) != 0 {
-        *dp.offset(i.wrapping_div(2 as uint32_t) as isize) as ::core::ffi::c_int
-            & 0xf as ::core::ffi::c_int
+    let bytes = if length == 0 {
+        &[]
     } else {
-        *dp.offset(i.wrapping_div(2 as uint32_t) as isize) as ::core::ffi::c_int
-            >> 4 as ::core::ffi::c_int
-            & 0xf as ::core::ffi::c_int
+        unsafe { core::slice::from_raw_parts(data, length as usize) }
     };
-    i = i.wrapping_add(1);
-    if nyb == 0 as ::core::ffi::c_int {
-        j = 0 as ::core::ffi::c_int;
-        loop {
-            if i.wrapping_div(2 as uint32_t) == pl {
-                pdf_warning!(
-                    b"EOD reached while unpacking pk_packed_num.\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
-                break;
-            } else {
-                nyb = if i.wrapping_rem(2 as uint32_t) != 0 {
-                    *dp.offset(i.wrapping_div(2 as uint32_t) as isize) as ::core::ffi::c_int
-                        & 0xf as ::core::ffi::c_int
-                } else {
-                    *dp.offset(i.wrapping_div(2 as uint32_t) as isize) as ::core::ffi::c_int
-                        >> 4 as ::core::ffi::c_int
-                        & 0xf as ::core::ffi::c_int
-                };
-                i = i.wrapping_add(1);
-                j += 1;
-                if !(nyb == 0 as ::core::ffi::c_int) {
-                    break;
-                }
-            }
+    let Ok(dynamic) = u8::try_from(dynamic) else {
+        return -1;
+    };
+    match crate::pk::decode(
+        bytes,
+        width,
+        height,
+        dynamic,
+        color != 0,
+        |row| unsafe {
+            pdf_add_stream(stream, row.as_ptr().cast(), row.len() as i32);
+        },
+        |message| {
+            pdf_warning!("{}", message);
+        },
+    ) {
+        Ok(()) => 0,
+        Err(error) => {
+            pdf_warning!("{}", error.message.to_string_lossy());
+            -1
         }
-        nmbr = nyb as uint32_t;
-        loop {
-            let fresh1 = j;
-            j = j - 1;
-            if !(fresh1 > 0 as ::core::ffi::c_int) {
-                break;
-            }
-            if i.wrapping_div(2 as uint32_t) == pl {
-                pdf_warning!(
-                    b"EOD reached while unpacking pk_packed_num.\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
-                break;
-            } else {
-                nyb = if i.wrapping_rem(2 as uint32_t) != 0 {
-                    *dp.offset(i.wrapping_div(2 as uint32_t) as isize) as ::core::ffi::c_int
-                        & 0xf as ::core::ffi::c_int
-                } else {
-                    *dp.offset(i.wrapping_div(2 as uint32_t) as isize) as ::core::ffi::c_int
-                        >> 4 as ::core::ffi::c_int
-                        & 0xf as ::core::ffi::c_int
-                };
-                i = i.wrapping_add(1);
-                nmbr = nmbr
-                    .wrapping_mul(16 as uint32_t)
-                    .wrapping_add(nyb as uint32_t);
-            }
-        }
-        nmbr = nmbr.wrapping_add(
-            ((13 as ::core::ffi::c_int - dyn_f) * 16 as ::core::ffi::c_int + dyn_f
-                - 15 as ::core::ffi::c_int) as uint32_t,
-        );
-    } else if nyb <= dyn_f {
-        nmbr = nyb as uint32_t;
-    } else if nyb < 14 as ::core::ffi::c_int {
-        if i.wrapping_div(2 as uint32_t) == pl {
-            pdf_warning!(
-                b"EOD reached while unpacking pk_packed_num.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
-            return 0 as uint32_t;
-        }
-        nmbr = ((nyb - dyn_f - 1 as ::core::ffi::c_int) * 16 as ::core::ffi::c_int
-            + (if i.wrapping_rem(2 as uint32_t) != 0 {
-                *dp.offset(i.wrapping_div(2 as uint32_t) as isize) as ::core::ffi::c_int
-                    & 0xf as ::core::ffi::c_int
-            } else {
-                *dp.offset(i.wrapping_div(2 as uint32_t) as isize) as ::core::ffi::c_int
-                    >> 4 as ::core::ffi::c_int
-                    & 0xf as ::core::ffi::c_int
-            })
-            + dyn_f
-            + 1 as ::core::ffi::c_int) as uint32_t;
-        i = i.wrapping_add(1);
     }
-    *np = i;
-    return nmbr;
 }
-unsafe extern "C-unwind" fn send_out(
-    mut rowptr: *mut ::core::ffi::c_uchar,
-    mut rowbytes: uint32_t,
-    mut stream: *mut pdf_obj,
-) {
-    pdf_add_stream(
-        stream,
-        rowptr as *mut ::core::ffi::c_void,
-        rowbytes as ::core::ffi::c_int,
-    );
-}
+
 unsafe extern "C-unwind" fn pk_decode_packed(
-    mut stream: *mut pdf_obj,
-    mut wd: uint32_t,
-    mut ht: uint32_t,
-    mut dyn_f: ::core::ffi::c_int,
-    mut run_color: ::core::ffi::c_int,
-    mut dp: *mut ::core::ffi::c_uchar,
-    mut pl: uint32_t,
-) -> ::core::ffi::c_int {
-    let mut rowptr: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    let mut rowbytes: uint32_t = 0;
-    let mut i: uint32_t = 0;
-    let mut np: uint32_t = 0 as uint32_t;
-    let mut run_count: uint32_t = 0 as uint32_t;
-    let mut repeat_count: uint32_t = 0 as uint32_t;
-    rowbytes = wd.wrapping_add(7 as uint32_t).wrapping_div(8 as uint32_t);
-    rowptr = new((rowbytes as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_uchar;
-    np = 0 as uint32_t;
-    i = 0 as uint32_t;
-    while i < ht {
-        let mut rowbits_left: uint32_t = 0;
-        let mut nbits: uint32_t = 0;
-        repeat_count = 0 as uint32_t;
-        memset(
-            rowptr as *mut ::core::ffi::c_void,
-            0xff as ::core::ffi::c_int,
-            rowbytes as size_t,
-        );
-        rowbits_left = wd;
-        if run_count > 0 as uint32_t {
-            nbits = if rowbits_left < run_count {
-                rowbits_left
-            } else {
-                run_count
-            };
-            match run_color {
-                0 => {
-                    rowbits_left =
-                        rowbits_left.wrapping_sub(fill_black_run(rowptr, 0 as uint32_t, nbits));
-                }
-                1 => {
-                    rowbits_left = rowbits_left.wrapping_sub(fill_white_run(nbits));
-                }
-                _ => {}
-            }
-            run_count = run_count.wrapping_sub(nbits);
-        }
-        while np.wrapping_div(2 as uint32_t) < pl && rowbits_left > 0 as uint32_t {
-            let mut nyb: ::core::ffi::c_int = 0;
-            nyb = if np.wrapping_rem(2 as uint32_t) != 0 {
-                *dp.offset(np.wrapping_div(2 as uint32_t) as isize) as ::core::ffi::c_int
-                    & 0xf as ::core::ffi::c_int
-            } else {
-                *dp.offset(np.wrapping_div(2 as uint32_t) as isize) as ::core::ffi::c_int
-                    >> 4 as ::core::ffi::c_int
-                    & 0xf as ::core::ffi::c_int
-            };
-            if nyb == 14 as ::core::ffi::c_int {
-                if repeat_count != 0 as uint32_t {
-                    pdf_warning!(
-                        b"Second repeat count for this row!\0" as *const u8
-                            as *const ::core::ffi::c_char,
-                    );
-                }
-                np = np.wrapping_add(1);
-                repeat_count = pk_packed_num(&raw mut np, dyn_f, dp, pl);
-            } else if nyb == 15 as ::core::ffi::c_int {
-                if repeat_count != 0 as uint32_t {
-                    pdf_warning!(
-                        b"Second repeat count for this row!\0" as *const u8
-                            as *const ::core::ffi::c_char,
-                    );
-                }
-                np = np.wrapping_add(1);
-                repeat_count = 1 as uint32_t;
-            } else {
-                run_count = pk_packed_num(&raw mut np, dyn_f, dp, pl);
-                nbits = if rowbits_left < run_count {
-                    rowbits_left
-                } else {
-                    run_count
-                };
-                run_color = (run_color == 0) as ::core::ffi::c_int;
-                run_count = run_count.wrapping_sub(nbits);
-                match run_color {
-                    0 => {
-                        rowbits_left = rowbits_left.wrapping_sub(fill_black_run(
-                            rowptr,
-                            wd.wrapping_sub(rowbits_left),
-                            nbits,
-                        ));
-                    }
-                    1 => {
-                        rowbits_left = rowbits_left.wrapping_sub(fill_white_run(nbits));
-                    }
-                    _ => {}
-                }
-            }
-        }
-        send_out(rowptr, rowbytes, stream);
-        while i < ht && repeat_count > 0 as uint32_t {
-            send_out(rowptr, rowbytes, stream);
-            repeat_count = repeat_count.wrapping_sub(1);
-            i = i.wrapping_add(1);
-        }
-        i = i.wrapping_add(1);
-    }
-    free(rowptr as *mut ::core::ffi::c_void);
-    return 0 as ::core::ffi::c_int;
+    stream: *mut pdf_obj,
+    width: u32,
+    height: u32,
+    dynamic: i32,
+    color: i32,
+    data: *mut u8,
+    length: u32,
+) -> i32 {
+    unsafe { decode_pk(stream, width, height, dynamic, color, data, length) }
 }
+
 unsafe extern "C-unwind" fn pk_decode_bitmap(
-    mut stream: *mut pdf_obj,
-    mut wd: uint32_t,
-    mut ht: uint32_t,
-    mut dyn_f: ::core::ffi::c_int,
-    mut run_color: ::core::ffi::c_int,
-    mut dp: *mut ::core::ffi::c_uchar,
-    mut pl: uint32_t,
-) -> ::core::ffi::c_int {
-    let mut rowptr: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    let mut c: ::core::ffi::c_uchar = 0;
-    let mut i: uint32_t = 0;
-    let mut j: uint32_t = 0;
-    let mut rowbytes: uint32_t = 0;
-    const MASK: [::core::ffi::c_uchar; 8] = [
-        0x80 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
-        0x40 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
-        0x20 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
-        0x10 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
-        0x8 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
-        0x4 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
-        0x2 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
-        0x1 as ::core::ffi::c_uint as ::core::ffi::c_uchar,
-    ];
-    if !(dyn_f == 14 as ::core::ffi::c_int) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"dyn_f == 14\0" as *const u8 as *const ::core::ffi::c_char
-        );
-    } else {
-    };
-    if run_color != 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"run_color != 0 for bitmap pk data?\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-    } else if pl
-        < wd.wrapping_mul(ht)
-            .wrapping_add(7 as uint32_t)
-            .wrapping_div(8 as uint32_t)
-    {
-        pdf_warning!(
-            b"Insufficient bitmap pk data. %dbytes expected but only %dbytes read.\0" as *const u8
-                as *const ::core::ffi::c_char,
-            wd.wrapping_mul(ht)
-                .wrapping_add(7 as uint32_t)
-                .wrapping_div(8 as uint32_t),
-            pl,
-        );
-        return -(1 as ::core::ffi::c_int);
-    }
-    rowbytes = wd.wrapping_add(7 as uint32_t).wrapping_div(8 as uint32_t);
-    rowptr = new((rowbytes as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_uchar;
-    memset(
-        rowptr as *mut ::core::ffi::c_void,
-        0 as ::core::ffi::c_int,
-        rowbytes as size_t,
-    );
-    i = 0 as uint32_t;
-    j = 0 as uint32_t;
-    while i < ht.wrapping_mul(wd) {
-        c = (*dp.offset(i.wrapping_div(8 as uint32_t) as isize) as ::core::ffi::c_int
-            & MASK[i.wrapping_rem(8 as uint32_t) as usize] as ::core::ffi::c_int)
-            as ::core::ffi::c_uchar;
-        if c as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
-            let ref mut fresh2 = *rowptr.offset(j.wrapping_div(8 as uint32_t) as isize);
-            *fresh2 = (*fresh2 as ::core::ffi::c_int
-                | MASK[i.wrapping_rem(8 as uint32_t) as usize] as ::core::ffi::c_int)
-                as ::core::ffi::c_uchar;
-        }
-        j = j.wrapping_add(1);
-        if j == wd {
-            send_out(rowptr, rowbytes, stream);
-            memset(
-                rowptr as *mut ::core::ffi::c_void,
-                0 as ::core::ffi::c_int,
-                rowbytes as size_t,
-            );
-            j = 0 as uint32_t;
-        }
-        i = i.wrapping_add(1);
-    }
-    return 0 as ::core::ffi::c_int;
+    stream: *mut pdf_obj,
+    width: u32,
+    height: u32,
+    dynamic: i32,
+    color: i32,
+    data: *mut u8,
+    length: u32,
+) -> i32 {
+    unsafe { decode_pk(stream, width, height, dynamic, color, data, length) }
 }
 unsafe extern "C-unwind" fn do_preamble(mut handle: rust_input_handle_t) {
     if ttstub_input_getc(handle) == 89 as ::core::ffi::c_int {
@@ -667,84 +387,39 @@ unsafe extern "C-unwind" fn do_preamble(mut handle: rust_input_handle_t) {
     };
 }
 unsafe extern "C-unwind" fn read_pk_char_header(
-    mut h: *mut pk_header_,
-    mut opcode: ::core::ffi::c_uchar,
-    mut handle: rust_input_handle_t,
-) -> ::core::ffi::c_int {
-    if h.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"h\0" as *const u8 as *const ::core::ffi::c_char
-        );
-    } else {
+    h: *mut pk_header_,
+    opcode: core::ffi::c_uchar,
+    handle: rust_input_handle_t,
+) -> i32 {
+    let mut input = crate::compat::input::ProbeInput { handle };
+    let parsed = match crate::pk::header(&mut input, opcode) {
+        Ok(header) => header,
+        Err(error) => {
+            pdf_warning!("{}", error.message.to_string_lossy());
+            return -1;
+        }
     };
-    if opcode as ::core::ffi::c_int & 4 as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
-        (*h).pkt_len =
-            ((opcode as ::core::ffi::c_int & 3 as ::core::ffi::c_int) << 8 as ::core::ffi::c_int
-                | tt_get_unsigned_byte(handle) as ::core::ffi::c_int) as uint32_t;
-        (*h).chrcode = tt_get_unsigned_byte(handle) as int32_t;
-        (*h).wd = tt_get_unsigned_triple(handle) as int32_t;
-        (*h).dx = ((tt_get_unsigned_byte(handle) as ::core::ffi::c_int) << 16 as ::core::ffi::c_int)
-            as int32_t;
-        (*h).dy = 0 as ::core::ffi::c_int as int32_t;
-        (*h).bm_wd = tt_get_unsigned_byte(handle) as uint32_t;
-        (*h).bm_ht = tt_get_unsigned_byte(handle) as uint32_t;
-        (*h).bm_hoff = tt_get_signed_byte(handle) as int32_t;
-        (*h).bm_voff = tt_get_signed_byte(handle) as int32_t;
-        (*h).pkt_len = (*h).pkt_len.wrapping_sub(8 as uint32_t);
-    } else if opcode as ::core::ffi::c_int & 7 as ::core::ffi::c_int == 7 as ::core::ffi::c_int {
-        (*h).pkt_len = tt_get_positive_quad(
-            handle,
-            b"PK\0" as *const u8 as *const ::core::ffi::c_char,
-            b"pkt_len\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-        (*h).chrcode = tt_get_signed_quad(handle);
-        (*h).wd = tt_get_signed_quad(handle);
-        (*h).dx = tt_get_signed_quad(handle);
-        (*h).dy = tt_get_signed_quad(handle);
-        (*h).bm_wd = tt_get_positive_quad(
-            handle,
-            b"PK\0" as *const u8 as *const ::core::ffi::c_char,
-            b"bm_wd\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-        (*h).bm_ht = tt_get_positive_quad(
-            handle,
-            b"PK\0" as *const u8 as *const ::core::ffi::c_char,
-            b"bm_ht\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-        (*h).bm_hoff = tt_get_signed_quad(handle);
-        (*h).bm_voff = tt_get_signed_quad(handle);
-        (*h).pkt_len = (*h).pkt_len.wrapping_sub(28 as uint32_t);
-    } else {
-        (*h).pkt_len =
-            ((opcode as ::core::ffi::c_int & 3 as ::core::ffi::c_int) << 16 as ::core::ffi::c_int
-                | tt_get_unsigned_pair(handle) as ::core::ffi::c_int) as uint32_t;
-        (*h).chrcode = tt_get_unsigned_byte(handle) as int32_t;
-        (*h).wd = tt_get_unsigned_triple(handle) as int32_t;
-        (*h).dx = ((tt_get_unsigned_pair(handle) as ::core::ffi::c_int) << 16 as ::core::ffi::c_int)
-            as int32_t;
-        (*h).dy = 0 as ::core::ffi::c_int as int32_t;
-        (*h).bm_wd = tt_get_unsigned_pair(handle) as uint32_t;
-        (*h).bm_ht = tt_get_unsigned_pair(handle) as uint32_t;
-        (*h).bm_hoff = tt_get_signed_pair(handle) as int32_t;
-        (*h).bm_voff = tt_get_signed_pair(handle) as int32_t;
-        (*h).pkt_len = (*h).pkt_len.wrapping_sub(13 as uint32_t);
-    }
-    (*h).dyn_f = opcode as ::core::ffi::c_int / 16 as ::core::ffi::c_int;
-    (*h).run_color = if opcode as ::core::ffi::c_int & 8 as ::core::ffi::c_int != 0 {
-        1 as ::core::ffi::c_int
-    } else {
-        0 as ::core::ffi::c_int
-    };
-    if (*h).chrcode as uint32_t > 0xff as uint32_t {
+    if !(0..=255).contains(&parsed.code) {
         pdf_warning!(
-            b"Unable to handle long characters in PK files: code=0x%04x\0" as *const u8
-                as *const ::core::ffi::c_char,
-            (*h).chrcode,
+            "Unable to handle long characters in PK files: code=0x{:04x}",
+            parsed.code
         );
-        return -(1 as ::core::ffi::c_int);
+        return -1;
     }
-    return 0 as ::core::ffi::c_int;
+    unsafe {
+        (*h).pkt_len = parsed.packet_length;
+        (*h).chrcode = parsed.code;
+        (*h).wd = parsed.width;
+        (*h).dx = parsed.dx;
+        (*h).dy = parsed.dy;
+        (*h).bm_wd = parsed.bitmap_width;
+        (*h).bm_ht = parsed.bitmap_height;
+        (*h).bm_hoff = parsed.horizontal_offset;
+        (*h).bm_voff = parsed.vertical_offset;
+        (*h).dyn_f = (opcode / 16) as i32;
+        (*h).run_color = i32::from(opcode & 8 != 0);
+    }
+    0
 }
 unsafe extern "C-unwind" fn create_pk_CharProc_stream(
     mut pkh: *mut pk_header_,
@@ -758,7 +433,10 @@ unsafe extern "C-unwind" fn create_pk_CharProc_stream(
     let mut urx: int32_t = 0;
     let mut ury: int32_t = 0;
     let mut len: ::core::ffi::c_int = 0;
-    llx = -(*pkh).bm_hoff;
+    llx = (*pkh)
+        .bm_hoff
+        .checked_neg()
+        .unwrap_or_else(|| pdf_abort!("Invalid PK glyph bounds."));
     lly = ((*pkh).bm_voff as uint32_t).wrapping_sub((*pkh).bm_ht) as int32_t;
     urx = (*pkh).bm_wd.wrapping_sub((*pkh).bm_hoff as uint32_t) as int32_t;
     ury = (*pkh).bm_voff;
@@ -802,7 +480,7 @@ unsafe extern "C-unwind" fn create_pk_CharProc_stream(
             &raw mut work_buffer as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
             len,
         );
-        if (*pkh).dyn_f == 14 as ::core::ffi::c_int {
+        let result = if (*pkh).dyn_f == 14 as ::core::ffi::c_int {
             pk_decode_bitmap(
                 stream,
                 (*pkh).bm_wd,
@@ -811,7 +489,7 @@ unsafe extern "C-unwind" fn create_pk_CharProc_stream(
                 (*pkh).run_color,
                 pkt_ptr,
                 pkt_len,
-            );
+            )
         } else {
             pk_decode_packed(
                 stream,
@@ -821,7 +499,11 @@ unsafe extern "C-unwind" fn create_pk_CharProc_stream(
                 (*pkh).run_color,
                 pkt_ptr,
                 pkt_len,
-            );
+            )
+        };
+        if result < 0 {
+            pdf_release_obj(stream);
+            return core::ptr::null_mut();
         }
         len = sprintf(
             &raw mut work_buffer as *mut ::core::ffi::c_char,
@@ -995,29 +677,30 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
                 } else {
                     pkh.bm_voff as ::core::ffi::c_double
                 };
-                pkt_ptr = new((pkh.pkt_len as usize)
-                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-                    as uint32_t) as *mut ::core::ffi::c_uchar;
-                bytesread = ttstub_input_read(
-                    handle,
-                    pkt_ptr as *mut ::core::ffi::c_char,
-                    pkh.pkt_len as size_t,
-                ) as size_t;
-                if bytesread != pkh.pkt_len as size_t {
-                    pdf_abort!(
-                        b"Only %zu bytes PK packet read. (expected %d bytes)\0" as *const u8
-                            as *const ::core::ffi::c_char,
-                        bytesread,
-                        pkh.pkt_len,
-                    );
+                use std::io::{Read, Seek, SeekFrom};
+                let mut input = crate::compat::input::ProbeInput { handle };
+                let position = input
+                    .stream_position()
+                    .unwrap_or_else(|_| pdf_abort!("Invalid PK packet offset."));
+                let end = input
+                    .seek(SeekFrom::End(0))
+                    .unwrap_or_else(|_| pdf_abort!("Invalid PK packet offset."));
+                input
+                    .seek(SeekFrom::Start(position))
+                    .unwrap_or_else(|_| pdf_abort!("Invalid PK packet offset."));
+                if u64::from(pkh.pkt_len) > end.saturating_sub(position) {
+                    pdf_abort!("File ended prematurely\n");
                 }
+                let mut packet = vec![0; pkh.pkt_len as usize];
+                input
+                    .read_exact(&mut packet)
+                    .unwrap_or_else(|_| pdf_abort!("File ended prematurely\n"));
                 charproc = create_pk_CharProc_stream(
                     &raw mut pkh,
                     charwidth,
-                    pkt_ptr,
-                    bytesread as uint32_t,
+                    packet.as_mut_ptr(),
+                    packet.len() as u32,
                 );
-                free(pkt_ptr as *mut ::core::ffi::c_void);
                 if charproc.is_null() {
                     pdf_abort!(
                         b"Unpacking PK character data failed.\0" as *const u8

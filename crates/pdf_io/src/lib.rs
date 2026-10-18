@@ -12,24 +12,34 @@ compile_error!(
 
 #[macro_use]
 mod backend;
+mod bmp;
 mod byte_cursor;
+mod cff;
 mod compat;
 mod compress;
 mod diagnostics;
 mod error;
 mod fontmap;
 mod input;
+mod jp2;
+mod jpeg;
 mod line;
 mod numbers;
 mod objects;
 mod options;
 mod pipeline;
+mod pk;
 mod predictor;
 mod preflight;
+mod raster;
 mod renderer;
 mod sfnt;
+mod syntax;
 mod tfm;
+mod type1;
+mod type2;
 mod unicode;
+mod vfont;
 
 pub use options::PdfBuildOptions;
 pub use pipeline::{PdfBuildStatistics, PdfRuntime};

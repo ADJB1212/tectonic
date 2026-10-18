@@ -2,6 +2,50 @@ use super::{dpx_dpxcrypt::*, runtime};
 use std::{ffi::CStr, fmt::Write, mem::zeroed};
 
 #[test]
+fn pdf_parser_checks_container_depth_truncated_tokens_and_recovers() {
+    let _document = crate::compat::document::DocumentScope::new().unwrap();
+    crate::compat::document::with_diagnostics(|state| state.quiet = 2);
+    unsafe {
+        let mut inputs = vec![
+            b"<".to_vec(),
+            b"<<".to_vec(),
+            b"[true".to_vec(),
+            b"(\\".to_vec(),
+            b"<< /a 1 >".to_vec(),
+        ];
+        inputs.push([vec![b'['; 257], vec![b']'; 257]].concat());
+        for bytes in inputs {
+            let mut start = bytes.as_ptr().cast();
+            let result = super::dpx_pdfparse::parse_pdf_object(
+                &mut start,
+                bytes.as_ptr().add(bytes.len()).cast(),
+                core::ptr::null_mut(),
+            );
+            assert!(result.is_null());
+            let bytes = b"<< /a [true null 12.25 (ok)] >>";
+            let mut start = bytes.as_ptr().cast();
+            let result = super::dpx_pdfparse::parse_pdf_object(
+                &mut start,
+                bytes.as_ptr().add(bytes.len()).cast(),
+                core::ptr::null_mut(),
+            );
+            assert!(!result.is_null());
+            assert_eq!(start, bytes.as_ptr().add(bytes.len()).cast());
+            super::dpx_pdfobj::pdf_release_obj(result.cast());
+        }
+        let name = [b"/".as_slice(), &[b'a'; 200]].concat();
+        let mut start = name.as_ptr().cast();
+        let result =
+            super::dpx_pdfparse::parse_pdf_name(&mut start, name.as_ptr().add(name.len()).cast());
+        assert_eq!(
+            CStr::from_ptr(super::dpx_pdfobj::pdf_name_value(result.cast())).to_bytes(),
+            &[b'a'; 200]
+        );
+        super::dpx_pdfobj::pdf_release_obj(result.cast());
+    }
+}
+
+#[test]
 fn object_containers_preserve_shared_identity_replacement_and_order() {
     use super::dpx_pdfobj::*;
     let _document = crate::compat::document::DocumentScope::new().unwrap();
@@ -551,6 +595,134 @@ fn backend_errors_unwind_destructors_before_returning_to_c() {
         c"invalid PDF input"
     );
     assert_eq!(runtime::boundary(|| 42), Ok(42));
+}
+
+#[test]
+fn aes_cbc_preserves_vectors_padding_and_block_boundaries() {
+    use aes::cipher::{Array, BlockCipherDecrypt, KeyInit};
+    unsafe {
+        let key = [
+            0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf,
+            0x4f, 0x3c,
+        ];
+        let iv: [u8; 16] = core::array::from_fn(|i| i as u8);
+        let plain = [
+            0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93,
+            0x17, 0x2a,
+        ];
+        let mut encrypted = core::ptr::null_mut();
+        let mut length = 0;
+        AES_cbc_encrypt_tectonic(
+            key.as_ptr(),
+            key.len(),
+            iv.as_ptr(),
+            0,
+            plain.as_ptr(),
+            plain.len(),
+            &mut encrypted,
+            &mut length,
+        );
+        assert_eq!(
+            hex(core::slice::from_raw_parts(encrypted, length)),
+            "7649abac8119b246cee98e9b12e9197d"
+        );
+        libc::free(encrypted.cast());
+        for key_len in [16, 24, 32] {
+            let key = vec![0x35; key_len];
+            for size in [0, 1, 15, 16, 17, 31, 32, 33] {
+                let plain: Vec<_> = (0..size).map(|i| i as u8).collect();
+                for padding in [0, 1] {
+                    AES_cbc_encrypt_tectonic(
+                        key.as_ptr(),
+                        key_len,
+                        iv.as_ptr(),
+                        padding,
+                        plain.as_ptr(),
+                        size,
+                        &mut encrypted,
+                        &mut length,
+                    );
+                    let pad = if padding != 0 || size % 16 != 0 {
+                        16 - size % 16
+                    } else {
+                        0
+                    };
+                    assert_eq!(length, size + pad);
+                    let ciphertext = core::slice::from_raw_parts(encrypted, length);
+                    let mut decoded = Vec::new();
+                    let mut previous = iv;
+                    for bytes in ciphertext.as_chunks::<16>().0 {
+                        let mut block = Array::from(*bytes);
+                        match key_len {
+                            16 => aes::Aes128::new_from_slice(&key)
+                                .unwrap()
+                                .decrypt_block(&mut block),
+                            24 => aes::Aes192::new_from_slice(&key)
+                                .unwrap()
+                                .decrypt_block(&mut block),
+                            32 => aes::Aes256::new_from_slice(&key)
+                                .unwrap()
+                                .decrypt_block(&mut block),
+                            _ => unreachable!(),
+                        }
+                        decoded.extend(block.iter().zip(previous).map(|(byte, old)| byte ^ old));
+                        previous = *bytes;
+                    }
+                    assert_eq!(&decoded[..size], plain);
+                    assert_eq!(&decoded[size..], vec![pad as u8; pad]);
+                    libc::free(encrypted.cast());
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn pdf_encryption_revisions_match_the_starting_revision() {
+    let _document = crate::compat::document::DocumentScope::new().unwrap();
+    unsafe {
+        for (version, revision, key_size, expected) in [
+            (1, 2, 5, "a907fc27477107574089d638c7600b214491098623ab"),
+            (2, 3, 16, "d5476339c3ac87a9087028b0f52dbdfdbeb852a7892e"),
+            (
+                4,
+                4,
+                16,
+                "f1f28e40d2d4ffbfb2110e803bb89d47e0cf915c3a725f196cdd97aa8a6ba0d4dcd025ec406ec958e77a6add075d8f27",
+            ),
+            (
+                5,
+                5,
+                32,
+                "f1f28e40d2d4ffbfb2110e803bb89d4749a2ef20ca5acb7ed07b6d19566c9c08cf38a6f510e820149b63d534d50f14d8",
+            ),
+            (
+                5,
+                6,
+                32,
+                "f1f28e40d2d4ffbfb2110e803bb89d4749a2ef20ca5acb7ed07b6d19566c9c08cf38a6f510e820149b63d534d50f14d8",
+            ),
+        ] {
+            let mut security: super::dpx_pdfencrypt::pdf_sec = zeroed();
+            security.V = version;
+            security.R = revision;
+            security.key_size = key_size;
+            security.key = core::array::from_fn(|i| i as u8);
+            security.label.objnum = 17;
+            security.label.gennum = 2;
+            super::dpx_mt19937ar::init_genrand(12345);
+            let output =
+                super::dpx_pdfencrypt::encrypt_owned(&mut security, b"PDF encryption fixture")
+                    .unwrap();
+            assert_eq!(hex(&output), expected);
+        }
+        let mut security: super::dpx_pdfencrypt::pdf_sec = zeroed();
+        security.V = 5;
+        security.key_size = 33;
+        assert!(super::dpx_pdfencrypt::encrypt_owned(&mut security, b"invalid").is_err());
+        security.key_size = 32;
+        assert!(super::dpx_pdfencrypt::encrypt_owned(&mut security, b"valid").is_ok());
+    }
 }
 
 #[test]

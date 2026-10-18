@@ -300,37 +300,10 @@ pub unsafe extern "C-unwind" fn jpeg_include_image(
         xdensity: 0.,
         ydensity: 0.,
     };
-    let mut j_info: JPEG_info = JPEG_info {
-        height: 0,
-        width: 0,
-        bits_per_component: 0,
-        num_components: 0,
-        xdpi: 0.,
-        ydpi: 0.,
-        flags: 0,
-        num_appn: 0,
-        max_appn: 0,
-        appn: ::core::ptr::null_mut::<JPEG_ext>(),
-        skipbits: [0; 129],
+    let Some(mut j_info) = scan_file(handle) else {
+        return -1;
     };
-    if check_for_jpeg(handle) == 0 {
-        pdf_warning!(
-            b"%s: Not a JPEG file?\0" as *const u8 as *const ::core::ffi::c_char,
-            JPEG_DEBUG_STR.as_ptr(),
-        );
-        crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-        return -(1 as ::core::ffi::c_int);
-    }
     pdf_ximage_init_image_info(&raw mut info);
-    JPEG_info_init(&raw mut j_info);
-    if JPEG_scan_file(&raw mut j_info, handle) < 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"%s: Not a JPEG file?\0" as *const u8 as *const ::core::ffi::c_char,
-            JPEG_DEBUG_STR.as_ptr(),
-        );
-        JPEG_info_clear(&raw mut j_info);
-        return -(1 as ::core::ffi::c_int);
-    }
     match j_info.num_components as ::core::ffi::c_int {
         1 => {
             colortype = PDF_COLORSPACE_TYPE_GRAY;
@@ -348,7 +321,6 @@ pub unsafe extern "C-unwind" fn jpeg_include_image(
                 JPEG_DEBUG_STR.as_ptr(),
                 info.num_components,
             );
-            JPEG_info_clear(&raw mut j_info);
             return -(1 as ::core::ffi::c_int);
         }
     }
@@ -362,7 +334,7 @@ pub unsafe extern "C-unwind" fn jpeg_include_image(
     if pdf_check_version(1 as ::core::ffi::c_int, 4 as ::core::ffi::c_int)
         >= 0 as ::core::ffi::c_int
     {
-        if j_info.flags & HAVE_APPn_XMP != 0 {
+        if !j_info.xmp.is_empty() {
             let mut XMP_stream: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
             XMP_stream = JPEG_get_XMP(&raw mut j_info);
             pdf_add_dict(
@@ -374,7 +346,7 @@ pub unsafe extern "C-unwind" fn jpeg_include_image(
         }
     }
     colorspace = ::core::ptr::null_mut::<pdf_obj>();
-    if j_info.flags & HAVE_APPn_ICC != 0 {
+    if !j_info.icc.is_empty() {
         let mut icc_stream: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
         let mut intent: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
         let mut cspc_id: ::core::ffi::c_int = 0;
@@ -437,9 +409,7 @@ pub unsafe extern "C-unwind" fn jpeg_include_image(
         pdf_new_name(b"ColorSpace\0" as *const u8 as *const ::core::ffi::c_char),
         colorspace,
     );
-    if j_info.flags & HAVE_APPn_ADOBE != 0
-        && j_info.num_components as ::core::ffi::c_int == 4 as ::core::ffi::c_int
-    {
+    if j_info.adobe && j_info.num_components as ::core::ffi::c_int == 4 as ::core::ffi::c_int {
         let mut decode: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
         let mut i: ::core::ffi::c_uint = 0;
         pdf_warning!(
@@ -459,7 +429,10 @@ pub unsafe extern "C-unwind" fn jpeg_include_image(
             decode,
         );
     }
-    JPEG_copy_stream(&raw mut j_info, stream, handle);
+    if JPEG_copy_stream(&raw mut j_info, stream, handle) < 0 {
+        pdf_release_obj(stream);
+        return -1;
+    }
     info.width = j_info.width as ::core::ffi::c_int;
     info.height = j_info.height as ::core::ffi::c_int;
     info.bits_per_component = j_info.bits_per_component as ::core::ffi::c_int;
@@ -470,1185 +443,157 @@ pub unsafe extern "C-unwind" fn jpeg_include_image(
         &raw mut info.ydensity,
     );
     pdf_ximage_set_image(ximage, &raw mut info as *mut ::core::ffi::c_void, stream);
-    JPEG_info_clear(&raw mut j_info);
     return 0 as ::core::ffi::c_int;
 }
+fn scan_file(handle: rust_input_handle_t) -> Option<crate::jpeg::Info> {
+    let mut input = crate::compat::input::ProbeInput { handle };
+    match crate::jpeg::scan(&mut input, |warning| match warning {
+        crate::jpeg::Warning::Message(message) => {
+            pdf_warning!("{}", message);
+        }
+        crate::jpeg::Warning::Resolution { exif, jfif } => {
+            pdf_warning!(
+                c"JPEG: Inconsistent resolution may have been specified in Exif and JFIF: %gx%g - %gx%g".as_ptr(),
+                exif.0, exif.1, jfif.0, jfif.1
+            );
+        }
+    }) {
+        Ok(info) => Some(info),
+        Err(error) => {
+            pdf_warning!("{}", error.message.to_string_lossy());
+            None
+        }
+    }
+}
+
 unsafe extern "C-unwind" fn jpeg_get_density(
-    mut j_info: *mut JPEG_info,
-    mut xdensity: *mut ::core::ffi::c_double,
-    mut ydensity: *mut ::core::ffi::c_double,
+    info: *mut crate::jpeg::Info,
+    xdensity: *mut f64,
+    ydensity: *mut f64,
 ) {
-    if (*j_info).xdpi < 0.1f64 && (*j_info).ydpi < 0.1f64 {
-        (*j_info).ydpi = 72.0f64;
-        (*j_info).xdpi = (*j_info).ydpi;
-    }
-    *xdensity = 72.0f64 / (*j_info).xdpi;
-    *ydensity = 72.0f64 / (*j_info).ydpi;
-}
-unsafe extern "C-unwind" fn JPEG_info_init(mut j_info: *mut JPEG_info) {
-    (*j_info).width = 0 as uint16_t;
-    (*j_info).height = 0 as uint16_t;
-    (*j_info).bits_per_component = 0 as uint8_t;
-    (*j_info).num_components = 0 as uint8_t;
-    (*j_info).xdpi = 0.0f64;
-    (*j_info).ydpi = 0.0f64;
-    (*j_info).flags = 0 as ::core::ffi::c_int;
-    (*j_info).num_appn = 0 as ::core::ffi::c_int;
-    (*j_info).max_appn = 0 as ::core::ffi::c_int;
-    (*j_info).appn = ::core::ptr::null_mut::<JPEG_ext>();
-    memset(
-        &raw mut (*j_info).skipbits as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
-        0 as ::core::ffi::c_int,
-        (MAX_COUNT / 8 as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as size_t,
-    );
-}
-unsafe extern "C-unwind" fn JPEG_release_APPn_data(
-    mut marker: JPEG_marker,
-    mut app_sig: JPEG_APPn_sig,
-    mut app_data: *mut ::core::ffi::c_void,
-) {
-    if marker as ::core::ffi::c_uint == JM_APP0 as ::core::ffi::c_int as ::core::ffi::c_uint
-        && app_sig as ::core::ffi::c_uint
-            == JS_APPn_JFIF as ::core::ffi::c_int as ::core::ffi::c_uint
-    {
-        let mut data: *mut JPEG_APPn_JFIF = ::core::ptr::null_mut::<JPEG_APPn_JFIF>();
-        data = app_data as *mut JPEG_APPn_JFIF;
-        (*data).thumbnail =
-            mfree((*data).thumbnail as *mut ::core::ffi::c_void) as *mut ::core::ffi::c_uchar;
-        free(data as *mut ::core::ffi::c_void);
-    } else if marker as ::core::ffi::c_uint == JM_APP2 as ::core::ffi::c_int as ::core::ffi::c_uint
-        && app_sig as ::core::ffi::c_uint
-            == JS_APPn_ICC as ::core::ffi::c_int as ::core::ffi::c_uint
-    {
-        let mut data_0: *mut JPEG_APPn_ICC = ::core::ptr::null_mut::<JPEG_APPn_ICC>();
-        data_0 = app_data as *mut JPEG_APPn_ICC;
-        (*data_0).chunk =
-            mfree((*data_0).chunk as *mut ::core::ffi::c_void) as *mut ::core::ffi::c_uchar;
-        free(data_0 as *mut ::core::ffi::c_void);
-    } else if marker as ::core::ffi::c_uint == JM_APP14 as ::core::ffi::c_int as ::core::ffi::c_uint
-        && app_sig as ::core::ffi::c_uint
-            == JS_APPn_ADOBE as ::core::ffi::c_int as ::core::ffi::c_uint
-    {
-        let mut data_1: *mut JPEG_APPn_Adobe = ::core::ptr::null_mut::<JPEG_APPn_Adobe>();
-        data_1 = app_data as *mut JPEG_APPn_Adobe;
-        free(data_1 as *mut ::core::ffi::c_void);
-    } else if marker as ::core::ffi::c_uint == JM_APP1 as ::core::ffi::c_int as ::core::ffi::c_uint
-        && app_sig as ::core::ffi::c_uint
-            == JS_APPn_XMP as ::core::ffi::c_int as ::core::ffi::c_uint
-    {
-        let mut data_2: *mut JPEG_APPn_XMP = ::core::ptr::null_mut::<JPEG_APPn_XMP>();
-        data_2 = app_data as *mut JPEG_APPn_XMP;
-        free((*data_2).packet as *mut ::core::ffi::c_void);
-        free(data_2 as *mut ::core::ffi::c_void);
+    unsafe {
+        *xdensity = 72.0 / (*info).xdpi;
+        *ydensity = 72.0 / (*info).ydpi;
     }
 }
-unsafe extern "C-unwind" fn JPEG_info_clear(mut j_info: *mut JPEG_info) {
-    if (*j_info).num_appn > 0 as ::core::ffi::c_int && !(*j_info).appn.is_null() {
-        let mut i: ::core::ffi::c_int = 0;
-        i = 0 as ::core::ffi::c_int;
-        while i < (*j_info).num_appn {
-            JPEG_release_APPn_data(
-                (*(*j_info).appn.offset(i as isize)).marker,
-                (*(*j_info).appn.offset(i as isize)).app_sig,
-                (*(*j_info).appn.offset(i as isize)).app_data,
+
+unsafe extern "C-unwind" fn JPEG_get_iccp(info: *mut crate::jpeg::Info) -> *mut pdf_obj {
+    let stream = unsafe { pdf_new_stream(STREAM_COMPRESS) };
+    let mut previous = 0;
+    let mut count = None;
+    for chunk in unsafe { &(*info).icc } {
+        if count.is_some_and(|n| {
+            n != chunk.count || chunk.id as i32 != previous + 1 || chunk.id > chunk.count
+        }) {
+            pdf_warning!(
+                "Invalid JPEG ICC chunk: {} (p:{}, n:{})",
+                chunk.id,
+                previous,
+                chunk.count
             );
-            i += 1;
-        }
-        free((*j_info).appn as *mut ::core::ffi::c_void);
-    }
-    (*j_info).appn = ::core::ptr::null_mut::<JPEG_ext>();
-    (*j_info).num_appn = 0 as ::core::ffi::c_int;
-    (*j_info).max_appn = 0 as ::core::ffi::c_int;
-    (*j_info).flags = 0 as ::core::ffi::c_int;
-}
-unsafe extern "C-unwind" fn JPEG_get_iccp(mut j_info: *mut JPEG_info) -> *mut pdf_obj {
-    let mut icc_stream: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut icc: *mut JPEG_APPn_ICC = ::core::ptr::null_mut::<JPEG_APPn_ICC>();
-    let mut i: ::core::ffi::c_int = 0;
-    let mut prev_id: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut num_icc_seg: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
-    icc_stream = pdf_new_stream(STREAM_COMPRESS);
-    i = 0 as ::core::ffi::c_int;
-    while i < (*j_info).num_appn {
-        if !((*(*j_info).appn.offset(i as isize)).marker as ::core::ffi::c_uint
-            != JM_APP2 as ::core::ffi::c_int as ::core::ffi::c_uint
-            || (*(*j_info).appn.offset(i as isize)).app_sig as ::core::ffi::c_uint
-                != JS_APPn_ICC as ::core::ffi::c_int as ::core::ffi::c_uint)
-        {
-            icc = (*(*j_info).appn.offset(i as isize)).app_data as *mut JPEG_APPn_ICC;
-            if num_icc_seg < 0 as ::core::ffi::c_int && prev_id == 0 as ::core::ffi::c_int {
-                num_icc_seg = (*icc).num_chunks as ::core::ffi::c_int;
-            } else if (*icc).seq_id as ::core::ffi::c_int != prev_id + 1 as ::core::ffi::c_int
-                || num_icc_seg != (*icc).num_chunks as ::core::ffi::c_int
-                || (*icc).seq_id as ::core::ffi::c_int > (*icc).num_chunks as ::core::ffi::c_int
-            {
-                pdf_warning!(
-                    b"Invalid JPEG ICC chunk: %d (p:%d, n:%d)\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                    (*icc).seq_id as ::core::ffi::c_int,
-                    prev_id,
-                    (*icc).num_chunks as ::core::ffi::c_int,
-                );
-                pdf_release_obj(icc_stream);
-                icc_stream = ::core::ptr::null_mut::<pdf_obj>();
-                break;
+            unsafe {
+                pdf_release_obj(stream);
             }
-            pdf_add_stream(
-                icc_stream,
-                (*icc).chunk as *const ::core::ffi::c_void,
-                (*icc).length as ::core::ffi::c_int,
-            );
-            prev_id = (*icc).seq_id as ::core::ffi::c_int;
-            num_icc_seg = (*icc).num_chunks as ::core::ffi::c_int;
+            return core::ptr::null_mut();
         }
-        i += 1;
-    }
-    return icc_stream;
-}
-unsafe extern "C-unwind" fn JPEG_get_XMP(mut j_info: *mut JPEG_info) -> *mut pdf_obj {
-    let mut XMP_stream: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut stream_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut XMP: *mut JPEG_APPn_XMP = ::core::ptr::null_mut::<JPEG_APPn_XMP>();
-    let mut i: ::core::ffi::c_int = 0;
-    let mut count: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    XMP_stream = pdf_new_stream(STREAM_COMPRESS);
-    stream_dict = pdf_stream_dict(XMP_stream);
-    pdf_add_dict(
-        stream_dict,
-        pdf_new_name(b"Type\0" as *const u8 as *const ::core::ffi::c_char),
-        pdf_new_name(b"Metadata\0" as *const u8 as *const ::core::ffi::c_char),
-    );
-    pdf_add_dict(
-        stream_dict,
-        pdf_new_name(b"Subtype\0" as *const u8 as *const ::core::ffi::c_char),
-        pdf_new_name(b"XML\0" as *const u8 as *const ::core::ffi::c_char),
-    );
-    i = 0 as ::core::ffi::c_int;
-    while i < (*j_info).num_appn {
-        if !((*(*j_info).appn.offset(i as isize)).marker as ::core::ffi::c_uint
-            != JM_APP1 as ::core::ffi::c_int as ::core::ffi::c_uint
-            || (*(*j_info).appn.offset(i as isize)).app_sig as ::core::ffi::c_uint
-                != JS_APPn_XMP as ::core::ffi::c_int as ::core::ffi::c_uint)
-        {
-            XMP = (*(*j_info).appn.offset(i as isize)).app_data as *mut JPEG_APPn_XMP;
-            pdf_add_stream(
-                XMP_stream,
-                (*XMP).packet as *const ::core::ffi::c_void,
-                (*XMP).length as ::core::ffi::c_int,
-            );
-            count += 1;
-        }
-        i += 1;
-    }
-    if count > 1 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"%s: Multiple XMP segments found in JPEG file. (untested)\0" as *const u8
-                as *const ::core::ffi::c_char,
-            JPEG_DEBUG_STR.as_ptr(),
-        );
-    }
-    return XMP_stream;
-}
-unsafe extern "C-unwind" fn JPEG_get_marker(mut handle: rust_input_handle_t) -> JPEG_marker {
-    let mut c: ::core::ffi::c_int = 0;
-    c = ttstub_input_getc(handle);
-    if c != 255 as ::core::ffi::c_int {
-        return 4294967295 as JPEG_marker;
-    }
-    loop {
-        c = ttstub_input_getc(handle);
-        if c < 0 as ::core::ffi::c_int {
-            return 4294967295 as JPEG_marker;
-        } else if c > 0 as ::core::ffi::c_int && c < 255 as ::core::ffi::c_int {
-            return c as JPEG_marker;
-        }
-    }
-}
-unsafe extern "C-unwind" fn add_APPn_marker(
-    mut j_info: *mut JPEG_info,
-    mut marker: JPEG_marker,
-    mut app_sig: ::core::ffi::c_int,
-    mut app_data: *mut ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
-    let mut n: ::core::ffi::c_int = 0;
-    if (*j_info).num_appn >= (*j_info).max_appn {
-        (*j_info).max_appn += 16 as ::core::ffi::c_int;
-        (*j_info).appn = renew(
-            (*j_info).appn as *mut ::core::ffi::c_void,
-            ((*j_info).max_appn as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<JPEG_ext>() as usize) as uint32_t,
-        ) as *mut JPEG_ext;
-    }
-    n = (*j_info).num_appn;
-    (*(*j_info).appn.offset(n as isize)).marker = marker;
-    (*(*j_info).appn.offset(n as isize)).app_sig = app_sig as JPEG_APPn_sig;
-    let ref mut fresh0 = (*(*j_info).appn.offset(n as isize)).app_data;
-    *fresh0 = app_data;
-    (*j_info).num_appn += 1 as ::core::ffi::c_int;
-    return n;
-}
-unsafe extern "C-unwind" fn read_APP14_Adobe(
-    mut j_info: *mut JPEG_info,
-    mut handle: rust_input_handle_t,
-) -> ::core::ffi::c_ushort {
-    let mut app_data: *mut JPEG_APPn_Adobe = ::core::ptr::null_mut::<JPEG_APPn_Adobe>();
-    app_data = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<JPEG_APPn_Adobe>() as usize)
-        as uint32_t) as *mut JPEG_APPn_Adobe;
-    (*app_data).version = tt_get_unsigned_pair(handle) as uint16_t;
-    (*app_data).flag0 = tt_get_unsigned_pair(handle) as uint16_t;
-    (*app_data).flag1 = tt_get_unsigned_pair(handle) as uint16_t;
-    (*app_data).transform = tt_get_unsigned_byte(handle) as uint8_t;
-    add_APPn_marker(
-        j_info,
-        JM_APP14,
-        JS_APPn_ADOBE as ::core::ffi::c_int,
-        app_data as *mut ::core::ffi::c_void,
-    );
-    return 7 as ::core::ffi::c_ushort;
-}
-pub const JPEG_EXIF_BIGENDIAN: ::core::ffi::c_int = 0;
-pub const JPEG_EXIF_LITTLEENDIAN: ::core::ffi::c_int = 1;
-unsafe extern "C-unwind" fn read_exif_bytes(
-    mut pp: *mut *mut ::core::ffi::c_uchar,
-    mut n: ::core::ffi::c_int,
-    mut endian: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
-    let mut rval: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut p: *mut ::core::ffi::c_uchar = *pp;
-    let mut i: ::core::ffi::c_int = 0;
-    match endian {
-        JPEG_EXIF_BIGENDIAN => {
-            i = 0 as ::core::ffi::c_int;
-            while i < n {
-                rval =
-                    (rval << 8 as ::core::ffi::c_int) + *p.offset(i as isize) as ::core::ffi::c_int;
-                i += 1;
-            }
-        }
-        JPEG_EXIF_LITTLEENDIAN => {
-            i = n - 1 as ::core::ffi::c_int;
-            while i >= 0 as ::core::ffi::c_int {
-                rval =
-                    (rval << 8 as ::core::ffi::c_int) + *p.offset(i as isize) as ::core::ffi::c_int;
-                i -= 1;
-            }
-        }
-        _ => {}
-    }
-    *pp = (*pp).offset(n as isize);
-    return rval;
-}
-pub const JPEG_EXIF_TYPE_BYTE: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-pub const JPEG_EXIF_TYPE_ASCII: ::core::ffi::c_int = 2;
-pub const JPEG_EXIF_TYPE_SHORT: ::core::ffi::c_int = 3;
-pub const JPEG_EXIF_TYPE_LONG: ::core::ffi::c_int = 4 as ::core::ffi::c_int;
-pub const JPEG_EXIF_TYPE_RATIONAL: ::core::ffi::c_int = 5;
-pub const JPEG_EXIF_TYPE_UNDEFINED: ::core::ffi::c_int = 7;
-pub const JPEG_EXIF_TYPE_SLONG: ::core::ffi::c_int = 9;
-pub const JPEG_EXIF_TYPE_SRATIONAL: ::core::ffi::c_int = 10;
-pub const JPEG_EXIF_TAG_XRESOLUTION: ::core::ffi::c_int = 282;
-pub const JPEG_EXIF_TAG_YRESOLUTION: ::core::ffi::c_int = 283;
-pub const JPEG_EXIF_TAG_RESOLUTIONUNIT: ::core::ffi::c_int = 296;
-pub const JPEG_EXIF_TAG_RESUNIT_MS: ::core::ffi::c_int = 20752;
-pub const JPEG_EXIF_TAG_XRES_MS: ::core::ffi::c_int = 20753;
-pub const JPEG_EXIF_TAG_YRES_MS: ::core::ffi::c_int = 20754;
-unsafe extern "C-unwind" fn read_APP1_Exif(
-    mut info: *mut JPEG_info,
-    mut handle: rust_input_handle_t,
-    mut length: size_t,
-) -> size_t {
-    let mut current_block: u64;
-    let mut buffer: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    let mut endptr: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    let mut p: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    let mut rp: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    let mut tiff_header: *mut ::core::ffi::c_uchar =
-        ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    let mut bigendian: ::core::ffi::c_char = 0;
-    let mut i: ::core::ffi::c_int = 0;
-    let mut num_fields: ::core::ffi::c_int = 0;
-    let mut tag: ::core::ffi::c_int = 0;
-    let mut type_0: ::core::ffi::c_int = 0;
-    let mut value: ::core::ffi::c_int = 0;
-    let mut num: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut den: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut xres: ::core::ffi::c_double = 0.0f64;
-    let mut yres: ::core::ffi::c_double = 0.0f64;
-    let mut res_unit: ::core::ffi::c_double = 1.0f64;
-    let mut xres_ms: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
-    let mut yres_ms: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
-    let mut res_unit_ms: ::core::ffi::c_double = 0.0f64;
-    let mut exifxdpi: ::core::ffi::c_double = 0.0f64;
-    let mut exifydpi: ::core::ffi::c_double = 0.0f64;
-    let mut r: ssize_t = 0;
-    buffer = crate::backend::runtime::allocate(length) as *mut ::core::ffi::c_uchar;
-    r = ttstub_input_read(handle, buffer as *mut ::core::ffi::c_char, length);
-    if !(r < 0 as ssize_t || r as size_t != length) {
-        p = buffer;
-        endptr = buffer.offset(length as isize);
-        while p < buffer.offset(length as isize)
-            && *p as ::core::ffi::c_int == 0 as ::core::ffi::c_int
-        {
-            p = p.offset(1);
-        }
-        if !(p.offset(8 as ::core::ffi::c_int as isize) >= endptr) {
-            tiff_header = p;
-            if *p as ::core::ffi::c_int == 'M' as i32
-                && *p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == 'M' as i32
-            {
-                bigendian = JPEG_EXIF_BIGENDIAN as ::core::ffi::c_char;
-                current_block = 15652330335145281839;
-            } else if *p as ::core::ffi::c_int == 'I' as i32
-                && *p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == 'I' as i32
-            {
-                bigendian = JPEG_EXIF_LITTLEENDIAN as ::core::ffi::c_char;
-                current_block = 15652330335145281839;
-            } else {
-                pdf_warning!(
-                    b"JPEG: Invalid value in Exif TIFF header.\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
-                current_block = 17070205778953429383;
-            }
-            match current_block {
-                17070205778953429383 => {}
-                _ => {
-                    p = p.offset(2 as ::core::ffi::c_int as isize);
-                    i = read_exif_bytes(
-                        &raw mut p,
-                        2 as ::core::ffi::c_int,
-                        bigendian as ::core::ffi::c_int,
-                    );
-                    if i != 42 as ::core::ffi::c_int {
-                        pdf_warning!(
-                            b"JPEG: Invalid value in Exif TIFF header.\0" as *const u8
-                                as *const ::core::ffi::c_char,
-                        );
-                    } else {
-                        i = read_exif_bytes(
-                            &raw mut p,
-                            4 as ::core::ffi::c_int,
-                            bigendian as ::core::ffi::c_int,
-                        );
-                        p = tiff_header.offset(i as isize);
-                        num_fields = read_exif_bytes(
-                            &raw mut p,
-                            2 as ::core::ffi::c_int,
-                            bigendian as ::core::ffi::c_int,
-                        );
-                        loop {
-                            let fresh1 = num_fields;
-                            num_fields = num_fields - 1;
-                            if !(fresh1 > 0 as ::core::ffi::c_int) {
-                                current_block = 5372832139739605200;
-                                break;
-                            }
-                            let mut count: ::core::ffi::c_int = 0;
-                            tag = read_exif_bytes(
-                                &raw mut p,
-                                2 as ::core::ffi::c_int,
-                                bigendian as ::core::ffi::c_int,
-                            );
-                            type_0 = read_exif_bytes(
-                                &raw mut p,
-                                2 as ::core::ffi::c_int,
-                                bigendian as ::core::ffi::c_int,
-                            );
-                            count = read_exif_bytes(
-                                &raw mut p,
-                                4 as ::core::ffi::c_int,
-                                bigendian as ::core::ffi::c_int,
-                            );
-                            match type_0 {
-                                JPEG_EXIF_TYPE_BYTE => {
-                                    let fresh2 = p;
-                                    p = p.offset(1);
-                                    value = *fresh2 as ::core::ffi::c_int;
-                                    p = p.offset(3 as ::core::ffi::c_int as isize);
-                                }
-                                JPEG_EXIF_TYPE_SHORT => {
-                                    value = read_exif_bytes(
-                                        &raw mut p,
-                                        2 as ::core::ffi::c_int,
-                                        bigendian as ::core::ffi::c_int,
-                                    );
-                                    p = p.offset(2 as ::core::ffi::c_int as isize);
-                                }
-                                JPEG_EXIF_TYPE_LONG | JPEG_EXIF_TYPE_SLONG => {
-                                    value = read_exif_bytes(
-                                        &raw mut p,
-                                        4 as ::core::ffi::c_int,
-                                        bigendian as ::core::ffi::c_int,
-                                    );
-                                }
-                                JPEG_EXIF_TYPE_RATIONAL | JPEG_EXIF_TYPE_SRATIONAL => {
-                                    value = read_exif_bytes(
-                                        &raw mut p,
-                                        4 as ::core::ffi::c_int,
-                                        bigendian as ::core::ffi::c_int,
-                                    );
-                                    rp = tiff_header.offset(value as isize);
-                                    num = read_exif_bytes(
-                                        &raw mut rp,
-                                        4 as ::core::ffi::c_int,
-                                        bigendian as ::core::ffi::c_int,
-                                    );
-                                    den = read_exif_bytes(
-                                        &raw mut rp,
-                                        4 as ::core::ffi::c_int,
-                                        bigendian as ::core::ffi::c_int,
-                                    );
-                                }
-                                JPEG_EXIF_TYPE_UNDEFINED => {
-                                    let fresh3 = p;
-                                    p = p.offset(1);
-                                    value = *fresh3 as ::core::ffi::c_int;
-                                    p = p.offset(3 as ::core::ffi::c_int as isize);
-                                }
-                                JPEG_EXIF_TYPE_ASCII | _ => {
-                                    value = 0 as ::core::ffi::c_int;
-                                    p = p.offset(4 as ::core::ffi::c_int as isize);
-                                }
-                            }
-                            match tag {
-                                JPEG_EXIF_TAG_XRESOLUTION => {
-                                    if den != 0 as ::core::ffi::c_int {
-                                        xres = (num / den) as ::core::ffi::c_double;
-                                    }
-                                }
-                                JPEG_EXIF_TAG_YRESOLUTION => {
-                                    if den != 0 as ::core::ffi::c_int {
-                                        yres = (num / den) as ::core::ffi::c_double;
-                                    }
-                                }
-                                JPEG_EXIF_TAG_RESOLUTIONUNIT => match value {
-                                    2 => {
-                                        res_unit = 1.0f64;
-                                    }
-                                    3 => {
-                                        res_unit = 2.54f64;
-                                    }
-                                    _ => {}
-                                },
-                                JPEG_EXIF_TAG_RESUNIT_MS => {
-                                    if type_0 != JPEG_EXIF_TYPE_BYTE
-                                        || count != 1 as ::core::ffi::c_int
-                                    {
-                                        pdf_warning!(
-                                            b"%s: Invalid data for ResolutionUnit in Exif chunk.\0"
-                                                as *const u8
-                                                as *const ::core::ffi::c_char,
-                                            JPEG_DEBUG_STR.as_ptr(),
-                                        );
-                                        current_block = 17070205778953429383;
-                                        break;
-                                    } else {
-                                        value = read_exif_bytes(
-                                            &raw mut p,
-                                            1 as ::core::ffi::c_int,
-                                            bigendian as ::core::ffi::c_int,
-                                        );
-                                        p = p.offset(3 as ::core::ffi::c_int as isize);
-                                        if value == 1 as ::core::ffi::c_int {
-                                            res_unit_ms = 0.0254f64;
-                                        } else {
-                                            res_unit_ms = 0.0f64;
-                                        }
-                                    }
-                                }
-                                JPEG_EXIF_TAG_XRES_MS => {
-                                    if type_0 != JPEG_EXIF_TYPE_LONG
-                                        || count != 1 as ::core::ffi::c_int
-                                    {
-                                        pdf_warning!(
-                                            b"%s: Invalid data for PixelPerUnitX in Exif chunk.\0"
-                                                as *const u8
-                                                as *const ::core::ffi::c_char,
-                                            JPEG_DEBUG_STR.as_ptr(),
-                                        );
-                                        current_block = 17070205778953429383;
-                                        break;
-                                    } else {
-                                        value = read_exif_bytes(
-                                            &raw mut p,
-                                            4 as ::core::ffi::c_int,
-                                            bigendian as ::core::ffi::c_int,
-                                        );
-                                        xres_ms = value as ::core::ffi::c_uint;
-                                    }
-                                }
-                                JPEG_EXIF_TAG_YRES_MS => {
-                                    if type_0 != JPEG_EXIF_TYPE_LONG
-                                        || count != 1 as ::core::ffi::c_int
-                                    {
-                                        pdf_warning!(
-                                            b"%s: Invalid data for PixelPerUnitY in Exif chunk.\0"
-                                                as *const u8
-                                                as *const ::core::ffi::c_char,
-                                            JPEG_DEBUG_STR.as_ptr(),
-                                        );
-                                        current_block = 17070205778953429383;
-                                        break;
-                                    } else {
-                                        value = read_exif_bytes(
-                                            &raw mut p,
-                                            4 as ::core::ffi::c_int,
-                                            bigendian as ::core::ffi::c_int,
-                                        );
-                                        yres_ms = value as ::core::ffi::c_uint;
-                                    }
-                                }
-                                _ => {}
-                            }
-                        }
-                        match current_block {
-                            17070205778953429383 => {}
-                            _ => {
-                                if xres > 0.0f64 && yres > 0.0f64 {
-                                    exifxdpi = xres * res_unit;
-                                    exifydpi = yres * res_unit;
-                                } else if xres_ms > 0 as ::core::ffi::c_uint
-                                    && yres_ms > 0 as ::core::ffi::c_uint
-                                    && res_unit_ms > 0.0f64
-                                {
-                                    exifxdpi = xres_ms as ::core::ffi::c_double * res_unit_ms;
-                                    exifydpi = yres_ms as ::core::ffi::c_double * res_unit_ms;
-                                } else {
-                                    exifxdpi = 72.0f64 * res_unit;
-                                    exifydpi = 72.0f64 * res_unit;
-                                }
-                                if (*info).xdpi < 0.1f64 && (*info).ydpi < 0.1f64 {
-                                    (*info).xdpi = exifxdpi;
-                                    (*info).ydpi = exifydpi;
-                                } else {
-                                    let mut xxx1: ::core::ffi::c_double = floor(exifxdpi + 0.5f64);
-                                    let mut xxx2: ::core::ffi::c_double =
-                                        floor((*info).xdpi + 0.5f64);
-                                    let mut yyy1: ::core::ffi::c_double = floor(exifydpi + 0.5f64);
-                                    let mut yyy2: ::core::ffi::c_double =
-                                        floor((*info).ydpi + 0.5f64);
-                                    if xxx1 != xxx2 || yyy1 != yyy2 {
-                                        pdf_warning!(
-                                            b"JPEG: Inconsistent resolution may have been specified in Exif and JFIF: %gx%g - %gx%g\0"
-                                            as * const u8 as * const ::core::ffi::c_char, xres *
-                                            res_unit, yres * res_unit, (* info).xdpi, (* info).ydpi,
-                                        );
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    free(buffer as *mut ::core::ffi::c_void);
-    return length;
-}
-unsafe extern "C-unwind" fn read_APP0_JFIF(
-    mut j_info: *mut JPEG_info,
-    mut handle: rust_input_handle_t,
-) -> size_t {
-    let mut app_data: *mut JPEG_APPn_JFIF = ::core::ptr::null_mut::<JPEG_APPn_JFIF>();
-    let mut thumb_data_len: size_t = 0;
-    app_data = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<JPEG_APPn_JFIF>() as usize)
-        as uint32_t) as *mut JPEG_APPn_JFIF;
-    (*app_data).version = tt_get_unsigned_pair(handle) as uint16_t;
-    (*app_data).units = tt_get_unsigned_byte(handle) as uint8_t;
-    (*app_data).Xdensity = tt_get_unsigned_pair(handle) as uint16_t;
-    (*app_data).Ydensity = tt_get_unsigned_pair(handle) as uint16_t;
-    (*app_data).Xthumbnail = tt_get_unsigned_byte(handle) as uint8_t;
-    (*app_data).Ythumbnail = tt_get_unsigned_byte(handle) as uint8_t;
-    thumb_data_len = (3 as ::core::ffi::c_int
-        * (*app_data).Xthumbnail as ::core::ffi::c_int
-        * (*app_data).Ythumbnail as ::core::ffi::c_int) as size_t;
-    if thumb_data_len > 0 as size_t {
-        (*app_data).thumbnail = new((thumb_data_len as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_uchar;
-        ttstub_input_read(
-            handle,
-            (*app_data).thumbnail as *mut ::core::ffi::c_char,
-            thumb_data_len,
-        );
-    } else {
-        (*app_data).thumbnail = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    }
-    add_APPn_marker(
-        j_info,
-        JM_APP0,
-        JS_APPn_JFIF as ::core::ffi::c_int,
-        app_data as *mut ::core::ffi::c_void,
-    );
-    match (*app_data).units as ::core::ffi::c_int {
-        1 => {
-            (*j_info).xdpi = (*app_data).Xdensity as ::core::ffi::c_double;
-            (*j_info).ydpi = (*app_data).Ydensity as ::core::ffi::c_double;
-        }
-        2 => {
-            (*j_info).xdpi =
-                (*app_data).Xdensity as ::core::ffi::c_int as ::core::ffi::c_double * 2.54f64;
-            (*j_info).ydpi =
-                (*app_data).Ydensity as ::core::ffi::c_int as ::core::ffi::c_double * 2.54f64;
-        }
-        _ => {
-            (*j_info).xdpi = 72.0f64;
-            (*j_info).ydpi = 72.0f64;
-        }
-    }
-    return (9 as size_t).wrapping_add(thumb_data_len);
-}
-unsafe extern "C-unwind" fn read_APP0_JFXX(
-    mut handle: rust_input_handle_t,
-    mut length: size_t,
-) -> size_t {
-    tt_get_unsigned_byte(handle);
-    crate::backend::runtime::input_seek(
-        handle,
-        length.wrapping_sub(1 as size_t) as ssize_t,
-        SEEK_CUR,
-    );
-    return length;
-}
-unsafe extern "C-unwind" fn read_APP1_XMP(
-    mut j_info: *mut JPEG_info,
-    mut handle: rust_input_handle_t,
-    mut length: size_t,
-) -> size_t {
-    let mut app_data: *mut JPEG_APPn_XMP = ::core::ptr::null_mut::<JPEG_APPn_XMP>();
-    app_data = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<JPEG_APPn_XMP>() as usize)
-        as uint32_t) as *mut JPEG_APPn_XMP;
-    (*app_data).length = length;
-    (*app_data).packet = new(((*app_data).length as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_uchar;
-    ttstub_input_read(
-        handle,
-        (*app_data).packet as *mut ::core::ffi::c_char,
-        (*app_data).length,
-    );
-    add_APPn_marker(
-        j_info,
-        JM_APP1,
-        JS_APPn_XMP as ::core::ffi::c_int,
-        app_data as *mut ::core::ffi::c_void,
-    );
-    return length;
-}
-unsafe extern "C-unwind" fn read_APP2_ICC(
-    mut j_info: *mut JPEG_info,
-    mut handle: rust_input_handle_t,
-    mut length: size_t,
-) -> size_t {
-    let mut app_data: *mut JPEG_APPn_ICC = ::core::ptr::null_mut::<JPEG_APPn_ICC>();
-    app_data = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<JPEG_APPn_ICC>() as usize)
-        as uint32_t) as *mut JPEG_APPn_ICC;
-    (*app_data).seq_id = tt_get_unsigned_byte(handle) as uint8_t;
-    (*app_data).num_chunks = tt_get_unsigned_byte(handle) as uint8_t;
-    (*app_data).length = length.wrapping_sub(2 as size_t);
-    (*app_data).chunk = new(((*app_data).length as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_uchar;
-    ttstub_input_read(
-        handle,
-        (*app_data).chunk as *mut ::core::ffi::c_char,
-        (*app_data).length,
-    );
-    add_APPn_marker(
-        j_info,
-        JM_APP2,
-        JS_APPn_ICC as ::core::ffi::c_int,
-        app_data as *mut ::core::ffi::c_void,
-    );
-    return length;
-}
-unsafe extern "C-unwind" fn JPEG_copy_stream(
-    mut j_info: *mut JPEG_info,
-    mut stream: *mut pdf_obj,
-    mut handle: rust_input_handle_t,
-) -> ::core::ffi::c_int {
-    let mut marker: JPEG_marker = 0 as JPEG_marker;
-    let mut length: ::core::ffi::c_int = 0;
-    let mut found_SOFn: ::core::ffi::c_int = 0;
-    let mut count: ::core::ffi::c_int = 0;
-    crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-    count = 0 as ::core::ffi::c_int;
-    found_SOFn = 0 as ::core::ffi::c_int;
-    while found_SOFn == 0 && count < MAX_COUNT && {
-        marker = JPEG_get_marker(handle);
-        marker as ::core::ffi::c_uint != 4294967295 as JPEG_marker as ::core::ffi::c_uint
-    } {
-        if marker as ::core::ffi::c_uint == JM_SOI as ::core::ffi::c_int as ::core::ffi::c_uint
-            || marker as ::core::ffi::c_uint >= JM_RST0 as ::core::ffi::c_int as ::core::ffi::c_uint
-                && marker as ::core::ffi::c_uint
-                    <= JM_RST7 as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
-            *(&raw mut work_buffer as *mut ::core::ffi::c_char)
-                .offset(0 as ::core::ffi::c_int as isize) =
-                0xff as ::core::ffi::c_int as ::core::ffi::c_char;
-            *(&raw mut work_buffer as *mut ::core::ffi::c_char)
-                .offset(1 as ::core::ffi::c_int as isize) = marker as ::core::ffi::c_char;
+        unsafe {
             pdf_add_stream(
                 stream,
-                &raw mut work_buffer as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-                2 as ::core::ffi::c_int,
+                chunk.bytes.as_ptr().cast(),
+                chunk.bytes.len() as i32,
             );
-        } else {
-            length = tt_get_unsigned_pair(handle) as ::core::ffi::c_int - 2 as ::core::ffi::c_int;
-            match marker as ::core::ffi::c_uint {
-                192 | 193 | 194 | 195 | 197 | 198 | 199 | 201 | 202 | 203 | 205 | 206 | 207 => {
-                    *(&raw mut work_buffer as *mut ::core::ffi::c_char)
-                        .offset(0 as ::core::ffi::c_int as isize) =
-                        0xff as ::core::ffi::c_int as ::core::ffi::c_char;
-                    *(&raw mut work_buffer as *mut ::core::ffi::c_char)
-                        .offset(1 as ::core::ffi::c_int as isize) = marker as ::core::ffi::c_char;
-                    *(&raw mut work_buffer as *mut ::core::ffi::c_char)
-                        .offset(2 as ::core::ffi::c_int as isize) =
-                        (length + 2 as ::core::ffi::c_int >> 8 as ::core::ffi::c_int
-                            & 0xff as ::core::ffi::c_int)
-                            as ::core::ffi::c_char;
-                    *(&raw mut work_buffer as *mut ::core::ffi::c_char)
-                        .offset(3 as ::core::ffi::c_int as isize) =
-                        (length + 2 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int)
-                            as ::core::ffi::c_char;
-                    pdf_add_stream(
-                        stream,
-                        &raw mut work_buffer as *mut ::core::ffi::c_char
-                            as *const ::core::ffi::c_void,
-                        4 as ::core::ffi::c_int,
-                    );
-                    while length > 0 as ::core::ffi::c_int {
-                        let mut nb_read: ::core::ffi::c_int = ttstub_input_read(
-                            handle,
-                            &raw mut work_buffer as *mut ::core::ffi::c_char,
-                            (if length < 1024 as ::core::ffi::c_int {
-                                length
-                            } else {
-                                1024 as ::core::ffi::c_int
-                            }) as size_t,
-                        )
-                            as ::core::ffi::c_int;
-                        if nb_read > 0 as ::core::ffi::c_int {
-                            pdf_add_stream(
-                                stream,
-                                &raw mut work_buffer as *mut ::core::ffi::c_char
-                                    as *const ::core::ffi::c_void,
-                                nb_read,
-                            );
-                        }
-                        length -= nb_read;
-                    }
-                    found_SOFn = 1 as ::core::ffi::c_int;
-                }
-                _ => {
-                    if (*j_info).skipbits[(count / 8 as ::core::ffi::c_int) as usize]
-                        as ::core::ffi::c_int
-                        & (1 as ::core::ffi::c_int)
-                            << 7 as ::core::ffi::c_int - count % 8 as ::core::ffi::c_int
-                        != 0
-                    {
-                        crate::backend::runtime::input_seek(handle, length as ssize_t, SEEK_CUR);
-                    } else {
-                        *(&raw mut work_buffer as *mut ::core::ffi::c_char)
-                            .offset(0 as ::core::ffi::c_int as isize) =
-                            0xff as ::core::ffi::c_int as ::core::ffi::c_char;
-                        *(&raw mut work_buffer as *mut ::core::ffi::c_char)
-                            .offset(1 as ::core::ffi::c_int as isize) =
-                            marker as ::core::ffi::c_char;
-                        *(&raw mut work_buffer as *mut ::core::ffi::c_char)
-                            .offset(2 as ::core::ffi::c_int as isize) =
-                            (length + 2 as ::core::ffi::c_int >> 8 as ::core::ffi::c_int
-                                & 0xff as ::core::ffi::c_int)
-                                as ::core::ffi::c_char;
-                        *(&raw mut work_buffer as *mut ::core::ffi::c_char)
-                            .offset(3 as ::core::ffi::c_int as isize) =
-                            (length + 2 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int)
-                                as ::core::ffi::c_char;
-                        pdf_add_stream(
-                            stream,
-                            &raw mut work_buffer as *mut ::core::ffi::c_char
-                                as *const ::core::ffi::c_void,
-                            4 as ::core::ffi::c_int,
-                        );
-                        while length > 0 as ::core::ffi::c_int {
-                            let mut nb_read_0: ::core::ffi::c_int = ttstub_input_read(
-                                handle,
-                                &raw mut work_buffer as *mut ::core::ffi::c_char,
-                                (if length < 1024 as ::core::ffi::c_int {
-                                    length
-                                } else {
-                                    1024 as ::core::ffi::c_int
-                                }) as size_t,
-                            )
-                                as ::core::ffi::c_int;
-                            if nb_read_0 > 0 as ::core::ffi::c_int {
-                                pdf_add_stream(
-                                    stream,
-                                    &raw mut work_buffer as *mut ::core::ffi::c_char
-                                        as *const ::core::ffi::c_void,
-                                    nb_read_0,
-                                );
-                            }
-                            length -= nb_read_0;
-                        }
-                    }
-                }
-            }
         }
-        count += 1;
+        previous = chunk.id as i32;
+        count = Some(chunk.count);
     }
-    let mut total_size: size_t = ttstub_input_get_size(handle);
-    let mut pos: size_t = crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_CUR);
-    loop {
-        length = ttstub_input_read(
-            handle,
-            &raw mut work_buffer as *mut ::core::ffi::c_char,
-            (if (1024 as size_t) < total_size.wrapping_sub(pos) {
-                1024 as size_t
-            } else {
-                total_size.wrapping_sub(pos)
-            }),
-        ) as ::core::ffi::c_int;
-        if !(length > 0 as ::core::ffi::c_int) {
-            break;
-        }
-        pdf_add_stream(
-            stream,
-            &raw mut work_buffer as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-            length,
-        );
-        pos = pos.wrapping_add(length as size_t);
-    }
-    return if found_SOFn != 0 {
-        0 as ::core::ffi::c_int
-    } else {
-        -(1 as ::core::ffi::c_int)
-    };
+    stream
 }
-unsafe extern "C-unwind" fn JPEG_scan_file(
-    mut j_info: *mut JPEG_info,
-    mut handle: rust_input_handle_t,
-) -> ::core::ffi::c_int {
-    let mut marker: JPEG_marker = 0 as JPEG_marker;
-    let mut found_SOFn: ::core::ffi::c_int = 0;
-    let mut count: ::core::ffi::c_int = 0;
-    let mut app_sig: [::core::ffi::c_char; 128] = [0; 128];
-    crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-    count = 0 as ::core::ffi::c_int;
-    found_SOFn = 0 as ::core::ffi::c_int;
-    while found_SOFn == 0 && {
-        marker = JPEG_get_marker(handle);
-        marker as ::core::ffi::c_uint != 4294967295 as JPEG_marker as ::core::ffi::c_uint
-    } {
-        if marker as ::core::ffi::c_uint != JM_SOI as ::core::ffi::c_int as ::core::ffi::c_uint
-            && ((marker as ::core::ffi::c_uint)
-                < JM_RST0 as ::core::ffi::c_int as ::core::ffi::c_uint
-                || marker as ::core::ffi::c_uint
-                    > JM_RST7 as ::core::ffi::c_int as ::core::ffi::c_uint)
-        {
-            let mut length: ::core::ffi::c_int =
-                tt_get_unsigned_pair(handle) as ::core::ffi::c_int - 2 as ::core::ffi::c_int;
-            match marker as ::core::ffi::c_uint {
-                192 | 193 | 194 | 195 | 197 | 198 | 199 | 201 | 202 | 203 | 205 | 206 | 207 => {
-                    (*j_info).bits_per_component = tt_get_unsigned_byte(handle) as uint8_t;
-                    (*j_info).height = tt_get_unsigned_pair(handle) as uint16_t;
-                    (*j_info).width = tt_get_unsigned_pair(handle) as uint16_t;
-                    (*j_info).num_components = tt_get_unsigned_byte(handle) as uint8_t;
-                    found_SOFn = 1 as ::core::ffi::c_int;
-                }
-                224 => {
-                    if length > 5 as ::core::ffi::c_int {
-                        if ttstub_input_read(
-                            handle,
-                            &raw mut app_sig as *mut ::core::ffi::c_char,
-                            5 as size_t,
-                        ) != 5 as ssize_t
-                        {
-                            return -(1 as ::core::ffi::c_int);
-                        }
-                        length -= 5 as ::core::ffi::c_int;
-                        if memcmp(
-                            &raw mut app_sig as *mut ::core::ffi::c_char
-                                as *const ::core::ffi::c_void,
-                            b"JFIF\0\0" as *const u8 as *const ::core::ffi::c_char
-                                as *const ::core::ffi::c_void,
-                            5 as size_t,
-                        ) == 0
-                        {
-                            (*j_info).flags |= HAVE_APPn_JFIF;
-                            length = (length as size_t).wrapping_sub(read_APP0_JFIF(j_info, handle))
-                                as ::core::ffi::c_int
-                                as ::core::ffi::c_int;
-                        } else if memcmp(
-                            &raw mut app_sig as *mut ::core::ffi::c_char
-                                as *const ::core::ffi::c_void,
-                            b"JFXX\0" as *const u8 as *const ::core::ffi::c_char
-                                as *const ::core::ffi::c_void,
-                            5 as size_t,
-                        ) == 0
-                        {
-                            length = (length as size_t)
-                                .wrapping_sub(read_APP0_JFXX(handle, length as size_t))
-                                as ::core::ffi::c_int
-                                as ::core::ffi::c_int;
-                            if count < MAX_COUNT {
-                                (*j_info).skipbits[(count / 8 as ::core::ffi::c_int) as usize] =
-                                    ((*j_info).skipbits[(count / 8 as ::core::ffi::c_int) as usize]
-                                        as ::core::ffi::c_int
-                                        | (1 as ::core::ffi::c_int)
-                                            << 7 as ::core::ffi::c_int
-                                                - count % 8 as ::core::ffi::c_int)
-                                        as ::core::ffi::c_char;
-                            }
-                        } else if count < MAX_COUNT {
-                            (*j_info).skipbits[(count / 8 as ::core::ffi::c_int) as usize] =
-                                ((*j_info).skipbits[(count / 8 as ::core::ffi::c_int) as usize]
-                                    as ::core::ffi::c_int
-                                    | (1 as ::core::ffi::c_int)
-                                        << 7 as ::core::ffi::c_int
-                                            - count % 8 as ::core::ffi::c_int)
-                                    as ::core::ffi::c_char;
-                        }
-                    } else if count < MAX_COUNT {
-                        (*j_info).skipbits[(count / 8 as ::core::ffi::c_int) as usize] = ((*j_info)
-                            .skipbits[(count / 8 as ::core::ffi::c_int) as usize]
-                            as ::core::ffi::c_int
-                            | (1 as ::core::ffi::c_int)
-                                << 7 as ::core::ffi::c_int - count % 8 as ::core::ffi::c_int)
-                            as ::core::ffi::c_char;
-                    }
-                    crate::backend::runtime::input_seek(handle, length as ssize_t, SEEK_CUR);
-                }
-                225 => {
-                    if length > 5 as ::core::ffi::c_int {
-                        if ttstub_input_read(
-                            handle,
-                            &raw mut app_sig as *mut ::core::ffi::c_char,
-                            5 as size_t,
-                        ) != 5 as ssize_t
-                        {
-                            return -(1 as ::core::ffi::c_int);
-                        }
-                        length -= 5 as ::core::ffi::c_int;
-                        if memcmp(
-                            &raw mut app_sig as *mut ::core::ffi::c_char
-                                as *const ::core::ffi::c_void,
-                            b"Exif\0\0" as *const u8 as *const ::core::ffi::c_char
-                                as *const ::core::ffi::c_void,
-                            5 as size_t,
-                        ) == 0
-                        {
-                            (*j_info).flags |= HAVE_APPn_Exif;
-                            length = (length as size_t).wrapping_sub(read_APP1_Exif(
-                                j_info,
-                                handle,
-                                length as size_t,
-                            )) as ::core::ffi::c_int
-                                as ::core::ffi::c_int;
-                        } else if memcmp(
-                            &raw mut app_sig as *mut ::core::ffi::c_char
-                                as *const ::core::ffi::c_void,
-                            b"http:\0" as *const u8 as *const ::core::ffi::c_char
-                                as *const ::core::ffi::c_void,
-                            5 as size_t,
-                        ) == 0
-                            && length > 24 as ::core::ffi::c_int
-                        {
-                            if ttstub_input_read(
-                                handle,
-                                &raw mut app_sig as *mut ::core::ffi::c_char,
-                                24 as size_t,
-                            ) != 24 as ssize_t
-                            {
-                                return -(1 as ::core::ffi::c_int);
-                            }
-                            length -= 24 as ::core::ffi::c_int;
-                            if memcmp(
-                                &raw mut app_sig as *mut ::core::ffi::c_char
-                                    as *const ::core::ffi::c_void,
-                                b"//ns.adobe.com/xap/1.0/\0\0" as *const u8
-                                    as *const ::core::ffi::c_char
-                                    as *const ::core::ffi::c_void,
-                                24 as size_t,
-                            ) == 0
-                            {
-                                (*j_info).flags |= HAVE_APPn_XMP;
-                                length = (length as size_t).wrapping_sub(read_APP1_XMP(
-                                    j_info,
-                                    handle,
-                                    length as size_t,
-                                )) as ::core::ffi::c_int
-                                    as ::core::ffi::c_int;
-                            }
-                            if count < MAX_COUNT {
-                                (*j_info).skipbits[(count / 8 as ::core::ffi::c_int) as usize] =
-                                    ((*j_info).skipbits[(count / 8 as ::core::ffi::c_int) as usize]
-                                        as ::core::ffi::c_int
-                                        | (1 as ::core::ffi::c_int)
-                                            << 7 as ::core::ffi::c_int
-                                                - count % 8 as ::core::ffi::c_int)
-                                        as ::core::ffi::c_char;
-                            }
-                        }
-                    } else if count < MAX_COUNT {
-                        (*j_info).skipbits[(count / 8 as ::core::ffi::c_int) as usize] = ((*j_info)
-                            .skipbits[(count / 8 as ::core::ffi::c_int) as usize]
-                            as ::core::ffi::c_int
-                            | (1 as ::core::ffi::c_int)
-                                << 7 as ::core::ffi::c_int - count % 8 as ::core::ffi::c_int)
-                            as ::core::ffi::c_char;
-                    }
-                    crate::backend::runtime::input_seek(handle, length as ssize_t, SEEK_CUR);
-                }
-                226 => {
-                    if length >= 14 as ::core::ffi::c_int {
-                        if ttstub_input_read(
-                            handle,
-                            &raw mut app_sig as *mut ::core::ffi::c_char,
-                            12 as size_t,
-                        ) != 12 as ssize_t
-                        {
-                            return -(1 as ::core::ffi::c_int);
-                        }
-                        length -= 12 as ::core::ffi::c_int;
-                        if memcmp(
-                            &raw mut app_sig as *mut ::core::ffi::c_char
-                                as *const ::core::ffi::c_void,
-                            b"ICC_PROFILE\0\0" as *const u8 as *const ::core::ffi::c_char
-                                as *const ::core::ffi::c_void,
-                            12 as size_t,
-                        ) == 0
-                        {
-                            (*j_info).flags |= HAVE_APPn_ICC;
-                            length = (length as size_t).wrapping_sub(read_APP2_ICC(
-                                j_info,
-                                handle,
-                                length as size_t,
-                            )) as ::core::ffi::c_int
-                                as ::core::ffi::c_int;
-                        }
-                    }
-                    crate::backend::runtime::input_seek(handle, length as ssize_t, SEEK_CUR);
-                    if count < MAX_COUNT {
-                        (*j_info).skipbits[(count / 8 as ::core::ffi::c_int) as usize] = ((*j_info)
-                            .skipbits[(count / 8 as ::core::ffi::c_int) as usize]
-                            as ::core::ffi::c_int
-                            | (1 as ::core::ffi::c_int)
-                                << 7 as ::core::ffi::c_int - count % 8 as ::core::ffi::c_int)
-                            as ::core::ffi::c_char;
-                    }
-                }
-                238 => {
-                    if length > 5 as ::core::ffi::c_int {
-                        if ttstub_input_read(
-                            handle,
-                            &raw mut app_sig as *mut ::core::ffi::c_char,
-                            5 as size_t,
-                        ) != 5 as ssize_t
-                        {
-                            return -(1 as ::core::ffi::c_int);
-                        }
-                        length -= 5 as ::core::ffi::c_int;
-                        if memcmp(
-                            &raw mut app_sig as *mut ::core::ffi::c_char
-                                as *const ::core::ffi::c_void,
-                            b"Adobe\0" as *const u8 as *const ::core::ffi::c_char
-                                as *const ::core::ffi::c_void,
-                            5 as size_t,
-                        ) == 0
-                        {
-                            (*j_info).flags |= HAVE_APPn_ADOBE;
-                            length -= read_APP14_Adobe(j_info, handle) as ::core::ffi::c_int;
-                        } else if count < MAX_COUNT {
-                            (*j_info).skipbits[(count / 8 as ::core::ffi::c_int) as usize] =
-                                ((*j_info).skipbits[(count / 8 as ::core::ffi::c_int) as usize]
-                                    as ::core::ffi::c_int
-                                    | (1 as ::core::ffi::c_int)
-                                        << 7 as ::core::ffi::c_int
-                                            - count % 8 as ::core::ffi::c_int)
-                                    as ::core::ffi::c_char;
-                        }
-                    } else if count < MAX_COUNT {
-                        (*j_info).skipbits[(count / 8 as ::core::ffi::c_int) as usize] = ((*j_info)
-                            .skipbits[(count / 8 as ::core::ffi::c_int) as usize]
-                            as ::core::ffi::c_int
-                            | (1 as ::core::ffi::c_int)
-                                << 7 as ::core::ffi::c_int - count % 8 as ::core::ffi::c_int)
-                            as ::core::ffi::c_char;
-                    }
-                    crate::backend::runtime::input_seek(handle, length as ssize_t, SEEK_CUR);
-                }
-                _ => {
-                    crate::backend::runtime::input_seek(handle, length as ssize_t, SEEK_CUR);
-                    if marker as ::core::ffi::c_uint
-                        >= JM_APP0 as ::core::ffi::c_int as ::core::ffi::c_uint
-                        && marker as ::core::ffi::c_uint
-                            <= JM_APP15 as ::core::ffi::c_int as ::core::ffi::c_uint
-                    {
-                        if count < MAX_COUNT {
-                            (*j_info).skipbits[(count / 8 as ::core::ffi::c_int) as usize] =
-                                ((*j_info).skipbits[(count / 8 as ::core::ffi::c_int) as usize]
-                                    as ::core::ffi::c_int
-                                    | (1 as ::core::ffi::c_int)
-                                        << 7 as ::core::ffi::c_int
-                                            - count % 8 as ::core::ffi::c_int)
-                                    as ::core::ffi::c_char;
-                        }
-                    }
-                }
-            }
+
+unsafe extern "C-unwind" fn JPEG_get_XMP(info: *mut crate::jpeg::Info) -> *mut pdf_obj {
+    unsafe {
+        let stream = pdf_new_stream(STREAM_COMPRESS);
+        let dict = pdf_stream_dict(stream);
+        pdf_add_dict(
+            dict,
+            pdf_new_name(c"Type".as_ptr()),
+            pdf_new_name(c"Metadata".as_ptr()),
+        );
+        pdf_add_dict(
+            dict,
+            pdf_new_name(c"Subtype".as_ptr()),
+            pdf_new_name(c"XML".as_ptr()),
+        );
+        for packet in &(*info).xmp {
+            pdf_add_stream(stream, packet.as_ptr().cast(), packet.len() as i32);
         }
-        count += 1;
+        if (*info).xmp.len() > 1 {
+            pdf_warning!("JPEG: Multiple XMP segments found in JPEG file. (untested)");
+        }
+        stream
     }
-    if (*j_info).xdpi < 0.1f64 && (*j_info).ydpi < 0.1f64 {
-        (*j_info).ydpi = 72.0f64;
-        (*j_info).xdpi = (*j_info).ydpi;
-    }
-    return if found_SOFn != 0 {
-        0 as ::core::ffi::c_int
-    } else {
-        -(1 as ::core::ffi::c_int)
+}
+
+unsafe extern "C-unwind" fn JPEG_copy_stream(
+    info: *mut crate::jpeg::Info,
+    stream: *mut pdf_obj,
+    handle: rust_input_handle_t,
+) -> i32 {
+    use std::io::{Read, Seek, SeekFrom};
+    let info = unsafe { &*info };
+    let mut input = crate::compat::input::ProbeInput { handle };
+    let copy = || -> std::io::Result<()> {
+        let end = input.seek(SeekFrom::End(0))?;
+        if info.rest > end {
+            return Err(std::io::Error::other("Invalid JPEG data offset"));
+        }
+        input.seek(SeekFrom::Start(info.rest))?;
+        unsafe {
+            pdf_add_stream(
+                stream,
+                info.prefix.as_ptr().cast(),
+                info.prefix.len() as i32,
+            );
+        }
+        let mut remaining = end - info.rest;
+        let mut buffer = [0; 1024];
+        while remaining > 0 {
+            let length = remaining.min(buffer.len() as u64) as usize;
+            input.read_exact(&mut buffer[..length])?;
+            unsafe {
+                pdf_add_stream(stream, buffer.as_ptr().cast(), length as i32);
+            }
+            remaining -= length as u64;
+        }
+        Ok(())
     };
+    match {
+        let mut copy = copy;
+        copy()
+    } {
+        Ok(()) => 0,
+        Err(_) => {
+            pdf_warning!("JPEG: Reading JPEG data failed.");
+            -1
+        }
+    }
 }
 #[unsafe(export_name = "__pdf_impl_jpeg_get_bbox")]
 pub unsafe extern "C-unwind" fn jpeg_get_bbox(
-    mut handle: rust_input_handle_t,
-    mut width: *mut ::core::ffi::c_uint,
-    mut height: *mut ::core::ffi::c_uint,
-    mut xdensity: *mut ::core::ffi::c_double,
-    mut ydensity: *mut ::core::ffi::c_double,
-) -> ::core::ffi::c_int {
-    let mut j_info: JPEG_info = JPEG_info {
-        height: 0,
-        width: 0,
-        bits_per_component: 0,
-        num_components: 0,
-        xdpi: 0.,
-        ydpi: 0.,
-        flags: 0,
-        num_appn: 0,
-        max_appn: 0,
-        appn: ::core::ptr::null_mut::<JPEG_ext>(),
-        skipbits: [0; 129],
+    handle: rust_input_handle_t,
+    width: *mut u32,
+    height: *mut u32,
+    xdensity: *mut f64,
+    ydensity: *mut f64,
+) -> i32 {
+    let Some(mut info) = scan_file(handle) else {
+        return -1;
     };
-    JPEG_info_init(&raw mut j_info);
-    if JPEG_scan_file(&raw mut j_info, handle) < 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"%s: Not a JPEG file?\0" as *const u8 as *const ::core::ffi::c_char,
-            JPEG_DEBUG_STR.as_ptr(),
-        );
-        JPEG_info_clear(&raw mut j_info);
-        return -(1 as ::core::ffi::c_int);
+    unsafe {
+        *width = info.width.into();
+        *height = info.height.into();
+        jpeg_get_density(&mut info, xdensity, ydensity);
     }
-    *width = j_info.width as ::core::ffi::c_uint;
-    *height = j_info.height as ::core::ffi::c_uint;
-    jpeg_get_density(&raw mut j_info, xdensity, ydensity);
-    JPEG_info_clear(&raw mut j_info);
-    return 0 as ::core::ffi::c_int;
+    0
 }
 unsafe extern "C" {
     fn memcmp(

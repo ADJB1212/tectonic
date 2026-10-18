@@ -131,25 +131,9 @@ unsafe extern "C-unwind" {
         warn_fn: png_error_ptr,
     ) -> png_structp;
     fn png_create_info_struct(png_ptr: png_const_structrp) -> png_infop;
-    fn png_read_info(png_ptr: png_structrp, info_ptr: png_inforp);
     fn png_set_expand_gray_1_2_4_to_8(png_ptr: png_structrp);
     fn png_set_packing(png_ptr: png_structrp);
-    fn png_set_background(
-        png_ptr: png_structrp,
-        background_color: png_const_color_16p,
-        background_gamma_code: ::core::ffi::c_int,
-        need_expand: ::core::ffi::c_int,
-        background_gamma: ::core::ffi::c_double,
-    );
     fn png_set_strip_16(png_ptr: png_structrp);
-    fn png_set_gamma(
-        png_ptr: png_structrp,
-        screen_gamma: ::core::ffi::c_double,
-        override_file_gamma: ::core::ffi::c_double,
-    );
-    fn png_read_update_info(png_ptr: png_structrp, info_ptr: png_inforp);
-    fn png_read_image(png_ptr: png_structrp, image: png_bytepp);
-    fn png_read_end(png_ptr: png_structrp, info_ptr: png_inforp);
     fn png_destroy_info_struct(png_ptr: png_const_structrp, info_ptr_ptr: png_infopp);
     fn png_destroy_read_struct(
         png_ptr_ptr: png_structpp,
@@ -371,23 +355,35 @@ pub unsafe extern "C-unwind" fn check_for_png(
         return 1 as ::core::ffi::c_int;
     };
 }
-unsafe extern "C-unwind" fn _png_warning_callback(
-    mut png_ptr: png_structp,
-    mut msg: png_const_charp,
-) {
+unsafe fn png_read_info(png: png_structrp, info: png_inforp) {
+    unsafe { crate::compat::png::read_info(png.cast(), info.cast()) }
+        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
 }
-unsafe extern "C-unwind" fn _png_read(
-    mut png_ptr: png_structp,
-    mut outbytes: png_bytep,
-    mut n: png_size_t,
+unsafe fn png_read_update_info(png: png_structrp, info: png_inforp) {
+    unsafe { crate::compat::png::update_info(png.cast(), info.cast()) }
+        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+}
+unsafe fn png_read_image(png: png_structrp, rows: png_bytepp) {
+    unsafe { crate::compat::png::read_image(png.cast(), rows) }
+        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+}
+unsafe fn png_read_end(png: png_structrp, info: png_inforp) {
+    unsafe { crate::compat::png::read_end(png.cast(), info.cast()) }
+        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+}
+unsafe fn png_set_gamma(png: png_structrp, screen: f64, file: f64) {
+    unsafe { crate::compat::png::set_gamma(png.cast(), screen, file) }
+        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+}
+unsafe fn png_set_background(
+    png: png_structrp,
+    color: png_const_color_16p,
+    code: i32,
+    expand: i32,
+    gamma: f64,
 ) {
-    let mut handle: rust_input_handle_t =
-        png_get_io_ptr(png_ptr as png_const_structrp) as rust_input_handle_t;
-    let mut r: ssize_t = 0;
-    r = ttstub_input_read(handle, outbytes as *mut ::core::ffi::c_char, n as size_t);
-    if r < 0 as ssize_t || r as size_t != n {
-        pdf_abort!(b"error reading PNG\0" as *const u8 as *const ::core::ffi::c_char);
-    }
+    unsafe { crate::compat::png::set_background(png.cast(), color.cast(), code, expand, gamma) }
+        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
 }
 #[unsafe(export_name = "__pdf_impl_png_include_image")]
 pub unsafe extern "C-unwind" fn png_include_image(
@@ -425,44 +421,19 @@ pub unsafe extern "C-unwind" fn png_include_image(
     mask = intent;
     colorspace = mask;
     crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-    png_ptr = png_create_read_struct(
-        png_get_libpng_ver(std::ptr::null()),
-        NULL,
-        None,
-        Some(
-            _png_warning_callback
-                as unsafe extern "C-unwind" fn(png_structp, png_const_charp) -> (),
-        ),
-    );
-    if png_ptr.is_null() {
-        pdf_warning!(
-            b"%s: Creating Libpng read struct failed.\0" as *const u8 as *const ::core::ffi::c_char,
-            PNG_DEBUG_STR.as_ptr(),
-        );
-        return -(1 as ::core::ffi::c_int);
-    }
-    png_info_ptr = png_create_info_struct(png_ptr as png_const_structrp);
-    if png_info_ptr.is_null() {
-        pdf_warning!(
-            b"%s: Creating Libpng info struct failed.\0" as *const u8 as *const ::core::ffi::c_char,
-            PNG_DEBUG_STR.as_ptr(),
-        );
-        png_destroy_read_struct(
-            &raw mut png_ptr,
-            ::core::ptr::null_mut::<*mut png_info>(),
-            ::core::ptr::null_mut::<*mut png_info>(),
-        );
-        return -(1 as ::core::ffi::c_int);
-    }
+    let png = match crate::compat::png::Reader::new(handle) {
+        Ok(reader) => reader,
+        Err(error) => {
+            pdf_warning!("{}", error.message.to_string_lossy());
+            return -1;
+        }
+    };
+    png_ptr = png.png().cast();
+    png_info_ptr = png.info().cast();
     png_set_option(
         png_ptr as png_structrp,
         PNG_MAXIMUM_INFLATE_WINDOW,
         PNG_OPTION_ON,
-    );
-    png_set_read_fn(
-        png_ptr as png_structrp,
-        handle as png_voidp,
-        Some(_png_read as unsafe extern "C-unwind" fn(png_structp, png_bytep, png_size_t) -> ()),
     );
     png_read_info(png_ptr as png_structrp, png_info_ptr as png_inforp);
     color_type = png_get_color_type(
@@ -534,10 +505,14 @@ pub unsafe extern "C-unwind" fn png_include_image(
     }
     trans_type = check_transparency(png_ptr, png_info_ptr);
     png_read_update_info(png_ptr as png_structrp, png_info_ptr as png_inforp);
-    rowbytes = png_get_rowbytes(
+    rowbytes = u32::try_from(png_get_rowbytes(
         png_ptr as png_const_structrp,
         png_info_ptr as png_const_inforp,
-    ) as png_uint_32;
+    ))
+    .unwrap_or_else(|_| pdf_abort!("PNG raster is too large."));
+    if width == 0 || height == 0 || width > i32::MAX as u32 || height > i32::MAX as u32 {
+        pdf_abort!("Invalid PNG dimensions.");
+    }
     info.width = width as ::core::ffi::c_int;
     info.height = height as ::core::ffi::c_int;
     info.bits_per_component = bpc as ::core::ffi::c_int;
@@ -557,9 +532,12 @@ pub unsafe extern "C-unwind" fn png_include_image(
     }
     stream = pdf_new_stream(STREAM_COMPRESS);
     stream_dict = pdf_stream_dict(stream);
-    stream_data_ptr = new((rowbytes.wrapping_mul(height) as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<png_byte>() as usize)
-        as uint32_t) as *mut png_byte;
+    let raster_len = rowbytes
+        .checked_mul(height)
+        .filter(|&len| len <= i32::MAX as u32)
+        .unwrap_or_else(|| pdf_abort!("PNG raster is too large.")) as usize;
+    let mut raster = vec![0; raster_len];
+    stream_data_ptr = raster.as_mut_ptr();
     read_image_data(png_ptr, stream_data_ptr, height, rowbytes);
     intent = get_rendering_intent(png_ptr, png_info_ptr);
     if !intent.is_null() {
@@ -675,7 +653,7 @@ pub unsafe extern "C-unwind" fn png_include_image(
         stream_data_ptr as *const ::core::ffi::c_void,
         rowbytes.wrapping_mul(height) as ::core::ffi::c_int,
     );
-    free(stream_data_ptr as *mut ::core::ffi::c_void);
+    drop(raster);
     if !mask.is_null() {
         if trans_type == PDF_TRANS_TYPE_BINARY {
             pdf_add_dict(
@@ -778,16 +756,7 @@ pub unsafe extern "C-unwind" fn png_include_image(
         }
     }
     png_read_end(png_ptr as png_structrp, ::core::ptr::null_mut::<png_info>());
-    if !png_info_ptr.is_null() {
-        png_destroy_info_struct(png_ptr as png_const_structrp, &raw mut png_info_ptr);
-    }
-    if !png_ptr.is_null() {
-        png_destroy_read_struct(
-            &raw mut png_ptr,
-            ::core::ptr::null_mut::<*mut png_info>(),
-            ::core::ptr::null_mut::<*mut png_info>(),
-        );
-    }
+    drop(png);
     if color_type as ::core::ffi::c_int != PNG_COLOR_TYPE_PALETTE
         && info.bits_per_component >= 8 as ::core::ffi::c_int
         && info.height > 64 as ::core::ffi::c_int
@@ -1585,343 +1554,148 @@ unsafe extern "C-unwind" fn create_ckey_mask(
     }
     return colorkeys;
 }
-unsafe extern "C-unwind" fn create_soft_mask(
-    mut png_ptr: png_structp,
-    mut info_ptr: png_infop,
-    mut image_data_ptr: png_bytep,
-    mut width: png_uint_32,
-    mut height: png_uint_32,
-) -> *mut pdf_obj {
-    let mut smask: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut smask_data_ptr: png_bytep = ::core::ptr::null_mut::<png_byte>();
-    let mut trans: png_bytep = ::core::ptr::null_mut::<png_byte>();
-    let mut num_trans: ::core::ffi::c_int = 0;
-    let mut i: png_uint_32 = 0;
-    let mut bpc: png_byte = 0;
-    let mut mask: png_byte = 0;
-    let mut shift: png_byte = 0;
-    if png_get_valid(
-        png_ptr as png_const_structrp,
-        info_ptr as png_const_inforp,
-        PNG_INFO_tRNS,
-    ) == 0
-        || png_get_tRNS(
-            png_ptr as png_const_structrp,
-            info_ptr as png_inforp,
-            &raw mut trans,
-            &raw mut num_trans,
-            ::core::ptr::null_mut::<png_color_16p>(),
-        ) == 0
-    {
-        pdf_warning!(
-            b"%s: PNG does not have valid tRNS chunk but tRNS is requested.\0" as *const u8
-                as *const ::core::ffi::c_char,
-            PNG_DEBUG_STR.as_ptr(),
+unsafe fn soft_mask(width: u32, height: u32, bits: u8, bytes: &[u8]) -> *mut pdf_obj {
+    unsafe {
+        let stream = pdf_new_stream(STREAM_COMPRESS);
+        let dict = pdf_stream_dict(stream);
+        pdf_add_dict(
+            dict,
+            pdf_new_name(c"Type".as_ptr()),
+            pdf_new_name(c"XObject".as_ptr()),
         );
-        return ::core::ptr::null_mut::<pdf_obj>();
+        pdf_add_dict(
+            dict,
+            pdf_new_name(c"Subtype".as_ptr()),
+            pdf_new_name(c"Image".as_ptr()),
+        );
+        pdf_add_dict(
+            dict,
+            pdf_new_name(c"Width".as_ptr()),
+            pdf_new_number(width as f64),
+        );
+        pdf_add_dict(
+            dict,
+            pdf_new_name(c"Height".as_ptr()),
+            pdf_new_number(height as f64),
+        );
+        pdf_add_dict(
+            dict,
+            pdf_new_name(c"ColorSpace".as_ptr()),
+            pdf_new_name(c"DeviceGray".as_ptr()),
+        );
+        pdf_add_dict(
+            dict,
+            pdf_new_name(c"BitsPerComponent".as_ptr()),
+            pdf_new_number(bits as f64),
+        );
+        pdf_add_stream(stream, bytes.as_ptr().cast(), bytes.len() as i32);
+        stream
     }
-    bpc = png_get_bit_depth(png_ptr as png_const_structrp, info_ptr as png_const_inforp);
-    mask = (0xff as ::core::ffi::c_int >> 8 as ::core::ffi::c_int - bpc as ::core::ffi::c_int)
-        as png_byte;
-    shift = (8 as ::core::ffi::c_int - bpc as ::core::ffi::c_int) as png_byte;
-    smask = pdf_new_stream(STREAM_COMPRESS);
-    dict = pdf_stream_dict(smask);
-    smask_data_ptr = new((width.wrapping_mul(height) as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<png_byte>() as usize)
-        as uint32_t) as *mut png_byte;
-    pdf_add_dict(
-        dict,
-        pdf_new_name(b"Type\0" as *const u8 as *const ::core::ffi::c_char),
-        pdf_new_name(b"XObject\0" as *const u8 as *const ::core::ffi::c_char),
-    );
-    pdf_add_dict(
-        dict,
-        pdf_new_name(b"Subtype\0" as *const u8 as *const ::core::ffi::c_char),
-        pdf_new_name(b"Image\0" as *const u8 as *const ::core::ffi::c_char),
-    );
-    pdf_add_dict(
-        dict,
-        pdf_new_name(b"Width\0" as *const u8 as *const ::core::ffi::c_char),
-        pdf_new_number(width as ::core::ffi::c_double),
-    );
-    pdf_add_dict(
-        dict,
-        pdf_new_name(b"Height\0" as *const u8 as *const ::core::ffi::c_char),
-        pdf_new_number(height as ::core::ffi::c_double),
-    );
-    pdf_add_dict(
-        dict,
-        pdf_new_name(b"ColorSpace\0" as *const u8 as *const ::core::ffi::c_char),
-        pdf_new_name(b"DeviceGray\0" as *const u8 as *const ::core::ffi::c_char),
-    );
-    pdf_add_dict(
-        dict,
-        pdf_new_name(b"BitsPerComponent\0" as *const u8 as *const ::core::ffi::c_char),
-        pdf_new_number(8 as ::core::ffi::c_int as ::core::ffi::c_double),
-    );
-    i = 0 as png_uint_32;
-    while i < width.wrapping_mul(height) {
-        let mut idx: png_byte = (*image_data_ptr.offset(
-            (bpc as png_uint_32)
-                .wrapping_mul(i)
-                .wrapping_div(8 as png_uint_32) as isize,
-        ) as ::core::ffi::c_int
-            >> (shift as png_uint_32).wrapping_sub(
-                (bpc as png_uint_32)
-                    .wrapping_mul(i)
-                    .wrapping_rem(8 as png_uint_32),
-            )
-            & mask as ::core::ffi::c_int) as png_byte;
-        *smask_data_ptr.offset(i as isize) = (if (idx as ::core::ffi::c_int) < num_trans {
-            *trans.offset(idx as isize) as ::core::ffi::c_int
-        } else {
-            0xff as ::core::ffi::c_int
-        }) as png_byte;
-        i = i.wrapping_add(1);
-    }
-    pdf_add_stream(
-        smask,
-        smask_data_ptr as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-        width.wrapping_mul(height) as ::core::ffi::c_int,
-    );
-    free(smask_data_ptr as *mut ::core::ffi::c_void);
-    return smask;
 }
-unsafe extern "C-unwind" fn strip_soft_mask(
-    mut png_ptr: png_structp,
-    mut info_ptr: png_infop,
-    mut image_data_ptr: png_bytep,
-    mut rowbytes_ptr: png_uint_32p,
-    mut width: png_uint_32,
-    mut height: png_uint_32,
+
+unsafe extern "C-unwind" fn create_soft_mask(
+    png: png_structp,
+    info: png_infop,
+    data: png_bytep,
+    width: u32,
+    height: u32,
 ) -> *mut pdf_obj {
-    let mut smask: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut color_type: png_byte = 0;
-    let mut bpc: png_byte = 0;
-    let mut smask_data_ptr: png_bytep = ::core::ptr::null_mut::<png_byte>();
-    let mut i: png_uint_32 = 0;
-    color_type = png_get_color_type(png_ptr as png_const_structrp, info_ptr as png_const_inforp);
-    bpc = png_get_bit_depth(png_ptr as png_const_structrp, info_ptr as png_const_inforp);
-    if color_type as ::core::ffi::c_int & PNG_COLOR_MASK_COLOR != 0 {
-        let mut bps: ::core::ffi::c_int = if bpc as ::core::ffi::c_int == 8 as ::core::ffi::c_int {
-            4 as ::core::ffi::c_int
+    let mut trans = core::ptr::null_mut();
+    let mut count = 0;
+    unsafe {
+        if png_get_valid(png, info, PNG_INFO_tRNS) == 0
+            || png_get_tRNS(png, info, &mut trans, &mut count, core::ptr::null_mut()) == 0
+        {
+            pdf_warning!("PNG: PNG does not have valid tRNS chunk but tRNS is requested.");
+            return core::ptr::null_mut();
+        }
+        let row = png_get_rowbytes(png, info);
+        let length = row
+            .checked_mul(height as usize)
+            .filter(|&len| len <= i32::MAX as usize)
+            .unwrap_or_else(|| pdf_abort!("PNG raster is too large."));
+        if count < 0 || (count > 0 && trans.is_null()) {
+            pdf_abort!("Invalid PNG transparency data.");
+        }
+        let transparency = if count == 0 {
+            &[]
         } else {
-            8 as ::core::ffi::c_int
+            core::slice::from_raw_parts(trans, count as usize)
         };
-        if *rowbytes_ptr as usize
-            != ((bps as png_uint_32).wrapping_mul(width) as usize)
-                .wrapping_mul(::core::mem::size_of::<png_byte>() as usize)
+        let bytes = core::slice::from_raw_parts(data, length);
+        let bits = png_get_bit_depth(png, info);
+        let mask = crate::raster::palette_alpha(
+            bytes,
+            width as usize,
+            height as usize,
+            bits,
+            transparency,
+        )
+        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+        soft_mask(width, height, 8, &mask)
+    }
+}
+
+unsafe extern "C-unwind" fn strip_soft_mask(
+    png: png_structp,
+    info: png_infop,
+    data: png_bytep,
+    row_bytes: *mut u32,
+    width: u32,
+    height: u32,
+) -> *mut pdf_obj {
+    unsafe {
+        let color = png_get_color_type(png, info);
+        let bits = png_get_bit_depth(png, info);
+        if !matches!(
+            color as i32,
+            PNG_COLOR_TYPE_RGB_ALPHA | PNG_COLOR_TYPE_GRAY_ALPHA
+        ) || !matches!(bits, 8 | 16)
         {
-            pdf_warning!(
-                b"%s: Inconsistent rowbytes value.\0" as *const u8 as *const ::core::ffi::c_char,
-                PNG_DEBUG_STR.as_ptr(),
-            );
-            return ::core::ptr::null_mut::<pdf_obj>();
+            pdf_warning!("You found a bug in pngimage.c!");
+            return core::ptr::null_mut();
         }
-    } else {
-        let mut bps_0: ::core::ffi::c_int = if bpc as ::core::ffi::c_int == 8 as ::core::ffi::c_int
-        {
-            2 as ::core::ffi::c_int
+        let length = (*row_bytes as usize)
+            .checked_mul(height as usize)
+            .filter(|&len| len <= i32::MAX as usize)
+            .unwrap_or_else(|| pdf_abort!("PNG raster is too large."));
+        let bytes = core::slice::from_raw_parts_mut(data, length);
+        let colors = if color as i32 == PNG_COLOR_TYPE_RGB_ALPHA {
+            3
         } else {
-            4 as ::core::ffi::c_int
+            1
         };
-        if *rowbytes_ptr as usize
-            != ((bps_0 as png_uint_32).wrapping_mul(width) as usize)
-                .wrapping_mul(::core::mem::size_of::<png_byte>() as usize)
-        {
-            pdf_warning!(
-                b"%s: Inconsistent rowbytes value.\0" as *const u8 as *const ::core::ffi::c_char,
-                PNG_DEBUG_STR.as_ptr(),
-            );
-            return ::core::ptr::null_mut::<pdf_obj>();
-        }
+        let (mask, row) = crate::raster::split_alpha(
+            bytes,
+            width as usize,
+            height as usize,
+            colors,
+            (bits / 8) as usize,
+        )
+        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+        *row_bytes = row as u32;
+        soft_mask(width, height, bits, &mask)
     }
-    smask = pdf_new_stream(STREAM_COMPRESS);
-    dict = pdf_stream_dict(smask);
-    pdf_add_dict(
-        dict,
-        pdf_new_name(b"Type\0" as *const u8 as *const ::core::ffi::c_char),
-        pdf_new_name(b"XObject\0" as *const u8 as *const ::core::ffi::c_char),
-    );
-    pdf_add_dict(
-        dict,
-        pdf_new_name(b"Subtype\0" as *const u8 as *const ::core::ffi::c_char),
-        pdf_new_name(b"Image\0" as *const u8 as *const ::core::ffi::c_char),
-    );
-    pdf_add_dict(
-        dict,
-        pdf_new_name(b"Width\0" as *const u8 as *const ::core::ffi::c_char),
-        pdf_new_number(width as ::core::ffi::c_double),
-    );
-    pdf_add_dict(
-        dict,
-        pdf_new_name(b"Height\0" as *const u8 as *const ::core::ffi::c_char),
-        pdf_new_number(height as ::core::ffi::c_double),
-    );
-    pdf_add_dict(
-        dict,
-        pdf_new_name(b"ColorSpace\0" as *const u8 as *const ::core::ffi::c_char),
-        pdf_new_name(b"DeviceGray\0" as *const u8 as *const ::core::ffi::c_char),
-    );
-    pdf_add_dict(
-        dict,
-        pdf_new_name(b"BitsPerComponent\0" as *const u8 as *const ::core::ffi::c_char),
-        pdf_new_number(bpc as ::core::ffi::c_double),
-    );
-    smask_data_ptr = new(
-        (((bpc as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as png_uint_32)
-            .wrapping_mul(width)
-            .wrapping_mul(height) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<png_byte>() as usize) as uint32_t,
-    ) as *mut png_byte;
-    match color_type as ::core::ffi::c_int {
-        PNG_COLOR_TYPE_RGB_ALPHA => {
-            if bpc as ::core::ffi::c_int == 8 as ::core::ffi::c_int {
-                i = 0 as png_uint_32;
-                while i < width.wrapping_mul(height) {
-                    memmove(
-                        image_data_ptr.offset((3 as png_uint_32).wrapping_mul(i) as isize)
-                            as *mut ::core::ffi::c_void,
-                        image_data_ptr.offset((4 as png_uint_32).wrapping_mul(i) as isize)
-                            as *const ::core::ffi::c_void,
-                        3 as size_t,
-                    );
-                    *smask_data_ptr.offset(i as isize) = *image_data_ptr.offset(
-                        (4 as png_uint_32)
-                            .wrapping_mul(i)
-                            .wrapping_add(3 as png_uint_32) as isize,
-                    );
-                    i = i.wrapping_add(1);
-                }
-                *rowbytes_ptr = ((3 as png_uint_32).wrapping_mul(width) as usize)
-                    .wrapping_mul(::core::mem::size_of::<png_byte>() as usize)
-                    as png_uint_32;
-            } else {
-                i = 0 as png_uint_32;
-                while i < width.wrapping_mul(height) {
-                    memmove(
-                        image_data_ptr.offset((6 as png_uint_32).wrapping_mul(i) as isize)
-                            as *mut ::core::ffi::c_void,
-                        image_data_ptr.offset((8 as png_uint_32).wrapping_mul(i) as isize)
-                            as *const ::core::ffi::c_void,
-                        6 as size_t,
-                    );
-                    *smask_data_ptr.offset((2 as png_uint_32).wrapping_mul(i) as isize) =
-                        *image_data_ptr.offset(
-                            (8 as png_uint_32)
-                                .wrapping_mul(i)
-                                .wrapping_add(6 as png_uint_32)
-                                as isize,
-                        );
-                    *smask_data_ptr.offset(
-                        (2 as png_uint_32)
-                            .wrapping_mul(i)
-                            .wrapping_add(1 as png_uint_32) as isize,
-                    ) = *image_data_ptr.offset(
-                        (8 as png_uint_32)
-                            .wrapping_mul(i)
-                            .wrapping_add(7 as png_uint_32) as isize,
-                    );
-                    i = i.wrapping_add(1);
-                }
-                *rowbytes_ptr = ((6 as png_uint_32).wrapping_mul(width) as usize)
-                    .wrapping_mul(::core::mem::size_of::<png_byte>() as usize)
-                    as png_uint_32;
-            }
-        }
-        PNG_COLOR_TYPE_GRAY_ALPHA => {
-            if bpc as ::core::ffi::c_int == 8 as ::core::ffi::c_int {
-                i = 0 as png_uint_32;
-                while i < width.wrapping_mul(height) {
-                    *image_data_ptr.offset(i as isize) =
-                        *image_data_ptr.offset((2 as png_uint_32).wrapping_mul(i) as isize);
-                    *smask_data_ptr.offset(i as isize) = *image_data_ptr.offset(
-                        (2 as png_uint_32)
-                            .wrapping_mul(i)
-                            .wrapping_add(1 as png_uint_32) as isize,
-                    );
-                    i = i.wrapping_add(1);
-                }
-                *rowbytes_ptr = (width as usize)
-                    .wrapping_mul(::core::mem::size_of::<png_byte>() as usize)
-                    as png_uint_32;
-            } else {
-                i = 0 as png_uint_32;
-                while i < width.wrapping_mul(height) {
-                    *image_data_ptr.offset((2 as png_uint_32).wrapping_mul(i) as isize) =
-                        *image_data_ptr.offset((4 as png_uint_32).wrapping_mul(i) as isize);
-                    *image_data_ptr.offset(
-                        (2 as png_uint_32)
-                            .wrapping_mul(i)
-                            .wrapping_add(1 as png_uint_32) as isize,
-                    ) = *image_data_ptr.offset(
-                        (4 as png_uint_32)
-                            .wrapping_mul(i)
-                            .wrapping_add(1 as png_uint_32) as isize,
-                    );
-                    *smask_data_ptr.offset((2 as png_uint_32).wrapping_mul(i) as isize) =
-                        *image_data_ptr.offset(
-                            (4 as png_uint_32)
-                                .wrapping_mul(i)
-                                .wrapping_add(2 as png_uint_32)
-                                as isize,
-                        );
-                    *smask_data_ptr.offset(
-                        (2 as png_uint_32)
-                            .wrapping_mul(i)
-                            .wrapping_add(1 as png_uint_32) as isize,
-                    ) = *image_data_ptr.offset(
-                        (4 as png_uint_32)
-                            .wrapping_mul(i)
-                            .wrapping_add(3 as png_uint_32) as isize,
-                    );
-                    i = i.wrapping_add(1);
-                }
-                *rowbytes_ptr = ((2 as png_uint_32).wrapping_mul(width) as usize)
-                    .wrapping_mul(::core::mem::size_of::<png_byte>() as usize)
-                    as png_uint_32;
-            }
-        }
-        _ => {
-            pdf_warning!(
-                b"You found a bug in pngimage.c!\0" as *const u8 as *const ::core::ffi::c_char,
-            );
-            pdf_release_obj(smask);
-            free(smask_data_ptr as *mut ::core::ffi::c_void);
-            return ::core::ptr::null_mut::<pdf_obj>();
-        }
-    }
-    pdf_add_stream(
-        smask,
-        smask_data_ptr as *const ::core::ffi::c_void,
-        ((bpc as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as png_uint_32)
-            .wrapping_mul(width)
-            .wrapping_mul(height) as ::core::ffi::c_int,
-    );
-    free(smask_data_ptr as *mut ::core::ffi::c_void);
-    return smask;
 }
 unsafe extern "C-unwind" fn read_image_data(
-    mut png_ptr: png_structp,
-    mut dest_ptr: png_bytep,
-    mut height: png_uint_32,
-    mut rowbytes: png_uint_32,
+    png_ptr: png_structp,
+    dest: png_bytep,
+    height: png_uint_32,
+    rowbytes: png_uint_32,
 ) {
-    let mut rows_p: png_bytepp = ::core::ptr::null_mut::<*mut png_byte>();
-    let mut i: png_uint_32 = 0;
-    rows_p = new((height as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<png_bytep>() as usize) as uint32_t)
-        as *mut png_bytep as png_bytepp;
-    i = 0 as png_uint_32;
-    while i < height {
-        let ref mut fresh0 = *rows_p.offset(i as isize);
-        *fresh0 = dest_ptr.offset(rowbytes.wrapping_mul(i) as isize) as *mut png_byte;
-        i = i.wrapping_add(1);
+    let length = (rowbytes as usize)
+        .checked_mul(height as usize)
+        .filter(|&len| len <= i32::MAX as usize)
+        .unwrap_or_else(|| pdf_abort!("PNG raster is too large."));
+    // The caller owns a raster of this checked size for the entire native read.
+    let raster = unsafe { core::slice::from_raw_parts_mut(dest, length) };
+    let mut rows: Vec<_> = raster
+        .chunks_exact_mut(rowbytes as usize)
+        .map(|row| row.as_mut_ptr())
+        .collect();
+    unsafe {
+        png_read_image(png_ptr, rows.as_mut_ptr());
     }
-    png_read_image(png_ptr as png_structrp, rows_p);
-    free(rows_p as *mut ::core::ffi::c_void);
 }
 #[unsafe(export_name = "__pdf_impl_png_get_bbox")]
 pub unsafe extern "C-unwind" fn png_get_bbox(
@@ -1934,38 +1708,15 @@ pub unsafe extern "C-unwind" fn png_get_bbox(
     let mut png_ptr: png_structp = ::core::ptr::null_mut::<png_struct>();
     let mut png_info_ptr: png_infop = ::core::ptr::null_mut::<png_info>();
     crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-    png_ptr = png_create_read_struct(
-        png_get_libpng_ver(std::ptr::null()),
-        NULL,
-        None,
-        Some(
-            _png_warning_callback
-                as unsafe extern "C-unwind" fn(png_structp, png_const_charp) -> (),
-        ),
-    );
-    if png_ptr.is_null() || {
-        png_info_ptr = png_create_info_struct(png_ptr as png_const_structrp);
-        png_info_ptr.is_null()
-    } {
-        pdf_warning!(
-            b"%s: Creating Libpng read/info struct failed.\0" as *const u8
-                as *const ::core::ffi::c_char,
-            PNG_DEBUG_STR.as_ptr(),
-        );
-        if !png_ptr.is_null() {
-            png_destroy_read_struct(
-                &raw mut png_ptr,
-                ::core::ptr::null_mut::<*mut png_info>(),
-                ::core::ptr::null_mut::<*mut png_info>(),
-            );
+    let png = match crate::compat::png::Reader::new(handle) {
+        Ok(reader) => reader,
+        Err(error) => {
+            pdf_warning!("{}", error.message.to_string_lossy());
+            return -1;
         }
-        return -(1 as ::core::ffi::c_int);
-    }
-    png_set_read_fn(
-        png_ptr as png_structrp,
-        handle as png_voidp,
-        Some(_png_read as unsafe extern "C-unwind" fn(png_structp, png_bytep, png_size_t) -> ()),
-    );
+    };
+    png_ptr = png.png().cast();
+    png_info_ptr = png.info().cast();
     png_read_info(png_ptr as png_structrp, png_info_ptr as png_inforp);
     *width = png_get_image_width(
         png_ptr as png_const_structrp,
@@ -1993,16 +1744,7 @@ pub unsafe extern "C-unwind" fn png_get_bbox(
     } else {
         1.0f64
     };
-    if !png_info_ptr.is_null() {
-        png_destroy_info_struct(png_ptr as png_const_structrp, &raw mut png_info_ptr);
-    }
-    if !png_ptr.is_null() {
-        png_destroy_read_struct(
-            &raw mut png_ptr,
-            ::core::ptr::null_mut::<*mut png_info>(),
-            ::core::ptr::null_mut::<*mut png_info>(),
-        );
-    }
+    drop(png);
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C" {

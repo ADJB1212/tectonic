@@ -10,8 +10,8 @@ use std::{
 };
 use tectonic_bridge_core::{CoreBridgeState, ttbc_input_getc, ttbc_input_read, ttbc_input_seek};
 
-struct ProbeInput {
-    handle: usize,
+pub(crate) struct ProbeInput {
+    pub(crate) handle: usize,
 }
 
 pub(crate) struct DirectoryInput {
@@ -125,6 +125,19 @@ impl Seek for BorrowedFile<'_> {
                 return Err(io::Error::last_os_error());
             }
             Ok(position as u64)
+        }
+    }
+}
+
+impl Read for BorrowedFile<'_> {
+    fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+        // SAFETY: The constructor requires an exclusive live FILE borrow.
+        unsafe {
+            let read = libc::fread(buffer.as_mut_ptr().cast(), 1, buffer.len(), self.file);
+            if read == 0 && libc::ferror(self.file) != 0 {
+                return Err(io::Error::last_os_error());
+            }
+            Ok(read)
         }
     }
 }

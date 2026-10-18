@@ -1537,17 +1537,16 @@ unsafe extern "C-unwind" fn write_string(p: *mut pdf_out, string: *mut Bytes) {
     if p.is_null() {
         pdf_abort!(c"assertion failed: %s".as_ptr(), c"p".as_ptr());
     }
-    let encrypted = (*p).state.enc_mode != 0;
-    let mut data = (*string).as_mut_ptr();
-    let mut len = (*string).as_bytes().len();
-    if encrypted {
-        pdf_encrypt_data((*p).sec_data, data, len, &mut data, &mut len);
-    }
-    let bytes = if len == 0 {
-        &[]
+    let owned = if (*p).state.enc_mode != 0 {
+        Some(
+            super::dpx_pdfencrypt::encrypt_owned((*p).sec_data.cast(), (*string).as_bytes())
+                .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy())),
+        )
     } else {
-        core::slice::from_raw_parts(data, len)
+        None
     };
+    let bytes = owned.as_deref().unwrap_or_else(|| (*string).as_bytes());
+    let len = bytes.len();
     let nonprintable = bytes
         .iter()
         .filter(|&&byte| unsafe { isprint(byte.into()) } == 0)
@@ -1565,9 +1564,6 @@ unsafe extern "C-unwind" fn write_string(p: *mut pdf_out, string: *mut Bytes) {
             pdf_out_str(p, escaped.as_ptr().cast(), escaped.len());
         }
         pdf_out_char(p, b')' as _);
-    }
-    if encrypted {
-        free(data.cast());
     }
 }
 
@@ -2302,20 +2298,21 @@ unsafe extern "C-unwind" fn write_stream(mut p: *mut pdf_out, mut stream: *mut p
         filtered = buffer;
         filtered_length = buffer_length;
     }
-    if (*p).state.enc_mode != 0 {
-        let mut cipher: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-        let mut cipher_len: size_t = 0 as size_t;
-        pdf_encrypt_data(
-            (*p).sec_data,
-            filtered,
-            filtered_length,
-            &raw mut cipher,
-            &raw mut cipher_len,
-        );
-        free(filtered as *mut ::core::ffi::c_void);
-        filtered = cipher;
-        filtered_length = cipher_len;
-    }
+    let encrypted = if (*p).state.enc_mode != 0 {
+        let bytes = if filtered_length == 0 {
+            &[]
+        } else {
+            core::slice::from_raw_parts(filtered, filtered_length)
+        };
+        let mut cipher = super::dpx_pdfencrypt::encrypt_owned((*p).sec_data.cast(), bytes)
+            .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+        free(filtered.cast());
+        filtered = cipher.as_mut_ptr();
+        filtered_length = cipher.len();
+        Some(cipher)
+    } else {
+        None
+    };
     pdf_add_dict(
         (*stream).dict as *mut pdf_obj,
         pdf_new_name(b"Length\0" as *const u8 as *const ::core::ffi::c_char),
@@ -2330,7 +2327,9 @@ unsafe extern "C-unwind" fn write_stream(mut p: *mut pdf_out, mut stream: *mut p
     if filtered_length > 0 as size_t {
         pdf_out_str(p, filtered as *const ::core::ffi::c_void, filtered_length);
     }
-    free(filtered as *mut ::core::ffi::c_void);
+    if encrypted.is_none() {
+        free(filtered.cast());
+    }
     pdf_out_str(
         p,
         b"\n\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,

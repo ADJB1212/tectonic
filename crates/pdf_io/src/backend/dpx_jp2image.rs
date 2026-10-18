@@ -168,364 +168,38 @@ pub const JP2_BOX_RESC: ::core::ffi::c_uint = 1919251299 as ::core::ffi::c_uint;
 pub const JP2_BOX_RESD: ::core::ffi::c_uint = 1919251300 as ::core::ffi::c_uint;
 pub const JP2_BOX_JP2C: ::core::ffi::c_uint = 1785737827 as ::core::ffi::c_uint;
 pub const JPX_BOX_LBL_: ::core::ffi::c_uint = 1818389536 as ::core::ffi::c_uint;
-unsafe extern "C-unwind" fn read_box_hdr(
-    mut fp: *mut FILE,
-    mut lbox: *mut ::core::ffi::c_uint,
-    mut tbox: *mut ::core::ffi::c_uint,
-) -> ::core::ffi::c_uint {
-    let mut bytesread: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
-    *lbox = get_unsigned_quad(fp) as ::core::ffi::c_uint;
-    *tbox = get_unsigned_quad(fp) as ::core::ffi::c_uint;
-    bytesread = bytesread.wrapping_add(8 as ::core::ffi::c_uint);
-    if *lbox == 1 as ::core::ffi::c_uint {
-        if get_unsigned_quad(fp) != 0 as uint32_t {
-            pdf_abort!(
-                b"JPEG2000: LBox value in JP2 file >32 bits.\nI can't handle this!\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
-        }
-        *lbox = get_unsigned_quad(fp) as ::core::ffi::c_uint;
-        bytesread = bytesread.wrapping_add(8 as ::core::ffi::c_uint);
-    } else if *lbox > 1 as ::core::ffi::c_uint && *lbox < 8 as ::core::ffi::c_uint {
-        pdf_warning!(
-            b"JPEG2000: Unknown LBox value %u in JP2 file!\0" as *const u8
-                as *const ::core::ffi::c_char,
-            *lbox,
-        );
-    }
-    return bytesread;
-}
-pub const FTYP_BR_JP2_: ::core::ffi::c_uint = 1785737760 as ::core::ffi::c_uint;
-pub const FTYP_BR_JPX_: ::core::ffi::c_uint = 1785755680 as ::core::ffi::c_uint;
-pub const FTYP_CL_JPXB: ::core::ffi::c_int = 0x6a707862 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn check_jp___box(mut fp: *mut FILE) -> ::core::ffi::c_int {
-    if get_unsigned_quad(fp) != 0xc as uint32_t {
-        return 0 as ::core::ffi::c_int;
-    }
-    if get_unsigned_quad(fp) != JP2_BOX_JP__ as uint32_t {
-        return 0 as ::core::ffi::c_int;
-    }
-    if get_unsigned_quad(fp) != 0xd0a870a as uint32_t {
-        return 0 as ::core::ffi::c_int;
-    }
-    return 1 as ::core::ffi::c_int;
-}
-unsafe extern "C-unwind" fn check_ftyp_data(
-    mut fp: *mut FILE,
-    mut size: ::core::ffi::c_uint,
-) -> ::core::ffi::c_int {
-    let mut supported: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut BR: ::core::ffi::c_uint = 0;
-    let mut CLi: ::core::ffi::c_uint = 0;
-    BR = get_unsigned_quad(fp) as ::core::ffi::c_uint;
-    size = size.wrapping_sub(4 as ::core::ffi::c_uint);
-    get_unsigned_quad(fp);
-    size = size.wrapping_sub(4 as ::core::ffi::c_uint);
-    match BR {
-        1785737760 => {
-            seek_relative(fp, size as int32_t);
-            size = 0 as ::core::ffi::c_uint;
-            supported = 1 as ::core::ffi::c_int;
-        }
-        1785755680 => {
-            while size > 0 as ::core::ffi::c_uint {
-                CLi = get_unsigned_quad(fp) as ::core::ffi::c_uint;
-                if CLi == FTYP_CL_JPXB as ::core::ffi::c_uint {
-                    supported = 1 as ::core::ffi::c_int;
-                }
-                size = size.wrapping_sub(4 as ::core::ffi::c_uint);
-            }
-        }
-        _ => {
-            pdf_warning!(
-                b"JPEG2000: Unknown JPEG 2000 File Type box Brand field value.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
-            seek_relative(fp, size as int32_t);
-            size = 0 as ::core::ffi::c_uint;
-            supported = 0 as ::core::ffi::c_int;
-        }
-    }
-    return supported;
-}
-unsafe extern "C-unwind" fn read_res__data(
-    mut info: *mut ximage_info,
-    mut fp: *mut FILE,
-    mut size: ::core::ffi::c_uint,
-) {
-    let mut VR_N: ::core::ffi::c_uint = 0;
-    let mut VR_D: ::core::ffi::c_uint = 0;
-    let mut HR_N: ::core::ffi::c_uint = 0;
-    let mut HR_D: ::core::ffi::c_uint = 0;
-    let mut VR_E: ::core::ffi::c_uchar = 0;
-    let mut HR_E: ::core::ffi::c_uchar = 0;
-    VR_N = get_unsigned_pair(fp) as ::core::ffi::c_uint;
-    VR_D = get_unsigned_pair(fp) as ::core::ffi::c_uint;
-    HR_N = get_unsigned_pair(fp) as ::core::ffi::c_uint;
-    HR_D = get_unsigned_pair(fp) as ::core::ffi::c_uint;
-    VR_E = get_unsigned_byte(fp);
-    HR_E = get_unsigned_byte(fp);
-    (*info).xdensity = 72.0f64
-        / (HR_N as ::core::ffi::c_double / HR_D as ::core::ffi::c_double
-            * pow(10.0f64, HR_E as ::core::ffi::c_double)
-            * 0.0254f64);
-    (*info).ydensity = 72.0f64
-        / (VR_N as ::core::ffi::c_double / VR_D as ::core::ffi::c_double
-            * pow(10.0f64, VR_E as ::core::ffi::c_double)
-            * 0.0254f64);
-}
-unsafe extern "C-unwind" fn scan_res_(
-    mut info: *mut ximage_info,
-    mut fp: *mut FILE,
-    mut size: ::core::ffi::c_uint,
-) -> ::core::ffi::c_int {
-    let mut len: ::core::ffi::c_uint = 0;
-    let mut lbox: ::core::ffi::c_uint = 0;
-    let mut tbox: ::core::ffi::c_uint = 0;
-    let mut have_resd: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    while size > 0 as ::core::ffi::c_uint {
-        len = read_box_hdr(fp, &raw mut lbox, &raw mut tbox);
-        if lbox == 0 as ::core::ffi::c_uint {
-            pdf_warning!(
-                b"JPEG2000: Unexpected lbox value 0 in JP2 Resolution box.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
-            break;
-        } else {
-            match tbox {
-                1919251299 => {
-                    if have_resd == 0 {
-                        read_res__data(info, fp, lbox.wrapping_sub(len));
-                    } else {
-                        seek_relative(fp, lbox.wrapping_sub(len) as int32_t);
-                    }
-                }
-                1919251300 => {
-                    read_res__data(info, fp, lbox.wrapping_sub(len));
-                    have_resd = 1 as ::core::ffi::c_int;
-                }
-                _ => {
-                    pdf_warning!(
-                        b"JPEG2000: Unknown JPEG 2000 box type in Resolution box.\0" as *const u8
-                            as *const ::core::ffi::c_char,
-                    );
-                    seek_relative(fp, lbox.wrapping_sub(len) as int32_t);
-                }
-            }
-            size = size.wrapping_sub(lbox);
-        }
-    }
-    return if size == 0 as ::core::ffi::c_uint {
-        0 as ::core::ffi::c_int
-    } else {
-        -(1 as ::core::ffi::c_int)
-    };
-}
-unsafe extern "C-unwind" fn scan_cdef(
-    mut info: *mut ximage_info,
-    mut smask: *mut ::core::ffi::c_int,
-    mut fp: *mut FILE,
-    mut size: ::core::ffi::c_uint,
-) -> ::core::ffi::c_int {
-    let mut opacity_channels: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut have_type0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut i: ::core::ffi::c_uint = 0;
-    let mut Cn: ::core::ffi::c_uint = 0;
-    let mut N: ::core::ffi::c_uint = 0;
-    let mut Typ: ::core::ffi::c_uint = 0;
-    let mut Asoc: ::core::ffi::c_uint = 0;
-    *smask = 0 as ::core::ffi::c_int;
-    N = get_unsigned_pair(fp) as ::core::ffi::c_uint;
-    if size
-        < N.wrapping_mul(6 as ::core::ffi::c_uint)
-            .wrapping_add(2 as ::core::ffi::c_uint)
-    {
-        pdf_warning!(
-            b"JPEG2000: Inconsistent N value in Channel Definition box.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
-        return -(1 as ::core::ffi::c_int);
-    }
-    i = 0 as ::core::ffi::c_uint;
-    while i < N {
-        Cn = get_unsigned_pair(fp) as ::core::ffi::c_uint;
-        Typ = get_unsigned_pair(fp) as ::core::ffi::c_uint;
-        Asoc = get_unsigned_pair(fp) as ::core::ffi::c_uint;
-        if Cn > N {
-            pdf_warning!(
-                b"JPEG2000: Invalid Cn value in Channel Definition box.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
-        }
-        if Typ == 1 as ::core::ffi::c_uint {
-            if Asoc == 0 as ::core::ffi::c_uint {
-                have_type0 = 1 as ::core::ffi::c_int;
-            }
-            opacity_channels += 1;
-        } else if Typ == 2 as ::core::ffi::c_uint {
-            opacity_channels += 1;
-        }
-        i = i.wrapping_add(1);
-    }
-    if opacity_channels == 1 as ::core::ffi::c_int {
-        *smask = if have_type0 != 0 {
-            1 as ::core::ffi::c_int
-        } else {
-            0 as ::core::ffi::c_int
-        };
-    } else if opacity_channels > 1 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"JPEG2000: Unsupported transparency type. (ignored)\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
-    }
-    return 0 as ::core::ffi::c_int;
-}
-unsafe extern "C-unwind" fn scan_jp2h(
-    mut info: *mut ximage_info,
-    mut smask: *mut ::core::ffi::c_int,
-    mut fp: *mut FILE,
-    mut size: ::core::ffi::c_uint,
-) -> ::core::ffi::c_int {
-    let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut have_ihdr: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut len: ::core::ffi::c_uint = 0;
-    let mut lbox: ::core::ffi::c_uint = 0;
-    let mut tbox: ::core::ffi::c_uint = 0;
-    while size > 0 as ::core::ffi::c_uint && error == 0 {
-        len = read_box_hdr(fp, &raw mut lbox, &raw mut tbox);
-        if lbox == 0 as ::core::ffi::c_uint {
-            pdf_warning!(
-                b"JPEG2000: Unexpected lbox value 0 in JP2 Header box...\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
-            error = -(1 as ::core::ffi::c_int);
-            break;
-        } else {
-            match tbox {
-                1768449138 => {
-                    (*info).height = get_unsigned_quad(fp) as ::core::ffi::c_int;
-                    (*info).width = get_unsigned_quad(fp) as ::core::ffi::c_int;
-                    (*info).num_components = get_unsigned_pair(fp) as ::core::ffi::c_int;
-                    get_unsigned_byte(fp);
-                    get_unsigned_byte(fp);
-                    get_unsigned_byte(fp);
-                    get_unsigned_byte(fp);
-                    have_ihdr = 1 as ::core::ffi::c_int;
-                }
-                1919251232 => {
-                    error = scan_res_(info, fp, lbox.wrapping_sub(len));
-                }
-                1667523942 => {
-                    error = scan_cdef(info, smask, fp, lbox.wrapping_sub(len));
-                }
-                1651532643 | 1668246642 | 1885564018 | 1668112752 | 1818389536 => {
-                    seek_relative(fp, lbox.wrapping_sub(len) as int32_t);
-                }
-                _ => {
-                    pdf_warning!(
-                        b"JPEG2000: Unknown JPEG 2000 box in JP2 Header box.\0" as *const u8
-                            as *const ::core::ffi::c_char,
-                    );
-                    seek_relative(fp, lbox.wrapping_sub(len) as int32_t);
-                    error = -(1 as ::core::ffi::c_int);
-                }
-            }
-            size = size.wrapping_sub(lbox);
-        }
-    }
-    if have_ihdr == 0 {
-        pdf_warning!(
-            b"JPEG2000: Expecting JPEG 2000 Image Header box but could not find.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
-    }
-    return if error == 0 && have_ihdr != 0 && size == 0 as ::core::ffi::c_uint {
-        0 as ::core::ffi::c_int
-    } else {
-        -(1 as ::core::ffi::c_int)
-    };
-}
 unsafe extern "C-unwind" fn scan_file(
-    mut info: *mut ximage_info,
-    mut smask: *mut ::core::ffi::c_int,
-    mut fp: *mut FILE,
-) -> ::core::ffi::c_int {
-    let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut have_jp2h: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut size: ::core::ffi::c_int = 0;
-    let mut len: ::core::ffi::c_uint = 0;
-    let mut lbox: ::core::ffi::c_uint = 0;
-    let mut tbox: ::core::ffi::c_uint = 0;
-    size = file_size(fp) as ::core::ffi::c_int;
-    if check_jp___box(fp) == 0 {
-        return -(1 as ::core::ffi::c_int);
-    }
-    size -= 12 as ::core::ffi::c_int;
-    len = read_box_hdr(fp, &raw mut lbox, &raw mut tbox);
-    if tbox != JP2_BOX_FTYP as ::core::ffi::c_uint {
-        return -(1 as ::core::ffi::c_int);
-    }
-    if check_ftyp_data(fp, lbox.wrapping_sub(len)) == 0 {
-        return -(1 as ::core::ffi::c_int);
-    }
-    size = (size as ::core::ffi::c_uint).wrapping_sub(lbox) as ::core::ffi::c_int
-        as ::core::ffi::c_int;
-    while size > 0 as ::core::ffi::c_int && error == 0 {
-        len = read_box_hdr(fp, &raw mut lbox, &raw mut tbox);
-        if lbox == 0 as ::core::ffi::c_uint {
-            lbox = size as ::core::ffi::c_uint;
+    info: *mut ximage_info,
+    smask: *mut core::ffi::c_int,
+    fp: *mut FILE,
+) -> core::ffi::c_int {
+    let mut input = unsafe { crate::compat::input::BorrowedFile::from_raw(fp.cast()) };
+    match crate::jp2::scan(&mut input, |message| {
+        pdf_warning!("{}", message);
+    }) {
+        Ok(metadata) => unsafe {
+            (*info).width = metadata.width;
+            (*info).height = metadata.height;
+            (*info).num_components = metadata.components;
+            (*info).xdensity = metadata.x_density;
+            (*info).ydensity = metadata.y_density;
+            *smask = i32::from(metadata.soft_mask);
+            0
+        },
+        Err(error) => {
+            pdf_warning!("{}", error.message.to_string_lossy());
+            -1
         }
-        match tbox {
-            1785737832 => {
-                error = scan_jp2h(info, smask, fp, lbox.wrapping_sub(len));
-                have_jp2h = 1 as ::core::ffi::c_int;
-            }
-            1785737827 => {
-                if have_jp2h == 0 {
-                    pdf_warning!(
-                        b"JPEG2000: JPEG 2000 Codestream box found before JP2 Header box.\0"
-                            as *const u8 as *const ::core::ffi::c_char,
-                    );
-                }
-                seek_relative(fp, lbox.wrapping_sub(len) as int32_t);
-            }
-            _ => {
-                seek_relative(fp, lbox.wrapping_sub(len) as int32_t);
-            }
-        }
-        size = (size as ::core::ffi::c_uint).wrapping_sub(lbox) as ::core::ffi::c_int
-            as ::core::ffi::c_int;
     }
-    if have_jp2h == 0 && error == 0 {
-        pdf_warning!(
-            b"JPEG2000: No JP2 Header box found. Not a JP2/JPX baseline file?\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
-        error = -(1 as ::core::ffi::c_int);
-    }
-    return error;
 }
+
 #[unsafe(export_name = "__pdf_impl_check_for_jp2")]
-pub unsafe extern "C-unwind" fn check_for_jp2(mut fp: *mut FILE) -> ::core::ffi::c_int {
-    let mut len: ::core::ffi::c_uint = 0;
-    let mut lbox: ::core::ffi::c_uint = 0;
-    let mut tbox: ::core::ffi::c_uint = 0;
+pub unsafe extern "C-unwind" fn check_for_jp2(fp: *mut FILE) -> core::ffi::c_int {
     if fp.is_null() {
-        return 0 as ::core::ffi::c_int;
+        return 0;
     }
-    rewind(fp);
-    if check_jp___box(fp) == 0 {
-        return 0 as ::core::ffi::c_int;
-    }
-    len = read_box_hdr(fp, &raw mut lbox, &raw mut tbox);
-    if tbox != JP2_BOX_FTYP as ::core::ffi::c_uint {
-        return 0 as ::core::ffi::c_int;
-    }
-    if check_ftyp_data(fp, lbox.wrapping_sub(len)) == 0 {
-        return 0 as ::core::ffi::c_int;
-    }
-    return 1 as ::core::ffi::c_int;
+    let mut input = unsafe { crate::compat::input::BorrowedFile::from_raw(fp.cast()) };
+    i32::from(crate::jp2::probe(&mut input).unwrap_or(false))
 }
 #[unsafe(export_name = "__pdf_impl_jp2_include_image")]
 pub unsafe extern "C-unwind" fn jp2_include_image(
@@ -580,23 +254,23 @@ pub unsafe extern "C-unwind" fn jp2_include_image(
             pdf_new_number(1 as ::core::ffi::c_int as ::core::ffi::c_double),
         );
     }
-    let mut nb_read: ::core::ffi::c_int = 0;
-    rewind(fp);
+    use std::io::{Read, Seek};
+    let mut input = crate::compat::input::BorrowedFile::from_raw(fp.cast());
+    if input.rewind().is_err() {
+        super::dpx_pdfobj::pdf_release_obj(stream.cast());
+        return -1;
+    }
+    let mut buffer = [0; 4096];
     loop {
-        nb_read = fread(
-            &raw mut work_buffer as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
-            ::core::mem::size_of::<::core::ffi::c_char>() as size_t,
-            WORK_BUFFER_SIZE as size_t,
-            fp,
-        ) as ::core::ffi::c_int;
-        if !(nb_read > 0 as ::core::ffi::c_int) {
-            break;
+        match input.read(&mut buffer) {
+            Ok(0) => break,
+            Ok(length) => pdf_add_stream(stream, buffer.as_ptr().cast(), length as i32),
+            Err(_) => {
+                super::dpx_pdfobj::pdf_release_obj(stream.cast());
+                pdf_warning!("JPEG2000: Reading JPEG 2000 file failed.");
+                return -1;
+            }
         }
-        pdf_add_stream(
-            stream,
-            &raw mut work_buffer as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-            nb_read,
-        );
     }
     pdf_ximage_set_image(ximage, &raw mut info as *mut ::core::ffi::c_void, stream);
     return 0 as ::core::ffi::c_int;
