@@ -38,6 +38,7 @@ authorization from the copyright holders.
 
 #include "xetex-core.h"
 #include "xetex-xetexd.h"
+#include "xetex-checkpoint.h"
 #include "teckit-c-Engine.h"
 #include "xetex-ext.h"
 
@@ -181,6 +182,7 @@ DoAATLayout(void* p, int justify)
 
     native_glyph_count(node) = totalGlyphCount;
     native_glyph_info_ptr(node) = glyph_info;
+    if (tt_checkpoint_enabled) tt_checkpoint_register_glyph((int32_t)(node - mem));
 
     if (!justify) {
         node_width(node) = width;

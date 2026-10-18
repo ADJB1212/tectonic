@@ -215,6 +215,7 @@ enum OutputDestination {
 /// hold the fully-prepared I/O stack information as well as the "event"
 /// information that helps the driver implement the rerun logic.
 struct BridgeState {
+    incremental: Option<crate::incremental::Cache>,
     /// I/O for the primary input source. This is boxed since it can come
     /// from different sources: maybe a file, maybe an in-memory buffer, etc.
     primary_input: Box<dyn IoProvider>,
@@ -638,6 +639,11 @@ impl IoProvider for BridgeState {
 }
 
 impl DriverHooks for BridgeState {
+    fn event_engine_checkpoint(&mut self, native: &[u8], io: &[u8]) {
+        if let Some(cache) = &mut self.incremental {
+            cache.capture(native, io);
+        }
+    }
     fn io(&mut self) -> &mut dyn IoProvider {
         self
     }
@@ -799,6 +805,7 @@ struct ExternalToolPass {
 /// option to enable potentially-insecure features such as shell-escape.
 #[derive(Default)]
 pub struct ProcessingSessionBuilder {
+    incremental_cache_path: Option<PathBuf>,
     pdf_options: PdfBuildOptions,
     security: SecuritySettings,
     primary_input: PrimaryInputMode,
@@ -818,6 +825,7 @@ pub struct ProcessingSessionBuilder {
     keep_logs: bool,
     synctex: bool,
     build_date: Option<SystemTime>,
+    fixed_build_date: bool,
     unstables: UnstableOptions,
     shell_escape_mode: ShellEscapeMode,
     html_assets_spec_path: Option<String>,
@@ -827,6 +835,13 @@ pub struct ProcessingSessionBuilder {
 }
 
 impl ProcessingSessionBuilder {
+    /// Enable persistent TeX checkpoints in this directory for PDF builds.
+    /// Build time is pinned until the cache is removed. Unsupported states
+    /// and changed dependencies automatically use a full TeX pass.
+    pub fn incremental_cache_path<P: AsRef<Path>>(&mut self, path: P) -> &mut Self {
+        self.incremental_cache_path = Some(path.as_ref().to_owned());
+        self
+    }
     /// Create a new builder with customized security settings.
     pub fn new_with_security(security: SecuritySettings) -> Self {
         ProcessingSessionBuilder {
@@ -991,6 +1006,7 @@ impl ProcessingSessionBuilder {
     /// See `TexEngine::build_date` for mor information.
     pub fn build_date(&mut self, date: SystemTime) -> &mut Self {
         self.build_date = Some(date);
+        self.fixed_build_date = true;
         self
     }
 
@@ -1000,6 +1016,7 @@ impl ProcessingSessionBuilder {
     /// Otherwise, we use the current system time.
     pub fn build_date_from_env(&mut self, force_deterministic: bool) -> &mut Self {
         let build_date_str = std::env::var("SOURCE_DATE_EPOCH").ok();
+        let fixed = force_deterministic || build_date_str.is_some();
         let build_date = match (force_deterministic, build_date_str) {
             (_, Some(s)) => {
                 let epoch = s
@@ -1013,7 +1030,9 @@ impl ProcessingSessionBuilder {
             (true, None) => SystemTime::UNIX_EPOCH,
             (false, None) => SystemTime::now(),
         };
-        self.build_date(build_date)
+        self.build_date = Some(build_date);
+        self.fixed_build_date = fixed;
+        self
     }
 
     /// Loads unstable options into the processing session
@@ -1118,6 +1137,26 @@ impl ProcessingSessionBuilder {
 
     /// Creates a `ProcessingSession`.
     pub fn create(self, status: &mut dyn StatusBackend) -> Result<ProcessingSession> {
+        let incremental_input = !matches!(&self.primary_input, PrimaryInputMode::Stdin);
+        let mut hidden: Vec<_> = self.hidden_input_paths.iter().collect();
+        hidden.sort();
+        let incremental_identity = format!(
+            "{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{:?}|{}|{:?}|{:?}|{:?}",
+            std::env::current_dir()?,
+            self.primary_input,
+            self.tex_input_name,
+            self.filesystem_root,
+            self.output_dest,
+            self.format_name,
+            self.output_format,
+            self.pass,
+            self.security,
+            self.unstables,
+            self.synctex,
+            hidden,
+            self.reruns,
+            std::env::var_os("SOURCE_DATE_EPOCH")
+        );
         // First, work on the "bridge state", which gathers the subset of our
         // state that has to be held in a mutable reference while running the
         // C/C++ engines:
@@ -1169,7 +1208,12 @@ impl ProcessingSessionBuilder {
         let format_cache_path = self
             .format_cache_path
             .unwrap_or_else(|| filesystem_root.clone());
-        let format_cache = FormatCache::new(bundle.get_digest()?, format_cache_path);
+        let bundle_digest = bundle.get_digest()?;
+        let incremental_identity = format!(
+            "{incremental_identity}|{bundle_digest}|{:?}",
+            self.fixed_build_date.then_some(self.build_date)
+        );
+        let format_cache = FormatCache::new(bundle_digest, format_cache_path);
 
         let genuine_stdout = if self.print_stdout {
             Some(GenuineStdoutIo::new())
@@ -1198,6 +1242,7 @@ impl ProcessingSessionBuilder {
         let mem = MemoryIo::new(true);
 
         let bs = BridgeState {
+            incremental: None,
             primary_input: pio,
             mem,
             filesystem,
@@ -1251,6 +1296,9 @@ impl ProcessingSessionBuilder {
         };
 
         Ok(ProcessingSession {
+            incremental_cache_path: self.incremental_cache_path,
+            incremental_identity,
+            incremental_input,
             pdf_options: self.pdf_options,
             security: self.security,
             bs,
@@ -1290,6 +1338,9 @@ enum RerunReason {
 /// processing a file. It understands, for example, the need to re-run the TeX
 /// engine if the `.aux` file changed.
 pub struct ProcessingSession {
+    incremental_cache_path: Option<PathBuf>,
+    incremental_identity: String,
+    incremental_input: bool,
     pdf_options: PdfBuildOptions,
     // Security settings.
     security: SecuritySettings,
@@ -1467,6 +1518,7 @@ impl ProcessingSession {
         }
 
         // Propagate the actual result.
+        self.bs.incremental = None;
         result
     }
 
@@ -1474,6 +1526,38 @@ impl ProcessingSession {
     /// lifecycle of resources like the shell-escape temporary directory, if
     /// needed.
     fn run_inner(&mut self, status: &mut dyn StatusBackend) -> Result<()> {
+        self.bs.incremental = None;
+        if let Some(path) = &self.incremental_cache_path {
+            if !self.incremental_input
+                || self.output_format != OutputFormat::Pdf
+                || self.pass != PassSetting::Default
+                || self.shell_escape_mode != ShellEscapeMode::Disabled
+            {
+                tt_note!(
+                    status,
+                    "incremental compilation unavailable for this input or engine mode; using a full build"
+                );
+            } else {
+                match crate::incremental::Cache::open(
+                    path,
+                    &self.incremental_identity,
+                    self.build_date,
+                ) {
+                    Ok((cache, warning)) => {
+                        if let Some(warning) = warning {
+                            tt_note!(status, "{}", warning);
+                        }
+                        self.build_date = cache.build_date;
+                        self.bs.incremental = Some(cache);
+                    }
+                    Err(error) => tt_note!(
+                        status,
+                        "incremental cache unavailable; using a full build: {}",
+                        error
+                    ),
+                }
+            }
+        }
         // Do we need to generate the format file?
 
         let generate_format = if self.output_format == OutputFormat::Format {
@@ -1586,8 +1670,14 @@ impl ProcessingSession {
             ctry!(mf_dest.flush(); "couldn't flush Makefile-rules file");
         }
 
-        // All done.
-
+        if let Some(cache) = &mut self.bs.incremental {
+            if cache.captures == 0 {
+                tt_note!(status, "no new safe TeX checkpoint was available");
+            }
+            if let Err(error) = cache.commit() {
+                tt_warning!(status, "could not save incremental checkpoints: {}", error);
+            }
+        }
         Ok(())
     }
 
@@ -1868,7 +1958,86 @@ impl ProcessingSession {
         rerun_explanation: Option<&str>,
         status: &mut dyn StatusBackend,
     ) -> Result<Option<&'static str>> {
-        let result = {
+        let baseline = self
+            .bs
+            .incremental
+            .as_ref()
+            .map(|_| (self.bs.mem.files.borrow().clone(), self.bs.events.clone()));
+        let candidates = self
+            .bs
+            .incremental
+            .as_ref()
+            .map_or_else(Vec::new, |cache| cache.candidates());
+        let mut result = None;
+        for bytes in candidates {
+            let checkpoint = match crate::incremental::Cache::decode(&bytes) {
+                Ok(checkpoint) => checkpoint,
+                Err(error) => {
+                    tt_note!(
+                        status,
+                        "discarding invalid incremental checkpoint: {}",
+                        error
+                    );
+                    continue;
+                }
+            };
+            let attempt = self.run_tex_engine(rerun_explanation, Some(checkpoint), status);
+            match attempt {
+                Err(error)
+                    if error
+                        .downcast_ref::<tectonic_engine_xetex::CheckpointRejected>()
+                        .is_some() =>
+                {
+                    tt_note!(status, "incremental checkpoint invalidated: {}", error);
+                    if let Some((files, events)) = &baseline {
+                        self.bs.mem.files.borrow_mut().clone_from(files);
+                        self.bs.events.clone_from(events);
+                    }
+                    if let Some(cache) = &mut self.bs.incremental {
+                        cache.discard_pass();
+                    }
+                }
+                attempt => {
+                    result = Some(attempt);
+                    break;
+                }
+            }
+        }
+        let result = result.unwrap_or_else(|| self.run_tex_engine(rerun_explanation, None, status));
+        if let Some(cache) = &mut self.bs.incremental {
+            cache.pass += 1;
+        }
+
+        let warnings = match result {
+            Ok(TexOutcome::Spotless) => None,
+            Ok(TexOutcome::Warnings) => Some(
+                "warnings were issued by the TeX engine; use --print and/or --keep-logs for details.",
+            ),
+            Ok(TexOutcome::Errors) => Some(
+                "errors were issued by the TeX engine, but were ignored; \
+                         use --print and/or --keep-logs for details.",
+            ),
+            Err(e) => return Err(e).with_context(|| EngineError::new("XeTeX")),
+        };
+
+        if !self.bs.mem.files.borrow().contains_key(&self.tex_xdv_path) {
+            tt_warning!(
+                status,
+                "did not produce \"{}\"; this may mean that your document is empty",
+                self.tex_xdv_path
+            )
+        }
+        Ok(warnings)
+    }
+
+    fn run_tex_engine(
+        &mut self,
+        rerun_explanation: Option<&str>,
+        checkpoint: Option<tectonic_engine_xetex::TexCheckpoint>,
+        status: &mut dyn StatusBackend,
+    ) -> Result<TexOutcome> {
+        let recording = self.bs.incremental.is_some();
+        {
             if let Some(s) = rerun_explanation {
                 status.note_highlighted("Rerunning ", "TeX", &format!(" because {s} ..."));
             } else {
@@ -1890,7 +2059,12 @@ impl ProcessingSession {
                 ));
             }
 
-            TexEngine::default()
+            let mut engine = TexEngine::default();
+            if let Some(checkpoint) = checkpoint {
+                engine.resume_checkpoint(checkpoint);
+            }
+            let result = engine
+                .checkpointing(recording)
                 .halt_on_error_mode(!self.unstables.continue_on_errors)
                 .initex_mode(self.output_format == OutputFormat::Format)
                 .synctex(self.synctex_enabled)
@@ -1901,31 +2075,16 @@ impl ProcessingSession {
                     &mut launcher,
                     &self.format_name,
                     &self.primary_input_tex_path,
-                )
-        };
-
-        let warnings = match result {
-            Ok(TexOutcome::Spotless) => None,
-            Ok(TexOutcome::Warnings) => Some(
-                "warnings were issued by the TeX engine; use --print and/or --keep-logs for details.",
-            ),
-            Ok(TexOutcome::Errors) => Some(
-                "errors were issued by the TeX engine, but were ignored; \
-                         use --print and/or --keep-logs for details.",
-            ),
-            Err(e) => return Err(e).with_context(|| EngineError::new("XeTeX")),
-        };
-
-        if !self.bs.mem.files.borrow().contains_key(&self.tex_xdv_path) {
-            // TeX did not produce the expected output file
-            tt_warning!(
-                status,
-                "did not produce \"{}\"; this may mean that your document is empty",
-                self.tex_xdv_path
-            )
+                );
+            if result.is_ok() && engine.resumed_dispatches() > 0 {
+                tt_note!(
+                    status,
+                    "resumed TeX execution; skipped {} prefix dispatches",
+                    engine.resumed_dispatches()
+                );
+            }
+            result
         }
-
-        Ok(warnings)
     }
 
     // Run Bibtex process for one .aux file.

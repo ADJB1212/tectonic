@@ -17,6 +17,11 @@ file defining a document to build.
 
 ## Current status
 
+`tectonic --incremental document.tex` enables persistent incremental PDF
+compilation. `--incremental-cache-dir PATH` overrides the output-local cache
+directory. See the [compile command documentation](../v2cli/compile.md#remarks)
+for checkpoint boundaries, fallback behavior, and pinned build times.
+
 **The V1 interface is the default**. If you want to use the V2 interface, you
 need to take special steps, as described in [its documentation](./v2cli.md).
 

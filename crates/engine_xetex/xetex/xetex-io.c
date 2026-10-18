@@ -486,7 +486,7 @@ make_utf16_name(void)
     uint32_t rval;
     uint16_t* t;
     static int name16len = 0;
-    if (name16len <= name_length) {
+    if (name_of_file16 == NULL || name16len <= name_length) {
         free(name_of_file16);
         name16len = name_length + 10;
         name_of_file16 = xcalloc(name16len, sizeof(uint16_t));

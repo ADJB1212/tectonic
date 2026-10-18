@@ -58,6 +58,7 @@ authorization from the copyright holders.
 #include <graphite2/Font.h>
 
 #include "xetex-xetexd.h"
+#include "xetex-checkpoint.h"
 
 
 /* OT-related constants we need */
@@ -1102,6 +1103,61 @@ cgColorToRGBA32(CGColorRef color)
 
 static int xdvBufSize = 0;
 
+void tt_checkpoint_ext_reset(void)
+{
+    if (brkIter) ubrk_close(brkIter);
+    brkIter = NULL;
+    brkLocaleStrNum = 0;
+}
+
+void tt_checkpoint_fonts(tt_checkpoint *cp)
+{
+    char *saved_name = name_of_file;
+    int saved_name_length = name_length;
+    char saved_flags = loaded_font_flags;
+    scaled_t saved_spacing = loaded_font_letter_space;
+    int saved_type = native_font_type_flag;
+    for (int f = FONT_BASE; f <= font_ptr && cp->valid; f++) {
+        if (font_area[f] != OTGR_FONT_FLAG && font_area[f] != AAT_FONT_FLAG) continue;
+        if (cp->restoring) {
+            char *recipe = gettexstring(font_name[f]);
+            name_of_file = xstrdup(recipe);
+            name_length = strlen(recipe);
+            font_layout_engine[f] = find_native_font(recipe, font_size[f]);
+            free(recipe);
+            if (!font_layout_engine[f] || native_font_type_flag != font_area[f]) { cp->valid = false; break; }
+            font_mapping[f] = loaded_font_mapping;
+        }
+        int length = make_font_def(f);
+        if (length < 7 || length > 4096) { cp->valid = false; break; }
+        if (cp->restoring) {
+            char *expected = xmalloc(length);
+            tt_checkpoint_field(cp, "font", expected, length);
+            if (memcmp(expected, xdv_buffer, length) != 0) cp->valid = false;
+            free(expected);
+            free(name_of_file);
+        } else {
+            char path[257];
+            size_t path_length = (unsigned char)xdv_buffer[6];
+            memcpy(path, xdv_buffer + 7, path_length);
+            path[path_length] = 0;
+            rust_input_handle_t handle = ttstub_input_open(path, TTBC_FILE_FORMAT_OPEN_TYPE, 0);
+            if (!handle) { cp->valid = false; break; }
+            char buffer[8192];
+            ssize_t count;
+            while ((count = ttstub_input_read_partial(handle, buffer, sizeof(buffer))) > 0) {}
+            if (count < 0) cp->valid = false;
+            ttstub_input_close(handle);
+            tt_checkpoint_field(cp, "font", xdv_buffer, length);
+        }
+    }
+    name_of_file = saved_name;
+    name_length = saved_name_length;
+    loaded_font_flags = saved_flags;
+    loaded_font_letter_space = saved_spacing;
+    native_font_type_flag = saved_type;
+}
+
 int
 makeXDVGlyphArrayData(void* pNode)
 {
@@ -1653,6 +1709,7 @@ measure_native_node(void* pNode, int use_glyph_metrics)
             node_width(node) = D2Fix(width);
             native_glyph_count(node) = totalGlyphCount;
             native_glyph_info_ptr(node) = glyph_info;
+            if (tt_checkpoint_enabled) tt_checkpoint_register_glyph((int32_t)(node - mem));
         } else {
             double width = 0;
             totalGlyphCount = layoutChars(engine, txtPtr, 0, txtLen, txtLen, (dir == UBIDI_RTL));
@@ -1683,6 +1740,7 @@ measure_native_node(void* pNode, int use_glyph_metrics)
             node_width(node) = D2Fix(width);
             native_glyph_count(node) = totalGlyphCount;
             native_glyph_info_ptr(node) = glyph_info;
+            if (tt_checkpoint_enabled) tt_checkpoint_register_glyph((int32_t)(node - mem));
 
             free(glyphs);
             free(positions);

@@ -7,6 +7,7 @@
 
 #include "xetex-core.h"
 #include "xetex-xetexd.h"
+#include "xetex-checkpoint.h"
 #include "xetex-ext.h"
 
 #include <stdio.h> /* For s(n)printf */
@@ -26,6 +27,24 @@ static int last_lineno;
 /* minimum size for time_str is 24: "D:YYYYmmddHHMMSS+HH'MM'" */
 #define TIME_STR_SIZE 30
 static char start_time_str[TIME_STR_SIZE];
+
+void tt_checkpoint_clock(tt_checkpoint *cp)
+{
+    int32_t seconds, micros;
+    get_seconds_and_micros(&seconds, &micros);
+    int64_t now = (int64_t)seconds * 1000000 + micros;
+    int64_t elapsed = now - ((int64_t)epochseconds * 1000000 + microseconds);
+    CP_VALUE(elapsed);
+    if (elapsed < 0 || elapsed > (int64_t)INT32_MAX * 1000000) { cp->valid = false; return; }
+    if (cp->restoring) {
+        int64_t start = now - elapsed;
+        epochseconds = (int32_t)(start / 1000000);
+        microseconds = (int32_t)(start % 1000000);
+    }
+    CP_VALUE(start_time_str);
+    CP_STRING(last_source_name);
+    CP_VALUE(last_lineno);
+}
 
 static void
 makepdftime(time_t t, char *time_str, bool utc)

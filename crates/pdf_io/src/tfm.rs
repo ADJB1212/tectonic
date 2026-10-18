@@ -8,7 +8,6 @@ use std::{
     cell::RefCell,
     collections::{HashMap, VecDeque},
     ffi::{CStr, CString, c_char},
-    io::Read,
     ptr, slice,
 };
 use tectonic_bridge_core::{CoreBridgeState, FileFormat, InputId};
@@ -608,8 +607,7 @@ fn read_file(name: &str, format: FileFormat) -> Result<Option<(Vec<u8>, u64)>, S
         let size = u64::try_from(state.input_get_size(id)).unwrap_or(u64::MAX);
         let mut bytes = Vec::new();
         state
-            .get_input(id)
-            .read_to_end(&mut bytes)
+            .input_read_to_end(id, &mut bytes)
             .map_err(|_| premature())?;
         Ok(Some((bytes, size)))
     })

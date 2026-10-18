@@ -38,6 +38,7 @@ XeTeX_pic.c
 
 #include "xetex-core.h"
 #include "xetex-xetexd.h"
+#include "xetex-checkpoint.h"
 #include "xetex-ext.h"
 #include "dpx-dpxutil.h"
 #include "dpx-pdfdoc.h"
@@ -75,6 +76,7 @@ typedef struct {
 int
 count_pdf_file_pages (void)
 {
+    tt_checkpoint_disallow();
     int pages;
     rust_input_handle_t handle;
     pdf_file *pf;
@@ -335,6 +337,7 @@ transform_concat(transform_t* t1, const transform_t* t2)
 void
 load_picture(bool is_pdf)
 {
+    tt_checkpoint_disallow();
     char *pic_path;
     real_rect bounds;
     transform_t t, t2;

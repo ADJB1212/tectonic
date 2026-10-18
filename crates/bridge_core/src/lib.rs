@@ -52,6 +52,9 @@ use tectonic_io_base::{
 };
 use tectonic_status_base::{MessageKind, StatusBackend, tt_error, tt_warning};
 
+mod checkpoint;
+use checkpoint::Operation as CheckpointOperation;
+
 /// The ID of an InputHandle, used for Rust core state
 #[derive(Copy, Clone, PartialEq)]
 #[repr(transparent)]
@@ -127,6 +130,8 @@ impl Display for SystemRequestError {
 /// dependency of the outputs on the inputs. The relevant trait methods have
 /// default implementations that do nothing.
 pub trait DriverHooks {
+    /// A restorable native-engine checkpoint with its I/O transaction prefix.
+    fn event_engine_checkpoint(&mut self, _native: &[u8], _io: &[u8]) {}
     /// Get the main I/O implementations of this driver.
     fn io(&mut self) -> &mut dyn IoProvider;
 
@@ -333,6 +338,7 @@ impl<'a> CoreBridgeLauncher<'a> {
 /// these state structures into the C/C++ layer. It is essential that lifetimes
 /// be properly managed across the Rust/C boundary.
 pub struct CoreBridgeState<'a> {
+    journal: Option<checkpoint::Journal>,
     /// The security settings for this invocation
     security: SecuritySettings,
 
@@ -369,6 +375,7 @@ impl<'a> CoreBridgeState<'a> {
         fs_emulation_settings: FsEmulationSettings,
     ) -> CoreBridgeState<'a> {
         CoreBridgeState {
+            journal: None,
             security,
             hooks,
             status,
@@ -460,6 +467,19 @@ impl<'a> CoreBridgeState<'a> {
     }
 
     fn get_file_md5(&mut self, name: &str, dest: &mut [u8]) -> bool {
+        let failed = self.compute_file_md5(name, dest);
+        self.record(CheckpointOperation::Md5 {
+            name: name.to_owned(),
+            digest: if failed {
+                None
+            } else {
+                Some(dest.try_into().unwrap())
+            },
+        });
+        failed
+    }
+
+    fn compute_file_md5(&mut self, name: &str, dest: &mut [u8]) -> bool {
         let name = normalize_tex_path(name);
         let mut hash = Md5::default();
 
@@ -521,6 +541,7 @@ impl<'a> CoreBridgeState<'a> {
 
     /// Get a mutable reference to an [`OutputHandle`] associated with an [`OutputId`]
     pub fn get_output(&mut self, id: OutputId) -> &mut OutputHandle {
+        self.invalidate_checkpoint();
         self.output_handles[id.idx()].as_mut().unwrap()
     }
 
@@ -547,7 +568,13 @@ impl<'a> CoreBridgeState<'a> {
         }
 
         self.output_handles.push(Some(oh));
-        OutputId::new(self.output_handles.len())
+        let id = OutputId::new(self.output_handles.len());
+        self.record(CheckpointOperation::Output {
+            name: Some(name.into_owned()),
+            gz: is_gz,
+            id: id.map(OutputId::idx),
+        });
+        id
     }
 
     /// Open a new stdout output.
@@ -564,12 +591,28 @@ impl<'a> CoreBridgeState<'a> {
         };
 
         self.output_handles.push(Some(oh));
-        OutputId::new(self.output_handles.len())
+        let id = OutputId::new(self.output_handles.len());
+        self.record(CheckpointOperation::Output {
+            name: None,
+            gz: false,
+            id: id.map(OutputId::idx),
+        });
+        id
     }
 
     fn output_write(&mut self, handle: OutputId, buf: &[u8]) -> bool {
-        let rhandle: &mut OutputHandle = self.get_output(handle);
+        let rhandle = self.output_handles[handle.idx()].as_mut().unwrap();
         let result = rhandle.write_all(buf);
+        if result.is_ok() {
+            if self.journal.is_some() {
+                self.record(CheckpointOperation::Write {
+                    id: handle.idx(),
+                    bytes: buf.to_vec(),
+                });
+            }
+        } else {
+            self.invalidate_checkpoint();
+        }
 
         match result {
             Ok(_) => false,
@@ -581,8 +624,13 @@ impl<'a> CoreBridgeState<'a> {
     }
 
     fn output_flush(&mut self, handle: OutputId) -> bool {
-        let rhandle: &mut OutputHandle = self.get_output(handle);
+        let rhandle = self.output_handles[handle.idx()].as_mut().unwrap();
         let result = rhandle.flush();
+        if result.is_ok() {
+            self.record(CheckpointOperation::Flush(handle.idx()));
+        } else {
+            self.invalidate_checkpoint();
+        }
 
         match result {
             Ok(_) => false,
@@ -603,11 +651,17 @@ impl<'a> CoreBridgeState<'a> {
         }
         let (name, digest) = oh.into_name_digest();
         self.hooks.event_output_closed(name, digest);
+        if rv {
+            self.invalidate_checkpoint();
+        } else {
+            self.record(CheckpointOperation::CloseOutput(id.idx()));
+        }
         rv
     }
 
     /// Get a mutable reference to an [`InputHandle`] associated with an [`InputId`]
     pub fn get_input(&mut self, input: InputId) -> &mut InputHandle {
+        self.invalidate_checkpoint();
         self.input_handles[input.idx()].as_mut().unwrap()
     }
 
@@ -618,17 +672,36 @@ impl<'a> CoreBridgeState<'a> {
         let (ih, path) = match self.input_open_name_format_gz(&name, format, is_gz) {
             OpenResult::Ok(tup) => tup,
             OpenResult::NotAvailable => {
+                self.record(CheckpointOperation::Input {
+                    name: Some(name.into_owned()),
+                    format,
+                    gz: is_gz,
+                    id: None,
+                    path: self.latest_input_path.clone(),
+                    resolved: None,
+                });
                 return None;
             }
             OpenResult::Err(e) => {
+                self.invalidate_checkpoint();
                 tt_warning!(self.status, "open of input {} failed", name; e);
                 return None;
             }
         };
 
+        let resolved = ih.name().to_owned();
         self.input_handles.push(Some(ih));
         self.latest_input_path = path;
-        InputId::new(self.input_handles.len())
+        let id = InputId::new(self.input_handles.len());
+        self.record(CheckpointOperation::Input {
+            name: Some(name.into_owned()),
+            format,
+            gz: is_gz,
+            id: id.map(InputId::idx),
+            path: self.latest_input_path.clone(),
+            resolved: Some(resolved),
+        });
+        id
     }
 
     fn input_open_primary(&mut self) -> Option<InputId> {
@@ -646,18 +719,35 @@ impl<'a> CoreBridgeState<'a> {
             }
         };
 
+        let resolved = ih.name().to_owned();
         self.input_handles.push(Some(ih));
         self.latest_input_path = path;
-        InputId::new(self.input_handles.len())
+        let id = InputId::new(self.input_handles.len());
+        self.record(CheckpointOperation::Input {
+            name: None,
+            format: FileFormat::Tex,
+            gz: false,
+            id: id.map(InputId::idx),
+            path: self.latest_input_path.clone(),
+            resolved: Some(resolved),
+        });
+        id
     }
 
     /// Get the size of an input. Prints a warning and returns 0 on error
     pub fn input_get_size(&mut self, handle: InputId) -> usize {
-        let rhandle: &mut InputHandle = self.get_input(handle);
+        let rhandle = self.input_handles[handle.idx()].as_mut().unwrap();
 
         match rhandle.get_size() {
-            Ok(s) => s,
+            Ok(s) => {
+                self.record(CheckpointOperation::Size {
+                    id: handle.idx(),
+                    size: s,
+                });
+                s
+            }
             Err(e) => {
+                self.invalidate_checkpoint();
                 tt_warning!(self.status, "failed to get the size of an input"; e);
                 0
             }
@@ -666,45 +756,131 @@ impl<'a> CoreBridgeState<'a> {
 
     fn input_get_mtime(&mut self, handle: InputId) -> i64 {
         if let Some(mtime) = self.fs_emulation_settings.mtime_override {
+            self.record(CheckpointOperation::Mtime {
+                id: handle.idx(),
+                time: mtime,
+            });
             return mtime;
         }
-        let rhandle: &mut InputHandle = self.get_input(handle);
+        let rhandle = self.input_handles[handle.idx()].as_mut().unwrap();
 
         let maybe_time = match rhandle.get_unix_mtime() {
             Ok(t) => t,
             Err(e) => {
+                self.invalidate_checkpoint();
                 tt_warning!(self.status, "failed to get the modification time of an input"; e);
                 Some(0)
             }
         };
 
-        maybe_time.unwrap_or(1)
+        let time = maybe_time.unwrap_or(1);
+        self.record(CheckpointOperation::Mtime {
+            id: handle.idx(),
+            time,
+        });
+        time
     }
 
     fn input_seek(&mut self, handle: InputId, pos: SeekFrom) -> Result<u64> {
-        let rhandle: &mut InputHandle = self.get_input(handle);
-        rhandle.try_seek(pos)
+        let result = self.input_handles[handle.idx()]
+            .as_mut()
+            .unwrap()
+            .try_seek(pos);
+        match &result {
+            Ok(result) => {
+                let (kind, offset) = match pos {
+                    SeekFrom::Start(n) => (0, n),
+                    SeekFrom::End(n) => (1, n as u64),
+                    SeekFrom::Current(n) => (2, n as u64),
+                };
+                self.record(CheckpointOperation::Seek {
+                    id: handle.idx(),
+                    kind,
+                    offset,
+                    result: *result,
+                });
+            }
+            Err(_) => self.invalidate_checkpoint(),
+        }
+        result
     }
 
     /// Read from an input
     pub fn input_read(&mut self, handle: InputId, buf: &mut [u8]) -> Result<()> {
-        let rhandle: &mut InputHandle = self.get_input(handle);
-        rhandle.read_exact(buf).map_err(Error::from)
+        let result = self.input_handles[handle.idx()]
+            .as_mut()
+            .unwrap()
+            .read_exact(buf)
+            .map_err(Error::from);
+        if result.is_ok() {
+            if self.journal.is_some() {
+                self.record(CheckpointOperation::Read {
+                    id: handle.idx(),
+                    requested: buf.len(),
+                    exact: true,
+                    count: buf.len(),
+                    digest: checkpoint::hash(buf),
+                });
+            }
+        } else {
+            self.invalidate_checkpoint();
+        }
+        result
     }
 
     fn input_read_partial(&mut self, handle: InputId, buf: &mut [u8]) -> Result<usize> {
-        let rhandle: &mut InputHandle = self.get_input(handle);
-        rhandle.read(buf).map_err(Error::from)
+        let result = self.input_handles[handle.idx()]
+            .as_mut()
+            .unwrap()
+            .read(buf)
+            .map_err(Error::from);
+        match &result {
+            Ok(count) => {
+                if self.journal.is_some() {
+                    self.record(CheckpointOperation::Read {
+                        id: handle.idx(),
+                        requested: buf.len(),
+                        exact: false,
+                        count: *count,
+                        digest: checkpoint::hash(&buf[..*count]),
+                    });
+                }
+            }
+            Err(_) => self.invalidate_checkpoint(),
+        }
+        result
     }
 
     fn input_getc(&mut self, handle: InputId) -> Result<u8> {
-        let rhandle: &mut InputHandle = self.get_input(handle);
-        rhandle.getc()
+        let result = self.input_handles[handle.idx()].as_mut().unwrap().getc();
+        if let Err(e) = &result
+            && !e
+                .downcast_ref::<io::Error>()
+                .is_some_and(|e| e.kind() == io::ErrorKind::UnexpectedEof)
+        {
+            self.invalidate_checkpoint();
+        }
+        self.record(CheckpointOperation::Getc {
+            id: handle.idx(),
+            byte: result.as_ref().ok().copied(),
+        });
+        result
     }
 
     fn input_ungetc(&mut self, handle: InputId, byte: u8) -> Result<()> {
-        let rhandle: &mut InputHandle = self.get_input(handle);
-        rhandle.ungetc(byte)
+        let result = self.input_handles[handle.idx()]
+            .as_mut()
+            .unwrap()
+            .ungetc(byte);
+        if result.is_ok() {
+            self.record(CheckpointOperation::Ungetc {
+                id: handle.idx(),
+                byte,
+            });
+        } else {
+            self.invalidate_checkpoint();
+        }
+        result
     }
 
     /// Close the provided output, performing any necessary handling.
@@ -718,8 +894,36 @@ impl<'a> CoreBridgeState<'a> {
         }
 
         let (name, digest_opt) = ih.into_name_digest();
+        let checkpoint_digest = if self.journal.is_some() {
+            digest_opt.map(|digest| digest.to_string())
+        } else {
+            None
+        };
         self.hooks.event_input_closed(name, digest_opt, self.status);
+        if rv {
+            self.invalidate_checkpoint();
+        } else {
+            self.record(CheckpointOperation::CloseInput {
+                id: id.idx(),
+                digest: checkpoint_digest,
+            });
+        }
         rv
+    }
+
+    /// Read the remaining input while retaining checkpoint observations.
+    pub fn input_read_to_end(&mut self, id: InputId, bytes: &mut Vec<u8>) -> io::Result<usize> {
+        let start = bytes.len();
+        let mut buffer = [0; 8192];
+        loop {
+            let count = self
+                .input_read_partial(id, &mut buffer)
+                .map_err(io::Error::other)?;
+            if count == 0 {
+                return Ok(bytes.len() - start);
+            }
+            bytes.extend_from_slice(&buffer[..count]);
+        }
     }
 
     fn shell_escape(&mut self, command: &str) -> bool {
@@ -1351,7 +1555,7 @@ pub unsafe extern "C" fn ttbc_shell_escape(
 /// for a file to open.
 ///
 /// cbindgen:rename-all=ScreamingSnakeCase
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 #[repr(C)]
 pub enum FileFormat {
     /// An Adobe Font Metrics file.

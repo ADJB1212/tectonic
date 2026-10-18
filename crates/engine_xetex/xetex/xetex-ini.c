@@ -15,6 +15,7 @@
 #include "xetex-synctex.h"
 #include "dpx-pdfobj.h" /* pdf_files_{init,close} */
 #include "xetex_bindings.h" /* FORMAT_SERIAL */
+#include "xetex-checkpoint.h"
 
 /* All the following variables are declared in xetex-xetexd.h */
 bool shell_escape_enabled = false;
@@ -3554,12 +3555,21 @@ tt_cleanup(void) {
     trie_trl = mfree(trie_trl);
     trie_tro = mfree(trie_tro);
     trie_trc = mfree(trie_trc);
+    tt_checkpoint_release();
 }
 
 tt_history_t
 tt_run_engine(const char *dump_name, const char *input_file_name, time_t build_date)
 {
     int32_t font_k;
+
+    if (tt_checkpoint_resume()) {
+        main_control();
+        final_cleanup();
+        close_files_and_terminate();
+        tt_cleanup();
+        return history;
+    }
 
     /* Miscellaneous initializations that were mostly originally done in the
      * main() driver routines. */
@@ -3878,4 +3888,107 @@ tt_run_engine(const char *dump_name, const char *input_file_name, time_t build_d
     tt_cleanup();
 
     return history;
+}
+
+void tt_checkpoint_engine(tt_checkpoint *cp)
+{
+#include "xetex-checkpoint-globals.h"
+    if (pool_size != 6250000L || max_strings != 565536L || font_max != 9000 ||
+        buf_size != 200000L || nest_size != 500 || stack_size != 5000 || param_size != 10000 ||
+        save_size != 80000L || trie_size != 1000000L || hyph_size != 8191 ||
+        font_mem_size < 0 || font_mem_size > 32000000L || hash_extra < 0 || hash_extra > 600000L) { cp->valid = false; return; }
+    if (!cp->valid || in_open < 0 || in_open > max_in_open || max_in_open != 15 ||
+        input_ptr < 0 || input_ptr > stack_size || font_ptr < FONT_BASE || font_ptr > font_max ||
+        pool_ptr < 0 || pool_ptr > pool_size || str_ptr < TOO_BIG_CHAR || str_ptr - TOO_BIG_CHAR > max_strings ||
+        save_ptr < 0 || save_ptr > save_size || param_ptr != 0 || nest_ptr != 0 ||
+        hash_top < hash_offset || hash_top > EQTB_SIZE + 600000L || eqtb_top != EQTB_SIZE + hash_extra ||
+        trie_max > 1000000L || fmem_ptr < 0 || fmem_ptr > font_mem_size ||
+        hash_high < 0 || hash_high > hash_extra) { cp->valid = false; return; }
+    CP_ARRAY(buffer, buf_size + 1);
+    CP_USED(nest, nest_size + 1, nest_ptr);
+    CP_USED(save_stack, save_size + 1, save_ptr);
+    CP_USED(input_stack, stack_size + 1, input_ptr);
+    CP_USED(param_stack, param_size + 1, param_ptr);
+    CP_ARRAY(line_stack, max_in_open + 1);
+    CP_ARRAY(eof_seen, max_in_open + 1);
+    CP_ARRAY(grp_stack, max_in_open + 1);
+    CP_ARRAY(if_stack, max_in_open + 1);
+    CP_ARRAY(source_filename_stack, max_in_open + 1);
+    CP_ARRAY(full_source_filename_stack, max_in_open + 1);
+    CP_ARRAY(hyph_word, hyph_size + 1);
+    CP_ARRAY(hyph_list, hyph_size + 1);
+    CP_ARRAY(hyph_link, hyph_size + 1);
+    if (cp->restoring) {
+        yhash = xmalloc_array(b32x2, 1 + hash_top - hash_offset);
+        hash = yhash - hash_offset;
+        memset(hash + HASH_BASE, 0, (UNDEFINED_CONTROL_SEQUENCE + 1 - HASH_BASE) * sizeof(b32x2));
+        if (hash_extra) memset(hash + EQTB_SIZE + 1, 0, hash_extra * sizeof(b32x2));
+    }
+    tt_checkpoint_field(cp, "hash", hash + HASH_BASE, (UNDEFINED_CONTROL_SEQUENCE + 1 - HASH_BASE) * sizeof(b32x2));
+    tt_checkpoint_field(cp, "hash_extra", hash_high ? hash + EQTB_SIZE + 1 : hash, hash_high * sizeof(b32x2));
+    CP_RLE(eqtb, eqtb_top + 1);
+    tt_checkpoint_memory(cp);
+    CP_USED(str_start, max_strings + 1, str_ptr - TOO_BIG_CHAR + 1);
+    CP_USED(str_pool, pool_size + 1, pool_ptr);
+    CP_USED(font_info, font_mem_size + 1, fmem_ptr);
+    CP_ARRAY(native_text, native_text_size);
+    CP_ARRAY(trie_trl, trie_max + 1);
+    CP_ARRAY(trie_tro, trie_max + 1);
+    CP_ARRAY(trie_trc, trie_max + 1);
+    CP_ARRAY(font_flags, font_max + 1);
+    CP_ARRAY(font_letter_space, font_max + 1);
+    CP_ARRAY(font_check, font_max + 1);
+    CP_ARRAY(font_size, font_max + 1);
+    CP_ARRAY(font_dsize, font_max + 1);
+    CP_ARRAY(font_params, font_max + 1);
+    CP_ARRAY(font_name, font_max + 1);
+    CP_ARRAY(font_area, font_max + 1);
+    CP_ARRAY(font_bc, font_max + 1);
+    CP_ARRAY(font_ec, font_max + 1);
+    CP_ARRAY(font_glue, font_max + 1);
+    CP_ARRAY(font_used, font_max + 1);
+    CP_ARRAY(hyphen_char, font_max + 1);
+    CP_ARRAY(skew_char, font_max + 1);
+    CP_ARRAY(bchar_label, font_max + 1);
+    CP_ARRAY(font_bchar, font_max + 1);
+    CP_ARRAY(font_false_bchar, font_max + 1);
+    CP_ARRAY(char_base, font_max + 1);
+    CP_ARRAY(width_base, font_max + 1);
+    CP_ARRAY(height_base, font_max + 1);
+    CP_ARRAY(depth_base, font_max + 1);
+    CP_ARRAY(italic_base, font_max + 1);
+    CP_ARRAY(lig_kern_base, font_max + 1);
+    CP_ARRAY(kern_base, font_max + 1);
+    CP_ARRAY(exten_base, font_max + 1);
+    CP_ARRAY(param_base, font_max + 1);
+    CP_STRING(name_of_file);
+    CP_STRING(name_of_input_file);
+    CP_STRING(TEX_format_default);
+    if (cp->restoring) {
+        name_of_file16 = NULL;
+        font_layout_engine = xcalloc_array(void *, font_max);
+        font_mapping = xcalloc_array(void *, font_max);
+        loaded_font_mapping = NULL;
+        memset(read_file, 0, sizeof(read_file));
+        memset(help_line, 0, sizeof(help_line));
+        max_reg_help_line = "A register number must be between 0 and 32767.";
+        output_file_extension = ".xdv";
+        input_file = xcalloc_array(UFILE *, max_in_open);
+        input_file[0] = &stdin_ufile;
+    }
+    CP_VALUE(stdin_ufile);
+    for (int i = 1; i <= in_open; i++) {
+        if (cp->restoring) input_file[i] = xcalloc(1, sizeof(UFILE));
+        tt_checkpoint_field(cp, "input", input_file[i], sizeof(UFILE));
+        if (cp->restoring && (input_file[i]->conversionData != NULL ||
+            input_file[i]->input.length > sizeof(input_file[i]->input.bytes) ||
+            input_file[i]->input.position > input_file[i]->input.length ||
+            input_file[i]->input.handle != input_file[i]->handle ||
+            !tt_xetex_checkpoint_handle_valid(input_file[i]->handle, false))) cp->valid = false;
+    }
+    if (cp->restoring && (!tt_xetex_checkpoint_handle_valid(rust_stdout, true) ||
+        (log_opened && !tt_xetex_checkpoint_handle_valid(log_file, true)))) cp->valid = false;
+    for (int i = 0; cp->restoring && i < 16; i++)
+        if (write_open[i] && !tt_xetex_checkpoint_handle_valid(write_file[i], true)) cp->valid = false;
+    if (cp->valid) tt_checkpoint_fonts(cp);
 }

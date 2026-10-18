@@ -14,12 +14,21 @@
 
 #include "xetex-core.h"
 #include "xetex-xetexd.h"
+#include "xetex-checkpoint.h"
 
 
 static int32_t best_page_break;
 static scaled_t best_size;
 static int32_t least_page_cost;
 static scaled_t page_max_depth;
+
+void tt_checkpoint_pagebuilder(tt_checkpoint *cp)
+{
+    CP_VALUE(best_page_break);
+    CP_VALUE(best_size);
+    CP_VALUE(least_page_cost);
+    CP_VALUE(page_max_depth);
+}
 /* XXX other variables belong here but pop up all over the code */
 
 void

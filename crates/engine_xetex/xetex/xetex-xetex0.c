@@ -6,6 +6,7 @@
 #include "xetex-core.h"
 #include "xetex-xetexd.h"
 #include "xetex-synctex.h"
+#include "xetex-checkpoint.h"
 
 #include <stdio.h> /* for EOF */
 
@@ -283,6 +284,7 @@ found:
 
 void free_node(int32_t p, int32_t s)
 {
+    if (tt_checkpoint_enabled) tt_checkpoint_unregister_glyph(p);
     int32_t q;
     mem[p].b32.s0 = s;
     mem[p].b32.s1 = MAX_HALFWORD;
@@ -365,6 +367,7 @@ copy_native_glyph_info(int32_t src, int32_t dest)
         NATIVE_NODE_glyph_info_ptr(dest) = xmalloc_array(char, glyph_count * NATIVE_GLYPH_INFO_SIZE);
         memcpy(NATIVE_NODE_glyph_info_ptr(dest), NATIVE_NODE_glyph_info_ptr(src), glyph_count * NATIVE_GLYPH_INFO_SIZE);
         NATIVE_NODE_glyph_count(dest) = glyph_count;
+        if (tt_checkpoint_enabled) tt_checkpoint_register_glyph(dest);
     }
 }
 
@@ -6437,6 +6440,7 @@ void get_x_token(void)
 {
  restart:
     get_next();
+    if (tt_checkpoint_enabled) tt_checkpoint_before_input();
 
     if (cur_cmd <= MAX_COMMAND)
         goto done;
@@ -16984,11 +16988,17 @@ main_control(void)
 {
     int32_t t;
 
-    if (LOCAL(every_job) != TEX_NULL)
+    if (!tt_checkpoint_resumed && LOCAL(every_job) != TEX_NULL)
         begin_token_list(LOCAL(every_job), EVERY_JOB_TEXT);
+    if (tt_checkpoint_resumed) tt_checkpoint_continue();
 
 big_switch: /* big_switch */
+    if (tt_checkpoint_enabled) {
+        tt_checkpoint_try();
+        tt_checkpoint_dispatch_fetch = true;
+    }
     get_x_token();
+    if (tt_checkpoint_enabled) tt_checkpoint_dispatch_fetch = false;
 
 reswitch:
     /*1066: */

@@ -22,6 +22,20 @@
 extern "C" {
 #endif // __cplusplus
 
+extern void tt_checkpoint_set(const uint8_t *bytes, uintptr_t length, bool enabled);
+
+extern uint64_t tt_checkpoint_skipped(void);
+
+extern bool tt_checkpoint_restored(void);
+
+extern void tt_xetex_checkpoint_emit(const uint8_t *bytes, uintptr_t length);
+
+extern bool tt_xetex_checkpoint_ready(void);
+
+extern bool tt_xetex_checkpoint_layout(void *checkpoint, bool restoring);
+
+extern bool tt_xetex_checkpoint_handle_valid(uintptr_t handle, bool output);
+
 extern int tt_xetex_set_int_variable(const char *var_name, int value);
 
 extern int tt_engine_xetex_main(ttbc_state_t *api,

@@ -23,6 +23,13 @@ use tectonic::{
 
 #[derive(Debug, Parser)]
 pub struct CompileOptions {
+    /// Resume TeX execution from persistent checkpoints
+    #[arg(long)]
+    incremental: bool,
+
+    /// Directory for incremental checkpoints [default: output directory/.tectonic-incremental]
+    #[arg(long, requires = "incremental", value_hint = clap::ValueHint::DirPath)]
+    incremental_cache_dir: Option<PathBuf>,
     /// Number of PDF workers [default: available CPU count]
     #[arg(long)]
     pdf_workers: Option<NonZeroUsize>,
@@ -100,6 +107,19 @@ pub struct CompileOptions {
 //impl TectonicCommand for CompileOptions {
 impl CompileOptions {
     pub fn execute(self, config: &PersistentConfig, status: &mut dyn StatusBackend) -> Result<i32> {
+        let incremental_cache = self.incremental.then(|| {
+            self.incremental_cache_dir.clone().unwrap_or_else(|| {
+                self.outdir
+                    .clone()
+                    .unwrap_or_else(|| {
+                        Path::new(&self.input)
+                            .parent()
+                            .unwrap_or_else(|| Path::new("."))
+                            .to_owned()
+                    })
+                    .join(".tectonic-incremental")
+            })
+        });
         let unstable = UnstableOptions::from_unstable_args(self.unstable.into_iter());
 
         // Default to allowing insecure since it would be super duper annoying
@@ -114,6 +134,9 @@ impl CompileOptions {
 
         let mut sess_builder =
             ProcessingSessionBuilder::new_with_security(SecuritySettings::new(stance));
+        if let Some(path) = incremental_cache {
+            sess_builder.incremental_cache_path(path);
+        }
         sess_builder.pdf_build_options(tectonic::PdfBuildOptions {
             workers: self.pdf_workers,
             queued_bytes: NonZeroUsize::new(self.pdf_queue_mib.get() * 1024 * 1024).unwrap(),

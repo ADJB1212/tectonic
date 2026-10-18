@@ -84,6 +84,7 @@ pub mod docmodel;
 pub mod driver;
 pub mod engines;
 pub mod errors;
+mod incremental;
 pub mod io;
 pub mod status;
 pub mod unstable_opts;

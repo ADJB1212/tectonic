@@ -12,6 +12,8 @@ CLI), see [its reference page][v1cli-ref].***
 
 ```sh
 tectonic -X build
+  [--incremental]
+  [--incremental-cache-dir <directory>]
   [--keep-intermediates] [-k]
   [--keep-logs]
   [--only-cached] [-C]
@@ -34,6 +36,13 @@ directory.
 [tectonic-toml]: ../ref/tectonic-toml.md
 
 #### Command-Line Options
+
+`--incremental` saves persistent TeX execution checkpoints for PDF targets and
+resumes the latest valid prefix on subsequent builds. Each output profile has
+its own cache identity. The cache defaults to `.tectonic-incremental` in that
+profile's output directory; `--incremental-cache-dir PATH` overrides its root.
+See [incremental compilation](./compile.md#remarks) for boundary restrictions,
+automatic full-build fallback, and pinned build-time behavior.
 
 The `--keep-intermediates` option (or `-k` for short) will cause the engine to
 save intermediate files (such as `mydoc.aux` or `mydoc.bbl`) in the build output

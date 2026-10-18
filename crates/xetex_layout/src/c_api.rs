@@ -91,6 +91,42 @@ pub unsafe extern "C" fn cacheGlyphBBox(font_id: u16, glyph_id: u16, bbox: *cons
 pub const LEFT_SIDE: i32 = 0;
 pub const RIGHT_SIDE: i32 = 1;
 
+#[derive(Clone, Copy, Debug)]
+#[repr(C)]
+pub struct ProtrusionCode {
+    pub font: i32,
+    pub character: u32,
+    pub side: i32,
+    pub value: i32,
+}
+
+pub fn protrusion_codes() -> Vec<ProtrusionCode> {
+    let mut codes = Vec::new();
+    for (side, cache) in [(LEFT_SIDE, &LEFT_PROT), (RIGHT_SIDE, &RIGHT_PROT)] {
+        cache.with_borrow(|cache| {
+            codes.extend(
+                cache
+                    .iter()
+                    .map(|(&(font, character), &value)| ProtrusionCode {
+                        font,
+                        character,
+                        side,
+                        value,
+                    }),
+            );
+        });
+    }
+    codes.sort_unstable_by_key(|code| (code.font, code.character, code.side));
+    codes
+}
+
+pub fn restore_protrusion_codes(codes: &[ProtrusionCode]) {
+    clear_font_caches();
+    for code in codes {
+        set_cp_code(code.font, code.character, code.side, code.value);
+    }
+}
+
 #[unsafe(no_mangle)]
 pub extern "C" fn set_cp_code(font_num: i32, code: u32, side: i32, value: i32) {
     match side {

@@ -12,6 +12,9 @@ mod utils;
 
 mod c_api;
 
+#[doc(hidden)]
+pub use c_api::{ProtrusionCode, protrusion_codes, restore_protrusion_codes};
+
 /// Does our resulting executable link correctly?
 #[test]
 fn linkage() {}

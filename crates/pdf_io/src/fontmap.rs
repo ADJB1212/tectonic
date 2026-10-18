@@ -6,7 +6,6 @@
 use std::{
     collections::{HashMap, hash_map::Entry},
     ffi::{CStr, CString, c_char},
-    io::Read,
     ops::Range,
     ptr,
     sync::Arc,
@@ -525,9 +524,7 @@ unsafe extern "C" fn tt_fontmap_remove(key: *const c_char) {
 extern "C" fn tt_fontmap_load_begin(handle: Option<InputId>, mode: i32, verbose: i32) -> i32 {
     let mut bytes = Vec::new();
     let result = CoreBridgeState::with_global_state(|state| {
-        state
-            .get_input(handle.expect("open font-map handle"))
-            .read_to_end(&mut bytes)
+        state.input_read_to_end(handle.expect("open font-map handle"), &mut bytes)
     });
     crate::compat::document::with_font_maps(|maps| {
         let mut maps = maps.borrow_mut();

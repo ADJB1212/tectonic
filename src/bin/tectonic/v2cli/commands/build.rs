@@ -16,6 +16,13 @@ use crate::v2cli::{CommandCustomizations, TectonicCommand};
 /// `build`: Build a document
 #[derive(Debug, Eq, PartialEq, Args, Clone)]
 pub struct BuildCommand {
+    /// Resume TeX execution from persistent checkpoints
+    #[arg(long)]
+    incremental: bool,
+
+    /// Override the incremental checkpoint directory
+    #[arg(long, requires = "incremental", value_hint = clap::ValueHint::DirPath)]
+    incremental_cache_dir: Option<std::path::PathBuf>,
     /// Number of PDF workers [default: available CPU count]
     #[arg(long)]
     pdf_workers: Option<NonZeroUsize>,
@@ -91,6 +98,16 @@ impl TectonicCommand for BuildCommand {
             }
 
             let mut builder = doc.setup_session(output_name, &setup_options, status)?;
+            if self.incremental {
+                let default = doc
+                    .output_main_file(output_name)
+                    .parent()
+                    .unwrap()
+                    .join(".tectonic-incremental");
+                builder.incremental_cache_path(
+                    self.incremental_cache_dir.as_ref().unwrap_or(&default),
+                );
+            }
             builder.pdf_build_options(tectonic::PdfBuildOptions {
                 workers: self.pdf_workers,
                 queued_bytes: NonZeroUsize::new(self.pdf_queue_mib.get() * 1024 * 1024).unwrap(),

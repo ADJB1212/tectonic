@@ -103,7 +103,7 @@ fn incremental_stream_appends_use_geometric_capacity_and_preserve_bytes() {
             capacity = current;
         }
         assert!(growths <= 12, "{growths} reallocations");
-        assert_eq!(pdf_stream_length(stream), expected.len() as _);
+        assert_eq!(pdf_stream_length(stream), expected.len() as std::ffi::c_int);
         assert_eq!(
             std::slice::from_raw_parts(pdf_stream_dataptr(stream).cast::<u8>(), expected.len()),
             expected

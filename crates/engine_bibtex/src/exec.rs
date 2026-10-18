@@ -2566,11 +2566,11 @@ mod tests {
         let slice = b"0123456789";
 
         let r1 = SLRange { start: 0, len: 0 };
-        assert_eq!(&slice[r1], &[]);
+        assert_eq!(&slice[r1], b"");
         let r2 = SLRange { start: 5, len: 0 };
-        assert_eq!(&slice[r2], &[]);
+        assert_eq!(&slice[r2], b"");
         let r3 = SLRange { start: -5, len: 0 };
-        assert_eq!(&slice[r3], &[]);
+        assert_eq!(&slice[r3], b"");
     }
 
     #[test]

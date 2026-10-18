@@ -5,6 +5,7 @@
 #include "xetex-core.h"
 #include "xetex-xetexd.h"
 #include "xetex-synctex.h"
+#include "xetex-checkpoint.h"
 #include "tectonic_bridge_core.h"
 
 
@@ -25,6 +26,28 @@ static int32_t down_ptr, right_ptr;
 static scaled_t dvi_h, dvi_v;
 static internal_font_number dvi_f;
 static int32_t cur_s;
+
+void tt_checkpoint_shipout(tt_checkpoint *cp)
+{
+    CP_VALUE(dvi_file);
+    CP_VALUE(output_file_name);
+    CP_ARRAY(dvi_buf, DVI_BUF_SIZE + 1);
+    CP_VALUE(dvi_limit);
+    CP_VALUE(g);
+    CP_VALUE(lq);
+    CP_VALUE(lr);
+    CP_VALUE(dvi_ptr);
+    CP_VALUE(dvi_offset);
+    CP_VALUE(dvi_gone);
+    CP_VALUE(down_ptr);
+    CP_VALUE(right_ptr);
+    CP_VALUE(dvi_h);
+    CP_VALUE(dvi_v);
+    CP_VALUE(dvi_f);
+    CP_VALUE(cur_s);
+    if (cp->restoring && (dvi_ptr < 0 || dvi_ptr > DVI_BUF_SIZE || dvi_limit < 0 || dvi_limit > DVI_BUF_SIZE)) cp->valid = false;
+    if (cp->restoring && output_file_name != 0 && !tt_xetex_checkpoint_handle_valid(dvi_file, true)) cp->valid = false;
+}
 
 
 static void hlist_out(void);

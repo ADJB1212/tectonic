@@ -126,6 +126,39 @@ static struct {
     { 0, 0, 0, 0, 0 } /* flags */
 };
 
+#include "xetex-checkpoint.h"
+
+void tt_checkpoint_synctex(tt_checkpoint *cp)
+{
+    if (!cp->restoring && synctex_ctxt.recorder != NULL) { cp->valid = false; return; }
+    CP_VALUE(synctex_ctxt.file);
+    CP_STRING(synctex_ctxt.root_name);
+    CP_VALUE(synctex_ctxt.count);
+    CP_VALUE(synctex_ctxt.node);
+    CP_VALUE(synctex_ctxt.tag);
+    CP_VALUE(synctex_ctxt.line);
+    CP_VALUE(synctex_ctxt.curh);
+    CP_VALUE(synctex_ctxt.curv);
+    CP_VALUE(synctex_ctxt.magnification);
+    CP_VALUE(synctex_ctxt.unit);
+    CP_VALUE(synctex_ctxt.total_length);
+    CP_VALUE(synctex_ctxt.lastv);
+    CP_VALUE(synctex_ctxt.form_depth);
+    CP_VALUE(synctex_ctxt.synctex_tag_counter);
+    unsigned int flags = synctex_ctxt.flags.content_ready | (synctex_ctxt.flags.off << 1) |
+        (synctex_ctxt.flags.not_void << 2) | (synctex_ctxt.flags.warn << 3) | (synctex_ctxt.flags.output_p << 4);
+    CP_VALUE(flags);
+    if (cp->restoring && synctex_ctxt.file && !tt_xetex_checkpoint_handle_valid(synctex_ctxt.file, true)) cp->valid = false;
+    if (cp->restoring) {
+        synctex_ctxt.flags.content_ready = flags & 1;
+        synctex_ctxt.flags.off = (flags >> 1) & 1;
+        synctex_ctxt.flags.not_void = (flags >> 2) & 1;
+        synctex_ctxt.flags.warn = (flags >> 3) & 1;
+        synctex_ctxt.flags.output_p = (flags >> 4) & 1;
+        synctex_ctxt.recorder = NULL;
+    }
+}
+
 
 static char *
 get_current_name (void)

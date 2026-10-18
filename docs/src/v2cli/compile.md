@@ -25,6 +25,8 @@ tectonic -X compile  # full form
   [--bundle <file_path>] [-b <file_path>]
   [--format <path>] [-f <path>]
   [--hide <hide_path>...]
+  [--incremental]
+  [--incremental-cache-dir <directory>]
   [--keep-intermediates] [-k]
   [--keep-logs]
   [--makefile-rules <dest_path>]
@@ -43,6 +45,25 @@ tectonic -X compile  # full form
 ```
 
 #### Remarks
+
+Use `--incremental` to save TeX execution checkpoints and reuse them in later
+invocations. Checkpoints are taken at safe top-level input boundaries and
+periodically between paragraphs in the main file, allowing reuse of unchanged
+prefixes in single-file documents as well as documents split with `\input` or
+`\include`. TeX processes the remaining document and performs its usual
+auxiliary-file reruns before generating the complete PDF.
+
+The default cache is `.tectonic-incremental` inside the output directory.
+`--incremental-cache-dir PATH` overrides it and requires `--incremental`.
+Changed dependencies invalidate affected checkpoints. Unsupported states,
+shell escape, standard input, and non-PDF modes use full compilation.
+
+Incremental builds retain the initial build date and saved random state.
+`SOURCE_DATE_EPOCH` is honored; changing it starts a separate cache generation.
+Delete the cache directory to reset the pinned date and discard all saved state.
+Native fonts and SyncTeX are supported. Imported pictures and live encoding
+converters prevent new checkpoints until a full build can establish a safe
+prefix. The status output reports how many TeX prefix dispatches were skipped.
 
 This command compiles a freestanding TeX document, outside of the Tectonic
 [document][docs-ref] framework. It is virtually the same interface as the ["V1"
