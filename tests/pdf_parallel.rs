@@ -177,6 +177,38 @@ fn page_document() -> String {
 }
 
 #[test]
+fn control_sequence_cache_preserves_collisions_definitions_and_engine_restarts() {
+    let source = r"\nopagenumbers
+\count255=0
+\loop
+  \expandafter\edef\csname cached@\the\count255\endcsname{\the\count255}
+  \advance\count255 by 1
+\ifnum\count255<40000 \repeat
+\count255=0
+\loop
+  \ifnum\csname cached@\the\count255\endcsname=\count255\else
+    \errmessage{Control sequence collision changed a definition}
+  \fi
+  \advance\count255 by 1
+\ifnum\count255<40000 \repeat
+\ifcsname cached@missing\endcsname\errmessage{Unexpected definition}\fi
+\expandafter\def\csname cached@missing\endcsname{7}
+\ifnum\csname cached@missing\endcsname=7\else\errmessage{Missing definition}\fi
+\def\cached{1}
+{\def\cached{2}\ifnum\cached=2\else\errmessage{Local definition}\fi}
+\ifnum\cached=1\else\errmessage{Restored definition}\fi
+\expandafter\def\csname cached@𐐷\endcsname{3}
+\ifnum\csname cached@𐐷\endcsname=3\else\errmessage{Unicode definition}\fi
+\expandafter\def\csname cached@α\endcsname{4}
+\ifnum\csname cached@α\endcsname=4\else\errmessage{BMP definition}\fi
+Cache lookup regression.\bye";
+    let mut memory = MemoryIo::new(true);
+    let (expected, _, _) = compile_pdf(&mut memory, source, false);
+    let (actual, _, _) = compile_pdf(&mut memory, source, false);
+    assert_eq!(actual, expected);
+}
+
+#[test]
 fn buffered_text_input_preserves_encodings_and_line_endings_across_refills() {
     let source = "\\nopagenumbers\\XeTeXgenerateactualtext=1\\font\\native=\"[lmroman12-regular]\"\\native\\input encoded.tex\\bye";
     let text = "\u{1d11e}\u{20ac} office\\par\nMore text.\\par\n";

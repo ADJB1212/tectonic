@@ -40,8 +40,7 @@ pub(crate) fn segment(input: &mut (impl Read + Seek), expected: u8) -> Result<Ve
             None => {
                 let end = input.seek(SeekFrom::End(0)).map_err(io)?;
                 input.seek(SeekFrom::Start(position)).map_err(io)?;
-                file_end = Some(end);
-                end
+                *file_end.insert(end)
             }
         };
         if length as u64 > end.saturating_sub(position) {

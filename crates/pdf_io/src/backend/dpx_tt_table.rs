@@ -848,7 +848,6 @@ pub unsafe extern "C-unwind" fn tt_get_ps_fontname(
     unsafe { core::ptr::copy_nonoverlapping(output.as_ptr().cast(), dest, length + 1) };
     length as u16
 }
-unsafe extern "C" {}
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_tt_pack_head_table(
     mut table: *mut tt_head_table,

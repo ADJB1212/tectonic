@@ -4,7 +4,7 @@
 use crate::error::{PdfError, PdfErrorKind};
 
 static DECIMAL_DIVISORS: std::sync::LazyLock<[f64; 310]> =
-    std::sync::LazyLock::new(|| std::array::from_fn(|power| 10.0f64.powf(power as f64)));
+    std::sync::LazyLock::new(|| std::array::from_fn(|power| 10.0f64.powf(f64::from(power as u32))));
 
 pub(crate) fn error(message: &'static str, offset: usize) -> PdfError {
     PdfError::new(

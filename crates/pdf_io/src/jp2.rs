@@ -125,7 +125,7 @@ pub(crate) fn scan(
                 have_header = true;
             }
             b"jp2c" if !have_header => {
-                warning("JPEG2000: JPEG 2000 Codestream box found before JP2 Header box.")
+                warning("JPEG2000: JPEG 2000 Codestream box found before JP2 Header box.");
             }
             _ => {}
         }

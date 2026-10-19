@@ -68,7 +68,7 @@ pub(crate) fn read_array<const N: usize>(
                 .during(IoOperation::Read));
             }
             Ok(length) => consumed += length,
-            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => continue,
+            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => {}
             Err(error) => {
                 return Err(PdfError::io(c"File ended prematurely\n".to_owned(), error)
                     .at(offset + consumed as u64)

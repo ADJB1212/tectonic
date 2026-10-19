@@ -309,7 +309,6 @@ pub unsafe extern "C-unwind" fn tt_get_positive_quad(
     }
     value as u32
 }
-unsafe extern "C" {}
 #[repr(C)]
 pub struct __sFILEX {
     _private: [u8; 0],

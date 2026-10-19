@@ -258,17 +258,11 @@ macro_rules! INTPAR {
     (right_hyphen_min) => {
         eqtb!(INT_BASE + INT_PAR__right_hyphen_min).b32.s1
     };
-    ($p:expr) => {
-        eqtb!(INT_BASE + ($p) as i32).b32.s1
-    };
 }
 
 macro_rules! DIMENPAR {
     (split_max_depth) => {
         eqtb!(DIMEN_BASE + DIMEN_PAR__split_max_depth).b32.s1
-    };
-    ($p:expr) => {
-        eqtb!(DIMEN_BASE + ($p) as i32).b32.s1
     };
 }
 
@@ -278,9 +272,6 @@ macro_rules! GLUEPAR {
     };
     (space_skip) => {
         eqtb!(GLUE_BASE + GLUE_PAR__space_skip).b32.s1
-    };
-    ($p:expr) => {
-        eqtb!(GLUE_BASE + ($p) as i32).b32.s1
     };
 }
 

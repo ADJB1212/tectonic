@@ -118,7 +118,6 @@ unsafe extern "C-unwind" {
 }
 pub type __darwin_size_t = usize;
 pub type size_t = __darwin_size_t;
-pub type uint8_t = u8;
 pub type uint32_t = u32;
 pub type uint64_t = u64;
 #[derive(Copy, Clone)]

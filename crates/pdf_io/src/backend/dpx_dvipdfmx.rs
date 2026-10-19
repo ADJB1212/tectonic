@@ -40,4 +40,3 @@ pub static mut landscape_mode: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub static mut paper_height: ::core::ffi::c_double = 842.0f64;
 #[unsafe(no_mangle)]
 pub static mut paper_width: ::core::ffi::c_double = 595.0f64;
-unsafe extern "C" {}

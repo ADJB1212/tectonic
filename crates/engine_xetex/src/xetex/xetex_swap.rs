@@ -10,26 +10,12 @@
 
 #[inline]
 pub fn SWAP16(p: u16) -> u16 {
-    #[cfg(target_endian = "big")]
-    {
-        p
-    }
-    #[cfg(not(target_endian = "big"))]
-    {
-        p.swap_bytes()
-    }
+    p.to_be()
 }
 
 #[inline]
 pub fn SWAP32(p: u32) -> u32 {
-    #[cfg(target_endian = "big")]
-    {
-        p
-    }
-    #[cfg(not(target_endian = "big"))]
-    {
-        p.swap_bytes()
-    }
+    p.to_be()
 }
 
 pub trait SwapExt {

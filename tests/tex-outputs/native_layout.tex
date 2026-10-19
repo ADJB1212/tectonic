@@ -1,0 +1,22 @@
+\nopagenumbers
+\font\regular="[LinLibertine_R_G.ttf]/OT" at 12pt
+\font\spaced="[LinLibertine_R_G.ttf]/OT:letterspace=10" at 12pt
+\def\sample{office AVATAR abc אבג 123 דהו xyz á}
+\regular
+\XeTeXuseglyphmetrics=1
+\hbox{\sample}
+\hbox{\sample\sample\sample\sample\sample\sample\sample\sample}
+\hbox{a}
+\hbox{אבג}
+\hbox{\char"200B}
+\hbox{}
+\spaced
+\hbox{\sample}
+\hbox{\sample\sample\sample\sample\sample\sample\sample\sample}
+\hbox{a}
+\hbox{אבג}
+\hbox{\char"200B}
+\XeTeXuseglyphmetrics=0
+\regular\hbox{\sample}
+\spaced\hbox{\sample}
+\bye

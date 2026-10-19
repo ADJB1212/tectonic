@@ -34,15 +34,16 @@ unsafe extern "C" {
 #[unsafe(export_name = "tectonic_rust_tt_xetex_set_int_variable")]
 pub unsafe extern "C" fn tt_xetex_set_int_variable(var_name: *const c_char, value: c_int) -> c_int {
     unsafe {
-        if libc::strcmp(var_name, c"halt_on_error_p".as_ptr()) == 0 {
+        let name = std::ffi::CStr::from_ptr(var_name);
+        if name == c"halt_on_error_p" {
             halt_on_error_p = value;
-        } else if libc::strcmp(var_name, c"in_initex_mode".as_ptr()) == 0 {
+        } else if name == c"in_initex_mode" {
             in_initex_mode = value != 0;
-        } else if libc::strcmp(var_name, c"synctex_enabled".as_ptr()) == 0 {
+        } else if name == c"synctex_enabled" {
             synctex_enabled = value != 0;
-        } else if libc::strcmp(var_name, c"semantic_pagination_enabled".as_ptr()) == 0 {
+        } else if name == c"semantic_pagination_enabled" {
             semantic_pagination_enabled = value != 0;
-        } else if libc::strcmp(var_name, c"shell_escape_enabled".as_ptr()) == 0 {
+        } else if name == c"shell_escape_enabled" {
             shell_escape_enabled = value != 0;
         } else {
             return 1;

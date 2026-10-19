@@ -44,6 +44,7 @@ impl<'a> ByteCursor<'a> {
         Ok(&self.bytes[start..self.offset])
     }
 
+    #[allow(dead_code)]
     pub(crate) fn skip(&mut self, length: usize) -> Result<(), ReadError> {
         self.read(length).map(|_| ())
     }
@@ -67,6 +68,7 @@ impl<'a> ByteCursor<'a> {
         Ok(((value << shift) as i32) >> shift)
     }
 
+    #[allow(dead_code)]
     pub(crate) fn read_u8(&mut self) -> Result<u8, ReadError> {
         self.read_unsigned(1).map(|value| value as u8)
     }

@@ -1145,11 +1145,3 @@ pub unsafe extern "C" fn __pdf_entry_parse_pdf_tainted_dict(
         Err(()) => -1,
     }
 }
-
-pub(crate) struct DocumentState;
-
-impl DocumentState {
-    pub(crate) fn new() -> Self {
-        Self
-    }
-}

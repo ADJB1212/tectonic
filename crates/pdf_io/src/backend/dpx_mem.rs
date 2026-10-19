@@ -66,7 +66,6 @@ pub unsafe extern "C-unwind" fn renew(
         return NULL;
     };
 }
-unsafe extern "C" {}
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_new(
     mut size: uint32_t,

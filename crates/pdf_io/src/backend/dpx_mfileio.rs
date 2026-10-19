@@ -162,7 +162,6 @@ pub unsafe extern "C-unwind" fn tt_mfgets(
     )
     .map_or(core::ptr::null_mut(), |_| buffer)
 }
-unsafe extern "C" {}
 #[repr(C)]
 pub struct __sFILEX {
     _private: [u8; 0],

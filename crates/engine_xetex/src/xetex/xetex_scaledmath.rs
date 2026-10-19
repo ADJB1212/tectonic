@@ -35,11 +35,11 @@ fn odd(x: i32) -> bool {
 
 #[unsafe(export_name = "tex_round")]
 pub unsafe extern "C" fn tex_round(r: f64) -> i32 {
-    if r > 2147483647.0 {
-        return 2147483647;
+    if r > i32::MAX as f64 {
+        return i32::MAX;
     }
-    if r < -2147483648.0 {
-        return -2147483648;
+    if r < i32::MIN as f64 {
+        return i32::MIN;
     }
     if r >= 0.0 {
         return (r + 0.5) as i32;

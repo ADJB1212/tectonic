@@ -201,7 +201,6 @@ pub unsafe extern "C-unwind" fn tfm_is_jfm(mut font_id: ::core::ffi::c_int) -> :
 pub unsafe extern "C-unwind" fn tfm_exists(mut tfm_name: *const ::core::ffi::c_char) -> bool {
     return tt_tfm_exists(tfm_name);
 }
-unsafe extern "C" {}
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_tfm_reset_global_state() -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tfm_reset_global_state() }) {

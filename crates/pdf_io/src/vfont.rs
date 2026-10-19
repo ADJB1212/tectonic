@@ -110,7 +110,7 @@ impl<R: Read + Seek> Records<R> {
                     (u32::from(opcode), self.value(1)?)
                 };
                 self.value(if opcode == 242 { 4 } else { 3 })?;
-                if code >= 0x1000000 {
+                if code >= 0x0100_0000 {
                     return Err(error(
                         "Long character (>24 bits) in VF file.\nI can't handle long characters!\n",
                         0,

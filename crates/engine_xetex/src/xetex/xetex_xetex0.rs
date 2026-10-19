@@ -3322,8 +3322,43 @@ pub unsafe extern "C" fn not_native_font_error(cmd: i32, c: i32, f: i32) {
     }
 }
 
+const CONTROL_SEQUENCE_CACHE_SIZE: usize = 32768;
+static mut control_sequence_cache: [i32; CONTROL_SEQUENCE_CACHE_SIZE] =
+    [0; CONTROL_SEQUENCE_CACHE_SIZE];
+
+pub(super) unsafe fn reset_control_sequence_cache() {
+    unsafe {
+        std::ptr::write_bytes(
+            (&raw mut control_sequence_cache).cast::<i32>(),
+            0,
+            CONTROL_SEQUENCE_CACHE_SIZE,
+        );
+    }
+}
+
 #[unsafe(export_name = "id_lookup")]
 pub unsafe extern "C" fn id_lookup(j: i32, l: i32) -> i32 {
+    unsafe {
+        use std::hash::BuildHasher;
+        let text = std::slice::from_raw_parts(buffer.add(j as usize), l as usize);
+        let slot =
+            rustc_hash::FxBuildHasher.hash_one(text) as usize & (CONTROL_SEQUENCE_CACHE_SIZE - 1);
+        let cached = (&raw const control_sequence_cache)
+            .cast::<i32>()
+            .add(slot)
+            .read();
+        if cached != 0 {
+            let string = (*hash.add(cached as usize)).s1;
+            if string >= TOO_BIG_CHAR && super::xetex_stringpool::str_eq_buf_bmp(string, j, l) {
+                return cached;
+            }
+        }
+        id_lookup_uncached(j, l, slot)
+    }
+}
+
+#[inline(never)]
+unsafe fn id_lookup_uncached(j: i32, l: i32, slot: usize) -> i32 {
     unsafe {
         let mut h: i32 = 0;
         let mut d: i32;
@@ -3352,6 +3387,10 @@ pub unsafe extern "C" fn id_lookup(j: i32, l: i32) -> i32 {
                         str_eq_buf(string, j)
                     };
                     if matched {
+                        (&raw mut control_sequence_cache)
+                            .cast::<i32>()
+                            .add(slot)
+                            .write(p);
                         return p;
                     }
                 }
@@ -3416,6 +3455,10 @@ pub unsafe extern "C" fn id_lookup(j: i32, l: i32) -> i32 {
 
                     (*hash.offset(p as isize)).s1 = make_string();
                     pool_ptr += d;
+                    (&raw mut control_sequence_cache)
+                        .cast::<i32>()
+                        .add(slot)
+                        .write(p);
                 }
                 return p;
             }

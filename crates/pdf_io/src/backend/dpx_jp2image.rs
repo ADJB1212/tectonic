@@ -304,7 +304,6 @@ pub unsafe extern "C-unwind" fn jp2_get_bbox(
     *ydensity = info.ydensity;
     return r;
 }
-unsafe extern "C" {}
 #[repr(C)]
 pub struct __sFILEX {
     _private: [u8; 0],

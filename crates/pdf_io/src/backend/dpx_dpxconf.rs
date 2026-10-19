@@ -337,7 +337,6 @@ pub unsafe extern "C-unwind" fn dumppaperinfo() {
     }
 }
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-unsafe extern "C" {}
 #[repr(C)]
 pub struct __sFILEX {
     _private: [u8; 0],

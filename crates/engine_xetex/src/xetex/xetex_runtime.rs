@@ -133,6 +133,8 @@ pub unsafe extern "C" fn tt_run_engine(
 ) -> tt_history_t {
     unsafe {
         super::xetex_stringpool::reset_string_index();
+        super::xetex_xetex0::reset_control_sequence_cache();
+        super::xetex_ext::reset_native_layout_scratch();
         if tt_checkpoint_resume() {
             main_control();
             final_cleanup();

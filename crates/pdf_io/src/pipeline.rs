@@ -47,7 +47,7 @@ pub(crate) struct WorkerTimings {
 
 pub(crate) fn record_elapsed(counter: &AtomicU64, start: Instant) {
     counter.fetch_add(
-        start.elapsed().as_nanos().min(u64::MAX as u128) as u64,
+        start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64,
         Ordering::Relaxed,
     );
 }
@@ -214,11 +214,12 @@ impl Runtime {
 }
 
 fn shared_pool(workers: usize) -> Option<Arc<rayon::ThreadPool>> {
+    type CachedPool = Mutex<Option<(usize, Arc<rayon::ThreadPool>)>>;
+    static POOL: OnceLock<CachedPool> = OnceLock::new();
+
     if workers == 1 {
         return None;
     }
-    type CachedPool = Mutex<Option<(usize, Arc<rayon::ThreadPool>)>>;
-    static POOL: OnceLock<CachedPool> = OnceLock::new();
     let mut cached = POOL.get_or_init(|| Mutex::new(None)).lock().ok()?;
     if let Some((count, pool)) = &*cached
         && *count == workers
@@ -596,7 +597,7 @@ extern "C" fn tt_pdf_page_submit(target: *mut c_void, compression_level: u32) ->
                         pool.as_deref(),
                         &timings,
                     )
-                    .map_err(|_| {
+                    .map_err(|()| {
                         PdfError::new(
                             PdfErrorKind::Backend,
                             c"PDF stream compression failed".to_owned(),
@@ -641,7 +642,7 @@ unsafe extern "C" fn tt_pdf_stream_submit(
                     pool.as_deref(),
                     &timings,
                 )
-                .map_err(|_| {
+                .map_err(|()| {
                     PdfError::new(
                         PdfErrorKind::Backend,
                         c"PDF stream compression failed".to_owned(),

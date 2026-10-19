@@ -1958,19 +1958,16 @@ impl ProcessingSession {
         rerun_explanation: Option<&str>,
         status: &mut dyn StatusBackend,
     ) -> Result<Option<&'static str>> {
-        let baseline = self
-            .bs
-            .incremental
-            .as_ref()
-            .map(|_| (self.bs.mem.files.borrow().clone(), self.bs.events.clone()));
         let candidates = self
             .bs
             .incremental
             .as_ref()
             .map_or_else(Vec::new, |cache| cache.candidates());
+        let baseline = (!candidates.is_empty())
+            .then(|| (self.bs.mem.files.borrow().clone(), self.bs.events.clone()));
         let mut result = None;
-        for bytes in candidates {
-            let checkpoint = match crate::incremental::Cache::decode(&bytes) {
+        for candidate in candidates {
+            let checkpoint = match candidate.decode() {
                 Ok(checkpoint) => checkpoint,
                 Err(error) => {
                     tt_note!(

@@ -2609,6 +2609,49 @@ pub unsafe extern "C" fn store_justified_native_glyphs(pNode: *mut c_void) {
     }
 }
 
+struct NativeLayoutScratch {
+    bidi: *mut UBiDi,
+    glyphs: Vec<u32>,
+    positions: Vec<FloatPoint>,
+    advances: Vec<f32>,
+    locations: Vec<FixedPoint>,
+    ids: Vec<u16>,
+    fixed_advances: Vec<Fixed>,
+}
+
+impl NativeLayoutScratch {
+    const fn new() -> Self {
+        Self {
+            bidi: std::ptr::null_mut(),
+            glyphs: Vec::new(),
+            positions: Vec::new(),
+            advances: Vec::new(),
+            locations: Vec::new(),
+            ids: Vec::new(),
+            fixed_advances: Vec::new(),
+        }
+    }
+
+    fn resize(&mut self, count: usize, letter_space: bool) {
+        self.glyphs.resize(count, 0);
+        self.positions.resize(count + 1, FloatPoint::default());
+        if letter_space {
+            self.advances.resize(count, 0.0);
+        }
+    }
+}
+
+static mut native_layout_scratch: NativeLayoutScratch = NativeLayoutScratch::new();
+
+pub(super) unsafe fn reset_native_layout_scratch() {
+    unsafe {
+        let scratch = std::ptr::replace(&raw mut native_layout_scratch, NativeLayoutScratch::new());
+        if !scratch.bidi.is_null() {
+            ubidi_close(scratch.bidi);
+        }
+    }
+}
+
 #[unsafe(export_name = "measure_native_node")]
 pub unsafe extern "C" fn measure_native_node(pNode: *mut c_void, use_glyph_metrics: c_int) {
     unsafe {
@@ -2627,6 +2670,9 @@ pub unsafe extern "C" fn measure_native_node(pNode: *mut c_void, use_glyph_metri
         if !handled {
             if *font_area.add(f) as u32 == OTGR_FONT_FLAG {
                 let engine = *font_layout_engine.add(f) as XeTeXLayoutEngine;
+                let font_ls = *font_letter_space.add(f);
+                let scratch = &mut *(&raw mut native_layout_scratch);
+                scratch.fixed_advances.clear();
 
                 let mut locations: *mut FixedPoint = std::ptr::null_mut();
                 let mut glyphIDs: *mut u16;
@@ -2638,7 +2684,10 @@ pub unsafe extern "C" fn measure_native_node(pNode: *mut c_void, use_glyph_metri
                 let mut advances: *mut f32 = std::ptr::null_mut();
                 let mut glyphs: *mut u32 = std::ptr::null_mut();
 
-                let pBiDi = ubidi_open();
+                if scratch.bidi.is_null() {
+                    scratch.bidi = ubidi_open();
+                }
+                let pBiDi = scratch.bidi;
                 let mut errorCode: UErrorCode = U_ZERO_ERROR;
                 ubidi_setPara(
                     pBiDi,
@@ -2656,29 +2705,11 @@ pub unsafe extern "C" fn measure_native_node(pNode: *mut c_void, use_glyph_metri
                     let mut logicalStart: i32 = 0;
                     let mut length: i32 = 0;
 
-                    for runIndex in 0..nRuns {
-                        let run_dir =
-                            ubidi_getVisualRun(pBiDi, runIndex, &mut logicalStart, &mut length);
-                        totalGlyphCount += layoutChars(
-                            engine,
-                            txtPtr,
-                            logicalStart,
-                            length,
-                            txtLen,
-                            run_dir == UBIDI_RTL,
-                        );
-                    }
-
-                    if totalGlyphCount > 0 {
+                    scratch.locations.clear();
+                    scratch.ids.clear();
+                    {
                         let mut x = 0.0f64;
                         let mut y = 0.0f64;
-                        glyph_info = xcalloc(totalGlyphCount as usize, native_glyph_info_size);
-                        locations = glyph_info as *mut FixedPoint;
-                        glyphIDs = locations.add(totalGlyphCount as usize) as *mut u16;
-                        glyphAdvances =
-                            xcalloc(totalGlyphCount as usize, std::mem::size_of::<Fixed>())
-                                as *mut Fixed;
-                        totalGlyphCount = 0;
 
                         for runIndex in 0..nRuns {
                             let run_dir =
@@ -2692,38 +2723,51 @@ pub unsafe extern "C" fn measure_native_node(pNode: *mut c_void, use_glyph_metri
                                 run_dir == UBIDI_RTL,
                             );
 
-                            glyphs =
-                                xcalloc(nGlyphs as usize, std::mem::size_of::<u32>()) as *mut u32;
-                            positions =
-                                xcalloc((nGlyphs + 1) as usize, std::mem::size_of::<FloatPoint>())
-                                    as *mut FloatPoint;
-                            advances =
-                                xcalloc(nGlyphs as usize, std::mem::size_of::<f32>()) as *mut f32;
+                            scratch.resize(nGlyphs as usize, font_ls != 0);
+                            glyphs = scratch.glyphs.as_mut_ptr();
+                            positions = scratch.positions.as_mut_ptr();
+                            advances = scratch.advances.as_mut_ptr();
 
                             getGlyphs(engine, glyphs);
-                            getGlyphAdvances(engine, advances);
+                            if font_ls != 0 {
+                                getGlyphAdvances(engine, advances);
+                            }
                             getGlyphPositions(engine, positions);
 
                             for i in 0..nGlyphs {
-                                *glyphIDs.add(totalGlyphCount as usize) =
-                                    *glyphs.add(i as usize) as u16;
-                                (*locations.add(totalGlyphCount as usize)).x =
-                                    D2Fix((*positions.add(i as usize)).x as f64 + x);
-                                (*locations.add(totalGlyphCount as usize)).y =
-                                    D2Fix((*positions.add(i as usize)).y as f64 + y);
-                                *glyphAdvances.add(totalGlyphCount as usize) =
-                                    D2Fix(*advances.add(i as usize) as f64);
+                                scratch.ids.push(*glyphs.add(i as usize) as u16);
+                                scratch.locations.push(FixedPoint {
+                                    x: D2Fix((*positions.add(i as usize)).x as f64 + x),
+                                    y: D2Fix((*positions.add(i as usize)).y as f64 + y),
+                                });
+                                if font_ls != 0 {
+                                    scratch
+                                        .fixed_advances
+                                        .push(D2Fix(*advances.add(i as usize) as f64));
+                                }
                                 totalGlyphCount += 1;
                             }
 
                             x += (*positions.add(nGlyphs as usize)).x as f64;
                             y += (*positions.add(nGlyphs as usize)).y as f64;
-
-                            libc::free(glyphs as *mut c_void);
-                            libc::free(positions as *mut c_void);
-                            libc::free(advances as *mut c_void);
                         }
                         width = x;
+                    }
+
+                    if totalGlyphCount > 0 {
+                        glyph_info = xcalloc(totalGlyphCount as usize, native_glyph_info_size);
+                        locations = glyph_info as *mut FixedPoint;
+                        glyphIDs = locations.add(totalGlyphCount as usize) as *mut u16;
+                        std::ptr::copy_nonoverlapping(
+                            scratch.locations.as_ptr(),
+                            locations,
+                            totalGlyphCount as usize,
+                        );
+                        std::ptr::copy_nonoverlapping(
+                            scratch.ids.as_ptr(),
+                            glyphIDs,
+                            totalGlyphCount as usize,
+                        );
                     }
 
                     *node_width(node) = D2Fix(width);
@@ -2737,30 +2781,28 @@ pub unsafe extern "C" fn measure_native_node(pNode: *mut c_void, use_glyph_metri
                     totalGlyphCount =
                         layoutChars(engine, txtPtr, 0, txtLen, txtLen, dir == UBIDI_RTL);
 
-                    glyphs =
-                        xcalloc(totalGlyphCount as usize, std::mem::size_of::<u32>()) as *mut u32;
-                    positions = xcalloc(
-                        (totalGlyphCount + 1) as usize,
-                        std::mem::size_of::<FloatPoint>(),
-                    ) as *mut FloatPoint;
-                    advances =
-                        xcalloc(totalGlyphCount as usize, std::mem::size_of::<f32>()) as *mut f32;
+                    scratch.resize(totalGlyphCount as usize, font_ls != 0);
+                    glyphs = scratch.glyphs.as_mut_ptr();
+                    positions = scratch.positions.as_mut_ptr();
+                    advances = scratch.advances.as_mut_ptr();
 
                     getGlyphs(engine, glyphs);
-                    getGlyphAdvances(engine, advances);
+                    if font_ls != 0 {
+                        getGlyphAdvances(engine, advances);
+                    }
                     getGlyphPositions(engine, positions);
 
                     if totalGlyphCount > 0 {
                         glyph_info = xcalloc(totalGlyphCount as usize, native_glyph_info_size);
                         locations = glyph_info as *mut FixedPoint;
                         glyphIDs = locations.add(totalGlyphCount as usize) as *mut u16;
-                        glyphAdvances =
-                            xcalloc(totalGlyphCount as usize, std::mem::size_of::<Fixed>())
-                                as *mut Fixed;
                         for i in 0..totalGlyphCount {
                             *glyphIDs.add(i as usize) = *glyphs.add(i as usize) as u16;
-                            *glyphAdvances.add(i as usize) =
-                                D2Fix(*advances.add(i as usize) as f64);
+                            if font_ls != 0 {
+                                scratch
+                                    .fixed_advances
+                                    .push(D2Fix(*advances.add(i as usize) as f64));
+                            }
                             (*locations.add(i as usize)).x =
                                 D2Fix((*positions.add(i as usize)).x as f64);
                             (*locations.add(i as usize)).y =
@@ -2775,16 +2817,10 @@ pub unsafe extern "C" fn measure_native_node(pNode: *mut c_void, use_glyph_metri
                     if tt_checkpoint_enabled {
                         tt_checkpoint_register_glyph(node.offset_from(mem) as i32);
                     }
-
-                    libc::free(glyphs as *mut c_void);
-                    libc::free(positions as *mut c_void);
-                    libc::free(advances as *mut c_void);
                 }
 
-                ubidi_close(pBiDi);
-
-                let font_ls = *font_letter_space.add(f);
                 if font_ls != 0 {
+                    glyphAdvances = scratch.fixed_advances.as_mut_ptr();
                     let mut lsDelta: Fixed = 0;
                     let lsUnit = font_ls;
                     for i in 0..totalGlyphCount {
@@ -2799,7 +2835,6 @@ pub unsafe extern "C" fn measure_native_node(pNode: *mut c_void, use_glyph_metri
                         *node_width(node) += lsDelta;
                     }
                 }
-                libc::free(glyphAdvances as *mut c_void);
             } else {
                 _tt_abort(
                     b"bad native font flag in `measure_native_node`\0".as_ptr() as *const c_char

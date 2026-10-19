@@ -195,7 +195,7 @@ struct Cursor<'a> {
     position: usize,
 }
 
-impl<'a> Cursor<'a> {
+impl Cursor<'_> {
     fn skip_blank(&mut self) {
         while self
             .bytes
@@ -290,7 +290,7 @@ fn map_format(line: &[u8]) -> i32 {
         count += 1;
         cursor.skip_blank();
     }
-    if count == 2 { 0 } else { 1 }
+    i32::from(count != 2)
 }
 
 struct ParsedLine {

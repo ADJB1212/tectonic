@@ -106,6 +106,7 @@ macro_rules! free_arrays {
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn tt_cleanup() {
     unsafe {
+        super::xetex_ext::reset_native_layout_scratch();
         super::xetex_stringpool::reset_string_index();
         pdf_files_close();
         free_arrays!(TEX_format_default, font_used);

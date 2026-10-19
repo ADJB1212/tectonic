@@ -225,9 +225,9 @@ fn decode_rle(
             if bits == 8 {
                 output[pos] = pixel;
             } else if x % 2 == 0 {
-                output[pos] = output[pos] & 15 | pixel << 4;
+                output[pos] = (output[pos] & 0x0f) | (pixel << 4);
             } else {
-                output[pos] = output[pos] & 240 | pixel;
+                output[pos] = (output[pos] & 0xf0) | pixel;
             }
             x += 1;
         }

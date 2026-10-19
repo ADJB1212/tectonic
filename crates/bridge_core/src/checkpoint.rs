@@ -68,7 +68,7 @@ pub(crate) enum Operation {
         id: usize,
         bytes: Vec<u8>,
     },
-    CharacterWrites(Vec<(usize, u8)>),
+    CharacterWrites(Vec<(u16, u8)>),
     Flush(usize),
     CloseOutput(usize),
 }
@@ -90,7 +90,7 @@ impl Journal {
 
     pub(crate) fn invalidate(&mut self) {
         self.valid = false;
-        self.operations.clear();
+        self.operations = Vec::new();
     }
 
     pub(crate) fn push(&mut self, operation: Operation) {
@@ -122,12 +122,14 @@ impl Journal {
                 }
             }
             Operation::Write { id, bytes } => {
-                if bytes.len() == 1 {
+                if bytes.len() == 1
+                    && let Ok(id) = u16::try_from(id)
+                {
                     if let Some(Operation::CharacterWrites(previous)) = self.operations.last_mut()
                         && previous.len() < 8192
                     {
                         previous.push((id, bytes[0]));
-                        self.bytes += std::mem::size_of::<(usize, u8)>();
+                        self.bytes += std::mem::size_of::<(u16, u8)>();
                         if self.bytes > LIMIT {
                             self.invalidate();
                         }
@@ -183,6 +185,26 @@ pub(crate) fn hash(bytes: &[u8]) -> [u8; 32] {
     DigestComputer::digest(bytes).into()
 }
 
+struct OperationsVisitor<F>(F);
+
+impl<'de, F: FnMut(Operation) -> Result<()>> serde::de::Visitor<'de> for OperationsVisitor<F> {
+    type Value = ();
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("a checkpoint operation sequence")
+    }
+
+    fn visit_seq<A: serde::de::SeqAccess<'de>>(
+        mut self,
+        mut sequence: A,
+    ) -> std::result::Result<(), A::Error> {
+        while let Some(operation) = sequence.next_element()? {
+            (self.0)(operation).map_err(serde::de::Error::custom)?;
+        }
+        Ok(())
+    }
+}
+
 impl CoreBridgeState<'_> {
     pub(crate) fn record(&mut self, operation: Operation) {
         if let Some(journal) = &mut self.journal {
@@ -231,18 +253,16 @@ impl CoreBridgeState<'_> {
     /// The caller must discard this bridge and reset its driver on failure.
     pub fn replay_checkpoint_io(&mut self, bytes: &[u8]) -> Result<()> {
         ensure!(bytes.len() <= LIMIT, "I/O checkpoint exceeds size limit");
-        let operations: Vec<Operation> = serde_json::from_slice(bytes)?;
-        ensure!(
-            operations.len() <= 262_144,
-            "too many checkpoint operations"
-        );
         ensure!(
             self.input_handles.is_empty() && self.output_handles.is_empty(),
             "checkpoint replay requires a fresh bridge"
         );
         self.record_checkpoint_io();
         let mut read_budget = 512 * 1024 * 1024usize;
-        for operation in operations {
+        let mut count = 0;
+        let replay = |operation: Operation| -> Result<()> {
+            count += 1;
+            ensure!(count <= 262_144, "too many checkpoint operations");
             match &operation {
                 Operation::Input {
                     name,
@@ -376,7 +396,7 @@ impl CoreBridgeState<'_> {
                 Operation::CharacterWrites(bytes) => {
                     ensure!(bytes.len() <= 8192, "invalid checkpoint writes");
                     for (id, byte) in bytes {
-                        let id = self.checked_output(*id)?;
+                        let id = self.checked_output(usize::from(*id))?;
                         ensure!(!self.output_write(id, &[*byte]), "output replay failed");
                     }
                 }
@@ -396,7 +416,12 @@ impl CoreBridgeState<'_> {
                     == Some(&operation),
                 "checkpoint I/O observations changed"
             );
-        }
+            Ok(())
+        };
+        use serde::Deserializer;
+        let mut decoder = serde_json::Deserializer::from_slice(bytes);
+        decoder.deserialize_seq(OperationsVisitor(replay))?;
+        decoder.end()?;
         Ok(())
     }
 
@@ -447,6 +472,17 @@ mod tests {
         }
         let encoded = journal.encode().unwrap();
         assert!(encoded.len() < 5_000_000);
+        let write_storage: usize = journal
+            .operations
+            .iter()
+            .map(|operation| match operation {
+                Operation::CharacterWrites(bytes) => {
+                    bytes.capacity() * std::mem::size_of::<(u16, u8)>()
+                }
+                _ => 0,
+            })
+            .sum();
+        assert!(write_storage < 2_000_000);
         let operations: Vec<Operation> = serde_json::from_slice(&encoded).unwrap();
         let count = operations
             .iter()
@@ -457,6 +493,35 @@ mod tests {
             })
             .sum::<usize>();
         assert_eq!(count, 600_000);
+    }
+
+    #[test]
+    fn character_writes_preserve_handles_outside_the_compact_range() {
+        let mut journal = Journal::new();
+        for id in [0, u16::MAX as usize, u16::MAX as usize + 1, usize::MAX] {
+            journal.push(Operation::Write {
+                id,
+                bytes: vec![b'x'],
+            });
+        }
+        let encoded = journal.encode().unwrap();
+        let operations: Vec<Operation> = serde_json::from_slice(&encoded).unwrap();
+        assert_eq!(
+            operations,
+            vec![
+                Operation::CharacterWrites(vec![(0, b'x'), (u16::MAX, b'x')]),
+                Operation::Write {
+                    id: u16::MAX as usize + 1,
+                    bytes: vec![b'x']
+                },
+                Operation::Write {
+                    id: usize::MAX,
+                    bytes: vec![b'x']
+                },
+            ]
+        );
+        journal.invalidate();
+        assert_eq!(journal.operations.capacity(), 0);
     }
 
     #[derive(Clone, Default)]

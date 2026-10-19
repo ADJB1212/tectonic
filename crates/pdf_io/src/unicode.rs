@@ -15,7 +15,7 @@ pub(crate) enum EncodeError {
 }
 
 pub(crate) fn is_valid(code_point: i32) -> bool {
-    (0..=0x10ffff).contains(&code_point) && !(0xd800..=0xdfff).contains(&code_point)
+    (0..=0x10_ffff).contains(&code_point) && !(0xd800..=0xdfff).contains(&code_point)
 }
 
 fn require(bytes: &[u8], needed: usize) -> Result<(), DecodeError> {
@@ -124,7 +124,7 @@ pub(crate) fn encode_utf8(value: i32, buffer: &mut [u8]) -> Result<usize, Encode
 }
 
 pub(crate) fn encode_utf16be(value: i32, buffer: &mut [u8]) -> Result<usize, EncodeError> {
-    if (0x10000..=0x10ffff).contains(&value) {
+    if (0x1_0000..=0x10_ffff).contains(&value) {
         let bytes = output(buffer, 4)?;
         let value = value as u32 - 0x10000;
         bytes[..2].copy_from_slice(&(0xd800 | (value >> 10) as u16).to_be_bytes());

@@ -301,7 +301,6 @@ pub unsafe extern "C-unwind" fn spc_color_setup_handler(
 }
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-unsafe extern "C" {}
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_color_check_special(
     mut buf: *const ::core::ffi::c_char,

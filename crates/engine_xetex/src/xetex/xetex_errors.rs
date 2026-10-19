@@ -61,7 +61,7 @@ unsafe fn pre_error_message() {
         }
 
         if interaction == BATCH_MODE {
-            selector = std::mem::transmute((selector as i32) - 1);
+            selector -= 1;
         }
 
         error_here_with_diagnostic(c"".as_ptr());
@@ -111,7 +111,7 @@ pub unsafe extern "C" fn error() {
         }
 
         if interaction > BATCH_MODE {
-            selector = std::mem::transmute((selector as i32) - 1);
+            selector -= 1;
         }
 
         if use_err_help {
@@ -126,7 +126,7 @@ pub unsafe extern "C" fn error() {
 
         print_ln();
         if interaction > BATCH_MODE {
-            selector = std::mem::transmute((selector as i32) + 1);
+            selector += 1;
         }
         print_ln();
     }

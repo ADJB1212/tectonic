@@ -258,6 +258,11 @@ fn graphite_basic() {
 }
 
 #[test]
+fn native_layout() {
+    TestCase::new("native_layout").go()
+}
+
+#[test]
 fn otf_ot_shaper() {
     TestCase::new("otf_ot_shaper")
         .expect(Ok(TexOutcome::Warnings))
