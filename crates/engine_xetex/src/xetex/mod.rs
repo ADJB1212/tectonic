@@ -44,6 +44,7 @@ pub mod xetex_pic;
 mod xetex_runtime;
 pub mod xetex_scaledmath;
 pub mod xetex_shipout;
+mod xetex_simd;
 pub mod xetex_stringpool;
 pub mod xetex_swap;
 pub mod xetex_synctex;

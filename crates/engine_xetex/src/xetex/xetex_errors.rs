@@ -11,9 +11,9 @@
 use crate::xetex::xetex_core::*;
 use std::ffi::{c_char, c_int, c_void};
 
-pub const BATCH_MODE: i32 = 0;
-pub const SCROLL_MODE: i32 = 2;
-pub const ERROR_STOP_MODE: i32 = 3;
+pub const BATCH_MODE: u8 = 0;
+pub const SCROLL_MODE: u8 = 2;
+pub const ERROR_STOP_MODE: u8 = 3;
 
 pub const HISTORY_ERROR_ISSUED: i32 = 2;
 pub const HISTORY_FATAL_ERROR: i32 = 3;
@@ -22,10 +22,10 @@ unsafe extern "C" {
     pub static mut log_opened: bool;
     pub static mut selector: selector_t;
     pub static mut job_name: i32;
-    pub static mut interaction: i32;
+    pub static mut interaction: u8;
     pub static mut history: i32;
     pub static mut halt_on_error_p: c_int;
-    pub static mut error_count: i32;
+    pub static mut error_count: i8;
     pub static mut use_err_help: bool;
     pub static mut help_ptr: u8;
     pub static mut help_line: [*const c_char; 6];
@@ -87,7 +87,7 @@ unsafe fn post_error_message(need_to_print_it: c_int) {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_error")]
+#[unsafe(export_name = "error")]
 pub unsafe extern "C" fn error() {
     unsafe {
         if history < HISTORY_ERROR_ISSUED {
@@ -132,7 +132,7 @@ pub unsafe extern "C" fn error() {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_fatal_error")]
+#[unsafe(export_name = "fatal_error")]
 pub unsafe extern "C" fn fatal_error(s: *const c_char) {
     unsafe {
         pre_error_message();
@@ -147,7 +147,7 @@ pub unsafe extern "C" fn fatal_error(s: *const c_char) {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_overflow")]
+#[unsafe(export_name = "overflow")]
 pub unsafe extern "C" fn overflow(s: *const c_char, n: i32) {
     unsafe {
         pre_error_message();
@@ -166,7 +166,7 @@ pub unsafe extern "C" fn overflow(s: *const c_char, n: i32) {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_confusion")]
+#[unsafe(export_name = "confusion")]
 pub unsafe extern "C" fn confusion(s: *const c_char) {
     unsafe {
         pre_error_message();
@@ -191,7 +191,7 @@ pub unsafe extern "C" fn confusion(s: *const c_char) {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_pdf_error")]
+#[unsafe(export_name = "pdf_error")]
 pub unsafe extern "C" fn pdf_error(t: *const c_char, p: *const c_char) {
     unsafe {
         pre_error_message();

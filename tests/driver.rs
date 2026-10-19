@@ -18,6 +18,85 @@ mod util;
 // Keep these alphabetized.
 
 #[test]
+fn buffered_input_preserves_unicode_normalization_and_line_endings() {
+    util::set_test_root();
+    let directory = tempfile::tempdir().unwrap();
+    for ending in ["\n", "\r", "\r\n"] {
+        for (normalization, expected) in [(0, "a\u{301}"), (1, "\u{e1}"), (2, "a\u{301}")] {
+            let source = [
+                format!("\\XeTeXinputnormalization={normalization}"),
+                format!("%{}", "x".repeat(8190)),
+                "\\message{INPUT:[a\u{301}]}".to_owned(),
+                "% trailing spaces   ".to_owned(),
+                String::new(),
+                "\\message{END-OF-INPUT}\\shipout\\hbox{}\\end".to_owned(),
+            ]
+            .join(ending);
+            let mut status = tectonic_status_base::NoopStatusBackend::default();
+            let mut builder = ProcessingSessionBuilder::default();
+            builder
+                .primary_input_buffer(source.as_bytes())
+                .tex_input_name("buffered.tex")
+                .format_name("plain")
+                .format_cache_path(util::test_path(&[]))
+                .output_dir(directory.path())
+                .output_format(tectonic::driver::OutputFormat::Xdv)
+                .keep_logs(true)
+                .bundle(Box::<TestBundle>::default());
+            builder
+                .create(&mut status)
+                .unwrap()
+                .run(&mut status)
+                .unwrap();
+            let log = std::fs::read_to_string(directory.path().join("buffered.log")).unwrap();
+            assert!(
+                log.contains(&format!("INPUT:[{expected}]")),
+                "{normalization}: {log}"
+            );
+            assert!(log.contains("END-OF-INPUT"), "{log}");
+        }
+    }
+}
+
+#[test]
+fn control_sequence_lookup_preserves_bmp_supplementary_and_redefined_names() {
+    util::set_test_root();
+    let directory = tempfile::tempdir().unwrap();
+    let source = "\\catcode\"03B1=11 \\catcode\"1F600=11\n\
+        \\def\\\u{3b1}unicode{BMP}\\def\\\u{1f600}unicode{ASTRAL}\n\
+        \\def\\abcdefgh{first}\n\
+        \\message{LOOKUP:[\\\u{3b1}unicode/\\\u{1f600}unicode/\\abcdefgh]}\n\
+        \\def\\abcdefgh{second}\n\
+        \\message{REDEFINED:[\\csname abcdefgh\\endcsname]}\n\
+        \\def\\identity#1{#1}\\edef\\saved{\\noexpand\\abcdefgh}\n\
+        \\message{PARAMETER:[\\identity{\\saved}]}\n\
+        \\outer\\def\\outertest{\\message{OUTER:[ok]}}\\outertest\n\
+        \\halign{#\\hfil&#\\hfil\\cr a&b\\cr}\n\
+        \\shipout\\hbox{}\\end";
+    let mut status = tectonic_status_base::NoopStatusBackend::default();
+    let mut builder = ProcessingSessionBuilder::default();
+    builder
+        .primary_input_buffer(source.as_bytes())
+        .tex_input_name("lookup.tex")
+        .format_name("plain")
+        .format_cache_path(util::test_path(&[]))
+        .output_dir(directory.path())
+        .output_format(tectonic::driver::OutputFormat::Xdv)
+        .keep_logs(true)
+        .bundle(Box::<TestBundle>::default());
+    builder
+        .create(&mut status)
+        .unwrap()
+        .run(&mut status)
+        .unwrap();
+    let log = std::fs::read_to_string(directory.path().join("lookup.log")).unwrap();
+    assert!(log.contains("LOOKUP:[BMP/ASTRAL/first]"), "{log}");
+    assert!(log.contains("REDEFINED:[second]"), "{log}");
+    assert!(log.contains("PARAMETER:[second]"), "{log}");
+    assert!(log.contains("OUTER:[ok]"), "{log}");
+}
+
+#[test]
 fn cleanup_reports_unclosed_groups_and_conditionals_without_leaking_state() {
     util::set_test_root();
     let directory = tempfile::tempdir().unwrap();

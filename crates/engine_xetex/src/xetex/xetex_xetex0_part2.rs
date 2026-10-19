@@ -136,7 +136,8 @@ macro_rules! set_help_line {
 }
 
 // 31. append_to_vlist
-pub unsafe fn append_to_vlist(b: i32) {
+#[unsafe(export_name = "append_to_vlist")]
+pub unsafe extern "C" fn append_to_vlist(b: i32) {
     let d: scaled_t;
     let p: i32;
     let upwards: bool = INTPAR!(INT_PAR__xetex_upwards) > 0;
@@ -169,7 +170,8 @@ pub unsafe fn append_to_vlist(b: i32) {
 }
 
 // 32. new_noad
-pub unsafe fn new_noad() -> i32 {
+#[unsafe(export_name = "new_noad")]
+pub unsafe extern "C" fn new_noad() -> i32 {
     let p: i32 = get_node(NOAD_SIZE as i32);
     mem!(p).b16.s1 = ORD_NOAD as u16;
     mem!(p).b16.s0 = NORMAL as u16;
@@ -180,7 +182,8 @@ pub unsafe fn new_noad() -> i32 {
 }
 
 // 33. new_style
-pub unsafe fn new_style(s: small_number) -> i32 {
+#[unsafe(export_name = "new_style")]
+pub unsafe extern "C" fn new_style(s: small_number) -> i32 {
     let p: i32 = get_node(STYLE_NODE_SIZE as i32);
     NODE_type!(p) = STYLE_NODE as u16;
     mem!(p).b16.s0 = s as u16;
@@ -190,7 +193,8 @@ pub unsafe fn new_style(s: small_number) -> i32 {
 }
 
 // 34. new_choice
-pub unsafe fn new_choice() -> i32 {
+#[unsafe(export_name = "new_choice")]
+pub unsafe extern "C" fn new_choice() -> i32 {
     let p: i32 = get_node(STYLE_NODE_SIZE as i32);
     NODE_type!(p) = CHOICE_NODE as u16;
     mem!(p).b16.s0 = 0;
@@ -202,12 +206,14 @@ pub unsafe fn new_choice() -> i32 {
 }
 
 // 35. show_info
-pub unsafe fn show_info() {
+#[unsafe(export_name = "show_info")]
+pub unsafe extern "C" fn show_info() {
     show_node_list(mem!(temp_ptr).b32.s0);
 }
 
 // 36. push_alignment
-pub unsafe fn push_alignment() {
+#[unsafe(export_name = "push_alignment")]
+pub unsafe extern "C" fn push_alignment() {
     let p: i32 = get_node(ALIGN_STACK_NODE_SIZE as i32);
     mem!(p).b32.s1 = align_ptr;
     mem!(p).b32.s0 = cur_align;
@@ -225,7 +231,8 @@ pub unsafe fn push_alignment() {
 }
 
 // 37. pop_alignment
-pub unsafe fn pop_alignment() {
+#[unsafe(export_name = "pop_alignment")]
+pub unsafe extern "C" fn pop_alignment() {
     mem!(cur_head).b32.s1 = avail;
     avail = cur_head;
     mem!(cur_pre_head).b32.s1 = avail;
@@ -245,7 +252,8 @@ pub unsafe fn pop_alignment() {
 }
 
 // 38. get_preamble_token
-pub unsafe fn get_preamble_token() {
+#[unsafe(export_name = "get_preamble_token")]
+pub unsafe extern "C" fn get_preamble_token() {
     loop {
         get_token();
         while cur_chr == SPAN_CODE as i32 && (cur_cmd as i32) == TAB_MARK {
@@ -275,7 +283,8 @@ pub unsafe fn get_preamble_token() {
 }
 
 // 39. init_align
-pub unsafe fn init_align() {
+#[unsafe(export_name = "init_align")]
+pub unsafe extern "C" fn init_align() {
     let save_cs_ptr: i32 = cur_cs;
     push_alignment();
     align_state = -1000000;
@@ -440,7 +449,8 @@ pub unsafe fn init_align() {
 }
 
 // 40. init_span
-pub unsafe fn init_span(p: i32) {
+#[unsafe(export_name = "init_span")]
+pub unsafe extern "C" fn init_span(p: i32) {
     push_nest();
     if cur_list.mode == -104 {
         cur_list.aux.b32.s0 = 1000;
@@ -452,7 +462,8 @@ pub unsafe fn init_span(p: i32) {
 }
 
 // 41. init_row
-pub unsafe fn init_row() {
+#[unsafe(export_name = "init_row")]
+pub unsafe extern "C" fn init_row() {
     push_nest();
     cur_list.mode = (-105) - cur_list.mode;
     if cur_list.mode == -104 {
@@ -470,7 +481,8 @@ pub unsafe fn init_row() {
 }
 
 // 42. init_col
-pub unsafe fn init_col() {
+#[unsafe(export_name = "init_col")]
+pub unsafe extern "C" fn init_col() {
     mem!(cur_align + 5).b32.s0 = cur_cmd as i32;
     if (cur_cmd as i32) == OMIT {
         align_state = 0;
@@ -481,7 +493,8 @@ pub unsafe fn init_col() {
 }
 
 // 43. fin_col
-pub unsafe fn fin_col() -> bool {
+#[unsafe(export_name = "fin_col")]
+pub unsafe extern "C" fn fin_col() -> bool {
     let mut p: i32;
     let mut q: i32;
     let mut r: i32;
@@ -653,7 +666,8 @@ pub unsafe fn fin_col() -> bool {
 }
 
 // 44. fin_row
-pub unsafe fn fin_row() {
+#[unsafe(export_name = "fin_row")]
+pub unsafe extern "C" fn fin_row() {
     let p: i32;
     if cur_list.mode == -104 {
         p = hpack(mem!(cur_list.head).b32.s1, 0, ADDITIONAL as small_number);
@@ -688,7 +702,8 @@ pub unsafe fn fin_row() {
 }
 
 // 45. fin_align
-pub unsafe fn fin_align() {
+#[unsafe(export_name = "fin_align")]
+pub unsafe extern "C" fn fin_align() {
     let mut p: i32;
     let mut q: i32;
     let mut r: i32;
@@ -1036,7 +1051,8 @@ pub unsafe fn fin_align() {
 }
 
 // 46. align_peek
-pub unsafe fn align_peek() {
+#[unsafe(export_name = "align_peek")]
+pub unsafe extern "C" fn align_peek() {
     loop {
         align_state = 1000000;
         loop {
@@ -1066,7 +1082,8 @@ pub unsafe fn align_peek() {
 }
 
 // 47. max_hyphenatable_length
-pub unsafe fn max_hyphenatable_length() -> i32 {
+#[unsafe(export_name = "max_hyphenatable_length")]
+pub unsafe extern "C" fn max_hyphenatable_length() -> i32 {
     if INTPAR!(INT_PAR__xetex_hyphenatable_length) > HYPHENATABLE_LENGTH_LIMIT as i32 {
         return HYPHENATABLE_LENGTH_LIMIT as i32;
     }
@@ -1074,7 +1091,8 @@ pub unsafe fn max_hyphenatable_length() -> i32 {
 }
 
 // 48. eTeX_enabled
-pub unsafe fn eTeX_enabled(b: bool, j: u16, k: i32) -> bool {
+#[unsafe(export_name = "eTeX_enabled")]
+pub unsafe extern "C" fn eTeX_enabled(b: bool, j: u16, k: i32) -> bool {
     if !b {
         error_here_with_diagnostic(b"Improper \0".as_ptr() as *const c_char);
         print_cmd_chr(j, k);
@@ -1090,7 +1108,8 @@ pub unsafe fn eTeX_enabled(b: bool, j: u16, k: i32) -> bool {
 }
 
 // 49. show_save_groups
-pub unsafe fn show_save_groups() {
+#[unsafe(export_name = "show_save_groups")]
+pub unsafe extern "C" fn show_save_groups() {
     let mut p: i32;
     let mut m: i16;
     let v: save_pointer;
@@ -1313,7 +1332,8 @@ pub unsafe fn show_save_groups() {
 }
 
 // 50. vert_break
-pub unsafe fn vert_break(mut p: i32, h: scaled_t, d: scaled_t) -> i32 {
+#[unsafe(export_name = "vert_break")]
+pub unsafe extern "C" fn vert_break(mut p: i32, h: scaled_t, d: scaled_t) -> i32 {
     let mut prev_p: i32;
     let mut q: i32;
     let mut r: i32;
@@ -1478,7 +1498,8 @@ pub unsafe fn vert_break(mut p: i32, h: scaled_t, d: scaled_t) -> i32 {
 }
 
 // 51. vsplit
-pub unsafe fn vsplit(n: i32, h: scaled_t) -> i32 {
+#[unsafe(export_name = "vsplit")]
+pub unsafe extern "C" fn vsplit(n: i32, h: scaled_t) -> i32 {
     let mut v: i32;
     let mut p: i32;
     let mut q: i32;
@@ -1588,7 +1609,8 @@ pub unsafe fn vsplit(n: i32, h: scaled_t) -> i32 {
 }
 
 // 52. print_totals
-pub unsafe fn print_totals() {
+#[unsafe(export_name = "print_totals")]
+pub unsafe extern "C" fn print_totals() {
     print_scaled(page_so_far[1]);
     if page_so_far[2] != 0 {
         print_cstr(b" plus \0".as_ptr() as *const c_char);
@@ -1617,7 +1639,8 @@ pub unsafe fn print_totals() {
 }
 
 // 53. box_error
-pub unsafe fn box_error(n: eight_bits) {
+#[unsafe(export_name = "box_error")]
+pub unsafe extern "C" fn box_error(n: eight_bits) {
     error();
     begin_diagnostic();
     diagnostic_begin_capture_warning_here();
@@ -1630,7 +1653,8 @@ pub unsafe fn box_error(n: eight_bits) {
 }
 
 // 54. app_space
-pub unsafe fn app_space() {
+#[unsafe(export_name = "app_space")]
+pub unsafe extern "C" fn app_space() {
     let q: i32;
     if cur_list.aux.b32.s0 >= 2000 && GLUEPAR!(GLUE_PAR__xspace_skip) != 0 {
         q = new_param_glue(GLUE_PAR__xspace_skip as small_number);
@@ -1665,7 +1689,8 @@ pub unsafe fn app_space() {
 }
 
 // 55. insert_dollar_sign
-pub unsafe fn insert_dollar_sign() {
+#[unsafe(export_name = "insert_dollar_sign")]
+pub unsafe extern "C" fn insert_dollar_sign() {
     back_input();
     cur_tok = MATH_SHIFT_TOKEN + 36;
     error_here_with_diagnostic(b"Missing $ inserted\0".as_ptr() as *const c_char);
@@ -1683,7 +1708,8 @@ pub unsafe fn insert_dollar_sign() {
 }
 
 // 56. you_cant
-pub unsafe fn you_cant() {
+#[unsafe(export_name = "you_cant")]
+pub unsafe extern "C" fn you_cant() {
     error_here_with_diagnostic(b"You can't use `\0".as_ptr() as *const c_char);
     print_cmd_chr(cur_cmd as u16, cur_chr);
     print_in_mode(cur_list.mode as i32);
@@ -1691,7 +1717,8 @@ pub unsafe fn you_cant() {
 }
 
 // 57. report_illegal_case
-pub unsafe fn report_illegal_case() {
+#[unsafe(export_name = "report_illegal_case")]
+pub unsafe extern "C" fn report_illegal_case() {
     you_cant();
     help_ptr = 4;
     set_help_line!(
@@ -1714,7 +1741,8 @@ pub unsafe fn report_illegal_case() {
 }
 
 // 58. privileged
-pub unsafe fn privileged() -> bool {
+#[unsafe(export_name = "privileged")]
+pub unsafe extern "C" fn privileged() -> bool {
     if cur_list.mode > 0 {
         true
     } else {
@@ -1724,7 +1752,8 @@ pub unsafe fn privileged() -> bool {
 }
 
 // 59. its_all_over
-pub unsafe fn its_all_over() -> bool {
+#[unsafe(export_name = "its_all_over")]
+pub unsafe extern "C" fn its_all_over() -> bool {
     if privileged() {
         if PAGE_HEAD == page_tail && cur_list.head == cur_list.tail && dead_cycles == 0 {
             return true;
@@ -1743,7 +1772,8 @@ pub unsafe fn its_all_over() -> bool {
 }
 
 // 60. append_glue
-pub unsafe fn append_glue() {
+#[unsafe(export_name = "append_glue")]
+pub unsafe extern "C" fn append_glue() {
     let s: small_number = cur_chr as small_number;
     match s as i32 {
         0 => {

@@ -31,7 +31,8 @@ fn odd(x: i32) -> bool {
     (x & 1) != 0
 }
 
-pub unsafe fn capture_to_diagnostic(diagnostic: *mut Diagnostic) {
+#[unsafe(export_name = "capture_to_diagnostic")]
+pub unsafe extern "C" fn capture_to_diagnostic(diagnostic: *mut Diagnostic) {
     unsafe {
         if !current_diagnostic.is_null() {
             ttstub_diag_finish(current_diagnostic);
@@ -66,7 +67,8 @@ unsafe fn diagnostic_print_file_line(diagnostic: *mut Diagnostic) {
     }
 }
 
-pub unsafe fn diagnostic_begin_capture_warning_here() -> *mut Diagnostic {
+#[unsafe(export_name = "diagnostic_begin_capture_warning_here")]
+pub unsafe extern "C" fn diagnostic_begin_capture_warning_here() -> *mut Diagnostic {
     unsafe {
         let warning = ttbc_diag_begin_warning();
         diagnostic_print_file_line(warning);
@@ -75,7 +77,8 @@ pub unsafe fn diagnostic_begin_capture_warning_here() -> *mut Diagnostic {
     }
 }
 
-pub unsafe fn error_here_with_diagnostic(message: *const c_char) -> *mut Diagnostic {
+#[unsafe(export_name = "error_here_with_diagnostic")]
+pub unsafe extern "C" fn error_here_with_diagnostic(message: *const c_char) -> *mut Diagnostic {
     unsafe {
         let error = ttbc_diag_begin_error();
         diagnostic_print_file_line(error);
@@ -102,7 +105,8 @@ unsafe fn warn_char(c: c_int) {
     }
 }
 
-pub unsafe fn print_ln() {
+#[unsafe(export_name = "print_ln")]
+pub unsafe extern "C" fn print_ln() {
     unsafe {
         match selector {
             SELECTOR_TERM_AND_LOG => {
@@ -130,7 +134,8 @@ pub unsafe fn print_ln() {
     }
 }
 
-pub unsafe fn print_raw_char(s: u16, incr_offset: bool) {
+#[unsafe(export_name = "print_raw_char")]
+pub unsafe extern "C" fn print_raw_char(s: u16, incr_offset: bool) {
     unsafe {
         let ch = s as c_int;
         match selector {
@@ -193,7 +198,8 @@ pub unsafe fn print_raw_char(s: u16, incr_offset: bool) {
     }
 }
 
-pub unsafe fn print_char(s: i32) {
+#[unsafe(export_name = "print_char")]
+pub unsafe extern "C" fn print_char(s: i32) {
     unsafe {
         let new_line_c = (*eqtb.add((INT_BASE + INT_PAR__new_line_char) as usize))
             .b32
@@ -265,7 +271,8 @@ pub unsafe fn print_char(s: i32) {
     }
 }
 
-pub unsafe fn print(s: i32) {
+#[unsafe(export_name = "print")]
+pub unsafe extern "C" fn print(s: i32) {
     unsafe {
         if s >= str_ptr {
             return print_cstr(b"???\0".as_ptr() as *const c_char);
@@ -323,7 +330,8 @@ pub unsafe fn print(s: i32) {
     }
 }
 
-pub unsafe fn print_cstr(str: *const c_char) {
+#[unsafe(export_name = "print_cstr")]
+pub unsafe extern "C" fn print_cstr(str: *const c_char) {
     unsafe {
         let len = libc::strlen(str);
         for i in 0..len {
@@ -332,7 +340,8 @@ pub unsafe fn print_cstr(str: *const c_char) {
     }
 }
 
-pub unsafe fn print_nl(s: str_number) {
+#[unsafe(export_name = "print_nl")]
+pub unsafe extern "C" fn print_nl(s: str_number) {
     unsafe {
         if (term_offset > 0 && odd(selector)) || (file_offset > 0 && selector >= SELECTOR_LOG_ONLY)
         {
@@ -342,7 +351,8 @@ pub unsafe fn print_nl(s: str_number) {
     }
 }
 
-pub unsafe fn print_nl_cstr(str: *const c_char) {
+#[unsafe(export_name = "print_nl_cstr")]
+pub unsafe extern "C" fn print_nl_cstr(str: *const c_char) {
     unsafe {
         if (term_offset > 0 && odd(selector)) || (file_offset > 0 && selector >= SELECTOR_LOG_ONLY)
         {
@@ -352,7 +362,8 @@ pub unsafe fn print_nl_cstr(str: *const c_char) {
     }
 }
 
-pub unsafe fn print_esc(s: str_number) {
+#[unsafe(export_name = "print_esc")]
+pub unsafe extern "C" fn print_esc(s: str_number) {
     unsafe {
         let c = (*eqtb.add((INT_BASE + INT_PAR__escape_char) as usize))
             .b32
@@ -364,7 +375,8 @@ pub unsafe fn print_esc(s: str_number) {
     }
 }
 
-pub unsafe fn print_esc_cstr(s: *const c_char) {
+#[unsafe(export_name = "print_esc_cstr")]
+pub unsafe extern "C" fn print_esc_cstr(s: *const c_char) {
     unsafe {
         let c = (*eqtb.add((INT_BASE + INT_PAR__escape_char) as usize))
             .b32
@@ -389,42 +401,18 @@ unsafe fn print_the_digs(mut k: u8) {
     }
 }
 
-pub unsafe fn print_int(mut n: i32) {
+#[unsafe(export_name = "print_int")]
+pub unsafe extern "C" fn print_int(n: i32) {
     unsafe {
-        let mut k: u8 = 0;
-
-        if n < 0 {
-            print_char(b'-' as i32);
-            if n > -100_000_000 {
-                n = -n;
-            } else {
-                let mut m = -1 - n;
-                n = m / 10;
-                m = (m % 10) + 1;
-                k = 1;
-                if m < 10 {
-                    dig[0] = m as u8;
-                } else {
-                    dig[0] = 0;
-                    n += 1;
-                }
-            }
+        let mut decimal_buffer = itoa::Buffer::new();
+        for byte in decimal_buffer.format(n).bytes() {
+            print_char(i32::from(byte));
         }
-
-        loop {
-            dig[k as usize] = (n % 10) as u8;
-            n /= 10;
-            k += 1;
-            if n == 0 {
-                break;
-            }
-        }
-
-        print_the_digs(k);
     }
 }
 
-pub unsafe fn print_cs(p: i32) {
+#[unsafe(export_name = "print_cs")]
+pub unsafe extern "C" fn print_cs(p: i32) {
     unsafe {
         if p < HASH_BASE {
             if p >= SINGLE_BASE {
@@ -462,7 +450,8 @@ pub unsafe fn print_cs(p: i32) {
     }
 }
 
-pub unsafe fn sprint_cs(p: i32) {
+#[unsafe(export_name = "sprint_cs")]
+pub unsafe extern "C" fn sprint_cs(p: i32) {
     unsafe {
         if p < HASH_BASE {
             if p < SINGLE_BASE {
@@ -481,7 +470,8 @@ pub unsafe fn sprint_cs(p: i32) {
     }
 }
 
-pub unsafe fn print_file_name(n: i32, a: i32, e: i32) {
+#[unsafe(export_name = "print_file_name")]
+pub unsafe extern "C" fn print_file_name(n: i32, a: i32, e: i32) {
     unsafe {
         let mut must_quote = false;
         let mut quote_char: i32 = 0;
@@ -545,7 +535,8 @@ pub unsafe fn print_file_name(n: i32, a: i32, e: i32) {
     }
 }
 
-pub unsafe fn print_size(s: i32) {
+#[unsafe(export_name = "print_size")]
+pub unsafe extern "C" fn print_size(s: i32) {
     unsafe {
         if s == TEXT_SIZE {
             print_esc_cstr(b"textfont\0".as_ptr() as *const c_char);
@@ -557,7 +548,8 @@ pub unsafe fn print_size(s: i32) {
     }
 }
 
-pub unsafe fn print_write_whatsit(s: *const c_char, p: i32) {
+#[unsafe(export_name = "print_write_whatsit")]
+pub unsafe extern "C" fn print_write_whatsit(s: *const c_char, p: i32) {
     unsafe {
         print_esc_cstr(s);
         let val = (*mem.add((p + 1) as usize)).b32.s0;
@@ -571,7 +563,8 @@ pub unsafe fn print_write_whatsit(s: *const c_char, p: i32) {
     }
 }
 
-pub unsafe fn print_native_word(p: i32) {
+#[unsafe(export_name = "print_native_word")]
+pub unsafe extern "C" fn print_native_word(p: i32) {
     unsafe {
         let length = (*mem.add((p + 4) as usize)).b16.s1 as i32;
         let for_end = length - 1;
@@ -602,7 +595,8 @@ pub unsafe fn print_native_word(p: i32) {
     }
 }
 
-pub unsafe fn print_sa_num(mut q: i32) {
+#[unsafe(export_name = "print_sa_num")]
+pub unsafe extern "C" fn print_sa_num(mut q: i32) {
     unsafe {
         let n = if (*mem.add(q as usize)).b16.s1 < DIMEN_VAL_LIMIT as u16 {
             (*mem.add((q + 1) as usize)).b32.s1
@@ -620,7 +614,8 @@ pub unsafe fn print_sa_num(mut q: i32) {
     }
 }
 
-pub unsafe fn print_file_line() {
+#[unsafe(export_name = "print_file_line")]
+pub unsafe extern "C" fn print_file_line() {
     unsafe {
         let mut level = in_open;
         while level > 0 && (*full_source_filename_stack.add(level as usize)) == 0 {
@@ -643,7 +638,8 @@ pub unsafe fn print_file_line() {
     }
 }
 
-pub unsafe fn print_two(n: i32) {
+#[unsafe(export_name = "print_two")]
+pub unsafe extern "C" fn print_two(n: i32) {
     unsafe {
         let val = n.abs() % 100;
         print_char((b'0' + (val / 10) as u8) as i32);
@@ -651,7 +647,8 @@ pub unsafe fn print_two(n: i32) {
     }
 }
 
-pub unsafe fn print_hex(mut n: i32) {
+#[unsafe(export_name = "print_hex")]
+pub unsafe extern "C" fn print_hex(mut n: i32) {
     unsafe {
         let mut k: u8 = 0;
         print_char(b'"' as i32);
@@ -667,7 +664,8 @@ pub unsafe fn print_hex(mut n: i32) {
     }
 }
 
-pub unsafe fn print_roman_int(mut n: i32) {
+#[unsafe(export_name = "print_roman_int")]
+pub unsafe extern "C" fn print_roman_int(mut n: i32) {
     unsafe {
         const ROMAN_DATA: &[u8] = b"m2d5c2l5x2v5i";
         let mut j: usize = 0;
@@ -701,7 +699,8 @@ pub unsafe fn print_roman_int(mut n: i32) {
     }
 }
 
-pub unsafe fn print_current_string() {
+#[unsafe(export_name = "print_current_string")]
+pub unsafe extern "C" fn print_current_string() {
     unsafe {
         let mut j = *str_start.add((str_ptr - 0x10000) as usize);
         while j < pool_ptr {
@@ -711,7 +710,8 @@ pub unsafe fn print_current_string() {
     }
 }
 
-pub unsafe fn print_scaled(mut s: scaled_t) {
+#[unsafe(export_name = "print_scaled")]
+pub unsafe extern "C" fn print_scaled(mut s: scaled_t) {
     unsafe {
         if s < 0 {
             print_char(b'-' as i32);
@@ -737,7 +737,8 @@ pub unsafe fn print_scaled(mut s: scaled_t) {
     }
 }
 
-pub unsafe fn print_ucs_code(mut n: UnicodeScalar) {
+#[unsafe(export_name = "print_ucs_code")]
+pub unsafe extern "C" fn print_ucs_code(mut n: UnicodeScalar) {
     unsafe {
         let mut k: u8 = 0;
         print_cstr(b"U+\0".as_ptr() as *const c_char);

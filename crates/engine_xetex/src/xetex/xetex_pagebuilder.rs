@@ -30,7 +30,8 @@ static mut best_size: scaled_t = 0;
 static mut least_page_cost: i32 = 0;
 static mut page_max_depth: scaled_t = 0;
 
-pub unsafe fn tt_checkpoint_pagebuilder(cp: *mut tt_checkpoint) {
+#[unsafe(export_name = "tt_checkpoint_pagebuilder")]
+pub unsafe extern "C" fn tt_checkpoint_pagebuilder(cp: *mut tt_checkpoint) {
     unsafe {
         tt_checkpoint_field(
             cp,
@@ -59,7 +60,8 @@ pub unsafe fn tt_checkpoint_pagebuilder(cp: *mut tt_checkpoint) {
     }
 }
 
-pub unsafe fn initialize_pagebuilder_variables() {
+#[unsafe(export_name = "initialize_pagebuilder_variables")]
+pub unsafe extern "C" fn initialize_pagebuilder_variables() {
     unsafe {
         page_max_depth = 0;
     }
@@ -452,7 +454,8 @@ fn is_non_discardable_node(p: i32) -> bool {
     unsafe { ((*mem.add(p as usize)).b16.s1 as i32) < MATH_NODE }
 }
 
-pub unsafe fn build_page() {
+#[unsafe(export_name = "build_page")]
+pub unsafe extern "C" fn build_page() {
     unsafe {
         if (*mem.add(CONTRIB_HEAD as usize)).b32.s1 == TEX_NULL || output_active {
             return;

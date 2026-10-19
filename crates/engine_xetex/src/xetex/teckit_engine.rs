@@ -11,6 +11,7 @@
 use super::teckit_c_engine::*;
 use super::teckit_common::*;
 use super::teckit_format::*;
+use byteorder::{BigEndian, ByteOrder, LittleEndian};
 use unicode_normalization::UnicodeNormalization;
 use unicode_normalization::char::{canonical_combining_class, compose, decompose_canonical};
 
@@ -101,14 +102,21 @@ impl Normalizer {
     fn push_decomposed(&mut self, c: char) {
         if canonical_combining_class(c) == 0 && !self.pending.is_empty() {
             if self.bCompose {
-                let normalized: String = self.pending.nfc().collect();
-                let can_compose = normalized.chars().next_back().is_some_and(|last| {
-                    canonical_combining_class(last) == 0 && compose(last, c).is_some()
-                });
-                self.pending = normalized;
-                if !can_compose {
-                    self.flush_pending();
+                let mut normalized = self.pending.nfc();
+                let first = normalized.next().unwrap();
+                let second = normalized.next();
+                if second.is_none()
+                    && canonical_combining_class(first) == 0
+                    && let Some(composed) = compose(first, c)
+                {
+                    self.pending.clear();
+                    self.pending.push(composed);
+                    return;
                 }
+                self.output.push_back(u32::from(first));
+                self.output.extend(second.map(u32::from));
+                self.output.extend(normalized.map(u32::from));
+                self.pending.clear();
             } else {
                 self.flush_pending();
             }
@@ -151,6 +159,77 @@ impl Stage for Normalizer {
 
     unsafe fn setPrevStage(&mut self, prev: *mut dyn Stage) {
         self.prevStage = prev;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn mapping_search_returns_first_equal_item_or_insertion_position() {
+        let values = [0u32, 1, 1, 127, 128, 255];
+        let words = values.map(|value| (value as u16).to_be());
+        let dwords = values.map(u32::to_be);
+        let bytes = values.map(|value| value as u8);
+        for count in 0..=values.len() {
+            for value in 0..=256 {
+                let expected = values[..count]
+                    .iter()
+                    .position(|&item| item >= value)
+                    .unwrap_or(count);
+                unsafe {
+                    assert_eq!(
+                        binary_search_u32(dwords.as_ptr(), count as u32, value),
+                        dwords.as_ptr().add(expected)
+                    );
+                    assert_eq!(
+                        binary_search_u16(words.as_ptr(), count as u32, value),
+                        words.as_ptr().add(expected)
+                    );
+                    assert_eq!(
+                        binary_search_u8(bytes.as_ptr(), count as u32, value),
+                        bytes.as_ptr().add(expected)
+                    );
+                }
+            }
+        }
+        unsafe {
+            assert!(binary_search_u32(std::ptr::null(), 0, 1).is_null());
+            assert!(binary_search_u16(std::ptr::null(), 0, 1).is_null());
+            assert!(binary_search_u8(std::ptr::null(), 0, 1).is_null());
+        }
+    }
+
+    #[test]
+    fn normalization_matches_unicode_iterator_for_starters_and_combining_sequences() {
+        let mut input = String::from("\u{301}\u{315}\u{300}");
+        for code in 0..=0x10ffff {
+            if let Some(c) = char::from_u32(code) {
+                input.push(c);
+                if code % 127 == 0 {
+                    input.push_str("a\u{315}\u{300}\u{1100}\u{1161}\u{11a8}\u{9c7}\u{9be}");
+                }
+            }
+        }
+        for compose in [false, true] {
+            let mut normalizer = Normalizer::new(compose);
+            for c in input.chars() {
+                decompose_canonical(c, |part| normalizer.push_decomposed(part));
+            }
+            normalizer.flush_pending();
+            let actual: String = normalizer
+                .output
+                .into_iter()
+                .map(|c| char::from_u32(c).unwrap())
+                .collect();
+            let expected: String = if compose {
+                input.nfc().collect()
+            } else {
+                input.nfd().collect()
+            };
+            assert_eq!(actual, expected, "compose {compose}");
+        }
     }
 }
 
@@ -216,63 +295,33 @@ pub struct Pass {
     pub numPageMaps: UInt8,
 }
 
-unsafe fn binary_search_u32(
-    mut array: *const UInt32,
-    mut count: UInt32,
-    value: UInt32,
-) -> *const UInt32 {
+unsafe fn binary_search_u32(array: *const UInt32, count: UInt32, value: UInt32) -> *const UInt32 {
     unsafe {
-        while count > 0 {
-            let count2 = count / 2;
-            let i = array.add(count2 as usize);
-            if READ_u32(*i) < value {
-                array = i.add(1);
-                count -= count2 + 1;
-            } else {
-                count = count2;
-            }
+        if count == 0 {
+            return array;
         }
-        array
+        let items = std::slice::from_raw_parts(array, count as usize);
+        array.add(items.partition_point(|&item| READ_u32(item) < value))
     }
 }
 
-unsafe fn binary_search_u16(
-    mut array: *const UInt16,
-    mut count: UInt32,
-    value: UInt32,
-) -> *const UInt16 {
+unsafe fn binary_search_u16(array: *const UInt16, count: UInt32, value: UInt32) -> *const UInt16 {
     unsafe {
-        while count > 0 {
-            let count2 = count / 2;
-            let i = array.add(count2 as usize);
-            if (READ_u16(*i) as UInt32) < value {
-                array = i.add(1);
-                count -= count2 + 1;
-            } else {
-                count = count2;
-            }
+        if count == 0 {
+            return array;
         }
-        array
+        let items = std::slice::from_raw_parts(array, count as usize);
+        array.add(items.partition_point(|&item| (READ_u16(item) as UInt32) < value))
     }
 }
 
-unsafe fn binary_search_u8(
-    mut array: *const UInt8,
-    mut count: UInt32,
-    value: UInt32,
-) -> *const UInt8 {
+unsafe fn binary_search_u8(array: *const UInt8, count: UInt32, value: UInt32) -> *const UInt8 {
     unsafe {
-        while count > 0 {
-            let count2 = count / 2;
-            let i = array.add(count2 as usize);
-            if (READ_u8(*i) as UInt32) < value {
-                array = i.add(1);
-                count -= count2 + 1;
-            } else {
-                count = count2;
-            }
+        if count == 0 {
+            return array;
         }
-        array
+        let items = std::slice::from_raw_parts(array, count as usize);
+        array.add(items.partition_point(|&item| (item as UInt32) < value))
     }
 }
 
@@ -1321,10 +1370,11 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = (*self.data.add(self.dataPtr as usize) as UInt32) << 8;
-                    self.dataPtr += 1;
-                    rval += *self.data.add(self.dataPtr as usize) as UInt32;
-                    self.dataPtr += 1;
+                    rval = BigEndian::read_u16(std::slice::from_raw_parts(
+                        self.data.add(self.dataPtr as usize),
+                        2,
+                    )) as UInt32;
+                    self.dataPtr += 2;
                     if rval >= kSurrogateHighStart && rval <= kSurrogateHighEnd {
                         self.dataPtr -= 2;
                         if self.dataPtr + 4 > self.dataLen {
@@ -1336,10 +1386,11 @@ impl Converter {
                             }
                         }
                         self.dataPtr += 2;
-                        let mut low = (*self.data.add(self.dataPtr as usize) as UInt32) << 8;
-                        self.dataPtr += 1;
-                        low += *self.data.add(self.dataPtr as usize) as UInt32;
-                        self.dataPtr += 1;
+                        let low = BigEndian::read_u16(std::slice::from_raw_parts(
+                            self.data.add(self.dataPtr as usize),
+                            2,
+                        )) as UInt32;
+                        self.dataPtr += 2;
                         rval = ((rval - kSurrogateHighStart) << halfShift)
                             + (low - kSurrogateLowStart)
                             + halfBase;
@@ -1354,10 +1405,11 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = *self.data.add(self.dataPtr as usize) as UInt32;
-                    self.dataPtr += 1;
-                    rval += (*self.data.add(self.dataPtr as usize) as UInt32) << 8;
-                    self.dataPtr += 1;
+                    rval = LittleEndian::read_u16(std::slice::from_raw_parts(
+                        self.data.add(self.dataPtr as usize),
+                        2,
+                    )) as UInt32;
+                    self.dataPtr += 2;
                     if rval >= kSurrogateHighStart && rval <= kSurrogateHighEnd {
                         self.dataPtr -= 2;
                         if self.dataPtr + 4 > self.dataLen {
@@ -1369,10 +1421,11 @@ impl Converter {
                             }
                         }
                         self.dataPtr += 2;
-                        let mut low = *self.data.add(self.dataPtr as usize) as UInt32;
-                        self.dataPtr += 1;
-                        low += (*self.data.add(self.dataPtr as usize) as UInt32) << 8;
-                        self.dataPtr += 1;
+                        let low = LittleEndian::read_u16(std::slice::from_raw_parts(
+                            self.data.add(self.dataPtr as usize),
+                            2,
+                        )) as UInt32;
+                        self.dataPtr += 2;
                         rval = ((rval - kSurrogateHighStart) << halfShift)
                             + (low - kSurrogateLowStart)
                             + halfBase;
@@ -1387,14 +1440,11 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = (*self.data.add(self.dataPtr as usize) as UInt32) << 24;
-                    self.dataPtr += 1;
-                    rval += (*self.data.add(self.dataPtr as usize) as UInt32) << 16;
-                    self.dataPtr += 1;
-                    rval += (*self.data.add(self.dataPtr as usize) as UInt32) << 8;
-                    self.dataPtr += 1;
-                    rval += *self.data.add(self.dataPtr as usize) as UInt32;
-                    self.dataPtr += 1;
+                    rval = BigEndian::read_u32(std::slice::from_raw_parts(
+                        self.data.add(self.dataPtr as usize),
+                        4,
+                    ));
+                    self.dataPtr += 4;
                 }
                 kForm_UTF32LE => {
                     if self.dataPtr + 4 > self.dataLen {
@@ -1405,14 +1455,11 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = *self.data.add(self.dataPtr as usize) as UInt32;
-                    self.dataPtr += 1;
-                    rval += (*self.data.add(self.dataPtr as usize) as UInt32) << 8;
-                    self.dataPtr += 1;
-                    rval += (*self.data.add(self.dataPtr as usize) as UInt32) << 16;
-                    self.dataPtr += 1;
-                    rval += (*self.data.add(self.dataPtr as usize) as UInt32) << 24;
-                    self.dataPtr += 1;
+                    rval = LittleEndian::read_u32(std::slice::from_raw_parts(
+                        self.data.add(self.dataPtr as usize),
+                        4,
+                    ));
+                    self.dataPtr += 4;
                 }
                 _ => {}
             }
@@ -1434,6 +1481,26 @@ impl Converter {
                 } else {
                     *data.add((idx - savedCount) as usize) as UInt32
                 }
+            };
+            let word_bytes = |position: UInt32| -> [u8; 2] {
+                std::array::from_fn(|i| {
+                    data_byte(
+                        self.savedCount,
+                        &self.savedBytes,
+                        self.data,
+                        position + i as u32,
+                    ) as u8
+                })
+            };
+            let dword_bytes = |position: UInt32| -> [u8; 4] {
+                std::array::from_fn(|i| {
+                    data_byte(
+                        self.savedCount,
+                        &self.savedBytes,
+                        self.data,
+                        position + i as u32,
+                    ) as u8
+                })
             };
 
             match self.inputForm as UInt16 {
@@ -1466,11 +1533,8 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval =
-                        data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr) << 8;
-                    self.dataPtr += 1;
-                    rval += data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr);
-                    self.dataPtr += 1;
+                    rval = BigEndian::read_u16(&word_bytes(self.dataPtr)) as UInt32;
+                    self.dataPtr += 2;
                     if rval >= kSurrogateHighStart && rval <= kSurrogateHighEnd {
                         self.dataPtr -= 2;
                         if self.dataPtr + 4 > self.savedCount + self.dataLen {
@@ -1482,13 +1546,8 @@ impl Converter {
                             }
                         }
                         self.dataPtr += 2;
-                        let mut low =
-                            data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr)
-                                << 8;
-                        self.dataPtr += 1;
-                        low +=
-                            data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr);
-                        self.dataPtr += 1;
+                        let low = BigEndian::read_u16(&word_bytes(self.dataPtr)) as UInt32;
+                        self.dataPtr += 2;
                         rval = ((rval - kSurrogateHighStart) << halfShift)
                             + (low - kSurrogateLowStart)
                             + halfBase;
@@ -1503,11 +1562,8 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr);
-                    self.dataPtr += 1;
-                    rval +=
-                        data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr) << 8;
-                    self.dataPtr += 1;
+                    rval = LittleEndian::read_u16(&word_bytes(self.dataPtr)) as UInt32;
+                    self.dataPtr += 2;
                     if rval >= kSurrogateHighStart && rval <= kSurrogateHighEnd {
                         self.dataPtr -= 2;
                         if self.dataPtr + 4 > self.savedCount + self.dataLen {
@@ -1519,13 +1575,8 @@ impl Converter {
                             }
                         }
                         self.dataPtr += 2;
-                        let mut low =
-                            data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr);
-                        self.dataPtr += 1;
-                        low +=
-                            data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr)
-                                << 8;
-                        self.dataPtr += 1;
+                        let low = LittleEndian::read_u16(&word_bytes(self.dataPtr)) as UInt32;
+                        self.dataPtr += 2;
                         rval = ((rval - kSurrogateHighStart) << halfShift)
                             + (low - kSurrogateLowStart)
                             + halfBase;
@@ -1540,17 +1591,8 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval =
-                        data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr) << 24;
-                    self.dataPtr += 1;
-                    rval +=
-                        data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr) << 16;
-                    self.dataPtr += 1;
-                    rval +=
-                        data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr) << 8;
-                    self.dataPtr += 1;
-                    rval += data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr);
-                    self.dataPtr += 1;
+                    rval = BigEndian::read_u32(&dword_bytes(self.dataPtr));
+                    self.dataPtr += 4;
                 }
                 kForm_UTF32LE => {
                     if self.dataPtr + 4 > self.savedCount + self.dataLen {
@@ -1561,17 +1603,8 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr);
-                    self.dataPtr += 1;
-                    rval +=
-                        data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr) << 8;
-                    self.dataPtr += 1;
-                    rval +=
-                        data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr) << 16;
-                    self.dataPtr += 1;
-                    rval +=
-                        data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr) << 24;
-                    self.dataPtr += 1;
+                    rval = LittleEndian::read_u32(&dword_bytes(self.dataPtr));
+                    self.dataPtr += 4;
                 }
                 _ => {}
             }
@@ -1727,10 +1760,14 @@ impl Converter {
                                     rval = kStatus_OutputBufferFull;
                                     break 'convert_loop;
                                 }
-                                *outBuffer.add(outPtr as usize) = (c >> 8) as Byte;
-                                outPtr += 1;
-                                *outBuffer.add(outPtr as usize) = c as Byte;
-                                outPtr += 1;
+                                BigEndian::write_u16(
+                                    std::slice::from_raw_parts_mut(
+                                        outBuffer.add(outPtr as usize),
+                                        2,
+                                    ),
+                                    c as u16,
+                                );
+                                outPtr += 2;
                             } else {
                                 if outPtr + 4 > outLength {
                                     (*cnv).pendingOutputChar = c;
@@ -1740,14 +1777,13 @@ impl Converter {
                                 let c_sub = c - halfBase;
                                 let hi = (c_sub >> halfShift) + kSurrogateHighStart;
                                 let lo = (c_sub & halfMask) + kSurrogateLowStart;
-                                *outBuffer.add(outPtr as usize) = (hi >> 8) as Byte;
-                                outPtr += 1;
-                                *outBuffer.add(outPtr as usize) = hi as Byte;
-                                outPtr += 1;
-                                *outBuffer.add(outPtr as usize) = (lo >> 8) as Byte;
-                                outPtr += 1;
-                                *outBuffer.add(outPtr as usize) = lo as Byte;
-                                outPtr += 1;
+                                let output = std::slice::from_raw_parts_mut(
+                                    outBuffer.add(outPtr as usize),
+                                    4,
+                                );
+                                BigEndian::write_u16(&mut output[..2], hi as u16);
+                                BigEndian::write_u16(&mut output[2..], lo as u16);
+                                outPtr += 4;
                             }
                         }
                         kForm_UTF16LE => {
@@ -1757,10 +1793,14 @@ impl Converter {
                                     rval = kStatus_OutputBufferFull;
                                     break 'convert_loop;
                                 }
-                                *outBuffer.add(outPtr as usize) = c as Byte;
-                                outPtr += 1;
-                                *outBuffer.add(outPtr as usize) = (c >> 8) as Byte;
-                                outPtr += 1;
+                                LittleEndian::write_u16(
+                                    std::slice::from_raw_parts_mut(
+                                        outBuffer.add(outPtr as usize),
+                                        2,
+                                    ),
+                                    c as u16,
+                                );
+                                outPtr += 2;
                             } else {
                                 if outPtr + 4 > outLength {
                                     (*cnv).pendingOutputChar = c;
@@ -1770,14 +1810,13 @@ impl Converter {
                                 let c_sub = c - halfBase;
                                 let hi = (c_sub >> halfShift) + kSurrogateHighStart;
                                 let lo = (c_sub & halfMask) + kSurrogateLowStart;
-                                *outBuffer.add(outPtr as usize) = hi as Byte;
-                                outPtr += 1;
-                                *outBuffer.add(outPtr as usize) = (hi >> 8) as Byte;
-                                outPtr += 1;
-                                *outBuffer.add(outPtr as usize) = lo as Byte;
-                                outPtr += 1;
-                                *outBuffer.add(outPtr as usize) = (lo >> 8) as Byte;
-                                outPtr += 1;
+                                let output = std::slice::from_raw_parts_mut(
+                                    outBuffer.add(outPtr as usize),
+                                    4,
+                                );
+                                LittleEndian::write_u16(&mut output[..2], hi as u16);
+                                LittleEndian::write_u16(&mut output[2..], lo as u16);
+                                outPtr += 4;
                             }
                         }
                         kForm_UTF32BE => {
@@ -1786,14 +1825,11 @@ impl Converter {
                                 rval = kStatus_OutputBufferFull;
                                 break 'convert_loop;
                             }
-                            *outBuffer.add(outPtr as usize) = (c >> 24) as Byte;
-                            outPtr += 1;
-                            *outBuffer.add(outPtr as usize) = (c >> 16) as Byte;
-                            outPtr += 1;
-                            *outBuffer.add(outPtr as usize) = (c >> 8) as Byte;
-                            outPtr += 1;
-                            *outBuffer.add(outPtr as usize) = c as Byte;
-                            outPtr += 1;
+                            BigEndian::write_u32(
+                                std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 4),
+                                c,
+                            );
+                            outPtr += 4;
                         }
                         kForm_UTF32LE => {
                             if outPtr + 4 > outLength {
@@ -1801,14 +1837,11 @@ impl Converter {
                                 rval = kStatus_OutputBufferFull;
                                 break 'convert_loop;
                             }
-                            *outBuffer.add(outPtr as usize) = c as Byte;
-                            outPtr += 1;
-                            *outBuffer.add(outPtr as usize) = (c >> 8) as Byte;
-                            outPtr += 1;
-                            *outBuffer.add(outPtr as usize) = (c >> 16) as Byte;
-                            outPtr += 1;
-                            *outBuffer.add(outPtr as usize) = (c >> 24) as Byte;
-                            outPtr += 1;
+                            LittleEndian::write_u32(
+                                std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 4),
+                                c,
+                            );
+                            outPtr += 4;
                         }
                         _ => {}
                     },

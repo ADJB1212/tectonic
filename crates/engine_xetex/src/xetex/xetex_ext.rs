@@ -341,7 +341,7 @@ unsafe fn mfree<T>(ptr: *mut T) -> *mut T {
 unsafe extern "C" {
     pub static mut name_of_file: *mut c_char;
     pub static mut name_length: c_int;
-    pub static mut font_area: *mut u16;
+    pub static mut font_area: *mut i32;
     pub static mut font_layout_engine: *mut *mut c_void;
     pub static mut font_mapping: *mut *mut c_void;
     pub static mut font_flags: *mut c_char;
@@ -374,6 +374,7 @@ unsafe extern "C" {
     pub fn end_diagnostic(blank_line: bool);
     pub fn print_nl(c: i32);
     pub fn print_int(n: i32);
+    #[link_name = "print_cstr"]
     pub fn print_c_string(s: *const c_char);
     pub fn print_char(c: i32);
     pub fn print_raw_char(c: u16, in_hex: bool);
@@ -420,6 +421,7 @@ unsafe extern "C" {
     pub fn tt_checkpoint_register_glyph(node: i32);
 
     // ICU BreakIterator
+    #[link_name = "tt_icu_ubrk_open"]
     pub fn ubrk_open(
         type_: c_int,
         locale: *const c_char,
@@ -427,32 +429,43 @@ unsafe extern "C" {
         textLength: i32,
         status: *mut UErrorCode,
     ) -> *mut UBreakIterator;
+    #[link_name = "tt_icu_ubrk_close"]
     pub fn ubrk_close(bi: *mut UBreakIterator);
+    #[link_name = "tt_icu_ubrk_set_text"]
     pub fn ubrk_setText(
         bi: *mut UBreakIterator,
         text: *const UChar,
         textLength: i32,
         status: *mut UErrorCode,
     );
+    #[link_name = "tt_icu_ubrk_next"]
     pub fn ubrk_next(bi: *mut UBreakIterator) -> i32;
 
     // ICU Converter
+    #[link_name = "tt_icu_ucnv_open"]
     pub fn ucnv_open(converterName: *const c_char, err: *mut UErrorCode) -> *mut UConverter;
+    #[link_name = "tt_icu_ucnv_close"]
     pub fn ucnv_close(converter: *mut UConverter);
 
     // ICU BiDi
+    #[link_name = "tt_icu_ubidi_open"]
     pub fn ubidi_open() -> *mut UBiDi;
+    #[link_name = "tt_icu_ubidi_close"]
     pub fn ubidi_close(pBiDi: *mut UBiDi);
+    #[link_name = "tt_icu_ubidi_set_para"]
     pub fn ubidi_setPara(
         pBiDi: *mut UBiDi,
         text: *const UChar,
         length: i32,
-        paraLevel: c_int,
+        paraLevel: u8,
         embeddingLevels: *mut c_void,
         pErrorCode: *mut UErrorCode,
     );
+    #[link_name = "tt_icu_ubidi_get_direction"]
     pub fn ubidi_getDirection(pBiDi: *const UBiDi) -> c_int;
+    #[link_name = "tt_icu_ubidi_count_runs"]
     pub fn ubidi_countRuns(pBiDi: *mut UBiDi, pErrorCode: *mut UErrorCode) -> c_int;
+    #[link_name = "tt_icu_ubidi_get_visual_run"]
     pub fn ubidi_getVisualRun(
         pBiDi: *mut UBiDi,
         runIndex: c_int,
@@ -729,7 +742,13 @@ static mut saved_mapping_name: *mut c_char = std::ptr::null_mut();
 static mut xdvBufSize: i32 = 0;
 static mut outLength: u32 = 0;
 
-pub unsafe fn linebreak_start(f: c_int, localeStrNum: i32, text: *mut u16, textLength: i32) {
+#[unsafe(export_name = "linebreak_start")]
+pub unsafe extern "C" fn linebreak_start(
+    f: c_int,
+    localeStrNum: i32,
+    text: *mut u16,
+    textLength: i32,
+) {
     unsafe {
         let mut status: UErrorCode = U_ZERO_ERROR;
         let locale = gettexstring(localeStrNum);
@@ -791,7 +810,8 @@ pub unsafe fn linebreak_start(f: c_int, localeStrNum: i32, text: *mut u16, textL
     }
 }
 
-pub unsafe fn linebreak_next(f: c_int) -> c_int {
+#[unsafe(export_name = "linebreak_next")]
+pub unsafe extern "C" fn linebreak_next(f: c_int) -> c_int {
     unsafe {
         if !brkIter.is_null() {
             ubrk_next(brkIter) as c_int
@@ -802,7 +822,8 @@ pub unsafe fn linebreak_next(f: c_int) -> c_int {
     }
 }
 
-pub unsafe fn get_encoding_mode_and_info(info: *mut i32) -> c_int {
+#[unsafe(export_name = "get_encoding_mode_and_info")]
+pub unsafe extern "C" fn get_encoding_mode_and_info(info: *mut i32) -> c_int {
     unsafe {
         let mut err: UErrorCode = U_ZERO_ERROR;
         *info = 0;
@@ -845,7 +866,8 @@ pub unsafe fn get_encoding_mode_and_info(info: *mut i32) -> c_int {
     }
 }
 
-pub unsafe fn print_utf8_str(mut str: *const u8, mut len: c_int) {
+#[unsafe(export_name = "print_utf8_str")]
+pub unsafe extern "C" fn print_utf8_str(mut str: *const u8, mut len: c_int) {
     unsafe {
         while len > 0 {
             len -= 1;
@@ -855,7 +877,8 @@ pub unsafe fn print_utf8_str(mut str: *const u8, mut len: c_int) {
     }
 }
 
-pub unsafe fn print_chars(mut str: *const u16, mut len: c_int) {
+#[unsafe(export_name = "print_chars")]
+pub unsafe extern "C" fn print_chars(mut str: *const u16, mut len: c_int) {
     unsafe {
         while len > 0 {
             len -= 1;
@@ -937,7 +960,8 @@ unsafe fn load_mapping_file(
     }
 }
 
-pub unsafe fn check_for_tfm_font_mapping() {
+#[unsafe(export_name = "check_for_tfm_font_mapping")]
+pub unsafe extern "C" fn check_for_tfm_font_mapping() {
     unsafe {
         let cp = libc::strstr(name_of_file, b":mapping=\0".as_ptr() as *const c_char);
         saved_mapping_name = mfree(saved_mapping_name);
@@ -954,7 +978,8 @@ pub unsafe fn check_for_tfm_font_mapping() {
     }
 }
 
-pub unsafe fn load_tfm_font_mapping() -> *mut c_void {
+#[unsafe(export_name = "load_tfm_font_mapping")]
+pub unsafe extern "C" fn load_tfm_font_mapping() -> *mut c_void {
     unsafe {
         let mut rval = std::ptr::null_mut();
         if !saved_mapping_name.is_null() {
@@ -966,7 +991,8 @@ pub unsafe fn load_tfm_font_mapping() -> *mut c_void {
     }
 }
 
-pub unsafe fn apply_tfm_font_mapping(cnv: *mut c_void, c: c_int) -> c_int {
+#[unsafe(export_name = "apply_tfm_font_mapping")]
+pub unsafe extern "C" fn apply_tfm_font_mapping(cnv: *mut c_void, c: c_int) -> c_int {
     unsafe {
         let in_char: UniChar = c as UniChar;
         let mut out: [Byte; 2] = [0; 2];
@@ -987,7 +1013,8 @@ pub unsafe fn apply_tfm_font_mapping(cnv: *mut c_void, c: c_int) -> c_int {
     }
 }
 
-pub unsafe fn read_double(s: *mut *const c_char) -> f64 {
+#[unsafe(export_name = "read_double")]
+pub unsafe extern "C" fn read_double(s: *mut *const c_char) -> f64 {
     unsafe {
         let mut neg = false;
         let mut val = 0.0f64;
@@ -1057,7 +1084,8 @@ unsafe fn read_tag_with_param(mut cp: *const c_char, param: *mut c_int) -> u32 {
     }
 }
 
-pub unsafe fn read_rgb_a(cp: *mut *const c_char) -> libc::c_uint {
+#[unsafe(export_name = "read_rgb_a")]
+pub unsafe extern "C" fn read_rgb_a(cp: *mut *const c_char) -> libc::c_uint {
     unsafe {
         let mut rgbValue: u32 = 0;
         let mut alpha: u32 = 0;
@@ -1231,10 +1259,8 @@ unsafe fn loadOTfont(
         let mut engine: XeTeXLayoutEngine = std::ptr::null_mut();
         let mut script: u32 = HB_TAG_NONE;
         let mut language: *mut c_char = std::ptr::null_mut();
-        let mut features: *mut hb_feature_t = std::ptr::null_mut();
-        let mut shapers: *mut *mut c_char = std::ptr::null_mut();
-        let mut nFeatures: c_int = 0;
-        let mut nShapers: c_int = 0;
+        let mut features: Vec<hb_feature_t> = Vec::new();
+        let mut shapers: Vec<*const c_char> = Vec::new();
 
         let mut rgbValue: u32 = 0x000000FF;
         let mut extend: f32 = 1.0;
@@ -1245,16 +1271,11 @@ unsafe fn loadOTfont(
         let reqEngine = getReqEngine();
 
         if reqEngine == b'O' as c_char || reqEngine == b'G' as c_char {
-            shapers = xrealloc(
-                shapers as *mut c_void,
-                ((nShapers + 1) as usize) * std::mem::size_of::<*mut c_char>(),
-            ) as *mut *mut c_char;
             if reqEngine == b'O' as c_char {
-                *shapers.add(nShapers as usize) = b"ot\0".as_ptr() as *mut c_char;
+                shapers.push(c"ot".as_ptr());
             } else if reqEngine == b'G' as c_char {
-                *shapers.add(nShapers as usize) = b"graphite2\0".as_ptr() as *mut c_char;
+                shapers.push(c"graphite2".as_ptr());
             }
-            nShapers += 1;
         }
 
         if reqEngine == b'G' as c_char {
@@ -1264,8 +1285,8 @@ unsafe fn loadOTfont(
                 font,
                 script,
                 std::ptr::null_mut(),
-                features,
-                nFeatures,
+                std::ptr::null_mut(),
+                0,
                 graphiteShaper.as_ptr(),
                 rgbValue,
                 extend,
@@ -1330,6 +1351,7 @@ unsafe fn loadOTfont(
                     }
                     cp3 = cp3.add(1);
                     let len = cp2.offset_from(cp3) as usize;
+                    libc::free(language.cast());
                     language = xmalloc(len + 1) as *mut c_char;
                     *language.add(len) = 0;
                     libc::memcpy(language as *mut c_void, cp3 as *const c_void, len);
@@ -1350,16 +1372,11 @@ unsafe fn loadOTfont(
                         continue;
                     }
                     cp3 = cp3.add(1);
-                    shapers = xrealloc(
-                        shapers as *mut c_void,
-                        ((nShapers + 1) as usize) * std::mem::size_of::<*mut c_char>(),
-                    ) as *mut *mut c_char;
                     let len = cp2.offset_from(cp3) as usize;
                     let s_copy = xmalloc(len + 1) as *mut c_char;
                     libc::memcpy(s_copy as *mut c_void, cp3 as *const c_void, len);
                     *s_copy.add(len) = 0;
-                    *shapers.add(nShapers as usize) = s_copy;
-                    nShapers += 1;
+                    shapers.push(s_copy);
                     cp1 = cp2;
                     continue;
                 }
@@ -1393,15 +1410,12 @@ unsafe fn loadOTfont(
                     if readFeatureNumber(cp1, cp2, &mut tag, &mut value)
                         || findGraphiteFeature(engine, cp1, cp2, &mut tag, &mut value)
                     {
-                        features = xrealloc(
-                            features as *mut c_void,
-                            ((nFeatures + 1) as usize) * std::mem::size_of::<hb_feature_t>(),
-                        ) as *mut hb_feature_t;
-                        (*features.add(nFeatures as usize)).tag = tag;
-                        (*features.add(nFeatures as usize)).value = value as u32;
-                        (*features.add(nFeatures as usize)).start = 0;
-                        (*features.add(nFeatures as usize)).end = !0u32;
-                        nFeatures += 1;
+                        features.push(hb_feature_t {
+                            tag,
+                            value: value as u32,
+                            start: 0,
+                            end: !0u32,
+                        });
                         cp1 = cp2;
                         continue;
                     }
@@ -1410,18 +1424,15 @@ unsafe fn loadOTfont(
                 if *cp1 == b'+' as c_char {
                     let mut param: c_int = 0;
                     let tag = read_tag_with_param(cp1.add(1), &mut param);
-                    features = xrealloc(
-                        features as *mut c_void,
-                        ((nFeatures + 1) as usize) * std::mem::size_of::<hb_feature_t>(),
-                    ) as *mut hb_feature_t;
-                    (*features.add(nFeatures as usize)).tag = tag;
-                    (*features.add(nFeatures as usize)).start = 0;
-                    (*features.add(nFeatures as usize)).end = !0u32;
                     if param >= 0 {
                         param += 1;
                     }
-                    (*features.add(nFeatures as usize)).value = param as u32;
-                    nFeatures += 1;
+                    features.push(hb_feature_t {
+                        tag,
+                        value: param as u32,
+                        start: 0,
+                        end: !0u32,
+                    });
                     cp1 = cp2;
                     continue;
                 }
@@ -1429,15 +1440,12 @@ unsafe fn loadOTfont(
                 if *cp1 == b'-' as c_char {
                     cp1 = cp1.add(1);
                     let tag = hb_tag_from_string(cp1, cp2.offset_from(cp1) as c_int);
-                    features = xrealloc(
-                        features as *mut c_void,
-                        ((nFeatures + 1) as usize) * std::mem::size_of::<hb_feature_t>(),
-                    ) as *mut hb_feature_t;
-                    (*features.add(nFeatures as usize)).tag = tag;
-                    (*features.add(nFeatures as usize)).start = 0;
-                    (*features.add(nFeatures as usize)).end = !0u32;
-                    (*features.add(nFeatures as usize)).value = 0;
-                    nFeatures += 1;
+                    features.push(hb_feature_t {
+                        tag,
+                        value: 0,
+                        start: 0,
+                        end: !0u32,
+                    });
                     cp1 = cp2;
                     continue;
                 }
@@ -1474,12 +1482,8 @@ unsafe fn loadOTfont(
             }
         }
 
-        if !shapers.is_null() {
-            shapers = xrealloc(
-                shapers as *mut c_void,
-                ((nShapers + 1) as usize) * std::mem::size_of::<*mut c_char>(),
-            ) as *mut *mut c_char;
-            *shapers.add(nShapers as usize) = std::ptr::null_mut();
+        if !shapers.is_empty() {
+            shapers.push(std::ptr::null());
         }
 
         if !engine.is_null() {
@@ -1507,21 +1511,23 @@ unsafe fn loadOTfont(
             font,
             script,
             language,
-            features,
-            nFeatures,
-            shapers as *const *const c_char,
+            if features.is_empty() {
+                std::ptr::null_mut()
+            } else {
+                features.as_mut_ptr()
+            },
+            features.len() as c_int,
+            if shapers.is_empty() {
+                std::ptr::null()
+            } else {
+                shapers.as_ptr()
+            },
             rgbValue,
             extend,
             slant,
             embolden,
         );
 
-        if !features.is_null() {
-            libc::free(features as *mut c_void);
-        }
-        if !shapers.is_null() {
-            libc::free(shapers as *mut c_void);
-        }
         if !language.is_null() {
             libc::free(language as *mut c_void);
         }
@@ -1766,7 +1772,8 @@ pub unsafe fn find_native_font(uname: *mut c_char, mut scaled_size: i32) -> *mut
     }
 }
 
-pub unsafe fn release_font_engine(engine: *mut c_void, type_flag: c_int) {
+#[unsafe(export_name = "release_font_engine")]
+pub unsafe extern "C" fn release_font_engine(engine: *mut c_void, type_flag: c_int) {
     unsafe {
         #[cfg(target_os = "macos")]
         if type_flag as u32 == AAT_FONT_FLAG {
@@ -1780,7 +1787,8 @@ pub unsafe fn release_font_engine(engine: *mut c_void, type_flag: c_int) {
     }
 }
 
-pub unsafe fn ot_get_font_metrics(
+#[unsafe(export_name = "ot_get_font_metrics")]
+pub unsafe extern "C" fn ot_get_font_metrics(
     pEngine: *mut c_void,
     ascent: *mut scaled_t,
     descent: *mut scaled_t,
@@ -1828,7 +1836,8 @@ pub unsafe fn ot_get_font_metrics(
     }
 }
 
-pub unsafe fn ot_font_get(what: i32, pEngine: *mut c_void) -> i32 {
+#[unsafe(export_name = "ot_font_get")]
+pub unsafe extern "C" fn ot_font_get(what: i32, pEngine: *mut c_void) -> i32 {
     unsafe {
         let engine = pEngine as XeTeXLayoutEngine;
         let fontInst = getFont(engine);
@@ -1841,7 +1850,8 @@ pub unsafe fn ot_font_get(what: i32, pEngine: *mut c_void) -> i32 {
     }
 }
 
-pub unsafe fn ot_font_get_1(what: i32, pEngine: *mut c_void, param: i32) -> i32 {
+#[unsafe(export_name = "ot_font_get_1")]
+pub unsafe extern "C" fn ot_font_get_1(what: i32, pEngine: *mut c_void, param: i32) -> i32 {
     unsafe {
         let engine = pEngine as XeTeXLayoutEngine;
         let fontInst = getFont(engine);
@@ -1856,7 +1866,13 @@ pub unsafe fn ot_font_get_1(what: i32, pEngine: *mut c_void, param: i32) -> i32 
     }
 }
 
-pub unsafe fn ot_font_get_2(what: i32, pEngine: *mut c_void, param1: i32, param2: i32) -> i32 {
+#[unsafe(export_name = "ot_font_get_2")]
+pub unsafe extern "C" fn ot_font_get_2(
+    what: i32,
+    pEngine: *mut c_void,
+    param1: i32,
+    param2: i32,
+) -> i32 {
     unsafe {
         let engine = pEngine as XeTeXLayoutEngine;
         let fontInst = getFont(engine);
@@ -1880,7 +1896,8 @@ pub unsafe fn ot_font_get_2(what: i32, pEngine: *mut c_void, param1: i32, param2
     }
 }
 
-pub unsafe fn ot_font_get_3(
+#[unsafe(export_name = "ot_font_get_3")]
+pub unsafe extern "C" fn ot_font_get_3(
     what: i32,
     pEngine: *mut c_void,
     param1: i32,
@@ -1902,7 +1919,13 @@ pub unsafe fn ot_font_get_3(
     }
 }
 
-pub unsafe fn gr_print_font_name(what: i32, pEngine: *mut c_void, param1: i32, param2: i32) {
+#[unsafe(export_name = "gr_print_font_name")]
+pub unsafe extern "C" fn gr_print_font_name(
+    what: i32,
+    pEngine: *mut c_void,
+    param1: i32,
+    param2: i32,
+) {
     unsafe {
         let engine = pEngine as XeTeXLayoutEngine;
         let mut name: *mut c_char = std::ptr::null_mut();
@@ -1923,7 +1946,8 @@ pub unsafe fn gr_print_font_name(what: i32, pEngine: *mut c_void, param1: i32, p
     }
 }
 
-pub unsafe fn gr_font_get_named(what: i32, pEngine: *mut c_void) -> i32 {
+#[unsafe(export_name = "gr_font_get_named")]
+pub unsafe extern "C" fn gr_font_get_named(what: i32, pEngine: *mut c_void) -> i32 {
     unsafe {
         let mut rval: libc::c_long = -1;
         let engine = pEngine as XeTeXLayoutEngine;
@@ -1934,7 +1958,8 @@ pub unsafe fn gr_font_get_named(what: i32, pEngine: *mut c_void) -> i32 {
     }
 }
 
-pub unsafe fn gr_font_get_named_1(what: i32, pEngine: *mut c_void, param: i32) -> i32 {
+#[unsafe(export_name = "gr_font_get_named_1")]
+pub unsafe extern "C" fn gr_font_get_named_1(what: i32, pEngine: *mut c_void, param: i32) -> i32 {
     unsafe {
         let mut rval: libc::c_long = -1;
         let engine = pEngine as XeTeXLayoutEngine;
@@ -1945,7 +1970,8 @@ pub unsafe fn gr_font_get_named_1(what: i32, pEngine: *mut c_void, param: i32) -
     }
 }
 
-pub unsafe fn tt_checkpoint_ext_reset() {
+#[unsafe(export_name = "tt_checkpoint_ext_reset")]
+pub unsafe extern "C" fn tt_checkpoint_ext_reset() {
     unsafe {
         if !brkIter.is_null() {
             ubrk_close(brkIter);
@@ -1955,7 +1981,8 @@ pub unsafe fn tt_checkpoint_ext_reset() {
     }
 }
 
-pub unsafe fn tt_checkpoint_fonts(cp: *mut tt_checkpoint) {
+#[unsafe(export_name = "tt_checkpoint_fonts")]
+pub unsafe extern "C" fn tt_checkpoint_fonts(cp: *mut tt_checkpoint) {
     unsafe {
         let saved_name = name_of_file;
         let saved_name_length = name_length;
@@ -2054,7 +2081,8 @@ pub unsafe fn tt_checkpoint_fonts(cp: *mut tt_checkpoint) {
     }
 }
 
-pub unsafe fn makeXDVGlyphArrayData(pNode: *mut c_void) -> c_int {
+#[unsafe(export_name = "makeXDVGlyphArrayData")]
+pub unsafe extern "C" fn makeXDVGlyphArrayData(pNode: *mut c_void) -> c_int {
     unsafe {
         let p = pNode as *mut memory_word;
         let glyphCount = *native_glyph_count(p) as usize;
@@ -2120,7 +2148,8 @@ pub unsafe fn makeXDVGlyphArrayData(pNode: *mut c_void) -> c_int {
     }
 }
 
-pub unsafe fn make_font_def(f: i32) -> c_int {
+#[unsafe(export_name = "make_font_def")]
+pub unsafe extern "C" fn make_font_def(f: i32) -> c_int {
     unsafe {
         let mut flags: u16 = 0;
         let mut rgba: u32 = 0;
@@ -2154,7 +2183,11 @@ pub unsafe fn make_font_def(f: i32) -> c_int {
             extend = t.a as f32;
             slant = t.c as f32;
 
-            let emboldenNumber = CFDictionaryGetValue(attributes, kXeTeXEmboldenAttributeName);
+            let emboldenNumber = if kXeTeXEmboldenAttributeName.is_null() {
+                std::ptr::null()
+            } else {
+                CFDictionaryGetValue(attributes, kXeTeXEmboldenAttributeName)
+            };
             if !emboldenNumber.is_null() {
                 CFNumberGetValue(
                     emboldenNumber,
@@ -2218,10 +2251,10 @@ pub unsafe fn make_font_def(f: i32) -> c_int {
 
         let mut cp = xdv_buffer as *mut u8;
 
-        *(cp as *mut Fixed) = SWAP32(size as u32) as Fixed;
+        std::ptr::write_unaligned(cp.cast::<Fixed>(), SWAP32(size as u32) as Fixed);
         cp = cp.add(4);
 
-        *(cp as *mut u16) = SWAP16(flags);
+        std::ptr::write_unaligned(cp.cast::<u16>(), SWAP16(flags));
         cp = cp.add(2);
 
         *cp = filenameLen as u8;
@@ -2229,27 +2262,27 @@ pub unsafe fn make_font_def(f: i32) -> c_int {
         libc::memcpy(cp as *mut c_void, filename as *const c_void, filenameLen);
         cp = cp.add(filenameLen);
 
-        *(cp as *mut u32) = SWAP32(index);
+        std::ptr::write_unaligned(cp.cast::<u32>(), SWAP32(index));
         cp = cp.add(4);
 
         if (*font_flags.add(f as usize) as u32 & FONT_FLAGS_COLORED) != 0 {
-            *(cp as *mut u32) = SWAP32(rgba);
+            std::ptr::write_unaligned(cp.cast::<u32>(), SWAP32(rgba));
             cp = cp.add(4);
         }
 
         if (flags & XDV_FLAG_EXTEND) != 0 {
             let f_fix = D2Fix(extend as f64);
-            *(cp as *mut u32) = SWAP32(f_fix as u32);
+            std::ptr::write_unaligned(cp.cast::<u32>(), SWAP32(f_fix as u32));
             cp = cp.add(4);
         }
         if (flags & XDV_FLAG_SLANT) != 0 {
             let f_fix = D2Fix(slant as f64);
-            *(cp as *mut u32) = SWAP32(f_fix as u32);
+            std::ptr::write_unaligned(cp.cast::<u32>(), SWAP32(f_fix as u32));
             cp = cp.add(4);
         }
         if (flags & XDV_FLAG_EMBOLDEN) != 0 {
             let f_fix = D2Fix(embolden as f64);
-            *(cp as *mut u32) = SWAP32(f_fix as u32);
+            std::ptr::write_unaligned(cp.cast::<u32>(), SWAP32(f_fix as u32));
             cp = cp.add(4);
         }
 
@@ -2259,7 +2292,12 @@ pub unsafe fn make_font_def(f: i32) -> c_int {
     }
 }
 
-pub unsafe fn apply_mapping(pCnv: *mut c_void, txtPtr: *mut u16, txtLen: c_int) -> c_int {
+#[unsafe(export_name = "apply_mapping")]
+pub unsafe extern "C" fn apply_mapping(
+    pCnv: *mut c_void,
+    txtPtr: *mut u16,
+    txtLen: c_int,
+) -> c_int {
     unsafe {
         let cnv = pCnv as TECkit_Converter;
         let mut inUsed: UInt32 = 0;
@@ -2312,7 +2350,8 @@ unsafe fn snap_zone(value: *mut scaled_t, snap_value: scaled_t, fuzz: scaled_t) 
     }
 }
 
-pub unsafe fn get_native_char_height_depth(
+#[unsafe(export_name = "get_native_char_height_depth")]
+pub unsafe extern "C" fn get_native_char_height_depth(
     font: i32,
     ch: i32,
     height: *mut scaled_t,
@@ -2357,7 +2396,8 @@ pub unsafe fn get_native_char_height_depth(
     }
 }
 
-pub unsafe fn getnativecharht(f: i32, c: i32) -> scaled_t {
+#[unsafe(export_name = "getnativecharht")]
+pub unsafe extern "C" fn getnativecharht(f: i32, c: i32) -> scaled_t {
     unsafe {
         let mut h: scaled_t = 0;
         let mut d: scaled_t = 0;
@@ -2366,7 +2406,8 @@ pub unsafe fn getnativecharht(f: i32, c: i32) -> scaled_t {
     }
 }
 
-pub unsafe fn getnativechardp(f: i32, c: i32) -> scaled_t {
+#[unsafe(export_name = "getnativechardp")]
+pub unsafe extern "C" fn getnativechardp(f: i32, c: i32) -> scaled_t {
     unsafe {
         let mut h: scaled_t = 0;
         let mut d: scaled_t = 0;
@@ -2375,7 +2416,8 @@ pub unsafe fn getnativechardp(f: i32, c: i32) -> scaled_t {
     }
 }
 
-pub unsafe fn get_native_char_sidebearings(
+#[unsafe(export_name = "get_native_char_sidebearings")]
+pub unsafe extern "C" fn get_native_char_sidebearings(
     font: i32,
     ch: i32,
     lsb: *mut scaled_t,
@@ -2414,7 +2456,8 @@ pub unsafe fn get_native_char_sidebearings(
     }
 }
 
-pub unsafe fn get_glyph_bounds(font: i32, edge: i32, gid: i32) -> scaled_t {
+#[unsafe(export_name = "get_glyph_bounds")]
+pub unsafe extern "C" fn get_glyph_bounds(font: i32, edge: i32, gid: i32) -> scaled_t {
     unsafe {
         let mut a: f32 = 0.0;
         let mut b: f32 = 0.0;
@@ -2450,7 +2493,8 @@ pub unsafe fn get_glyph_bounds(font: i32, edge: i32, gid: i32) -> scaled_t {
     }
 }
 
-pub unsafe fn getnativecharic(f: i32, c: i32) -> scaled_t {
+#[unsafe(export_name = "getnativecharic")]
+pub unsafe extern "C" fn getnativecharic(f: i32, c: i32) -> scaled_t {
     unsafe {
         let mut lsb: scaled_t = 0;
         let mut rsb: scaled_t = 0;
@@ -2464,7 +2508,8 @@ pub unsafe fn getnativecharic(f: i32, c: i32) -> scaled_t {
     }
 }
 
-pub unsafe fn getnativecharwd(f: i32, c: i32) -> scaled_t {
+#[unsafe(export_name = "getnativecharwd")]
+pub unsafe extern "C" fn getnativecharwd(f: i32, c: i32) -> scaled_t {
     unsafe {
         let mut wd: scaled_t = 0;
         let area = *font_area.add(f as usize) as u32;
@@ -2494,7 +2539,8 @@ pub unsafe fn getnativecharwd(f: i32, c: i32) -> scaled_t {
     }
 }
 
-pub unsafe fn real_get_native_glyph(pNode: *mut c_void, index: libc::c_uint) -> u16 {
+#[unsafe(export_name = "real_get_native_glyph")]
+pub unsafe extern "C" fn real_get_native_glyph(pNode: *mut c_void, index: libc::c_uint) -> u16 {
     unsafe {
         let node = pNode as *mut memory_word;
         let count = *native_glyph_count(node) as usize;
@@ -2508,7 +2554,8 @@ pub unsafe fn real_get_native_glyph(pNode: *mut c_void, index: libc::c_uint) -> 
     }
 }
 
-pub unsafe fn store_justified_native_glyphs(pNode: *mut c_void) {
+#[unsafe(export_name = "store_justified_native_glyphs")]
+pub unsafe extern "C" fn store_justified_native_glyphs(pNode: *mut c_void) {
     unsafe {
         let node = pNode as *mut memory_word;
         let f = *native_font(node) as usize;
@@ -2562,7 +2609,8 @@ pub unsafe fn store_justified_native_glyphs(pNode: *mut c_void) {
     }
 }
 
-pub unsafe fn measure_native_node(pNode: *mut c_void, use_glyph_metrics: c_int) {
+#[unsafe(export_name = "measure_native_node")]
+pub unsafe extern "C" fn measure_native_node(pNode: *mut c_void, use_glyph_metrics: c_int) {
     unsafe {
         let node = pNode as *mut memory_word;
         let txtLen = *native_length(node) as i32;
@@ -2596,7 +2644,7 @@ pub unsafe fn measure_native_node(pNode: *mut c_void, use_glyph_metrics: c_int) 
                     pBiDi,
                     txtPtr,
                     txtLen,
-                    getDefaultDirection(engine),
+                    getDefaultDirection(engine) as u8,
                     std::ptr::null_mut(),
                     &mut errorCode,
                 );
@@ -2809,7 +2857,8 @@ pub unsafe fn measure_native_node(pNode: *mut c_void, use_glyph_metrics: c_int) 
     }
 }
 
-pub unsafe fn real_get_native_italic_correction(pNode: *mut c_void) -> Fixed {
+#[unsafe(export_name = "real_get_native_italic_correction")]
+pub unsafe extern "C" fn real_get_native_italic_correction(pNode: *mut c_void) -> Fixed {
     unsafe {
         let node = pNode as *mut memory_word;
         let f = *native_font(node) as usize;
@@ -2836,7 +2885,8 @@ pub unsafe fn real_get_native_italic_correction(pNode: *mut c_void) -> Fixed {
     }
 }
 
-pub unsafe fn real_get_native_glyph_italic_correction(pNode: *mut c_void) -> Fixed {
+#[unsafe(export_name = "real_get_native_glyph_italic_correction")]
+pub unsafe extern "C" fn real_get_native_glyph_italic_correction(pNode: *mut c_void) -> Fixed {
     unsafe {
         let node = pNode as *mut memory_word;
         let gid = *native_glyph(node);
@@ -2857,7 +2907,8 @@ pub unsafe fn real_get_native_glyph_italic_correction(pNode: *mut c_void) -> Fix
     }
 }
 
-pub unsafe fn measure_native_glyph(pNode: *mut c_void, use_glyph_metrics: c_int) {
+#[unsafe(export_name = "measure_native_glyph")]
+pub unsafe extern "C" fn measure_native_glyph(pNode: *mut c_void, use_glyph_metrics: c_int) {
     unsafe {
         let node = pNode as *mut memory_word;
         let gid = *native_glyph(node);
@@ -2903,7 +2954,8 @@ pub unsafe fn measure_native_glyph(pNode: *mut c_void, use_glyph_metrics: c_int)
     }
 }
 
-pub unsafe fn map_char_to_glyph(font: i32, ch: i32) -> i32 {
+#[unsafe(export_name = "map_char_to_glyph")]
+pub unsafe extern "C" fn map_char_to_glyph(font: i32, ch: i32) -> i32 {
     unsafe {
         if ch > 0x10ffff || (ch >= 0xd800 && ch <= 0xdfff) {
             return 0;
@@ -2942,7 +2994,8 @@ pub unsafe fn map_glyph_to_index(font: i32) -> i32 {
     }
 }
 
-pub unsafe fn get_font_char_range(font: i32, first: c_int) -> i32 {
+#[unsafe(export_name = "get_font_char_range")]
+pub unsafe extern "C" fn get_font_char_range(font: i32, first: c_int) -> i32 {
     unsafe {
         let area = *font_area.add(font as usize) as u32;
 
@@ -2960,17 +3013,18 @@ pub unsafe fn get_font_char_range(font: i32, first: c_int) -> i32 {
     }
 }
 
-#[inline]
-pub fn D2Fix(d: f64) -> Fixed {
+#[unsafe(export_name = "D2Fix")]
+pub extern "C" fn D2Fix(d: f64) -> Fixed {
     (d * 65536.0 + 0.5) as Fixed
 }
 
-#[inline]
-pub fn Fix2D(f: Fixed) -> f64 {
+#[unsafe(export_name = "Fix2D")]
+pub extern "C" fn Fix2D(f: Fixed) -> f64 {
     f as f64 / 65536.0
 }
 
-pub unsafe fn aat_get_font_metrics(
+#[unsafe(export_name = "aat_get_font_metrics")]
+pub unsafe extern "C" fn aat_get_font_metrics(
     attributes: CFDictionaryRef,
     ascent: *mut i32,
     descent: *mut i32,
@@ -2991,7 +3045,8 @@ pub unsafe fn aat_get_font_metrics(
     }
 }
 
-pub unsafe fn aat_font_get(what: c_int, attributes: CFDictionaryRef) -> c_int {
+#[unsafe(export_name = "aat_font_get")]
+pub unsafe extern "C" fn aat_font_get(what: c_int, attributes: CFDictionaryRef) -> c_int {
     unsafe {
         let mut rval = -1;
         #[cfg(target_os = "macos")]
@@ -3015,7 +3070,12 @@ pub unsafe fn aat_font_get(what: c_int, attributes: CFDictionaryRef) -> c_int {
     }
 }
 
-pub unsafe fn aat_font_get_1(what: c_int, attributes: CFDictionaryRef, param: c_int) -> c_int {
+#[unsafe(export_name = "aat_font_get_1")]
+pub unsafe extern "C" fn aat_font_get_1(
+    what: c_int,
+    attributes: CFDictionaryRef,
+    param: c_int,
+) -> c_int {
     unsafe {
         let mut rval = -1;
         #[cfg(target_os = "macos")]
@@ -3085,7 +3145,8 @@ pub unsafe fn aat_font_get_1(what: c_int, attributes: CFDictionaryRef, param: c_
     }
 }
 
-pub unsafe fn aat_font_get_2(
+#[unsafe(export_name = "aat_font_get_2")]
+pub unsafe extern "C" fn aat_font_get_2(
     what: c_int,
     attributes: CFDictionaryRef,
     param1: c_int,
@@ -3153,7 +3214,8 @@ pub unsafe fn aat_font_get_2(
     }
 }
 
-pub unsafe fn aat_font_get_named(what: c_int, attributes: CFDictionaryRef) -> c_int {
+#[unsafe(export_name = "aat_font_get_named")]
+pub unsafe extern "C" fn aat_font_get_named(what: c_int, attributes: CFDictionaryRef) -> c_int {
     unsafe {
         let mut rval = -1;
         #[cfg(target_os = "macos")]
@@ -3182,7 +3244,8 @@ pub unsafe fn aat_font_get_named(what: c_int, attributes: CFDictionaryRef) -> c_
     }
 }
 
-pub unsafe fn aat_font_get_named_1(
+#[unsafe(export_name = "aat_font_get_named_1")]
+pub unsafe extern "C" fn aat_font_get_named_1(
     what: c_int,
     attributes: CFDictionaryRef,
     param: c_int,
@@ -3216,7 +3279,8 @@ pub unsafe fn aat_font_get_named_1(
     }
 }
 
-pub unsafe fn aat_print_font_name(
+#[unsafe(export_name = "aat_print_font_name")]
+pub unsafe extern "C" fn aat_print_font_name(
     what: c_int,
     attributes: CFDictionaryRef,
     param1: c_int,
@@ -3283,7 +3347,8 @@ unsafe fn cgColorToRGBA32(color: CGColorRef) -> u32 {
     }
 }
 
-pub unsafe fn print_glyph_name(font: i32, gid: i32) {
+#[unsafe(export_name = "print_glyph_name")]
+pub unsafe extern "C" fn print_glyph_name(font: i32, gid: i32) {
     unsafe {
         let mut s: *const c_char = std::ptr::null();
         let mut len: c_int = 0;
@@ -3315,7 +3380,8 @@ pub unsafe fn print_glyph_name(font: i32, gid: i32) {
     }
 }
 
-pub unsafe fn real_get_native_word_cp(pNode: *mut c_void, side: c_int) -> i32 {
+#[unsafe(export_name = "real_get_native_word_cp")]
+pub unsafe extern "C" fn real_get_native_word_cp(pNode: *mut c_void, side: c_int) -> i32 {
     unsafe {
         let node = pNode as *mut memory_word;
         let glyphCount = *native_glyph_count(node) as usize;

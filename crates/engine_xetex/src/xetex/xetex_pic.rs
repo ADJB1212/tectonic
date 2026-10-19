@@ -129,7 +129,8 @@ fn max4(a: f64, b: f64, c: f64, d: f64) -> f64 {
     a.max(b).max(c).max(d)
 }
 
-pub unsafe fn count_pdf_file_pages() -> c_int {
+#[unsafe(export_name = "count_pdf_file_pages")]
+pub unsafe extern "C" fn count_pdf_file_pages() -> c_int {
     unsafe {
         tt_checkpoint_disallow();
 
@@ -385,7 +386,8 @@ fn transform_concat(t1: &mut transform_t, t2: &transform_t) {
     *t1 = r;
 }
 
-pub unsafe fn load_picture(is_pdf: bool) {
+#[unsafe(export_name = "load_picture")]
+pub unsafe extern "C" fn load_picture(is_pdf: bool) {
     unsafe {
         tt_checkpoint_disallow();
 

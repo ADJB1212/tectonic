@@ -771,7 +771,6 @@ unsafe extern "C" {
     pub fn effective_char(init_font: bool, f: internal_font_number, uc: UTF16_code) -> i32;
     pub fn max_hyphenatable_length() -> i32;
     pub fn new_native_word_node(f: internal_font_number, n: i32) -> i32;
-    pub fn set_native_metrics(p: i32, use_glyph_metrics: bool);
     pub fn new_spec(p: i32) -> i32;
     pub fn new_math(w: scaled_t, s: small_number) -> i32;
     pub fn get_avail() -> i32;
@@ -799,6 +798,12 @@ unsafe extern "C" {
     pub fn error();
     pub fn pdf_error(t: *const std::ffi::c_char, p: *const std::ffi::c_char) -> !;
     pub fn confusion(s: *const std::ffi::c_char) -> !;
+}
+
+pub unsafe fn set_native_metrics(p: i32, use_glyph_metrics: bool) {
+    unsafe {
+        super::xetex_ext::measure_native_node(mem.add(p as usize).cast(), use_glyph_metrics.into());
+    }
 }
 
 static mut passive: i32 = 0;
@@ -843,8 +848,8 @@ static mut fill_width: [scaled_t; 3] = [0; 3];
 static mut best_pl_short: [scaled_t; 4] = [0; 4];
 static mut best_pl_glue: [scaled_t; 4] = [0; 4];
 
-#[inline]
-pub unsafe fn get_native_usv(p: i32, i: i32) -> UnicodeScalar {
+#[unsafe(export_name = "get_native_usv")]
+pub unsafe extern "C" fn get_native_usv(p: i32, i: i32) -> UnicodeScalar {
     let c = *native_node_text(p).offset(i as isize) as i32;
     if (0xD800..0xDC00).contains(&c) {
         0x10000 + (c - 0xD800) * 0x400 + *native_node_text(p).offset((i + 1) as isize) as i32
@@ -865,7 +870,8 @@ pub unsafe fn get_native_usv(p: i32, i: i32) -> UnicodeScalar {
  * starting line number (0 unless we're continuing after display math). After
  * completion, `just_box` will point to the final box created.
  */
-pub unsafe fn line_break(d: bool) {
+#[unsafe(export_name = "line_break")]
+pub unsafe extern "C" fn line_break(d: bool) {
     let mut auto_breaking: bool;
     let mut prev_p: i32;
     let mut q: i32;
@@ -2084,6 +2090,7 @@ unsafe fn post_line_break(d: bool) {
         }
 
         pen = 0;
+        let line_list = q;
         if cur_line + 1 != best_line {
             q = ETEX_PENALTIES_PAR!(inter_line_penalties);
 
@@ -2135,7 +2142,7 @@ unsafe fn post_line_break(d: bool) {
         }
 
         lines.push(PendingLine {
-            list: q,
+            list: line_list,
             width: cur_width,
             indent: cur_indent,
             penalty: pen,

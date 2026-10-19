@@ -179,62 +179,44 @@ unsafe fn xcalloc_array<T>(size: usize) -> *mut T {
 // ---------------------------------------------------------------------------
 
 #[cfg(target_endian = "big")]
-pub unsafe fn swap_items(_p: *mut c_char, _nitems: usize, _size: usize) {}
+#[unsafe(export_name = "swap_items")]
+pub unsafe extern "C" fn swap_items(_p: *mut c_char, _nitems: usize, _size: usize) {}
 
 #[cfg(not(target_endian = "big"))]
-pub unsafe fn swap_items(mut p: *mut c_char, mut nitems: usize, size: usize) {
-    let mut temp: c_char;
+#[unsafe(export_name = "swap_items")]
+pub unsafe extern "C" fn swap_items(p: *mut c_char, nitems: usize, size: usize) {
+    if !matches!(size, 1 | 2 | 4 | 8 | 16) {
+        _tt_abort(c"can't swap a %zu-byte item for (un)dumping".as_ptr(), size);
+    }
+    if size == 1 || nitems == 0 {
+        return;
+    }
+    let bytes = std::slice::from_raw_parts_mut(p.cast::<u8>(), nitems * size);
+    if bytes.len() >= 16 * 1024 * 1024 {
+        use rayon::prelude::*;
+        bytes
+            .par_chunks_mut(256 * 1024)
+            .for_each(|chunk| swap_item_bytes(chunk, size));
+    } else {
+        swap_item_bytes(bytes, size);
+    }
+}
+
+fn swap_item_bytes(bytes: &mut [u8], size: usize) {
     macro_rules! swap {
-        ($x:expr, $y:expr) => {
-            temp = $x;
-            $x = $y;
-            $y = temp;
+        ($ty:ty, $size:literal) => {
+            for item in bytes.chunks_exact_mut($size) {
+                let value = <$ty>::from_ne_bytes((&*item).try_into().unwrap());
+                item.copy_from_slice(&value.swap_bytes().to_ne_bytes());
+            }
         };
     }
     match size {
-        16 => {
-            while nitems > 0 {
-                nitems -= 1;
-                swap!(*p.add(0), *p.add(15));
-                swap!(*p.add(1), *p.add(14));
-                swap!(*p.add(2), *p.add(13));
-                swap!(*p.add(3), *p.add(12));
-                swap!(*p.add(4), *p.add(11));
-                swap!(*p.add(5), *p.add(10));
-                swap!(*p.add(6), *p.add(9));
-                swap!(*p.add(7), *p.add(8));
-                p = p.add(size);
-            }
-        }
-        8 => {
-            while nitems > 0 {
-                nitems -= 1;
-                swap!(*p.add(0), *p.add(7));
-                swap!(*p.add(1), *p.add(6));
-                swap!(*p.add(2), *p.add(5));
-                swap!(*p.add(3), *p.add(4));
-                p = p.add(size);
-            }
-        }
-        4 => {
-            while nitems > 0 {
-                nitems -= 1;
-                swap!(*p.add(0), *p.add(3));
-                swap!(*p.add(1), *p.add(2));
-                p = p.add(size);
-            }
-        }
-        2 => {
-            while nitems > 0 {
-                nitems -= 1;
-                swap!(*p.add(0), *p.add(1));
-                p = p.add(size);
-            }
-        }
-        1 => {}
-        _ => {
-            _tt_abort(c"can't swap a %zu-byte item for (un)dumping".as_ptr(), size);
-        }
+        2 => swap!(u16, 2),
+        4 => swap!(u32, 4),
+        8 => swap!(u64, 8),
+        16 => swap!(u128, 16),
+        _ => unreachable!(),
     }
 }
 
@@ -242,7 +224,8 @@ pub unsafe fn swap_items(mut p: *mut c_char, mut nitems: usize, size: usize) {
 // 2. do_dump
 // ---------------------------------------------------------------------------
 
-pub unsafe fn do_dump(
+#[unsafe(export_name = "do_dump")]
+pub unsafe extern "C" fn do_dump(
     p: *mut c_char,
     item_size: usize,
     nitems: usize,
@@ -267,7 +250,8 @@ pub unsafe fn do_dump(
 // 3. do_undump
 // ---------------------------------------------------------------------------
 
-pub unsafe fn do_undump(
+#[unsafe(export_name = "do_undump")]
+pub unsafe extern "C" fn do_undump(
     p: *mut c_char,
     item_size: usize,
     nitems: usize,
@@ -371,8 +355,11 @@ macro_rules! undump_upper_check_things {
             let item = *local_base_ptr.add(i);
             if i64::from(item) > i64::from(high) {
                 _tt_abort(
-                    c"item %u of .fmt array exceeds upper bound".as_ptr(),
+                    c"item %u of .fmt array %s exceeds upper bound (%lld > %lld)".as_ptr(),
                     i as libc::c_uint,
+                    concat!(stringify!($base), "\0").as_ptr().cast::<c_char>(),
+                    i64::from(item),
+                    i64::from(high),
                 );
             }
         }
@@ -383,7 +370,8 @@ macro_rules! undump_upper_check_things {
 // 4. new_patterns
 // ---------------------------------------------------------------------------
 
-pub unsafe fn new_patterns() {
+#[unsafe(export_name = "new_patterns")]
+pub unsafe extern "C" fn new_patterns() {
     let mut k: i16;
     let mut l: i16;
     let mut digit_sensed: bool;
@@ -622,7 +610,8 @@ pub unsafe fn new_patterns() {
 // 5. init_trie
 // ---------------------------------------------------------------------------
 
-pub unsafe fn init_trie() {
+#[unsafe(export_name = "init_trie")]
+pub unsafe extern "C" fn init_trie() {
     let mut p: trie_pointer;
     let mut j: i32;
     let mut k: i32;
@@ -732,7 +721,8 @@ pub unsafe fn init_trie() {
 // 6. new_hyph_exceptions
 // ---------------------------------------------------------------------------
 
-pub unsafe fn new_hyph_exceptions() {
+#[unsafe(export_name = "new_hyph_exceptions")]
+pub unsafe extern "C" fn new_hyph_exceptions() {
     let mut n: i16;
     let mut j: i16;
     let mut h: hyph_pointer;
@@ -925,7 +915,8 @@ pub unsafe fn new_hyph_exceptions() {
 // 7. prefixed_command
 // ---------------------------------------------------------------------------
 
-pub unsafe fn prefixed_command() {
+#[unsafe(export_name = "prefixed_command")]
+pub unsafe extern "C" fn prefixed_command() {
     let mut a: small_number;
     let mut f: internal_font_number;
     let mut j: i32;
@@ -1769,7 +1760,8 @@ pub unsafe fn prefixed_command() {
 // 8. store_fmt_file
 // ---------------------------------------------------------------------------
 
-pub unsafe fn store_fmt_file() {
+#[unsafe(export_name = "store_fmt_file")]
+pub unsafe extern "C" fn store_fmt_file() {
     let mut j: i32;
     let mut k: i32;
     let mut l: i32;
@@ -2303,7 +2295,8 @@ pub unsafe fn store_fmt_file() {
 // 9. pack_buffered_name
 // ---------------------------------------------------------------------------
 
-pub unsafe fn pack_buffered_name(n: small_number, a: i32, b: i32) {
+#[unsafe(export_name = "pack_buffered_name")]
+pub unsafe extern "C" fn pack_buffered_name(n: small_number, a: i32, b: i32) {
     libc::free(name_of_file as *mut c_void);
     name_of_file = xmalloc_array::<c_char>((format_default_length + 1) as usize);
 
@@ -2315,7 +2308,9 @@ pub unsafe fn pack_buffered_name(n: small_number, a: i32, b: i32) {
 // 10. load_fmt_file
 // ---------------------------------------------------------------------------
 
-pub unsafe fn load_fmt_file() -> bool {
+#[unsafe(export_name = "load_fmt_file")]
+pub unsafe extern "C" fn load_fmt_file() -> bool {
+    super::xetex_stringpool::reset_string_index();
     let mut j: i32;
     let mut k: i32;
     let mut p: i32;
@@ -2378,23 +2373,17 @@ pub unsafe fn load_fmt_file() -> bool {
         hash_top = eqtb_top;
     }
 
-    yhash = xmalloc_array::<b32x2>((1 + hash_top - hash_offset) as usize);
+    yhash = xcalloc_array::<b32x2>((1 + hash_top - hash_offset) as usize);
     hash = yhash.offset(-hash_offset as isize);
-    (*hash.add(HASH_BASE as usize)).s0 = 0;
-    (*hash.add(HASH_BASE as usize)).s1 = 0;
-
-    for x_idx in (HASH_BASE + 1)..=hash_top {
-        *hash.add(x_idx as usize) = *hash.add(HASH_BASE as usize);
-    }
 
     eqtb = xmalloc_array::<memory_word>((eqtb_top + 1) as usize);
     (*eqtb.add(UNDEFINED_CONTROL_SEQUENCE as usize)).b16.s1 = UNDEFINED_CS as u16;
     (*eqtb.add(UNDEFINED_CONTROL_SEQUENCE as usize)).b32.s1 = TEX_NULL;
     (*eqtb.add(UNDEFINED_CONTROL_SEQUENCE as usize)).b16.s0 = LEVEL_ZERO as u16;
 
-    for x_idx in (EQTB_SIZE + 1)..=eqtb_top {
-        *eqtb.add(x_idx as usize) = *eqtb.add(UNDEFINED_CONTROL_SEQUENCE as usize);
-    }
+    let undefined = *eqtb.add(UNDEFINED_CONTROL_SEQUENCE as usize);
+    std::slice::from_raw_parts_mut(eqtb.add((EQTB_SIZE + 1) as usize), hash_extra as usize)
+        .fill(undefined);
 
     max_reg_num = 32767;
     max_reg_help_line = c"A register number must be between 0 and 32767.".as_ptr();
@@ -2548,9 +2537,8 @@ pub unsafe fn load_fmt_file() -> bool {
             _tt_abort(c"fatal format file error".as_ptr());
         }
 
-        for j_idx in k..=(k + x - 1) {
-            *eqtb.add(j_idx as usize) = *eqtb.add((k - 1) as usize);
-        }
+        let value = *eqtb.add((k - 1) as usize);
+        std::slice::from_raw_parts_mut(eqtb.add(k as usize), x as usize).fill(value);
 
         k += x;
 
@@ -2939,7 +2927,7 @@ pub unsafe fn load_fmt_file() -> bool {
         fmt_in,
     );
     undump_upper_check_things!(
-        MAX_TRIE_OP as small_number,
+        MAX_TRIE_OP,
         (&raw mut hyf_next).cast::<u16>().add(1),
         j,
         fmt_in
@@ -2982,11 +2970,13 @@ pub unsafe fn load_fmt_file() -> bool {
     true
 }
 
-pub unsafe fn tt_xetex_native_load_format() -> bool {
+#[unsafe(export_name = "tt_xetex_native_load_format")]
+pub unsafe extern "C" fn tt_xetex_native_load_format() -> bool {
     load_fmt_file()
 }
 
-pub unsafe fn tt_xetex_native_store_format() {
+#[unsafe(export_name = "tt_xetex_native_store_format")]
+pub unsafe extern "C" fn tt_xetex_native_store_format() {
     store_fmt_file();
 }
 
@@ -3016,7 +3006,7 @@ macro_rules! cp_array {
             concat!(stringify!($var), "\0").as_ptr() as *const c_char,
             (&raw mut $var) as *mut *mut c_void,
             $count as usize,
-            std::mem::size_of_val(&*$var),
+            checkpoint_element_size($var),
         );
     };
 }
@@ -3029,7 +3019,7 @@ macro_rules! cp_used {
             (&raw mut $var) as *mut *mut c_void,
             $capacity as usize,
             $used as usize,
-            std::mem::size_of_val(&*$var),
+            checkpoint_element_size($var),
         );
     };
 }
@@ -3041,7 +3031,7 @@ macro_rules! cp_rle {
             concat!(stringify!($var), "\0").as_ptr() as *const c_char,
             (&raw mut $var) as *mut *mut c_void,
             $count as usize,
-            std::mem::size_of_val(&*$var),
+            checkpoint_element_size($var),
         );
     };
 }
@@ -3056,7 +3046,12 @@ macro_rules! cp_string {
     };
 }
 
-pub unsafe fn tt_checkpoint_engine(cp: *mut tt_checkpoint) {
+fn checkpoint_element_size<T>(_: *const T) -> usize {
+    std::mem::size_of::<T>()
+}
+
+#[unsafe(export_name = "tt_checkpoint_engine")]
+pub unsafe extern "C" fn tt_checkpoint_engine(cp: *mut tt_checkpoint) {
     let cp_ref = &mut *cp;
 
     // Checkpoint globals (from generated xetex-checkpoint-globals.h)

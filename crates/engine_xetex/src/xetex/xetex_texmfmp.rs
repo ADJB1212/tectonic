@@ -40,7 +40,8 @@ fn is_dir_sep(ch: c_char) -> bool {
     u == b'/' || u == b'\\'
 }
 
-pub unsafe fn tt_checkpoint_clock(cp: *mut tt_checkpoint) {
+#[unsafe(export_name = "tt_checkpoint_clock")]
+pub unsafe extern "C" fn tt_checkpoint_clock(cp: *mut tt_checkpoint) {
     unsafe {
         let mut seconds: i32 = 0;
         let mut micros: i32 = 0;
@@ -82,7 +83,8 @@ pub unsafe fn tt_checkpoint_clock(cp: *mut tt_checkpoint) {
     }
 }
 
-pub unsafe fn makepdftime(t: time_t, time_str: *mut c_char, utc: bool) {
+#[unsafe(export_name = "makepdftime")]
+pub unsafe extern "C" fn makepdftime(t: time_t, time_str: *mut c_char, utc: bool) {
     unsafe {
         let mut lt: libc::tm = std::mem::zeroed();
         let mut gmt: libc::tm = std::mem::zeroed();
@@ -146,7 +148,8 @@ pub unsafe fn makepdftime(t: time_t, time_str: *mut c_char, utc: bool) {
     }
 }
 
-pub unsafe fn init_start_time(source_date_epoch: time_t) {
+#[unsafe(export_name = "init_start_time")]
+pub unsafe extern "C" fn init_start_time(source_date_epoch: time_t) {
     unsafe {
         makepdftime(
             source_date_epoch,
@@ -156,7 +159,8 @@ pub unsafe fn init_start_time(source_date_epoch: time_t) {
     }
 }
 
-pub unsafe fn getcreationdate() {
+#[unsafe(export_name = "getcreationdate")]
+pub unsafe extern "C" fn getcreationdate() {
     unsafe {
         let len = libc::strlen((&raw const start_time_str).cast::<c_char>());
         if (pool_ptr as usize + len) >= pool_size as usize {
@@ -171,7 +175,8 @@ pub unsafe fn getcreationdate() {
     }
 }
 
-pub unsafe fn get_date_and_time(
+#[unsafe(export_name = "get_date_and_time")]
+pub unsafe extern "C" fn get_date_and_time(
     source_date_epoch: time_t,
     minutes: *mut i32,
     day: *mut i32,
@@ -189,7 +194,8 @@ pub unsafe fn get_date_and_time(
     }
 }
 
-pub unsafe fn get_seconds_and_micros(seconds: *mut i32, micros: *mut i32) {
+#[unsafe(export_name = "get_seconds_and_micros")]
+pub unsafe extern "C" fn get_seconds_and_micros(seconds: *mut i32, micros: *mut i32) {
     unsafe {
         let mut tv: libc::timeval = std::mem::zeroed();
         libc::gettimeofday(&mut tv, ptr::null_mut());
@@ -198,7 +204,8 @@ pub unsafe fn get_seconds_and_micros(seconds: *mut i32, micros: *mut i32) {
     }
 }
 
-pub unsafe fn getfilemoddate(s: str_number) {
+#[unsafe(export_name = "getfilemoddate")]
+pub unsafe extern "C" fn getfilemoddate(s: str_number) {
     unsafe {
         let name = gettexstring(s);
         let handle = super::bridge::ttstub_input_open(name, super::bridge::TTBC_FILE_FORMAT_TEX, 0);
@@ -226,7 +233,8 @@ pub unsafe fn getfilemoddate(s: str_number) {
     }
 }
 
-pub unsafe fn getfilesize(s: str_number) {
+#[unsafe(export_name = "getfilesize")]
+pub unsafe extern "C" fn getfilesize(s: str_number) {
     unsafe {
         let name = gettexstring(s);
         let handle = super::bridge::ttstub_input_open(name, super::bridge::TTBC_FILE_FORMAT_TEX, 0);
@@ -239,29 +247,23 @@ pub unsafe fn getfilesize(s: str_number) {
         let file_len = super::bridge::ttstub_input_get_size(handle);
         super::bridge::ttstub_input_close(handle);
 
-        let mut buf: [c_char; 20] = [0; 20];
-        let num_fmt = b"%lu\0".as_ptr() as *const c_char;
-        let i = libc::snprintf(
-            buf.as_mut_ptr(),
-            buf.len(),
-            num_fmt,
-            file_len as libc::c_ulong,
-        );
-        check_nprintf(i, buf.len());
-        let text_len = libc::strlen(buf.as_ptr());
+        let mut decimal_buffer = itoa::Buffer::new();
+        let text = decimal_buffer.format(file_len);
+        let text_len = text.len();
 
         if (pool_ptr as usize + text_len) >= pool_size as usize {
             pool_ptr = pool_size;
         } else {
-            for j in 0..text_len {
-                (*str_pool.add(pool_ptr as usize)) = buf[j] as u8 as u16;
+            for byte in text.bytes() {
+                (*str_pool.add(pool_ptr as usize)) = u16::from(byte);
                 pool_ptr += 1;
             }
         }
     }
 }
 
-pub unsafe fn getfiledump(s: i32, offset: c_int, length: c_int) {
+#[unsafe(export_name = "getfiledump")]
+pub unsafe extern "C" fn getfiledump(s: i32, offset: c_int, length: c_int) {
     unsafe {
         if length <= 0 {
             return;
@@ -304,7 +306,8 @@ unsafe fn checkpool_pointer(pool_ptr_val: pool_pointer, len: size_t) {
     }
 }
 
-pub unsafe fn maketexstring(s: *const c_char) -> c_int {
+#[unsafe(export_name = "maketexstring")]
+pub unsafe extern "C" fn maketexstring(s: *const c_char) -> c_int {
     unsafe {
         if s.is_null() || *s == 0 {
             return EMPTY_STRING;
@@ -321,7 +324,8 @@ pub unsafe fn maketexstring(s: *const c_char) -> c_int {
     }
 }
 
-pub unsafe fn gettexstring(s: str_number) -> *mut c_char {
+#[unsafe(export_name = "gettexstring")]
+pub unsafe extern "C" fn gettexstring(s: str_number) -> *mut c_char {
     unsafe {
         let units = if s >= 65536 {
             let start = *str_start.add((s - 65536) as usize);
@@ -378,7 +382,8 @@ unsafe fn compare_paths(mut p1: *const c_char, mut p2: *const c_char) -> c_int {
     }
 }
 
-pub unsafe fn is_new_source(srcfilename: str_number, lineno: c_int) -> bool {
+#[unsafe(export_name = "is_new_source")]
+pub unsafe extern "C" fn is_new_source(srcfilename: str_number, lineno: c_int) -> bool {
     unsafe {
         let name = gettexstring(srcfilename);
         let diff = compare_paths(name, last_source_name) != 0 || lineno != last_lineno;
@@ -387,7 +392,8 @@ pub unsafe fn is_new_source(srcfilename: str_number, lineno: c_int) -> bool {
     }
 }
 
-pub unsafe fn remember_source_info(srcfilename: str_number, lineno: c_int) {
+#[unsafe(export_name = "remember_source_info")]
+pub unsafe extern "C" fn remember_source_info(srcfilename: str_number, lineno: c_int) {
     unsafe {
         if !last_source_name.is_null() {
             libc::free(last_source_name as *mut libc::c_void);
@@ -397,7 +403,8 @@ pub unsafe fn remember_source_info(srcfilename: str_number, lineno: c_int) {
     }
 }
 
-pub unsafe fn make_src_special(srcfilename: str_number, lineno: c_int) -> pool_pointer {
+#[unsafe(export_name = "make_src_special")]
+pub unsafe extern "C" fn make_src_special(srcfilename: str_number, lineno: c_int) -> pool_pointer {
     unsafe {
         let oldpool_ptr = pool_ptr;
         let filename = gettexstring(srcfilename);
@@ -433,9 +440,13 @@ pub unsafe fn make_src_special(srcfilename: str_number, lineno: c_int) -> pool_p
 
 unsafe fn append_hex_to_pool(bytes: &[u8]) {
     unsafe {
-        for byte in faster_hex::hex_string_upper(bytes).bytes() {
-            *str_pool.add(pool_ptr as usize) = u16::from(byte);
-            pool_ptr += 1;
+        let mut encoded = [0; 512];
+        for chunk in bytes.chunks(encoded.len() / 2) {
+            let text = faster_hex::hex_encode_upper(chunk, &mut encoded).unwrap();
+            for byte in text.bytes() {
+                *str_pool.add(pool_ptr as usize) = u16::from(byte);
+                pool_ptr += 1;
+            }
         }
     }
 }
@@ -457,6 +468,7 @@ mod tests {
 
     impl Drop for PoolState {
         fn drop(&mut self) {
+            super::super::xetex_stringpool::reset_string_index();
             unsafe {
                 str_pool = self.pool;
                 str_start = self.starts;
@@ -517,6 +529,25 @@ mod tests {
                 "5D41402ABC4B2A76B9719D911017C592"
             );
 
+            use super::super::xetex_stringpool::{search_string, slow_make_string};
+            pool_ptr = start as i32;
+            let duplicate = maketexstring(c"hello".as_ptr());
+            assert_eq!(search_string(duplicate), input);
+            str_ptr -= 1;
+            pool_ptr = starts[(str_ptr - 65536) as usize];
+            let replacement = maketexstring(c"other".as_ptr());
+            assert_eq!(replacement, duplicate);
+            assert_eq!(search_string(replacement), 0);
+            let duplicate = maketexstring(c"hello".as_ptr());
+            assert_eq!(search_string(duplicate), input);
+            let before = pool_ptr;
+            for unit in "other".encode_utf16() {
+                pool[pool_ptr as usize] = unit;
+                pool_ptr += 1;
+            }
+            assert_eq!(slow_make_string(), replacement);
+            assert_eq!({ pool_ptr }, before);
+
             for (units, expected) in [
                 (&[0xd83d, 0xde00][..], "\u{1f600}"),
                 (&[0xd800, 0x41][..], "\u{fffd}A"),
@@ -534,7 +565,7 @@ mod tests {
                 assert_eq!(actual, expected.as_bytes());
             }
 
-            for length in [0, 1, 16, 31, 32, 33, 256] {
+            for length in [0, 1, 16, 31, 32, 33, 255, 256, 257, 510] {
                 let bytes: Vec<u8> = (0..length).map(|value| value as u8).collect();
                 use std::fmt::Write;
                 let expected = bytes.iter().fold(String::new(), |mut output, byte| {
@@ -555,7 +586,8 @@ mod tests {
     }
 }
 
-pub unsafe fn getmd5sum(s: str_number, file: bool) {
+#[unsafe(export_name = "getmd5sum")]
+pub unsafe extern "C" fn getmd5sum(s: str_number, file: bool) {
     unsafe {
         let mut digest = [0u8; DIGEST_SIZE];
 

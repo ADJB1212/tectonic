@@ -231,6 +231,11 @@ fn issue393_ungetc() {
 }
 
 #[test]
+fn math_spacing() {
+    TestCase::new("math_spacing").go()
+}
+
+#[test]
 fn md5_of_hello() {
     TestCase::new("md5_of_hello").check_pdf(true).go()
 }

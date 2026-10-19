@@ -143,7 +143,7 @@ macro_rules! COUNT_REG {
 
 macro_rules! XEQ_LEVEL {
     ($p:expr) => {
-        eqtb!($p).b16.s0
+        _xeq_level_array[(($p) - INT_BASE) as usize]
     };
 }
 
@@ -165,7 +165,8 @@ macro_rules! GLUEPAR {
     };
 }
 
-pub unsafe fn int_error(n: i32) {
+#[unsafe(export_name = "int_error")]
+pub unsafe extern "C" fn int_error(n: i32) {
     unsafe {
         print_cstr(b" (\0".as_ptr() as *const c_char);
         print_int(n);
@@ -174,7 +175,8 @@ pub unsafe fn int_error(n: i32) {
     }
 }
 
-pub unsafe fn badness(t: scaled_t, s: scaled_t) -> i32 {
+#[unsafe(export_name = "badness")]
+pub unsafe extern "C" fn badness(t: scaled_t, s: scaled_t) -> i32 {
     if t == 0 {
         return 0;
     }
@@ -194,7 +196,8 @@ pub unsafe fn badness(t: scaled_t, s: scaled_t) -> i32 {
     (r * r * r + 0x20000) / 0x40000
 }
 
-pub unsafe fn show_token_list(mut p: i32, q: i32, l: i32) {
+#[unsafe(export_name = "show_token_list")]
+pub unsafe extern "C" fn show_token_list(mut p: i32, q: i32, l: i32) {
     unsafe {
         let mut m: i32;
         let mut c: i32;
@@ -272,7 +275,8 @@ pub unsafe fn show_token_list(mut p: i32, q: i32, l: i32) {
     }
 }
 
-pub unsafe fn runaway() {
+#[unsafe(export_name = "runaway")]
+pub unsafe extern "C" fn runaway() {
     unsafe {
         let mut p: i32 = TEX_NULL;
 
@@ -304,7 +308,8 @@ pub unsafe fn runaway() {
     }
 }
 
-pub unsafe fn get_avail() -> i32 {
+#[unsafe(export_name = "get_avail")]
+pub unsafe extern "C" fn get_avail() -> i32 {
     unsafe {
         let mut p: i32 = avail;
         if p != TEX_NULL {
@@ -328,7 +333,8 @@ pub unsafe fn get_avail() -> i32 {
     }
 }
 
-pub unsafe fn flush_list(p: i32) {
+#[unsafe(export_name = "flush_list")]
+pub unsafe extern "C" fn flush_list(p: i32) {
     unsafe {
         if p != TEX_NULL {
             let mut r = p;
@@ -346,7 +352,8 @@ pub unsafe fn flush_list(p: i32) {
     }
 }
 
-pub unsafe fn get_node(s: i32) -> i32 {
+#[unsafe(export_name = "get_node")]
+pub unsafe extern "C" fn get_node(s: i32) -> i32 {
     unsafe {
         let mut p: i32;
         let mut q: i32;
@@ -430,7 +437,8 @@ pub unsafe fn get_node(s: i32) -> i32 {
     }
 }
 
-pub unsafe fn free_node(p: i32, s: i32) {
+#[unsafe(export_name = "free_node")]
+pub unsafe extern "C" fn free_node(p: i32, s: i32) {
     unsafe {
         if tt_checkpoint_enabled {
             tt_checkpoint_unregister_glyph(p);
@@ -446,7 +454,8 @@ pub unsafe fn free_node(p: i32, s: i32) {
     }
 }
 
-pub unsafe fn new_null_box() -> i32 {
+#[unsafe(export_name = "new_null_box")]
+pub unsafe extern "C" fn new_null_box() -> i32 {
     unsafe {
         let p = get_node(BOX_NODE_SIZE);
         NODE_type!(p) = (HLIST_NODE) as u16;
@@ -463,7 +472,8 @@ pub unsafe fn new_null_box() -> i32 {
     }
 }
 
-pub unsafe fn new_rule() -> i32 {
+#[unsafe(export_name = "new_rule")]
+pub unsafe extern "C" fn new_rule() -> i32 {
     unsafe {
         let p = get_node(RULE_NODE_SIZE);
         NODE_type!(p) = (RULE_NODE) as u16;
@@ -475,7 +485,8 @@ pub unsafe fn new_rule() -> i32 {
     }
 }
 
-pub unsafe fn new_ligature(f: internal_font_number, c: u16, q: i32) -> i32 {
+#[unsafe(export_name = "new_ligature")]
+pub unsafe extern "C" fn new_ligature(f: internal_font_number, c: u16, q: i32) -> i32 {
     unsafe {
         let p = get_node(SMALL_NODE_SIZE);
         NODE_type!(p) = (LIGATURE_NODE) as u16;
@@ -487,7 +498,8 @@ pub unsafe fn new_ligature(f: internal_font_number, c: u16, q: i32) -> i32 {
     }
 }
 
-pub unsafe fn new_lig_item(c: u16) -> i32 {
+#[unsafe(export_name = "new_lig_item")]
+pub unsafe extern "C" fn new_lig_item(c: u16) -> i32 {
     unsafe {
         let p = get_node(SMALL_NODE_SIZE);
         mem!(p).b16.s0 = c;
@@ -496,7 +508,8 @@ pub unsafe fn new_lig_item(c: u16) -> i32 {
     }
 }
 
-pub unsafe fn new_disc() -> i32 {
+#[unsafe(export_name = "new_disc")]
+pub unsafe extern "C" fn new_disc() -> i32 {
     unsafe {
         let p = get_node(SMALL_NODE_SIZE);
         NODE_type!(p) = (DISC_NODE) as u16;
@@ -507,7 +520,8 @@ pub unsafe fn new_disc() -> i32 {
     }
 }
 
-pub unsafe fn copy_native_glyph_info(src: i32, dest: i32) {
+#[unsafe(export_name = "copy_native_glyph_info")]
+pub unsafe extern "C" fn copy_native_glyph_info(src: i32, dest: i32) {
     unsafe {
         if !NATIVE_NODE_glyph_info_ptr!(src).is_null() {
             let glyph_count = NATIVE_NODE_glyph_count!(src) as i32;
@@ -523,7 +537,8 @@ pub unsafe fn copy_native_glyph_info(src: i32, dest: i32) {
     }
 }
 
-pub unsafe fn new_math(w: scaled_t, s: small_number) -> i32 {
+#[unsafe(export_name = "new_math")]
+pub unsafe extern "C" fn new_math(w: scaled_t, s: small_number) -> i32 {
     unsafe {
         let p = get_node(MEDIUM_NODE_SIZE);
         NODE_type!(p) = (MATH_NODE) as u16;
@@ -533,7 +548,8 @@ pub unsafe fn new_math(w: scaled_t, s: small_number) -> i32 {
     }
 }
 
-pub unsafe fn new_spec(p: i32) -> i32 {
+#[unsafe(export_name = "new_spec")]
+pub unsafe extern "C" fn new_spec(p: i32) -> i32 {
     unsafe {
         let q = get_node(GLUE_SPEC_SIZE);
         mem!(q) = mem!(p);
@@ -545,7 +561,8 @@ pub unsafe fn new_spec(p: i32) -> i32 {
     }
 }
 
-pub unsafe fn new_param_glue(n: small_number) -> i32 {
+#[unsafe(export_name = "new_param_glue")]
+pub unsafe extern "C" fn new_param_glue(n: small_number) -> i32 {
     unsafe {
         let p = get_node(MEDIUM_NODE_SIZE);
         NODE_type!(p) = (GLUE_NODE) as u16;
@@ -558,7 +575,8 @@ pub unsafe fn new_param_glue(n: small_number) -> i32 {
     }
 }
 
-pub unsafe fn new_glue(q: i32) -> i32 {
+#[unsafe(export_name = "new_glue")]
+pub unsafe extern "C" fn new_glue(q: i32) -> i32 {
     unsafe {
         let p = get_node(MEDIUM_NODE_SIZE);
         NODE_type!(p) = (GLUE_NODE) as u16;
@@ -570,7 +588,8 @@ pub unsafe fn new_glue(q: i32) -> i32 {
     }
 }
 
-pub unsafe fn new_skip_param(n: small_number) -> i32 {
+#[unsafe(export_name = "new_skip_param")]
+pub unsafe extern "C" fn new_skip_param(n: small_number) -> i32 {
     unsafe {
         temp_ptr = new_spec(eqtb!(GLUE_BASE + n as i32).b32.s1);
         let p = new_glue(temp_ptr);
@@ -580,7 +599,8 @@ pub unsafe fn new_skip_param(n: small_number) -> i32 {
     }
 }
 
-pub unsafe fn new_kern(w: scaled_t) -> i32 {
+#[unsafe(export_name = "new_kern")]
+pub unsafe extern "C" fn new_kern(w: scaled_t) -> i32 {
     unsafe {
         let p = get_node(MEDIUM_NODE_SIZE);
         NODE_type!(p) = (KERN_NODE) as u16;
@@ -590,7 +610,8 @@ pub unsafe fn new_kern(w: scaled_t) -> i32 {
     }
 }
 
-pub unsafe fn new_penalty(m: i32) -> i32 {
+#[unsafe(export_name = "new_penalty")]
+pub unsafe extern "C" fn new_penalty(m: i32) -> i32 {
     unsafe {
         let p = get_node(MEDIUM_NODE_SIZE);
         NODE_type!(p) = (PENALTY_NODE) as u16;
@@ -600,7 +621,8 @@ pub unsafe fn new_penalty(m: i32) -> i32 {
     }
 }
 
-pub unsafe fn prev_rightmost(s: i32, e: i32) -> i32 {
+#[unsafe(export_name = "prev_rightmost")]
+pub unsafe extern "C" fn prev_rightmost(s: i32, e: i32) -> i32 {
     unsafe {
         let mut p = s;
         if p == TEX_NULL {
@@ -616,7 +638,8 @@ pub unsafe fn prev_rightmost(s: i32, e: i32) -> i32 {
     }
 }
 
-pub unsafe fn get_microinterval() -> i32 {
+#[unsafe(export_name = "get_microinterval")]
+pub unsafe extern "C" fn get_microinterval() -> i32 {
     unsafe {
         let mut s: i32 = 0;
         let mut m: i32 = 0;
@@ -633,7 +656,8 @@ pub unsafe fn get_microinterval() -> i32 {
     }
 }
 
-pub unsafe fn short_display(mut p: i32) {
+#[unsafe(export_name = "short_display")]
+pub unsafe extern "C" fn short_display(mut p: i32) {
     unsafe {
         let mut n: i32;
 
@@ -713,7 +737,8 @@ pub unsafe fn short_display(mut p: i32) {
     }
 }
 
-pub unsafe fn print_font_and_char(p: i32) {
+#[unsafe(export_name = "print_font_and_char")]
+pub unsafe extern "C" fn print_font_and_char(p: i32) {
     unsafe {
         if p > mem_end {
             print_esc_cstr(b"CLOBBERED.\0".as_ptr() as *const c_char);
@@ -729,7 +754,8 @@ pub unsafe fn print_font_and_char(p: i32) {
     }
 }
 
-pub unsafe fn print_mark(p: i32) {
+#[unsafe(export_name = "print_mark")]
+pub unsafe extern "C" fn print_mark(p: i32) {
     unsafe {
         print_char(b'{' as i32);
         if p < hi_mem_min || p > mem_end {
@@ -741,7 +767,8 @@ pub unsafe fn print_mark(p: i32) {
     }
 }
 
-pub unsafe fn print_rule_dimen(d: scaled_t) {
+#[unsafe(export_name = "print_rule_dimen")]
+pub unsafe extern "C" fn print_rule_dimen(d: scaled_t) {
     unsafe {
         if d == NULL_FLAG {
             print_char(b'*' as i32);
@@ -751,7 +778,8 @@ pub unsafe fn print_rule_dimen(d: scaled_t) {
     }
 }
 
-pub unsafe fn print_glue(d: scaled_t, mut order: i32, s: *const c_char) {
+#[unsafe(export_name = "print_glue")]
+pub unsafe extern "C" fn print_glue(d: scaled_t, mut order: i32, s: *const c_char) {
     unsafe {
         print_scaled(d);
         if order < NORMAL as i32 || order > FILLL as i32 {
@@ -768,7 +796,8 @@ pub unsafe fn print_glue(d: scaled_t, mut order: i32, s: *const c_char) {
     }
 }
 
-pub unsafe fn print_spec(p: i32, s: *const c_char) {
+#[unsafe(export_name = "print_spec")]
+pub unsafe extern "C" fn print_spec(p: i32, s: *const c_char) {
     unsafe {
         if p < 0 || p >= lo_mem_max {
             print_char(b'*' as i32);
@@ -789,7 +818,8 @@ pub unsafe fn print_spec(p: i32, s: *const c_char) {
     }
 }
 
-pub unsafe fn print_fam_and_char(p: i32) {
+#[unsafe(export_name = "print_fam_and_char")]
+pub unsafe extern "C" fn print_fam_and_char(p: i32) {
     unsafe {
         print_esc_cstr(b"fam\0".as_ptr() as *const c_char);
         print_int(((mem!(p).b16.s1 % 256) % 256) as i32);
@@ -803,7 +833,8 @@ pub unsafe fn print_fam_and_char(p: i32) {
     }
 }
 
-pub unsafe fn print_delimiter(p: i32) {
+#[unsafe(export_name = "print_delimiter")]
+pub unsafe extern "C" fn print_delimiter(p: i32) {
     unsafe {
         let mut a: i32 = (mem!(p).b16.s3 % 256) as i32 * 256
             + (mem!(p).b16.s2 as i32 + (mem!(p).b16.s3 as i32 / 256) * 65536);
@@ -818,7 +849,8 @@ pub unsafe fn print_delimiter(p: i32) {
     }
 }
 
-pub unsafe fn print_subsidiary_data(p: i32, c: UTF16_code) {
+#[unsafe(export_name = "print_subsidiary_data")]
+pub unsafe extern "C" fn print_subsidiary_data(p: i32, c: UTF16_code) {
     unsafe {
         if cur_length() >= depth_threshold {
             if mem!(p).b32.s1 != EMPTY {
@@ -855,7 +887,8 @@ pub unsafe fn print_subsidiary_data(p: i32, c: UTF16_code) {
     }
 }
 
-pub unsafe fn print_style(c: i32) {
+#[unsafe(export_name = "print_style")]
+pub unsafe extern "C" fn print_style(c: i32) {
     unsafe {
         match (c / 2) as i32 {
             x if x == DISPLAY_STYLE as i32 / 2 => {
@@ -875,7 +908,8 @@ pub unsafe fn print_style(c: i32) {
     }
 }
 
-pub unsafe fn print_skip_param(n: i32) {
+#[unsafe(export_name = "print_skip_param")]
+pub unsafe extern "C" fn print_skip_param(n: i32) {
     unsafe {
         match (n) as i32 {
             GLUE_PAR__line_skip => print_esc_cstr(b"lineskip\0".as_ptr() as *const c_char),
@@ -912,7 +946,8 @@ pub unsafe fn print_skip_param(n: i32) {
     }
 }
 
-pub unsafe fn show_node_list(mut p: i32) {
+#[unsafe(export_name = "show_node_list")]
+pub unsafe extern "C" fn show_node_list(mut p: i32) {
     unsafe {
         let mut n: i32;
         let mut i: i32;
@@ -1400,7 +1435,8 @@ pub unsafe fn show_node_list(mut p: i32) {
     }
 }
 
-pub unsafe fn show_box(p: i32) {
+#[unsafe(export_name = "show_box")]
+pub unsafe extern "C" fn show_box(p: i32) {
     unsafe {
         depth_threshold = INTPAR!(INT_PAR__show_box_depth);
         breadth_max = INTPAR!(INT_PAR__show_box_breadth);
@@ -1415,7 +1451,8 @@ pub unsafe fn show_box(p: i32) {
     }
 }
 
-pub unsafe fn short_display_n(p: i32, m: i32) {
+#[unsafe(export_name = "short_display_n")]
+pub unsafe extern "C" fn short_display_n(p: i32, m: i32) {
     unsafe {
         breadth_max = m;
         depth_threshold = pool_size - pool_ptr - 1;
@@ -1423,7 +1460,8 @@ pub unsafe fn short_display_n(p: i32, m: i32) {
     }
 }
 
-pub unsafe fn delete_token_ref(p: i32) {
+#[unsafe(export_name = "delete_token_ref")]
+pub unsafe extern "C" fn delete_token_ref(p: i32) {
     unsafe {
         if mem!(p).b32.s0 == TEX_NULL {
             flush_list(p);
@@ -1433,7 +1471,8 @@ pub unsafe fn delete_token_ref(p: i32) {
     }
 }
 
-pub unsafe fn delete_glue_ref(p: i32) {
+#[unsafe(export_name = "delete_glue_ref")]
+pub unsafe extern "C" fn delete_glue_ref(p: i32) {
     unsafe {
         if mem!(p).b32.s1 == TEX_NULL {
             free_node(p, GLUE_SPEC_SIZE);
@@ -1443,7 +1482,8 @@ pub unsafe fn delete_glue_ref(p: i32) {
     }
 }
 
-pub unsafe fn flush_node_list(mut p: i32) {
+#[unsafe(export_name = "flush_node_list")]
+pub unsafe extern "C" fn flush_node_list(mut p: i32) {
     unsafe {
         let mut q: i32;
 
@@ -1602,7 +1642,8 @@ pub unsafe fn flush_node_list(mut p: i32) {
     }
 }
 
-pub unsafe fn copy_node_list(mut p: i32) -> i32 {
+#[unsafe(export_name = "copy_node_list")]
+pub unsafe extern "C" fn copy_node_list(mut p: i32) -> i32 {
     unsafe {
         let h = get_avail();
         let mut q = h;
@@ -1748,7 +1789,8 @@ pub unsafe fn copy_node_list(mut p: i32) -> i32 {
     }
 }
 
-pub unsafe fn print_mode(m: i32) {
+#[unsafe(export_name = "print_mode")]
+pub unsafe extern "C" fn print_mode(m: i32) {
     unsafe {
         if m > 0 {
             match (m / (MAX_COMMAND as i32 + 1)) as i32 {
@@ -1770,7 +1812,8 @@ pub unsafe fn print_mode(m: i32) {
     }
 }
 
-pub unsafe fn print_in_mode(m: i32) {
+#[unsafe(export_name = "print_in_mode")]
+pub unsafe extern "C" fn print_in_mode(m: i32) {
     unsafe {
         if m > 0 {
             match (m / (MAX_COMMAND as i32 + 1)) as i32 {
@@ -1792,7 +1835,8 @@ pub unsafe fn print_in_mode(m: i32) {
     }
 }
 
-pub unsafe fn push_nest() {
+#[unsafe(export_name = "push_nest")]
+pub unsafe extern "C" fn push_nest() {
     unsafe {
         if nest_ptr > max_nest_stack {
             max_nest_stack = nest_ptr;
@@ -1813,7 +1857,8 @@ pub unsafe fn push_nest() {
     }
 }
 
-pub unsafe fn pop_nest() {
+#[unsafe(export_name = "pop_nest")]
+pub unsafe extern "C" fn pop_nest() {
     unsafe {
         mem!(cur_list.head).b32.s1 = avail;
         avail = cur_list.head;
@@ -1822,7 +1867,8 @@ pub unsafe fn pop_nest() {
     }
 }
 
-pub unsafe fn show_activities() {
+#[unsafe(export_name = "show_activities")]
+pub unsafe extern "C" fn show_activities() {
     unsafe {
         let mut p: i32;
         let mut m: i16;
@@ -1949,7 +1995,8 @@ pub unsafe fn show_activities() {
     }
 }
 
-pub unsafe fn print_param(n: i32) {
+#[unsafe(export_name = "print_param")]
+pub unsafe extern "C" fn print_param(n: i32) {
     unsafe {
         match (n) as i32 {
             INT_PAR__pretolerance => print_esc_cstr(b"pretolerance\0".as_ptr() as *const c_char),
@@ -2117,7 +2164,8 @@ pub unsafe fn print_param(n: i32) {
     }
 }
 
-pub unsafe fn begin_diagnostic() {
+#[unsafe(export_name = "begin_diagnostic")]
+pub unsafe extern "C" fn begin_diagnostic() {
     unsafe {
         old_setting = (selector) as u8;
         if INTPAR!(INT_PAR__tracing_online) <= 0 && selector == SELECTOR_TERM_AND_LOG {
@@ -2129,7 +2177,8 @@ pub unsafe fn begin_diagnostic() {
     }
 }
 
-pub unsafe fn end_diagnostic(blank_line: bool) {
+#[unsafe(export_name = "end_diagnostic")]
+pub unsafe extern "C" fn end_diagnostic(blank_line: bool) {
     unsafe {
         print_nl_cstr(b"\0".as_ptr() as *const c_char);
         if blank_line {
@@ -2139,7 +2188,8 @@ pub unsafe fn end_diagnostic(blank_line: bool) {
     }
 }
 
-pub unsafe fn print_length_param(n: i32) {
+#[unsafe(export_name = "print_length_param")]
+pub unsafe extern "C" fn print_length_param(n: i32) {
     unsafe {
         match (n) as i32 {
             DIMEN_PAR__par_indent => print_esc_cstr(b"parindent\0".as_ptr() as *const c_char),
@@ -2188,7 +2238,8 @@ pub unsafe fn print_length_param(n: i32) {
     }
 }
 
-pub unsafe fn print_cmd_chr(cmd: u16, mut chr_code: i32) {
+#[unsafe(export_name = "print_cmd_chr")]
+pub unsafe extern "C" fn print_cmd_chr(cmd: u16, mut chr_code: i32) {
     unsafe {
         let mut n: i32;
         let font_name_str: str_number;
@@ -3219,7 +3270,8 @@ pub unsafe fn print_cmd_chr(cmd: u16, mut chr_code: i32) {
     }
 }
 
-pub unsafe fn not_aat_font_error(cmd: i32, c: i32, f: i32) {
+#[unsafe(export_name = "not_aat_font_error")]
+pub unsafe extern "C" fn not_aat_font_error(cmd: i32, c: i32, f: i32) {
     unsafe {
         error_here_with_diagnostic(b"Cannot use \0".as_ptr() as *const c_char);
         print_cmd_chr(cmd as u16, c);
@@ -3231,7 +3283,8 @@ pub unsafe fn not_aat_font_error(cmd: i32, c: i32, f: i32) {
     }
 }
 
-pub unsafe fn not_aat_gr_font_error(cmd: i32, c: i32, f: i32) {
+#[unsafe(export_name = "not_aat_gr_font_error")]
+pub unsafe extern "C" fn not_aat_gr_font_error(cmd: i32, c: i32, f: i32) {
     unsafe {
         error_here_with_diagnostic(b"Cannot use \0".as_ptr() as *const c_char);
         print_cmd_chr(cmd as u16, c);
@@ -3243,7 +3296,8 @@ pub unsafe fn not_aat_gr_font_error(cmd: i32, c: i32, f: i32) {
     }
 }
 
-pub unsafe fn not_ot_font_error(cmd: i32, c: i32, f: i32) {
+#[unsafe(export_name = "not_ot_font_error")]
+pub unsafe extern "C" fn not_ot_font_error(cmd: i32, c: i32, f: i32) {
     unsafe {
         error_here_with_diagnostic(b"Cannot use \0".as_ptr() as *const c_char);
         print_cmd_chr(cmd as u16, c);
@@ -3255,7 +3309,8 @@ pub unsafe fn not_ot_font_error(cmd: i32, c: i32, f: i32) {
     }
 }
 
-pub unsafe fn not_native_font_error(cmd: i32, c: i32, f: i32) {
+#[unsafe(export_name = "not_native_font_error")]
+pub unsafe extern "C" fn not_native_font_error(cmd: i32, c: i32, f: i32) {
     unsafe {
         error_here_with_diagnostic(b"Cannot use \0".as_ptr() as *const c_char);
         print_cmd_chr(cmd as u16, c);
@@ -3267,34 +3322,36 @@ pub unsafe fn not_native_font_error(cmd: i32, c: i32, f: i32) {
     }
 }
 
-pub unsafe fn id_lookup(j: i32, l: i32) -> i32 {
+#[unsafe(export_name = "id_lookup")]
+pub unsafe extern "C" fn id_lookup(j: i32, l: i32) -> i32 {
     unsafe {
         let mut h: i32 = 0;
         let mut d: i32;
         let mut p: i32;
         let mut k: i32;
-        let mut ll: i32;
+        let mut ll = l;
 
         for k_idx in j..=(j + l - 1) {
-            h = h + h + *buffer.offset(k_idx as isize);
+            let scalar = *buffer.offset(k_idx as isize);
+            ll += i32::from(scalar >= 65536);
+            h = h + h + scalar;
             while h >= HASH_PRIME {
                 h -= 8501;
             }
         }
 
         p = h + HASH_BASE;
-        ll = l;
-
-        for d_idx in 0..=(l - 1) {
-            if *buffer.offset((j + d_idx) as isize) >= 65536 {
-                ll += 1;
-            }
-        }
 
         loop {
             if (*hash.offset(p as isize)).s1 > 0 {
                 if length((*hash.offset(p as isize)).s1) == ll {
-                    if str_eq_buf((*hash.offset(p as isize)).s1, j) {
+                    let string = (*hash.offset(p as isize)).s1;
+                    let matched = if ll == l {
+                        super::xetex_stringpool::str_eq_buf_bmp(string, j, l)
+                    } else {
+                        str_eq_buf(string, j)
+                    };
+                    if matched {
                         return p;
                     }
                 }
@@ -3307,7 +3364,7 @@ pub unsafe fn id_lookup(j: i32, l: i32) -> i32 {
                     if (*hash.offset(p as isize)).s1 > 0 {
                         if hash_high < hash_extra {
                             hash_high += 1;
-                            (*hash.offset(p as isize)).s0 = ((hash_high + EQTB_SIZE) as u16) as i32;
+                            (*hash.offset(p as isize)).s0 = hash_high + EQTB_SIZE;
                             p = hash_high + EQTB_SIZE;
                         } else {
                             loop {
@@ -3322,7 +3379,7 @@ pub unsafe fn id_lookup(j: i32, l: i32) -> i32 {
                                     break;
                                 }
                             }
-                            (*hash.offset(p as isize)).s0 = (hash_used as u16) as i32;
+                            (*hash.offset(p as isize)).s0 = hash_used;
                             p = hash_used;
                         }
                     }
@@ -3368,7 +3425,8 @@ pub unsafe fn id_lookup(j: i32, l: i32) -> i32 {
     }
 }
 
-pub unsafe fn prim_lookup(s: str_number) -> i32 {
+#[unsafe(export_name = "prim_lookup")]
+pub unsafe extern "C" fn prim_lookup(s: str_number) -> i32 {
     unsafe {
         let mut h: i32;
         let mut p: i32;
@@ -3447,7 +3505,8 @@ pub unsafe fn prim_lookup(s: str_number) -> i32 {
     }
 }
 
-pub unsafe fn print_group(e: bool) {
+#[unsafe(export_name = "print_group")]
+pub unsafe extern "C" fn print_group(e: bool) {
     unsafe {
         match (cur_group) as i32 {
             BOTTOM_LEVEL => {
@@ -3504,7 +3563,8 @@ pub unsafe fn print_group(e: bool) {
     }
 }
 
-pub unsafe fn pseudo_input() -> bool {
+#[unsafe(export_name = "pseudo_input")]
+pub unsafe extern "C" fn pseudo_input() -> bool {
     unsafe {
         let p = mem!(pseudo_files).b32.s0;
         if p == TEX_NULL {
@@ -3543,7 +3603,8 @@ pub unsafe fn pseudo_input() -> bool {
     }
 }
 
-pub unsafe fn pseudo_close() {
+#[unsafe(export_name = "pseudo_close")]
+pub unsafe extern "C" fn pseudo_close() {
     unsafe {
         let p = mem!(pseudo_files).b32.s1;
         let mut q = mem!(pseudo_files).b32.s0;
@@ -3558,7 +3619,8 @@ pub unsafe fn pseudo_close() {
     }
 }
 
-pub unsafe fn group_warning() {
+#[unsafe(export_name = "group_warning")]
+pub unsafe extern "C" fn group_warning() {
     unsafe {
         let mut i: i32;
         let mut w: bool;
@@ -3599,7 +3661,8 @@ pub unsafe fn group_warning() {
     }
 }
 
-pub unsafe fn if_warning() {
+#[unsafe(export_name = "if_warning")]
+pub unsafe extern "C" fn if_warning() {
     unsafe {
         let mut i: i32;
         let mut w: bool;
@@ -3644,7 +3707,8 @@ pub unsafe fn if_warning() {
     }
 }
 
-pub unsafe fn file_warning() {
+#[unsafe(export_name = "file_warning")]
+pub unsafe extern "C" fn file_warning() {
     unsafe {
         let p = save_ptr;
         let l = cur_level;
@@ -3703,7 +3767,8 @@ pub unsafe fn file_warning() {
     }
 }
 
-pub unsafe fn delete_sa_ref(mut q: i32) {
+#[unsafe(export_name = "delete_sa_ref")]
+pub unsafe extern "C" fn delete_sa_ref(mut q: i32) {
     unsafe {
         let mut p: i32;
         let mut i: small_number;
@@ -3755,7 +3820,8 @@ pub unsafe fn delete_sa_ref(mut q: i32) {
     }
 }
 
-pub unsafe fn sa_save(p: i32) {
+#[unsafe(export_name = "sa_save")]
+pub unsafe extern "C" fn sa_save(p: i32) {
     unsafe {
         let q: i32;
         let mut i: u16;
@@ -3800,7 +3866,8 @@ pub unsafe fn sa_save(p: i32) {
     }
 }
 
-pub unsafe fn sa_destroy(p: i32) {
+#[unsafe(export_name = "sa_destroy")]
+pub unsafe extern "C" fn sa_destroy(p: i32) {
     unsafe {
         if mem!(p).b16.s1 < MU_VAL_LIMIT as u16 {
             delete_glue_ref(mem!(p + 1).b32.s1);
@@ -3814,7 +3881,8 @@ pub unsafe fn sa_destroy(p: i32) {
     }
 }
 
-pub unsafe fn sa_def(p: i32, e: i32) {
+#[unsafe(export_name = "sa_def")]
+pub unsafe extern "C" fn sa_def(p: i32, e: i32) {
     unsafe {
         mem!(p + 1).b32.s0 += 1;
         if mem!(p + 1).b32.s1 == e {
@@ -3832,7 +3900,8 @@ pub unsafe fn sa_def(p: i32, e: i32) {
     }
 }
 
-pub unsafe fn sa_w_def(p: i32, w: i32) {
+#[unsafe(export_name = "sa_w_def")]
+pub unsafe extern "C" fn sa_w_def(p: i32, w: i32) {
     unsafe {
         mem!(p + 1).b32.s0 += 1;
         if mem!(p + 2).b32.s1 != w {
@@ -3846,7 +3915,8 @@ pub unsafe fn sa_w_def(p: i32, w: i32) {
     }
 }
 
-pub unsafe fn gsa_def(p: i32, e: i32) {
+#[unsafe(export_name = "gsa_def")]
+pub unsafe extern "C" fn gsa_def(p: i32, e: i32) {
     unsafe {
         mem!(p + 1).b32.s0 += 1;
         sa_destroy(p);
@@ -3856,7 +3926,8 @@ pub unsafe fn gsa_def(p: i32, e: i32) {
     }
 }
 
-pub unsafe fn gsa_w_def(p: i32, w: i32) {
+#[unsafe(export_name = "gsa_w_def")]
+pub unsafe extern "C" fn gsa_w_def(p: i32, w: i32) {
     unsafe {
         mem!(p + 1).b32.s0 += 1;
         mem!(p).b16.s0 = (LEVEL_ONE) as u16;
@@ -3865,7 +3936,8 @@ pub unsafe fn gsa_w_def(p: i32, w: i32) {
     }
 }
 
-pub unsafe fn sa_restore() {
+#[unsafe(export_name = "sa_restore")]
+pub unsafe extern "C" fn sa_restore() {
     unsafe {
         let mut p: i32;
 
@@ -3903,7 +3975,8 @@ pub unsafe fn sa_restore() {
     }
 }
 
-pub unsafe fn new_save_level(c: group_code) {
+#[unsafe(export_name = "new_save_level")]
+pub unsafe extern "C" fn new_save_level(c: group_code) {
     unsafe {
         if save_ptr > max_save_stack {
             max_save_stack = save_ptr;
@@ -3932,7 +4005,8 @@ pub unsafe fn new_save_level(c: group_code) {
     }
 }
 
-pub unsafe fn eq_destroy(w: memory_word) {
+#[unsafe(export_name = "eq_destroy")]
+pub unsafe extern "C" fn eq_destroy(w: memory_word) {
     unsafe {
         let q: i32;
         match (w.b16.s1) as i32 {
@@ -3961,7 +4035,8 @@ pub unsafe fn eq_destroy(w: memory_word) {
     }
 }
 
-pub unsafe fn eq_save(p: i32, l: u16) {
+#[unsafe(export_name = "eq_save")]
+pub unsafe extern "C" fn eq_save(p: i32, l: u16) {
     unsafe {
         if save_ptr > max_save_stack {
             max_save_stack = save_ptr;
@@ -3985,7 +4060,8 @@ pub unsafe fn eq_save(p: i32, l: u16) {
     }
 }
 
-pub unsafe fn eq_define(p: i32, t: u16, e: i32) {
+#[unsafe(export_name = "eq_define")]
+pub unsafe extern "C" fn eq_define(p: i32, t: u16, e: i32) {
     unsafe {
         if eqtb!(p).b16.s1 == t && eqtb!(p).b32.s1 == e {
             eq_destroy(eqtb!(p));
@@ -4002,7 +4078,8 @@ pub unsafe fn eq_define(p: i32, t: u16, e: i32) {
     }
 }
 
-pub unsafe fn eq_word_define(p: i32, w: i32) {
+#[unsafe(export_name = "eq_word_define")]
+pub unsafe extern "C" fn eq_word_define(p: i32, w: i32) {
     unsafe {
         if eqtb!(p).b32.s1 == w {
             return;
@@ -4015,7 +4092,8 @@ pub unsafe fn eq_word_define(p: i32, w: i32) {
     }
 }
 
-pub unsafe fn geq_define(p: i32, t: u16, e: i32) {
+#[unsafe(export_name = "geq_define")]
+pub unsafe extern "C" fn geq_define(p: i32, t: u16, e: i32) {
     unsafe {
         eq_destroy(eqtb!(p));
         eqtb!(p).b16.s0 = (LEVEL_ONE) as u16;
@@ -4024,14 +4102,16 @@ pub unsafe fn geq_define(p: i32, t: u16, e: i32) {
     }
 }
 
-pub unsafe fn geq_word_define(p: i32, w: i32) {
+#[unsafe(export_name = "geq_word_define")]
+pub unsafe extern "C" fn geq_word_define(p: i32, w: i32) {
     unsafe {
         eqtb!(p).b32.s1 = w;
         XEQ_LEVEL!(p) = (LEVEL_ONE) as u16;
     }
 }
 
-pub unsafe fn save_for_after(t: i32) {
+#[unsafe(export_name = "save_for_after")]
+pub unsafe extern "C" fn save_for_after(t: i32) {
     unsafe {
         if cur_level > (LEVEL_ONE) as u16 {
             if save_ptr > max_save_stack {
@@ -4051,7 +4131,8 @@ pub unsafe fn save_for_after(t: i32) {
     }
 }
 
-pub unsafe fn unsave() {
+#[unsafe(export_name = "unsave")]
+pub unsafe extern "C" fn unsave() {
     unsafe {
         let mut p: i32;
         let mut l: u16 = 0;
@@ -4125,7 +4206,8 @@ pub unsafe fn unsave() {
     }
 }
 
-pub unsafe fn prepare_mag() {
+#[unsafe(export_name = "prepare_mag")]
+pub unsafe extern "C" fn prepare_mag() {
     unsafe {
         if mag_set > 0 && INTPAR!(INT_PAR__mag) != mag_set {
             let errmsg = error_here_with_diagnostic(
@@ -4166,7 +4248,8 @@ pub unsafe fn prepare_mag() {
     }
 }
 
-pub unsafe fn token_show(p: i32) {
+#[unsafe(export_name = "token_show")]
+pub unsafe extern "C" fn token_show(p: i32) {
     unsafe {
         if p != TEX_NULL {
             show_token_list(mem!(p).b32.s1, TEX_NULL, 10000000);
@@ -4174,7 +4257,8 @@ pub unsafe fn token_show(p: i32) {
     }
 }
 
-pub unsafe fn print_meaning() {
+#[unsafe(export_name = "print_meaning")]
+pub unsafe extern "C" fn print_meaning() {
     unsafe {
         print_cmd_chr((cur_cmd) as u16, cur_chr);
         if cur_cmd >= (CALL) as u8 {
@@ -4189,7 +4273,8 @@ pub unsafe fn print_meaning() {
     }
 }
 
-pub unsafe fn show_cur_cmd_chr() {
+#[unsafe(export_name = "show_cur_cmd_chr")]
+pub unsafe extern "C" fn show_cur_cmd_chr() {
     unsafe {
         let mut n: i32;
         let mut l: i32;
@@ -4236,7 +4321,8 @@ pub unsafe fn show_cur_cmd_chr() {
     }
 }
 
-pub unsafe fn show_context() {
+#[unsafe(export_name = "show_context")]
+pub unsafe extern "C" fn show_context() {
     unsafe {
         let mut saved_selector: selector_t;
         let mut nn: i32;
@@ -4460,7 +4546,8 @@ pub unsafe fn show_context() {
     }
 }
 
-pub unsafe fn begin_token_list(p: i32, t: u16) {
+#[unsafe(export_name = "begin_token_list")]
+pub unsafe extern "C" fn begin_token_list(p: i32, t: u16) {
     unsafe {
         if input_ptr > max_in_stack {
             max_in_stack = input_ptr;
@@ -4507,7 +4594,8 @@ pub unsafe fn begin_token_list(p: i32, t: u16) {
     }
 }
 
-pub unsafe fn end_token_list() {
+#[unsafe(export_name = "end_token_list")]
+pub unsafe extern "C" fn end_token_list() {
     unsafe {
         if cur_input.index >= (BACKED_UP) as u16 {
             if cur_input.index <= (INSERTED) as u16 {
@@ -4535,7 +4623,8 @@ pub unsafe fn end_token_list() {
     }
 }
 
-pub unsafe fn back_input() {
+#[unsafe(export_name = "back_input")]
+pub unsafe extern "C" fn back_input() {
     unsafe {
         let mut p: i32;
         while cur_input.state == (TOKEN_LIST) as u16
@@ -4571,14 +4660,16 @@ pub unsafe fn back_input() {
     }
 }
 
-pub unsafe fn back_error() {
+#[unsafe(export_name = "back_error")]
+pub unsafe extern "C" fn back_error() {
     unsafe {
         back_input();
         error();
     }
 }
 
-pub unsafe fn ins_error() {
+#[unsafe(export_name = "ins_error")]
+pub unsafe extern "C" fn ins_error() {
     unsafe {
         back_input();
         cur_input.index = (INSERTED) as u16;
@@ -4586,7 +4677,8 @@ pub unsafe fn ins_error() {
     }
 }
 
-pub unsafe fn begin_file_reading() {
+#[unsafe(export_name = "begin_file_reading")]
+pub unsafe extern "C" fn begin_file_reading() {
     unsafe {
         if in_open as i32 == max_in_open {
             overflow(
@@ -4626,7 +4718,8 @@ pub unsafe fn begin_file_reading() {
     }
 }
 
-pub unsafe fn end_file_reading() {
+#[unsafe(export_name = "end_file_reading")]
+pub unsafe extern "C" fn end_file_reading() {
     unsafe {
         first = cur_input.start;
         line = *line_stack.offset(cur_input.index as isize);
@@ -4644,7 +4737,8 @@ pub unsafe fn end_file_reading() {
     }
 }
 
-pub unsafe fn check_outer_validity() {
+#[unsafe(export_name = "check_outer_validity")]
+pub unsafe extern "C" fn check_outer_validity() {
     unsafe {
         let mut p: i32;
         let q: i32;
@@ -4754,7 +4848,190 @@ pub unsafe fn check_outer_validity() {
     }
 }
 
-pub unsafe fn get_next() {
+#[unsafe(export_name = "get_next")]
+pub unsafe extern "C" fn get_next() {
+    unsafe {
+        if cur_input.state == TOKEN_LIST as u16 && cur_input.loc != TEX_NULL {
+            let node = *mem.add(cur_input.loc as usize);
+            let token = node.b32.s0;
+            let (command, character, control_sequence) = if token >= CS_TOKEN_FLAG {
+                let control_sequence = token - CS_TOKEN_FLAG;
+                let definition = *eqtb.add(control_sequence as usize);
+                let command = definition.b16.s1 as u8;
+                if command >= OUTER_CALL as u8 {
+                    get_next_slow();
+                    return;
+                }
+                (command, definition.b32.s1, control_sequence)
+            } else {
+                let command = (token / MAX_CHAR_VAL) as u8;
+                if command == OUT_PARAM as u8 {
+                    get_next_slow();
+                    return;
+                }
+                (command, token % MAX_CHAR_VAL, 0)
+            };
+            if align_state == 0 && command >= TAB_MARK as u8 && command <= CAR_RET as u8 {
+                get_next_slow();
+                return;
+            }
+            cur_input.loc = node.b32.s1;
+            cur_cmd = command;
+            cur_chr = character;
+            cur_cs = control_sequence;
+            if token < CS_TOKEN_FLAG {
+                if command == LEFT_BRACE as u8 {
+                    align_state += 1;
+                } else if command == RIGHT_BRACE as u8 {
+                    align_state -= 1;
+                }
+            }
+            return;
+        } else if cur_input.state != TOKEN_LIST as u16 && cur_input.loc <= cur_input.limit {
+            let character = *buffer.add(cur_input.loc as usize);
+            if (0..=BIGGEST_USV).contains(&character) && !(0xD800..0xDC00).contains(&character) {
+                let command = (*eqtb.add((CAT_CODE_BASE + character) as usize)).b32.s1 as u8;
+                if command == LETTER as u8 || command == OTHER_CHAR as u8 {
+                    cur_input.loc += 1;
+                    cur_input.state = MID_LINE as u16;
+                    cur_cmd = command;
+                    cur_chr = character;
+                    cur_cs = 0;
+                    return;
+                }
+            }
+        }
+        get_next_slow();
+    }
+}
+
+#[cfg(test)]
+mod token_tests {
+    use super::*;
+
+    #[test]
+    fn token_list_fast_path_matches_full_scanner() {
+        unsafe {
+            let saved = (
+                mem,
+                eqtb,
+                buffer,
+                cur_input,
+                align_state,
+                cur_cmd,
+                cur_chr,
+                cur_cs,
+            );
+            let result = std::panic::catch_unwind(|| {
+                let zero: memory_word = std::mem::zeroed();
+                let mut nodes = [zero; 4];
+                let mut definitions = vec![zero; (CAT_CODE_BASE + BIGGEST_USV + 1) as usize];
+                mem = nodes.as_mut_ptr();
+                eqtb = definitions.as_mut_ptr();
+                nodes[1].b32.s1 = 2;
+                for is_control_sequence in [false, true] {
+                    let commands = if is_control_sequence { OUTER_CALL } else { 16 };
+                    for command in 0..commands {
+                        if !is_control_sequence && command == OUT_PARAM {
+                            continue;
+                        }
+                        for character in [0, 32, 65535, 65536, 0x10ffff] {
+                            for alignment in [-100, 0, 1, 1000000] {
+                                if alignment == 0 && (TAB_MARK..=CAR_RET).contains(&command) {
+                                    continue;
+                                }
+                                nodes[1].b32.s0 = if is_control_sequence {
+                                    definitions[7].b16.s1 = command as u16;
+                                    definitions[7].b32.s1 = character;
+                                    CS_TOKEN_FLAG + 7
+                                } else {
+                                    command * MAX_CHAR_VAL + character
+                                };
+                                let reset = || {
+                                    cur_input.state = TOKEN_LIST as u16;
+                                    cur_input.loc = 1;
+                                    align_state = alignment;
+                                    cur_cmd = 255;
+                                    cur_chr = -1;
+                                    cur_cs = -1;
+                                };
+                                reset();
+                                get_next_slow();
+                                let expected =
+                                    (cur_cmd, cur_chr, cur_cs, cur_input.loc, align_state);
+                                reset();
+                                get_next();
+                                assert_eq!(
+                                    (cur_cmd, cur_chr, cur_cs, cur_input.loc, align_state),
+                                    expected
+                                );
+                            }
+                        }
+                    }
+                }
+                let mut source = [0; 4];
+                buffer = source.as_mut_ptr();
+                for state in [MID_LINE, SKIP_BLANKS, NEW_LINE] {
+                    for command in [LETTER, OTHER_CHAR] {
+                        for character in [
+                            0, 32, 97, 0x3b1, 0xd800, 0xdbff, 0xdc00, 0xffff, 0x10000, 0x10ffff,
+                        ] {
+                            source[1] = character;
+                            definitions[(CAT_CODE_BASE + character) as usize].b32.s1 = command;
+                            let reset = || {
+                                cur_input.state = state as u16;
+                                cur_input.loc = 1;
+                                cur_input.limit = 1;
+                                cur_cmd = 255;
+                                cur_chr = -1;
+                                cur_cs = -1;
+                            };
+                            reset();
+                            get_next_slow();
+                            let expected = (
+                                cur_cmd,
+                                cur_chr,
+                                cur_cs,
+                                cur_input.loc,
+                                cur_input.state,
+                                align_state,
+                            );
+                            reset();
+                            get_next();
+                            assert_eq!(
+                                (
+                                    cur_cmd,
+                                    cur_chr,
+                                    cur_cs,
+                                    cur_input.loc,
+                                    cur_input.state,
+                                    align_state
+                                ),
+                                expected
+                            );
+                        }
+                    }
+                }
+            });
+            (
+                mem,
+                eqtb,
+                buffer,
+                cur_input,
+                align_state,
+                cur_cmd,
+                cur_chr,
+                cur_cs,
+            ) = saved;
+            if let Err(error) = result {
+                std::panic::resume_unwind(error);
+            }
+        }
+    }
+}
+
+#[inline(never)]
+unsafe fn get_next_slow() {
     unsafe {
         let mut k: i32;
         let t: i32;
@@ -5402,7 +5679,8 @@ pub unsafe fn get_next() {
     }
 }
 
-pub unsafe fn get_token() {
+#[unsafe(export_name = "get_token")]
+pub unsafe extern "C" fn get_token() {
     unsafe {
         no_new_control_sequence = false;
         get_next();
@@ -5415,7 +5693,8 @@ pub unsafe fn get_token() {
     }
 }
 
-pub unsafe fn macro_call() {
+#[unsafe(export_name = "macro_call")]
+pub unsafe extern "C" fn macro_call() {
     unsafe {
         let mut r: i32;
         let mut p: i32 = TEX_NULL;
@@ -5795,7 +6074,8 @@ pub unsafe fn macro_call() {
     }
 }
 
-pub unsafe fn insert_relax() {
+#[unsafe(export_name = "insert_relax")]
+pub unsafe extern "C" fn insert_relax() {
     unsafe {
         cur_tok = CS_TOKEN_FLAG + cur_cs;
         back_input();
@@ -5805,7 +6085,8 @@ pub unsafe fn insert_relax() {
     }
 }
 
-pub unsafe fn new_index(i: u16, q: i32) {
+#[unsafe(export_name = "new_index")]
+pub unsafe extern "C" fn new_index(i: u16, q: i32) {
     unsafe {
         cur_ptr = get_node(INDEX_NODE_SIZE);
         mem!(cur_ptr).b16.s1 = i;
@@ -5819,7 +6100,8 @@ pub unsafe fn new_index(i: u16, q: i32) {
     }
 }
 
-pub unsafe fn find_sa_element(t: small_number, n: i32, w: bool) {
+#[unsafe(export_name = "find_sa_element")]
+pub unsafe extern "C" fn find_sa_element(t: small_number, n: i32, w: bool) {
     unsafe {
         let mut q: i32;
         let mut i: small_number;
@@ -5860,7 +6142,7 @@ pub unsafe fn find_sa_element(t: small_number, n: i32, w: bool) {
             mem!(q).b16.s0 += 1;
             q = cur_ptr;
             i = (n % 64) as small_number;
-            init_leaf(t, i, q);
+            init_leaf(t, i, q, n);
             return;
         }
 
@@ -5902,7 +6184,7 @@ pub unsafe fn find_sa_element(t: small_number, n: i32, w: bool) {
             mem!(q).b16.s0 += 1;
             q = cur_ptr;
             i = (n % 64) as small_number;
-            init_leaf(t, i, q);
+            init_leaf(t, i, q, n);
             return;
         }
 
@@ -5935,7 +6217,7 @@ pub unsafe fn find_sa_element(t: small_number, n: i32, w: bool) {
             mem!(q).b16.s0 += 1;
             q = cur_ptr;
             i = (n % 64) as small_number;
-            init_leaf(t, i, q);
+            init_leaf(t, i, q, n);
             return;
         }
 
@@ -5959,7 +6241,7 @@ pub unsafe fn find_sa_element(t: small_number, n: i32, w: bool) {
             mem!(q).b16.s0 += 1;
             q = cur_ptr;
             i = (n % 64) as small_number;
-            init_leaf(t, i, q);
+            init_leaf(t, i, q, n);
             return;
         }
 
@@ -5971,10 +6253,10 @@ pub unsafe fn find_sa_element(t: small_number, n: i32, w: bool) {
             mem!(q + (i as i32 / 2) + 1).b32.s0
         };
         if cur_ptr == TEX_NULL && w {
-            init_leaf(t, i, q);
+            init_leaf(t, i, q, n);
         }
 
-        unsafe fn init_leaf(t: small_number, i: small_number, q: i32) {
+        unsafe fn init_leaf(t: small_number, i: small_number, q: i32, n: i32) {
             unsafe {
                 if t == MARK_VAL as small_number {
                     cur_ptr = get_node(MARK_CLASS_NODE_SIZE);
@@ -5985,7 +6267,7 @@ pub unsafe fn find_sa_element(t: small_number, n: i32, w: bool) {
                     if (t as u16) <= DIMEN_VAL as u16 {
                         cur_ptr = get_node(WORD_NODE_SIZE);
                         mem!(cur_ptr + 2).b32.s1 = 0;
-                        mem!(cur_ptr + 1).b32.s1 = 0;
+                        mem!(cur_ptr + 1).b32.s1 = n;
                     } else {
                         cur_ptr = get_node(POINTER_NODE_SIZE);
                         if (t as u16) <= MU_VAL as u16 {
@@ -6011,7 +6293,8 @@ pub unsafe fn find_sa_element(t: small_number, n: i32, w: bool) {
     }
 }
 
-pub unsafe fn expand() {
+#[unsafe(export_name = "expand")]
+pub unsafe extern "C" fn expand() {
     unsafe {
         let mut t: i32;
         let b: bool;
@@ -6310,7 +6593,8 @@ pub unsafe fn expand() {
     }
 }
 
-pub unsafe fn get_x_token() {
+#[unsafe(export_name = "get_x_token")]
+pub unsafe extern "C" fn get_x_token() {
     unsafe {
         loop {
             get_next();
@@ -6340,7 +6624,8 @@ pub unsafe fn get_x_token() {
     }
 }
 
-pub unsafe fn x_token() {
+#[unsafe(export_name = "x_token")]
+pub unsafe extern "C" fn x_token() {
     unsafe {
         while cur_cmd > (MAX_COMMAND) as u8 {
             expand();
@@ -6354,7 +6639,8 @@ pub unsafe fn x_token() {
     }
 }
 
-pub unsafe fn scan_left_brace() {
+#[unsafe(export_name = "scan_left_brace")]
+pub unsafe extern "C" fn scan_left_brace() {
     unsafe {
         loop {
             get_x_token();
@@ -6385,7 +6671,8 @@ pub unsafe fn scan_left_brace() {
     }
 }
 
-pub unsafe fn scan_optional_equals() {
+#[unsafe(export_name = "scan_optional_equals")]
+pub unsafe extern "C" fn scan_optional_equals() {
     unsafe {
         loop {
             get_x_token();
@@ -6399,7 +6686,8 @@ pub unsafe fn scan_optional_equals() {
     }
 }
 
-pub unsafe fn scan_keyword(s: *const c_char) -> bool {
+#[unsafe(export_name = "scan_keyword")]
+pub unsafe extern "C" fn scan_keyword(s: *const c_char) -> bool {
     unsafe {
         let mut p = BACKUP_HEAD;
         let mut q: i32;
@@ -6454,7 +6742,8 @@ pub unsafe fn scan_keyword(s: *const c_char) -> bool {
     }
 }
 
-pub unsafe fn mu_error() {
+#[unsafe(export_name = "mu_error")]
+pub unsafe extern "C" fn mu_error() {
     unsafe {
         error_here_with_diagnostic(b"Incompatible glue units\0".as_ptr() as *const c_char);
         capture_to_diagnostic(std::ptr::null_mut());
@@ -6465,7 +6754,8 @@ pub unsafe fn mu_error() {
     }
 }
 
-pub unsafe fn scan_glyph_number(f: internal_font_number) {
+#[unsafe(export_name = "scan_glyph_number")]
+pub unsafe extern "C" fn scan_glyph_number(f: internal_font_number) {
     unsafe {
         if scan_keyword(b"/\0".as_ptr() as *const c_char) {
             scan_and_pack_name();
@@ -6481,7 +6771,8 @@ pub unsafe fn scan_glyph_number(f: internal_font_number) {
     }
 }
 
-pub unsafe fn scan_char_class() {
+#[unsafe(export_name = "scan_char_class")]
+pub unsafe extern "C" fn scan_char_class() {
     unsafe {
         scan_int();
         if cur_val < 0 || cur_val > CHAR_CLASS_LIMIT {
@@ -6500,7 +6791,8 @@ pub unsafe fn scan_char_class() {
     }
 }
 
-pub unsafe fn scan_char_class_not_ignored() {
+#[unsafe(export_name = "scan_char_class_not_ignored")]
+pub unsafe extern "C" fn scan_char_class_not_ignored() {
     unsafe {
         scan_int();
         if cur_val < 0 || cur_val > CHAR_CLASS_LIMIT {
@@ -6520,7 +6812,8 @@ pub unsafe fn scan_char_class_not_ignored() {
     }
 }
 
-pub unsafe fn scan_eight_bit_int() {
+#[unsafe(export_name = "scan_eight_bit_int")]
+pub unsafe extern "C" fn scan_eight_bit_int() {
     unsafe {
         scan_int();
         if cur_val < 0 || cur_val > 255 {
@@ -6540,7 +6833,8 @@ pub unsafe fn scan_eight_bit_int() {
     }
 }
 
-pub unsafe fn scan_usv_num() {
+#[unsafe(export_name = "scan_usv_num")]
+pub unsafe extern "C" fn scan_usv_num() {
     unsafe {
         scan_int();
         if cur_val < 0 || cur_val > BIGGEST_USV {
@@ -6560,7 +6854,8 @@ pub unsafe fn scan_usv_num() {
     }
 }
 
-pub unsafe fn scan_char_num() {
+#[unsafe(export_name = "scan_char_num")]
+pub unsafe extern "C" fn scan_char_num() {
     unsafe {
         scan_int();
         if cur_val < 0 || cur_val > BIGGEST_CHAR {
@@ -6579,7 +6874,8 @@ pub unsafe fn scan_char_num() {
     }
 }
 
-pub unsafe fn scan_xetex_math_char_int() {
+#[unsafe(export_name = "scan_xetex_math_char_int")]
+pub unsafe extern "C" fn scan_xetex_math_char_int() {
     unsafe {
         scan_int();
         if math_char((cur_val) as u32) == (ACTIVE_MATH_CHAR) as u32 {
@@ -6616,7 +6912,8 @@ pub unsafe fn scan_xetex_math_char_int() {
     }
 }
 
-pub unsafe fn scan_math(p: i32) {
+#[unsafe(export_name = "scan_math")]
+pub unsafe extern "C" fn scan_math(p: i32) {
     unsafe {
         let mut c: i32;
 
@@ -6721,7 +7018,8 @@ pub unsafe fn scan_math(p: i32) {
     }
 }
 
-pub unsafe fn set_math_char(c: i32) {
+#[unsafe(export_name = "set_math_char")]
+pub unsafe extern "C" fn set_math_char(c: i32) {
     unsafe {
         let p: i32;
         let ch: UnicodeScalar;
@@ -6755,7 +7053,8 @@ pub unsafe fn set_math_char(c: i32) {
     }
 }
 
-pub unsafe fn scan_math_class_int() {
+#[unsafe(export_name = "scan_math_class_int")]
+pub unsafe extern "C" fn scan_math_class_int() {
     unsafe {
         scan_int();
         if cur_val < 0 || cur_val > 7 {
@@ -6773,7 +7072,8 @@ pub unsafe fn scan_math_class_int() {
     }
 }
 
-pub unsafe fn scan_math_fam_int() {
+#[unsafe(export_name = "scan_math_fam_int")]
+pub unsafe extern "C" fn scan_math_fam_int() {
     unsafe {
         scan_int();
         if cur_val < 0 || cur_val > (NUMBER_MATH_FAMILIES - 1) {
@@ -6791,7 +7091,8 @@ pub unsafe fn scan_math_fam_int() {
     }
 }
 
-pub unsafe fn scan_four_bit_int() {
+#[unsafe(export_name = "scan_four_bit_int")]
+pub unsafe extern "C" fn scan_four_bit_int() {
     unsafe {
         scan_int();
         if cur_val < 0 || cur_val > 15 {
@@ -6809,7 +7110,8 @@ pub unsafe fn scan_four_bit_int() {
     }
 }
 
-pub unsafe fn scan_fifteen_bit_int() {
+#[unsafe(export_name = "scan_fifteen_bit_int")]
+pub unsafe extern "C" fn scan_fifteen_bit_int() {
     unsafe {
         scan_int();
         if cur_val < 0 || cur_val > 32767 {
@@ -6827,7 +7129,8 @@ pub unsafe fn scan_fifteen_bit_int() {
     }
 }
 
-pub unsafe fn scan_delimiter_int() {
+#[unsafe(export_name = "scan_delimiter_int")]
+pub unsafe extern "C" fn scan_delimiter_int() {
     unsafe {
         scan_int();
         if cur_val < 0 || cur_val > 0x7FFFFFF {
@@ -6847,7 +7150,8 @@ pub unsafe fn scan_delimiter_int() {
     }
 }
 
-pub unsafe fn scan_register_num() {
+#[unsafe(export_name = "scan_register_num")]
+pub unsafe extern "C" fn scan_register_num() {
     unsafe {
         scan_int();
         if cur_val < 0 || cur_val > max_reg_num {
@@ -6865,7 +7169,8 @@ pub unsafe fn scan_register_num() {
     }
 }
 
-pub unsafe fn scan_four_bit_int_or_18() {
+#[unsafe(export_name = "scan_four_bit_int_or_18")]
+pub unsafe extern "C" fn scan_four_bit_int_or_18() {
     unsafe {
         scan_int();
         if cur_val < 0 || (cur_val > 15 && cur_val != 18) {
@@ -6883,7 +7188,8 @@ pub unsafe fn scan_four_bit_int_or_18() {
     }
 }
 
-pub unsafe fn get_x_or_protected() {
+#[unsafe(export_name = "get_x_or_protected")]
+pub unsafe extern "C" fn get_x_or_protected() {
     unsafe {
         loop {
             get_token();
@@ -6900,7 +7206,8 @@ pub unsafe fn get_x_or_protected() {
     }
 }
 
-pub unsafe fn effective_char(err_p: bool, f: internal_font_number, mut c: u16) -> i32 {
+#[unsafe(export_name = "effective_char")]
+pub unsafe extern "C" fn effective_char(err_p: bool, f: internal_font_number, mut c: u16) -> i32 {
     unsafe {
         if !xtx_ligature_present && !(*font_mapping.offset(f as isize)).is_null() {
             c = apply_tfm_font_mapping(*font_mapping.offset(f as isize), c as UnicodeScalar) as u16;
@@ -6910,7 +7217,8 @@ pub unsafe fn effective_char(err_p: bool, f: internal_font_number, mut c: u16) -
     }
 }
 
-pub unsafe fn scan_font_ident() {
+#[unsafe(export_name = "scan_font_ident")]
+pub unsafe extern "C" fn scan_font_ident() {
     unsafe {
         let mut f: internal_font_number;
         let m: i32;
@@ -6945,7 +7253,8 @@ pub unsafe fn scan_font_ident() {
     }
 }
 
-pub unsafe fn find_font_dimen(writing: bool) {
+#[unsafe(export_name = "find_font_dimen")]
+pub unsafe extern "C" fn find_font_dimen(writing: bool) {
     unsafe {
         let f: internal_font_number;
         let n: i32;
@@ -7009,7 +7318,8 @@ pub unsafe fn find_font_dimen(writing: bool) {
     }
 }
 
-pub unsafe fn scan_something_internal(level: small_number, negative: bool) {
+#[unsafe(export_name = "scan_something_internal")]
+pub unsafe extern "C" fn scan_something_internal(level: small_number, negative: bool) {
     unsafe {
         let mut m: i32;
         let mut n: i32;
@@ -7570,8 +7880,8 @@ pub unsafe fn scan_something_internal(level: small_number, negative: bool) {
                                         cur_val = 0;
                                     } else {
                                         if q == 2 {
-                                            let q_mod = cur_val % 2;
-                                            cur_val = (cur_val + q_mod) / 2;
+                                            q = cur_val % 2;
+                                            cur_val = (cur_val + q) / 2;
                                         }
                                         if cur_val
                                             > mem!(eqtb!(LOCAL_BASE + LOCAL__par_shape).b32.s1)
@@ -8129,7 +8439,8 @@ pub unsafe fn scan_something_internal(level: small_number, negative: bool) {
     }
 }
 
-pub unsafe fn scan_int() {
+#[unsafe(export_name = "scan_int")]
+pub unsafe extern "C" fn scan_int() {
     unsafe {
         let mut negative: bool;
         let mut m: i32;
@@ -8327,7 +8638,13 @@ unsafe fn round_decimals(mut k: u8) -> scaled_t {
     }
 }
 
-pub unsafe fn xetex_scan_dimen(mu: bool, inf: bool, shortcut: bool, requires_units: bool) {
+#[unsafe(export_name = "xetex_scan_dimen")]
+pub unsafe extern "C" fn xetex_scan_dimen(
+    mu: bool,
+    inf: bool,
+    shortcut: bool,
+    requires_units: bool,
+) {
     unsafe {
         let mut negative: bool;
         let mut f: i32;
@@ -8692,19 +9009,22 @@ pub unsafe fn xetex_scan_dimen(mu: bool, inf: bool, shortcut: bool, requires_uni
     }
 }
 
-pub unsafe fn scan_dimen(mu: bool, inf: bool, shortcut: bool) {
+#[unsafe(export_name = "scan_dimen")]
+pub unsafe extern "C" fn scan_dimen(mu: bool, inf: bool, shortcut: bool) {
     unsafe {
         xetex_scan_dimen(mu, inf, shortcut, true);
     }
 }
 
-pub unsafe fn scan_decimal() {
+#[unsafe(export_name = "scan_decimal")]
+pub unsafe extern "C" fn scan_decimal() {
     unsafe {
         xetex_scan_dimen(false, false, false, false);
     }
 }
 
-pub unsafe fn scan_glue(level: u8) {
+#[unsafe(export_name = "scan_glue")]
+pub unsafe extern "C" fn scan_glue(level: u8) {
     unsafe {
         let mut negative: bool;
         let q: i32;
@@ -8770,7 +9090,8 @@ pub unsafe fn scan_glue(level: u8) {
     }
 }
 
-pub unsafe fn add_or_sub(x: i32, mut y: i32, max_answer: i32, negative: bool) -> i32 {
+#[unsafe(export_name = "add_or_sub")]
+pub unsafe extern "C" fn add_or_sub(x: i32, mut y: i32, max_answer: i32, negative: bool) -> i32 {
     unsafe {
         let a: i32;
         if negative {
@@ -8793,7 +9114,8 @@ pub unsafe fn add_or_sub(x: i32, mut y: i32, max_answer: i32, negative: bool) ->
     }
 }
 
-pub unsafe fn quotient(mut n: i32, mut d: i32) -> i32 {
+#[unsafe(export_name = "quotient")]
+pub unsafe extern "C" fn quotient(mut n: i32, mut d: i32) -> i32 {
     unsafe {
         let mut negative: bool;
         let mut a: i32;
@@ -8825,7 +9147,8 @@ pub unsafe fn quotient(mut n: i32, mut d: i32) -> i32 {
     }
 }
 
-pub unsafe fn fract(mut x: i32, mut n: i32, mut d: i32, max_answer: i32) -> i32 {
+#[unsafe(export_name = "fract")]
+pub unsafe extern "C" fn fract(mut x: i32, mut n: i32, mut d: i32, max_answer: i32) -> i32 {
     unsafe {
         let mut negative: bool;
         let mut a: i32;
@@ -8931,7 +9254,8 @@ pub unsafe fn fract(mut x: i32, mut n: i32, mut d: i32, max_answer: i32) -> i32 
     }
 }
 
-pub unsafe fn scan_expr() {
+#[unsafe(export_name = "scan_expr")]
+pub unsafe extern "C" fn scan_expr() {
     unsafe {
         let a: bool;
         let mut b: bool;
@@ -9217,19 +9541,22 @@ pub unsafe fn scan_expr() {
     }
 }
 
-pub unsafe fn scan_normal_glue() {
+#[unsafe(export_name = "scan_normal_glue")]
+pub unsafe extern "C" fn scan_normal_glue() {
     unsafe {
         scan_glue((GLUE_VAL) as u8);
     }
 }
 
-pub unsafe fn scan_mu_glue() {
+#[unsafe(export_name = "scan_mu_glue")]
+pub unsafe extern "C" fn scan_mu_glue() {
     unsafe {
         scan_glue((MU_VAL) as u8);
     }
 }
 
-pub unsafe fn scan_rule_spec() -> i32 {
+#[unsafe(export_name = "scan_rule_spec")]
+pub unsafe extern "C" fn scan_rule_spec() -> i32 {
     unsafe {
         let q: i32 = new_rule();
         if cur_cmd == (VRULE) as u8 {
@@ -9261,7 +9588,8 @@ pub unsafe fn scan_rule_spec() -> i32 {
     }
 }
 
-pub unsafe fn scan_general_text() {
+#[unsafe(export_name = "scan_general_text")]
+pub unsafe extern "C" fn scan_general_text() {
     unsafe {
         let s: u8 = scanner_status;
         let w: i32 = warning_index;
@@ -9307,7 +9635,8 @@ pub unsafe fn scan_general_text() {
     }
 }
 
-pub unsafe fn pseudo_start() {
+#[unsafe(export_name = "pseudo_start")]
+pub unsafe extern "C" fn pseudo_start() {
     unsafe {
         let saved_selector: selector_t;
         let s: str_number;
@@ -9415,7 +9744,8 @@ pub unsafe fn pseudo_start() {
     }
 }
 
-pub unsafe fn str_toks_cat(b: pool_pointer, cat: u8) -> i32 {
+#[unsafe(export_name = "str_toks_cat")]
+pub unsafe extern "C" fn str_toks_cat(b: pool_pointer, cat: u8) -> i32 {
     unsafe {
         let mut p: i32;
         let mut q: i32;
@@ -9479,11 +9809,13 @@ pub unsafe fn str_toks_cat(b: pool_pointer, cat: u8) -> i32 {
     }
 }
 
-pub unsafe fn str_toks(b: pool_pointer) -> i32 {
+#[unsafe(export_name = "str_toks")]
+pub unsafe extern "C" fn str_toks(b: pool_pointer) -> i32 {
     unsafe { str_toks_cat(b, 0) }
 }
 
-pub unsafe fn the_toks() -> i32 {
+#[unsafe(export_name = "the_toks")]
+pub unsafe extern "C" fn the_toks() -> i32 {
     unsafe {
         let saved_selector: selector_t;
         let mut p: i32;
@@ -9569,14 +9901,16 @@ pub unsafe fn the_toks() -> i32 {
     }
 }
 
-pub unsafe fn ins_the_toks() {
+#[unsafe(export_name = "ins_the_toks")]
+pub unsafe extern "C" fn ins_the_toks() {
     unsafe {
         mem!(GARBAGE).b32.s1 = the_toks();
         begin_token_list(mem!(TEMP_HEAD).b32.s1, (INSERTED) as u16);
     }
 }
 
-pub unsafe fn conv_toks() {
+#[unsafe(export_name = "conv_toks")]
+pub unsafe extern "C" fn conv_toks() {
     unsafe {
         let saved_selector: selector_t;
         let save_warning_index: i32;
@@ -10182,7 +10516,8 @@ pub unsafe fn conv_toks() {
     }
 }
 
-pub unsafe fn scan_toks(macro_def: bool, xpand: bool) -> i32 {
+#[unsafe(export_name = "scan_toks")]
+pub unsafe extern "C" fn scan_toks(macro_def: bool, xpand: bool) -> i32 {
     unsafe {
         let mut t: i32;
         let mut s: i32;
@@ -10390,7 +10725,8 @@ pub unsafe fn scan_toks(macro_def: bool, xpand: bool) -> i32 {
     }
 }
 
-pub unsafe fn read_toks(n: i32, r: i32, j: i32) {
+#[unsafe(export_name = "read_toks")]
+pub unsafe extern "C" fn read_toks(n: i32, r: i32, j: i32) {
     unsafe {
         let mut p: i32;
         let mut q: i32;
@@ -10431,7 +10767,7 @@ pub unsafe fn read_toks(n: i32, r: i32, j: i32) {
                     *(&raw mut read_open).cast::<u8>().offset(m as isize) = (CLOSED) as u8;
                 }
             } else {
-                if !input_line(*(&raw mut read_file).cast::<*mut UFILE>().offset(m as isize)) != 0 {
+                if input_line(*(&raw mut read_file).cast::<*mut UFILE>().offset(m as isize)) == 0 {
                     u_close(*(&raw mut read_file).cast::<*mut UFILE>().offset(m as isize));
                     *(&raw mut read_open).cast::<u8>().offset(m as isize) = (CLOSED) as u8;
                     if align_state != 1000000 {
@@ -10516,7 +10852,8 @@ pub unsafe fn read_toks(n: i32, r: i32, j: i32) {
     }
 }
 
-pub unsafe fn pass_text() {
+#[unsafe(export_name = "pass_text")]
+pub unsafe extern "C" fn pass_text() {
     unsafe {
         let mut l: i32;
         let mut save_scanner_status: u8;
@@ -10547,7 +10884,8 @@ pub unsafe fn pass_text() {
     }
 }
 
-pub unsafe fn change_if_limit(l: u8, p: i32) {
+#[unsafe(export_name = "change_if_limit")]
+pub unsafe extern "C" fn change_if_limit(l: u8, p: i32) {
     unsafe {
         let mut q: i32;
         if p == cond_ptr {
@@ -10568,7 +10906,8 @@ pub unsafe fn change_if_limit(l: u8, p: i32) {
     }
 }
 
-pub unsafe fn conditional() {
+#[unsafe(export_name = "conditional")]
+pub unsafe extern "C" fn conditional() {
     unsafe {
         let mut b: bool = false;
         let e: bool;

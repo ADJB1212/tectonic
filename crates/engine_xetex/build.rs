@@ -45,9 +45,6 @@ fn main() {
 
     let mut c_cfg = cc::Build::new();
     let mut cxx_cfg = cc::Build::new();
-    let generated_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap());
-    generate_checkpoint_globals(&generated_dir);
-    c_cfg.include(&generated_dir);
 
     cxx_cfg.cpp(true);
 
@@ -115,7 +112,6 @@ fn main() {
 
     if is_mac_os {
         c_cfg.define("XETEX_MAC", Some("1"));
-        c_cfg.file("xetex/xetex-macos.c");
         cxx_cfg.define("XETEX_MAC", Some("1"));
     }
 
@@ -159,74 +155,6 @@ fn main() {
     }
 }
 
-fn generate_checkpoint_globals(output: &std::path::Path) {
-    let source = std::fs::read_to_string("xetex/xetex-ini.c").unwrap();
-    let globals = source
-        .split("/* All the following variables")
-        .nth(1)
-        .unwrap()
-        .split("/* Read and write dump files")
-        .next()
-        .unwrap();
-    let mut header = String::new();
-    for line in globals.lines() {
-        let line = line.split("/*").next().unwrap().trim();
-        if !line.ends_with(';') || line.starts_with('#') {
-            continue;
-        }
-        if line.contains('*') {
-            let name = line
-                .trim_end_matches(';')
-                .split('=')
-                .next()
-                .unwrap()
-                .split('[')
-                .next()
-                .unwrap()
-                .split_whitespace()
-                .last()
-                .unwrap()
-                .trim_start_matches('*');
-            assert!(
-                CHECKPOINT_POINTERS
-                    .split_whitespace()
-                    .any(|known| known == name),
-                "unclassified checkpoint pointer: {line}"
-            );
-            continue;
-        }
-        let line = line.strip_prefix("static ").unwrap_or(line);
-        for name in line.trim_end_matches(';').split(',') {
-            let name = name
-                .split('=')
-                .next()
-                .unwrap()
-                .split('[')
-                .next()
-                .unwrap()
-                .split_whitespace()
-                .last()
-                .unwrap();
-            assert!(
-                name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_'),
-                "invalid checkpoint global: {line}"
-            );
-            header.push_str(&format!("CP_VALUE({name});\n"));
-        }
-    }
-    std::fs::write(output.join("xetex-checkpoint-globals.h"), header).unwrap();
-}
-
-const CHECKPOINT_POINTERS: &str = "eqtb name_of_file name_of_file16 buffer str_pool str_start
-help_line native_text mem nest hash save_stack input_stack input_file line_stack
-source_filename_stack full_source_filename_stack param_stack read_file TEX_format_default
-output_file_extension font_info font_check font_size font_dsize font_params font_name
-font_area font_bc font_ec font_glue font_used hyphen_char skew_char bchar_label font_bchar
-font_false_bchar font_layout_engine font_mapping font_flags font_letter_space loaded_font_mapping
-mapped_text xdv_buffer char_base width_base height_base depth_base italic_base lig_kern_base
-kern_base exten_base param_base trie_trl trie_tro trie_trc hyph_word hyph_list hyph_link
-trie_c trie_o trie_l trie_r trie_hash trie_taken eof_seen grp_stack if_stack max_reg_help_line yhash";
-
 const C_FLAGS: &[&str] = &[
     "-Wall",
     "-Wcast-qual",
@@ -266,25 +194,7 @@ const C_FLAGS: &[&str] = &[
     "-std=gnu11",
 ];
 
-const C_FILES: &[&str] = &[
-    "xetex/xetex-checkpoint.c",
-    "xetex/xetex-engine-interface.c",
-    "xetex/xetex-errors.c",
-    "xetex/xetex-ext.c",
-    "xetex/xetex-ini.c",
-    "xetex/xetex-io.c",
-    "xetex/xetex-linebreak.c",
-    "xetex/xetex-math.c",
-    "xetex/xetex-output.c",
-    "xetex/xetex-pagebuilder.c",
-    "xetex/xetex-pic.c",
-    "xetex/xetex-scaledmath.c",
-    "xetex/xetex-shipout.c",
-    "xetex/xetex-stringpool.c",
-    "xetex/xetex-synctex.c",
-    "xetex/xetex-texmfmp.c",
-    "xetex/xetex-xetex0.c",
-];
+const C_FILES: &[&str] = &["xetex/xetex-engine-interface.c", "xetex/xetex-icu.c"];
 
 const CXX_FLAGS: &[&str] = &[
     "-std=c++14",
@@ -318,4 +228,4 @@ const CXX_FLAGS: &[&str] = &[
     "-fno-rtti",
 ];
 
-const CXX_FILES: &[&str] = &["xetex/teckit-Engine.cpp", "xetex/xetex-XeTeXOTMath.cpp"];
+const CXX_FILES: &[&str] = &["xetex/teckit-Engine.cpp"];

@@ -62,18 +62,18 @@ pub struct UFILE {
     pub input: ttbc_buffered_input,
 }
 
-#[unsafe(export_name = "tectonic_rust_name_of_input_file")]
+#[unsafe(export_name = "name_of_input_file")]
 pub static mut name_of_input_file: *mut c_char = std::ptr::null_mut();
 
-#[unsafe(export_name = "tectonic_rust_abspath_of_input_file")]
+#[unsafe(export_name = "abspath_of_input_file")]
 pub static mut abspath_of_input_file: [c_char; 1024] = [0; 1024];
 
-#[unsafe(export_name = "tectonic_rust_offsetsFromUTF8")]
+#[unsafe(export_name = "offsetsFromUTF8")]
 pub static offsetsFromUTF8: [u32; 6] = [
     0x00000000, 0x00003080, 0x000E2080, 0x03C82080, 0xFA082080, 0x82082080,
 ];
 
-#[unsafe(export_name = "tectonic_rust_bytesFromUTF8")]
+#[unsafe(export_name = "bytesFromUTF8")]
 pub static bytesFromUTF8: [u8; 256] = [
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -85,7 +85,7 @@ pub static bytesFromUTF8: [u8; 256] = [
     2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5,
 ];
 
-#[unsafe(export_name = "tectonic_rust_firstByteMark")]
+#[unsafe(export_name = "firstByteMark")]
 pub static firstByteMark: [u8; 7] = [0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC];
 
 static mut normalizers: [TECkit_Converter; 2] = [std::ptr::null_mut(), std::ptr::null_mut()];
@@ -160,8 +160,11 @@ unsafe extern "C" {
     pub fn more_name(c: UTF16_code) -> bool;
     pub fn end_name();
 
+    #[link_name = "tt_icu_ucnv_open"]
     pub fn ucnv_open(converterName: *const c_char, err: *mut i32) -> *mut c_void;
+    #[link_name = "tt_icu_ucnv_close"]
     pub fn ucnv_close(converter: *mut c_void);
+    #[link_name = "tt_icu_ucnv_to_algorithmic"]
     pub fn ucnv_toAlgorithmic(
         alg: i32,
         cnv: *mut c_void,
@@ -217,7 +220,7 @@ pub unsafe fn ttbc_buffered_input_ungetc(input: *mut ttbc_buffered_input, byte: 
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_xetex_open_input")]
+#[unsafe(export_name = "tt_xetex_open_input")]
 pub unsafe extern "C" fn tt_xetex_open_input(filefmt: c_int) -> rust_input_handle_t {
     unsafe {
         let handle: rust_input_handle_t;
@@ -253,7 +256,7 @@ pub unsafe extern "C" fn tt_xetex_open_input(filefmt: c_int) -> rust_input_handl
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_set_input_file_encoding")]
+#[unsafe(export_name = "set_input_file_encoding")]
 pub unsafe extern "C" fn set_input_file_encoding(f: *mut UFILE, mode: i32, encodingData: i32) {
     unsafe {
         if (*f).encodingMode as i32 == ICUMAPPING && !(*f).conversionData.is_null() {
@@ -290,7 +293,7 @@ pub unsafe extern "C" fn set_input_file_encoding(f: *mut UFILE, mode: i32, encod
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_u_open_in")]
+#[unsafe(export_name = "u_open_in")]
 pub unsafe extern "C" fn u_open_in(
     f: *mut *mut UFILE,
     filefmt: i32,
@@ -418,7 +421,202 @@ fn is_spc_or_eol(c: UnicodeScalar) -> bool {
     c == b' ' as i32 || c == b'\r' as i32 || c == b'\n' as i32
 }
 
-#[unsafe(export_name = "tectonic_rust_input_line")]
+fn copy_ascii_line(input: &[u8], output: &mut [UnicodeScalar]) -> usize {
+    let input = &input[..input.len().min(output.len())];
+    if input.first().is_some_and(|byte| !byte.is_ascii()) {
+        return 0;
+    }
+    let mut count = 0;
+    for chunk in input.chunks(64) {
+        if !chunk.is_ascii() {
+            count += chunk
+                .iter()
+                .position(|&byte| !byte.is_ascii() || byte == b'\r' || byte == b'\n')
+                .unwrap();
+            break;
+        }
+        if let Some(end) = memchr::memchr2(b'\r', b'\n', chunk) {
+            count += end;
+            break;
+        }
+        count += chunk.len();
+    }
+    for (dst, &src) in output[..count].iter_mut().zip(&input[..count]) {
+        *dst = src as UnicodeScalar;
+    }
+    count
+}
+
+#[inline]
+unsafe fn read_buffered_ascii(f: *mut UFILE, output: *mut UnicodeScalar, capacity: usize) -> usize {
+    unsafe {
+        if (*f).savedChar != -1 || !matches!((*f).encodingMode as i32, UTF8 | RAW) {
+            return 0;
+        }
+        let input = &mut (*f).input;
+        let count = copy_ascii_line(
+            &input.bytes[input.position..input.length],
+            std::slice::from_raw_parts_mut(output, capacity),
+        );
+        input.position += count;
+        count
+    }
+}
+
+#[cfg(test)]
+mod ascii_tests {
+    use super::*;
+
+    #[test]
+    fn ascii_line_copy_stops_at_unicode_newlines_and_capacity() {
+        for input in [
+            b"abc\rdef".as_slice(),
+            b"abc\ndef",
+            b"abc\xc3\xa9",
+            b"abc\xff",
+        ] {
+            for capacity in 0..=input.len() + 1 {
+                let mut output = vec![-1; capacity + 1];
+                let count = copy_ascii_line(input, &mut output[..capacity]);
+                assert_eq!(count, 3.min(capacity));
+                assert_eq!(&output[..count], &[97, 98, 99][..count]);
+                assert!(output[count..].iter().all(|&value| value == -1));
+            }
+        }
+        let mut output = [0; 256];
+        let input: Vec<u8> = (0..=255).collect();
+        assert_eq!(copy_ascii_line(&input, &mut output), 10);
+        assert_eq!(&output[..10], &[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    }
+
+    #[test]
+    fn ascii_line_copy_matches_scalar_at_scan_boundaries() {
+        for length in [0, 1, 63, 64, 65, 127, 128, 129, 8192] {
+            for position in [0, 1, 62, 63, 64, 65, 126, 127, 128, 8191] {
+                for marker in [b'\r', b'\n', 0x80, 0xff] {
+                    let mut input = vec![b'a'; length];
+                    if position < length {
+                        input[position] = marker;
+                    }
+                    for capacity in [0, 1, 63, 64, 65, length, length + 1] {
+                        let mut output = vec![-1; capacity + 1];
+                        let expected: Vec<i32> = input
+                            .iter()
+                            .take(capacity)
+                            .take_while(|&&byte| byte.is_ascii() && byte != b'\r' && byte != b'\n')
+                            .map(|&byte| byte as i32)
+                            .collect();
+                        let count = copy_ascii_line(&input, &mut output[..capacity]);
+                        assert_eq!(count, expected.len());
+                        assert_eq!(&output[..count], expected);
+                        assert!(output[count..].iter().all(|&value| value == -1));
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn buffered_ascii_preserves_decoder_state_and_buffer_boundaries() {
+        let mut file = UFILE {
+            handle: 1,
+            savedChar: -1,
+            skipNextLF: 0,
+            encodingMode: UTF8 as i16,
+            conversionData: std::ptr::null_mut(),
+            input: ttbc_buffered_input {
+                handle: 1,
+                position: 2,
+                length: 8,
+                bytes: [0; 8192],
+            },
+        };
+        file.input.bytes[..8].copy_from_slice(b"xxabc\xc3\xa9\n");
+        let mut output = [0; 8];
+        unsafe {
+            assert_eq!(read_buffered_ascii(&mut file, output.as_mut_ptr(), 8), 3);
+            assert_eq!(file.input.position, 5);
+            assert_eq!(get_uni_c(&mut file), 0xe9);
+            assert_eq!(read_buffered_ascii(&mut file, output.as_mut_ptr(), 8), 0);
+            assert_eq!(get_uni_c(&mut file), 10);
+            assert_eq!(read_buffered_ascii(&mut file, output.as_mut_ptr(), 8), 0);
+            for mode in [UTF8, UTF16LE, UTF16BE, RAW] {
+                file.encodingMode = mode as i16;
+                file.input.position = 2;
+                file.savedChar = 42;
+                assert_eq!(read_buffered_ascii(&mut file, output.as_mut_ptr(), 8), 0);
+                assert_eq!(file.input.position, 2);
+                assert_eq!(get_uni_c(&mut file), 42);
+                if mode == UTF16LE || mode == UTF16BE {
+                    assert_eq!(read_buffered_ascii(&mut file, output.as_mut_ptr(), 8), 0);
+                    assert_eq!(file.input.position, 2);
+                }
+            }
+        }
+    }
+
+    #[test]
+    #[ignore = "manual performance measurement"]
+    fn benchmark_ascii_line_decoding() {
+        use std::{hint::black_box, time::Instant};
+        let mut file = UFILE {
+            handle: 1,
+            savedChar: -1,
+            skipNextLF: 0,
+            encodingMode: UTF8 as i16,
+            conversionData: std::ptr::null_mut(),
+            input: ttbc_buffered_input {
+                handle: 1,
+                position: 0,
+                length: 8192,
+                bytes: [b'a'; 8192],
+            },
+        };
+        for length in [40, 120, 1024, 8192] {
+            for (label, input) in [
+                ("ASCII", vec![b'a'; length]),
+                ("mixed", "abc\u{e9}".repeat(length / 5).into_bytes()),
+                ("Unicode", "\u{e9}".repeat(length / 2).into_bytes()),
+            ] {
+                file.input.bytes[..input.len()].copy_from_slice(&input);
+                file.input.length = input.len();
+                let mut output = vec![0; std::str::from_utf8(&input).unwrap().chars().count()];
+                for bulk in [false, true] {
+                    let start = Instant::now();
+                    for _ in 0..(32 * 1024 * 1024 / length) {
+                        file.input.position = 0;
+                        let file = black_box(&mut file);
+                        if bulk {
+                            let mut written = 0;
+                            while written < output.len() {
+                                let value = unsafe { get_uni_c(file) };
+                                output[written] = value;
+                                written += 1;
+                                if (0..128).contains(&value) {
+                                    written += unsafe {
+                                        read_buffered_ascii(
+                                            file,
+                                            output.as_mut_ptr().add(written),
+                                            output.len() - written,
+                                        )
+                                    };
+                                }
+                            }
+                        } else {
+                            for dst in &mut output {
+                                *dst = unsafe { get_uni_c(file) };
+                            }
+                        }
+                        black_box(&output);
+                    }
+                    eprintln!("{label} length={length} bulk={bulk}: {:?}", start.elapsed());
+                }
+            }
+        }
+    }
+}
+
+#[unsafe(export_name = "input_line")]
 pub unsafe extern "C" fn input_line(f: *mut UFILE) -> c_int {
     unsafe {
         let mut i: c_int;
@@ -537,6 +735,19 @@ pub unsafe extern "C" fn input_line(f: *mut UFILE) -> c_int {
                     }
                     if i != -1 && i != b'\n' as c_int && i != b'\r' as c_int {
                         while tmpLen < buf_size {
+                            let copied = if (0..128).contains(&i) {
+                                read_buffered_ascii(
+                                    f,
+                                    utf32Buf.add(tmpLen as usize).cast(),
+                                    (buf_size - tmpLen) as usize,
+                                )
+                            } else {
+                                0
+                            };
+                            tmpLen += copied as i32;
+                            if tmpLen == buf_size {
+                                break;
+                            }
                             i = get_uni_c(f);
                             if i == -1 || i == b'\n' as c_int || i == b'\r' as c_int {
                                 break;
@@ -563,6 +774,19 @@ pub unsafe extern "C" fn input_line(f: *mut UFILE) -> c_int {
                     }
                     if i != -1 && i != b'\n' as c_int && i != b'\r' as c_int {
                         while last < buf_size {
+                            let copied = if (0..128).contains(&i) {
+                                read_buffered_ascii(
+                                    f,
+                                    buffer.add(last as usize),
+                                    (buf_size - last) as usize,
+                                )
+                            } else {
+                                0
+                            };
+                            last += copied as i32;
+                            if last == buf_size {
+                                break;
+                            }
                             i = get_uni_c(f);
                             if i == -1 || i == b'\n' as c_int || i == b'\r' as c_int {
                                 break;
@@ -601,7 +825,7 @@ pub unsafe extern "C" fn input_line(f: *mut UFILE) -> c_int {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_u_close")]
+#[unsafe(export_name = "u_close")]
 pub unsafe extern "C" fn u_close(f: *mut UFILE) {
     unsafe {
         if f.is_null() || (*f).handle == INVALID_HANDLE {
@@ -618,7 +842,7 @@ pub unsafe extern "C" fn u_close(f: *mut UFILE) {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_get_uni_c")]
+#[unsafe(export_name = "get_uni_c")]
 pub unsafe extern "C" fn get_uni_c(f: *mut UFILE) -> c_int {
     unsafe {
         let mut rval: c_int;
@@ -763,7 +987,7 @@ pub unsafe extern "C" fn get_uni_c(f: *mut UFILE) -> c_int {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_make_utf16_name")]
+#[unsafe(export_name = "make_utf16_name")]
 pub unsafe extern "C" fn make_utf16_name() {
     unsafe {
         let mut s = name_of_file as *mut u8;
@@ -883,7 +1107,7 @@ pub unsafe extern "C" fn make_utf16_name() {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_open_or_close_in")]
+#[unsafe(export_name = "open_or_close_in")]
 pub unsafe extern "C" fn open_or_close_in() {
     unsafe {
         let c = cur_chr as u8;

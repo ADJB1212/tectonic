@@ -282,7 +282,8 @@ unsafe extern "C" {
 }
 
 // 1. begin_name
-pub unsafe fn begin_name() {
+#[unsafe(export_name = "begin_name")]
+pub unsafe extern "C" fn begin_name() {
     area_delimiter = 0;
     ext_delimiter = 0;
     quoted_filename = false;
@@ -290,7 +291,8 @@ pub unsafe fn begin_name() {
 }
 
 // 2. more_name
-pub unsafe fn more_name(c: UTF16_code) -> bool {
+#[unsafe(export_name = "more_name")]
+pub unsafe extern "C" fn more_name(c: UTF16_code) -> bool {
     if stop_at_space && file_name_quote_char == 0 && c == b' ' as UTF16_code {
         return false;
     }
@@ -330,7 +332,9 @@ pub unsafe fn more_name(c: UTF16_code) -> bool {
 }
 
 // 3. end_name
-pub unsafe fn end_name() {
+#[unsafe(export_name = "end_name")]
+pub unsafe extern "C" fn end_name() {
+    super::xetex_stringpool::truncate_string_index(str_ptr);
     let mut temp_str: str_number;
     let mut j: pool_pointer;
 
@@ -398,7 +402,8 @@ pub unsafe fn end_name() {
 }
 
 // 4. pack_file_name
-pub unsafe fn pack_file_name(n: str_number, a: str_number, e: str_number) {
+#[unsafe(export_name = "pack_file_name")]
+pub unsafe extern "C" fn pack_file_name(n: str_number, a: str_number, e: str_number) {
     let buf_len = ((length(a) + length(n) + length(e)) * 3 + 1) as usize;
     let work_buffer = xmalloc(buf_len) as *mut c_char;
     *work_buffer = 0;
@@ -424,7 +429,8 @@ pub unsafe fn pack_file_name(n: str_number, a: str_number, e: str_number) {
 }
 
 // 5. make_name_string
-pub unsafe fn make_name_string() -> str_number {
+#[unsafe(export_name = "make_name_string")]
+pub unsafe extern "C" fn make_name_string() -> str_number {
     let mut k: i32;
     let save_area_delimiter: pool_pointer;
     let save_ext_delimiter: pool_pointer;
@@ -469,7 +475,8 @@ pub unsafe fn make_name_string() -> str_number {
 }
 
 // 6. scan_file_name_braced
-pub unsafe fn scan_file_name_braced() {
+#[unsafe(export_name = "scan_file_name_braced")]
+pub unsafe extern "C" fn scan_file_name_braced() {
     let save_scanner_status: u8 = scanner_status;
     let save_def_ref: i32 = def_ref;
     let save_cur_cs: i32 = cur_cs;
@@ -504,7 +511,8 @@ pub unsafe fn scan_file_name_braced() {
 }
 
 // 7. scan_file_name
-pub unsafe fn scan_file_name() {
+#[unsafe(export_name = "scan_file_name")]
+pub unsafe extern "C" fn scan_file_name() {
     let save_warning_index: i32 = warning_index;
     warning_index = cur_cs;
 
@@ -550,7 +558,8 @@ pub unsafe fn scan_file_name() {
 }
 
 // 8. pack_job_name
-pub unsafe fn pack_job_name(s: *const c_char) {
+#[unsafe(export_name = "pack_job_name")]
+pub unsafe extern "C" fn pack_job_name(s: *const c_char) {
     cur_area = EMPTY_STRING;
     cur_ext = maketexstring(s);
     cur_name = job_name;
@@ -558,7 +567,8 @@ pub unsafe fn pack_job_name(s: *const c_char) {
 }
 
 // 9. open_log_file
-pub unsafe fn open_log_file() {
+#[unsafe(export_name = "open_log_file")]
+pub unsafe extern "C" fn open_log_file() {
     let local_old_setting: u8;
     let mut k: i32;
     let mut l: i32;
@@ -601,7 +611,8 @@ pub unsafe fn open_log_file() {
 }
 
 // 10. start_input
-pub unsafe fn start_input(primary_input_name: *const c_char) {
+#[unsafe(export_name = "start_input")]
+pub unsafe extern "C" fn start_input(primary_input_name: *const c_char) {
     let mut format: c_int = TTBC_FILE_FORMAT_TEX;
     let mut temp_str: str_number;
 
@@ -744,13 +755,13 @@ pub unsafe fn start_input(primary_input_name: *const c_char) {
 
     begin_file_reading();
 
-    if (!u_open_in(
+    if u_open_in(
         input_file.offset(cur_input.index as isize),
         format,
         b"rb\0".as_ptr() as *const c_char,
         INTPAR!(INT_PAR__xetex_default_input_mode),
         INTPAR!(INT_PAR__xetex_default_input_encoding),
-    )) != 0
+    ) == 0
     {
         _tt_abort(
             b"failed to open input file \"%s\"\0".as_ptr() as *const c_char,
@@ -843,7 +854,8 @@ pub unsafe fn start_input(primary_input_name: *const c_char) {
 }
 
 // 11. effective_char_info
-pub unsafe fn effective_char_info(f: internal_font_number, mut c: u16) -> b16x4 {
+#[unsafe(export_name = "effective_char_info")]
+pub unsafe extern "C" fn effective_char_info(f: internal_font_number, mut c: u16) -> b16x4 {
     if !xtx_ligature_present && !(*font_mapping.offset(f as isize)).is_null() {
         c = apply_tfm_font_mapping(*font_mapping.offset(f as isize), c as i32) as u16;
     }
@@ -853,7 +865,8 @@ pub unsafe fn effective_char_info(f: internal_font_number, mut c: u16) -> b16x4 
 }
 
 // 12. char_warning
-pub unsafe fn char_warning(f: internal_font_number, c: i32) {
+#[unsafe(export_name = "char_warning")]
+pub unsafe extern "C" fn char_warning(f: internal_font_number, c: i32) {
     let mut local_old_setting: i32;
 
     if INTPAR!(INT_PAR__tracing_lost_chars) > 0 {
@@ -951,7 +964,8 @@ pub unsafe fn char_warning(f: internal_font_number, c: i32) {
 }
 
 // 13. new_native_word_node
-pub unsafe fn new_native_word_node(f: internal_font_number, n: i32) -> i32 {
+#[unsafe(export_name = "new_native_word_node")]
+pub unsafe extern "C" fn new_native_word_node(f: internal_font_number, n: i32) -> i32 {
     let l = NATIVE_NODE_SIZE
         + (n * std::mem::size_of::<UTF16_code>() as i32
             + std::mem::size_of::<memory_word>() as i32
@@ -975,7 +989,11 @@ pub unsafe fn new_native_word_node(f: internal_font_number, n: i32) -> i32 {
 }
 
 // 14. new_native_character
-pub unsafe fn new_native_character(f: internal_font_number, mut c: UnicodeScalar) -> i32 {
+#[unsafe(export_name = "new_native_character")]
+pub unsafe extern "C" fn new_native_character(
+    f: internal_font_number,
+    mut c: UnicodeScalar,
+) -> i32 {
     let mut p: i32;
     let mut i: i32;
     let len: i32;
@@ -1068,7 +1086,8 @@ pub unsafe fn new_native_character(f: internal_font_number, mut c: UnicodeScalar
 }
 
 // 15. font_feature_warning
-pub unsafe fn font_feature_warning(
+#[unsafe(export_name = "font_feature_warning")]
+pub unsafe extern "C" fn font_feature_warning(
     featureNameP: *const c_void,
     featLen: i32,
     settingNameP: *const c_void,
@@ -1096,7 +1115,8 @@ pub unsafe fn font_feature_warning(
 }
 
 // 16. font_mapping_warning
-pub unsafe fn font_mapping_warning(
+#[unsafe(export_name = "font_mapping_warning")]
+pub unsafe extern "C" fn font_mapping_warning(
     mappingNameP: *const c_void,
     mappingNameLen: i32,
     warningType: i32,
@@ -1136,7 +1156,8 @@ pub unsafe fn font_mapping_warning(
 }
 
 // 17. graphite_warning
-pub unsafe fn graphite_warning() {
+#[unsafe(export_name = "graphite_warning")]
+pub unsafe extern "C" fn graphite_warning() {
     begin_diagnostic();
     diagnostic_begin_capture_warning_here();
     print_nl_cstr(b"Font `\0".as_ptr() as *const c_char);
@@ -1155,7 +1176,8 @@ pub unsafe fn graphite_warning() {
 }
 
 // 18. load_native_font
-pub unsafe fn load_native_font(
+#[unsafe(export_name = "load_native_font")]
+pub unsafe extern "C" fn load_native_font(
     u: i32,
     nom: str_number,
     aire: str_number,
@@ -1356,7 +1378,8 @@ pub unsafe fn load_native_font(
 }
 
 // 19. do_locale_linebreaks
-pub unsafe fn do_locale_linebreaks(s: i32, len: i32) {
+#[unsafe(export_name = "do_locale_linebreaks")]
+pub unsafe extern "C" fn do_locale_linebreaks(s: i32, len: i32) {
     let mut offs: i32;
     let mut prevOffs: i32;
     let mut i: i32;
@@ -1419,7 +1442,8 @@ pub unsafe fn do_locale_linebreaks(s: i32, len: i32) {
 }
 
 // 20. bad_utf8_warning
-pub unsafe fn bad_utf8_warning() {
+#[unsafe(export_name = "bad_utf8_warning")]
+pub unsafe extern "C" fn bad_utf8_warning() {
     begin_diagnostic();
     diagnostic_begin_capture_warning_here();
     print_nl_cstr(b"Invalid UTF-8 byte or sequence\0".as_ptr() as *const c_char);
@@ -1435,7 +1459,8 @@ pub unsafe fn bad_utf8_warning() {
 }
 
 // 21. get_input_normalization_state
-pub unsafe fn get_input_normalization_state() -> i32 {
+#[unsafe(export_name = "get_input_normalization_state")]
+pub unsafe extern "C" fn get_input_normalization_state() -> i32 {
     if eqtb.is_null() {
         0
     } else {
@@ -1444,12 +1469,14 @@ pub unsafe fn get_input_normalization_state() -> i32 {
 }
 
 // 22. get_tracing_fonts_state
-pub unsafe fn get_tracing_fonts_state() -> i32 {
+#[unsafe(export_name = "get_tracing_fonts_state")]
+pub unsafe extern "C" fn get_tracing_fonts_state() -> i32 {
     INTPAR!(INT_PAR__xetex_tracing_fonts)
 }
 
 // 23. read_font_info
-pub unsafe fn read_font_info(
+#[unsafe(export_name = "read_font_info")]
+pub unsafe extern "C" fn read_font_info(
     u: i32,
     nom: str_number,
     aire: str_number,
@@ -1616,13 +1643,13 @@ pub unsafe fn read_font_info(
             }
 
             a = ttstub_input_getc(tfm_file);
-            qw.s3 = (a as i8) as u16;
+            qw.s3 = a as u16;
             b = ttstub_input_getc(tfm_file);
-            qw.s2 = (b as i8) as u16;
+            qw.s2 = b as u16;
             c = ttstub_input_getc(tfm_file);
-            qw.s1 = (c as i8) as u16;
+            qw.s1 = c as u16;
             d = ttstub_input_getc(tfm_file);
-            qw.s0 = (d as i8) as u16;
+            qw.s0 = d as u16;
             if a == libc::EOF || b == libc::EOF || c == libc::EOF || d == libc::EOF {
                 is_bad_tfm = true;
                 break 'read_tfm;
@@ -1659,13 +1686,13 @@ pub unsafe fn read_font_info(
             k = fmem_ptr;
             while k <= *width_base.offset(f as isize) - 1 {
                 a = ttstub_input_getc(tfm_file);
-                qw.s3 = (a as i8) as u16;
+                qw.s3 = a as u16;
                 b = ttstub_input_getc(tfm_file);
-                qw.s2 = (b as i8) as u16;
+                qw.s2 = b as u16;
                 c = ttstub_input_getc(tfm_file);
-                qw.s1 = (c as i8) as u16;
+                qw.s1 = c as u16;
                 d = ttstub_input_getc(tfm_file);
-                qw.s0 = (d as i8) as u16;
+                qw.s0 = d as u16;
                 if a == libc::EOF || b == libc::EOF || c == libc::EOF || d == libc::EOF {
                     is_bad_tfm = true;
                     break 'read_tfm;
@@ -1787,13 +1814,13 @@ pub unsafe fn read_font_info(
                 k = *lig_kern_base.offset(f as isize);
                 while k <= *kern_base.offset(f as isize) + 256 * 128 - 1 {
                     a = ttstub_input_getc(tfm_file);
-                    qw.s3 = (a as i8) as u16;
+                    qw.s3 = a as u16;
                     b = ttstub_input_getc(tfm_file);
-                    qw.s2 = (b as i8) as u16;
+                    qw.s2 = b as u16;
                     c = ttstub_input_getc(tfm_file);
-                    qw.s1 = (c as i8) as u16;
+                    qw.s1 = c as u16;
                     d = ttstub_input_getc(tfm_file);
-                    qw.s0 = (d as i8) as u16;
+                    qw.s0 = d as u16;
                     if a == libc::EOF || b == libc::EOF || c == libc::EOF || d == libc::EOF {
                         is_bad_tfm = true;
                         break 'read_tfm;
@@ -1877,13 +1904,13 @@ pub unsafe fn read_font_info(
             k = *exten_base.offset(f as isize);
             while k <= *param_base.offset(f as isize) - 1 {
                 a = ttstub_input_getc(tfm_file);
-                qw.s3 = (a as i8) as u16;
+                qw.s3 = a as u16;
                 b = ttstub_input_getc(tfm_file);
-                qw.s2 = (b as i8) as u16;
+                qw.s2 = b as u16;
                 c = ttstub_input_getc(tfm_file);
-                qw.s1 = (c as i8) as u16;
+                qw.s1 = c as u16;
                 d = ttstub_input_getc(tfm_file);
-                qw.s0 = (d as i8) as u16;
+                qw.s0 = d as u16;
                 if a == libc::EOF || b == libc::EOF || c == libc::EOF || d == libc::EOF {
                     is_bad_tfm = true;
                     break 'read_tfm;
@@ -2010,7 +2037,7 @@ pub unsafe fn read_font_info(
                 if local_bchar >= bc as i16 {
                     qw = FONT_CHARACTER_INFO!(f, local_bchar);
                     if qw.s3 > 0 {
-                        *font_false_bchar.offset(f as isize) = (TOO_BIG_CHAR as i16) as i32;
+                        *font_false_bchar.offset(f as isize) = TOO_BIG_CHAR;
                     }
                 }
             }
@@ -2115,7 +2142,8 @@ pub unsafe fn read_font_info(
 }
 
 // 24. new_character
-pub unsafe fn new_character(f: internal_font_number, c: UTF16_code) -> i32 {
+#[unsafe(export_name = "new_character")]
+pub unsafe extern "C" fn new_character(f: internal_font_number, c: UTF16_code) -> i32 {
     let p: i32;
     let ec: u16;
     if *font_area.offset(f as isize) == (AAT_FONT_FLAG) as i32
@@ -2139,7 +2167,8 @@ pub unsafe fn new_character(f: internal_font_number, c: UTF16_code) -> i32 {
 }
 
 // 25. scan_spec
-pub unsafe fn scan_spec(c: group_code, three_codes: bool) {
+#[unsafe(export_name = "scan_spec")]
+pub unsafe extern "C" fn scan_spec(c: group_code, three_codes: bool) {
     let mut s: i32 = 0;
     let spec_code: u8;
     if three_codes {
@@ -2168,7 +2197,8 @@ pub unsafe fn scan_spec(c: group_code, three_codes: bool) {
 }
 
 // 26. char_pw
-pub unsafe fn char_pw(mut p: i32, side: small_number) -> scaled_t {
+#[unsafe(export_name = "char_pw")]
+pub unsafe extern "C" fn char_pw(mut p: i32, side: small_number) -> scaled_t {
     let f: internal_font_number;
     let c: i32;
     if side == 0 {
@@ -2247,7 +2277,8 @@ pub unsafe fn char_pw(mut p: i32, side: small_number) -> scaled_t {
 }
 
 // 27. new_margin_kern
-pub unsafe fn new_margin_kern(w: scaled_t, p: i32, side: small_number) -> i32 {
+#[unsafe(export_name = "new_margin_kern")]
+pub unsafe extern "C" fn new_margin_kern(w: scaled_t, p: i32, side: small_number) -> i32 {
     let k = get_node(MARGIN_KERN_NODE_SIZE);
     NODE_type!(k) = (MARGIN_KERN_NODE as i16) as u16;
     mem!(k).b16.s0 = (side as i16) as u16;
@@ -2256,7 +2287,11 @@ pub unsafe fn new_margin_kern(w: scaled_t, p: i32, side: small_number) -> i32 {
 }
 
 // 28. prepare_native_line_layouts
-pub unsafe fn prepare_native_line_layouts(lines: *const i32, count: usize) -> *mut PreparedLayouts {
+#[unsafe(export_name = "prepare_native_line_layouts")]
+pub unsafe extern "C" fn prepare_native_line_layouts(
+    lines: *const i32,
+    count: usize,
+) -> *mut PreparedLayouts {
     let mut requests: *mut NativeLayoutRequest = std::ptr::null_mut();
     let mut request_count: usize = 0;
     let mut capacity: usize = 0;
@@ -2351,7 +2386,8 @@ pub unsafe fn prepare_native_line_layouts(lines: *const i32, count: usize) -> *m
 }
 
 // 29. hpack
-pub unsafe fn hpack(mut p: i32, mut w: scaled_t, m: small_number) -> i32 {
+#[unsafe(export_name = "hpack")]
+pub unsafe extern "C" fn hpack(mut p: i32, mut w: scaled_t, m: small_number) -> i32 {
     let r: i32;
     let mut q: i32;
     let mut h: scaled_t;
@@ -2815,7 +2851,13 @@ pub unsafe fn hpack(mut p: i32, mut w: scaled_t, m: small_number) -> i32 {
 }
 
 // 30. vpackage
-pub unsafe fn vpackage(mut p: i32, mut h: scaled_t, m: small_number, l: scaled_t) -> i32 {
+#[unsafe(export_name = "vpackage")]
+pub unsafe extern "C" fn vpackage(
+    mut p: i32,
+    mut h: scaled_t,
+    m: small_number,
+    l: scaled_t,
+) -> i32 {
     let r: i32;
     let mut w: scaled_t;
     let mut d: scaled_t;

@@ -107,12 +107,12 @@ pub struct tt_checkpoint {
 
 static mut resume_bytes: *const u8 = std::ptr::null();
 static mut resume_length: usize = 0;
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_enabled")]
+#[unsafe(export_name = "tt_checkpoint_enabled")]
 pub static mut tt_checkpoint_enabled: bool = false;
 static mut allowed: bool = false;
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_resumed")]
+#[unsafe(export_name = "tt_checkpoint_resumed")]
 pub static mut tt_checkpoint_resumed: bool = false;
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_dispatch_fetch")]
+#[unsafe(export_name = "tt_checkpoint_dispatch_fetch")]
 pub static mut tt_checkpoint_dispatch_fetch: bool = false;
 static mut resume_action: u8 = 0;
 static mut dispatches: u64 = 0;
@@ -175,17 +175,17 @@ unsafe extern "C" {
     pub fn macro_call();
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_skipped")]
+#[unsafe(export_name = "tt_checkpoint_skipped")]
 pub unsafe extern "C" fn tt_checkpoint_skipped() -> u64 {
     unsafe { skipped_dispatches }
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_restored")]
+#[unsafe(export_name = "tt_checkpoint_restored")]
 pub unsafe extern "C" fn tt_checkpoint_restored() -> bool {
     unsafe { tt_checkpoint_resumed }
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_register_glyph")]
+#[unsafe(export_name = "tt_checkpoint_register_glyph")]
 pub unsafe extern "C" fn tt_checkpoint_register_glyph(node: i32) {
     unsafe {
         glyph_nodes[node as usize] = if !(*mem.add((node + 5) as usize)).ptr.is_null() {
@@ -196,14 +196,14 @@ pub unsafe extern "C" fn tt_checkpoint_register_glyph(node: i32) {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_unregister_glyph")]
+#[unsafe(export_name = "tt_checkpoint_unregister_glyph")]
 pub unsafe extern "C" fn tt_checkpoint_unregister_glyph(node: i32) {
     unsafe {
         glyph_nodes[node as usize] = 0;
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_release")]
+#[unsafe(export_name = "tt_checkpoint_release")]
 pub unsafe extern "C" fn tt_checkpoint_release() {
     unsafe {
         libc::free(capture_bytes as *mut c_void);
@@ -212,7 +212,7 @@ pub unsafe extern "C" fn tt_checkpoint_release() {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_set")]
+#[unsafe(export_name = "tt_checkpoint_set")]
 pub unsafe extern "C" fn tt_checkpoint_set(bytes: *const u8, length: usize, record: bool) {
     unsafe {
         tt_checkpoint_release();
@@ -239,14 +239,14 @@ pub unsafe extern "C" fn tt_checkpoint_set(bytes: *const u8, length: usize, reco
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_disallow")]
+#[unsafe(export_name = "tt_checkpoint_disallow")]
 pub unsafe extern "C" fn tt_checkpoint_disallow() {
     unsafe {
         allowed = false;
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_field")]
+#[unsafe(export_name = "tt_checkpoint_field")]
 pub unsafe extern "C" fn tt_checkpoint_field(
     cp: *mut tt_checkpoint,
     name: *const c_char,
@@ -304,7 +304,7 @@ pub unsafe extern "C" fn tt_checkpoint_field(
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_array")]
+#[unsafe(export_name = "tt_checkpoint_array")]
 pub unsafe extern "C" fn tt_checkpoint_array(
     cp: *mut tt_checkpoint,
     name: *const c_char,
@@ -333,7 +333,7 @@ pub unsafe extern "C" fn tt_checkpoint_array(
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_used_array")]
+#[unsafe(export_name = "tt_checkpoint_used_array")]
 pub unsafe extern "C" fn tt_checkpoint_used_array(
     cp: *mut tt_checkpoint,
     name: *const c_char,
@@ -364,7 +364,7 @@ pub unsafe extern "C" fn tt_checkpoint_used_array(
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_rle")]
+#[unsafe(export_name = "tt_checkpoint_rle")]
 pub unsafe extern "C" fn tt_checkpoint_rle(
     cp: *mut tt_checkpoint,
     name: *const c_char,
@@ -540,7 +540,7 @@ pub unsafe extern "C" fn tt_checkpoint_rle(
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_memory")]
+#[unsafe(export_name = "tt_checkpoint_memory")]
 pub unsafe extern "C" fn tt_checkpoint_memory(cp: *mut tt_checkpoint) {
     unsafe {
         if !(*cp).valid || lo_mem_max < 0 || hi_mem_min <= lo_mem_max || hi_mem_min > MEM_TOP {
@@ -632,7 +632,7 @@ pub unsafe extern "C" fn tt_checkpoint_memory(cp: *mut tt_checkpoint) {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_string")]
+#[unsafe(export_name = "tt_checkpoint_string")]
 pub unsafe extern "C" fn tt_checkpoint_string(
     cp: *mut tt_checkpoint,
     name: *const c_char,
@@ -735,7 +735,7 @@ unsafe fn transfer(cp: *mut tt_checkpoint) {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_resume")]
+#[unsafe(export_name = "tt_checkpoint_resume")]
 pub unsafe extern "C" fn tt_checkpoint_resume() -> bool {
     unsafe {
         if resume_bytes.is_null() || resume_length == 0 {
@@ -754,6 +754,7 @@ pub unsafe extern "C" fn tt_checkpoint_resume() -> bool {
         if !cp.valid || cp.position != cp.length {
             _tt_abort(c"invalid engine checkpoint".as_ptr());
         }
+        super::xetex_stringpool::reset_string_index();
         tt_checkpoint_ext_reset();
         tt_checkpoint_resumed = true;
         skipped_dispatches = dispatches;
@@ -827,7 +828,7 @@ unsafe fn capture(action: u8) {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_try")]
+#[unsafe(export_name = "tt_checkpoint_try")]
 pub unsafe extern "C" fn tt_checkpoint_try() {
     unsafe {
         if !tt_checkpoint_enabled {
@@ -847,7 +848,7 @@ pub unsafe extern "C" fn tt_checkpoint_try() {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_before_input")]
+#[unsafe(export_name = "tt_checkpoint_before_input")]
 pub unsafe extern "C" fn tt_checkpoint_before_input() {
     unsafe {
         if !tt_checkpoint_enabled
@@ -878,7 +879,7 @@ pub unsafe extern "C" fn tt_checkpoint_before_input() {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_tt_checkpoint_continue")]
+#[unsafe(export_name = "tt_checkpoint_continue")]
 pub unsafe extern "C" fn tt_checkpoint_continue() {
     unsafe {
         let action = resume_action;

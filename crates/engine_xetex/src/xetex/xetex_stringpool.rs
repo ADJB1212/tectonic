@@ -32,9 +32,65 @@ unsafe extern "C" {
 
 static STRING_CONSTANTS: &[&[u8]] = &[b"this marks the start of the stringpool", b""];
 
-#[unsafe(export_name = "tectonic_rust_load_pool_strings")]
+#[derive(Default)]
+struct StringIndex {
+    heads: rustc_hash::FxHashMap<u64, i32>,
+    entries: Vec<(u64, i32)>,
+}
+
+impl StringIndex {
+    fn truncate(&mut self, strings: i32) {
+        let count = (strings - TOO_BIG_CHAR).max(0) as usize;
+        while self.entries.len() > count {
+            let (hash, previous) = self.entries.pop().unwrap();
+            if previous == 0 {
+                self.heads.remove(&hash);
+            } else {
+                self.heads.insert(hash, previous);
+            }
+        }
+    }
+
+    fn insert(&mut self, hash: u64) {
+        let string = TOO_BIG_CHAR + self.entries.len() as i32;
+        let previous = self.heads.insert(hash, string).unwrap_or(0);
+        self.entries.push((hash, previous));
+    }
+}
+
+thread_local! {
+    static STRING_INDEX: std::cell::RefCell<StringIndex> = Default::default();
+}
+
+pub(super) fn reset_string_index() {
+    STRING_INDEX.with(|index| *index.borrow_mut() = StringIndex::default());
+}
+
+pub(super) fn truncate_string_index(strings: i32) {
+    STRING_INDEX.with(|index| index.borrow_mut().truncate(strings));
+}
+
+unsafe fn pooled_string<'a>(s: i32) -> &'a [u16] {
+    unsafe {
+        let start = *str_start.add((s - TOO_BIG_CHAR) as usize) as usize;
+        let end = *str_start.add((s + 1 - TOO_BIG_CHAR) as usize) as usize;
+        std::slice::from_raw_parts(str_pool.add(start), end - start)
+    }
+}
+
+pub(super) unsafe fn str_eq_buf_bmp(s: str_number, start: i32, len: i32) -> bool {
+    unsafe {
+        super::xetex_simd::eq_utf16_utf32(
+            pooled_string(s),
+            std::slice::from_raw_parts(buffer.add(start as usize), len as usize),
+        )
+    }
+}
+
+#[unsafe(export_name = "load_pool_strings")]
 pub unsafe extern "C" fn load_pool_strings(spare_size: i32) -> libc::c_int {
     unsafe {
+        reset_string_index();
         let mut total_len: usize = 0;
         let mut g: str_number = 0;
 
@@ -57,7 +113,7 @@ pub unsafe extern "C" fn load_pool_strings(spare_size: i32) -> libc::c_int {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_length")]
+#[unsafe(export_name = "length")]
 pub unsafe extern "C" fn length(s: str_number) -> i32 {
     unsafe {
         if s >= 65536 {
@@ -76,20 +132,21 @@ pub unsafe extern "C" fn length(s: str_number) -> i32 {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_make_string")]
+#[unsafe(export_name = "make_string")]
 pub unsafe extern "C" fn make_string() -> str_number {
     unsafe {
         if str_ptr == max_strings {
             overflow(c"number of strings".as_ptr(), max_strings - init_str_ptr);
         }
 
+        truncate_string_index(str_ptr);
         str_ptr += 1;
         *str_start.add((str_ptr - TOO_BIG_CHAR) as usize) = pool_ptr;
         str_ptr - 1
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_append_str")]
+#[unsafe(export_name = "append_str")]
 pub unsafe extern "C" fn append_str(s: str_number) {
     unsafe {
         let mut i = length(s);
@@ -109,7 +166,7 @@ pub unsafe extern "C" fn append_str(s: str_number) {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_str_eq_buf")]
+#[unsafe(export_name = "str_eq_buf")]
 pub unsafe extern "C" fn str_eq_buf(s: str_number, mut k: i32) -> bool {
     unsafe {
         let mut j = *str_start.add((s - 65536) as usize);
@@ -138,7 +195,7 @@ pub unsafe extern "C" fn str_eq_buf(s: str_number, mut k: i32) -> bool {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_str_eq_str")]
+#[unsafe(export_name = "str_eq_str")]
 pub unsafe extern "C" fn str_eq_str(s: str_number, t: str_number) -> bool {
     unsafe {
         if length(s) != length(t) {
@@ -188,30 +245,42 @@ pub unsafe extern "C" fn str_eq_str(s: str_number, t: str_number) -> bool {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_search_string")]
+#[unsafe(export_name = "search_string")]
 pub unsafe extern "C" fn search_string(search: str_number) -> str_number {
     unsafe {
+        if search < TOO_BIG_CHAR {
+            return 0;
+        }
         let len = length(search);
 
         if len == 0 {
             EMPTY_STRING
         } else {
-            let mut s = search - 1;
-
-            while s > 65535 {
-                if length(s) == len && str_eq_str(s, search) {
-                    return s;
+            use std::hash::BuildHasher;
+            STRING_INDEX.with(|index| {
+                let mut index = index.borrow_mut();
+                index.truncate(search);
+                while index.entries.len() < (search - TOO_BIG_CHAR) as usize {
+                    let s = TOO_BIG_CHAR + index.entries.len() as i32;
+                    let hash = index.heads.hasher().hash_one(pooled_string(s));
+                    index.insert(hash);
                 }
-
-                s -= 1;
-            }
-
-            0
+                let text = pooled_string(search);
+                let hash = index.heads.hasher().hash_one(text);
+                let mut s = index.heads.get(&hash).copied().unwrap_or(0);
+                while s != 0 {
+                    if pooled_string(s) == text {
+                        return s;
+                    }
+                    s = index.entries[(s - TOO_BIG_CHAR) as usize].1;
+                }
+                0
+            })
         }
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_slow_make_string")]
+#[unsafe(export_name = "slow_make_string")]
 pub unsafe extern "C" fn slow_make_string() -> str_number {
     unsafe {
         let t = make_string();
@@ -224,5 +293,60 @@ pub unsafe extern "C" fn slow_make_string() -> str_number {
         }
 
         t
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[ignore = "manual performance measurement"]
+    fn benchmark_string_index_hashing() {
+        use std::{collections::HashMap, hash::BuildHasher, hint::black_box, time::Instant};
+        fn measure<H: BuildHasher + Default>(strings: &[Vec<u16>]) -> std::time::Duration {
+            let mut heads: HashMap<u64, usize, H> = HashMap::default();
+            for (index, string) in strings.iter().enumerate() {
+                let hash = heads.hasher().hash_one(string.as_slice());
+                heads.insert(hash, index);
+            }
+            let start = Instant::now();
+            for _ in 0..100 {
+                for string in strings {
+                    let hash = heads.hasher().hash_one(black_box(string.as_slice()));
+                    black_box(heads.get(&hash));
+                }
+            }
+            start.elapsed()
+        }
+        let strings: Vec<Vec<u16>> = (0..20_000)
+            .map(|index| format!("control@sequence@{index}").encode_utf16().collect())
+            .collect();
+        eprintln!(
+            "string index standard: {:?}",
+            measure::<std::collections::hash_map::RandomState>(&strings)
+        );
+        eprintln!(
+            "string index Fx: {:?}",
+            measure::<rustc_hash::FxBuildHasher>(&strings)
+        );
+    }
+
+    #[test]
+    fn string_index_restores_collision_chains_after_rollback() {
+        let mut index = StringIndex::default();
+        index.insert(7);
+        index.insert(11);
+        index.insert(7);
+        assert_eq!(index.heads[&7], TOO_BIG_CHAR + 2);
+        assert_eq!(index.entries[2].1, TOO_BIG_CHAR);
+        index.truncate(TOO_BIG_CHAR + 1);
+        assert_eq!(index.heads[&7], TOO_BIG_CHAR);
+        assert!(!index.heads.contains_key(&11));
+        index.insert(13);
+        assert_eq!(index.heads[&13], TOO_BIG_CHAR + 1);
+        index.truncate(TOO_BIG_CHAR);
+        assert!(index.heads.is_empty());
+        assert!(index.entries.is_empty());
     }
 }

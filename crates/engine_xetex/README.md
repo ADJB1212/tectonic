@@ -24,17 +24,14 @@ This crate provides the following [Cargo features][features]:
 
 ## Rust engine migration
 
-The default build uses Rust startup code in `src/xetex/xetex_runtime.rs` for
-`tt_run_engine`, including allocation, variable and primitive initialization,
-input setup, and checkpoint-resume orchestration. End-of-job cleanup and resource
-teardown also run in Rust. The C entry shim retains the engine's fatal-error
-boundary.
+The default build uses the Rust engine in `src/xetex`, including startup,
+execution, format loading and saving, line breaking, math, shipout, SyncTeX,
+checkpointing, and cleanup. Rust definitions provide the engine's shared state
+and ABI symbols. The corresponding C engine sources are not compiled.
 
-This is still a mixed Rust/C engine. The execution loop, format loading and
-saving, and low-level engine operations still depend on native code.
-Other translated modules remain compiled with namespaced exports while their
-state and call paths are migrated. Switching startup to Rust does not complete
-the engine port.
+The C entry shim retains the engine's fatal-error boundary. A small ICU shim
+handles ICU's versioned API symbols. Native dependencies, including TECkit and
+the font layout libraries, remain in use.
 
 The Rust TECkit converter uses `unicode-normalization` for canonical Unicode
 normalization, including Hangul and combining-class handling. Its Unicode data

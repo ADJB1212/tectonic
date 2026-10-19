@@ -323,28 +323,31 @@ pub fn TeXtoPSPoints(pts: f64) -> f64 {
     pts * 72.0 / 72.27
 }
 
-#[inline]
-pub fn PStoTeXPoints(pts: f64) -> f64 {
+#[unsafe(export_name = "PStoTeXPoints")]
+pub extern "C" fn PStoTeXPoints(pts: f64) -> f64 {
     pts * 72.27 / 72.0
 }
 
-#[inline]
-pub fn FixedPStoTeXPoints(pts: f64) -> i32 {
+#[unsafe(export_name = "FixedPStoTeXPoints")]
+pub extern "C" fn FixedPStoTeXPoints(pts: f64) -> i32 {
     D2Fix(PStoTeXPoints(pts))
 }
 
-pub unsafe fn fontFromAttributes(attributes: CFDictionaryRef) -> CTFontRef {
+#[unsafe(export_name = "fontFromAttributes")]
+pub unsafe extern "C" fn fontFromAttributes(attributes: CFDictionaryRef) -> CTFontRef {
     unsafe { CFDictionaryGetValue(attributes, kCTFontAttributeName as *const c_void) as CTFontRef }
 }
 
-pub unsafe fn fontFromInteger(font: i32) -> CTFontRef {
+#[unsafe(export_name = "fontFromInteger")]
+pub unsafe extern "C" fn fontFromInteger(font: i32) -> CTFontRef {
     unsafe {
         let attributes = (*font_layout_engine.add(font as usize)) as CFDictionaryRef;
         fontFromAttributes(attributes)
     }
 }
 
-pub unsafe fn DoAATLayout(p: *mut c_void, justify: c_int) {
+#[unsafe(export_name = "DoAATLayout")]
+pub unsafe extern "C" fn DoAATLayout(p: *mut c_void, justify: c_int) {
     unsafe {
         let node = p as *mut memory_word;
 
@@ -541,7 +544,12 @@ unsafe fn getGlyphBBoxFromCTFont(font: CTFontRef, gid: u16, bbox: *mut GlyphBBox
     }
 }
 
-pub unsafe fn GetGlyphBBox_AAT(attributes: CFDictionaryRef, gid: u16, bbox: *mut GlyphBBox) {
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn GetGlyphBBox_AAT(
+    attributes: CFDictionaryRef,
+    gid: u16,
+    bbox: *mut GlyphBBox,
+) {
     unsafe {
         let font = fontFromAttributes(attributes);
         getGlyphBBoxFromCTFont(font, gid, bbox);
@@ -561,14 +569,16 @@ unsafe fn getGlyphWidthFromCTFont(font: CTFontRef, gid: u16) -> f64 {
     }
 }
 
-pub unsafe fn GetGlyphWidth_AAT(attributes: CFDictionaryRef, gid: u16) -> f64 {
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn GetGlyphWidth_AAT(attributes: CFDictionaryRef, gid: u16) -> f64 {
     unsafe {
         let font = fontFromAttributes(attributes);
         getGlyphWidthFromCTFont(font, gid)
     }
 }
 
-pub unsafe fn GetGlyphHeightDepth_AAT(
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn GetGlyphHeightDepth_AAT(
     attributes: CFDictionaryRef,
     gid: u16,
     ht: *mut f32,
@@ -582,7 +592,8 @@ pub unsafe fn GetGlyphHeightDepth_AAT(
     }
 }
 
-pub unsafe fn GetGlyphSidebearings_AAT(
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn GetGlyphSidebearings_AAT(
     attributes: CFDictionaryRef,
     gid: u16,
     lsb: *mut f32,
@@ -603,7 +614,8 @@ pub unsafe fn GetGlyphSidebearings_AAT(
     }
 }
 
-pub unsafe fn GetGlyphItalCorr_AAT(attributes: CFDictionaryRef, gid: u16) -> f64 {
+#[unsafe(export_name = "GetGlyphItalCorr_AAT")]
+pub unsafe extern "C" fn GetGlyphItalCorr_AAT(attributes: CFDictionaryRef, gid: u16) -> f64 {
     unsafe {
         let font = fontFromAttributes(attributes);
         let mut advances = [CGSize {
@@ -648,7 +660,8 @@ unsafe fn mapCharToGlyphFromCTFont(font: CTFontRef, mut ch: u32) -> c_int {
     }
 }
 
-pub unsafe fn MapCharToGlyph_AAT(attributes: CFDictionaryRef, ch: u32) -> c_int {
+#[unsafe(export_name = "MapCharToGlyph_AAT")]
+pub unsafe extern "C" fn MapCharToGlyph_AAT(attributes: CFDictionaryRef, ch: u32) -> c_int {
     unsafe {
         let font = fontFromAttributes(attributes);
         mapCharToGlyphFromCTFont(font, ch)
@@ -669,14 +682,19 @@ unsafe fn GetGlyphIDFromCTFont(ctFontRef: CTFontRef, glyphName: *const c_char) -
     }
 }
 
-pub unsafe fn MapGlyphToIndex_AAT(attributes: CFDictionaryRef, glyphName: *const c_char) -> c_int {
+#[unsafe(export_name = "MapGlyphToIndex_AAT")]
+pub unsafe extern "C" fn MapGlyphToIndex_AAT(
+    attributes: CFDictionaryRef,
+    glyphName: *const c_char,
+) -> c_int {
     unsafe {
         let font = fontFromAttributes(attributes);
         GetGlyphIDFromCTFont(font, glyphName)
     }
 }
 
-pub unsafe fn GetGlyphNameFromCTFont(
+#[unsafe(export_name = "GetGlyphNameFromCTFont")]
+pub unsafe extern "C" fn GetGlyphNameFromCTFont(
     ctFontRef: CTFontRef,
     gid: u16,
     len: *mut c_int,
@@ -707,7 +725,11 @@ pub unsafe fn GetGlyphNameFromCTFont(
     }
 }
 
-pub unsafe fn GetFontCharRange_AAT(attributes: CFDictionaryRef, reqFirst: c_int) -> c_int {
+#[unsafe(export_name = "GetFontCharRange_AAT")]
+pub unsafe extern "C" fn GetFontCharRange_AAT(
+    attributes: CFDictionaryRef,
+    reqFirst: c_int,
+) -> c_int {
     unsafe {
         if reqFirst != 0 {
             let mut ch: u32 = 0;
@@ -725,7 +747,8 @@ pub unsafe fn GetFontCharRange_AAT(attributes: CFDictionaryRef, reqFirst: c_int)
     }
 }
 
-pub unsafe fn findDictionaryInArrayWithIdentifier(
+#[unsafe(export_name = "findDictionaryInArrayWithIdentifier")]
+pub unsafe extern "C" fn findDictionaryInArrayWithIdentifier(
     array: CFArrayRef,
     identifierKey: *const c_void,
     identifier: c_int,
@@ -756,7 +779,8 @@ pub unsafe fn findDictionaryInArrayWithIdentifier(
     }
 }
 
-pub unsafe fn findDictionaryInArray(
+#[unsafe(export_name = "findDictionaryInArray")]
+pub unsafe extern "C" fn findDictionaryInArray(
     array: CFArrayRef,
     nameKey: *const c_void,
     name: *const c_char,
@@ -790,7 +814,8 @@ pub unsafe fn findDictionaryInArray(
     }
 }
 
-pub unsafe fn findSelectorByName(
+#[unsafe(export_name = "findSelectorByName")]
+pub unsafe extern "C" fn findSelectorByName(
     feature: CFDictionaryRef,
     name: *const c_char,
     nameLength: c_int,
@@ -842,6 +867,7 @@ unsafe fn createFeatureSettingDictionary(
     }
 }
 
+#[unsafe(no_mangle)]
 pub static mut kXeTeXEmboldenAttributeName: CFStringRef = ptr::null();
 
 pub unsafe fn strstartswith(mut s: *const c_char, mut prefix: *const c_char) -> *const c_char {
@@ -892,7 +918,8 @@ pub unsafe fn read_double(s: &mut *const c_char) -> f64 {
     }
 }
 
-pub unsafe fn loadAATfont(
+#[unsafe(export_name = "loadAATfont")]
+pub unsafe extern "C" fn loadAATfont(
     mut descriptor: CTFontDescriptorRef,
     scaled_size: i32,
     mut cp1: *const c_char,

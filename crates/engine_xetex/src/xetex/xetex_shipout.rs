@@ -212,10 +212,10 @@ pub const END_WRITE: i32 = FROZEN_CONTROL_SEQUENCE + 8;
 pub const INSERTED: u8 = 5;
 pub const WRITE_TEXT: u8 = 18;
 
-pub const SELECTOR_TERM_ONLY: u8 = 17;
-pub const SELECTOR_LOG_ONLY: u8 = 18;
-pub const SELECTOR_TERM_AND_LOG: u8 = 19;
-pub const SELECTOR_NEW_STRING: u8 = 21;
+pub const SELECTOR_TERM_ONLY: i32 = 17;
+pub const SELECTOR_LOG_ONLY: i32 = 18;
+pub const SELECTOR_TERM_AND_LOG: i32 = 19;
+pub const SELECTOR_NEW_STRING: i32 = 21;
 
 pub const INT_BASE: i32 = 7826729;
 pub const COUNT_BASE: i32 = 7826812;
@@ -542,7 +542,7 @@ unsafe extern "C" {
     pub static mut file_offset: i32;
     pub static mut max_print_line: i32;
     pub static mut rust_stdout: rust_output_handle_t;
-    pub static mut help_ptr: i32;
+    pub static mut help_ptr: u8;
     pub static mut help_line: [*const libc::c_char; 6];
     pub static mut max_v: scaled_t;
     pub static mut max_h: scaled_t;
@@ -557,7 +557,7 @@ unsafe extern "C" {
     pub static mut total_pages: i32;
     pub static mut semantic_pagination_enabled: bool;
     pub static mut last_bop: i32;
-    pub static mut selector: u8;
+    pub static mut selector: i32;
     pub static mut str_start: *mut pool_pointer;
     pub static mut str_ptr: str_number;
     pub static mut str_pool: *mut u16;
@@ -658,8 +658,6 @@ unsafe extern "C" {
     pub fn new_kern(w: scaled_t) -> i32;
     pub fn new_math(w: scaled_t, s: small_number) -> i32;
     pub fn new_native_word_node(f: internal_font_number, n: i32) -> i32;
-    pub fn set_justified_native_glyphs(p: i32);
-    pub fn make_xdv_glyph_array_data(p: i32) -> i32;
     pub fn make_font_def(f: internal_font_number) -> i32;
     pub fn apply_tfm_font_mapping(mapping: *mut libc::c_void, c: i32) -> i32;
     pub fn effective_char(err_p: bool, f: internal_font_number, c: UTF16_code) -> i32;
@@ -701,6 +699,16 @@ unsafe extern "C" {
     pub fn xmalloc(size: usize) -> *mut libc::c_void;
 }
 
+unsafe fn set_justified_native_glyphs(p: i32) {
+    unsafe {
+        super::xetex_ext::store_justified_native_glyphs(mem.add(p as usize).cast());
+    }
+}
+
+unsafe fn make_xdv_glyph_array_data(p: i32) -> i32 {
+    unsafe { super::xetex_ext::makeXDVGlyphArrayData(mem.add(p as usize).cast()) }
+}
+
 #[inline(always)]
 unsafe fn cp_value<T>(cp: *mut tt_checkpoint, name: *const libc::c_char, val: *mut T) {
     unsafe {
@@ -726,7 +734,8 @@ unsafe fn cp_array<T>(
     }
 }
 
-pub unsafe fn tt_checkpoint_shipout(cp: *mut tt_checkpoint) {
+#[unsafe(export_name = "tt_checkpoint_shipout")]
+pub unsafe extern "C" fn tt_checkpoint_shipout(cp: *mut tt_checkpoint) {
     unsafe {
         cp_value(cp, c"dvi_file".as_ptr(), &raw mut dvi_file);
         cp_value(cp, c"output_file_name".as_ptr(), &raw mut output_file_name);
@@ -761,7 +770,8 @@ pub unsafe fn tt_checkpoint_shipout(cp: *mut tt_checkpoint) {
     }
 }
 
-pub unsafe fn initialize_shipout_variables() {
+#[unsafe(export_name = "initialize_shipout_variables")]
+pub unsafe extern "C" fn initialize_shipout_variables() {
     unsafe {
         output_file_name = 0;
         dvi_buf = xmalloc((DVI_BUF_SIZE + 1) * size_of::<eight_bits>()) as *mut eight_bits;
@@ -775,7 +785,8 @@ pub unsafe fn initialize_shipout_variables() {
     }
 }
 
-pub unsafe fn deinitialize_shipout_variables() {
+#[unsafe(export_name = "deinitialize_shipout_variables")]
+pub unsafe extern "C" fn deinitialize_shipout_variables() {
     unsafe {
         libc::free(dvi_buf as *mut libc::c_void);
         dvi_buf = ptr::null_mut();
@@ -793,7 +804,8 @@ unsafe fn dvi_out(c: eight_bits) {
     }
 }
 
-pub unsafe fn ship_out(p: i32) {
+#[unsafe(export_name = "ship_out")]
+pub unsafe extern "C" fn ship_out(p: i32) {
     unsafe {
         synctex_sheet(INTPAR!(mag));
 
@@ -1276,7 +1288,7 @@ unsafe fn hlist_out() {
         let mut left_edge = cur_h;
         synctex_hlist(this_box);
 
-        while p != TEX_NULL {
+        'nodes: while p != TEX_NULL {
             'reswitch: loop {
                 if is_char_node(p) {
                     if cur_h != dvi_h {
@@ -1338,7 +1350,7 @@ unsafe fn hlist_out() {
 
                     synctex_current();
                     dvi_h = cur_h;
-                    break 'reswitch;
+                    continue 'nodes;
                 } else {
                     match NODE_type!(p) {
                         HLIST_NODE | VLIST_NODE => {
@@ -2384,7 +2396,8 @@ unsafe fn reverse(this_box: i32, t: i32, cur_g: *mut scaled_t, cur_glue: *mut f6
     }
 }
 
-pub unsafe fn new_edge(s: small_number, w: scaled_t) -> i32 {
+#[unsafe(export_name = "new_edge")]
+pub unsafe extern "C" fn new_edge(s: small_number, w: scaled_t) -> i32 {
     unsafe {
         let p = get_node(EDGE_NODE_SIZE);
         NODE_type!(p) = EDGE_NODE;
@@ -2395,7 +2408,8 @@ pub unsafe fn new_edge(s: small_number, w: scaled_t) -> i32 {
     }
 }
 
-pub unsafe fn out_what(p: i32) {
+#[unsafe(export_name = "out_what")]
+pub unsafe extern "C" fn out_what(p: i32) {
     unsafe {
         match mem!(p).b16.s0 {
             OPEN_NODE | WRITE_NODE | CLOSE_NODE => {
@@ -2483,7 +2497,8 @@ unsafe fn dvi_native_font_def(f: internal_font_number) {
     }
 }
 
-pub unsafe fn dvi_font_def(f: internal_font_number) {
+#[unsafe(export_name = "dvi_font_def")]
+pub unsafe extern "C" fn dvi_font_def(f: internal_font_number) {
     unsafe {
         if *font_area.offset(f as isize) as u32 == AAT_FONT_FLAG
             || *font_area.offset(f as isize) as u32 == OTGR_FONT_FLAG
@@ -2822,7 +2837,7 @@ unsafe fn write_out(p: i32) {
         if j == 18 {
             selector = SELECTOR_NEW_STRING;
         } else if (j as usize) < 16 && write_open[j as usize] {
-            selector = j as u8;
+            selector = j as i32;
         } else {
             if j == 17 && selector == SELECTOR_TERM_AND_LOG {
                 selector = SELECTOR_LOG_ONLY;
@@ -2949,7 +2964,8 @@ unsafe fn pic_out(p: i32) {
     }
 }
 
-pub unsafe fn finalize_dvi_file() {
+#[unsafe(export_name = "finalize_dvi_file")]
+pub unsafe extern "C" fn finalize_dvi_file() {
     unsafe {
         while cur_s > -1 {
             if cur_s > 0 {

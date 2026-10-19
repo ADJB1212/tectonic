@@ -238,7 +238,8 @@ macro_rules! CHAR_NODE_character {
 }
 
 // 61. append_kern
-pub unsafe fn append_kern() {
+#[unsafe(export_name = "append_kern")]
+pub unsafe extern "C" fn append_kern() {
     let s: u16 = cur_chr as u16;
     scan_dimen(s == MU_GLUE as u16, false, false);
     mem!(cur_list.tail).b32.s1 = new_kern(cur_val);
@@ -247,7 +248,8 @@ pub unsafe fn append_kern() {
 }
 
 // 62. off_save
-pub unsafe fn off_save() {
+#[unsafe(export_name = "off_save")]
+pub unsafe extern "C" fn off_save() {
     let mut p: i32;
 
     if cur_group == (BOTTOM_LEVEL) as u8 {
@@ -311,7 +313,8 @@ pub unsafe fn off_save() {
 }
 
 // 63. extra_right_brace
-pub unsafe fn extra_right_brace() {
+#[unsafe(export_name = "extra_right_brace")]
+pub unsafe extern "C" fn extra_right_brace() {
     error_here_with_diagnostic(b"Extra }, or forgotten \0".as_ptr() as *const c_char);
 
     match cur_group as i32 {
@@ -352,7 +355,8 @@ pub unsafe fn extra_right_brace() {
 }
 
 // 64. normal_paragraph
-pub unsafe fn normal_paragraph() {
+#[unsafe(export_name = "normal_paragraph")]
+pub unsafe extern "C" fn normal_paragraph() {
     if INTPAR!(INT_PAR__looseness) != 0 {
         eq_word_define(INT_BASE + INT_PAR__looseness as i32, 0);
     }
@@ -379,7 +383,8 @@ pub unsafe fn normal_paragraph() {
 }
 
 // 65. box_end
-pub unsafe fn box_end(box_context: i32) {
+#[unsafe(export_name = "box_end")]
+pub unsafe extern "C" fn box_end(box_context: i32) {
     let mut p: i32;
     let mut a: small_number;
 
@@ -484,7 +489,8 @@ pub unsafe fn box_end(box_context: i32) {
 }
 
 // 66. begin_box
-pub unsafe fn begin_box(box_context: i32) {
+#[unsafe(export_name = "begin_box")]
+pub unsafe extern "C" fn begin_box(box_context: i32) {
     let mut p: i32;
     let mut q: i32;
     let mut r: i32;
@@ -646,7 +652,7 @@ pub unsafe fn begin_box(box_context: i32) {
             }
 
             scan_dimen(false, false, false);
-            cur_box = vsplit((n as u8) as i32, cur_val);
+            cur_box = vsplit(n, cur_val);
         }
 
         _ => {
@@ -691,7 +697,8 @@ pub unsafe fn begin_box(box_context: i32) {
 }
 
 // 67. scan_box
-pub unsafe fn scan_box(box_context: i32) {
+#[unsafe(export_name = "scan_box")]
+pub unsafe extern "C" fn scan_box(box_context: i32) {
     loop {
         get_x_token();
         if cur_cmd as i32 != SPACER && cur_cmd as i32 != RELAX {
@@ -726,7 +733,8 @@ pub unsafe fn scan_box(box_context: i32) {
 }
 
 // 68. package
-pub unsafe fn package(c: small_number) {
+#[unsafe(export_name = "package")]
+pub unsafe extern "C" fn package(c: small_number) {
     let mut h: scaled_t;
     let mut p: i32;
     let d: scaled_t;
@@ -770,7 +778,8 @@ pub unsafe fn package(c: small_number) {
 }
 
 // 69. norm_min
-pub unsafe fn norm_min(h: i32) -> small_number {
+#[unsafe(export_name = "norm_min")]
+pub unsafe extern "C" fn norm_min(h: i32) -> small_number {
     if h <= 0 {
         1
     } else if h >= 63 {
@@ -781,7 +790,8 @@ pub unsafe fn norm_min(h: i32) -> small_number {
 }
 
 // 70. new_graf
-pub unsafe fn new_graf(indented: bool) {
+#[unsafe(export_name = "new_graf")]
+pub unsafe extern "C" fn new_graf(indented: bool) {
     cur_list.prev_graf = 0;
 
     if cur_list.mode as i32 == VMODE || cur_list.head != cur_list.tail {
@@ -826,7 +836,8 @@ pub unsafe fn new_graf(indented: bool) {
 }
 
 // 71. indent_in_hmode
-pub unsafe fn indent_in_hmode() {
+#[unsafe(export_name = "indent_in_hmode")]
+pub unsafe extern "C" fn indent_in_hmode() {
     let mut p: i32;
     let q: i32;
 
@@ -847,7 +858,8 @@ pub unsafe fn indent_in_hmode() {
 }
 
 // 72. head_for_vmode
-pub unsafe fn head_for_vmode() {
+#[unsafe(export_name = "head_for_vmode")]
+pub unsafe extern "C" fn head_for_vmode() {
     if cur_list.mode < 0 {
         if cur_cmd as i32 != HRULE {
             off_save();
@@ -874,7 +886,8 @@ pub unsafe fn head_for_vmode() {
 }
 
 // 73. end_graf
-pub unsafe fn end_graf() {
+#[unsafe(export_name = "end_graf")]
+pub unsafe extern "C" fn end_graf() {
     if cur_list.mode as i32 == HMODE {
         if cur_list.head == cur_list.tail {
             pop_nest();
@@ -893,7 +906,8 @@ pub unsafe fn end_graf() {
 }
 
 // 74. begin_insert_or_adjust
-pub unsafe fn begin_insert_or_adjust() {
+#[unsafe(export_name = "begin_insert_or_adjust")]
+pub unsafe extern "C" fn begin_insert_or_adjust() {
     if cur_cmd as i32 == VADJUST {
         cur_val = 255;
     } else {
@@ -926,7 +940,8 @@ pub unsafe fn begin_insert_or_adjust() {
 }
 
 // 75. make_mark
-pub unsafe fn make_mark() {
+#[unsafe(export_name = "make_mark")]
+pub unsafe extern "C" fn make_mark() {
     let mut p: i32;
     let c: i32;
     if cur_chr == 0 {
@@ -946,7 +961,8 @@ pub unsafe fn make_mark() {
 }
 
 // 76. append_penalty
-pub unsafe fn append_penalty() {
+#[unsafe(export_name = "append_penalty")]
+pub unsafe extern "C" fn append_penalty() {
     scan_int();
     mem!(cur_list.tail).b32.s1 = new_penalty(cur_val);
     cur_list.tail = LLIST_link!(cur_list.tail);
@@ -956,7 +972,8 @@ pub unsafe fn append_penalty() {
 }
 
 // 77. delete_last
-pub unsafe fn delete_last() {
+#[unsafe(export_name = "delete_last")]
+pub unsafe extern "C" fn delete_last() {
     let mut p: i32;
     let mut q: i32;
     let mut r: i32;
@@ -1046,7 +1063,8 @@ pub unsafe fn delete_last() {
 }
 
 // 78. unpackage
-pub unsafe fn unpackage() {
+#[unsafe(export_name = "unpackage")]
+pub unsafe extern "C" fn unpackage() {
     let mut p: i32;
     let mut r: i32;
     let c: u8;
@@ -1119,7 +1137,8 @@ pub unsafe fn unpackage() {
 }
 
 // 79. append_italic_correction
-pub unsafe fn append_italic_correction() {
+#[unsafe(export_name = "append_italic_correction")]
+pub unsafe extern "C" fn append_italic_correction() {
     let p: i32;
     let f: internal_font_number;
     if cur_list.tail != cur_list.head {
@@ -1159,7 +1178,8 @@ pub unsafe fn append_italic_correction() {
 }
 
 // 80. append_discretionary
-pub unsafe fn append_discretionary() {
+#[unsafe(export_name = "append_discretionary")]
+pub unsafe extern "C" fn append_discretionary() {
     let c: i32;
 
     mem!(cur_list.tail).b32.s1 = new_disc();
@@ -1187,7 +1207,8 @@ pub unsafe fn append_discretionary() {
 }
 
 // 81. build_discretionary
-pub unsafe fn build_discretionary() {
+#[unsafe(export_name = "build_discretionary")]
+pub unsafe extern "C" fn build_discretionary() {
     let mut p: i32;
     let mut q: i32;
     let mut n: i32;
@@ -1303,7 +1324,8 @@ pub unsafe fn build_discretionary() {
 }
 
 // 82. make_accent
-pub unsafe fn make_accent() {
+#[unsafe(export_name = "make_accent")]
+pub unsafe extern "C" fn make_accent() {
     let mut s: f64;
     let mut t: f64;
     let mut p: i32;
@@ -1395,7 +1417,8 @@ pub unsafe fn make_accent() {
 }
 
 // 83. align_error
-pub unsafe fn align_error() {
+#[unsafe(export_name = "align_error")]
+pub unsafe extern "C" fn align_error() {
     if align_state.abs() > 2 {
         error_here_with_diagnostic(b"Misplaced \0".as_ptr() as *const c_char);
         print_cmd_chr(cur_cmd as u16, cur_chr);
@@ -1458,7 +1481,8 @@ pub unsafe fn align_error() {
 }
 
 // 84. no_align_error
-pub unsafe fn no_align_error() {
+#[unsafe(export_name = "no_align_error")]
+pub unsafe extern "C" fn no_align_error() {
     error_here_with_diagnostic(b"Misplaced \0".as_ptr() as *const c_char);
     print_esc_cstr(b"noalign\0".as_ptr() as *const c_char);
     capture_to_diagnostic(std::ptr::null_mut());
@@ -1470,7 +1494,8 @@ pub unsafe fn no_align_error() {
 }
 
 // 85. omit_error
-pub unsafe fn omit_error() {
+#[unsafe(export_name = "omit_error")]
+pub unsafe extern "C" fn omit_error() {
     error_here_with_diagnostic(b"Misplaced \0".as_ptr() as *const c_char);
     print_esc_cstr(b"omit\0".as_ptr() as *const c_char);
     capture_to_diagnostic(std::ptr::null_mut());
@@ -1485,7 +1510,8 @@ pub unsafe fn omit_error() {
 }
 
 // 86. do_endv
-pub unsafe fn do_endv() {
+#[unsafe(export_name = "do_endv")]
+pub unsafe extern "C" fn do_endv() {
     base_ptr = input_ptr;
     *input_stack.offset(base_ptr as isize) = cur_input;
     while ((*input_stack.offset(base_ptr as isize)).index as i32 != V_TEMPLATE)
@@ -1513,7 +1539,8 @@ pub unsafe fn do_endv() {
 }
 
 // 87. cs_error
-pub unsafe fn cs_error() {
+#[unsafe(export_name = "cs_error")]
+pub unsafe extern "C" fn cs_error() {
     error_here_with_diagnostic(b"Extra \0".as_ptr() as *const c_char);
     print_esc_cstr(b"endcsname\0".as_ptr() as *const c_char);
     capture_to_diagnostic(std::ptr::null_mut());
@@ -1523,7 +1550,8 @@ pub unsafe fn cs_error() {
 }
 
 // 88. push_math
-pub unsafe fn push_math(c: group_code) {
+#[unsafe(export_name = "push_math")]
+pub unsafe extern "C" fn push_math(c: group_code) {
     push_nest();
     cur_list.mode = -207;
     cur_list.aux.b32.s1 = TEX_NULL;
@@ -1531,7 +1559,8 @@ pub unsafe fn push_math(c: group_code) {
 }
 
 // 89. just_copy
-pub unsafe fn just_copy(mut p: i32, mut h: i32, t: i32) {
+#[unsafe(export_name = "just_copy")]
+pub unsafe extern "C" fn just_copy(mut p: i32, mut h: i32, t: i32) {
     let mut r: i32;
     let mut words: usize;
 
@@ -1653,7 +1682,8 @@ pub unsafe fn just_copy(mut p: i32, mut h: i32, t: i32) {
 }
 
 // 90. just_reverse
-pub unsafe fn just_reverse(mut p: i32) {
+#[unsafe(export_name = "just_reverse")]
+pub unsafe extern "C" fn just_reverse(mut p: i32) {
     let mut l: i32;
     let t: i32;
     let mut q: i32;

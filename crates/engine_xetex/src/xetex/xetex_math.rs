@@ -109,36 +109,42 @@ pub const GLUE_PAR__above_display_short_skip: i16 = 5;
 pub const GLUE_PAR__below_display_short_skip: i16 = 6;
 pub const GLUE_PAR__left_skip: i16 = 7;
 pub const GLUE_PAR__right_skip: i16 = 8;
-pub const GLUE_PAR__thin_mu_skip: i32 = 15;
-pub const GLUE_PAR__med_mu_skip: i32 = 16;
-pub const GLUE_PAR__thick_mu_skip: i32 = 17;
+pub const GLUE_PAR__thin_mu_skip: i32 = super::xetex_format::GLUE_PAR__thin_mu_skip as i32;
+pub const GLUE_PAR__med_mu_skip: i32 = super::xetex_format::GLUE_PAR__med_mu_skip as i32;
+pub const GLUE_PAR__thick_mu_skip: i32 = super::xetex_format::GLUE_PAR__thick_mu_skip as i32;
 
 pub const INT_PAR__bin_op_penalty: usize = 9;
 pub const INT_PAR__rel_penalty: usize = 10;
 pub const INT_PAR__pre_display_penalty: usize = 11;
 pub const INT_PAR__post_display_penalty: usize = 12;
 pub const INT_PAR__delimiter_factor: usize = 18;
-pub const INT_PAR__hang_after: usize = 40;
-pub const INT_PAR__cur_fam: usize = 53;
-pub const INT_PAR__language: usize = 55;
-pub const INT_PAR__left_hyphen_min: usize = 56;
-pub const INT_PAR__right_hyphen_min: usize = 57;
-pub const INT_PAR__texxet: usize = 61;
-pub const INT_PAR__pre_display_direction: usize = 63;
+pub const INT_PAR__hang_after: usize = super::xetex_format::INT_PAR__hang_after as usize;
+pub const INT_PAR__cur_fam: usize = super::xetex_format::INT_PAR__cur_fam as usize;
+pub const INT_PAR__language: usize = super::xetex_format::INT_PAR__language as usize;
+pub const INT_PAR__left_hyphen_min: usize = super::xetex_format::INT_PAR__left_hyphen_min as usize;
+pub const INT_PAR__right_hyphen_min: usize =
+    super::xetex_format::INT_PAR__right_hyphen_min as usize;
+pub const INT_PAR__texxet: usize = super::xetex_format::INT_PAR__texxet as usize;
+pub const INT_PAR__pre_display_direction: usize =
+    super::xetex_format::INT_PAR__pre_display_direction as usize;
 
-pub const DIMEN_PAR__null_delimiter_space: usize = 4;
-pub const DIMEN_PAR__math_surround: usize = 6;
-pub const DIMEN_PAR__pre_display_size: usize = 8;
-pub const DIMEN_PAR__display_width: usize = 9;
-pub const DIMEN_PAR__display_indent: usize = 10;
-pub const DIMEN_PAR__script_space: usize = 13;
-pub const DIMEN_PAR__hang_indent: usize = 14;
-pub const DIMEN_PAR__hsize: usize = 15;
-pub const DIMEN_PAR__delimiter_shortfall: usize = 20;
+pub const DIMEN_PAR__null_delimiter_space: usize =
+    super::xetex_format::DIMEN_PAR__null_delimiter_space as usize;
+pub const DIMEN_PAR__math_surround: usize = super::xetex_format::DIMEN_PAR__math_surround as usize;
+pub const DIMEN_PAR__pre_display_size: usize =
+    super::xetex_format::DIMEN_PAR__pre_display_size as usize;
+pub const DIMEN_PAR__display_width: usize = super::xetex_format::DIMEN_PAR__display_width as usize;
+pub const DIMEN_PAR__display_indent: usize =
+    super::xetex_format::DIMEN_PAR__display_indent as usize;
+pub const DIMEN_PAR__script_space: usize = super::xetex_format::DIMEN_PAR__script_space as usize;
+pub const DIMEN_PAR__hang_indent: usize = super::xetex_format::DIMEN_PAR__hang_indent as usize;
+pub const DIMEN_PAR__hsize: usize = super::xetex_format::DIMEN_PAR__hsize as usize;
+pub const DIMEN_PAR__delimiter_shortfall: usize =
+    super::xetex_format::DIMEN_PAR__delimiter_shortfall as usize;
 
 pub const LOCAL__par_shape: usize = 0;
-pub const LOCAL__every_math: usize = 15;
-pub const LOCAL__every_display: usize = 16;
+pub const LOCAL__every_math: usize = super::xetex_format::LOCAL__every_math as usize;
+pub const LOCAL__every_display: usize = super::xetex_format::LOCAL__every_display as usize;
 
 pub const NORMAL: i16 = 0;
 pub const FIL: usize = 1;
@@ -319,7 +325,7 @@ unsafe extern "C" {
     pub static mut file_line_error_style_p: i32;
     pub static mut save_ptr: i32;
     pub static mut nest_ptr: i32;
-    pub static mut help_ptr: i32;
+    pub static mut help_ptr: u8;
     pub static mut help_line: [*const c_char; 6];
 
     pub static mut save_stack: *mut memory_word;
@@ -333,8 +339,8 @@ unsafe extern "C" {
     pub static mut lig_kern_base: *mut i32;
     pub static mut kern_base: *mut i32;
     pub static mut exten_base: *mut i32;
-    pub static mut font_bc: *mut i32;
-    pub static mut font_ec: *mut i32;
+    pub static mut font_bc: *mut u16;
+    pub static mut font_ec: *mut u16;
     pub static mut char_base: *mut i32;
     pub static mut width_base: *mut i32;
     pub static mut height_base: *mut i32;
@@ -629,7 +635,8 @@ static mut cur_size: i32 = 0;
 static mut cur_mu: scaled_t = 0;
 static mut mlist_penalties: bool = false;
 
-pub unsafe fn initialize_math_variables() {
+#[unsafe(export_name = "initialize_math_variables")]
+pub unsafe extern "C" fn initialize_math_variables() {
     unsafe {
         null_delimiter.s3 = 0;
         null_delimiter.s2 = 0;
@@ -638,7 +645,8 @@ pub unsafe fn initialize_math_variables() {
     }
 }
 
-pub unsafe fn init_math() {
+#[unsafe(export_name = "init_math")]
+pub unsafe extern "C" fn init_math() {
     unsafe {
         let mut w: scaled_t;
         let mut j: i32;
@@ -940,7 +948,8 @@ pub unsafe fn init_math() {
     }
 }
 
-pub unsafe fn start_eq_no() {
+#[unsafe(export_name = "start_eq_no")]
+pub unsafe extern "C" fn start_eq_no() {
     unsafe {
         (*save_stack.add(save_ptr as usize)).b32.s1 = cur_chr;
         save_ptr += 1;
@@ -956,7 +965,8 @@ pub unsafe fn start_eq_no() {
     }
 }
 
-pub unsafe fn math_limit_switch() {
+#[unsafe(export_name = "math_limit_switch")]
+pub unsafe extern "C" fn math_limit_switch() {
     unsafe {
         if cur_list.head != cur_list.tail {
             if (*mem.add(cur_list.tail as usize)).b16.s1 == OP_NOAD as u16 {
@@ -1056,7 +1066,8 @@ unsafe fn scan_delimiter(p: i32, r: bool) {
     }
 }
 
-pub unsafe fn math_radical() {
+#[unsafe(export_name = "math_radical")]
+pub unsafe extern "C" fn math_radical() {
     unsafe {
         (*mem.add(cur_list.tail as usize)).b32.s1 = get_node(RADICAL_NOAD_SIZE);
         cur_list.tail = LLIST_link(cur_list.tail);
@@ -1071,7 +1082,8 @@ pub unsafe fn math_radical() {
     }
 }
 
-pub unsafe fn math_ac() {
+#[unsafe(export_name = "math_ac")]
+pub unsafe extern "C" fn math_ac() {
     unsafe {
         let mut c: i32;
 
@@ -1135,7 +1147,8 @@ pub unsafe fn math_ac() {
     }
 }
 
-pub unsafe fn append_choices() {
+#[unsafe(export_name = "append_choices")]
+pub unsafe extern "C" fn append_choices() {
     unsafe {
         (*mem.add(cur_list.tail as usize)).b32.s1 = new_choice();
         cur_list.tail = LLIST_link(cur_list.tail);
@@ -1147,7 +1160,8 @@ pub unsafe fn append_choices() {
     }
 }
 
-pub unsafe fn fin_mlist(p: i32) -> i32 {
+#[unsafe(export_name = "fin_mlist")]
+pub unsafe extern "C" fn fin_mlist(p: i32) -> i32 {
     unsafe {
         let q: i32;
         if cur_list.aux.b32.s1 != TEX_NULL {
@@ -1177,7 +1191,8 @@ pub unsafe fn fin_mlist(p: i32) -> i32 {
     }
 }
 
-pub unsafe fn build_choices() {
+#[unsafe(export_name = "build_choices")]
+pub unsafe extern "C" fn build_choices() {
     unsafe {
         let p: i32;
         unsave();
@@ -1205,7 +1220,8 @@ pub unsafe fn build_choices() {
     }
 }
 
-pub unsafe fn sub_sup() {
+#[unsafe(export_name = "sub_sup")]
+pub unsafe extern "C" fn sub_sup() {
     unsafe {
         let mut t: small_number = EMPTY as small_number;
         let mut p: i32 = TEX_NULL;
@@ -1244,7 +1260,8 @@ pub unsafe fn sub_sup() {
     }
 }
 
-pub unsafe fn math_fraction() {
+#[unsafe(export_name = "math_fraction")]
+pub unsafe extern "C" fn math_fraction() {
     unsafe {
         let c: small_number = cur_chr as small_number;
 
@@ -1308,7 +1325,8 @@ pub unsafe fn math_fraction() {
     }
 }
 
-pub unsafe fn math_left_right() {
+#[unsafe(export_name = "math_left_right")]
+pub unsafe extern "C" fn math_left_right() {
     unsafe {
         let t: small_number = cur_chr as small_number;
         let p: i32;
@@ -1488,7 +1506,8 @@ unsafe fn app_display(j: i32, mut b: i32, mut d: scaled_t) {
     }
 }
 
-pub unsafe fn after_math() {
+#[unsafe(export_name = "after_math")]
+pub unsafe extern "C" fn after_math() {
     unsafe {
         let mut l: bool;
         let mut danger: bool;
@@ -1846,7 +1865,8 @@ pub unsafe fn after_math() {
     }
 }
 
-pub unsafe fn resume_after_display() {
+#[unsafe(export_name = "resume_after_display")]
+pub unsafe extern "C" fn resume_after_display() {
     unsafe {
         if cur_group != MATH_SHIFT_GROUP {
             confusion(b"display\0".as_ptr() as *const c_char);
@@ -2308,7 +2328,8 @@ unsafe fn math_kern(p: i32, m: scaled_t) {
     }
 }
 
-pub unsafe fn flush_math() {
+#[unsafe(export_name = "flush_math")]
+pub unsafe extern "C" fn flush_math() {
     unsafe {
         flush_node_list((*mem.add(cur_list.head as usize)).b32.s1);
         flush_node_list(cur_list.aux.b32.s1);
@@ -2426,7 +2447,9 @@ unsafe fn fetch(a: i32) {
         {
             cur_i = null_character;
         } else {
-            if cur_c >= *font_bc.add(cur_f as usize) && cur_c <= *font_ec.add(cur_f as usize) {
+            if cur_c >= i32::from(*font_bc.add(cur_f as usize))
+                && cur_c <= i32::from(*font_ec.add(cur_f as usize))
+            {
                 cur_i = FONT_CHARACTER_INFO(cur_f, cur_c);
             } else {
                 cur_i = null_character;
@@ -3931,7 +3954,7 @@ unsafe fn mlist_to_hlist() {
         }
         cur_mu = x_over_n(math_quad(cur_size), 18);
 
-        while q != TEX_NULL {
+        'nodes: while q != TEX_NULL {
             'reswitch: loop {
                 delta = 0;
                 match (*mem.add(q as usize)).b16.s1 as i16 {
@@ -3961,7 +3984,7 @@ unsafe fn mlist_to_hlist() {
                                 cur_mu = x_over_n(math_quad(cur_size), 18);
                             }
                             q = LLIST_link(q);
-                            continue;
+                            continue 'nodes;
                         }
                     }
                     LEFT_NOAD => {
@@ -3979,7 +4002,7 @@ unsafe fn mlist_to_hlist() {
                             cur_mu = x_over_n(math_quad(cur_size), 18);
                         }
                         q = LLIST_link(q);
-                        continue;
+                        continue 'nodes;
                     }
                     FRACTION_NOAD => {
                         make_fraction(q);
@@ -4005,7 +4028,7 @@ unsafe fn mlist_to_hlist() {
                             cur_mu = x_over_n(math_quad(cur_size), 18);
                         }
                         q = LLIST_link(q);
-                        continue;
+                        continue 'nodes;
                     }
                     OP_NOAD => {
                         delta = make_op(q);
@@ -4032,7 +4055,7 @@ unsafe fn mlist_to_hlist() {
                                 cur_mu = x_over_n(math_quad(cur_size), 18);
                             }
                             q = LLIST_link(q);
-                            continue;
+                            continue 'nodes;
                         }
                     }
                     ORD_NOAD => {
@@ -4064,7 +4087,7 @@ unsafe fn mlist_to_hlist() {
                         cur_mu = x_over_n(math_quad(cur_size), 18);
                         // goto lab81;
                         q = LLIST_link(q);
-                        continue;
+                        continue 'nodes;
                     }
                     CHOICE_NODE => {
                         match cur_style / 2 {
@@ -4104,13 +4127,13 @@ unsafe fn mlist_to_hlist() {
                         }
                         // goto lab81;
                         q = LLIST_link(q);
-                        continue;
+                        continue 'nodes;
                     }
                     INS_NODE | MARK_NODE | ADJUST_NODE | WHATSIT_NODE | PENALTY_NODE
                     | DISC_NODE => {
                         // goto lab81;
                         q = LLIST_link(q);
-                        continue;
+                        continue 'nodes;
                     }
                     RULE_NODE => {
                         if (*mem.add((q + 3) as usize)).b32.s1 > max_h {
@@ -4121,7 +4144,7 @@ unsafe fn mlist_to_hlist() {
                         }
                         // goto lab81;
                         q = LLIST_link(q);
-                        continue;
+                        continue 'nodes;
                     }
                     GLUE_NODE => {
                         if (*mem.add(q as usize)).b16.s0 == MU_GLUE {
@@ -4144,13 +4167,13 @@ unsafe fn mlist_to_hlist() {
                         }
                         // goto lab81;
                         q = LLIST_link(q);
-                        continue;
+                        continue 'nodes;
                     }
                     KERN_NODE => {
                         math_kern(q, cur_mu);
                         // goto lab81;
                         q = LLIST_link(q);
-                        continue;
+                        continue 'nodes;
                     }
                     _ => {
                         confusion(b"mlist1\0".as_ptr() as *const c_char);
@@ -4536,7 +4559,9 @@ unsafe fn var_delimiter(d: i32, s: i32, v: scaled_t) -> i32 {
                             }
                         } else {
                             y = x;
-                            if y >= *font_bc.add(g as usize) && y <= *font_ec.add(g as usize) {
+                            if y >= i32::from(*font_bc.add(g as usize))
+                                && y <= i32::from(*font_ec.add(g as usize))
+                            {
                                 loop {
                                     q = FONT_CHARACTER_INFO(g, y);
                                     if q.s3 > 0 {

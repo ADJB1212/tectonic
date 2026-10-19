@@ -128,6 +128,29 @@ use super::*;
 use libc::*;
 use std::ptr;
 
+pub(super) fn native_text_capacity(current: i32, required: i32) -> i32 {
+    current
+        .saturating_mul(2)
+        .max(128)
+        .max(required.saturating_add(1))
+}
+
+unsafe fn reserve_native_text(required: i32) {
+    unsafe {
+        if native_text_size <= required {
+            if required == i32::MAX {
+                overflow(c"native text buffer".as_ptr(), i32::MAX);
+            }
+            native_text_size = native_text_capacity(native_text_size, required);
+            native_text = xrealloc(
+                native_text.cast(),
+                native_text_size as usize * std::mem::size_of::<UTF16_code>(),
+            )
+            .cast();
+        }
+    }
+}
+
 macro_rules! mem {
     ($p:expr) => {
         *mem.offset(($p) as isize)
@@ -319,7 +342,8 @@ enum MainControlState {
 }
 
 // 91. get_r_token
-pub unsafe fn get_r_token() {
+#[unsafe(export_name = "get_r_token")]
+pub unsafe extern "C" fn get_r_token() {
     'restart: loop {
         loop {
             get_token();
@@ -369,7 +393,8 @@ pub unsafe fn get_r_token() {
 }
 
 // 92. trap_zero_glue
-pub unsafe fn trap_zero_glue() {
+#[unsafe(export_name = "trap_zero_glue")]
+pub unsafe extern "C" fn trap_zero_glue() {
     if (mem!(cur_val + 1).b32.s1 == 0)
         && (mem!(cur_val + 2).b32.s1 == 0)
         && (mem!(cur_val + 3).b32.s1 == 0)
@@ -381,7 +406,8 @@ pub unsafe fn trap_zero_glue() {
 }
 
 // 93. do_register_command
-pub unsafe fn do_register_command(a: small_number) {
+#[unsafe(export_name = "do_register_command")]
+pub unsafe extern "C" fn do_register_command(a: small_number) {
     let mut l: i32 = TEX_NULL;
     let mut q: i32;
     let mut r: i32;
@@ -584,7 +610,8 @@ pub unsafe fn do_register_command(a: small_number) {
 }
 
 // 94. alter_aux
-pub unsafe fn alter_aux() {
+#[unsafe(export_name = "alter_aux")]
+pub unsafe extern "C" fn alter_aux() {
     let mut c: i32;
     if cur_chr != (cur_list.mode as i32).abs() {
         report_illegal_case();
@@ -612,7 +639,8 @@ pub unsafe fn alter_aux() {
 }
 
 // 95. alter_prev_graf
-pub unsafe fn alter_prev_graf() {
+#[unsafe(export_name = "alter_prev_graf")]
+pub unsafe extern "C" fn alter_prev_graf() {
     let mut p: i32;
     *nest.offset(nest_ptr as isize) = cur_list;
     p = nest_ptr;
@@ -636,7 +664,8 @@ pub unsafe fn alter_prev_graf() {
 }
 
 // 96. alter_page_so_far
-pub unsafe fn alter_page_so_far() {
+#[unsafe(export_name = "alter_page_so_far")]
+pub unsafe extern "C" fn alter_page_so_far() {
     let mut c: u8;
     c = cur_chr as u8;
     scan_optional_equals();
@@ -645,7 +674,8 @@ pub unsafe fn alter_page_so_far() {
 }
 
 // 97. alter_integer
-pub unsafe fn alter_integer() {
+#[unsafe(export_name = "alter_integer")]
+pub unsafe extern "C" fn alter_integer() {
     let mut c: small_number;
     c = cur_chr as small_number;
     scan_optional_equals();
@@ -672,7 +702,8 @@ pub unsafe fn alter_integer() {
 }
 
 // 98. alter_box_dimen
-pub unsafe fn alter_box_dimen() {
+#[unsafe(export_name = "alter_box_dimen")]
+pub unsafe extern "C" fn alter_box_dimen() {
     let mut c: small_number;
     let mut b: i32;
 
@@ -696,7 +727,8 @@ pub unsafe fn alter_box_dimen() {
 }
 
 // 99. new_font
-pub unsafe fn new_font(a: small_number) {
+#[unsafe(export_name = "new_font")]
+pub unsafe extern "C" fn new_font(a: small_number) {
     let mut u: i32;
     let mut s: scaled_t;
     let mut f: internal_font_number;
@@ -846,7 +878,8 @@ pub unsafe fn new_font(a: small_number) {
 }
 
 // 100. new_interaction
-pub unsafe fn new_interaction() {
+#[unsafe(export_name = "new_interaction")]
+pub unsafe extern "C" fn new_interaction() {
     print_ln();
     interaction = (cur_chr) as u8;
     if interaction == (BATCH_MODE) as u8 {
@@ -860,7 +893,8 @@ pub unsafe fn new_interaction() {
 }
 
 // 101. issue_message
-pub unsafe fn issue_message() {
+#[unsafe(export_name = "issue_message")]
+pub unsafe extern "C" fn issue_message() {
     let mut local_old_setting: u8;
     let mut c: u8;
     let mut s: str_number;
@@ -918,7 +952,8 @@ pub unsafe fn issue_message() {
 }
 
 // 102. shift_case
-pub unsafe fn shift_case() {
+#[unsafe(export_name = "shift_case")]
+pub unsafe extern "C" fn shift_case() {
     let mut b: i32;
     let mut p: i32;
     let mut t: i32;
@@ -945,7 +980,8 @@ pub unsafe fn shift_case() {
 }
 
 // 103. show_whatever
-pub unsafe fn show_whatever() {
+#[unsafe(export_name = "show_whatever")]
+pub unsafe extern "C" fn show_whatever() {
     let mut p: i32;
     let mut t: small_number;
     let mut m: u8;
@@ -1099,7 +1135,8 @@ pub unsafe fn show_whatever() {
 }
 
 // 104. new_write_whatsit
-pub unsafe fn new_write_whatsit(w: small_number) {
+#[unsafe(export_name = "new_write_whatsit")]
+pub unsafe extern "C" fn new_write_whatsit(w: small_number) {
     new_whatsit(cur_chr as small_number, w);
     if w != WRITE_NODE_SIZE as small_number {
         scan_four_bit_int();
@@ -1115,13 +1152,15 @@ pub unsafe fn new_write_whatsit(w: small_number) {
 }
 
 // 105. scan_and_pack_name
-pub unsafe fn scan_and_pack_name() {
+#[unsafe(export_name = "scan_and_pack_name")]
+pub unsafe extern "C" fn scan_and_pack_name() {
     scan_file_name();
     pack_file_name(cur_name, cur_area, cur_ext);
 }
 
 // 106. do_extension
-pub unsafe fn do_extension() {
+#[unsafe(export_name = "do_extension")]
+pub unsafe extern "C" fn do_extension() {
     let mut i: i32;
     let mut j: i32 = 0;
     let mut k: i32;
@@ -1304,7 +1343,8 @@ pub unsafe fn do_extension() {
 }
 
 // 107. fix_language
-pub unsafe fn fix_language() {
+#[unsafe(export_name = "fix_language")]
+pub unsafe extern "C" fn fix_language() {
     let mut l: UTF16_code;
 
     if INTPAR!(language) <= 0 || INTPAR!(language) > 255 {
@@ -1325,7 +1365,8 @@ pub unsafe fn fix_language() {
 }
 
 // 108. insert_src_special
-pub unsafe fn insert_src_special() {
+#[unsafe(export_name = "insert_src_special")]
+pub unsafe extern "C" fn insert_src_special() {
     let mut toklist: i32;
     let mut p: i32;
     let mut q: i32;
@@ -1354,7 +1395,8 @@ pub unsafe fn insert_src_special() {
 }
 
 // 109. append_src_special
-pub unsafe fn append_src_special() {
+#[unsafe(export_name = "append_src_special")]
+pub unsafe extern "C" fn append_src_special() {
     if *source_filename_stack.offset(in_open as isize) > 0
         && is_new_source(*source_filename_stack.offset(in_open as isize), line)
     {
@@ -1376,7 +1418,8 @@ pub unsafe fn append_src_special() {
 }
 
 // 110. tt_insert_special
-pub unsafe fn tt_insert_special(mut ascii_text: *const c_char) {
+#[unsafe(export_name = "tt_insert_special")]
+pub unsafe extern "C" fn tt_insert_special(mut ascii_text: *const c_char) {
     let mut toklist_start: i32;
     let mut p: i32;
     let mut q: i32;
@@ -1411,7 +1454,8 @@ pub unsafe fn tt_insert_special(mut ascii_text: *const c_char) {
 }
 
 // 111. handle_right_brace
-pub unsafe fn handle_right_brace() {
+#[unsafe(export_name = "handle_right_brace")]
+pub unsafe extern "C" fn handle_right_brace() {
     let mut p: i32;
     let mut q: i32;
     let mut d: scaled_t;
@@ -1668,7 +1712,8 @@ pub unsafe fn handle_right_brace() {
 }
 
 // 112. main_control
-pub unsafe fn main_control() {
+#[unsafe(export_name = "main_control")]
+pub unsafe extern "C" fn main_control() {
     let mut t: i32;
 
     if !tt_checkpoint_resumed && LOCAL!(LOCAL__every_job) != TEX_NULL {
@@ -2424,14 +2469,7 @@ pub unsafe fn main_control() {
                 }
 
                 if (cur_chr > 65535) {
-                    while (native_text_size <= native_len + 2) {
-                        native_text_size = native_text_size + 128;
-                        native_text = xrealloc(
-                            native_text.cast(),
-                            native_text_size as usize * std::mem::size_of::<UTF16_code>(),
-                        )
-                        .cast();
-                    }
+                    reserve_native_text(native_len + 2);
 
                     *native_text.offset((native_len) as isize) =
                         ((cur_chr - 65536) / 1024 + 0xD800) as u16;
@@ -2448,14 +2486,7 @@ pub unsafe fn main_control() {
                         previous
                     };
                 } else {
-                    while (native_text_size <= native_len + 1) {
-                        native_text_size = native_text_size + 128;
-                        native_text = xrealloc(
-                            native_text.cast(),
-                            native_text_size as usize * std::mem::size_of::<UTF16_code>(),
-                        )
-                        .cast();
-                    }
+                    reserve_native_text(native_len + 1);
 
                     *native_text.offset((native_len) as isize) = (cur_chr) as u16;
                     {
@@ -2535,14 +2566,7 @@ pub unsafe fn main_control() {
                     );
                     native_len = 0;
 
-                    while (native_text_size <= native_len + main_k) {
-                        native_text_size = native_text_size + 128;
-                        native_text = xrealloc(
-                            native_text.cast(),
-                            native_text_size as usize * std::mem::size_of::<UTF16_code>(),
-                        )
-                        .cast();
-                    }
+                    reserve_native_text(native_len + main_k);
 
                     main_h = 0;
 
@@ -2662,14 +2686,7 @@ pub unsafe fn main_control() {
                         {
                             main_k = main_h + (mem!(main_pp + 4).b16.s1) as i32;
 
-                            while (native_text_size <= native_len + main_k) {
-                                native_text_size = native_text_size + 128;
-                                native_text = xrealloc(
-                                    native_text.cast(),
-                                    native_text_size as usize * std::mem::size_of::<UTF16_code>(),
-                                )
-                                .cast();
-                            }
+                            reserve_native_text(native_len + main_k);
 
                             save_native_len = native_len;
 
@@ -3228,7 +3245,7 @@ pub unsafe fn main_control() {
                     continue 'control;
                 }
 
-                state = MainControlState::MainLoopMoveLig;
+                state = MainControlState::MainLoopMove2;
             }
             MainControlState::MainLoopMove2 => {
                 if ((effective_char(false, main_f, (cur_chr) as u16)
@@ -3695,12 +3712,14 @@ pub unsafe fn main_control() {
 }
 
 // 113. give_err_help
-pub unsafe fn give_err_help() {
+#[unsafe(export_name = "give_err_help")]
+pub unsafe extern "C" fn give_err_help() {
     token_show(LOCAL!(LOCAL__err_help));
 }
 
 // 114. close_files_and_terminate
-pub unsafe fn close_files_and_terminate() {
+#[unsafe(export_name = "close_files_and_terminate")]
+pub unsafe extern "C" fn close_files_and_terminate() {
     let mut k: i32;
 
     for k in 0..=15 {
@@ -3729,7 +3748,8 @@ pub unsafe fn close_files_and_terminate() {
 }
 
 // 115. flush_str
-pub unsafe fn flush_str(s: str_number) {
+#[unsafe(export_name = "flush_str")]
+pub unsafe extern "C" fn flush_str(s: str_number) {
     if s == str_ptr - 1 {
         str_ptr -= 1;
         pool_ptr = *str_start.offset((str_ptr - TOO_BIG_CHAR) as isize);
@@ -3737,7 +3757,8 @@ pub unsafe fn flush_str(s: str_number) {
 }
 
 // 116. tokens_to_string
-pub unsafe fn tokens_to_string(p: i32) -> str_number {
+#[unsafe(export_name = "tokens_to_string")]
+pub unsafe extern "C" fn tokens_to_string(p: i32) -> str_number {
     if selector == (SELECTOR_NEW_STRING as u8) as i32 {
         pdf_error(
             b"tokens\0".as_ptr() as *const c_char,
@@ -3752,12 +3773,14 @@ pub unsafe fn tokens_to_string(p: i32) -> str_number {
 }
 
 // 117. scan_pdf_ext_toks
-pub unsafe fn scan_pdf_ext_toks() {
+#[unsafe(export_name = "scan_pdf_ext_toks")]
+pub unsafe extern "C" fn scan_pdf_ext_toks() {
     scan_toks(false, true);
 }
 
 // 118. compare_strings
-pub unsafe fn compare_strings() {
+#[unsafe(export_name = "compare_strings")]
+pub unsafe extern "C" fn compare_strings() {
     let mut s1: str_number;
     let mut s2: str_number;
     let mut i1: pool_pointer;
@@ -3807,7 +3830,8 @@ pub unsafe fn compare_strings() {
 }
 
 // 119. prune_page_top
-pub unsafe fn prune_page_top(p: i32, s: bool) -> i32 {
+#[unsafe(export_name = "prune_page_top")]
+pub unsafe extern "C" fn prune_page_top(p: i32, s: bool) -> i32 {
     let mut prev_p: i32;
     let mut q: i32;
     let mut r: i32 = TEX_NULL;
@@ -3859,7 +3883,8 @@ pub unsafe fn prune_page_top(p: i32, s: bool) -> i32 {
 }
 
 // 120. do_marks
-pub unsafe fn do_marks(a: small_number, l: small_number, mut q: i32) -> bool {
+#[unsafe(export_name = "do_marks")]
+pub unsafe extern "C" fn do_marks(a: small_number, l: small_number, mut q: i32) -> bool {
     let mut i: small_number;
 
     if l < 4 {
@@ -3951,7 +3976,8 @@ pub unsafe fn do_marks(a: small_number, l: small_number, mut q: i32) -> bool {
 }
 
 // 121. do_assignments
-pub unsafe fn do_assignments() {
+#[unsafe(export_name = "do_assignments")]
+pub unsafe extern "C" fn do_assignments() {
     loop {
         loop {
             get_x_token();
@@ -3971,7 +3997,8 @@ pub unsafe fn do_assignments() {
 }
 
 // 122. new_whatsit
-pub unsafe fn new_whatsit(s: small_number, w: small_number) {
+#[unsafe(export_name = "new_whatsit")]
+pub unsafe extern "C" fn new_whatsit(s: small_number, w: small_number) {
     let p = get_node(w as i32);
     NODE_type!(p) = WHATSIT_NODE as u16;
     mem!(p).b16.s0 = (s as u16) as u16;

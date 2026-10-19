@@ -186,7 +186,8 @@ pub fn Fix2D(f: i32) -> f64 {
     f as f64 / 65536.0
 }
 
-pub unsafe fn get_ot_math_constant(f: c_int, n: c_int) -> c_int {
+#[unsafe(export_name = "get_ot_math_constant")]
+pub unsafe extern "C" fn get_ot_math_constant(f: c_int, n: c_int) -> c_int {
     unsafe {
         let constant: hb_ot_math_constant_t = n;
         let mut rval: hb_position_t = 0;
@@ -257,7 +258,8 @@ const TEX_SYM_TO_OT_MAP: &[hb_ot_math_constant_t] = &[
     HB_OT_MATH_CONSTANT_AXIS_HEIGHT,
 ];
 
-pub unsafe fn get_native_mathsy_param(f: c_int, n: c_int) -> c_int {
+#[unsafe(export_name = "get_native_mathsy_param")]
+pub unsafe extern "C" fn get_native_mathsy_param(f: c_int, n: c_int) -> c_int {
     unsafe {
         let mut rval = 0;
 
@@ -302,7 +304,8 @@ const TEX_EXT_TO_OT_MAP: &[hb_ot_math_constant_t] = &[
     HB_OT_MATH_CONSTANT_STACK_GAP_MIN,
 ];
 
-pub unsafe fn get_native_mathex_param(f: c_int, n: c_int) -> c_int {
+#[unsafe(export_name = "get_native_mathex_param")]
+pub unsafe extern "C" fn get_native_mathex_param(f: c_int, n: c_int) -> c_int {
     unsafe {
         let mut rval = 0;
 
@@ -319,7 +322,8 @@ pub unsafe fn get_native_mathex_param(f: c_int, n: c_int) -> c_int {
     }
 }
 
-pub unsafe fn get_ot_math_variant(
+#[unsafe(export_name = "get_ot_math_variant")]
+pub unsafe extern "C" fn get_ot_math_variant(
     f: c_int,
     g: c_int,
     v: c_int,
@@ -363,7 +367,8 @@ pub unsafe fn get_ot_math_variant(
     }
 }
 
-pub unsafe fn get_ot_assembly_ptr(f: c_int, g: c_int, horiz: c_int) -> *mut c_void {
+#[unsafe(export_name = "get_ot_assembly_ptr")]
+pub unsafe extern "C" fn get_ot_assembly_ptr(f: c_int, g: c_int, horiz: c_int) -> *mut c_void {
     unsafe {
         let mut rval: *mut c_void = ptr::null_mut();
 
@@ -409,7 +414,8 @@ pub unsafe fn get_ot_assembly_ptr(f: c_int, g: c_int, horiz: c_int) -> *mut c_vo
     }
 }
 
-pub unsafe fn free_ot_assembly(a: *mut GlyphAssembly) {
+#[unsafe(export_name = "free_ot_assembly")]
+pub unsafe extern "C" fn free_ot_assembly(a: *mut GlyphAssembly) {
     unsafe {
         if a.is_null() {
             return;
@@ -421,7 +427,8 @@ pub unsafe fn free_ot_assembly(a: *mut GlyphAssembly) {
     }
 }
 
-pub unsafe fn get_ot_math_ital_corr(f: c_int, g: c_int) -> c_int {
+#[unsafe(export_name = "get_ot_math_ital_corr")]
+pub unsafe extern "C" fn get_ot_math_ital_corr(f: c_int, g: c_int) -> c_int {
     unsafe {
         let mut rval: hb_position_t = 0;
 
@@ -437,7 +444,8 @@ pub unsafe fn get_ot_math_ital_corr(f: c_int, g: c_int) -> c_int {
     }
 }
 
-pub unsafe fn get_ot_math_accent_pos(f: c_int, g: c_int) -> c_int {
+#[unsafe(export_name = "get_ot_math_accent_pos")]
+pub unsafe extern "C" fn get_ot_math_accent_pos(f: c_int, g: c_int) -> c_int {
     unsafe {
         let mut rval: hb_position_t = 0x7fffffff;
 
@@ -453,7 +461,8 @@ pub unsafe fn get_ot_math_accent_pos(f: c_int, g: c_int) -> c_int {
     }
 }
 
-pub unsafe fn ot_min_connector_overlap(f: c_int) -> c_int {
+#[unsafe(export_name = "ot_min_connector_overlap")]
+pub unsafe extern "C" fn ot_min_connector_overlap(f: c_int) -> c_int {
     unsafe {
         let mut rval: hb_position_t = 0;
 
@@ -512,7 +521,8 @@ unsafe fn glyph_depth(f: c_int, g: c_int) -> f32 {
 const SUP_CMD: c_int = 0;
 const SUB_CMD: c_int = 1;
 
-pub unsafe fn get_ot_math_kern(
+#[unsafe(export_name = "get_ot_math_kern")]
+pub unsafe extern "C" fn get_ot_math_kern(
     f: c_int,
     g: c_int,
     sf: c_int,
@@ -608,19 +618,27 @@ pub unsafe fn get_ot_math_kern(
     }
 }
 
-pub unsafe fn ot_part_count(a: *const GlyphAssembly) -> c_int {
+#[unsafe(export_name = "ot_part_count")]
+pub unsafe extern "C" fn ot_part_count(a: *const GlyphAssembly) -> c_int {
     unsafe { (*a).count as c_int }
 }
 
-pub unsafe fn ot_part_glyph(a: *const GlyphAssembly, i: c_int) -> c_int {
+#[unsafe(export_name = "ot_part_glyph")]
+pub unsafe extern "C" fn ot_part_glyph(a: *const GlyphAssembly, i: c_int) -> c_int {
     unsafe { (*(*a).parts.add(i as usize)).glyph as c_int }
 }
 
-pub unsafe fn ot_part_is_extender(a: *const GlyphAssembly, i: c_int) -> bool {
+#[unsafe(export_name = "ot_part_is_extender")]
+pub unsafe extern "C" fn ot_part_is_extender(a: *const GlyphAssembly, i: c_int) -> bool {
     unsafe { ((*(*a).parts.add(i as usize)).flags & HB_MATH_GLYPH_PART_FLAG_EXTENDER) != 0 }
 }
 
-pub unsafe fn ot_part_start_connector(f: c_int, a: *const GlyphAssembly, i: c_int) -> c_int {
+#[unsafe(export_name = "ot_part_start_connector")]
+pub unsafe extern "C" fn ot_part_start_connector(
+    f: c_int,
+    a: *const GlyphAssembly,
+    i: c_int,
+) -> c_int {
     unsafe {
         let mut rval = 0;
 
@@ -637,7 +655,12 @@ pub unsafe fn ot_part_start_connector(f: c_int, a: *const GlyphAssembly, i: c_in
     }
 }
 
-pub unsafe fn ot_part_end_connector(f: c_int, a: *const GlyphAssembly, i: c_int) -> c_int {
+#[unsafe(export_name = "ot_part_end_connector")]
+pub unsafe extern "C" fn ot_part_end_connector(
+    f: c_int,
+    a: *const GlyphAssembly,
+    i: c_int,
+) -> c_int {
     unsafe {
         let mut rval = 0;
 
@@ -654,7 +677,12 @@ pub unsafe fn ot_part_end_connector(f: c_int, a: *const GlyphAssembly, i: c_int)
     }
 }
 
-pub unsafe fn ot_part_full_advance(f: c_int, a: *const GlyphAssembly, i: c_int) -> c_int {
+#[unsafe(export_name = "ot_part_full_advance")]
+pub unsafe extern "C" fn ot_part_full_advance(
+    f: c_int,
+    a: *const GlyphAssembly,
+    i: c_int,
+) -> c_int {
     unsafe {
         let mut rval = 0;
 

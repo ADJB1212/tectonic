@@ -33,7 +33,7 @@ fn odd(x: i32) -> bool {
     (x & 1) != 0
 }
 
-#[unsafe(export_name = "tectonic_rust_tex_round")]
+#[unsafe(export_name = "tex_round")]
 pub unsafe extern "C" fn tex_round(r: f64) -> i32 {
     if r > 2147483647.0 {
         return 2147483647;
@@ -47,7 +47,7 @@ pub unsafe extern "C" fn tex_round(r: f64) -> i32 {
     (r - 0.5) as i32
 }
 
-#[unsafe(export_name = "tectonic_rust_half")]
+#[unsafe(export_name = "half")]
 pub unsafe extern "C" fn half(x: i32) -> i32 {
     if odd(x) {
         return (x + 1) / 2;
@@ -55,7 +55,7 @@ pub unsafe extern "C" fn half(x: i32) -> i32 {
     x / 2
 }
 
-#[unsafe(export_name = "tectonic_rust_mult_and_add")]
+#[unsafe(export_name = "mult_and_add")]
 pub unsafe extern "C" fn mult_and_add(
     mut n: i32,
     mut x: scaled_t,
@@ -79,7 +79,7 @@ pub unsafe extern "C" fn mult_and_add(
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_x_over_n")]
+#[unsafe(export_name = "x_over_n")]
 pub unsafe extern "C" fn x_over_n(mut x: scaled_t, mut n: i32) -> scaled_t {
     unsafe {
         if n == 0 {
@@ -104,7 +104,7 @@ pub unsafe extern "C" fn x_over_n(mut x: scaled_t, mut n: i32) -> scaled_t {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_xn_over_d")]
+#[unsafe(export_name = "xn_over_d")]
 pub unsafe extern "C" fn xn_over_d(mut x: scaled_t, n: i32, d: i32) -> scaled_t {
     unsafe {
         let positive = if x >= 0 {
@@ -134,7 +134,7 @@ pub unsafe extern "C" fn xn_over_d(mut x: scaled_t, n: i32, d: i32) -> scaled_t 
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_round_xn_over_d")]
+#[unsafe(export_name = "round_xn_over_d")]
 pub unsafe extern "C" fn round_xn_over_d(mut x: scaled_t, n: i32, d: i32) -> scaled_t {
     unsafe {
         let positive = if x >= 0 {
@@ -422,7 +422,7 @@ unsafe fn new_randoms() {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_init_randoms")]
+#[unsafe(export_name = "init_randoms")]
 pub unsafe extern "C" fn init_randoms(seed: i32) {
     unsafe {
         let mut j = seed.abs();
@@ -449,7 +449,7 @@ pub unsafe extern "C" fn init_randoms(seed: i32) {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_unif_rand")]
+#[unsafe(export_name = "unif_rand")]
 pub unsafe extern "C" fn unif_rand(x: i32) -> i32 {
     unsafe {
         if j_random == 0 {
@@ -469,7 +469,7 @@ pub unsafe extern "C" fn unif_rand(x: i32) -> i32 {
     }
 }
 
-#[unsafe(export_name = "tectonic_rust_norm_rand")]
+#[unsafe(export_name = "norm_rand")]
 pub unsafe extern "C" fn norm_rand() -> i32 {
     unsafe {
         loop {

@@ -142,7 +142,8 @@ static mut synctex_ctxt: SynctexContext = SynctexContext {
     },
 };
 
-pub unsafe fn tt_checkpoint_synctex(cp: *mut tt_checkpoint) {
+#[unsafe(export_name = "tt_checkpoint_synctex")]
+pub unsafe extern "C" fn tt_checkpoint_synctex(cp: *mut tt_checkpoint) {
     unsafe {
         if !(*cp).restoring && { synctex_ctxt.recorder }.is_some() {
             (*cp).valid = false;
@@ -267,7 +268,8 @@ unsafe fn get_current_name() -> *mut c_char {
     unsafe { libc::strdup((&raw const abspath_of_input_file).cast::<c_char>()) }
 }
 
-pub unsafe fn synctex_init_command() {
+#[unsafe(export_name = "synctex_init_command")]
+pub unsafe extern "C" fn synctex_init_command() {
     unsafe {
         synctex_ctxt.file = INVALID_HANDLE;
         synctex_ctxt.root_name = ptr::null_mut();
@@ -546,7 +548,7 @@ unsafe fn synctex_record_node_hlist(p: i32) {
     unsafe {
         synctex_ctxt.flags.not_void = true;
         let s = format!(
-            "({},{},{}:{},:{},{},{}\n",
+            "({},{}:{},{}:{},{},{}\n",
             synctex_tag_box(p),
             synctex_line_box(p),
             synctex_ctxt.curh / synctex_ctxt.unit,
@@ -821,7 +823,8 @@ unsafe fn synctex_prepare_content() -> rust_output_handle_t {
     }
 }
 
-pub unsafe fn synctex_start_input() {
+#[unsafe(export_name = "synctex_start_input")]
+pub unsafe extern "C" fn synctex_start_input() {
     unsafe {
         if synctex_ctxt.flags.off {
             return;
@@ -852,7 +855,8 @@ pub unsafe fn synctex_start_input() {
     }
 }
 
-pub unsafe fn synctex_terminate(_log_opened: bool) {
+#[unsafe(export_name = "synctex_terminate")]
+pub unsafe extern "C" fn synctex_terminate(_log_opened: bool) {
     unsafe {
         if synctex_ctxt.file != INVALID_HANDLE {
             synctex_record_postamble();
@@ -863,7 +867,8 @@ pub unsafe fn synctex_terminate(_log_opened: bool) {
     }
 }
 
-pub unsafe fn synctex_sheet(mag: i32) {
+#[unsafe(export_name = "synctex_sheet")]
+pub unsafe extern "C" fn synctex_sheet(mag: i32) {
     unsafe {
         if synctex_ctxt.flags.off {
             if (*eqtb.add((INT_BASE + INT_PAR__synctex) as usize)).b32.s1 != 0
@@ -887,7 +892,8 @@ pub unsafe fn synctex_sheet(mag: i32) {
     }
 }
 
-pub unsafe fn synctex_teehs() {
+#[unsafe(export_name = "synctex_teehs")]
+pub unsafe extern "C" fn synctex_teehs() {
     unsafe {
         if synctex_ctxt.flags.off || synctex_ctxt.file == INVALID_HANDLE {
             return;
@@ -905,7 +911,8 @@ unsafe fn synctex_ignore_general() -> bool {
     }
 }
 
-pub unsafe fn synctex_vlist(this_box: i32) {
+#[unsafe(export_name = "synctex_vlist")]
+pub unsafe extern "C" fn synctex_vlist(this_box: i32) {
     unsafe {
         if synctex_ignore_general() {
             return;
@@ -920,7 +927,8 @@ pub unsafe fn synctex_vlist(this_box: i32) {
     }
 }
 
-pub unsafe fn synctex_tsilv(this_box: i32) {
+#[unsafe(export_name = "synctex_tsilv")]
+pub unsafe extern "C" fn synctex_tsilv(this_box: i32) {
     unsafe {
         if synctex_ignore_general() {
             return;
@@ -935,7 +943,8 @@ pub unsafe fn synctex_tsilv(this_box: i32) {
     }
 }
 
-pub unsafe fn synctex_void_vlist(p: i32, _this_box: i32) {
+#[unsafe(export_name = "synctex_void_vlist")]
+pub unsafe extern "C" fn synctex_void_vlist(p: i32, _this_box: i32) {
     unsafe {
         if synctex_ignore_general() {
             return;
@@ -950,7 +959,8 @@ pub unsafe fn synctex_void_vlist(p: i32, _this_box: i32) {
     }
 }
 
-pub unsafe fn synctex_hlist(this_box: i32) {
+#[unsafe(export_name = "synctex_hlist")]
+pub unsafe extern "C" fn synctex_hlist(this_box: i32) {
     unsafe {
         if synctex_ignore_general() {
             return;
@@ -965,7 +975,8 @@ pub unsafe fn synctex_hlist(this_box: i32) {
     }
 }
 
-pub unsafe fn synctex_tsilh(this_box: i32) {
+#[unsafe(export_name = "synctex_tsilh")]
+pub unsafe extern "C" fn synctex_tsilh(this_box: i32) {
     unsafe {
         if synctex_ignore_general() {
             return;
@@ -980,7 +991,8 @@ pub unsafe fn synctex_tsilh(this_box: i32) {
     }
 }
 
-pub unsafe fn synctex_void_hlist(p: i32, _this_box: i32) {
+#[unsafe(export_name = "synctex_void_hlist")]
+pub unsafe extern "C" fn synctex_void_hlist(p: i32, _this_box: i32) {
     unsafe {
         if synctex_ignore_general() {
             return;
@@ -1007,7 +1019,8 @@ unsafe fn synctex_context_did_change_medium(node: i32) -> bool {
     }
 }
 
-pub unsafe fn synctex_math(p: i32, _this_box: i32) {
+#[unsafe(export_name = "synctex_math")]
+pub unsafe extern "C" fn synctex_math(p: i32, _this_box: i32) {
     unsafe {
         if synctex_ignore_general() {
             return;
@@ -1027,7 +1040,8 @@ pub unsafe fn synctex_math(p: i32, _this_box: i32) {
     }
 }
 
-pub unsafe fn synctex_horizontal_rule_or_glue(p: i32, _this_box: i32) {
+#[unsafe(export_name = "synctex_horizontal_rule_or_glue")]
+pub unsafe extern "C" fn synctex_horizontal_rule_or_glue(p: i32, _this_box: i32) {
     unsafe {
         let t = synctex_type(p) as i32;
         match t {
@@ -1096,7 +1110,8 @@ pub unsafe fn synctex_horizontal_rule_or_glue(p: i32, _this_box: i32) {
     }
 }
 
-pub unsafe fn synctex_kern(p: i32, this_box: i32) {
+#[unsafe(export_name = "synctex_kern")]
+pub unsafe extern "C" fn synctex_kern(p: i32, this_box: i32) {
     unsafe {
         if synctex_ctxt.flags.off
             || (*eqtb.add((INT_BASE + INT_PAR__synctex) as usize)).b32.s1 == 0
@@ -1131,7 +1146,8 @@ pub unsafe fn synctex_kern(p: i32, this_box: i32) {
     }
 }
 
-pub unsafe fn synctex_current() {
+#[unsafe(export_name = "synctex_current")]
+pub unsafe extern "C" fn synctex_current() {
     unsafe {
         if synctex_ignore_general() {
             return;
@@ -1153,7 +1169,8 @@ pub unsafe fn synctex_current() {
     }
 }
 
-pub unsafe fn synctex_pdfxform(p: i32) {
+#[unsafe(export_name = "synctex_pdfxform")]
+pub unsafe extern "C" fn synctex_pdfxform(p: i32) {
     unsafe {
         if synctex_ctxt.flags.off {
             if (*eqtb.add((INT_BASE + INT_PAR__synctex) as usize)).b32.s1 != 0
@@ -1172,7 +1189,8 @@ pub unsafe fn synctex_pdfxform(p: i32) {
     }
 }
 
-pub unsafe fn synctex_mrofxfdp() {
+#[unsafe(export_name = "synctex_mrofxfdp")]
+pub unsafe extern "C" fn synctex_mrofxfdp() {
     unsafe {
         if synctex_ctxt.file != INVALID_HANDLE {
             synctex_record_mrofxfdp();
@@ -1180,7 +1198,8 @@ pub unsafe fn synctex_mrofxfdp() {
     }
 }
 
-pub unsafe fn synctex_pdfrefxform(objnum: c_int) {
+#[unsafe(export_name = "synctex_pdfrefxform")]
+pub unsafe extern "C" fn synctex_pdfrefxform(objnum: c_int) {
     unsafe {
         if synctex_ctxt.file != INVALID_HANDLE {
             synctex_record_node_pdfrefxform(objnum);

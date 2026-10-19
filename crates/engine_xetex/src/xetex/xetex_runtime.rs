@@ -14,7 +14,6 @@ use libc::{c_char, c_void, time_t};
 
 unsafe extern "C" {
     static mut yhash: *mut b32x2;
-    static mut stdin_ufile: UFILE;
     fn xmalloc(size: usize) -> *mut c_void;
     fn xcalloc(count: usize, size: usize) -> *mut c_void;
     fn _tt_abort(format: *const c_char, ...) -> !;
@@ -25,6 +24,21 @@ unsafe extern "C" {
     fn maketexstring(value: *const c_char) -> str_number;
     fn tt_xetex_native_load_format() -> bool;
 }
+
+#[unsafe(no_mangle)]
+static mut stdin_ufile: UFILE = UFILE {
+    handle: 0,
+    savedChar: -1,
+    skipNextLF: 0,
+    encodingMode: 0,
+    conversionData: std::ptr::null_mut(),
+    input: ttbc_buffered_input {
+        handle: 0,
+        position: 0,
+        length: 0,
+        bytes: [0; 8192],
+    },
+};
 
 macro_rules! int_par {
     ($parameter:ident) => {
@@ -118,6 +132,7 @@ pub unsafe extern "C" fn tt_run_engine(
     build_date: time_t,
 ) -> tt_history_t {
     unsafe {
+        super::xetex_stringpool::reset_string_index();
         if tt_checkpoint_resume() {
             main_control();
             final_cleanup();
@@ -179,15 +194,8 @@ pub unsafe extern "C" fn tt_run_engine(
             } else {
                 hash_top = eqtb_top;
             }
-            yhash = malloc_array::<b32x2>(1 + hash_top - HASH_OFFSET);
+            yhash = calloc_array::<b32x2>(1 + hash_top - HASH_OFFSET);
             hash = yhash.wrapping_sub(HASH_OFFSET as usize);
-            (*hash.add(HASH_BASE as usize)).s0 = 0;
-            (*hash.add(HASH_BASE as usize)).s1 = 0;
-            hash_used = HASH_BASE + 1;
-            while hash_used <= hash_top {
-                *hash.add(hash_used as usize) = (*hash.add(HASH_BASE as usize));
-                hash_used += 1;
-            }
             eqtb = calloc_array::<memory_word>(eqtb_top);
             str_start = malloc_array::<pool_pointer>(max_strings);
             str_pool = malloc_array::<packed_UTF16_code>(pool_size);
