@@ -22,6 +22,8 @@ use std::{ffi::CString, time::SystemTime};
 use tectonic_bridge_core::{CoreBridgeLauncher, CoreBridgeState, EngineAbortedError};
 use tectonic_errors::prelude::*;
 
+pub mod xetex;
+
 /// A serial number describing the detailed binary layout of the TeX "format
 /// files" used by this crate. This number will occasionally increment,
 /// indicating that the format file structure has changed. There is no provision

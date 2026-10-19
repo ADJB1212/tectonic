@@ -22,6 +22,25 @@ This crate provides the following [Cargo features][features]:
   the `tectonic_bridge_harfbuzz` dependency.
 
 
+## Rust engine migration
+
+The default build uses Rust startup code in `src/xetex/xetex_runtime.rs` for
+`tt_run_engine`, including allocation, variable and primitive initialization,
+input setup, and checkpoint-resume orchestration. End-of-job cleanup and resource
+teardown also run in Rust. The C entry shim retains the engine's fatal-error
+boundary.
+
+This is still a mixed Rust/C engine. The execution loop, format loading and
+saving, and low-level engine operations still depend on native code.
+Other translated modules remain compiled with namespaced exports while their
+state and call paths are migrated. Switching startup to Rust does not complete
+the engine port.
+
+The Rust TECkit converter uses `unicode-normalization` for canonical Unicode
+normalization, including Hangul and combining-class handling. Its Unicode data
+comes from that crate rather than the native engine's bundled tables.
+
+
 ## Updating the generated headers
 
 This crate exposes Rust functions to C/C++ code using a header file created by

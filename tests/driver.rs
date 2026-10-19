@@ -18,6 +18,37 @@ mod util;
 // Keep these alphabetized.
 
 #[test]
+fn cleanup_reports_unclosed_groups_and_conditionals_without_leaking_state() {
+    util::set_test_root();
+    let directory = tempfile::tempdir().unwrap();
+    for (source, unclosed) in [
+        (br"\begingroup\iftrue\shipout\hbox{}\end".as_slice(), true),
+        (br"\shipout\hbox{}\end".as_slice(), false),
+    ] {
+        let mut status = tectonic_status_base::NoopStatusBackend::default();
+        let mut builder = ProcessingSessionBuilder::default();
+        builder
+            .primary_input_buffer(source)
+            .tex_input_name("cleanup.tex")
+            .format_name("plain")
+            .format_cache_path(util::test_path(&[]))
+            .output_dir(directory.path())
+            .output_format(tectonic::driver::OutputFormat::Xdv)
+            .keep_logs(true)
+            .bundle(Box::<TestBundle>::default());
+        builder
+            .create(&mut status)
+            .unwrap()
+            .run(&mut status)
+            .unwrap();
+
+        let log = std::fs::read_to_string(directory.path().join("cleanup.log")).unwrap();
+        assert_eq!(log.contains("inside a group at level 1"), unclosed, "{log}");
+        assert_eq!(log.contains("was incomplete"), unclosed, "{log}");
+    }
+}
+
+#[test]
 fn the_letter_a() {
     util::set_test_root();
 

@@ -1172,6 +1172,11 @@ cur_length(void) {
 
 /* Tectonic related functions */
 void tt_cleanup(void);
+extern b32x2 *yhash;
+extern UFILE stdin_ufile;
+extern int32_t _trie_op_hash_array[2 * TRIE_OP_SIZE + 1];
+bool tt_xetex_native_load_format(void);
+void tt_xetex_native_store_format(void);
 tt_history_t tt_run_engine(const char *dump_name, const char *input_file_name, time_t build_date);
 
 void tt_insert_special(const char *ascii_text);
