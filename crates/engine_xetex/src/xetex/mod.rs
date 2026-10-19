@@ -32,6 +32,7 @@ pub mod xetex_errors;
 pub mod xetex_ext;
 pub mod xetex_format;
 pub mod xetex_ini;
+pub mod xetex_ini_part2;
 mod xetex_initialize;
 pub mod xetex_io;
 pub mod xetex_linebreak;
@@ -48,6 +49,10 @@ pub mod xetex_swap;
 pub mod xetex_synctex;
 pub mod xetex_texmfmp;
 pub mod xetex_xetex0;
+pub mod xetex_xetex0_part1;
+pub mod xetex_xetex0_part2;
+pub mod xetex_xetex0_part3;
+pub mod xetex_xetex0_part4;
 pub mod xetex_xetex_ot_math;
 pub mod xetex_xetexd;
 

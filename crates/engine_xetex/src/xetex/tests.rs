@@ -2,6 +2,42 @@ use super::teckit_c_engine::*;
 use super::teckit_common::*;
 
 #[test]
+fn rust_hyphenation_minimum_matches_native_boundaries() {
+    unsafe extern "C" {
+        fn norm_min(value: i32) -> i16;
+    }
+
+    for value in [i32::MIN, -1, 0, 1, 2, 62, 63, 64, 255, i32::MAX] {
+        unsafe {
+            assert_eq!(super::xetex_xetex0_part3::norm_min(value), norm_min(value));
+        }
+    }
+}
+
+#[test]
+fn rust_format_byte_swapping_preserves_item_boundaries_and_round_trips() {
+    for size in [1, 2, 4, 8, 16] {
+        let original: Vec<u8> = (0..3 * size + 2).map(|byte| byte as u8).collect();
+        let mut expected = original.clone();
+        if cfg!(target_endian = "little") {
+            for item in expected[1..1 + 3 * size].chunks_exact_mut(size) {
+                item.reverse();
+            }
+        }
+        let mut actual = original.clone();
+        unsafe {
+            let data = actual.as_mut_ptr().add(1).cast();
+            super::xetex_ini_part2::swap_items(data, 3, size);
+            assert_eq!(actual, expected, "item size {size}");
+            super::xetex_ini_part2::swap_items(data, 0, size);
+            assert_eq!(actual, expected, "empty item size {size}");
+            super::xetex_ini_part2::swap_items(data, 3, size);
+        }
+        assert_eq!(actual, original, "round trip item size {size}");
+    }
+}
+
+#[test]
 fn rust_normalization_preserves_state_across_input_and_output_chunks() {
     let input = "a\u{315}\u{300}\u{1100}\u{1161}\u{11a8}\u{9c7}\u{9be}\u{1d15e}\u{ffff}";
     for (form, expected) in [
