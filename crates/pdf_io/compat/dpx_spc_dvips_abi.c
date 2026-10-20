@@ -10,7 +10,6 @@
 #include "tectonic_bridge_core.h"
 #include "dpx-dpxfile.h"
 #include "dpx-dvi.h"
-#include "dpx-dvicodes.h"
 #include "dpx-epdf.h"
 #include "dpx-error.h"
 #include "dpx-mem.h"

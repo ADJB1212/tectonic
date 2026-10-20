@@ -15,7 +15,6 @@
 #include "dpx-error.h"
 #include "dpx-mem.h"
 #include "dpx-pdfobj.h"
-#include "dpx-cid_basefont.h"
 #include "dpx-pdfparse.h"
 
 extern const char *tt_pdf_last_error(void);

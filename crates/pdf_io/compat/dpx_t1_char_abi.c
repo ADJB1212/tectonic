@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "tectonic_bridge_core.h"
-#include "dpx-cff_limits.h"
 #include "dpx-cff_types.h"
 #include "dpx-dpxutil.h"
 #include "dpx-error.h"

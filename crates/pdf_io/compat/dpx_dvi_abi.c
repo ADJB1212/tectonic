@@ -16,7 +16,6 @@
 #include "dpx-dpxconf.h"
 #include "dpx-dpxfile.h"
 #include "dpx-dpxutil.h"
-#include "dpx-dvicodes.h"
 #include "dpx-dvipdfmx.h"
 #include "dpx-error.h"
 #include "dpx-fontmap.h"

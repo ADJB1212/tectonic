@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "dpx-cff_dict.h"
-#include "dpx-cff_stdstr.h"
 #include "dpx-cff_types.h"
 #include "dpx-error.h"
 #include "dpx-mem.h"

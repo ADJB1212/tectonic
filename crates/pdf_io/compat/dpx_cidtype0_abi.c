@@ -9,7 +9,6 @@
 #include "dpx-agl.h"
 #include "dpx-cff.h"
 #include "dpx-cff_dict.h"
-#include "dpx-cff_limits.h"
 #include "dpx-cff_types.h"
 #include "dpx-cid.h"
 #include "dpx-cmap.h"
