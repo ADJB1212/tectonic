@@ -174,7 +174,7 @@ lto = "off"
 debug = true
 
 [dev-dependencies]
-tempfile = "^3.1"
+tempfile = { version = "3", default-features = false }
 
 [package.metadata.vcpkg]
 git = "https://github.com/microsoft/vcpkg"

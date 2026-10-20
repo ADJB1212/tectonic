@@ -28,6 +28,7 @@ pub(crate) enum Operation {
         requested: usize,
         exact: bool,
         count: usize,
+        #[serde(with = "faster_hex::nopfx_lowercase::array")]
         digest: [u8; 32],
     },
     Getc {
@@ -36,6 +37,10 @@ pub(crate) enum Operation {
     },
     Bytes {
         id: usize,
+        #[serde(
+            serialize_with = "faster_hex::nopfx_lowercase::serialize",
+            deserialize_with = "faster_hex::nopfx_lowercase::deserialize_bounded::<8192, _, _>"
+        )]
         bytes: Vec<u8>,
     },
     Ungetc {
@@ -66,11 +71,37 @@ pub(crate) enum Operation {
     },
     Write {
         id: usize,
+        #[serde(
+            serialize_with = "faster_hex::nopfx_lowercase::serialize",
+            deserialize_with = "faster_hex::nopfx_lowercase::deserialize_bounded::<LIMIT, _, _>"
+        )]
         bytes: Vec<u8>,
     },
-    CharacterWrites(Vec<(u16, u8)>),
+    CharacterWrites(#[serde(with = "character_writes")] Vec<(u16, u8)>),
     Flush(usize),
     CloseOutput(usize),
+}
+
+mod character_writes {
+    use serde::{Deserializer, Serializer, de::Error};
+
+    pub(super) fn serialize<S: Serializer>(writes: &[(u16, u8)], serializer: S) -> Result<S::Ok, S::Error> {
+        let mut bytes = Vec::with_capacity(writes.len() * 3);
+        for &(id, byte) in writes {
+            bytes.extend_from_slice(&id.to_le_bytes());
+            bytes.push(byte);
+        }
+        faster_hex::nopfx_lowercase::serialize(bytes, serializer)
+    }
+
+    pub(super) fn deserialize<'de, D: Deserializer<'de>>(deserializer: D) -> Result<Vec<(u16, u8)>, D::Error> {
+        let bytes: Vec<u8> = faster_hex::nopfx_lowercase::deserialize_bounded::<{ 8192 * 3 }, _, _>(deserializer)?;
+        let (records, remaining) = bytes.as_chunks::<3>();
+        if !remaining.is_empty() {
+            return Err(D::Error::custom("invalid checkpoint character writes"));
+        }
+        Ok(records.iter().map(|item| (u16::from_le_bytes([item[0], item[1]]), item[2])).collect())
+    }
 }
 
 pub(crate) struct Journal {
@@ -80,6 +111,40 @@ pub(crate) struct Journal {
 }
 
 impl Journal {
+    pub(crate) fn write(&mut self, id: usize, bytes: &[u8]) {
+        if !self.valid {
+            return;
+        }
+        if bytes.len() == 1
+            && let Ok(id) = u16::try_from(id)
+            && let Some(Operation::CharacterWrites(previous)) = self.operations.last_mut()
+            && previous.len() < 8192
+        {
+            previous.push((id, bytes[0]));
+            self.bytes += std::mem::size_of::<(u16, u8)>();
+        } else if let Some(Operation::Write {
+            id: previous,
+            bytes: previous_bytes,
+        }) = self.operations.last_mut()
+            && *previous == id
+            && previous_bytes.len() + bytes.len() <= 8192
+            && bytes.len() != 1
+        {
+            previous_bytes.extend_from_slice(bytes);
+            self.bytes += bytes.len();
+        } else {
+            if bytes.len() == 1 && u16::try_from(id).is_ok() {
+                self.push(Operation::CharacterWrites(vec![(id as u16, bytes[0])]));
+            } else {
+                self.push(Operation::Write { id, bytes: bytes.to_vec() });
+            }
+            return;
+        }
+        if self.bytes > LIMIT {
+            self.invalidate();
+        }
+    }
+
     pub(crate) fn new() -> Self {
         Self {
             operations: Vec::new(),
@@ -244,6 +309,7 @@ impl CoreBridgeState<'_> {
         self.record_checkpoint_io();
         let mut read_budget = 512 * 1024 * 1024usize;
         let mut count = 0;
+        let mut buffer = Vec::new();
         let replay = |operation: Operation| -> Result<()> {
             count += 1;
             ensure!(count <= 262_144, "too many checkpoint operations");
@@ -287,7 +353,7 @@ impl CoreBridgeState<'_> {
                     );
                     read_budget -= *requested;
                     let id = self.checked_input(*id)?;
-                    let mut buffer = vec![0; *requested];
+                    buffer.resize(*requested, 0);
                     let actual = if *exact {
                         self.input_read(id, &mut buffer)?;
                         *requested
@@ -307,9 +373,17 @@ impl CoreBridgeState<'_> {
                     ensure!(bytes.len() <= 8192 && bytes.len() <= read_budget, "invalid checkpoint bytes");
                     read_budget -= bytes.len();
                     let id = self.checked_input(*id)?;
-                    for byte in bytes {
-                        ensure!(self.input_getc(id).ok() == Some(*byte), "input byte changed before checkpoint");
+                    let input = self.input_handles[id.idx()].as_mut().unwrap();
+                    if let Some((first, rest)) = bytes.split_first() {
+                        ensure!(input.getc().ok() == Some(*first), "input byte changed before checkpoint");
+                        if !rest.is_empty() {
+                            buffer.resize(rest.len(), 0);
+                            std::io::Read::read_exact(input, &mut buffer)?;
+                            ensure!(buffer == *rest, "input byte changed before checkpoint");
+                        }
                     }
+                    self.record(operation);
+                    return Ok(());
                 }
                 Operation::Ungetc { id, byte } => {
                     let id = self.checked_input(*id)?;
@@ -351,10 +425,18 @@ impl CoreBridgeState<'_> {
                 }
                 Operation::CharacterWrites(bytes) => {
                     ensure!(bytes.len() <= 8192, "invalid checkpoint writes");
-                    for (id, byte) in bytes {
-                        let id = self.checked_output(usize::from(*id))?;
-                        ensure!(!self.output_write(id, &[*byte]), "output replay failed");
+                    let mut start = 0;
+                    while start < bytes.len() {
+                        let id = self.checked_output(usize::from(bytes[start].0))?;
+                        buffer.clear();
+                        while start < bytes.len() && usize::from(bytes[start].0) == id.idx() {
+                            buffer.push(bytes[start].1);
+                            start += 1;
+                        }
+                        std::io::Write::write_all(self.output_handles[id.idx()].as_mut().unwrap(), &buffer)?;
                     }
+                    self.record(operation);
+                    return Ok(());
                 }
                 Operation::Flush(id) => {
                     let id = self.checked_output(*id)?;
@@ -407,6 +489,51 @@ mod tests {
     };
     use tectonic_io_base::{InputHandle, InputOrigin, IoProvider, OpenResult, OutputHandle};
     use tectonic_status_base::NoopStatusBackend;
+
+    #[test]
+    fn hex_journal_payloads_round_trip_bytes_digests_and_handle_bits() {
+        for length in [0, 1, 7, 15, 16, 17, 31, 32, 33, 256, 8192] {
+            let bytes: Vec<u8> = (0..length).map(|index| index as u8).collect();
+            let operations = vec![
+                Operation::Read {
+                    id: 0,
+                    requested: length,
+                    exact: true,
+                    count: length,
+                    digest: hash(&bytes),
+                },
+                Operation::Bytes { id: 0, bytes: bytes.clone() },
+                Operation::Write { id: 0, bytes },
+                Operation::CharacterWrites((0..length).map(|index| ((index as u16).wrapping_mul(4099), index as u8)).collect()),
+            ];
+            let encoded = serde_json::to_vec(&operations).unwrap();
+            assert_eq!(serde_json::from_slice::<Vec<Operation>>(&encoded).unwrap(), operations);
+        }
+        assert_eq!(
+            serde_json::to_string(&Operation::CharacterWrites(vec![(0x1234, 0xab), (u16::MAX, 0)])).unwrap(),
+            r#"{"CharacterWrites":"3412abffff00"}"#,
+        );
+    }
+
+    #[test]
+    fn hex_journal_payloads_reject_malformed_and_oversized_values() {
+        for encoded in [
+            r#"{"Bytes":{"id":0,"bytes":"0"}}"#,
+            r#"{"Bytes":{"id":0,"bytes":"gg"}}"#,
+            r#"{"Bytes":{"id":0,"bytes":"AA"}}"#,
+            r#"{"CharacterWrites":"00"}"#,
+            r#"{"Read":{"id":0,"requested":0,"exact":true,"count":0,"digest":"00"}}"#,
+        ] {
+            assert!(serde_json::from_str::<Operation>(encoded).is_err(), "{encoded}");
+        }
+        for operation in [
+            Operation::Bytes { id: 0, bytes: vec![0; 8193] },
+            Operation::CharacterWrites(vec![(0, 0); 8193]),
+        ] {
+            let encoded = serde_json::to_vec(&operation).unwrap();
+            assert!(serde_json::from_slice::<Operation>(&encoded).is_err());
+        }
+    }
 
     #[test]
     fn character_io_does_not_exhaust_the_checkpoint_journal() {
@@ -469,6 +596,34 @@ mod tests {
         assert_eq!(journal.operations.capacity(), 0);
     }
 
+    #[test]
+    fn borrowed_writes_preserve_journal_encoding_and_limits() {
+        let mut borrowed = Journal::new();
+        let mut owned = Journal::new();
+        for i in 0..20_000 {
+            let bytes: &[u8] = match i % 5 {
+                0 => b"",
+                1 | 2 => b"x",
+                _ => b"multiple bytes",
+            };
+            let id = if i % 11 == 0 { usize::MAX } else { i % 2 };
+            borrowed.write(id, bytes);
+            owned.push(Operation::Write { id, bytes: bytes.to_vec() });
+        }
+        assert_eq!(borrowed.encode().unwrap(), owned.encode().unwrap());
+        for _ in 0..300_000 {
+            borrowed.write(0, b"x");
+            owned.push(Operation::Write { id: 0, bytes: vec![b'x'] });
+        }
+        assert_eq!(borrowed.encode().unwrap(), owned.encode().unwrap());
+        borrowed.bytes = LIMIT;
+        borrowed.write(0, b"x");
+        assert!(!borrowed.valid);
+        assert_eq!(borrowed.operations.capacity(), 0);
+        borrowed.write(0, b"ignored");
+        assert!(borrowed.operations.is_empty());
+    }
+
     #[derive(Clone, Default)]
     struct Writer(Rc<RefCell<Vec<u8>>>);
 
@@ -497,6 +652,9 @@ mod tests {
         fn output_open_name(&mut self, name: &str) -> OpenResult<OutputHandle> {
             self.output.0.borrow_mut().clear();
             OpenResult::Ok(OutputHandle::new(name, self.output.clone()))
+        }
+        fn output_open_stdout(&mut self) -> OpenResult<OutputHandle> {
+            OpenResult::Ok(OutputHandle::new("", self.output.clone()))
         }
     }
 
@@ -539,6 +697,49 @@ mod tests {
                 Ok(())
             })
             .unwrap();
+    }
+
+    #[test]
+    fn batched_replay_preserves_character_reads_writes_and_closed_digests() {
+        let source = vec![b'x'; 20_000];
+        let mut original = driver(&source);
+        let journal = CoreBridgeLauncher::new(&mut original, &mut NoopStatusBackend::default())
+            .with_global_lock(|state| {
+                state.record_checkpoint_io();
+                let input = state.input_open("source.tex", FileFormat::Tex, false).unwrap();
+                let output = state.output_open("output", false).unwrap();
+                let stdout = state.output_open_stdout().unwrap();
+                state.input_ungetc(input, b'y')?;
+                assert_eq!(state.input_getc(input)?, b'y');
+                state.output_write(output, b"y");
+                for _ in &source {
+                    assert_eq!(state.input_getc(input)?, b'x');
+                }
+                assert!(state.input_getc(input).is_err());
+                for i in 0..source.len() {
+                    state.output_write(if i / 17 % 2 == 0 { output } else { stdout }, b"x");
+                }
+                state.input_close(input);
+                state.journal.as_ref().unwrap().encode()
+            })
+            .unwrap();
+        let mut resumed = driver(&source);
+        CoreBridgeLauncher::new(&mut resumed, &mut NoopStatusBackend::default())
+            .with_global_lock(|state| {
+                state.replay_checkpoint_io(&journal)?;
+                assert_eq!(state.journal.as_ref().unwrap().encode()?, journal);
+                Ok(())
+            })
+            .unwrap();
+        assert_eq!(*resumed.0.output.0.borrow(), *original.0.output.0.borrow());
+        for changed in [vec![b'x'; source.len() - 1], vec![b'z'; source.len()]] {
+            let mut changed = driver(&changed);
+            assert!(
+                CoreBridgeLauncher::new(&mut changed, &mut NoopStatusBackend::default())
+                    .with_global_lock(|state| state.replay_checkpoint_io(&journal))
+                    .is_err()
+            );
+        }
     }
 
     #[test]
@@ -600,7 +801,9 @@ mod tests {
             .with_global_lock(|state| {
                 state.record_checkpoint_io();
                 let output = state.output_open("document.synctex.gz", true).unwrap();
-                assert!(!state.output_write(output, b"prefix"));
+                for byte in b"prefix" {
+                    assert!(!state.output_write(output, &[*byte]));
+                }
                 assert!(!state.output_flush(output));
                 state.journal.as_ref().unwrap().encode()
             })

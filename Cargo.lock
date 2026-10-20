@@ -2818,6 +2818,7 @@ name = "tectonic_bridge_core"
 version = "0.0.0-dev.0"
 dependencies = [
  "cc",
+ "faster-hex 1.0.0",
  "flate2",
  "libc",
  "md-5",

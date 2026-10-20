@@ -63,6 +63,10 @@ fn control_sequence_lookup_preserves_bmp_supplementary_and_redefined_names() {
         \\message{REDEFINED:[\\csname abcdefgh\\endcsname]}\n\
         \\def\\identity#1{#1}\\edef\\saved{\\noexpand\\abcdefgh}\n\
         \\message{PARAMETER:[\\identity{\\saved}]}\n\
+        \\def\\skiptest#1{\\iffalse#1\\else\\message{SKIP:[ok]}\\fi}\n\
+        \\skiptest{\\iftrue{\\errmessage{Expanded skipped argument}}\\else unused\\fi}\n\
+        \\ifcase2 \\errmessage{Wrong case zero}\\or\\errmessage{Wrong case one}\n\
+        \\or\\message{CASE:[ok]}\\else\\errmessage{Wrong case fallback}\\fi\n\
         \\outer\\def\\outertest{\\message{OUTER:[ok]}}\\outertest\n\
         \\halign{#\\hfil&#\\hfil\\cr a&b\\cr}\n\
         \\shipout\\hbox{}\\end";
@@ -82,6 +86,8 @@ fn control_sequence_lookup_preserves_bmp_supplementary_and_redefined_names() {
     assert!(log.contains("LOOKUP:[BMP/ASTRAL/first]"), "{log}");
     assert!(log.contains("REDEFINED:[second]"), "{log}");
     assert!(log.contains("PARAMETER:[second]"), "{log}");
+    assert!(log.contains("SKIP:[ok]"), "{log}");
+    assert!(log.contains("CASE:[ok]"), "{log}");
     assert!(log.contains("OUTER:[ok]"), "{log}");
 }
 

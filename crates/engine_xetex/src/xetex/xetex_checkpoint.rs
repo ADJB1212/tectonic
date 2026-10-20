@@ -329,13 +329,17 @@ pub unsafe extern "C" fn tt_checkpoint_used_array(
 
 #[unsafe(export_name = "tt_checkpoint_rle")]
 pub unsafe extern "C" fn tt_checkpoint_rle(cp: *mut tt_checkpoint, name: *const c_char, value: *mut *mut c_void, count: usize, item_size: usize) {
+    unsafe { checkpoint_rle(cp, name, value, count, item_size, true) }
+}
+
+unsafe fn checkpoint_rle(cp: *mut tt_checkpoint, name: *const c_char, value: *mut *mut c_void, count: usize, item_size: usize, allocate: bool) {
     unsafe {
         let cp_ref = &mut *cp;
         if !cp_ref.valid || item_size == 0 || count > (256 * 1024 * 1024) / item_size {
             cp_ref.valid = false;
             return;
         }
-        if cp_ref.restoring {
+        if cp_ref.restoring && allocate {
             *value = xcalloc(count, item_size);
         }
         let items = *value as *mut u8;
@@ -480,37 +484,34 @@ pub unsafe extern "C" fn tt_checkpoint_memory(cp: *mut tt_checkpoint) {
         let mut low: *mut memory_word = std::ptr::null_mut();
         let mut high: *mut memory_word = std::ptr::null_mut();
         if (*cp).restoring {
-            tt_checkpoint_rle(
+            let restored = xcalloc((MEM_TOP + 2) as usize, std::mem::size_of::<memory_word>()) as *mut memory_word;
+            low = restored;
+            high = restored.add(hi_mem_min as usize);
+            checkpoint_rle(
                 cp,
                 c"low".as_ptr(),
                 (&mut low as *mut *mut memory_word).cast(),
                 (lo_mem_max + 1) as usize,
                 std::mem::size_of::<memory_word>(),
+                false,
             );
-            tt_checkpoint_rle(
+            checkpoint_rle(
                 cp,
                 c"high".as_ptr(),
                 (&mut high as *mut *mut memory_word).cast(),
                 (MEM_TOP + 1 - hi_mem_min) as usize,
                 std::mem::size_of::<memory_word>(),
+                false,
             );
             if (*cp).valid {
-                mem = xmalloc(((MEM_TOP + 2) as usize) * std::mem::size_of::<memory_word>()) as *mut memory_word;
-                std::ptr::copy_nonoverlapping(low, mem, (lo_mem_max + 1) as usize);
-                std::ptr::copy_nonoverlapping(high, mem.add(hi_mem_min as usize), (MEM_TOP + 1 - hi_mem_min) as usize);
+                mem = restored;
+            } else {
+                libc::free(restored.cast());
             }
-            libc::free(low as *mut c_void);
-            libc::free(high as *mut c_void);
             return;
         }
-        let original = mem;
-        mem = xcalloc((MEM_TOP + 1) as usize, std::mem::size_of::<memory_word>()) as *mut memory_word;
-        std::ptr::copy_nonoverlapping(original, mem, (lo_mem_max + 1) as usize);
-        std::ptr::copy_nonoverlapping(
-            original.add(hi_mem_min as usize),
-            mem.add(hi_mem_min as usize),
-            (MEM_TOP + 1 - hi_mem_min) as usize,
-        );
+        low = xmalloc((lo_mem_max + 1) as usize * std::mem::size_of::<memory_word>()) as *mut memory_word;
+        std::ptr::copy_nonoverlapping(mem, low, (lo_mem_max + 1) as usize);
         let mut free_block = rover;
         let mut visited: usize = 0;
         loop {
@@ -519,23 +520,26 @@ pub unsafe extern "C" fn tt_checkpoint_memory(cp: *mut tt_checkpoint) {
                 (*cp).valid = false;
                 break;
             }
-            let size = (*mem.add(free_block as usize)).b32.s0;
+            let size = (*low.add(free_block as usize)).b32.s0;
             if size < 2 || size > lo_mem_max + 1 - free_block {
                 (*cp).valid = false;
                 break;
             }
-            std::ptr::write_bytes(mem.add((free_block + 2) as usize), 0, (size - 2) as usize);
-            free_block = (*mem.add((free_block + 1) as usize)).b32.s1;
+            std::ptr::write_bytes(low.add((free_block + 2) as usize), 0, (size - 2) as usize);
+            free_block = (*low.add((free_block + 1) as usize)).b32.s1;
             if free_block == rover {
                 break;
             }
         }
-        for node in 0..=MEM_TOP {
+        for node in 0..=lo_mem_max {
             if glyph_nodes[node as usize] != 0 {
-                (*mem.add((node + 5) as usize)).ptr = std::ptr::null_mut();
+                if node > lo_mem_max - 5 {
+                    (*cp).valid = false;
+                    break;
+                }
+                (*low.add((node + 5) as usize)).ptr = std::ptr::null_mut();
             }
         }
-        low = mem;
         high = mem.add(hi_mem_min as usize);
         tt_checkpoint_rle(
             cp,
@@ -551,8 +555,7 @@ pub unsafe extern "C" fn tt_checkpoint_memory(cp: *mut tt_checkpoint) {
             (MEM_TOP + 1 - hi_mem_min) as usize,
             std::mem::size_of::<memory_word>(),
         );
-        libc::free(mem as *mut c_void);
-        mem = original;
+        libc::free(low as *mut c_void);
     }
 }
 
@@ -596,13 +599,13 @@ unsafe fn checkpoint_glyphs(cp: *mut tt_checkpoint) {
             cp,
             c"glyph_nodes".as_ptr(),
             (&raw mut glyph_nodes).cast::<u8>().cast(),
-            (MEM_TOP + 1) as usize,
+            (lo_mem_max + 1) as usize,
         );
-        for node in 0..=MEM_TOP {
+        for node in 0..=lo_mem_max {
             if glyph_nodes[node as usize] == 0 {
                 continue;
             }
-            if node > MEM_TOP - 6 {
+            if node > lo_mem_max - 6 {
                 (*cp).valid = false;
                 return;
             }
@@ -793,6 +796,59 @@ pub unsafe extern "C" fn tt_checkpoint_continue() {
             macro_call();
         } else if action != 0 {
             _tt_abort(c"invalid checkpoint continuation".as_ptr());
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rle_restores_into_an_existing_arena_without_touching_adjacent_regions() {
+        let mut words = vec![0u64; 4096];
+        for (i, word) in words[1024..2048].iter_mut().enumerate() {
+            *word = (i * i) as u64;
+        }
+        for (i, word) in words[2048..3072].iter_mut().enumerate() {
+            *word = i as u64 + 10;
+        }
+        let mut capture = tt_checkpoint {
+            bytes: std::ptr::null_mut(),
+            length: 0,
+            capacity: 0,
+            position: 0,
+            restoring: false,
+            valid: true,
+        };
+        unsafe {
+            let mut input = words.as_mut_ptr().cast();
+            checkpoint_rle(&mut capture, c"test".as_ptr(), &mut input, words.len(), size_of::<u64>(), false);
+            assert!(capture.valid);
+            let mut restored = vec![0u64; words.len() + 2];
+            restored[0] = u64::MAX;
+            restored[words.len() + 1] = u64::MAX;
+            let mut output = restored.as_mut_ptr().add(1).cast();
+            let original_output = output;
+            let mut resume = tt_checkpoint { restoring: true, ..capture };
+            checkpoint_rle(&mut resume, c"test".as_ptr(), &mut output, words.len(), size_of::<u64>(), false);
+            assert!(resume.valid);
+            assert_eq!(resume.position, capture.length);
+            assert_eq!(output, original_output);
+            assert_eq!(restored[1..words.len() + 1], words);
+            assert_eq!(restored[0], u64::MAX);
+            assert_eq!(restored[words.len() + 1], u64::MAX);
+
+            let mut truncated = tt_checkpoint {
+                length: capture.length - 1,
+                restoring: true,
+                ..capture
+            };
+            checkpoint_rle(&mut truncated, c"test".as_ptr(), &mut output, words.len(), size_of::<u64>(), false);
+            assert!(!truncated.valid);
+            assert_eq!(restored[0], u64::MAX);
+            assert_eq!(restored[words.len() + 1], u64::MAX);
+            libc::free(capture.bytes.cast());
         }
     }
 }

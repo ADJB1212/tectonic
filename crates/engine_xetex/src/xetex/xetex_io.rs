@@ -13,6 +13,7 @@ use crate::xetex::teckit_common::*;
 use crate::xetex::xetex_checkpoint::memory_word;
 use crate::xetex::xetex_core::*;
 use crate::xetex::xetex_format::*;
+use crate::xetex::xetex_simd::copy_ascii_line;
 use std::ffi::{c_char, c_int, c_void};
 
 pub type rust_input_handle_t = usize;
@@ -374,29 +375,6 @@ fn is_spc_or_eol(c: UnicodeScalar) -> bool {
     c == b' ' as i32 || c == b'\r' as i32 || c == b'\n' as i32
 }
 
-fn copy_ascii_line(input: &[u8], output: &mut [UnicodeScalar]) -> usize {
-    let input = &input[..input.len().min(output.len())];
-    if input.first().is_some_and(|byte| !byte.is_ascii()) {
-        return 0;
-    }
-    let mut count = 0;
-    for chunk in input.chunks(64) {
-        if !chunk.is_ascii() {
-            count += chunk.iter().position(|&byte| !byte.is_ascii() || byte == b'\r' || byte == b'\n').unwrap();
-            break;
-        }
-        if let Some(end) = memchr::memchr2(b'\r', b'\n', chunk) {
-            count += end;
-            break;
-        }
-        count += chunk.len();
-    }
-    for (dst, &src) in output[..count].iter_mut().zip(&input[..count]) {
-        *dst = src as UnicodeScalar;
-    }
-    count
-}
-
 #[inline]
 unsafe fn read_buffered_ascii(f: *mut UFILE, output: *mut UnicodeScalar, capacity: usize) -> usize {
     unsafe {
@@ -456,6 +434,58 @@ mod ascii_tests {
                         assert_eq!(&output[..count], expected);
                         assert!(output[count..].iter().all(|&value| value == -1));
                     }
+                }
+            }
+        }
+    }
+
+    #[test]
+    #[ignore = "manual performance measurement"]
+    fn benchmark_ascii_line_copy() {
+        use std::{hint::black_box, time::Instant};
+
+        fn baseline(input: &[u8], output: &mut [i32]) -> usize {
+            let input = &input[..input.len().min(output.len())];
+            if input.first().is_some_and(|byte| !byte.is_ascii()) {
+                return 0;
+            }
+            let mut count = 0;
+            for chunk in input.chunks(64) {
+                if !chunk.is_ascii() {
+                    count += chunk.iter().position(|&byte| !byte.is_ascii() || byte == b'\r' || byte == b'\n').unwrap();
+                    break;
+                }
+                if let Some(end) = memchr::memchr2(b'\r', b'\n', chunk) {
+                    count += end;
+                    break;
+                }
+                count += chunk.len();
+            }
+            for (dst, &src) in output[..count].iter_mut().zip(&input[..count]) {
+                *dst = src as i32;
+            }
+            count
+        }
+
+        for length in [8, 40, 120, 1024, 8192] {
+            for (label, marker) in [
+                ("ASCII", None),
+                ("newline", Some((length - 1, b'\n'))),
+                ("mixed", Some((3, 0xc3))),
+                ("Unicode", Some((0, 0xc3))),
+            ] {
+                let mut input = vec![b'a'; length];
+                if let Some((position, byte)) = marker {
+                    input[position] = byte;
+                }
+                let mut output = vec![0; length];
+                for (name, copy) in [("baseline", baseline as fn(&[u8], &mut [i32]) -> usize), ("SIMD", copy_ascii_line)] {
+                    let start = Instant::now();
+                    for _ in 0..(32 * 1024 * 1024 / length) {
+                        black_box(copy(black_box(&input), black_box(&mut output)));
+                        black_box(&output);
+                    }
+                    eprintln!("copy {label} length={length} {name}: {:?}", start.elapsed());
                 }
             }
         }

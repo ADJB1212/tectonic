@@ -558,11 +558,8 @@ impl<'a> CoreBridgeState<'a> {
         let rhandle = self.output_handles[handle.idx()].as_mut().unwrap();
         let result = rhandle.write_all(buf);
         if result.is_ok() {
-            if self.journal.is_some() {
-                self.record(CheckpointOperation::Write {
-                    id: handle.idx(),
-                    bytes: buf.to_vec(),
-                });
+            if let Some(journal) = &mut self.journal {
+                journal.write(handle.idx(), buf);
             }
         } else {
             self.invalidate_checkpoint();
@@ -754,7 +751,7 @@ impl<'a> CoreBridgeState<'a> {
     pub fn input_read(&mut self, handle: InputId, buf: &mut [u8]) -> Result<()> {
         let result = self.input_handles[handle.idx()].as_mut().unwrap().read_exact(buf).map_err(Error::from);
         if result.is_ok() {
-            if self.journal.is_some() {
+            if self.checkpoint_io_ready() {
                 self.record(CheckpointOperation::Read {
                     id: handle.idx(),
                     requested: buf.len(),
@@ -773,7 +770,7 @@ impl<'a> CoreBridgeState<'a> {
         let result = self.input_handles[handle.idx()].as_mut().unwrap().read(buf).map_err(Error::from);
         match &result {
             Ok(count) => {
-                if self.journal.is_some() {
+                if self.checkpoint_io_ready() {
                     self.record(CheckpointOperation::Read {
                         id: handle.idx(),
                         requested: buf.len(),
@@ -823,7 +820,7 @@ impl<'a> CoreBridgeState<'a> {
         }
 
         let (name, digest_opt) = ih.into_name_digest();
-        let checkpoint_digest = if self.journal.is_some() {
+        let checkpoint_digest = if self.checkpoint_io_ready() {
             digest_opt.map(|digest| digest.to_string())
         } else {
             None

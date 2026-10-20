@@ -4483,6 +4483,10 @@ mod token_tests {
                 mem = nodes.as_mut_ptr();
                 eqtb = definitions.as_mut_ptr();
                 nodes[1].b32.s1 = 2;
+                nodes[2].b32.s0 = CS_TOKEN_FLAG + 8;
+                nodes[2].b32.s1 = TEX_NULL;
+                definitions[8].b16.s1 = FI_OR_ELSE as u16;
+                definitions[8].b32.s1 = FI_CODE;
                 for is_control_sequence in [false, true] {
                     let commands = if is_control_sequence { OUTER_CALL } else { 16 };
                     for command in 0..commands {
@@ -4515,6 +4519,13 @@ mod token_tests {
                                 reset();
                                 get_next();
                                 assert_eq!((cur_cmd, cur_chr, cur_cs, cur_input.loc, align_state), expected);
+                                reset();
+                                skip_inactive_tokens();
+                                if command == IF_TEST || command == FI_OR_ELSE || command == OUT_PARAM {
+                                    assert_eq!((cur_cmd, cur_chr, cur_cs, cur_input.loc, align_state), (255, -1, -1, 1, alignment));
+                                } else {
+                                    assert_eq!((cur_cmd, cur_chr, cur_cs, cur_input.loc, align_state), expected);
+                                }
                             }
                         }
                     }
@@ -9751,6 +9762,7 @@ pub unsafe extern "C" fn pass_text() {
         skip_line = line;
 
         loop {
+            skip_inactive_tokens();
             get_next();
             if cur_cmd == (FI_OR_ELSE) as u8 {
                 if l == 0 {
@@ -9767,6 +9779,55 @@ pub unsafe extern "C" fn pass_text() {
         scanner_status = (save_scanner_status) as u8;
         if INTPAR!(INT_PAR__tracing_ifs) > 0 {
             show_cur_cmd_chr();
+        }
+    }
+}
+
+#[inline]
+unsafe fn skip_inactive_tokens() {
+    unsafe {
+        if cur_input.state != TOKEN_LIST as u16 {
+            return;
+        }
+        let mut position = cur_input.loc;
+        let mut alignment = align_state;
+        let mut skipped = None;
+        while position != TEX_NULL {
+            let node = *mem.add(position as usize);
+            let token = node.b32.s0;
+            let command = if token >= CS_TOKEN_FLAG {
+                (*eqtb.add((token - CS_TOKEN_FLAG) as usize)).b16.s1 as u8
+            } else {
+                (token / MAX_CHAR_VAL) as u8
+            };
+            if command == IF_TEST as u8
+                || command == FI_OR_ELSE as u8
+                || command >= OUTER_CALL as u8
+                || command == OUT_PARAM as u8
+                || (alignment == 0 && (TAB_MARK as u8..=CAR_RET as u8).contains(&command))
+            {
+                break;
+            }
+            if token < CS_TOKEN_FLAG {
+                if command == LEFT_BRACE as u8 {
+                    alignment += 1;
+                } else if command == RIGHT_BRACE as u8 {
+                    alignment -= 1;
+                }
+            }
+            skipped = Some((token, command));
+            position = node.b32.s1;
+        }
+        if let Some((token, command)) = skipped {
+            cur_input.loc = position;
+            align_state = alignment;
+            cur_cmd = command;
+            cur_cs = if token >= CS_TOKEN_FLAG { token - CS_TOKEN_FLAG } else { 0 };
+            cur_chr = if token >= CS_TOKEN_FLAG {
+                (*eqtb.add(cur_cs as usize)).b32.s1
+            } else {
+                token % MAX_CHAR_VAL
+            };
         }
     }
 }
