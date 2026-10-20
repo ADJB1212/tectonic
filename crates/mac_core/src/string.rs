@@ -53,15 +53,7 @@ impl CFString {
     /// as `str` or `CStr`.
     pub fn new<S: ?Sized + StrLike>(val: &S) -> CFString {
         // SAFETY: Length, pointer, and encoding are derived from same value.
-        let ptr = unsafe {
-            sys::CFStringCreateWithBytes(
-                ptr::null(),
-                val.as_ptr(),
-                val.len() as sys::CFIndex,
-                val.encoding(),
-                false,
-            )
-        };
+        let ptr = unsafe { sys::CFStringCreateWithBytes(ptr::null(), val.as_ptr(), val.len() as sys::CFIndex, val.encoding(), false) };
         let ptr = NonNull::new(ptr.cast_mut()).unwrap();
         // SAFETY: If non-null, pointer returned by CFStringCreateWithBytes is guaranteed to be a
         //         valid CFString.
@@ -127,8 +119,7 @@ impl CFString {
     /// otherwise re-encode into UTF-8.
     pub fn as_str(&self) -> Cow<'_, str> {
         // SAFETY: Self is guaranteed valid
-        let cstr =
-            unsafe { sys::CFStringGetCStringPtr(self.as_type_ref(), sys::kCFStringEncodingUTF8) };
+        let cstr = unsafe { sys::CFStringGetCStringPtr(self.as_type_ref(), sys::kCFStringEncodingUTF8) };
         if cstr.is_null() {
             Cow::Owned(self.get_string())
         } else {
@@ -168,8 +159,7 @@ impl CFString {
     /// otherwise allocate a CString in that encoding.
     pub fn as_cstr(&self) -> Option<Cow<'_, CStr>> {
         // SAFETY: Self is guaranteed valid
-        let cstr =
-            unsafe { sys::CFStringGetCStringPtr(self.as_type_ref(), sys::kCFStringEncodingUTF8) };
+        let cstr = unsafe { sys::CFStringGetCStringPtr(self.as_type_ref(), sys::kCFStringEncodingUTF8) };
         if cstr.is_null() {
             self.get_cstring().map(Cow::Owned)
         } else {

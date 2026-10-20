@@ -24,10 +24,5 @@ unsafe extern "C" {
     pub fn tt_xetex_checkpoint_layout(checkpoint: *mut c_void, restoring: bool) -> bool;
     pub fn tt_xetex_checkpoint_handle_valid(handle: usize, output: bool) -> bool;
     pub fn tt_xetex_set_int_variable(var_name: *const c_char, value: c_int) -> c_int;
-    pub fn tt_engine_xetex_main(
-        api: &mut ttbc_state_t,
-        dump_name: *const c_char,
-        input_file_name: *const c_char,
-        build_date: u64,
-    ) -> c_int;
+    pub fn tt_engine_xetex_main(api: &mut ttbc_state_t, dump_name: *const c_char, input_file_name: *const c_char, build_date: u64) -> c_int;
 }

@@ -17,13 +17,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 use std::{collections::HashMap, ffi::CStr};
 
@@ -34,22 +28,10 @@ unsafe fn post_caches() -> *mut PostCaches {
     unsafe { core::ptr::addr_of_mut!((*crate::compat::document::current()).post_names) }
 }
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     fn xstrdup(s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-    fn ttstub_input_read(
-        handle: rust_input_handle_t,
-        data: *mut ::core::ffi::c_char,
-        len: size_t,
-    ) -> ssize_t;
+    fn ttstub_input_read(handle: rust_input_handle_t, data: *mut ::core::ffi::c_char, len: size_t) -> ssize_t;
     #[link_name = "__pdf_impl_tt_get_unsigned_byte"]
     fn tt_get_unsigned_byte(handle: rust_input_handle_t) -> ::core::ffi::c_uchar;
     #[link_name = "__pdf_impl_tt_get_unsigned_pair"]
@@ -128,14 +110,9 @@ pub struct tt_post_table {
 pub const __DARWIN_NULL: *mut ::core::ffi::c_void = ::core::ptr::null_mut::<::core::ffi::c_void>();
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 static STANDARD_NAMES: std::sync::LazyLock<[std::ffi::CString; 258]> =
-    std::sync::LazyLock::new(|| {
-        read_fonts::tables::post::DEFAULT_GLYPH_NAMES
-            .map(|name| std::ffi::CString::new(name).unwrap())
-    });
+    std::sync::LazyLock::new(|| read_fonts::tables::post::DEFAULT_GLYPH_NAMES.map(|name| std::ffi::CString::new(name).unwrap()));
 
-fn parse_post_names(
-    table: &read_fonts::tables::post::Post<'_>,
-) -> Result<(Vec<u16>, Vec<Option<std::ffi::CString>>), read_fonts::ReadError> {
+fn parse_post_names(table: &read_fonts::tables::post::Post<'_>) -> Result<(Vec<u16>, Vec<Option<std::ffi::CString>>), read_fonts::ReadError> {
     use read_fonts::{ReadError, types::Version16Dot16};
     match table.version() {
         Version16Dot16::VERSION_1_0 => return Ok(((0..258).collect(), Vec::new())),
@@ -143,21 +120,11 @@ fn parse_post_names(
         _ => return Ok((Vec::new(), Vec::new())),
     }
     let count = table.num_glyphs().ok_or(ReadError::OutOfBounds)?;
-    let indices: Vec<_> = table
-        .glyph_name_index()
-        .unwrap_or_default()
-        .iter()
-        .map(|index| index.get())
-        .collect();
+    let indices: Vec<_> = table.glyph_name_index().unwrap_or_default().iter().map(|index| index.get()).collect();
     if indices.len() != count as usize {
         return Err(ReadError::OutOfBounds);
     }
-    let custom_count = indices
-        .iter()
-        .copied()
-        .max()
-        .unwrap_or(257)
-        .saturating_sub(257) as usize;
+    let custom_count = indices.iter().copied().max().unwrap_or(257).saturating_sub(257) as usize;
     if custom_count == 0 {
         return Ok((indices, Vec::new()));
     }
@@ -225,9 +192,8 @@ pub unsafe extern "C-unwind" fn tt_read_post_table(sfont: *mut sfnt) -> *mut tt_
     let custom: Vec<_> = names
         .iter()
         .map(|name| {
-            name.as_ref().map_or(core::ptr::null_mut(), |name| unsafe {
-                crate::backend::runtime::duplicate(name.as_ptr())
-            })
+            name.as_ref()
+                .map_or(core::ptr::null_mut(), |name| unsafe { crate::backend::runtime::duplicate(name.as_ptr()) })
         })
         .collect();
     let pointers: Vec<_> = indices
@@ -259,9 +225,7 @@ pub unsafe extern "C-unwind" fn tt_read_post_table(sfont: *mut sfnt) -> *mut tt_
     let mut index = HashMap::with_capacity(pointers.len());
     for (gid, &name) in pointers.iter().enumerate() {
         if !name.is_null() {
-            index
-                .entry(Box::from(unsafe { CStr::from_ptr(name) }.to_bytes()))
-                .or_insert(gid as u16);
+            index.entry(Box::from(unsafe { CStr::from_ptr(name) }.to_bytes())).or_insert(gid as u16);
         }
     }
     unsafe { (*post_caches()).0.insert(output as usize, index) };
@@ -269,26 +233,19 @@ pub unsafe extern "C-unwind" fn tt_read_post_table(sfont: *mut sfnt) -> *mut tt_
 }
 
 #[unsafe(export_name = "__pdf_impl_tt_lookup_post_table")]
-pub unsafe extern "C-unwind" fn tt_lookup_post_table(
-    post: *mut tt_post_table,
-    glyphname: *const ::core::ffi::c_char,
-) -> USHORT {
+pub unsafe extern "C-unwind" fn tt_lookup_post_table(post: *mut tt_post_table, glyphname: *const ::core::ffi::c_char) -> USHORT {
     if post.is_null() || glyphname.is_null() {
         pdf_abort!("assertion failed: post && glyphname");
     }
     if let Some(index) = unsafe { (*post_caches()).0.get(&(post as usize)) } {
-        return index
-            .get(unsafe { CStr::from_ptr(glyphname) }.to_bytes())
-            .copied()
-            .unwrap_or(0);
+        return index.get(unsafe { CStr::from_ptr(glyphname) }.to_bytes()).copied().unwrap_or(0);
     }
     let post = unsafe { &*post };
     if post.numberOfGlyphs == 0 {
         return 0;
     }
     let glyphname = unsafe { std::ffi::CStr::from_ptr(glyphname) };
-    let names =
-        unsafe { core::slice::from_raw_parts(post.glyphNamePtr, post.numberOfGlyphs as usize) };
+    let names = unsafe { core::slice::from_raw_parts(post.glyphNamePtr, post.numberOfGlyphs as usize) };
     names
         .iter()
         .position(|&name| !name.is_null() && unsafe { std::ffi::CStr::from_ptr(name) } == glyphname)
@@ -296,10 +253,7 @@ pub unsafe extern "C-unwind" fn tt_lookup_post_table(
 }
 
 #[unsafe(export_name = "__pdf_impl_tt_get_glyphname")]
-pub unsafe extern "C-unwind" fn tt_get_glyphname(
-    post: *mut tt_post_table,
-    gid: USHORT,
-) -> *mut ::core::ffi::c_char {
+pub unsafe extern "C-unwind" fn tt_get_glyphname(post: *mut tt_post_table, gid: USHORT) -> *mut ::core::ffi::c_char {
     let post = unsafe { &*post };
     if gid >= post.numberOfGlyphs {
         return core::ptr::null_mut();
@@ -332,10 +286,7 @@ pub unsafe extern "C-unwind" fn tt_release_post_table(post: *mut tt_post_table) 
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_read_post_table(
-    mut sfont: *mut sfnt,
-    _result: *mut *mut tt_post_table,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_read_post_table(mut sfont: *mut sfnt, _result: *mut *mut tt_post_table) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_read_post_table(sfont) }) {
         Ok(value) => {
             unsafe {
@@ -348,9 +299,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_read_post_table(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_tt_lookup_post_table(
-    mut post: *mut tt_post_table,
-    mut glyphname: *const ::core::ffi::c_char,
-    _result: *mut USHORT,
+    mut post: *mut tt_post_table, mut glyphname: *const ::core::ffi::c_char, _result: *mut USHORT,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_lookup_post_table(post, glyphname) }) {
         Ok(value) => {
@@ -363,11 +312,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_lookup_post_table(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_get_glyphname(
-    mut post: *mut tt_post_table,
-    mut gid: USHORT,
-    _result: *mut *mut ::core::ffi::c_char,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_get_glyphname(mut post: *mut tt_post_table, mut gid: USHORT, _result: *mut *mut ::core::ffi::c_char) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_get_glyphname(post, gid) }) {
         Ok(value) => {
             unsafe {

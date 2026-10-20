@@ -24,19 +24,14 @@ impl Subroutines<'_> {
         let id = operand
             .checked_add(bias)
             .filter(|&id| id >= 0 && (id as usize) < count)
-            .ok_or_else(|| error("Type2 Charstring Parser: Invalid Subr index.", 0))?
-            as usize;
+            .ok_or_else(|| error("Type2 Charstring Parser: Invalid Subr index.", 0))? as usize;
         let start = self.offsets[id]
             .checked_sub(1)
-            .ok_or_else(|| error("Invalid CFF Index offset data", id))?
-            as usize;
+            .ok_or_else(|| error("Invalid CFF Index offset data", id))? as usize;
         let end = self.offsets[id + 1]
             .checked_sub(1)
-            .ok_or_else(|| error("Invalid CFF Index offset data", id + 1))?
-            as usize;
-        self.bytes
-            .get(start..end)
-            .ok_or_else(|| error("Invalid CFF Index offset data", id))
+            .ok_or_else(|| error("Invalid CFF Index offset data", id + 1))? as usize;
+        self.bytes.get(start..end).ok_or_else(|| error("Invalid CFF Index offset data", id))
     }
 }
 
@@ -93,33 +88,18 @@ impl<F: FnMut(&str)> Parser<'_, F> {
             let value = self.stack[i];
             let rounded = (value + 0.5).floor() as i32;
             if !value.is_finite() || value >= 32768.0 || value <= -32769.0 {
-                return Err(error(
-                    "Type2 Charstring Parser: Argument value too large. (This is bug)",
-                    0,
-                ));
+                return Err(error("Type2 Charstring Parser: Argument value too large. (This is bug)", 0));
             }
             if (value - f64::from(rounded)).abs() > 3.0e-5 {
                 let integral = value.floor() as i32;
                 let fraction = ((value - f64::from(integral)) * 65536.0) as i32;
-                self.emit(&[
-                    255,
-                    (integral >> 8) as u8,
-                    integral as u8,
-                    (fraction >> 8) as u8,
-                    fraction as u8,
-                ])?;
+                self.emit(&[255, (integral >> 8) as u8, integral as u8, (fraction >> 8) as u8, fraction as u8])?;
             } else if (-107..=107).contains(&rounded) {
                 self.emit(&[(rounded + 139) as u8])?;
             } else if (108..=1131).contains(&rounded) {
-                self.emit(&[
-                    ((rounded - 108) / 256 + 247) as u8,
-                    ((rounded - 108) % 256) as u8,
-                ])?;
+                self.emit(&[((rounded - 108) / 256 + 247) as u8, ((rounded - 108) % 256) as u8])?;
             } else if (-1131..=-108).contains(&rounded) {
-                self.emit(&[
-                    ((-rounded - 108) / 256 + 251) as u8,
-                    ((-rounded - 108) % 256) as u8,
-                ])?;
+                self.emit(&[((-rounded - 108) / 256 + 251) as u8, ((-rounded - 108) % 256) as u8])?;
             } else {
                 self.emit(&[28, (rounded >> 8) as u8, rounded as u8])?;
             }
@@ -134,10 +114,7 @@ impl<F: FnMut(&str)> Parser<'_, F> {
                     if self.phase == 0 && !self.stack.len().is_multiple_of(2) {
                         self.width = self.stack.first().copied();
                     }
-                    self.stems = self
-                        .stems
-                        .checked_add(self.stack.len() / 2)
-                        .ok_or_else(|| self.failure(-1))?;
+                    self.stems = self.stems.checked_add(self.stack.len() / 2).ok_or_else(|| self.failure(-1))?;
                 }
                 self.flush()?;
                 self.emit(&[op])?;
@@ -190,9 +167,7 @@ impl<F: FnMut(&str)> Parser<'_, F> {
                 self.emit(&[op])?;
             }
             _ => {
-                (self.warning)(&format!(
-                    "Type2 Charstring Parser: Unknown charstring operator: 0x{op:02x}"
-                ));
+                (self.warning)(&format!("Type2 Charstring Parser: Unknown charstring operator: 0x{op:02x}"));
                 return Err(self.failure(-1));
             }
         }
@@ -252,10 +227,7 @@ impl<F: FnMut(&str)> Parser<'_, F> {
             20 => {
                 let index = self.pop()? as i32;
                 let value = self.pop()?;
-                let Some(target) = usize::try_from(index)
-                    .ok()
-                    .and_then(|i| self.transient.get_mut(i))
-                else {
+                let Some(target) = usize::try_from(index).ok().and_then(|i| self.transient.get_mut(i)) else {
                     return Err(self.failure(-2));
                 };
                 *target = value;
@@ -306,30 +278,18 @@ impl<F: FnMut(&str)> Parser<'_, F> {
                     .filter(|&n| n > 0 && n <= self.stack.len())
                     .ok_or_else(|| self.failure(-2))?;
                 let n = self.stack.len();
-                self.stack[n - count..]
-                    .rotate_right((i64::from(shift).rem_euclid(count as i64)) as usize);
+                self.stack[n - count..].rotate_right((i64::from(shift).rem_euclid(count as i64)) as usize);
             }
             _ => {
-                (self.warning)(&format!(
-                    "Type2 Charstring Parser: Unknown charstring operator: 0x0c{op:02x}"
-                ));
+                (self.warning)(&format!("Type2 Charstring Parser: Unknown charstring operator: 0x0c{op:02x}"));
                 return Err(self.failure(-1));
             }
         }
         Ok(())
     }
-    fn parse(
-        &mut self,
-        bytes: &[u8],
-        global: Option<&Subroutines<'_>>,
-        local: Option<&Subroutines<'_>>,
-        depth: usize,
-    ) -> Result<Flow, PdfError> {
+    fn parse(&mut self, bytes: &[u8], global: Option<&Subroutines<'_>>, local: Option<&Subroutines<'_>>, depth: usize) -> Result<Flow, PdfError> {
         if depth > 10 {
-            return Err(error(
-                "Type2 Charstring Parser: Subroutine nested too deeply.",
-                0,
-            ));
+            return Err(error("Type2 Charstring Parser: Subroutine nested too deeply.", 0));
         }
         let mut pos = 0;
         while let Some(&byte) = bytes.get(pos) {
@@ -337,11 +297,7 @@ impl<F: FnMut(&str)> Parser<'_, F> {
             let flow = match byte {
                 255 => {
                     let end = pos.checked_add(4).ok_or_else(|| self.failure(-1))?;
-                    let data: [u8; 4] = bytes
-                        .get(pos..end)
-                        .ok_or_else(|| self.failure(-1))?
-                        .try_into()
-                        .unwrap();
+                    let data: [u8; 4] = bytes.get(pos..end).ok_or_else(|| self.failure(-1))?.try_into().unwrap();
                     self.push(f64::from(i32::from_be_bytes(data)) / 65536.0)?;
                     pos = end;
                     Flow::Continue
@@ -349,18 +305,11 @@ impl<F: FnMut(&str)> Parser<'_, F> {
                 11 => Flow::Return,
                 10 | 29 => {
                     let id = self.pop()? as i32;
-                    let subroutines = if byte == 10 { local } else { global }.ok_or_else(|| {
-                        error(
-                            "Type2 Charstring Parser: Subroutine called but no subroutine found.",
-                            pos,
-                        )
-                    })?;
+                    let subroutines = if byte == 10 { local } else { global }
+                        .ok_or_else(|| error("Type2 Charstring Parser: Subroutine called but no subroutine found.", pos))?;
                     let data = subroutines.get(id)?;
                     if data.len() > self.output.len() - self.written {
-                        return Err(error(
-                            "Type2 Charstring Parser: Possible buffer overflow.",
-                            pos,
-                        ));
+                        return Err(error("Type2 Charstring Parser: Possible buffer overflow.", pos));
                     }
                     match self.parse(data, global, local, depth + 1)? {
                         Flow::Return => Flow::Continue,
@@ -374,8 +323,7 @@ impl<F: FnMut(&str)> Parser<'_, F> {
                     Flow::Continue
                 }
                 28 | 32..=254 => {
-                    let (value, consumed) =
-                        crate::cff::integer(&bytes[pos - 1..]).map_err(|_| self.failure(-1))?;
+                    let (value, consumed) = crate::cff::integer(&bytes[pos - 1..]).map_err(|_| self.failure(-1))?;
                     self.push(value)?;
                     pos += consumed - 1;
                     Flow::Continue
@@ -399,13 +347,8 @@ pub(crate) struct Output {
 }
 
 pub(crate) fn copy(
-    bytes: &[u8],
-    output: &mut [u8],
-    global: Option<&Subroutines<'_>>,
-    local: Option<&Subroutines<'_>>,
-    transient: &mut [f64; 32],
-    stack: &mut Vec<f64>,
-    warning: impl FnMut(&str),
+    bytes: &[u8], output: &mut [u8], global: Option<&Subroutines<'_>>, local: Option<&Subroutines<'_>>, transient: &mut [f64; 32],
+    stack: &mut Vec<f64>, warning: impl FnMut(&str),
 ) -> Result<Output, PdfError> {
     stack.clear();
     let mut parser = Parser {
@@ -430,29 +373,15 @@ mod tests {
     use super::*;
     fn expand(bytes: &[u8], capacity: usize) -> Result<Vec<u8>, PdfError> {
         let mut output = vec![0; capacity];
-        let result = copy(
-            bytes,
-            &mut output,
-            None,
-            None,
-            &mut [0.0; 32],
-            &mut Vec::new(),
-            |_| {},
-        )?;
+        let result = copy(bytes, &mut output, None, None, &mut [0.0; 32], &mut Vec::new(), |_| {})?;
         output.truncate(result.length);
         Ok(output)
     }
     #[test]
     fn expands_numbers_arithmetic_and_preserves_exact_capacity() {
-        assert_eq!(
-            expand(&[140, 141, 12, 10, 22, 14], 3).unwrap(),
-            [142, 22, 14]
-        );
+        assert_eq!(expand(&[140, 141, 12, 10, 22, 14], 3).unwrap(), [142, 22, 14]);
         assert!(expand(&[140, 141, 12, 10, 22, 14], 2).is_err());
-        assert_eq!(
-            expand(&[255, 255, 255, 128, 0, 22, 14], 7).unwrap(),
-            [255, 255, 255, 128, 0, 22, 14]
-        );
+        assert_eq!(expand(&[255, 255, 255, 128, 0, 22, 14], 7).unwrap(), [255, 255, 255, 128, 0, 22, 14]);
     }
     #[test]
     fn allows_ten_nested_subroutines_and_rejects_eleven() {
@@ -512,17 +441,6 @@ mod tests {
             offsets: &[1, 4],
             bytes: &[32, 10, 11],
         };
-        assert!(
-            copy(
-                &[32, 10],
-                &mut [0; 100],
-                None,
-                Some(&recursive),
-                &mut [0.0; 32],
-                &mut Vec::new(),
-                |_| {}
-            )
-            .is_err()
-        );
+        assert!(copy(&[32, 10], &mut [0; 100], None, Some(&recursive), &mut [0.0; 32], &mut Vec::new(), |_| {}).is_err());
     }
 }

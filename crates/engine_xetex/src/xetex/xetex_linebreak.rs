@@ -488,159 +488,103 @@ macro_rules! GLUE_SPEC_shrink {
 
 macro_rules! GLUEPAR {
     (left_skip) => {
-        (*eqtb.offset((GLUE_BASE + GLUE_PAR__left_skip) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((GLUE_BASE + GLUE_PAR__left_skip) as isize)).b32.s1
     };
     (right_skip) => {
-        (*eqtb.offset((GLUE_BASE + GLUE_PAR__right_skip) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((GLUE_BASE + GLUE_PAR__right_skip) as isize)).b32.s1
     };
 }
 
 macro_rules! LOCAL {
     (par_shape) => {
-        (*eqtb.offset((LOCAL_BASE + LOCAL__par_shape) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((LOCAL_BASE + LOCAL__par_shape) as isize)).b32.s1
     };
 }
 
 macro_rules! DIMENPAR {
     (hsize) => {
-        (*eqtb.offset((DIMEN_BASE + DIMEN_PAR__hsize) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((DIMEN_BASE + DIMEN_PAR__hsize) as isize)).b32.s1
     };
     (hang_indent) => {
-        (*eqtb.offset((DIMEN_BASE + DIMEN_PAR__hang_indent) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((DIMEN_BASE + DIMEN_PAR__hang_indent) as isize)).b32.s1
     };
     (emergency_stretch) => {
-        (*eqtb.offset((DIMEN_BASE + DIMEN_PAR__emergency_stretch) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((DIMEN_BASE + DIMEN_PAR__emergency_stretch) as isize)).b32.s1
     };
 }
 
 macro_rules! INTPAR {
     (pretolerance) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__pretolerance) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__pretolerance) as isize)).b32.s1
     };
     (tolerance) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__tolerance) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__tolerance) as isize)).b32.s1
     };
     (line_penalty) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__line_penalty) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__line_penalty) as isize)).b32.s1
     };
     (hyphen_penalty) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__hyphen_penalty) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__hyphen_penalty) as isize)).b32.s1
     };
     (ex_hyphen_penalty) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__ex_hyphen_penalty) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__ex_hyphen_penalty) as isize)).b32.s1
     };
     (club_penalty) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__club_penalty) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__club_penalty) as isize)).b32.s1
     };
     (widow_penalty) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__widow_penalty) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__widow_penalty) as isize)).b32.s1
     };
     (display_widow_penalty) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__display_widow_penalty) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__display_widow_penalty) as isize)).b32.s1
     };
     (broken_penalty) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__broken_penalty) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__broken_penalty) as isize)).b32.s1
     };
     (inter_line_penalty) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__inter_line_penalty) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__inter_line_penalty) as isize)).b32.s1
     };
     (double_hyphen_demerits) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__double_hyphen_demerits) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__double_hyphen_demerits) as isize)).b32.s1
     };
     (final_hyphen_demerits) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__final_hyphen_demerits) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__final_hyphen_demerits) as isize)).b32.s1
     };
     (adj_demerits) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__adj_demerits) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__adj_demerits) as isize)).b32.s1
     };
     (looseness) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__looseness) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__looseness) as isize)).b32.s1
     };
     (uc_hyph) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__uc_hyph) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__uc_hyph) as isize)).b32.s1
     };
     (hang_after) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__hang_after) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__hang_after) as isize)).b32.s1
     };
     (last_line_fit) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__last_line_fit) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__last_line_fit) as isize)).b32.s1
     };
     (xetex_protrude_chars) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__xetex_protrude_chars) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__xetex_protrude_chars) as isize)).b32.s1
     };
     (texxet) => {
         (*eqtb.offset((INT_BASE + INT_PAR__texxet) as isize)).b32.s1
     };
     (xetex_use_glyph_metrics) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__xetex_use_glyph_metrics) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__xetex_use_glyph_metrics) as isize)).b32.s1
     };
 }
 
 macro_rules! ETEX_PENALTIES_PAR {
     (inter_line_penalties) => {
-        (*eqtb.offset((ETEX_PEN_BASE + ETEX_PENALTIES_PAR__inter_line_penalties) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((ETEX_PEN_BASE + ETEX_PENALTIES_PAR__inter_line_penalties) as isize)).b32.s1
     };
     (club_penalties) => {
-        (*eqtb.offset((ETEX_PEN_BASE + ETEX_PENALTIES_PAR__club_penalties) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((ETEX_PEN_BASE + ETEX_PENALTIES_PAR__club_penalties) as isize)).b32.s1
     };
     (widow_penalties) => {
-        (*eqtb.offset((ETEX_PEN_BASE + ETEX_PENALTIES_PAR__widow_penalties) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((ETEX_PEN_BASE + ETEX_PENALTIES_PAR__widow_penalties) as isize)).b32.s1
     };
     (display_widow_penalties) => {
         (*eqtb.offset((ETEX_PEN_BASE + ETEX_PENALTIES_PAR__display_widow_penalties) as isize))
@@ -667,9 +611,7 @@ pub unsafe fn font_character_info(f: internal_font_number, c: i32) -> b16x4 {
 
 #[inline]
 pub unsafe fn font_charinfo_width(f: internal_font_number, info: b16x4) -> scaled_t {
-    (*font_info.offset((*width_base.offset(f as isize) + info.s3 as i32) as isize))
-        .b32
-        .s1
+    (*font_info.offset((*width_base.offset(f as isize) + info.s3 as i32) as isize)).b32.s1
 }
 
 #[inline]
@@ -791,9 +733,7 @@ unsafe extern "C" {
     pub fn new_lig_item(c: u16) -> i32;
     pub fn new_ligature(f: internal_font_number, c: u16, q: i32) -> i32;
     pub fn new_kern(w: scaled_t) -> i32;
-    pub fn error_here_with_diagnostic(
-        msg: *const std::ffi::c_char,
-    ) -> *mut tectonic_bridge_core::Diagnostic;
+    pub fn error_here_with_diagnostic(msg: *const std::ffi::c_char) -> *mut tectonic_bridge_core::Diagnostic;
     pub fn capture_to_diagnostic(diagnostic: *mut tectonic_bridge_core::Diagnostic);
     pub fn error();
     pub fn pdf_error(t: *const std::ffi::c_char, p: *const std::ffi::c_char) -> !;
@@ -852,8 +792,7 @@ static mut best_pl_glue: [scaled_t; 4] = [0; 4];
 pub unsafe extern "C" fn get_native_usv(p: i32, i: i32) -> UnicodeScalar {
     let c = *native_node_text(p).offset(i as isize) as i32;
     if (0xD800..0xDC00).contains(&c) {
-        0x10000 + (c - 0xD800) * 0x400 + *native_node_text(p).offset((i + 1) as isize) as i32
-            - 0xDC00
+        0x10000 + (c - 0xD800) * 0x400 + *native_node_text(p).offset((i + 1) as isize) as i32 - 0xDC00
     } else {
         c
     }
@@ -916,15 +855,11 @@ pub unsafe extern "C" fn line_break(d: bool) {
 
     no_shrink_error_yet = true;
 
-    if GLUE_SPEC_shrink_order!(GLUEPAR!(left_skip)) as i32 != NORMAL
-        && GLUE_SPEC_shrink!(GLUEPAR!(left_skip)) != 0
-    {
+    if GLUE_SPEC_shrink_order!(GLUEPAR!(left_skip)) as i32 != NORMAL && GLUE_SPEC_shrink!(GLUEPAR!(left_skip)) != 0 {
         GLUEPAR!(left_skip) = finite_shrink(GLUEPAR!(left_skip));
     }
 
-    if GLUE_SPEC_shrink_order!(GLUEPAR!(right_skip)) as i32 != NORMAL
-        && GLUE_SPEC_shrink!(GLUEPAR!(right_skip)) != 0
-    {
+    if GLUE_SPEC_shrink_order!(GLUEPAR!(right_skip)) as i32 != NORMAL && GLUE_SPEC_shrink!(GLUEPAR!(right_skip)) != 0 {
         GLUEPAR!(right_skip) = finite_shrink(GLUEPAR!(right_skip));
     }
 
@@ -996,12 +931,8 @@ pub unsafe extern "C" fn line_break(d: bool) {
         }
     } else {
         last_special_line = LLIST_info!(LOCAL!(par_shape)) - 1;
-        second_width = (*mem.offset((LOCAL!(par_shape) + 2 * (last_special_line + 1)) as isize))
-            .b32
-            .s1;
-        second_indent = (*mem.offset((LOCAL!(par_shape) + 2 * last_special_line + 1) as isize))
-            .b32
-            .s1;
+        second_width = (*mem.offset((LOCAL!(par_shape) + 2 * (last_special_line + 1)) as isize)).b32.s1;
+        second_indent = (*mem.offset((LOCAL!(par_shape) + 2 * last_special_line + 1) as isize)).b32.s1;
     }
 
     if INTPAR!(looseness) == 0 {
@@ -1099,9 +1030,7 @@ pub unsafe extern "C" fn line_break(d: bool) {
                         l_hyf = LANGUAGE_NODE_what_lhm!(cur_p) as i32;
                         r_hyf = LANGUAGE_NODE_what_rhm!(cur_p) as i32;
 
-                        if *trie_trc.offset((hyph_start + cur_lang as i32) as isize) as u32
-                            != cur_lang as u32
-                        {
+                        if *trie_trc.offset((hyph_start + cur_lang as i32) as isize) as u32 != cur_lang as u32 {
                             hyph_index = 0;
                         } else {
                             hyph_index = *trie_trl.offset((hyph_start + cur_lang as i32) as isize);
@@ -1120,9 +1049,7 @@ pub unsafe extern "C" fn line_break(d: bool) {
                             try_break(0, UNHYPHENATED as small_number);
                         } else if is_non_discardable_node(prev_p) {
                             try_break(0, UNHYPHENATED as small_number);
-                        } else if NODE_type!(prev_p) as i32 == KERN_NODE
-                            && NODE_subtype!(prev_p) as i32 != EXPLICIT
-                        {
+                        } else if NODE_type!(prev_p) as i32 == KERN_NODE && NODE_subtype!(prev_p) as i32 != EXPLICIT {
                             try_break(0, UNHYPHENATED as small_number);
                         }
                     }
@@ -1161,22 +1088,16 @@ pub unsafe extern "C" fn line_break(d: bool) {
                                     q = LIGATURE_NODE_lig_ptr!(s);
                                     c = CHAR_NODE_character!(q) as i32;
                                     hf = CHAR_NODE_font!(q) as i32;
-                                } else if NODE_type!(s) as i32 == KERN_NODE
-                                    && NODE_subtype!(s) as i32 == NORMAL
-                                {
+                                } else if NODE_type!(s) as i32 == KERN_NODE && NODE_subtype!(s) as i32 == NORMAL {
                                     prev_s = s;
                                     s = LLIST_link!(prev_s);
                                     continue;
-                                } else if NODE_type!(s) as i32 == MATH_NODE
-                                    && NODE_subtype!(s) as i32 >= L_CODE
-                                {
+                                } else if NODE_type!(s) as i32 == MATH_NODE && NODE_subtype!(s) as i32 >= L_CODE {
                                     prev_s = s;
                                     s = LLIST_link!(prev_s);
                                     continue;
                                 } else if NODE_type!(s) as i32 == WHATSIT_NODE {
-                                    if NODE_subtype!(s) as i32 == NATIVE_WORD_NODE
-                                        || NODE_subtype!(s) as i32 == NATIVE_WORD_NODE_AT
-                                    {
+                                    if NODE_subtype!(s) as i32 == NATIVE_WORD_NODE || NODE_subtype!(s) as i32 == NATIVE_WORD_NODE_AT {
                                         let mut l_idx = 0;
                                         while l_idx < NATIVE_NODE_length!(s) as i32 {
                                             c = get_native_usv(s, l_idx);
@@ -1202,14 +1123,10 @@ pub unsafe extern "C" fn line_break(d: bool) {
                                         l_hyf = LANGUAGE_NODE_what_lhm!(s) as i32;
                                         r_hyf = LANGUAGE_NODE_what_rhm!(s) as i32;
 
-                                        if *trie_trc.offset((hyph_start + cur_lang as i32) as isize)
-                                            as u32
-                                            != cur_lang as u32
-                                        {
+                                        if *trie_trc.offset((hyph_start + cur_lang as i32) as isize) as u32 != cur_lang as u32 {
                                             hyph_index = 0;
                                         } else {
-                                            hyph_index = *trie_trl
-                                                .offset((hyph_start + cur_lang as i32) as isize);
+                                            hyph_index = *trie_trl.offset((hyph_start + cur_lang as i32) as isize);
                                         }
                                     }
 
@@ -1254,8 +1171,7 @@ pub unsafe extern "C" fn line_break(d: bool) {
                             if ha != TEX_NULL
                                 && ha < hi_mem_min
                                 && NODE_type!(ha) as i32 == WHATSIT_NODE
-                                && (NODE_subtype!(ha) as i32 == NATIVE_WORD_NODE
-                                    || NODE_subtype!(ha) as i32 == NATIVE_WORD_NODE_AT)
+                                && (NODE_subtype!(ha) as i32 == NATIVE_WORD_NODE || NODE_subtype!(ha) as i32 == NATIVE_WORD_NODE_AT)
                             {
                                 s = LLIST_link!(ha);
 
@@ -1268,8 +1184,7 @@ pub unsafe extern "C" fn line_break(d: bool) {
                                                     break 'chk_after;
                                                 }
                                             }
-                                            WHATSIT_NODE | GLUE_NODE | PENALTY_NODE | INS_NODE
-                                            | ADJUST_NODE | MARK_NODE => {
+                                            WHATSIT_NODE | GLUE_NODE | PENALTY_NODE | INS_NODE | ADJUST_NODE | MARK_NODE => {
                                                 break 'chk_after;
                                             }
                                             _ => {
@@ -1291,67 +1206,42 @@ pub unsafe extern "C" fn line_break(d: bool) {
 
                                         if hyph_index == 0 || c > 255 {
                                             hc[0] = LC_CODE!(c);
-                                        } else if *trie_trc.offset((hyph_index + c) as isize) as i32
-                                            != c
-                                        {
+                                        } else if *trie_trc.offset((hyph_index + c) as isize) as i32 != c {
                                             hc[0] = 0;
                                         } else {
-                                            hc[0] =
-                                                *trie_tro.offset((hyph_index + c) as isize) as i32;
+                                            hc[0] = *trie_tro.offset((hyph_index + c) as isize) as i32;
                                         }
 
                                         if hc[0] == 0 {
                                             if hn > 0 {
-                                                q = new_native_word_node(
-                                                    hf,
-                                                    NATIVE_NODE_length!(ha) as i32 - l_idx,
-                                                );
+                                                q = new_native_word_node(hf, NATIVE_NODE_length!(ha) as i32 - l_idx);
                                                 NODE_subtype!(q) = NODE_subtype!(ha);
 
                                                 for i_idx in l_idx..NATIVE_NODE_length!(ha) as i32 {
-                                                    *native_node_text(q)
-                                                        .offset((i_idx - l_idx) as isize) =
-                                                        *native_node_text(ha)
-                                                            .offset(i_idx as isize);
+                                                    *native_node_text(q).offset((i_idx - l_idx) as isize) =
+                                                        *native_node_text(ha).offset(i_idx as isize);
                                                 }
 
-                                                set_native_metrics(
-                                                    q,
-                                                    INTPAR!(xetex_use_glyph_metrics) > 0,
-                                                );
+                                                set_native_metrics(q, INTPAR!(xetex_use_glyph_metrics) > 0);
                                                 LLIST_link!(q) = LLIST_link!(ha);
                                                 LLIST_link!(ha) = q;
                                                 NATIVE_NODE_length!(ha) = l_idx as u16;
-                                                set_native_metrics(
-                                                    ha,
-                                                    INTPAR!(xetex_use_glyph_metrics) > 0,
-                                                );
+                                                set_native_metrics(ha, INTPAR!(xetex_use_glyph_metrics) > 0);
                                                 break 'restart;
                                             }
                                         } else if hn == 0 && l_idx > 0 {
-                                            q = new_native_word_node(
-                                                hf,
-                                                NATIVE_NODE_length!(ha) as i32 - l_idx,
-                                            );
+                                            q = new_native_word_node(hf, NATIVE_NODE_length!(ha) as i32 - l_idx);
                                             NODE_subtype!(q) = NODE_subtype!(ha);
 
                                             for i_idx in l_idx..NATIVE_NODE_length!(ha) as i32 {
-                                                *native_node_text(q)
-                                                    .offset((i_idx - l_idx) as isize) =
-                                                    *native_node_text(ha).offset(i_idx as isize);
+                                                *native_node_text(q).offset((i_idx - l_idx) as isize) = *native_node_text(ha).offset(i_idx as isize);
                                             }
 
-                                            set_native_metrics(
-                                                q,
-                                                INTPAR!(xetex_use_glyph_metrics) > 0,
-                                            );
+                                            set_native_metrics(q, INTPAR!(xetex_use_glyph_metrics) > 0);
                                             LLIST_link!(q) = LLIST_link!(ha);
                                             LLIST_link!(ha) = q;
                                             NATIVE_NODE_length!(ha) = l_idx as u16;
-                                            set_native_metrics(
-                                                ha,
-                                                INTPAR!(xetex_use_glyph_metrics) > 0,
-                                            );
+                                            set_native_metrics(ha, INTPAR!(xetex_use_glyph_metrics) > 0);
                                             ha = LLIST_link!(ha);
                                             continue 'restart;
                                         } else if hn as i32 == max_hyphenatable_length() {
@@ -1392,19 +1282,13 @@ pub unsafe extern "C" fn line_break(d: bool) {
 
                                         if hyph_index == 0 || c > 255 {
                                             hc[0] = LC_CODE!(c);
-                                        } else if *trie_trc.offset((hyph_index + c) as isize) as i32
-                                            != c
-                                        {
+                                        } else if *trie_trc.offset((hyph_index + c) as isize) as i32 != c {
                                             hc[0] = 0;
                                         } else {
-                                            hc[0] =
-                                                *trie_tro.offset((hyph_index + c) as isize) as i32;
+                                            hc[0] = *trie_tro.offset((hyph_index + c) as isize) as i32;
                                         }
 
-                                        if hc[0] == 0
-                                            || hc[0] > max_hyph_char
-                                            || hn as i32 == max_hyphenatable_length()
-                                        {
+                                        if hc[0] == 0 || hc[0] > max_hyph_char || hn as i32 == max_hyphenatable_length() {
                                             break 'skip_hb;
                                         }
 
@@ -1430,20 +1314,13 @@ pub unsafe extern "C" fn line_break(d: bool) {
 
                                             if hyph_index == 0 || c > 255 {
                                                 hc[0] = LC_CODE!(c);
-                                            } else if *trie_trc.offset((hyph_index + c) as isize)
-                                                as i32
-                                                != c
-                                            {
+                                            } else if *trie_trc.offset((hyph_index + c) as isize) as i32 != c {
                                                 hc[0] = 0;
                                             } else {
-                                                hc[0] = *trie_tro.offset((hyph_index + c) as isize)
-                                                    as i32;
+                                                hc[0] = *trie_tro.offset((hyph_index + c) as isize) as i32;
                                             }
 
-                                            if hc[0] == 0
-                                                || hc[0] > max_hyph_char
-                                                || j as i32 == max_hyphenatable_length()
-                                            {
+                                            if hc[0] == 0 || hc[0] > max_hyph_char || j as i32 == max_hyphenatable_length() {
                                                 break 'skip_hb;
                                             }
 
@@ -1461,9 +1338,7 @@ pub unsafe extern "C" fn line_break(d: bool) {
                                         } else {
                                             hyf_bchar = TOO_BIG_CHAR;
                                         }
-                                    } else if NODE_type!(s) as i32 == KERN_NODE
-                                        && NODE_subtype!(s) as i32 == NORMAL
-                                    {
+                                    } else if NODE_type!(s) as i32 == KERN_NODE && NODE_subtype!(s) as i32 == NORMAL {
                                         hb = s;
                                         hyf_bchar = *font_bchar.offset(hf as isize) as i32;
                                     } else {
@@ -1487,8 +1362,7 @@ pub unsafe extern "C" fn line_break(d: bool) {
                                                 break;
                                             }
                                         }
-                                        WHATSIT_NODE | GLUE_NODE | PENALTY_NODE | INS_NODE
-                                        | ADJUST_NODE | MARK_NODE => {
+                                        WHATSIT_NODE | GLUE_NODE | PENALTY_NODE | INS_NODE | ADJUST_NODE | MARK_NODE => {
                                             break;
                                         }
                                         MATH_NODE => {
@@ -1528,10 +1402,7 @@ pub unsafe extern "C" fn line_break(d: bool) {
                 LIGATURE_NODE => {
                     f = LIGATURE_NODE_lig_font!(cur_p) as i32;
                     xtx_ligature_present = true;
-                    active_width[1] += font_character_width(
-                        f,
-                        effective_char(true, f, LIGATURE_NODE_lig_char!(cur_p) as u16),
-                    );
+                    active_width[1] += font_character_width(f, effective_char(true, f, LIGATURE_NODE_lig_char!(cur_p) as u16));
                 }
 
                 DISC_NODE => {
@@ -1544,19 +1415,14 @@ pub unsafe extern "C" fn line_break(d: bool) {
                         loop {
                             if is_char_node(s) {
                                 f = CHAR_NODE_font!(s) as i32;
-                                let eff_char =
-                                    effective_char(true, f, CHAR_NODE_character!(s) as u16);
+                                let eff_char = effective_char(true, f, CHAR_NODE_character!(s) as u16);
                                 disc_width += font_character_width(f, eff_char);
                             } else {
                                 match NODE_type!(s) as i32 {
                                     LIGATURE_NODE => {
                                         f = LIGATURE_NODE_lig_font!(s) as i32;
                                         xtx_ligature_present = true;
-                                        let eff_char = effective_char(
-                                            true,
-                                            f,
-                                            LIGATURE_NODE_lig_char!(s) as u16,
-                                        );
+                                        let eff_char = effective_char(true, f, LIGATURE_NODE_lig_char!(s) as u16);
                                         disc_width += font_character_width(f, eff_char);
                                     }
 
@@ -1567,11 +1433,7 @@ pub unsafe extern "C" fn line_break(d: bool) {
                                     WHATSIT_NODE => {
                                         if matches!(
                                             NODE_subtype!(s) as i32,
-                                            NATIVE_WORD_NODE
-                                                | NATIVE_WORD_NODE_AT
-                                                | GLYPH_NODE
-                                                | PIC_NODE
-                                                | PDF_NODE
+                                            NATIVE_WORD_NODE | NATIVE_WORD_NODE_AT | GLYPH_NODE | PIC_NODE | PDF_NODE
                                         ) {
                                             disc_width += BOX_width!(s);
                                         } else {
@@ -1609,8 +1471,7 @@ pub unsafe extern "C" fn line_break(d: bool) {
                                 LIGATURE_NODE => {
                                     f = LIGATURE_NODE_lig_font!(s) as i32;
                                     xtx_ligature_present = true;
-                                    let eff_char =
-                                        effective_char(true, f, LIGATURE_NODE_lig_char!(s) as u16);
+                                    let eff_char = effective_char(true, f, LIGATURE_NODE_lig_char!(s) as u16);
                                     active_width[1] += font_character_width(f, eff_char);
                                 }
 
@@ -1621,11 +1482,7 @@ pub unsafe extern "C" fn line_break(d: bool) {
                                 WHATSIT_NODE => {
                                     if matches!(
                                         NODE_subtype!(s) as i32,
-                                        NATIVE_WORD_NODE
-                                            | NATIVE_WORD_NODE_AT
-                                            | GLYPH_NODE
-                                            | PIC_NODE
-                                            | PDF_NODE
+                                        NATIVE_WORD_NODE | NATIVE_WORD_NODE_AT | GLYPH_NODE | PIC_NODE | PDF_NODE
                                     ) {
                                         active_width[1] += BOX_width!(s);
                                     } else {
@@ -1719,9 +1576,7 @@ pub unsafe extern "C" fn line_break(d: bool) {
                             best_bet = r;
                             actual_looseness = line_diff;
                             fewest_demerits = ACTIVE_NODE_total_demerits!(r);
-                        } else if line_diff == actual_looseness
-                            && ACTIVE_NODE_total_demerits!(r) < fewest_demerits
-                        {
+                        } else if line_diff == actual_looseness && ACTIVE_NODE_total_demerits!(r) < fewest_demerits {
                             best_bet = r;
                             fewest_demerits = ACTIVE_NODE_total_demerits!(r);
                         }
@@ -1868,10 +1723,7 @@ unsafe fn post_line_break(d: bool) {
                 r = q;
 
                 loop {
-                    s = new_math(
-                        0,
-                        ((*mem.offset(temp_ptr as isize)).b32.s0 - 1) as small_number,
-                    );
+                    s = new_math(0, ((*mem.offset(temp_ptr as isize)).b32.s0 - 1) as small_number);
                     (*mem.offset(s as isize)).b32.s1 = r;
                     r = s;
                     temp_ptr = LLIST_link!(temp_ptr);
@@ -1887,8 +1739,7 @@ unsafe fn post_line_break(d: bool) {
                 if q < hi_mem_min && (NODE_type!(q) as i32) == MATH_NODE {
                     if odd((*mem.offset(q as isize)).b16.s0 as i32) {
                         if LR_ptr != TEX_NULL
-                            && (*mem.offset(LR_ptr as isize)).b32.s0
-                                == (L_CODE * ((*mem.offset(q as isize)).b16.s0 as i32 / L_CODE) + 3)
+                            && (*mem.offset(LR_ptr as isize)).b32.s0 == (L_CODE * ((*mem.offset(q as isize)).b16.s0 as i32 / L_CODE) + 3)
                         {
                             temp_ptr = LR_ptr;
                             LR_ptr = (*mem.offset(temp_ptr as isize)).b32.s1;
@@ -1897,8 +1748,7 @@ unsafe fn post_line_break(d: bool) {
                         }
                     } else {
                         temp_ptr = get_avail();
-                        (*mem.offset(temp_ptr as isize)).b32.s0 =
-                            L_CODE * ((*mem.offset(q as isize)).b16.s0 as i32 / L_CODE) + 3;
+                        (*mem.offset(temp_ptr as isize)).b32.s0 = L_CODE * ((*mem.offset(q as isize)).b16.s0 as i32 / L_CODE) + 3;
                         (*mem.offset(temp_ptr as isize)).b32.s1 = LR_ptr;
                         LR_ptr = temp_ptr;
                     }
@@ -1981,8 +1831,7 @@ unsafe fn post_line_break(d: bool) {
             if INTPAR!(texxet) > 0 {
                 if odd((*mem.offset(q as isize)).b16.s0 as i32) {
                     if LR_ptr != TEX_NULL
-                        && (*mem.offset(LR_ptr as isize)).b32.s0
-                            == (L_CODE * ((*mem.offset(q as isize)).b16.s0 as i32 / L_CODE) + 3)
+                        && (*mem.offset(LR_ptr as isize)).b32.s0 == (L_CODE * ((*mem.offset(q as isize)).b16.s0 as i32 / L_CODE) + 3)
                     {
                         temp_ptr = LR_ptr;
                         LR_ptr = (*mem.offset(temp_ptr as isize)).b32.s1;
@@ -1991,8 +1840,7 @@ unsafe fn post_line_break(d: bool) {
                     }
                 } else {
                     temp_ptr = get_avail();
-                    (*mem.offset(temp_ptr as isize)).b32.s0 =
-                        L_CODE * ((*mem.offset(q as isize)).b16.s0 as i32 / L_CODE) + 3;
+                    (*mem.offset(temp_ptr as isize)).b32.s0 = L_CODE * ((*mem.offset(q as isize)).b16.s0 as i32 / L_CODE) + 3;
                     (*mem.offset(temp_ptr as isize)).b32.s1 = LR_ptr;
                     LR_ptr = temp_ptr;
                 }
@@ -2081,12 +1929,8 @@ unsafe fn post_line_break(d: bool) {
             cur_width = first_width;
             cur_indent = first_indent;
         } else {
-            cur_width = (*mem.offset((LOCAL!(par_shape) + 2 * cur_line) as isize))
-                .b32
-                .s1;
-            cur_indent = (*mem.offset((LOCAL!(par_shape) + 2 * cur_line - 1) as isize))
-                .b32
-                .s1;
+            cur_width = (*mem.offset((LOCAL!(par_shape) + 2 * cur_line) as isize)).b32.s1;
+            cur_indent = (*mem.offset((LOCAL!(par_shape) + 2 * cur_line - 1) as isize)).b32.s1;
         }
 
         pen = 0;
@@ -2167,10 +2011,7 @@ unsafe fn post_line_break(d: bool) {
                     if is_non_discardable_node(q) {
                         break;
                     }
-                    if (NODE_type!(q) as i32) == KERN_NODE
-                        && NODE_subtype!(q) as i32 != EXPLICIT
-                        && NODE_subtype!(q) as i32 != SPACE_ADJUSTMENT
-                    {
+                    if (NODE_type!(q) as i32) == KERN_NODE && NODE_subtype!(q) as i32 != EXPLICIT && NODE_subtype!(q) as i32 != SPACE_ADJUSTMENT {
                         break;
                     }
 
@@ -2179,9 +2020,7 @@ unsafe fn post_line_break(d: bool) {
                     if (NODE_type!(q) as i32) == MATH_NODE && INTPAR!(texxet) > 0 {
                         if odd((*mem.offset(q as isize)).b16.s0 as i32) {
                             if LR_ptr != TEX_NULL
-                                && (*mem.offset(LR_ptr as isize)).b32.s0
-                                    == (L_CODE * ((*mem.offset(q as isize)).b16.s0 as i32 / L_CODE)
-                                        + 3)
+                                && (*mem.offset(LR_ptr as isize)).b32.s0 == (L_CODE * ((*mem.offset(q as isize)).b16.s0 as i32 / L_CODE) + 3)
                             {
                                 temp_ptr = LR_ptr;
                                 LR_ptr = (*mem.offset(temp_ptr as isize)).b32.s1;
@@ -2190,8 +2029,7 @@ unsafe fn post_line_break(d: bool) {
                             }
                         } else {
                             temp_ptr = get_avail();
-                            (*mem.offset(temp_ptr as isize)).b32.s0 =
-                                L_CODE * ((*mem.offset(q as isize)).b16.s0 as i32 / L_CODE) + 3;
+                            (*mem.offset(temp_ptr as isize)).b32.s0 = L_CODE * ((*mem.offset(q as isize)).b16.s0 as i32 / L_CODE) + 3;
                             (*mem.offset(temp_ptr as isize)).b32.s1 = LR_ptr;
                             LR_ptr = temp_ptr;
                         }
@@ -2335,19 +2173,14 @@ unsafe fn try_break(mut pi: i32, break_type: small_number) {
 
                                 if is_char_node(v) {
                                     f = CHAR_NODE_font!(v) as i32;
-                                    let eff_char =
-                                        effective_char(true, f, CHAR_NODE_character!(v) as u16);
+                                    let eff_char = effective_char(true, f, CHAR_NODE_character!(v) as u16);
                                     break_width[1] -= font_character_width(f, eff_char);
                                 } else {
                                     match NODE_type!(v) as i32 {
                                         LIGATURE_NODE => {
                                             f = LIGATURE_NODE_lig_font!(v) as i32;
                                             xtx_ligature_present = true;
-                                            let eff_char = effective_char(
-                                                true,
-                                                f,
-                                                LIGATURE_NODE_lig_char!(v) as u16,
-                                            );
+                                            let eff_char = effective_char(true, f, LIGATURE_NODE_lig_char!(v) as u16);
                                             break_width[1] -= font_character_width(f, eff_char);
                                         }
 
@@ -2358,11 +2191,7 @@ unsafe fn try_break(mut pi: i32, break_type: small_number) {
                                         WHATSIT_NODE => {
                                             if matches!(
                                                 NODE_subtype!(v) as i32,
-                                                NATIVE_WORD_NODE
-                                                    | NATIVE_WORD_NODE_AT
-                                                    | GLYPH_NODE
-                                                    | PIC_NODE
-                                                    | PDF_NODE
+                                                NATIVE_WORD_NODE | NATIVE_WORD_NODE_AT | GLYPH_NODE | PIC_NODE | PDF_NODE
                                             ) {
                                                 break_width[1] -= BOX_width!(v);
                                             } else {
@@ -2380,19 +2209,14 @@ unsafe fn try_break(mut pi: i32, break_type: small_number) {
                             while s != TEX_NULL {
                                 if is_char_node(s) {
                                     f = CHAR_NODE_font!(s) as i32;
-                                    let eff_char =
-                                        effective_char(true, f, CHAR_NODE_character!(s) as u16);
+                                    let eff_char = effective_char(true, f, CHAR_NODE_character!(s) as u16);
                                     break_width[1] += font_character_width(f, eff_char);
                                 } else {
                                     match (*mem.offset(s as isize)).b16.s1 as i32 {
                                         LIGATURE_NODE => {
                                             f = LIGATURE_NODE_lig_font!(s) as i32;
                                             xtx_ligature_present = true;
-                                            let eff_char = effective_char(
-                                                true,
-                                                f,
-                                                LIGATURE_NODE_lig_char!(s) as u16,
-                                            );
+                                            let eff_char = effective_char(true, f, LIGATURE_NODE_lig_char!(s) as u16);
                                             break_width[1] += font_character_width(f, eff_char);
                                         }
 
@@ -2403,11 +2227,7 @@ unsafe fn try_break(mut pi: i32, break_type: small_number) {
                                         WHATSIT_NODE => {
                                             if matches!(
                                                 NODE_subtype!(s) as i32,
-                                                NATIVE_WORD_NODE
-                                                    | NATIVE_WORD_NODE_AT
-                                                    | GLYPH_NODE
-                                                    | PIC_NODE
-                                                    | PDF_NODE
+                                                NATIVE_WORD_NODE | NATIVE_WORD_NODE_AT | GLYPH_NODE | PIC_NODE | PDF_NODE
                                             ) {
                                                 break_width[1] += BOX_width!(s);
                                             } else {
@@ -2440,8 +2260,7 @@ unsafe fn try_break(mut pi: i32, break_type: small_number) {
                             GLUE_NODE => {
                                 v = GLUE_NODE_glue_ptr!(s);
                                 break_width[1] -= BOX_width!(v);
-                                break_width[2 + GLUE_SPEC_stretch_order!(v) as usize] -=
-                                    GLUE_SPEC_stretch!(v);
+                                break_width[2 + GLUE_SPEC_stretch_order!(v) as usize] -= GLUE_SPEC_stretch!(v);
                                 break_width[6] -= GLUE_SPEC_shrink!(v);
                             }
 
@@ -2594,10 +2413,7 @@ unsafe fn try_break(mut pi: i32, break_type: small_number) {
                                 break 'not_found;
                             }
 
-                            if cur_active_width[3] != fill_width[0]
-                                || cur_active_width[4] != fill_width[1]
-                                || cur_active_width[5] != fill_width[2]
-                            {
+                            if cur_active_width[3] != fill_width[0] || cur_active_width[4] != fill_width[1] || cur_active_width[5] != fill_width[2] {
                                 break 'not_found;
                             }
 
@@ -2612,12 +2428,7 @@ unsafe fn try_break(mut pi: i32, break_type: small_number) {
                             }
 
                             arith_error = false;
-                            g = fract(
-                                g,
-                                ACTIVE_NODE_shortfall!(r),
-                                ACTIVE_NODE_glue!(r),
-                                MAX_HALFWORD,
-                            );
+                            g = fract(g, ACTIVE_NODE_shortfall!(r), ACTIVE_NODE_glue!(r), MAX_HALFWORD);
                             if INTPAR!(last_line_fit) < 1000 {
                                 g = fract(g, INTPAR!(last_line_fit), 1000, MAX_HALFWORD);
                             }
@@ -2735,11 +2546,7 @@ unsafe fn try_break(mut pi: i32, break_type: small_number) {
         let should_deactivate: bool;
 
         if b > INF_BAD || pi == EJECT_PENALTY {
-            if final_pass
-                && minimum_demerits == AWFUL_BAD
-                && LLIST_link!(r) == LAST_ACTIVE
-                && prev_r == ACTIVE_LIST
-            {
+            if final_pass && minimum_demerits == AWFUL_BAD && LLIST_link!(r) == LAST_ACTIVE && prev_r == ACTIVE_LIST {
                 artificial_demerits = true;
                 node_r_stays_active = false;
                 should_deactivate = false;
@@ -3016,8 +2823,7 @@ unsafe fn hyphenate_found() {
     if ha != TEX_NULL
         && !is_char_node(ha)
         && (NODE_type!(ha) as i32) == WHATSIT_NODE
-        && ((*mem.offset(ha as isize)).b16.s0 as i32 == NATIVE_WORD_NODE
-            || (*mem.offset(ha as isize)).b16.s0 as i32 == NATIVE_WORD_NODE_AT)
+        && ((*mem.offset(ha as isize)).b16.s0 as i32 == NATIVE_WORD_NODE || (*mem.offset(ha as isize)).b16.s0 as i32 == NATIVE_WORD_NODE_AT)
     {
         s = cur_p;
         while (*mem.offset(s as isize)).b32.s1 != ha {
@@ -3031,8 +2837,7 @@ unsafe fn hyphenate_found() {
                 (*mem.offset(q as isize)).b16.s0 = (*mem.offset(ha as isize)).b16.s0;
 
                 for idx in 0..(j_val - hyphen_passed as i32) {
-                    *native_node_text(q).offset(idx as isize) =
-                        *native_node_text(ha).offset((idx + hyphen_passed as i32) as isize);
+                    *native_node_text(q).offset(idx as isize) = *native_node_text(ha).offset((idx + hyphen_passed as i32) as isize);
                 }
 
                 set_native_metrics(q, INTPAR!(xetex_use_glyph_metrics) > 0);
@@ -3051,8 +2856,7 @@ unsafe fn hyphenate_found() {
         (*mem.offset(q as isize)).b16.s0 = (*mem.offset(ha as isize)).b16.s0;
 
         for idx in 0..(hn as i32 - hyphen_passed as i32) {
-            *native_node_text(q).offset(idx as isize) =
-                *native_node_text(ha).offset((idx + hyphen_passed as i32) as isize);
+            *native_node_text(q).offset(idx as isize) = *native_node_text(ha).offset((idx + hyphen_passed as i32) as isize);
         }
 
         set_native_metrics(q, INTPAR!(xetex_use_glyph_metrics) > 0);
@@ -3108,10 +2912,7 @@ unsafe fn hyphenate_found() {
                     free_node(ha, SMALL_NODE_SIZE);
                 }
             } else {
-                if !is_char_node(r)
-                    && (NODE_type!(r) as i32) == LIGATURE_NODE
-                    && (*mem.offset(r as isize)).b16.s0 > 1
-                {
+                if !is_char_node(r) && (NODE_type!(r) as i32) == LIGATURE_NODE && (*mem.offset(r as isize)).b16.s0 > 1 {
                     // found2:
                     s = ha;
                     j = 0;
@@ -3182,20 +2983,13 @@ unsafe fn hyphenate_found() {
                     }
 
                     while l <= i {
-                        l = reconstitute(
-                            l,
-                            i,
-                            *font_bchar.offset(hf as isize) as i32,
-                            TOO_BIG_CHAR,
-                        ) + 1;
+                        l = reconstitute(l, i, *font_bchar.offset(hf as isize) as i32, TOO_BIG_CHAR) + 1;
 
                         if (*mem.offset(HOLD_HEAD as isize)).b32.s1 > TEX_NULL {
                             if minor_tail == TEX_NULL {
-                                (*mem.offset((r + 1) as isize)).b32.s0 =
-                                    (*mem.offset(HOLD_HEAD as isize)).b32.s1;
+                                (*mem.offset((r + 1) as isize)).b32.s0 = (*mem.offset(HOLD_HEAD as isize)).b32.s1;
                             } else {
-                                (*mem.offset(minor_tail as isize)).b32.s1 =
-                                    (*mem.offset(HOLD_HEAD as isize)).b32.s1;
+                                (*mem.offset(minor_tail as isize)).b32.s1 = (*mem.offset(HOLD_HEAD as isize)).b32.s1;
                             }
 
                             minor_tail = (*mem.offset(HOLD_HEAD as isize)).b32.s1;
@@ -3233,11 +3027,9 @@ unsafe fn hyphenate_found() {
 
                             if (*mem.offset(HOLD_HEAD as isize)).b32.s1 > TEX_NULL {
                                 if minor_tail == TEX_NULL {
-                                    (*mem.offset((r + 1) as isize)).b32.s1 =
-                                        (*mem.offset(HOLD_HEAD as isize)).b32.s1;
+                                    (*mem.offset((r + 1) as isize)).b32.s1 = (*mem.offset(HOLD_HEAD as isize)).b32.s1;
                                 } else {
-                                    (*mem.offset(minor_tail as isize)).b32.s1 =
-                                        (*mem.offset(HOLD_HEAD as isize)).b32.s1;
+                                    (*mem.offset(minor_tail as isize)).b32.s1 = (*mem.offset(HOLD_HEAD as isize)).b32.s1;
                                 }
 
                                 minor_tail = (*mem.offset(HOLD_HEAD as isize)).b32.s1;
@@ -3253,8 +3045,7 @@ unsafe fn hyphenate_found() {
 
                         while l > j {
                             j = reconstitute(j, hn, bchar, TOO_BIG_CHAR) + 1;
-                            (*mem.offset(major_tail as isize)).b32.s1 =
-                                (*mem.offset(HOLD_HEAD as isize)).b32.s1;
+                            (*mem.offset(major_tail as isize)).b32.s1 = (*mem.offset(HOLD_HEAD as isize)).b32.s1;
 
                             while (*mem.offset(major_tail as isize)).b32.s1 > TEX_NULL {
                                 major_tail = LLIST_link!(major_tail);
@@ -3314,12 +3105,7 @@ unsafe fn finite_shrink(p: i32) -> i32 {
     q
 }
 
-unsafe fn reconstitute(
-    mut j: small_number,
-    n: small_number,
-    mut bchar: i32,
-    mut hchar: i32,
-) -> small_number {
+unsafe fn reconstitute(mut j: small_number, n: small_number, mut bchar: i32, mut hchar: i32) -> small_number {
     let mut p: i32;
     let mut t: i32;
     let mut q: b16x4;
@@ -3388,11 +3174,7 @@ unsafe fn reconstitute(
                 q = (*font_info.offset(k as isize)).b16;
 
                 if q.s3 > 128 {
-                    k = *lig_kern_base.offset(hf as isize)
-                        + 256 * q.s1 as i32
-                        + q.s0 as i32
-                        + 32768
-                        - 256 * 128;
+                    k = *lig_kern_base.offset(hf as isize) + 256 * q.s1 as i32 + q.s0 as i32 + 32768 - 256 * 128;
                     q = (*font_info.offset(k as isize)).b16;
                 }
             }
@@ -3446,8 +3228,7 @@ unsafe fn reconstitute(
                                             } else {
                                                 p = get_avail();
                                                 (*mem.offset((lig_stack + 1) as isize)).b32.s1 = p;
-                                                (*mem.offset(p as isize)).b16.s0 =
-                                                    hu[(j + 1) as usize] as u16;
+                                                (*mem.offset(p as isize)).b16.s0 = hu[(j + 1) as usize] as u16;
                                                 (*mem.offset(p as isize)).b16.s1 = hf as u16;
                                             }
                                         }
@@ -3462,11 +3243,7 @@ unsafe fn reconstitute(
 
                                     7 | 11 => {
                                         if ligature_present {
-                                            p = new_ligature(
-                                                hf,
-                                                cur_l as u16,
-                                                (*mem.offset(cur_q as isize)).b32.s1,
-                                            );
+                                            p = new_ligature(hf, cur_l as u16, (*mem.offset(cur_q as isize)).b32.s1);
                                             if lft_hit {
                                                 (*mem.offset(p as isize)).b16.s0 = 2;
                                                 lft_hit = false;
@@ -3485,11 +3262,8 @@ unsafe fn reconstitute(
                                         ligature_present = true;
 
                                         if lig_stack > TEX_NULL {
-                                            if (*mem.offset((lig_stack + 1) as isize)).b32.s1
-                                                > TEX_NULL
-                                            {
-                                                (*mem.offset(t as isize)).b32.s1 =
-                                                    (*mem.offset((lig_stack + 1) as isize)).b32.s1;
+                                            if (*mem.offset((lig_stack + 1) as isize)).b32.s1 > TEX_NULL {
+                                                (*mem.offset(t as isize)).b32.s1 = (*mem.offset((lig_stack + 1) as isize)).b32.s1;
                                                 t = LLIST_link!(t);
                                                 j += 1;
                                             }
@@ -3511,8 +3285,7 @@ unsafe fn reconstitute(
                                                     cur_rh = TOO_BIG_CHAR;
                                                 }
                                             } else {
-                                                cur_r =
-                                                    (*mem.offset(lig_stack as isize)).b16.s0 as i32;
+                                                cur_r = (*mem.offset(lig_stack as isize)).b16.s0 as i32;
                                             }
                                         } else if j == n {
                                             break 'inner;
@@ -3547,12 +3320,9 @@ unsafe fn reconstitute(
                                 continue 'continue_loop;
                             }
 
-                            w = (*font_info.offset(
-                                (*kern_base.offset(hf as isize) + 256 * q.s1 as i32 + q.s0 as i32)
-                                    as isize,
-                            ))
-                            .b32
-                            .s1;
+                            w = (*font_info.offset((*kern_base.offset(hf as isize) + 256 * q.s1 as i32 + q.s0 as i32) as isize))
+                                .b32
+                                .s1;
                             break 'inner;
                         }
                     }
@@ -3645,17 +3415,12 @@ unsafe fn total_pw(q: i32, p: i32) -> scaled_t {
     if (*mem.offset((q + 1) as isize)).b32.s1 == TEX_NULL {
         l = first_p;
     } else {
-        l = (*mem.offset(((*mem.offset((q + 1) as isize)).b32.s1 + 1) as isize))
-            .b32
-            .s1;
+        l = (*mem.offset(((*mem.offset((q + 1) as isize)).b32.s1 + 1) as isize)).b32.s1;
     }
 
     r = prev_rightmost(global_prev_p, p);
 
-    if p != TEX_NULL
-        && (NODE_type!(p) as i32) == DISC_NODE
-        && (*mem.offset((p + 1) as isize)).b32.s0 != TEX_NULL
-    {
+    if p != TEX_NULL && (NODE_type!(p) as i32) == DISC_NODE && (*mem.offset((p + 1) as isize)).b32.s0 != TEX_NULL {
         r = (*mem.offset((p + 1) as isize)).b32.s0;
         while (*mem.offset(r as isize)).b32.s1 != TEX_NULL {
             r = LLIST_link!(r);
@@ -3701,10 +3466,7 @@ unsafe fn find_protchar_left(mut l: i32, d: bool) -> i32 {
     {
         l = LLIST_link!(l);
     } else if d {
-        while (*mem.offset(l as isize)).b32.s1 != TEX_NULL
-            && !is_char_node(l)
-            && !is_non_discardable_node(l)
-        {
+        while (*mem.offset(l as isize)).b32.s1 != TEX_NULL && !is_char_node(l) && !is_non_discardable_node(l) {
             l = LLIST_link!(l);
         }
     }
@@ -3715,10 +3477,7 @@ unsafe fn find_protchar_left(mut l: i32, d: bool) -> i32 {
     loop {
         t = l;
 
-        while run
-            && (NODE_type!(l) as i32) == HLIST_NODE
-            && (*mem.offset((l + 5) as isize)).b32.s1 != TEX_NULL
-        {
+        while run && (NODE_type!(l) as i32) == HLIST_NODE && (*mem.offset((l + 5) as isize)).b32.s1 != TEX_NULL {
             push_node(l);
             l = (*mem.offset((l + 5) as isize)).b32.s1;
         }
@@ -3733,13 +3492,10 @@ unsafe fn find_protchar_left(mut l: i32, d: bool) -> i32 {
                     && (*mem.offset((l + 1) as isize)).b32.s0 == TEX_NULL
                     && (*mem.offset((l + 1) as isize)).b32.s1 == TEX_NULL
                     && (*mem.offset(l as isize)).b16.s0 == 0)
-                || ((NODE_type!(l) as i32) == MATH_NODE
-                    && (*mem.offset((l + 1) as isize)).b32.s1 == 0)
+                || ((NODE_type!(l) as i32) == MATH_NODE && (*mem.offset((l + 1) as isize)).b32.s1 == 0)
                 || ((NODE_type!(l) as i32) == KERN_NODE
-                    && ((*mem.offset((l + 1) as isize)).b32.s1 == 0
-                        || (*mem.offset(l as isize)).b16.s0 as i32 == NORMAL))
-                || ((NODE_type!(l) as i32) == GLUE_NODE
-                    && (*mem.offset((l + 1) as isize)).b32.s0 == 0)
+                    && ((*mem.offset((l + 1) as isize)).b32.s1 == 0 || (*mem.offset(l as isize)).b16.s0 as i32 == NORMAL))
+                || ((NODE_type!(l) as i32) == GLUE_NODE && (*mem.offset((l + 1) as isize)).b32.s0 == 0)
                 || ((NODE_type!(l) as i32) == HLIST_NODE
                     && (*mem.offset((l + 1) as isize)).b32.s1 == 0
                     && (*mem.offset((l + 3) as isize)).b32.s1 == 0
@@ -3779,10 +3535,7 @@ unsafe fn find_protchar_right(mut l: i32, mut r: i32) -> i32 {
     loop {
         t = r;
 
-        while run
-            && (NODE_type!(r) as i32) == HLIST_NODE
-            && (*mem.offset((r + 5) as isize)).b32.s1 != TEX_NULL
-        {
+        while run && (NODE_type!(r) as i32) == HLIST_NODE && (*mem.offset((r + 5) as isize)).b32.s1 != TEX_NULL {
             push_node(l);
             push_node(r);
             l = (*mem.offset((r + 5) as isize)).b32.s1;
@@ -3802,13 +3555,10 @@ unsafe fn find_protchar_right(mut l: i32, mut r: i32) -> i32 {
                     && (*mem.offset((r + 1) as isize)).b32.s0 == TEX_NULL
                     && (*mem.offset((r + 1) as isize)).b32.s1 == TEX_NULL
                     && (*mem.offset(r as isize)).b16.s0 == 0)
-                || ((NODE_type!(r) as i32) == MATH_NODE
-                    && (*mem.offset((r + 1) as isize)).b32.s1 == 0)
+                || ((NODE_type!(r) as i32) == MATH_NODE && (*mem.offset((r + 1) as isize)).b32.s1 == 0)
                 || ((NODE_type!(r) as i32) == KERN_NODE
-                    && ((*mem.offset((r + 1) as isize)).b32.s1 == 0
-                        || (*mem.offset(r as isize)).b16.s0 as i32 == NORMAL))
-                || ((NODE_type!(r) as i32) == GLUE_NODE
-                    && (*mem.offset((r + 1) as isize)).b32.s0 == 0)
+                    && ((*mem.offset((r + 1) as isize)).b32.s1 == 0 || (*mem.offset(r as isize)).b16.s0 as i32 == NORMAL))
+                || ((NODE_type!(r) as i32) == GLUE_NODE && (*mem.offset((r + 1) as isize)).b32.s0 == 0)
                 || ((NODE_type!(r) as i32) == HLIST_NODE
                     && (*mem.offset((r + 1) as isize)).b32.s1 == 0
                     && (*mem.offset((r + 3) as isize)).b32.s1 == 0
@@ -3846,10 +3596,7 @@ unsafe fn push_node(p: i32) {
 unsafe fn pop_node() -> i32 {
     hlist_stack_level -= 1;
     if hlist_stack_level < 0 {
-        pdf_error(
-            c"pop_node".as_ptr(),
-            c"stack underflow (internal error)".as_ptr(),
-        );
+        pdf_error(c"pop_node".as_ptr(), c"stack underflow (internal error)".as_ptr());
     }
     hlist_stack[hlist_stack_level as usize]
 }

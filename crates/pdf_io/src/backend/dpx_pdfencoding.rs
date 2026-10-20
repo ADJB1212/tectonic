@@ -19,47 +19,18 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-    fn strcpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    fn strcpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
-    fn ttstub_input_open(
-        path: *const ::core::ffi::c_char,
-        format: ttbc_file_format,
-        is_gz: ::core::ffi::c_int,
-    ) -> rust_input_handle_t;
+    fn ttstub_input_open(path: *const ::core::ffi::c_char, format: ttbc_file_format, is_gz: ::core::ffi::c_int) -> rust_input_handle_t;
     fn ttstub_input_get_size(handle: rust_input_handle_t) -> size_t;
-    fn ttstub_input_read(
-        handle: rust_input_handle_t,
-        data: *mut ::core::ffi::c_char,
-        len: size_t,
-    ) -> ssize_t;
+    fn ttstub_input_read(handle: rust_input_handle_t, data: *mut ::core::ffi::c_char, len: size_t) -> ssize_t;
     fn ttstub_input_close(handle: rust_input_handle_t) -> ::core::ffi::c_int;
-    fn sprintf(
-        _: *mut ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
+    fn sprintf(_: *mut ::core::ffi::c_char, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_release_obj"]
     fn pdf_release_obj(object: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_new_number"]
@@ -77,23 +48,12 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_new_dict"]
     fn pdf_new_dict() -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_check_version"]
-    fn pdf_check_version(
-        major: ::core::ffi::c_int,
-        minor: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn pdf_check_version(major: ::core::ffi::c_int, minor: ::core::ffi::c_int) -> ::core::ffi::c_int;
     static mut dpx_conf: _dpx_conf;
     #[link_name = "__pdf_impl_dpx_tt_open"]
-    fn dpx_tt_open(
-        filename: *const ::core::ffi::c_char,
-        suffix: *const ::core::ffi::c_char,
-        format: ttbc_file_format,
-    ) -> rust_input_handle_t;
+    fn dpx_tt_open(filename: *const ::core::ffi::c_char, suffix: *const ::core::ffi::c_char, format: ttbc_file_format) -> rust_input_handle_t;
     fn dpx_message(fmt: *const ::core::ffi::c_char, ...);
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_new"]
@@ -105,21 +65,12 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_skip_white"]
     fn skip_white(start: *mut *const ::core::ffi::c_char, end: *const ::core::ffi::c_char);
     #[link_name = "__pdf_impl_parse_pdf_name"]
-    fn parse_pdf_name(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-    ) -> *mut pdf_obj;
+    fn parse_pdf_name(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_parse_pdf_array"]
-    fn parse_pdf_array(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-        pf: *mut pdf_file,
-    ) -> *mut pdf_obj;
+    fn parse_pdf_array(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char, pf: *mut pdf_file) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_agl_sput_UTF16BE"]
     fn agl_sput_UTF16BE(
-        name: *const ::core::ffi::c_char,
-        dstpp: *mut *mut ::core::ffi::c_uchar,
-        limptr: *mut ::core::ffi::c_uchar,
+        name: *const ::core::ffi::c_char, dstpp: *mut *mut ::core::ffi::c_uchar, limptr: *mut ::core::ffi::c_uchar,
         num_fails: *mut ::core::ffi::c_int,
     ) -> int32_t;
     static mut CSI_UNICODE: CIDSysInfo;
@@ -137,18 +88,11 @@ unsafe extern "C-unwind" {
     fn CMap_set_CIDSysInfo(cmap: *mut CMap, csi: *const CIDSysInfo);
     #[link_name = "__pdf_impl_CMap_add_bfchar"]
     fn CMap_add_bfchar(
-        cmap: *mut CMap,
-        src: *const ::core::ffi::c_uchar,
-        srcdim: size_t,
-        dest: *const ::core::ffi::c_uchar,
-        destdim: size_t,
+        cmap: *mut CMap, src: *const ::core::ffi::c_uchar, srcdim: size_t, dest: *const ::core::ffi::c_uchar, destdim: size_t,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_CMap_add_codespacerange"]
     fn CMap_add_codespacerange(
-        cmap: *mut CMap,
-        codelo: *const ::core::ffi::c_uchar,
-        codehi: *const ::core::ffi::c_uchar,
-        dim: size_t,
+        cmap: *mut CMap, codelo: *const ::core::ffi::c_uchar, codehi: *const ::core::ffi::c_uchar, dim: size_t,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_CMap_parse_check_sig"]
     fn CMap_parse_check_sig(handle: rust_input_handle_t) -> ::core::ffi::c_int;
@@ -293,25 +237,17 @@ unsafe extern "C-unwind" fn mfree(mut ptr: *mut ::core::ffi::c_void) -> *mut ::c
     return NULL;
 }
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
     return false_0 != 0;
 }
-pub const FLAG_IS_PREDEFINED: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
-pub const FLAG_USED_BY_TYPE3: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
+pub const FLAG_IS_PREDEFINED: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const FLAG_USED_BY_TYPE3: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
 unsafe extern "C-unwind" fn pdf_init_encoding_struct(mut encoding: *mut pdf_encoding) {
     if encoding.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"encoding\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"encoding\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     (*encoding).ident = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -331,36 +267,21 @@ unsafe extern "C-unwind" fn pdf_init_encoding_struct(mut encoding: *mut pdf_enco
     (*encoding).flags = 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn create_encoding_resource(
-    mut enc_vec: *mut *mut ::core::ffi::c_char,
-    mut baseenc_name: *const ::core::ffi::c_char,
-    mut baseenc_vec: *mut *const ::core::ffi::c_char,
+    mut enc_vec: *mut *mut ::core::ffi::c_char, mut baseenc_name: *const ::core::ffi::c_char, mut baseenc_vec: *mut *const ::core::ffi::c_char,
     mut is_used: *mut ::core::ffi::c_char,
 ) -> *mut pdf_obj {
     let mut differences: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     if enc_vec.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"enc_vec\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"enc_vec\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if !baseenc_name.is_null() {
-        if strcmp(
-            baseenc_name,
-            b"MacRomanEncoding\0" as *const u8 as *const ::core::ffi::c_char,
-        ) != 0
-            && strcmp(
-                baseenc_name,
-                b"MacExpertEncoding\0" as *const u8 as *const ::core::ffi::c_char,
-            ) != 0
-            && strcmp(
-                baseenc_name,
-                b"WinAnsiEncoding\0" as *const u8 as *const ::core::ffi::c_char,
-            ) != 0
+        if strcmp(baseenc_name, b"MacRomanEncoding\0" as *const u8 as *const ::core::ffi::c_char) != 0
+            && strcmp(baseenc_name, b"MacExpertEncoding\0" as *const u8 as *const ::core::ffi::c_char) != 0
+            && strcmp(baseenc_name, b"WinAnsiEncoding\0" as *const u8 as *const ::core::ffi::c_char) != 0
         {
             pdf_abort!(
-                b"Invalid encoding name for BaseEncoding: %s\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Invalid encoding name for BaseEncoding: %s\0" as *const u8 as *const ::core::ffi::c_char,
                 baseenc_name,
             );
         }
@@ -391,10 +312,7 @@ unsafe extern "C-unwind" fn create_encoding_resource(
 }
 unsafe extern "C-unwind" fn pdf_flush_encoding(mut encoding: *mut pdf_encoding) {
     if encoding.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"encoding\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"encoding\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if !(*encoding).resource.is_null() {
@@ -409,10 +327,7 @@ unsafe extern "C-unwind" fn pdf_flush_encoding(mut encoding: *mut pdf_encoding) 
 unsafe extern "C-unwind" fn pdf_clean_encoding_struct(mut encoding: *mut pdf_encoding) {
     let mut code: ::core::ffi::c_int = 0;
     if encoding.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"encoding\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"encoding\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if !(*encoding).resource.is_null() {
@@ -425,32 +340,21 @@ unsafe extern "C-unwind" fn pdf_clean_encoding_struct(mut encoding: *mut pdf_enc
     (*encoding).enc_name = ::core::ptr::null_mut::<::core::ffi::c_char>();
     code = 0 as ::core::ffi::c_int;
     while code < 256 as ::core::ffi::c_int {
-        (*encoding).glyphs[code as usize] =
-            mfree((*encoding).glyphs[code as usize] as *mut ::core::ffi::c_void)
-                as *mut ::core::ffi::c_char;
+        (*encoding).glyphs[code as usize] = mfree((*encoding).glyphs[code as usize] as *mut ::core::ffi::c_void) as *mut ::core::ffi::c_char;
         code += 1;
     }
     (*encoding).ident = ::core::ptr::null_mut::<::core::ffi::c_char>();
     (*encoding).enc_name = ::core::ptr::null_mut::<::core::ffi::c_char>();
 }
-unsafe extern "C-unwind" fn is_similar_charset(
-    mut enc_vec: *mut *mut ::core::ffi::c_char,
-    mut enc_vec2: *mut *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn is_similar_charset(mut enc_vec: *mut *mut ::core::ffi::c_char, mut enc_vec2: *mut *const ::core::ffi::c_char) -> bool {
     let mut code: ::core::ffi::c_int = 0;
     let mut same: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     code = 0 as ::core::ffi::c_int;
     while code < 256 as ::core::ffi::c_int {
-        if !(!(*enc_vec.offset(code as isize)).is_null()
-            && strcmp(
-                *enc_vec.offset(code as isize),
-                *enc_vec2.offset(code as isize),
-            ) != 0)
-            && {
-                same += 1;
-                same >= 64 as ::core::ffi::c_int
-            }
-        {
+        if !(!(*enc_vec.offset(code as isize)).is_null() && strcmp(*enc_vec.offset(code as isize), *enc_vec2.offset(code as isize)) != 0) && {
+            same += 1;
+            same >= 64 as ::core::ffi::c_int
+        } {
             return true_0 != 0;
         }
         code += 1;
@@ -458,34 +362,24 @@ unsafe extern "C-unwind" fn is_similar_charset(
     return false_0 != 0;
 }
 unsafe extern "C-unwind" fn make_encoding_differences(
-    mut enc_vec: *mut *mut ::core::ffi::c_char,
-    mut baseenc: *mut *const ::core::ffi::c_char,
-    mut is_used: *const ::core::ffi::c_char,
+    mut enc_vec: *mut *mut ::core::ffi::c_char, mut baseenc: *mut *const ::core::ffi::c_char, mut is_used: *const ::core::ffi::c_char,
 ) -> *mut pdf_obj {
     let mut differences: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut code: ::core::ffi::c_int = 0;
     let mut count: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut skipping: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
     if enc_vec.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"enc_vec\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"enc_vec\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     differences = pdf_new_array();
     code = 0 as ::core::ffi::c_int;
     while code < 256 as ::core::ffi::c_int {
-        if !is_used.is_null() && *is_used.offset(code as isize) == 0
-            || (*enc_vec.offset(code as isize)).is_null()
-        {
+        if !is_used.is_null() && *is_used.offset(code as isize) == 0 || (*enc_vec.offset(code as isize)).is_null() {
             skipping = 1 as ::core::ffi::c_int;
         } else if baseenc.is_null()
             || (*baseenc.offset(code as isize)).is_null()
-            || strcmp(
-                *baseenc.offset(code as isize),
-                *enc_vec.offset(code as isize),
-            ) != 0 as ::core::ffi::c_int
+            || strcmp(*baseenc.offset(code as isize), *enc_vec.offset(code as isize)) != 0 as ::core::ffi::c_int
         {
             if skipping != 0 {
                 pdf_add_array(differences, pdf_new_number(code as ::core::ffi::c_double));
@@ -504,17 +398,14 @@ unsafe extern "C-unwind" fn make_encoding_differences(
     }
     return differences;
 }
-unsafe extern "C-unwind" fn load_encoding_file(
-    mut filename: *const ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn load_encoding_file(mut filename: *const ::core::ffi::c_char) -> ::core::ffi::c_int {
     let mut handle: rust_input_handle_t = INVALID_HANDLE;
     let mut enc_name: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut encoding_array: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut wbuf_0: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut endptr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-    let mut enc_vec: [*const ::core::ffi::c_char; 256] =
-        [::core::ptr::null::<::core::ffi::c_char>(); 256];
+    let mut enc_vec: [*const ::core::ffi::c_char; 256] = [::core::ptr::null::<::core::ffi::c_char>(); 256];
     let mut code: ::core::ffi::c_int = 0;
     let mut fsize: ::core::ffi::c_int = 0;
     let mut enc_id: ::core::ffi::c_int = 0;
@@ -522,37 +413,25 @@ unsafe extern "C-unwind" fn load_encoding_file(
         return -(1 as ::core::ffi::c_int);
     }
     if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
-        pdf_message!(
-            b"(Encoding:%s\0" as *const u8 as *const ::core::ffi::c_char,
-            filename,
-        );
+        pdf_message!(b"(Encoding:%s\0" as *const u8 as *const ::core::ffi::c_char, filename,);
     }
-    handle = dpx_tt_open(
-        filename,
-        b".enc\0" as *const u8 as *const ::core::ffi::c_char,
-        TTBC_FILE_FORMAT_ENC,
-    );
+    handle = dpx_tt_open(filename, b".enc\0" as *const u8 as *const ::core::ffi::c_char, TTBC_FILE_FORMAT_ENC);
     if handle == INVALID_HANDLE {
         return -(1 as ::core::ffi::c_int);
     }
     fsize = ttstub_input_get_size(handle) as ::core::ffi::c_int;
-    wbuf_0 = new(((fsize + 1 as ::core::ffi::c_int) as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
+    wbuf_0 = new(
+        ((fsize + 1 as ::core::ffi::c_int) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t,
+    ) as *mut ::core::ffi::c_char;
     *wbuf_0.offset(fsize as isize) = '\0' as i32 as ::core::ffi::c_char;
     if ttstub_input_read(handle, wbuf_0, fsize as size_t) != fsize as ssize_t {
-        pdf_abort!(
-            b"error reading %s\0" as *const u8 as *const ::core::ffi::c_char,
-            filename,
-        );
+        pdf_abort!(b"error reading %s\0" as *const u8 as *const ::core::ffi::c_char, filename,);
     }
     crate::backend::runtime::input_close(handle);
     p = wbuf_0;
     endptr = wbuf_0.offset(fsize as isize);
     skip_white(&raw mut p, endptr);
-    while p < endptr
-        && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '%' as i32
-    {
+    while p < endptr && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '%' as i32 {
         pdfparse_skip_line(&raw mut p, endptr);
         skip_white(&raw mut p, endptr);
     }
@@ -583,10 +462,7 @@ unsafe extern "C-unwind" fn load_encoding_file(
     );
     if !enc_name.is_null() {
         if dpx_conf.verbose_level > 1 as ::core::ffi::c_int {
-            pdf_message!(
-                b"[%s]\0" as *const u8 as *const ::core::ffi::c_char,
-                pdf_name_value(enc_name),
-            );
+            pdf_message!(b"[%s]\0" as *const u8 as *const ::core::ffi::c_char, pdf_name_value(enc_name),);
         }
         pdf_release_obj(enc_name);
     }
@@ -602,10 +478,9 @@ pub unsafe extern "C-unwind" fn pdf_init_encodings() {
     let __pdf_state = unsafe { document_state() };
     (*__pdf_state).enc_cache.count = 0 as ::core::ffi::c_int;
     (*__pdf_state).enc_cache.capacity = 3 as ::core::ffi::c_int;
-    (*__pdf_state).enc_cache.encodings = new(((*__pdf_state).enc_cache.capacity as uint32_t
-        as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_encoding>() as usize)
-        as uint32_t) as *mut pdf_encoding;
+    (*__pdf_state).enc_cache.encodings =
+        new(((*__pdf_state).enc_cache.capacity as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_encoding>() as usize) as uint32_t)
+            as *mut pdf_encoding;
     pdf_encoding_new_encoding(
         b"WinAnsiEncoding\0" as *const u8 as *const ::core::ffi::c_char,
         b"WinAnsiEncoding\0" as *const u8 as *const ::core::ffi::c_char,
@@ -626,9 +501,7 @@ pub unsafe extern "C-unwind" fn pdf_init_encodings() {
     );
 }
 unsafe extern "C-unwind" fn pdf_encoding_new_encoding(
-    mut enc_name: *const ::core::ffi::c_char,
-    mut ident: *const ::core::ffi::c_char,
-    mut encoding_vec: *mut *const ::core::ffi::c_char,
+    mut enc_name: *const ::core::ffi::c_char, mut ident: *const ::core::ffi::c_char, mut encoding_vec: *mut *const ::core::ffi::c_char,
     mut flags: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
@@ -642,24 +515,16 @@ unsafe extern "C-unwind" fn pdf_encoding_new_encoding(
         (*__pdf_state).enc_cache.capacity += 16 as ::core::ffi::c_int;
         (*__pdf_state).enc_cache.encodings = renew(
             (*__pdf_state).enc_cache.encodings as *mut ::core::ffi::c_void,
-            ((*__pdf_state).enc_cache.capacity as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<pdf_encoding>() as usize)
-                as uint32_t,
+            ((*__pdf_state).enc_cache.capacity as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_encoding>() as usize) as uint32_t,
         ) as *mut pdf_encoding;
     }
     encoding = (*__pdf_state).enc_cache.encodings.offset(enc_id as isize) as *mut pdf_encoding;
     pdf_init_encoding_struct(encoding);
-    (*encoding).ident = new(
-        (strlen(ident).wrapping_add(1 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t,
-    ) as *mut ::core::ffi::c_char;
+    (*encoding).ident = new((strlen(ident).wrapping_add(1 as size_t) as uint32_t as usize)
+        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
     strcpy((*encoding).ident, ident);
-    (*encoding).enc_name = new(
-        (strlen(enc_name).wrapping_add(1 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t,
-    ) as *mut ::core::ffi::c_char;
+    (*encoding).enc_name = new((strlen(enc_name).wrapping_add(1 as size_t) as uint32_t as usize)
+        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
     strcpy((*encoding).enc_name, enc_name);
     (*encoding).flags = flags;
     code = 0 as ::core::ffi::c_int;
@@ -670,16 +535,11 @@ unsafe extern "C-unwind" fn pdf_encoding_new_encoding(
                 b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
             ) != 0
         {
-            (*encoding).glyphs[code as usize] = new((strlen(*encoding_vec.offset(code as isize))
-                .wrapping_add(1 as size_t)
-                as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t)
-                as *mut ::core::ffi::c_char;
-            strcpy(
-                (*encoding).glyphs[code as usize],
-                *encoding_vec.offset(code as isize),
-            );
+            (*encoding).glyphs[code as usize] = new(
+                (strlen(*encoding_vec.offset(code as isize)).wrapping_add(1 as size_t) as uint32_t as usize)
+                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t,
+            ) as *mut ::core::ffi::c_char;
+            strcpy((*encoding).glyphs[code as usize], *encoding_vec.offset(code as isize));
         }
         code += 1;
     }
@@ -695,15 +555,11 @@ pub unsafe extern "C-unwind" fn pdf_encoding_complete() {
     enc_id = 0 as ::core::ffi::c_int;
     while enc_id < (*__pdf_state).enc_cache.count {
         if pdf_encoding_is_predefined(enc_id) == 0 {
-            let mut encoding: *mut pdf_encoding =
-                (*__pdf_state).enc_cache.encodings.offset(enc_id as isize) as *mut pdf_encoding;
-            let mut baseenc_name: *const ::core::ffi::c_char =
-                ::core::ptr::null::<::core::ffi::c_char>();
-            let mut baseenc_vec: *mut *const ::core::ffi::c_char =
-                ::core::ptr::null_mut::<*const ::core::ffi::c_char>();
+            let mut encoding: *mut pdf_encoding = (*__pdf_state).enc_cache.encodings.offset(enc_id as isize) as *mut pdf_encoding;
+            let mut baseenc_name: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
+            let mut baseenc_vec: *mut *const ::core::ffi::c_char = ::core::ptr::null_mut::<*const ::core::ffi::c_char>();
             let mut with_base: ::core::ffi::c_int = ((*encoding).flags & FLAG_USED_BY_TYPE3 == 0
-                || pdf_check_version(1 as ::core::ffi::c_int, 4 as ::core::ffi::c_int)
-                    >= 0 as ::core::ffi::c_int)
+                || pdf_check_version(1 as ::core::ffi::c_int, 4 as ::core::ffi::c_int) >= 0 as ::core::ffi::c_int)
                 as ::core::ffi::c_int;
             if !(*encoding).resource.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
                 pdf_abort!(
@@ -751,8 +607,7 @@ pub unsafe extern "C-unwind" fn pdf_close_encodings() {
         enc_id = 0 as ::core::ffi::c_int;
         while enc_id < (*__pdf_state).enc_cache.count {
             let mut encoding: *mut pdf_encoding = ::core::ptr::null_mut::<pdf_encoding>();
-            encoding =
-                (*__pdf_state).enc_cache.encodings.offset(enc_id as isize) as *mut pdf_encoding;
+            encoding = (*__pdf_state).enc_cache.encodings.offset(enc_id as isize) as *mut pdf_encoding;
             if !encoding.is_null() {
                 pdf_flush_encoding(encoding);
                 pdf_clean_encoding_struct(encoding);
@@ -766,29 +621,20 @@ pub unsafe extern "C-unwind" fn pdf_close_encodings() {
     (*__pdf_state).enc_cache.capacity = 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_encoding_findresource")]
-pub unsafe extern "C-unwind" fn pdf_encoding_findresource(
-    mut enc_name: *const ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_encoding_findresource(mut enc_name: *const ::core::ffi::c_char) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut enc_id: ::core::ffi::c_int = 0;
     let mut encoding: *mut pdf_encoding = ::core::ptr::null_mut::<pdf_encoding>();
     if enc_name.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"enc_name\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"enc_name\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     enc_id = 0 as ::core::ffi::c_int;
     while enc_id < (*__pdf_state).enc_cache.count {
         encoding = (*__pdf_state).enc_cache.encodings.offset(enc_id as isize) as *mut pdf_encoding;
-        if !(*encoding).ident.is_null()
-            && streq_ptr(enc_name, (*encoding).ident) as ::core::ffi::c_int != 0
-        {
+        if !(*encoding).ident.is_null() && streq_ptr(enc_name, (*encoding).ident) as ::core::ffi::c_int != 0 {
             return enc_id;
-        } else if !(*encoding).enc_name.is_null()
-            && streq_ptr(enc_name, (*encoding).enc_name) as ::core::ffi::c_int != 0
-        {
+        } else if !(*encoding).enc_name.is_null() && streq_ptr(enc_name, (*encoding).enc_name) as ::core::ffi::c_int != 0 {
             return enc_id;
         }
         enc_id += 1;
@@ -796,46 +642,31 @@ pub unsafe extern "C-unwind" fn pdf_encoding_findresource(
     return load_encoding_file(enc_name);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_encoding_get_encoding")]
-pub unsafe extern "C-unwind" fn pdf_encoding_get_encoding(
-    mut enc_id: ::core::ffi::c_int,
-) -> *mut *mut ::core::ffi::c_char {
+pub unsafe extern "C-unwind" fn pdf_encoding_get_encoding(mut enc_id: ::core::ffi::c_int) -> *mut *mut ::core::ffi::c_char {
     let __pdf_state = unsafe { document_state() };
     let mut encoding: *mut pdf_encoding = ::core::ptr::null_mut::<pdf_encoding>();
     if enc_id < 0 as ::core::ffi::c_int || enc_id >= (*__pdf_state).enc_cache.count {
-        pdf_abort!(
-            b"Invalid encoding id: %d\0" as *const u8 as *const ::core::ffi::c_char,
-            enc_id,
-        );
+        pdf_abort!(b"Invalid encoding id: %d\0" as *const u8 as *const ::core::ffi::c_char, enc_id,);
     }
     encoding = (*__pdf_state).enc_cache.encodings.offset(enc_id as isize) as *mut pdf_encoding;
     return &raw mut (*encoding).glyphs as *mut *mut ::core::ffi::c_char;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_get_encoding_obj")]
-pub unsafe extern "C-unwind" fn pdf_get_encoding_obj(
-    mut enc_id: ::core::ffi::c_int,
-) -> *mut pdf_obj {
+pub unsafe extern "C-unwind" fn pdf_get_encoding_obj(mut enc_id: ::core::ffi::c_int) -> *mut pdf_obj {
     let __pdf_state = unsafe { document_state() };
     let mut encoding: *mut pdf_encoding = ::core::ptr::null_mut::<pdf_encoding>();
     if enc_id < 0 as ::core::ffi::c_int || enc_id >= (*__pdf_state).enc_cache.count {
-        pdf_abort!(
-            b"Invalid encoding id: %d\0" as *const u8 as *const ::core::ffi::c_char,
-            enc_id,
-        );
+        pdf_abort!(b"Invalid encoding id: %d\0" as *const u8 as *const ::core::ffi::c_char, enc_id,);
     }
     encoding = (*__pdf_state).enc_cache.encodings.offset(enc_id as isize) as *mut pdf_encoding;
     return (*encoding).resource;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_encoding_is_predefined")]
-pub unsafe extern "C-unwind" fn pdf_encoding_is_predefined(
-    mut enc_id: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_encoding_is_predefined(mut enc_id: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut encoding: *mut pdf_encoding = ::core::ptr::null_mut::<pdf_encoding>();
     if enc_id < 0 as ::core::ffi::c_int || enc_id >= (*__pdf_state).enc_cache.count {
-        pdf_abort!(
-            b"Invalid encoding id: %d\0" as *const u8 as *const ::core::ffi::c_char,
-            enc_id,
-        );
+        pdf_abort!(b"Invalid encoding id: %d\0" as *const u8 as *const ::core::ffi::c_char, enc_id,);
     }
     encoding = (*__pdf_state).enc_cache.encodings.offset(enc_id as isize) as *mut pdf_encoding;
     return if (*encoding).flags & FLAG_IS_PREDEFINED != 0 {
@@ -849,25 +680,17 @@ pub unsafe extern "C-unwind" fn pdf_encoding_used_by_type3(mut enc_id: ::core::f
     let __pdf_state = unsafe { document_state() };
     let mut encoding: *mut pdf_encoding = ::core::ptr::null_mut::<pdf_encoding>();
     if enc_id < 0 as ::core::ffi::c_int || enc_id >= (*__pdf_state).enc_cache.count {
-        pdf_abort!(
-            b"Invalid encoding id: %d\0" as *const u8 as *const ::core::ffi::c_char,
-            enc_id,
-        );
+        pdf_abort!(b"Invalid encoding id: %d\0" as *const u8 as *const ::core::ffi::c_char, enc_id,);
     }
     encoding = (*__pdf_state).enc_cache.encodings.offset(enc_id as isize) as *mut pdf_encoding;
     (*encoding).flags |= FLAG_USED_BY_TYPE3;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_encoding_get_name")]
-pub unsafe extern "C-unwind" fn pdf_encoding_get_name(
-    mut enc_id: ::core::ffi::c_int,
-) -> *mut ::core::ffi::c_char {
+pub unsafe extern "C-unwind" fn pdf_encoding_get_name(mut enc_id: ::core::ffi::c_int) -> *mut ::core::ffi::c_char {
     let __pdf_state = unsafe { document_state() };
     let mut encoding: *mut pdf_encoding = ::core::ptr::null_mut::<pdf_encoding>();
     if enc_id < 0 as ::core::ffi::c_int || enc_id >= (*__pdf_state).enc_cache.count {
-        pdf_abort!(
-            b"Invalid encoding id: %d\0" as *const u8 as *const ::core::ffi::c_char,
-            enc_id,
-        );
+        pdf_abort!(b"Invalid encoding id: %d\0" as *const u8 as *const ::core::ffi::c_char, enc_id,);
     }
     encoding = (*__pdf_state).enc_cache.encodings.offset(enc_id as isize) as *mut pdf_encoding;
     return (*encoding).enc_name;
@@ -878,57 +701,35 @@ pub const WBUF_SIZE: ::core::ffi::c_int = 1024 as ::core::ffi::c_int;
 const RANGE_MIN: [::core::ffi::c_uchar; 1] = [0 as ::core::ffi::c_uint as ::core::ffi::c_uchar];
 const RANGE_MAX: [::core::ffi::c_uchar; 1] = [0xff as ::core::ffi::c_uint as ::core::ffi::c_uchar];
 #[unsafe(export_name = "__pdf_impl_pdf_encoding_add_usedchars")]
-pub unsafe extern "C-unwind" fn pdf_encoding_add_usedchars(
-    mut encoding_id: ::core::ffi::c_int,
-    mut is_used: *const ::core::ffi::c_char,
-) {
+pub unsafe extern "C-unwind" fn pdf_encoding_add_usedchars(mut encoding_id: ::core::ffi::c_int, mut is_used: *const ::core::ffi::c_char) {
     let __pdf_state = unsafe { document_state() };
     let mut encoding: *mut pdf_encoding = ::core::ptr::null_mut::<pdf_encoding>();
     let mut code: ::core::ffi::c_int = 0;
     if encoding_id < 0 as ::core::ffi::c_int || encoding_id >= (*__pdf_state).enc_cache.count {
-        pdf_abort!(
-            b"Invalid encoding id: %d\0" as *const u8 as *const ::core::ffi::c_char,
-            encoding_id,
-        );
+        pdf_abort!(b"Invalid encoding id: %d\0" as *const u8 as *const ::core::ffi::c_char, encoding_id,);
     }
     if is_used.is_null() || pdf_encoding_is_predefined(encoding_id) != 0 {
         return;
     }
-    encoding = (*__pdf_state)
-        .enc_cache
-        .encodings
-        .offset(encoding_id as isize) as *mut pdf_encoding;
+    encoding = (*__pdf_state).enc_cache.encodings.offset(encoding_id as isize) as *mut pdf_encoding;
     code = 0 as ::core::ffi::c_int;
     while code <= 0xff as ::core::ffi::c_int {
-        (*encoding).is_used[code as usize] = ((*encoding).is_used[code as usize]
-            as ::core::ffi::c_int
-            | *is_used.offset(code as isize) as ::core::ffi::c_int)
-            as ::core::ffi::c_char;
+        (*encoding).is_used[code as usize] =
+            ((*encoding).is_used[code as usize] as ::core::ffi::c_int | *is_used.offset(code as isize) as ::core::ffi::c_int) as ::core::ffi::c_char;
         code += 1;
     }
 }
 #[unsafe(export_name = "__pdf_impl_pdf_encoding_get_tounicode")]
-pub unsafe extern "C-unwind" fn pdf_encoding_get_tounicode(
-    mut encoding_id: ::core::ffi::c_int,
-) -> *mut pdf_obj {
+pub unsafe extern "C-unwind" fn pdf_encoding_get_tounicode(mut encoding_id: ::core::ffi::c_int) -> *mut pdf_obj {
     let __pdf_state = unsafe { document_state() };
     if encoding_id < 0 as ::core::ffi::c_int || encoding_id >= (*__pdf_state).enc_cache.count {
-        pdf_abort!(
-            b"Invalid encoding id: %d\0" as *const u8 as *const ::core::ffi::c_char,
-            encoding_id,
-        );
+        pdf_abort!(b"Invalid encoding id: %d\0" as *const u8 as *const ::core::ffi::c_char, encoding_id,);
     }
-    return (*(*__pdf_state)
-        .enc_cache
-        .encodings
-        .offset(encoding_id as isize))
-    .tounicode;
+    return (*(*__pdf_state).enc_cache.encodings.offset(encoding_id as isize)).tounicode;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_create_ToUnicode_CMap")]
 pub unsafe extern "C-unwind" fn pdf_create_ToUnicode_CMap(
-    mut enc_name: *const ::core::ffi::c_char,
-    mut enc_vec: *mut *mut ::core::ffi::c_char,
-    mut is_used: *const ::core::ffi::c_char,
+    mut enc_name: *const ::core::ffi::c_char, mut enc_vec: *mut *mut ::core::ffi::c_char, mut is_used: *const ::core::ffi::c_char,
 ) -> *mut pdf_obj {
     let __pdf_state = unsafe { document_state() };
     let mut stream: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -939,9 +740,7 @@ pub unsafe extern "C-unwind" fn pdf_create_ToUnicode_CMap(
     let mut cmap_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut p: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
     let mut endptr: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-    if !(!enc_name.is_null() && !enc_vec.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long
-        != 0
-    {
+    if !(!enc_name.is_null() && !enc_vec.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"enc_name && enc_vec\0" as *const u8 as *const ::core::ffi::c_char
@@ -952,17 +751,10 @@ pub unsafe extern "C-unwind" fn pdf_create_ToUnicode_CMap(
         return ::core::ptr::null_mut::<pdf_obj>();
     }
     cmap_name = new((strlen(enc_name)
-        .wrapping_add(strlen(
-            b"-UTF16\0" as *const u8 as *const ::core::ffi::c_char,
-        ))
+        .wrapping_add(strlen(b"-UTF16\0" as *const u8 as *const ::core::ffi::c_char))
         .wrapping_add(1 as size_t) as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
-    sprintf(
-        cmap_name,
-        b"%s-UTF16\0" as *const u8 as *const ::core::ffi::c_char,
-        enc_name,
-    );
+        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
+    sprintf(cmap_name, b"%s-UTF16\0" as *const u8 as *const ::core::ffi::c_char, enc_name);
     cmap = CMap_new();
     CMap_set_name(cmap, cmap_name);
     CMap_set_type(cmap, CMAP_TYPE_TO_UNICODE);
@@ -977,18 +769,10 @@ pub unsafe extern "C-unwind" fn pdf_create_ToUnicode_CMap(
             if !(*enc_vec.offset(code as isize)).is_null() {
                 let mut len: size_t = 0;
                 let mut fail_count: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-                (*__pdf_state).wbuf[0 as ::core::ffi::c_int as usize] =
-                    (code & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
-                p = (&raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar)
-                    .offset(1 as ::core::ffi::c_int as isize);
-                endptr = (&raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar)
-                    .offset(WBUF_SIZE as isize);
-                len = agl_sput_UTF16BE(
-                    *enc_vec.offset(code as isize),
-                    &raw mut p,
-                    endptr,
-                    &raw mut fail_count,
-                ) as size_t;
+                (*__pdf_state).wbuf[0 as ::core::ffi::c_int as usize] = (code & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+                p = (&raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar).offset(1 as ::core::ffi::c_int as isize);
+                endptr = (&raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar).offset(WBUF_SIZE as isize);
+                len = agl_sput_UTF16BE(*enc_vec.offset(code as isize), &raw mut p, endptr, &raw mut fail_count) as size_t;
                 if len < 1 as size_t && fail_count > 0 as ::core::ffi::c_int {
                     total_fail += 1;
                 } else {
@@ -996,8 +780,7 @@ pub unsafe extern "C-unwind" fn pdf_create_ToUnicode_CMap(
                         cmap,
                         &raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar,
                         1 as size_t,
-                        (&raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar)
-                            .offset(1 as ::core::ffi::c_int as isize),
+                        (&raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar).offset(1 as ::core::ffi::c_int as isize),
                         len,
                     );
                     count += 1;
@@ -1008,10 +791,7 @@ pub unsafe extern "C-unwind" fn pdf_create_ToUnicode_CMap(
     }
     if total_fail > 0 as ::core::ffi::c_int {
         if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
-            pdf_warning!(
-                b"Glyphs with no Unicode mapping found. Removing ToUnicode CMap.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"Glyphs with no Unicode mapping found. Removing ToUnicode CMap.\0" as *const u8 as *const ::core::ffi::c_char,);
         }
     }
     stream = if count == 0 as ::core::ffi::c_int || total_fail > 0 as ::core::ffi::c_int {
@@ -1024,9 +804,7 @@ pub unsafe extern "C-unwind" fn pdf_create_ToUnicode_CMap(
     return stream;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_load_ToUnicode_stream")]
-pub unsafe extern "C-unwind" fn pdf_load_ToUnicode_stream(
-    mut ident: *const ::core::ffi::c_char,
-) -> *mut pdf_obj {
+pub unsafe extern "C-unwind" fn pdf_load_ToUnicode_stream(mut ident: *const ::core::ffi::c_char) -> *mut pdf_obj {
     let mut stream: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut cmap: *mut CMap = ::core::ptr::null_mut::<CMap>();
     let mut handle: rust_input_handle_t = INVALID_HANDLE;
@@ -1043,22 +821,15 @@ pub unsafe extern "C-unwind" fn pdf_load_ToUnicode_stream(
     }
     cmap = CMap_new();
     if CMap_parse(cmap, handle) < 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Reading CMap file \"%s\" failed.\0" as *const u8 as *const ::core::ffi::c_char,
-            ident,
-        );
+        pdf_warning!(b"Reading CMap file \"%s\" failed.\0" as *const u8 as *const ::core::ffi::c_char, ident,);
     } else {
         if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
-            pdf_message!(
-                b"(CMap:%s)\0" as *const u8 as *const ::core::ffi::c_char,
-                ident,
-            );
+            pdf_message!(b"(CMap:%s)\0" as *const u8 as *const ::core::ffi::c_char, ident,);
         }
         stream = CMap_create_stream(cmap);
         if stream.is_null() {
             pdf_warning!(
-                b"Failed to creat ToUnicode CMap stream for \"%s\".\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Failed to creat ToUnicode CMap stream for \"%s\".\0" as *const u8 as *const ::core::ffi::c_char,
                 ident,
             );
         }
@@ -1844,11 +1615,7 @@ const WinAnsiEncoding: [*const ::core::ffi::c_char; 256] = [
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memset(
-        __b: *mut ::core::ffi::c_void,
-        __c: ::core::ffi::c_int,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memset(__b: *mut ::core::ffi::c_void, __c: ::core::ffi::c_int, __len: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -1890,10 +1657,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_close_encodings() -> i32 {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_encoding_findresource(
-    mut enc_name: *const ::core::ffi::c_char,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_encoding_findresource(mut enc_name: *const ::core::ffi::c_char, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_encoding_findresource(enc_name) }) {
         Ok(value) => {
             unsafe {
@@ -1905,10 +1669,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_encoding_findresource(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_encoding_get_encoding(
-    mut enc_id: ::core::ffi::c_int,
-    _result: *mut *mut *mut ::core::ffi::c_char,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_encoding_get_encoding(mut enc_id: ::core::ffi::c_int, _result: *mut *mut *mut ::core::ffi::c_char) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_encoding_get_encoding(enc_id) }) {
         Ok(value) => {
             unsafe {
@@ -1920,10 +1681,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_encoding_get_encoding(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_get_encoding_obj(
-    mut enc_id: ::core::ffi::c_int,
-    _result: *mut *mut pdf_obj,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_get_encoding_obj(mut enc_id: ::core::ffi::c_int, _result: *mut *mut pdf_obj) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_get_encoding_obj(enc_id) }) {
         Ok(value) => {
             unsafe {
@@ -1935,10 +1693,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_get_encoding_obj(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_encoding_is_predefined(
-    mut enc_id: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_encoding_is_predefined(mut enc_id: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_encoding_is_predefined(enc_id) }) {
         Ok(value) => {
             unsafe {
@@ -1950,9 +1705,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_encoding_is_predefined(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_encoding_used_by_type3(
-    mut enc_id: ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_encoding_used_by_type3(mut enc_id: ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_encoding_used_by_type3(enc_id) }) {
         Ok(value) => {
             let _ = value;
@@ -1962,10 +1715,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_encoding_used_by_type3(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_encoding_get_name(
-    mut enc_id: ::core::ffi::c_int,
-    _result: *mut *mut ::core::ffi::c_char,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_encoding_get_name(mut enc_id: ::core::ffi::c_int, _result: *mut *mut ::core::ffi::c_char) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_encoding_get_name(enc_id) }) {
         Ok(value) => {
             unsafe {
@@ -1977,13 +1727,8 @@ pub unsafe extern "C" fn __pdf_entry_pdf_encoding_get_name(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_encoding_add_usedchars(
-    mut encoding_id: ::core::ffi::c_int,
-    mut is_used: *const ::core::ffi::c_char,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_encoding_add_usedchars(encoding_id, is_used)
-    }) {
+pub unsafe extern "C" fn __pdf_entry_pdf_encoding_add_usedchars(mut encoding_id: ::core::ffi::c_int, mut is_used: *const ::core::ffi::c_char) -> i32 {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_encoding_add_usedchars(encoding_id, is_used) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -1992,10 +1737,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_encoding_add_usedchars(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_encoding_get_tounicode(
-    mut encoding_id: ::core::ffi::c_int,
-    _result: *mut *mut pdf_obj,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_encoding_get_tounicode(mut encoding_id: ::core::ffi::c_int, _result: *mut *mut pdf_obj) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_encoding_get_tounicode(encoding_id) }) {
         Ok(value) => {
             unsafe {
@@ -2008,14 +1750,10 @@ pub unsafe extern "C" fn __pdf_entry_pdf_encoding_get_tounicode(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_create_ToUnicode_CMap(
-    mut enc_name: *const ::core::ffi::c_char,
-    mut enc_vec: *mut *mut ::core::ffi::c_char,
-    mut is_used: *const ::core::ffi::c_char,
+    mut enc_name: *const ::core::ffi::c_char, mut enc_vec: *mut *mut ::core::ffi::c_char, mut is_used: *const ::core::ffi::c_char,
     _result: *mut *mut pdf_obj,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_create_ToUnicode_CMap(enc_name, enc_vec, is_used)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_create_ToUnicode_CMap(enc_name, enc_vec, is_used) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -2026,10 +1764,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_create_ToUnicode_CMap(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_load_ToUnicode_stream(
-    mut ident: *const ::core::ffi::c_char,
-    _result: *mut *mut pdf_obj,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_load_ToUnicode_stream(mut ident: *const ::core::ffi::c_char, _result: *mut *mut pdf_obj) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_load_ToUnicode_stream(ident) }) {
         Ok(value) => {
             unsafe {
@@ -2061,10 +1796,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_pdfencoding
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_pdfencoding.pointer }
 }

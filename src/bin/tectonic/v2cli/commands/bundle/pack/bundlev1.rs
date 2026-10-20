@@ -36,10 +36,7 @@ impl<W: Write> Write for CountingWriter<W> {
 }
 
 pub fn decode_hex(s: &str) -> Result<Vec<u8>, ParseIntError> {
-    (0..s.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16))
-        .collect()
+    (0..s.len()).step_by(2).map(|i| u8::from_str_radix(&s[i..i + 2], 16)).collect()
 }
 
 // Size of ttbv1 header
@@ -143,10 +140,7 @@ impl BundleV1 {
                 let mut file = fs::File::open(self.content_dir.join(&path))?;
 
                 // Compress and write bytes
-                let mut encoder = GzEncoder::new(
-                    CountingWriter::new(&mut self.target),
-                    Compression::default(),
-                );
+                let mut encoder = GzEncoder::new(CountingWriter::new(&mut self.target), Compression::default());
                 let real_len = std::io::copy(&mut file, &mut encoder)?;
                 let gzip_len = encoder.finish()?.written;
                 assert!(real_len < u32::MAX as u64);
@@ -167,10 +161,7 @@ impl BundleV1 {
             }
         }
 
-        info!(
-            "Average compression ratio: {:.2}",
-            real_len_sum as f64 / byte_count as f64
-        );
+        info!("Average compression ratio: {:.2}", real_len_sum as f64 / byte_count as f64);
 
         Ok(byte_count)
     }
@@ -188,10 +179,7 @@ impl BundleV1 {
 
         info!("Writing index");
 
-        let mut encoder = CountingWriter::new(GzEncoder::new(
-            CountingWriter::new(&mut self.target),
-            Compression::default(),
-        ));
+        let mut encoder = CountingWriter::new(GzEncoder::new(CountingWriter::new(&mut self.target), Compression::default()));
 
         encoder.write_all(b"[DEFAULTSEARCH]\nMAIN\n[SEARCH:MAIN]\n")?;
 
@@ -210,10 +198,7 @@ impl BundleV1 {
         self.index_gzip_len = gzip_len as u32;
         self.index_real_len = real_len as u32;
 
-        info!(
-            "index is at {} and has length {}",
-            self.index_start, self.index_gzip_len
-        );
+        info!("index is at {} and has length {}", self.index_start, self.index_gzip_len);
 
         Ok(())
     }
@@ -290,11 +275,7 @@ mod tests {
         fs::create_dir(&content).unwrap();
         fs::write(content.join("SEARCH"), "/source//\n").unwrap();
         fs::write(content.join("SHA256SUM"), "00".repeat(32)).unwrap();
-        fs::write(
-            content.join("FILELIST"),
-            "nohash file with spaces\nnohash empty\n",
-        )
-        .unwrap();
+        fs::write(content.join("FILELIST"), "nohash file with spaces\nnohash empty\n").unwrap();
         let mut state = 1u32;
         let contents: Vec<u8> = (0..200_000)
             .map(|_| {
@@ -327,26 +308,15 @@ mod tests {
         let index_real_len = u32::from_le_bytes(bytes[30..34].try_into().unwrap()) as usize;
         assert_eq!(bytes.len(), index_start + index_gzip_len);
         let mut index = String::new();
-        GzDecoder::new(&bytes[index_start..])
-            .read_to_string(&mut index)
-            .unwrap();
+        GzDecoder::new(&bytes[index_start..]).read_to_string(&mut index).unwrap();
         assert_eq!(index.len(), index_real_len);
         let mut lines = index.lines();
         assert_eq!(
             lines.by_ref().take(5).collect::<Vec<_>>(),
-            [
-                "[DEFAULTSEARCH]",
-                "MAIN",
-                "[SEARCH:MAIN]",
-                "/source//",
-                "[FILELIST]",
-            ]
+            ["[DEFAULTSEARCH]", "MAIN", "[SEARCH:MAIN]", "/source//", "[FILELIST]",]
         );
         let mut offset = HEADER_SIZE as usize;
-        for (line, (path, expected)) in lines.zip([
-            ("file with spaces", contents.as_slice()),
-            ("empty", &[][..]),
-        ]) {
+        for (line, (path, expected)) in lines.zip([("file with spaces", contents.as_slice()), ("empty", &[][..])]) {
             let mut fields = line.splitn(5, ' ');
             let start = fields.next().unwrap().parse::<usize>().unwrap();
             let gzip_len = fields.next().unwrap().parse::<usize>().unwrap();
@@ -356,9 +326,7 @@ mod tests {
             assert_eq!(fields.next(), Some("nohash"));
             assert_eq!(fields.next(), Some(path));
             let mut actual = Vec::new();
-            GzDecoder::new(&bytes[start..start + gzip_len])
-                .read_to_end(&mut actual)
-                .unwrap();
+            GzDecoder::new(&bytes[start..start + gzip_len]).read_to_end(&mut actual).unwrap();
             assert_eq!(actual, expected);
             offset += gzip_len;
         }

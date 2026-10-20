@@ -152,10 +152,7 @@ mod tests {
     fn test_type_id() {
         let arr = CFArray::<CFType>::empty();
         assert_eq!(CFTypeId::of::<CFArray<CFType>>(), CFTypeId::of_val(&arr));
-        assert_eq!(
-            CFTypeId::of::<CFArray<CFString>>(),
-            CFTypeId::of::<CFArray<CFUrl>>()
-        );
+        assert_eq!(CFTypeId::of::<CFArray<CFString>>(), CFTypeId::of::<CFArray<CFUrl>>());
         assert_ne!(CFTypeId::of::<CFString>(), CFTypeId::of::<CFUrl>());
     }
 

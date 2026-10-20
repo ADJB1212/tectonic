@@ -19,18 +19,9 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 unsafe extern "C-unwind" {
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     static mut __stdoutp: *mut FILE;
     fn fprintf(_: *mut FILE, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
 }
@@ -75,23 +66,9 @@ pub struct __sFILE {
     pub _lbfsize: ::core::ffi::c_int,
     pub _cookie: *mut ::core::ffi::c_void,
     pub _close: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void) -> ::core::ffi::c_int>,
-    pub _read: Option<
-        unsafe extern "C-unwind" fn(
-            *mut ::core::ffi::c_void,
-            *mut ::core::ffi::c_char,
-            ::core::ffi::c_int,
-        ) -> ::core::ffi::c_int,
-    >,
-    pub _seek: Option<
-        unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, fpos_t, ::core::ffi::c_int) -> fpos_t,
-    >,
-    pub _write: Option<
-        unsafe extern "C-unwind" fn(
-            *mut ::core::ffi::c_void,
-            *const ::core::ffi::c_char,
-            ::core::ffi::c_int,
-        ) -> ::core::ffi::c_int,
-    >,
+    pub _read: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, *mut ::core::ffi::c_char, ::core::ffi::c_int) -> ::core::ffi::c_int>,
+    pub _seek: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, fpos_t, ::core::ffi::c_int) -> fpos_t>,
+    pub _write: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, *const ::core::ffi::c_char, ::core::ffi::c_int) -> ::core::ffi::c_int>,
     pub _ub: __sbuf,
     pub _extra: *mut __sFILEX,
     pub _ur: ::core::ffi::c_int,
@@ -111,10 +88,7 @@ pub struct __sbuf {
 pub const __DARWIN_NULL: *mut ::core::ffi::c_void = ::core::ptr::null_mut::<::core::ffi::c_void>();
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
@@ -244,15 +218,12 @@ pub static mut paperspecs: [paper; 22] = [
     },
 ];
 #[unsafe(export_name = "__pdf_impl_paperinfo")]
-pub unsafe extern "C-unwind" fn paperinfo(
-    mut ppformat: *const ::core::ffi::c_char,
-) -> *const paper {
+pub unsafe extern "C-unwind" fn paperinfo(mut ppformat: *const ::core::ffi::c_char) -> *const paper {
     let mut ppinfo: *const paper = ::core::ptr::null::<paper>();
     if ppformat.is_null() {
         return ::core::ptr::null::<paper>();
     }
-    ppinfo = (&raw const paperspecs as *const paper).offset(0 as ::core::ffi::c_int as isize)
-        as *const paper;
+    ppinfo = (&raw const paperspecs as *const paper).offset(0 as ::core::ffi::c_int as isize) as *const paper;
     while !ppinfo.is_null()
         && !(if !ppinfo.is_null() && !(*ppinfo).name.is_null() {
             (*ppinfo).name
@@ -264,11 +235,7 @@ pub unsafe extern "C-unwind" fn paperinfo(
         if streq_ptr(ppformat, (*ppinfo).name) {
             break;
         }
-        ppinfo = if !ppinfo.offset(1 as ::core::ffi::c_int as isize).is_null()
-            && !(*ppinfo.offset(1 as ::core::ffi::c_int as isize))
-                .name
-                .is_null()
-        {
+        ppinfo = if !ppinfo.offset(1 as ::core::ffi::c_int as isize).is_null() && !(*ppinfo.offset(1 as ::core::ffi::c_int as isize)).name.is_null() {
             ppinfo.offset(1 as ::core::ffi::c_int as isize)
         } else {
             ::core::ptr::null::<paper>()
@@ -290,8 +257,7 @@ pub unsafe extern "C-unwind" fn paperinfo(
 #[unsafe(export_name = "__pdf_impl_dumppaperinfo")]
 pub unsafe extern "C-unwind" fn dumppaperinfo() {
     let mut ppinfo: *const paper = ::core::ptr::null::<paper>();
-    ppinfo = (&raw const paperspecs as *const paper).offset(0 as ::core::ffi::c_int as isize)
-        as *const paper;
+    ppinfo = (&raw const paperspecs as *const paper).offset(0 as ::core::ffi::c_int as isize) as *const paper;
     while !ppinfo.is_null()
         && !(if !ppinfo.is_null() && !(*ppinfo).name.is_null() {
             (*ppinfo).name
@@ -325,11 +291,7 @@ pub unsafe extern "C-unwind" fn dumppaperinfo() {
             25.4f64 * wd / 72.0f64,
             25.4f64 * ht / 72.0f64,
         );
-        ppinfo = if !ppinfo.offset(1 as ::core::ffi::c_int as isize).is_null()
-            && !(*ppinfo.offset(1 as ::core::ffi::c_int as isize))
-                .name
-                .is_null()
-        {
+        ppinfo = if !ppinfo.offset(1 as ::core::ffi::c_int as isize).is_null() && !(*ppinfo.offset(1 as ::core::ffi::c_int as isize)).name.is_null() {
             ppinfo.offset(1 as ::core::ffi::c_int as isize)
         } else {
             ::core::ptr::null::<paper>()
@@ -342,10 +304,7 @@ pub struct __sFILEX {
     _private: [u8; 0],
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_paperinfo(
-    mut ppformat: *const ::core::ffi::c_char,
-    _result: *mut *const paper,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_paperinfo(mut ppformat: *const ::core::ffi::c_char, _result: *mut *const paper) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { paperinfo(ppformat) }) {
         Ok(value) => {
             unsafe {

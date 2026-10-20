@@ -3,23 +3,13 @@
 
 use crate::{error::PdfError, syntax::error};
 
-pub(crate) fn split_alpha(
-    bytes: &mut [u8],
-    width: usize,
-    height: usize,
-    colors: usize,
-    sample: usize,
-) -> Result<(Vec<u8>, usize), PdfError> {
+pub(crate) fn split_alpha(bytes: &mut [u8], width: usize, height: usize, colors: usize, sample: usize) -> Result<(Vec<u8>, usize), PdfError> {
     if !matches!(colors, 1 | 3) || !matches!(sample, 1 | 2) {
         return Err(error("Invalid PNG alpha layout.", 0));
     }
     let pixel_bytes = (colors + 1) * sample;
-    let pixels = width
-        .checked_mul(height)
-        .ok_or_else(|| error("PNG raster is too large.", 0))?;
-    let length = pixels
-        .checked_mul(pixel_bytes)
-        .ok_or_else(|| error("PNG raster is too large.", 0))?;
+    let pixels = width.checked_mul(height).ok_or_else(|| error("PNG raster is too large.", 0))?;
+    let length = pixels.checked_mul(pixel_bytes).ok_or_else(|| error("PNG raster is too large.", 0))?;
     if bytes.len() != length {
         return Err(error("PNG: Inconsistent rowbytes value.", 0));
     }
@@ -27,20 +17,13 @@ pub(crate) fn split_alpha(
     let color_bytes = colors * sample;
     for pixel in 0..pixels {
         let start = pixel * pixel_bytes;
-        mask[pixel * sample..(pixel + 1) * sample]
-            .copy_from_slice(&bytes[start + color_bytes..start + pixel_bytes]);
+        mask[pixel * sample..(pixel + 1) * sample].copy_from_slice(&bytes[start + color_bytes..start + pixel_bytes]);
         bytes.copy_within(start..start + color_bytes, pixel * color_bytes);
     }
     Ok((mask, width * color_bytes))
 }
 
-pub(crate) fn palette_alpha(
-    bytes: &[u8],
-    width: usize,
-    height: usize,
-    bits: u8,
-    transparency: &[u8],
-) -> Result<Vec<u8>, PdfError> {
+pub(crate) fn palette_alpha(bytes: &[u8], width: usize, height: usize, bits: u8, transparency: &[u8]) -> Result<Vec<u8>, PdfError> {
     if width == 0 || height == 0 {
         return Err(error("Invalid PNG dimensions.", 0));
     }
@@ -56,9 +39,7 @@ pub(crate) fn palette_alpha(
         .and_then(|n| n.checked_add(7))
         .map(|n| n / 8)
         .ok_or_else(|| error("PNG raster is too large.", 0))?;
-    let len = row_bytes
-        .checked_mul(height)
-        .ok_or_else(|| error("PNG raster is too large.", 0))?;
+    let len = row_bytes.checked_mul(height).ok_or_else(|| error("PNG raster is too large.", 0))?;
     if bytes.len() != len {
         return Err(error("PNG: Inconsistent rowbytes value.", 0));
     }
@@ -66,8 +47,7 @@ pub(crate) fn palette_alpha(
     for row in bytes.chunks_exact(row_bytes) {
         for x in 0..width {
             let bit = x * usize::from(bits);
-            let index =
-                (row[bit / 8] >> (8 - usize::from(bits) - bit % 8)) & ((1u16 << bits) - 1) as u8;
+            let index = (row[bit / 8] >> (8 - usize::from(bits) - bit % 8)) & ((1u16 << bits) - 1) as u8;
             mask.push(transparency.get(index as usize).copied().unwrap_or(255));
         }
     }
@@ -104,10 +84,7 @@ mod tests {
 
     #[test]
     fn palette_rows_have_independent_padding_and_default_opaque_entries() {
-        assert_eq!(
-            palette_alpha(&[0x40, 0xa0], 3, 2, 1, &[0]).unwrap(),
-            [0, 255, 0, 255, 0, 255]
-        );
+        assert_eq!(palette_alpha(&[0x40, 0xa0], 3, 2, 1, &[0]).unwrap(), [0, 255, 0, 255, 0, 255]);
         assert!(palette_alpha(&[0], 2, 2, 8, &[]).is_err());
     }
 }

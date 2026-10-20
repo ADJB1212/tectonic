@@ -60,17 +60,10 @@ pub(crate) fn segment(input: &mut (impl Read + Seek), expected: u8) -> Result<Ve
 }
 
 fn update(key: u16, byte: u8) -> u16 {
-    key.wrapping_add(byte.into())
-        .wrapping_mul(52845)
-        .wrapping_add(22719)
+    key.wrapping_add(byte.into()).wrapping_mul(52845).wrapping_add(22719)
 }
 
-pub(crate) fn decrypt(
-    input: &[u8],
-    output: &mut [u8],
-    mut key: u16,
-    skip: usize,
-) -> Result<(), PdfError> {
+pub(crate) fn decrypt(input: &[u8], output: &mut [u8], mut key: u16, skip: usize) -> Result<(), PdfError> {
     let length = input
         .len()
         .checked_sub(skip)
@@ -86,11 +79,7 @@ pub(crate) fn decrypt(
     Ok(())
 }
 
-pub(crate) fn decrypt_in_place(
-    bytes: &mut [u8],
-    mut key: u16,
-    skip: usize,
-) -> Result<(), PdfError> {
+pub(crate) fn decrypt_in_place(bytes: &mut [u8], mut key: u16, skip: usize) -> Result<(), PdfError> {
     if skip > bytes.len() {
         return Err(error("Invalid Type 1 encrypted string length.", 0));
     }

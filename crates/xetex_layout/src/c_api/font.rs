@@ -12,9 +12,7 @@ use tectonic_mac_core::{CTFont, CoreType, sys::CTFontRef};
 pub unsafe extern "C" fn hasFontTable(font: XeTeXFont, table_tag: OTTag) -> bool {
     unsafe {
         // TODO: has_font_table for efficiency
-        (*font)
-            .load_font_table(ft::TableTag::Other(table_tag))
-            .is_some()
+        (*font).load_font_table(ft::TableTag::Other(table_tag)).is_some()
     }
 }
 
@@ -51,11 +49,7 @@ pub unsafe extern "C" fn getIndScript(font: XeTeXFont, index: libc::c_uint) -> h
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn getIndLanguage(
-    font: XeTeXFont,
-    script: hb::Tag,
-    index: libc::c_uint,
-) -> hb::Tag {
+pub unsafe extern "C" fn getIndLanguage(font: XeTeXFont, script: hb::Tag, index: libc::c_uint) -> hb::Tag {
     unsafe {
         let index = index as usize;
         let script = get_larger_script_list_table_ot(&*font).find_script(script);
@@ -75,12 +69,7 @@ pub unsafe extern "C" fn getIndLanguage(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn getIndFeature(
-    font: XeTeXFont,
-    script: hb::Tag,
-    language: hb::Tag,
-    index: libc::c_uint,
-) -> hb::Tag {
+pub unsafe extern "C" fn getIndFeature(font: XeTeXFont, script: hb::Tag, language: hb::Tag, index: libc::c_uint) -> hb::Tag {
     unsafe {
         let mut index = index as usize;
         let layout = (*font).hb_font().face().ot_layout();
@@ -107,11 +96,7 @@ pub unsafe extern "C" fn getIndFeature(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn getGlyphName(
-    font: XeTeXFont,
-    gid: u16,
-    len: *mut libc::c_int,
-) -> *const libc::c_char {
+pub unsafe extern "C" fn getGlyphName(font: XeTeXFont, gid: u16, len: *mut libc::c_int) -> *const libc::c_char {
     unsafe {
         match (*font).get_glyph_name(gid) {
             Some(out) => {
@@ -162,11 +147,7 @@ pub unsafe extern "C" fn createFont(font_ref: RawPlatformFontRef, point_size: Fi
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn createFontFromFile(
-    filename: *const libc::c_char,
-    index: libc::c_int,
-    point_size: Fixed,
-) -> XeTeXFont {
+pub unsafe extern "C" fn createFontFromFile(filename: *const libc::c_char, index: libc::c_int, point_size: Fixed) -> XeTeXFont {
     unsafe {
         let filename = if filename.is_null() {
             None
@@ -199,13 +180,7 @@ pub unsafe extern "C" fn countLanguages(font: XeTeXFont, script: hb::Tag) -> lib
         let table = get_larger_script_list_table_ot(&*font);
         let script = table.find_script(script);
         let out = match script {
-            Some(script) => {
-                script.language_tags_len()
-                    + script
-                        .swap_table()
-                        .map(|s| s.language_tags_len())
-                        .unwrap_or(0)
-            }
+            Some(script) => script.language_tags_len() + script.swap_table().map(|s| s.language_tags_len()).unwrap_or(0),
             None => 0,
         };
         out as libc::c_uint
@@ -213,11 +188,7 @@ pub unsafe extern "C" fn countLanguages(font: XeTeXFont, script: hb::Tag) -> lib
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn countFeatures(
-    font: XeTeXFont,
-    script: hb::Tag,
-    language: hb::Tag,
-) -> libc::c_uint {
+pub unsafe extern "C" fn countFeatures(font: XeTeXFont, script: hb::Tag, language: hb::Tag) -> libc::c_uint {
     unsafe {
         let layout = (*font).hb_font().face().ot_layout();
 
@@ -237,17 +208,11 @@ pub unsafe extern "C" fn countFeatures(
 
 #[cfg(target_os = "macos")]
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn getFileNameFromCTFont(
-    ct_font: CTFontRef,
-    index: *mut u32,
-) -> *const libc::c_char {
+pub unsafe extern "C" fn getFileNameFromCTFont(ct_font: CTFontRef, index: *mut u32) -> *const libc::c_char {
     unsafe {
         use std::ptr::NonNull;
-        crate::font::get_file_name_from_ct_font(
-            &CTFont::new_borrowed(NonNull::new(ct_font.cast_mut()).unwrap()),
-            &mut *index,
-        )
-        .map(CString::into_raw)
-        .unwrap_or(ptr::null_mut())
+        crate::font::get_file_name_from_ct_font(&CTFont::new_borrowed(NonNull::new(ct_font.cast_mut()).unwrap()), &mut *index)
+            .map(CString::into_raw)
+            .unwrap_or(ptr::null_mut())
     }
 }

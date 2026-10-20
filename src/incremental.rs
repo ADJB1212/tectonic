@@ -44,9 +44,7 @@ struct LimitedWriter<W> {
 
 impl<W: Write> Write for LimitedWriter<W> {
     fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
-        let count = self
-            .inner
-            .write(&bytes[..bytes.len().min(self.remaining)])?;
+        let count = self.inner.write(&bytes[..bytes.len().min(self.remaining)])?;
         self.remaining -= count;
         Ok(count)
     }
@@ -67,11 +65,7 @@ pub(crate) struct Cache {
 }
 
 impl Cache {
-    pub(crate) fn open(
-        root: &Path,
-        identity: &str,
-        build_date: SystemTime,
-    ) -> Result<(Self, Option<String>)> {
+    pub(crate) fn open(root: &Path, identity: &str, build_date: SystemTime) -> Result<(Self, Option<String>)> {
         let mut key = Sha256::new();
         key.update(identity.as_bytes());
         let mut executable = File::open(std::env::current_exe()?)?;
@@ -119,21 +113,13 @@ impl Cache {
             Err(error) => return Err(error.into()),
         };
         let file_length = file.metadata()?.len();
-        ensure!(
-            file_length <= MAX_CACHE as u64,
-            "checkpoint file is too large"
-        );
+        ensure!(file_length <= MAX_CACHE as u64, "checkpoint file is too large");
         let source = Arc::new(Mutex::new(file));
-        let mut source_file = source
-            .lock()
-            .map_err(|_| tectonic_errors::Error::msg("checkpoint file lock poisoned"))?;
+        let mut source_file = source.lock().map_err(|_| tectonic_errors::Error::msg("checkpoint file lock poisoned"))?;
         let mut file = BufReader::new((&mut *source_file).take(MAX_CACHE as u64 + 1));
         let mut header = [0; 56];
         file.read_exact(&mut header)?;
-        ensure!(
-            file_length >= 56 && &header[..8] == MAGIC,
-            "invalid cache header"
-        );
+        ensure!(file_length >= 56 && &header[..8] == MAGIC, "invalid cache header");
         let mut hash = Sha256::new();
         hash.update(&header[40..]);
         let mut input = &header[40..];
@@ -170,14 +156,8 @@ impl Cache {
                 length,
             });
         }
-        ensure!(
-            remaining == 0 && file.read(&mut [0])? == 0,
-            "trailing checkpoint bytes"
-        );
-        ensure!(
-            hash.finalize()[..] == header[8..40],
-            "cache checksum mismatch"
-        );
+        ensure!(remaining == 0 && file.read(&mut [0])? == 0, "trailing checkpoint bytes");
+        ensure!(hash.finalize()[..] == header[8..40], "cache checksum mismatch");
         self.saved = saved;
         self.build_date = SystemTime::UNIX_EPOCH
             .checked_add(Duration::from_secs(timestamp))
@@ -210,16 +190,8 @@ impl Cache {
         let Ok(saved) = result else {
             return;
         };
-        if self
-            .pending
-            .iter()
-            .filter(|saved| saved.pass == self.pass)
-            .count()
-            >= 2
-            && let Some(index) = self
-                .pending
-                .iter()
-                .position(|saved| saved.pass == self.pass)
+        if self.pending.iter().filter(|saved| saved.pass == self.pass).count() >= 2
+            && let Some(index) = self.pending.iter().position(|saved| saved.pass == self.pass)
         {
             self.pending.remove(index);
         }
@@ -229,12 +201,7 @@ impl Cache {
     }
 
     pub(crate) fn candidates(&self) -> Vec<Saved> {
-        self.saved
-            .iter()
-            .rev()
-            .filter(|saved| saved.pass == self.pass)
-            .cloned()
-            .collect()
+        self.saved.iter().rev().filter(|saved| saved.pass == self.pass).cloned().collect()
     }
 
     pub(crate) fn discard_pass(&mut self) {
@@ -250,13 +217,8 @@ impl Cache {
         let mut io = vec![0; io_length];
         decoder.read_exact(&mut io)?;
         let mut native = Vec::new();
-        decoder
-            .take((MAX_STATE + 1) as u64)
-            .read_to_end(&mut native)?;
-        ensure!(
-            !native.is_empty() && native.len() <= MAX_STATE,
-            "invalid native checkpoint size"
-        );
+        decoder.take((MAX_STATE + 1) as u64).read_to_end(&mut native)?;
+        ensure!(!native.is_empty() && native.len() <= MAX_STATE, "invalid native checkpoint size");
         Ok(TexCheckpoint { io, native })
     }
 
@@ -264,16 +226,11 @@ impl Cache {
         if self.pending.is_empty() {
             return Ok(());
         }
-        let passes: std::collections::HashSet<_> =
-            self.pending.iter().map(|saved| saved.pass).collect();
+        let passes: std::collections::HashSet<_> = self.pending.iter().map(|saved| saved.pass).collect();
         self.saved.retain(|saved| !passes.contains(&saved.pass));
         self.saved.append(&mut self.pending);
         trim(&mut self.saved);
-        let timestamp = self
-            .build_date
-            .duration_since(SystemTime::UNIX_EPOCH)?
-            .as_secs()
-            .to_le_bytes();
+        let timestamp = self.build_date.duration_since(SystemTime::UNIX_EPOCH)?.as_secs().to_le_bytes();
         let count = (self.saved.len() as u64).to_le_bytes();
         let mut hash = Sha256::new();
         hash.update(timestamp);
@@ -312,18 +269,10 @@ impl Cache {
 }
 
 fn trim(saved: &mut Vec<Saved>) {
-    while saved.len() > 24
-        || saved.iter().map(|saved| saved.length + 16).sum::<usize>() > MAX_CACHE - 56
-    {
+    while saved.len() > 24 || saved.iter().map(|saved| saved.length + 16).sum::<usize>() > MAX_CACHE - 56 {
         let index = saved
             .iter()
-            .position(|entry| {
-                saved
-                    .iter()
-                    .filter(|other| other.pass == entry.pass)
-                    .count()
-                    > 1
-            })
+            .position(|entry| saved.iter().filter(|other| other.pass == entry.pass).count() > 1)
             .unwrap_or(0);
         saved.remove(index);
     }
@@ -402,10 +351,7 @@ mod tests {
             inner: Vec::new(),
             remaining: 3,
         };
-        assert_eq!(
-            writer.write_all(b"1234").unwrap_err().kind(),
-            io::ErrorKind::WriteZero
-        );
+        assert_eq!(writer.write_all(b"1234").unwrap_err().kind(), io::ErrorKind::WriteZero);
         assert_eq!(writer.inner, b"123");
         assert_eq!(writer.remaining, 0);
     }
@@ -431,10 +377,7 @@ mod tests {
         drop(cache);
 
         std::thread::scope(|scope| {
-            for (candidate, expected) in candidates
-                .iter()
-                .zip([b"second".as_slice(), b"first".as_slice()])
-            {
+            for (candidate, expected) in candidates.iter().zip([b"second".as_slice(), b"first".as_slice()]) {
                 scope.spawn(move || {
                     for _ in 0..20 {
                         let checkpoint = candidate.decode().unwrap();
@@ -445,15 +388,9 @@ mod tests {
         });
         let (mut cache, warning) = Cache::open(root.path(), "test", SystemTime::now()).unwrap();
         assert!(warning.is_none());
-        assert_eq!(
-            cache.candidates()[0].decode().unwrap().native,
-            b"replacement"
-        );
+        assert_eq!(cache.candidates()[0].decode().unwrap().native, b"replacement");
         cache.pass = 1;
-        assert_eq!(
-            cache.candidates()[0].decode().unwrap().native,
-            b"another pass"
-        );
+        assert_eq!(cache.candidates()[0].decode().unwrap().native, b"another pass");
     }
 
     #[test]
@@ -467,9 +404,6 @@ mod tests {
         cache.capture(b"unsuccessful", b"[]");
         drop(cache);
         let (cache, _) = Cache::open(root.path(), "test", SystemTime::now()).unwrap();
-        assert_eq!(
-            cache.candidates()[0].decode().unwrap().native,
-            b"successful"
-        );
+        assert_eq!(cache.candidates()[0].decode().unwrap().native, b"successful");
     }
 }

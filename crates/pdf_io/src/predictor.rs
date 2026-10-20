@@ -11,14 +11,7 @@ use std::{
 const PARALLEL_THRESHOLD: usize = 256 * 1024;
 
 unsafe extern "C" {
-    fn tt_pdf_filter_png_rows(
-        raster: *const u8,
-        destination: *mut u8,
-        row_bytes: i32,
-        bytes_per_pixel: i32,
-        first_row: i32,
-        last_row: i32,
-    );
+    fn tt_pdf_filter_png_rows(raster: *const u8, destination: *mut u8, row_bytes: i32, bytes_per_pixel: i32, first_row: i32, last_row: i32);
 }
 
 pub(crate) fn pool() -> Option<Arc<rayon::ThreadPool>> {
@@ -41,13 +34,7 @@ pub(crate) fn pool() -> Option<Arc<rayon::ThreadPool>> {
     .clone()
 }
 
-fn filter_parallel(
-    source: &[u8],
-    destination: &mut [u8],
-    row_bytes: usize,
-    bytes_per_pixel: i32,
-    pool: &rayon::ThreadPool,
-) {
+fn filter_parallel(source: &[u8], destination: &mut [u8], row_bytes: usize, bytes_per_pixel: i32, pool: &rayon::ThreadPool) {
     let rows = source.len() / row_bytes;
     let rows_per_chunk = rows.div_ceil(pool.current_num_threads() * 4);
     pool.install(|| {
@@ -79,13 +66,7 @@ fn filter_parallel(
 /// bytes and `(row_bytes + 1) * rows` output bytes. Dimensions must be nonnegative
 /// and products must fit i32. `bytes_per_pixel` must be positive.
 #[unsafe(no_mangle)]
-unsafe extern "C" fn tt_pdf_filter_png_parallel(
-    raster: *const u8,
-    destination: *mut u8,
-    row_bytes: i32,
-    rows: i32,
-    bytes_per_pixel: i32,
-) {
+unsafe extern "C" fn tt_pdf_filter_png_parallel(raster: *const u8, destination: *mut u8, row_bytes: i32, rows: i32, bytes_per_pixel: i32) {
     unsafe {
         if rows == 0 {
             return;
@@ -95,46 +76,22 @@ unsafe extern "C" fn tt_pdf_filter_png_parallel(
             return;
         }
         let source = slice::from_raw_parts(raster, row_bytes as usize * rows as usize);
-        let destination =
-            slice::from_raw_parts_mut(destination, (row_bytes as usize + 1) * rows as usize);
+        let destination = slice::from_raw_parts_mut(destination, (row_bytes as usize + 1) * rows as usize);
         if source.len() >= PARALLEL_THRESHOLD
             && let Some(pool) = pool()
         {
-            filter_parallel(
-                source,
-                destination,
-                row_bytes as usize,
-                bytes_per_pixel,
-                &pool,
-            );
+            filter_parallel(source, destination, row_bytes as usize, bytes_per_pixel, &pool);
             return;
         }
-        tt_pdf_filter_png_rows(
-            source.as_ptr(),
-            destination.as_mut_ptr(),
-            row_bytes,
-            bytes_per_pixel,
-            0,
-            rows,
-        );
+        tt_pdf_filter_png_rows(source.as_ptr(), destination.as_mut_ptr(), row_bytes, bytes_per_pixel, 0, rows);
     }
 }
 
-fn filter_tiff_row(
-    source: &[u8],
-    destination: &mut [u8],
-    columns: usize,
-    bpc: usize,
-    colors: usize,
-) {
+fn filter_tiff_row(source: &[u8], destination: &mut [u8], columns: usize, bpc: usize, colors: usize) {
     match bpc {
         8 => {
             for (index, byte) in destination.iter_mut().enumerate() {
-                let previous = if index >= colors {
-                    source[index - colors]
-                } else {
-                    0
-                };
+                let previous = if index >= colors { source[index - colors] } else { 0 };
                 *byte = source[index].wrapping_sub(previous);
             }
         }
@@ -154,14 +111,9 @@ fn filter_tiff_row(
         1 | 2 | 4 => {
             destination.fill(0);
             let mask = (1u8 << bpc) - 1;
-            let sample =
-                |index: usize| (source[index * bpc / 8] >> (8 - bpc - index * bpc % 8)) & mask;
+            let sample = |index: usize| (source[index * bpc / 8] >> (8 - bpc - index * bpc % 8)) & mask;
             for index in 0..columns * colors {
-                let previous = if index >= colors {
-                    sample(index - colors)
-                } else {
-                    0
-                };
+                let previous = if index >= colors { sample(index - colors) } else { 0 };
                 let difference = sample(index).wrapping_sub(previous) & mask;
                 destination[index * bpc / 8] |= difference << (8 - bpc - index * bpc % 8);
             }
@@ -170,14 +122,7 @@ fn filter_tiff_row(
     }
 }
 
-fn filter_tiff(
-    source: &[u8],
-    destination: &mut [u8],
-    columns: usize,
-    bpc: usize,
-    colors: usize,
-    pool: Option<&rayon::ThreadPool>,
-) {
+fn filter_tiff(source: &[u8], destination: &mut [u8], columns: usize, bpc: usize, colors: usize, pool: Option<&rayon::ThreadPool>) {
     let row_bytes = (columns * bpc * colors).div_ceil(8);
     if let Some(pool) = pool {
         let rows_per_chunk = (source.len() / row_bytes).div_ceil(pool.current_num_threads() * 4);
@@ -186,19 +131,13 @@ fn filter_tiff(
                 .par_chunks_mut(rows_per_chunk * row_bytes)
                 .zip(source.par_chunks(rows_per_chunk * row_bytes))
                 .for_each(|(destination, source)| {
-                    for (source, destination) in source
-                        .chunks_exact(row_bytes)
-                        .zip(destination.chunks_exact_mut(row_bytes))
-                    {
+                    for (source, destination) in source.chunks_exact(row_bytes).zip(destination.chunks_exact_mut(row_bytes)) {
                         filter_tiff_row(source, destination, columns, bpc, colors);
                     }
                 });
         });
     } else {
-        for (source, destination) in source
-            .chunks_exact(row_bytes)
-            .zip(destination.chunks_exact_mut(row_bytes))
-        {
+        for (source, destination) in source.chunks_exact(row_bytes).zip(destination.chunks_exact_mut(row_bytes)) {
             filter_tiff_row(source, destination, columns, bpc, colors);
         }
     }
@@ -211,45 +150,21 @@ fn filter_tiff(
 /// * rows` bytes. Dimensions must be nonnegative with products fitting i32;
 /// `bpc` and `colors` must be positive.
 #[unsafe(no_mangle)]
-unsafe extern "C" fn tt_pdf_filter_tiff_parallel(
-    raster: *const u8,
-    destination: *mut u8,
-    columns: i32,
-    rows: i32,
-    bpc: i32,
-    colors: i32,
-) {
+unsafe extern "C" fn tt_pdf_filter_tiff_parallel(raster: *const u8, destination: *mut u8, columns: i32, rows: i32, bpc: i32, colors: i32) {
     unsafe {
-        let length =
-            (columns as usize * bpc as usize * colors as usize).div_ceil(8) * rows as usize;
+        let length = (columns as usize * bpc as usize * colors as usize).div_ceil(8) * rows as usize;
         if length == 0 {
             return;
         }
         let source = slice::from_raw_parts(raster, length);
         let destination = slice::from_raw_parts_mut(destination, length);
-        let pool = if length >= PARALLEL_THRESHOLD {
-            pool()
-        } else {
-            None
-        };
-        filter_tiff(
-            source,
-            destination,
-            columns as usize,
-            bpc as usize,
-            colors as usize,
-            pool.as_deref(),
-        );
+        let pool = if length >= PARALLEL_THRESHOLD { pool() } else { None };
+        filter_tiff(source, destination, columns as usize, bpc as usize, colors as usize, pool.as_deref());
     }
 }
 
 pub(crate) fn filter_owned(
-    mut source: Vec<u8>,
-    predictor: i32,
-    columns: i32,
-    bpc: i32,
-    colors: i32,
-    pool: Option<&rayon::ThreadPool>,
+    mut source: Vec<u8>, predictor: i32, columns: i32, bpc: i32, colors: i32, pool: Option<&rayon::ThreadPool>,
 ) -> Result<Vec<u8>, ()> {
     if predictor == 0 {
         return Ok(source);
@@ -284,8 +199,8 @@ pub(crate) fn filter_owned(
                     for index in (colors..row.len() / 2).rev() {
                         let offset = index * 2;
                         let previous = offset - colors * 2;
-                        let value = u16::from_be_bytes([row[offset], row[offset + 1]])
-                            .wrapping_sub(u16::from_be_bytes([row[previous], row[previous + 1]]));
+                        let value =
+                            u16::from_be_bytes([row[offset], row[offset + 1]]).wrapping_sub(u16::from_be_bytes([row[previous], row[previous + 1]]));
                         row[offset..offset + 2].copy_from_slice(&value.to_be_bytes());
                     }
                 } else {
@@ -358,10 +273,7 @@ mod tests {
 
     #[test]
     fn tiff_predictors_preserve_samples_and_row_boundaries() {
-        let pool = rayon::ThreadPoolBuilder::new()
-            .num_threads(3)
-            .build()
-            .unwrap();
+        let pool = rayon::ThreadPoolBuilder::new().num_threads(3).build().unwrap();
         for bpc in [1, 2, 4, 8, 16] {
             for colors in [1, 3, 4] {
                 for columns in [1, 7, 257] {
@@ -371,20 +283,13 @@ mod tests {
                         let mask = ((1u32 << bpc) - 1) as u16;
                         for row in 0..rows {
                             let samples: Vec<u16> = (0..columns * colors)
-                                .map(|index| {
-                                    ((index * 4093 + row * 8191 + index / colors * 17) as u16)
-                                        & mask
-                                })
+                                .map(|index| ((index * 4093 + row * 8191 + index / colors * 17) as u16) & mask)
                                 .collect();
                             let differences: Vec<u16> = samples
                                 .iter()
                                 .enumerate()
                                 .map(|(index, &sample)| {
-                                    let previous = if index >= colors {
-                                        samples[index - colors]
-                                    } else {
-                                        0
-                                    };
+                                    let previous = if index >= colors { samples[index - colors] } else { 0 };
                                     sample.wrapping_sub(previous) & mask
                                 })
                                 .collect();
@@ -397,21 +302,10 @@ mod tests {
                         let mut actual = vec![0xff; expected.len()];
                         for pool in [None, Some(&pool)] {
                             filter_tiff(&source, &mut actual, columns, bpc, colors, pool);
-                            assert_eq!(
-                                actual, expected,
-                                "bpc={bpc}, colors={colors}, columns={columns}, rows={rows}"
-                            );
+                            assert_eq!(actual, expected, "bpc={bpc}, colors={colors}, columns={columns}, rows={rows}");
                             let owned = source.clone();
                             let pointer = owned.as_ptr();
-                            let filtered = filter_owned(
-                                owned,
-                                2,
-                                columns as i32,
-                                bpc as i32,
-                                colors as i32,
-                                pool,
-                            )
-                            .unwrap();
+                            let filtered = filter_owned(owned, 2, columns as i32, bpc as i32, colors as i32, pool).unwrap();
                             assert_eq!(filtered, expected);
                             assert_eq!(filtered.as_ptr(), pointer);
                         }
@@ -448,9 +342,7 @@ mod tests {
     fn benchmark_pdf_tiff_predictor() {
         let pool = pool().expect("benchmark requires multiple CPUs");
         let (columns, rows, colors, bpc) = (1024, 4096, 3, 16);
-        let source: Vec<_> = (0..columns * rows * colors * 2)
-            .map(|i| (i % 251) as u8)
-            .collect();
+        let source: Vec<_> = (0..columns * rows * colors * 2).map(|i| (i % 251) as u8).collect();
         let mut output = vec![0; source.len()];
         filter_tiff(&source, &mut output, columns, bpc, colors, Some(&pool));
         let measure = |output: &mut [u8], pool| {
@@ -472,10 +364,7 @@ mod tests {
 
     #[test]
     fn parallel_png_predictors_match_serial_rows() {
-        let pool = rayon::ThreadPoolBuilder::new()
-            .num_threads(3)
-            .build()
-            .unwrap();
+        let pool = rayon::ThreadPoolBuilder::new().num_threads(3).build().unwrap();
         for bytes_per_pixel in [1, 2, 3, 4, 6, 8] {
             let row_bytes = 257 * bytes_per_pixel;
             for rows in [1, 2, 13, 1025] {
@@ -495,17 +384,8 @@ mod tests {
                         rows as i32,
                     );
                 }
-                filter_parallel(
-                    &source,
-                    &mut actual,
-                    row_bytes,
-                    bytes_per_pixel as i32,
-                    &pool,
-                );
-                assert_eq!(
-                    actual, expected,
-                    "bytes_per_pixel={bytes_per_pixel}, rows={rows}"
-                );
+                filter_parallel(&source, &mut actual, row_bytes, bytes_per_pixel as i32, &pool);
+                assert_eq!(actual, expected, "bytes_per_pixel={bytes_per_pixel}, rows={rows}");
             }
         }
     }
@@ -522,14 +402,7 @@ mod tests {
         for _ in 0..3 {
             // SAFETY: The buffers have the sizes required for these raster dimensions.
             unsafe {
-                tt_pdf_filter_png_rows(
-                    source.as_ptr(),
-                    output.as_mut_ptr(),
-                    row_bytes as i32,
-                    3,
-                    0,
-                    rows as i32,
-                );
+                tt_pdf_filter_png_rows(source.as_ptr(), output.as_mut_ptr(), row_bytes as i32, 3, 0, rows as i32);
             }
             std::hint::black_box(&output);
         }

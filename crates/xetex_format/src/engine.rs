@@ -46,11 +46,7 @@ impl Engine {
     /// Get an engine definition for a specific version.
     pub fn new_for_version(version: FormatVersion) -> Result<Engine> {
         let mut symbols = SymbolTable::default();
-        symbols.add(
-            SymbolCategory::FormatVersion,
-            "TECTONIC_FORMAT_VERSION",
-            version as isize,
-        )?;
+        symbols.add(SymbolCategory::FormatVersion, "TECTONIC_FORMAT_VERSION", version as isize)?;
 
         cshash::initialize_cshash_symbols(&mut symbols)?;
 
@@ -72,8 +68,7 @@ impl Engine {
         let dimen_pars = dimenpars::get_dimenpars_for_version(version, &mut symbols)?;
         let glue_pars = gluepars::get_gluepars_for_version(version, &mut symbols)?;
         let local_pars = locals::get_local_pars_for_version(version, &mut symbols)?;
-        let etex_penalties_pars =
-            etexpenalties::get_etex_penalties_pars_for_version(version, &mut symbols)?;
+        let etex_penalties_pars = etexpenalties::get_etex_penalties_pars_for_version(version, &mut symbols)?;
 
         eqtb::initialize_eqtb_symbols(version, &mut symbols)?;
         commands::initialize_command_code_symbols(version, &mut symbols);

@@ -98,14 +98,8 @@ impl Journal {
             return;
         }
         let operation = match operation {
-            Operation::Getc {
-                id,
-                byte: Some(byte),
-            } => {
-                if let Some(Operation::Bytes {
-                    id: previous,
-                    bytes,
-                }) = self.operations.last_mut()
+            Operation::Getc { id, byte: Some(byte) } => {
+                if let Some(Operation::Bytes { id: previous, bytes }) = self.operations.last_mut()
                     && *previous == id
                     && bytes.len() < 8192
                 {
@@ -116,10 +110,7 @@ impl Journal {
                     }
                     return;
                 }
-                Operation::Bytes {
-                    id,
-                    bytes: vec![byte],
-                }
+                Operation::Bytes { id, bytes: vec![byte] }
             }
             Operation::Write { id, bytes } => {
                 if bytes.len() == 1
@@ -158,11 +149,7 @@ impl Journal {
         };
         self.bytes += match &operation {
             Operation::Write { bytes, .. } | Operation::Bytes { bytes, .. } => bytes.len() + 128,
-            Operation::Input { name, resolved, .. } => {
-                name.as_ref().map_or(0, String::len)
-                    + resolved.as_ref().map_or(0, String::len)
-                    + 256
-            }
+            Operation::Input { name, resolved, .. } => name.as_ref().map_or(0, String::len) + resolved.as_ref().map_or(0, String::len) + 256,
             Operation::Md5 { name, .. } => name.len() + 128,
             _ => 128,
         };
@@ -194,10 +181,7 @@ impl<'de, F: FnMut(Operation) -> Result<()>> serde::de::Visitor<'de> for Operati
         formatter.write_str("a checkpoint operation sequence")
     }
 
-    fn visit_seq<A: serde::de::SeqAccess<'de>>(
-        mut self,
-        mut sequence: A,
-    ) -> std::result::Result<(), A::Error> {
+    fn visit_seq<A: serde::de::SeqAccess<'de>>(mut self, mut sequence: A) -> std::result::Result<(), A::Error> {
         while let Some(operation) = sequence.next_element()? {
             (self.0)(operation).map_err(serde::de::Error::custom)?;
         }
@@ -276,18 +260,10 @@ impl CoreBridgeState<'_> {
                         Some(name) => self.input_open(name, *format, *gz),
                         None => self.input_open_primary(),
                     };
-                    ensure!(
-                        actual.map(InputId::idx) == *id,
-                        "input availability changed"
-                    );
+                    ensure!(actual.map(InputId::idx) == *id, "input availability changed");
                     ensure!(self.latest_input_path == *path, "input resolution changed");
                     ensure!(
-                        actual.map(|id| self.input_handles[id.idx()]
-                            .as_ref()
-                            .unwrap()
-                            .name()
-                            .to_owned())
-                            == *resolved,
+                        actual.map(|id| self.input_handles[id.idx()].as_ref().unwrap().name().to_owned()) == *resolved,
                         "input name changed"
                     );
                 }
@@ -296,10 +272,7 @@ impl CoreBridgeState<'_> {
                         Some(name) => self.output_open(name, *gz),
                         None => self.output_open_stdout(),
                     };
-                    ensure!(
-                        actual.map(OutputId::idx) == *id,
-                        "output availability changed"
-                    );
+                    ensure!(actual.map(OutputId::idx) == *id, "output availability changed");
                 }
                 Operation::Read {
                     id,
@@ -328,35 +301,21 @@ impl CoreBridgeState<'_> {
                 }
                 Operation::Getc { id, byte } => {
                     let id = self.checked_input(*id)?;
-                    ensure!(
-                        self.input_getc(id).ok() == *byte,
-                        "input byte changed before checkpoint"
-                    );
+                    ensure!(self.input_getc(id).ok() == *byte, "input byte changed before checkpoint");
                 }
                 Operation::Bytes { id, bytes } => {
-                    ensure!(
-                        bytes.len() <= 8192 && bytes.len() <= read_budget,
-                        "invalid checkpoint bytes"
-                    );
+                    ensure!(bytes.len() <= 8192 && bytes.len() <= read_budget, "invalid checkpoint bytes");
                     read_budget -= bytes.len();
                     let id = self.checked_input(*id)?;
                     for byte in bytes {
-                        ensure!(
-                            self.input_getc(id).ok() == Some(*byte),
-                            "input byte changed before checkpoint"
-                        );
+                        ensure!(self.input_getc(id).ok() == Some(*byte), "input byte changed before checkpoint");
                     }
                 }
                 Operation::Ungetc { id, byte } => {
                     let id = self.checked_input(*id)?;
                     self.input_ungetc(id, *byte)?;
                 }
-                Operation::Seek {
-                    id,
-                    kind,
-                    offset,
-                    result,
-                } => {
+                Operation::Seek { id, kind, offset, result } => {
                     let id = self.checked_input(*id)?;
                     let from = match kind {
                         0 => SeekFrom::Start(*offset),
@@ -372,10 +331,7 @@ impl CoreBridgeState<'_> {
                 }
                 Operation::Mtime { id, time } => {
                     let id = self.checked_input(*id)?;
-                    ensure!(
-                        self.input_get_mtime(id) == *time,
-                        "input modification time changed"
-                    );
+                    ensure!(self.input_get_mtime(id) == *time, "input modification time changed");
                 }
                 Operation::Md5 { name, digest } => {
                     let mut actual = [0; 16];
@@ -410,10 +366,7 @@ impl CoreBridgeState<'_> {
                 }
             }
             ensure!(
-                self.journal
-                    .as_ref()
-                    .and_then(|journal| journal.operations.last())
-                    == Some(&operation),
+                self.journal.as_ref().and_then(|journal| journal.operations.last()) == Some(&operation),
                 "checkpoint I/O observations changed"
             );
             Ok(())
@@ -465,10 +418,7 @@ mod tests {
             });
         }
         for _ in 0..300_000 {
-            journal.push(Operation::Getc {
-                id: 0,
-                byte: Some(b'y'),
-            });
+            journal.push(Operation::Getc { id: 0, byte: Some(b'y') });
         }
         let encoded = journal.encode().unwrap();
         assert!(encoded.len() < 5_000_000);
@@ -476,9 +426,7 @@ mod tests {
             .operations
             .iter()
             .map(|operation| match operation {
-                Operation::CharacterWrites(bytes) => {
-                    bytes.capacity() * std::mem::size_of::<(u16, u8)>()
-                }
+                Operation::CharacterWrites(bytes) => bytes.capacity() * std::mem::size_of::<(u16, u8)>(),
                 _ => 0,
             })
             .sum();
@@ -499,10 +447,7 @@ mod tests {
     fn character_writes_preserve_handles_outside_the_compact_range() {
         let mut journal = Journal::new();
         for id in [0, u16::MAX as usize, u16::MAX as usize + 1, usize::MAX] {
-            journal.push(Operation::Write {
-                id,
-                bytes: vec![b'x'],
-            });
+            journal.push(Operation::Write { id, bytes: vec![b'x'] });
         }
         let encoded = journal.encode().unwrap();
         let operations: Vec<Operation> = serde_json::from_slice(&encoded).unwrap();
@@ -543,17 +488,9 @@ mod tests {
     }
 
     impl IoProvider for Provider {
-        fn input_open_name(
-            &mut self,
-            name: &str,
-            _: &mut dyn crate::StatusBackend,
-        ) -> OpenResult<InputHandle> {
+        fn input_open_name(&mut self, name: &str, _: &mut dyn crate::StatusBackend) -> OpenResult<InputHandle> {
             match self.files.get(name) {
-                Some(bytes) => OpenResult::Ok(InputHandle::new(
-                    name,
-                    Cursor::new(bytes.clone()),
-                    InputOrigin::Filesystem,
-                )),
+                Some(bytes) => OpenResult::Ok(InputHandle::new(name, Cursor::new(bytes.clone()), InputOrigin::Filesystem)),
                 None => OpenResult::NotAvailable,
             }
         }
@@ -575,9 +512,7 @@ mod tests {
         CoreBridgeLauncher::new(&mut driver, &mut NoopStatusBackend::default())
             .with_global_lock(|state| {
                 state.record_checkpoint_io();
-                let input = state
-                    .input_open("source.tex", FileFormat::Tex, false)
-                    .unwrap();
+                let input = state.input_open("source.tex", FileFormat::Tex, false).unwrap();
                 assert_eq!(state.input_getc(input).unwrap(), b'p');
                 state.input_ungetc(input, b'p')?;
                 assert_eq!(state.input_seek(input, SeekFrom::Current(0))?, 0);
@@ -610,25 +545,21 @@ mod tests {
     fn replay_detects_changed_closed_dependencies_and_negative_lookups() {
         let journal = record_prefix(true);
         let mut changed = driver(b"prefix-new");
-        let result = CoreBridgeLauncher::new(&mut changed, &mut NoopStatusBackend::default())
-            .with_global_lock(|state| state.replay_checkpoint_io(&journal));
+        let result =
+            CoreBridgeLauncher::new(&mut changed, &mut NoopStatusBackend::default()).with_global_lock(|state| state.replay_checkpoint_io(&journal));
         assert!(result.is_err());
         let mut absent = driver(b"prefix-old");
         let journal = CoreBridgeLauncher::new(&mut absent, &mut NoopStatusBackend::default())
             .with_global_lock(|state| {
                 state.record_checkpoint_io();
-                assert!(
-                    state
-                        .input_open("missing", FileFormat::Tex, false)
-                        .is_none()
-                );
+                assert!(state.input_open("missing", FileFormat::Tex, false).is_none());
                 state.journal.as_ref().unwrap().encode()
             })
             .unwrap();
         let mut present = driver(b"prefix-old");
         present.0.files.insert("missing".to_owned(), Vec::new());
-        let result = CoreBridgeLauncher::new(&mut present, &mut NoopStatusBackend::default())
-            .with_global_lock(|state| state.replay_checkpoint_io(&journal));
+        let result =
+            CoreBridgeLauncher::new(&mut present, &mut NoopStatusBackend::default()).with_global_lock(|state| state.replay_checkpoint_io(&journal));
         assert!(result.is_err());
     }
 
@@ -685,11 +616,7 @@ mod tests {
             })
             .unwrap();
         let mut bytes = Vec::new();
-        io::Read::read_to_end(
-            &mut flate2::read::GzDecoder::new(resumed.0.output.0.borrow().as_slice()),
-            &mut bytes,
-        )
-        .unwrap();
+        io::Read::read_to_end(&mut flate2::read::GzDecoder::new(resumed.0.output.0.borrow().as_slice()), &mut bytes).unwrap();
         assert_eq!(bytes, b"prefixsuffix");
     }
 
@@ -701,8 +628,8 @@ mod tests {
         }])
         .unwrap();
         let mut driver = driver(b"");
-        let result = CoreBridgeLauncher::new(&mut driver, &mut NoopStatusBackend::default())
-            .with_global_lock(|state| state.replay_checkpoint_io(&bytes));
+        let result =
+            CoreBridgeLauncher::new(&mut driver, &mut NoopStatusBackend::default()).with_global_lock(|state| state.replay_checkpoint_io(&bytes));
         assert!(result.is_err());
     }
 }

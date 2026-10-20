@@ -11,9 +11,7 @@
 use super::bridge::ttstub_output_putc;
 use libc::{c_char, c_int, c_void};
 use std::ptr;
-use tectonic_bridge_core::{
-    Diagnostic, ttbc_diag_append, ttbc_diag_begin_error, ttbc_diag_begin_warning,
-};
+use tectonic_bridge_core::{Diagnostic, ttbc_diag_append, ttbc_diag_begin_error, ttbc_diag_begin_warning};
 
 use super::xetex_constants::*;
 use super::xetex_core::*;
@@ -51,11 +49,7 @@ unsafe fn diagnostic_print_file_line(diagnostic: *mut Diagnostic) {
         if level == 0 {
             ttbc_diag_append(&mut *diagnostic, b"!\0".as_ptr() as *const c_char);
         } else {
-            let source_line = if level != in_open {
-                *line_stack.add((level + 1) as usize)
-            } else {
-                line
-            };
+            let source_line = if level != in_open { *line_stack.add((level + 1) as usize) } else { line };
 
             let filename = gettexstring(*full_source_filename_stack.add(level as usize));
             let mut buf = [0u8; 1024];
@@ -201,9 +195,7 @@ pub unsafe extern "C" fn print_raw_char(s: u16, incr_offset: bool) {
 #[unsafe(export_name = "print_char")]
 pub unsafe extern "C" fn print_char(s: i32) {
     unsafe {
-        let new_line_c = (*eqtb.add((INT_BASE + INT_PAR__new_line_char) as usize))
-            .b32
-            .s1;
+        let new_line_c = (*eqtb.add((INT_BASE + INT_PAR__new_line_char) as usize)).b32.s1;
 
         if selector > SELECTOR_PSEUDO && !doing_special {
             if s >= 0x10000 {
@@ -285,9 +277,7 @@ pub unsafe extern "C" fn print(s: i32) {
                     return;
                 }
 
-                let new_line_c = (*eqtb.add((INT_BASE + INT_PAR__new_line_char) as usize))
-                    .b32
-                    .s1;
+                let new_line_c = (*eqtb.add((INT_BASE + INT_PAR__new_line_char) as usize)).b32.s1;
                 if s == new_line_c {
                     if selector < SELECTOR_PSEUDO {
                         print_ln();
@@ -295,16 +285,10 @@ pub unsafe extern "C" fn print(s: i32) {
                     }
                 }
 
-                let nl = (*eqtb.add((INT_BASE + INT_PAR__new_line_char) as usize))
-                    .b32
-                    .s1;
-                (*eqtb.add((INT_BASE + INT_PAR__new_line_char) as usize))
-                    .b32
-                    .s1 = -1;
+                let nl = (*eqtb.add((INT_BASE + INT_PAR__new_line_char) as usize)).b32.s1;
+                (*eqtb.add((INT_BASE + INT_PAR__new_line_char) as usize)).b32.s1 = -1;
                 print_char(s);
-                (*eqtb.add((INT_BASE + INT_PAR__new_line_char) as usize))
-                    .b32
-                    .s1 = nl;
+                (*eqtb.add((INT_BASE + INT_PAR__new_line_char) as usize)).b32.s1 = nl;
                 return;
             }
         }
@@ -315,10 +299,7 @@ pub unsafe extern "C" fn print(s: i32) {
 
         while i < end {
             let ch = (*str_pool.add(i as usize)) as i32;
-            if (0xD800..0xDC00).contains(&ch)
-                && (i + 1 < end)
-                && (0xDC00..0xE000).contains(&((*str_pool.add((i + 1) as usize)) as i32))
-            {
+            if (0xD800..0xDC00).contains(&ch) && (i + 1 < end) && (0xDC00..0xE000).contains(&((*str_pool.add((i + 1) as usize)) as i32)) {
                 let ch2 = (*str_pool.add((i + 1) as usize)) as i32;
                 print_char(0x10000 + (ch - 0xD800) * 1024 + ch2 - 0xDC00);
                 i += 2;
@@ -343,8 +324,7 @@ pub unsafe extern "C" fn print_cstr(str: *const c_char) {
 #[unsafe(export_name = "print_nl")]
 pub unsafe extern "C" fn print_nl(s: str_number) {
     unsafe {
-        if (term_offset > 0 && odd(selector)) || (file_offset > 0 && selector >= SELECTOR_LOG_ONLY)
-        {
+        if (term_offset > 0 && odd(selector)) || (file_offset > 0 && selector >= SELECTOR_LOG_ONLY) {
             print_ln();
         }
         print(s);
@@ -354,8 +334,7 @@ pub unsafe extern "C" fn print_nl(s: str_number) {
 #[unsafe(export_name = "print_nl_cstr")]
 pub unsafe extern "C" fn print_nl_cstr(str: *const c_char) {
     unsafe {
-        if (term_offset > 0 && odd(selector)) || (file_offset > 0 && selector >= SELECTOR_LOG_ONLY)
-        {
+        if (term_offset > 0 && odd(selector)) || (file_offset > 0 && selector >= SELECTOR_LOG_ONLY) {
             print_ln();
         }
         print_cstr(str);
@@ -365,9 +344,7 @@ pub unsafe extern "C" fn print_nl_cstr(str: *const c_char) {
 #[unsafe(export_name = "print_esc")]
 pub unsafe extern "C" fn print_esc(s: str_number) {
     unsafe {
-        let c = (*eqtb.add((INT_BASE + INT_PAR__escape_char) as usize))
-            .b32
-            .s1;
+        let c = (*eqtb.add((INT_BASE + INT_PAR__escape_char) as usize)).b32.s1;
         if (0..=BIGGEST_USV).contains(&c) {
             print_char(c);
         }
@@ -378,9 +355,7 @@ pub unsafe extern "C" fn print_esc(s: str_number) {
 #[unsafe(export_name = "print_esc_cstr")]
 pub unsafe extern "C" fn print_esc_cstr(s: *const c_char) {
     unsafe {
-        let c = (*eqtb.add((INT_BASE + INT_PAR__escape_char) as usize))
-            .b32
-            .s1;
+        let c = (*eqtb.add((INT_BASE + INT_PAR__escape_char) as usize)).b32.s1;
         if (0..=BIGGEST_USV).contains(&c) {
             print_char(c);
         }
@@ -422,11 +397,7 @@ pub unsafe extern "C" fn print_cs(p: i32) {
                     print_char(b' ' as i32);
                 } else {
                     print_esc(p - SINGLE_BASE);
-                    if (*eqtb.add((CAT_CODE_BASE + (p - SINGLE_BASE)) as usize))
-                        .b32
-                        .s1
-                        == LETTER as i32
-                    {
+                    if (*eqtb.add((CAT_CODE_BASE + (p - SINGLE_BASE)) as usize)).b32.s1 == LETTER as i32 {
                         print_char(b' ' as i32);
                     }
                 }
@@ -605,10 +576,7 @@ pub unsafe extern "C" fn print_sa_num(mut q: i32) {
             q = (*mem.add(q as usize)).b32.s1;
             n_val += 64 * ((*mem.add(q as usize)).b16.s1 as i32);
             q = (*mem.add(q as usize)).b32.s1;
-            n_val
-                + 64 * 64
-                    * ((*mem.add(q as usize)).b16.s1 as i32
-                        + 64 * ((*mem.add((*mem.add(q as usize)).b32.s1 as usize)).b16.s1 as i32))
+            n_val + 64 * 64 * ((*mem.add(q as usize)).b16.s1 as i32 + 64 * ((*mem.add((*mem.add(q as usize)).b32.s1 as usize)).b16.s1 as i32))
         };
         print_int(n);
     }

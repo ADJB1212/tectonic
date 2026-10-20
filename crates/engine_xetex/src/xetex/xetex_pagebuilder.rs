@@ -9,12 +9,8 @@
 )]
 
 use super::xetex_constants::{NORMAL, TEX_NULL, VMODE};
-use super::xetex_output::{
-    capture_to_diagnostic, error_here_with_diagnostic, print_cstr, print_esc_cstr, print_int,
-};
-use super::xetex_xetexd::{
-    cur_list, help_ptr, mem, nest_ptr, output_active, semantic_pagination_enabled,
-};
+use super::xetex_output::{capture_to_diagnostic, error_here_with_diagnostic, print_cstr, print_esc_cstr, print_int};
+use super::xetex_xetexd::{cur_list, help_ptr, mem, nest_ptr, output_active, semantic_pagination_enabled};
 
 use libc::{c_char, c_int, c_void};
 use std::ptr;
@@ -71,9 +67,7 @@ unsafe fn freeze_page_specs(s: u8) {
     unsafe {
         page_contents = (s as i32) as u8;
         page_so_far[0] = (*eqtb.add((DIMEN_BASE + DIMEN_PAR__vsize) as usize)).b32.s1;
-        page_max_depth = (*eqtb.add((DIMEN_BASE + DIMEN_PAR__max_depth) as usize))
-            .b32
-            .s1;
+        page_max_depth = (*eqtb.add((DIMEN_BASE + DIMEN_PAR__max_depth) as usize)).b32.s1;
         page_so_far[7] = 0;
         page_so_far[1] = 0;
         page_so_far[2] = 0;
@@ -95,15 +89,12 @@ unsafe fn ensure_vbox(n: u8) {
             return;
         }
 
-        error_here_with_diagnostic(
-            b"Insertions can only be added to a vbox\0".as_ptr() as *const c_char
-        );
+        error_here_with_diagnostic(b"Insertions can only be added to a vbox\0".as_ptr() as *const c_char);
         capture_to_diagnostic(ptr::null_mut());
         help_ptr = 3;
         help_line[2] = b"Tut tut: You're trying to \\insert into a\0".as_ptr() as *const c_char;
         help_line[1] = b"\\box register that now contains an \\hbox.\0".as_ptr() as *const c_char;
-        help_line[0] =
-            b"Proceed, and I'll discard its present contents.\0".as_ptr() as *const c_char;
+        help_line[0] = b"Proceed, and I'll discard its present contents.\0".as_ptr() as *const c_char;
         box_error((n as i32) as u8);
     }
 }
@@ -111,10 +102,7 @@ unsafe fn ensure_vbox(n: u8) {
 unsafe fn fire_up(c: i32) {
     unsafe {
         if (*mem.add(best_page_break as usize)).b16.s1 as i32 == PENALTY_NODE {
-            geq_word_define(
-                INT_BASE + INT_PAR__output_penalty,
-                (*mem.add((best_page_break + 1) as usize)).b32.s1,
-            );
+            geq_word_define(INT_BASE + INT_PAR__output_penalty, (*mem.add((best_page_break + 1) as usize)).b32.s1);
             (*mem.add((best_page_break + 1) as usize)).b32.s1 = INF_PENALTY;
         } else {
             geq_word_define(INT_BASE + INT_PAR__output_penalty, INF_PENALTY);
@@ -146,23 +134,15 @@ unsafe fn fire_up(c: i32) {
             print_cstr(b"255 is not void\0".as_ptr() as *const c_char);
             capture_to_diagnostic(ptr::null_mut());
             help_ptr = 2;
-            help_line[1] = b"You shouldn't use \\box255 except in \\output routines.\0".as_ptr()
-                as *const c_char;
-            help_line[0] =
-                b"Proceed, and I'll discard its present contents.\0".as_ptr() as *const c_char;
+            help_line[1] = b"You shouldn't use \\box255 except in \\output routines.\0".as_ptr() as *const c_char;
+            help_line[0] = b"Proceed, and I'll discard its present contents.\0".as_ptr() as *const c_char;
             box_error(255);
         }
 
         insert_penalties = 0;
-        let save_split_top_skip = (*eqtb.add((GLUE_BASE + GLUE_PAR__split_top_skip) as usize))
-            .b32
-            .s1;
+        let save_split_top_skip = (*eqtb.add((GLUE_BASE + GLUE_PAR__split_top_skip) as usize)).b32.s1;
 
-        let process_inserts = ((*eqtb.add((INT_BASE + INT_PAR__holding_inserts) as usize))
-            .b32
-            .s1
-            <= 0)
-            && !semantic_pagination_enabled;
+        let process_inserts = ((*eqtb.add((INT_BASE + INT_PAR__holding_inserts) as usize)).b32.s1 <= 0) && !semantic_pagination_enabled;
 
         if process_inserts {
             let mut r = (*mem.add(PAGE_INS_HEAD as usize)).b32.s1;
@@ -209,31 +189,18 @@ unsafe fn fire_up(c: i32) {
 
                         if (*mem.add((r + 2) as usize)).b32.s0 == p {
                             if (*mem.add(r as usize)).b16.s1 as i32 == SPLIT_UP {
-                                if (*mem.add((r + 1) as usize)).b32.s0 == p
-                                    && (*mem.add((r + 1) as usize)).b32.s1 != TEX_NULL
-                                {
-                                    while (*mem.add(s as usize)).b32.s1
-                                        != (*mem.add((r + 1) as usize)).b32.s1
-                                    {
+                                if (*mem.add((r + 1) as usize)).b32.s0 == p && (*mem.add((r + 1) as usize)).b32.s1 != TEX_NULL {
+                                    while (*mem.add(s as usize)).b32.s1 != (*mem.add((r + 1) as usize)).b32.s1 {
                                         s = (*mem.add(s as usize)).b32.s1;
                                     }
                                     (*mem.add(s as usize)).b32.s1 = TEX_NULL;
-                                    (*eqtb.add((GLUE_BASE + GLUE_PAR__split_top_skip) as usize))
-                                        .b32
-                                        .s1 = (*mem.add((p + 4) as usize)).b32.s1;
-                                    (*mem.add((p + 4) as usize)).b32.s0 =
-                                        prune_page_top((*mem.add((r + 1) as usize)).b32.s1, false);
+                                    (*eqtb.add((GLUE_BASE + GLUE_PAR__split_top_skip) as usize)).b32.s1 = (*mem.add((p + 4) as usize)).b32.s1;
+                                    (*mem.add((p + 4) as usize)).b32.s0 = prune_page_top((*mem.add((r + 1) as usize)).b32.s1, false);
 
                                     if (*mem.add((p + 4) as usize)).b32.s0 != TEX_NULL {
-                                        temp_ptr = vpackage(
-                                            (*mem.add((p + 4) as usize)).b32.s0,
-                                            0,
-                                            (ADDITIONAL) as i16,
-                                            MAX_HALFWORD,
-                                        );
+                                        temp_ptr = vpackage((*mem.add((p + 4) as usize)).b32.s0, 0, (ADDITIONAL) as i16, MAX_HALFWORD);
                                         (*mem.add((p + 3) as usize)).b32.s1 =
-                                            (*mem.add((temp_ptr + 3) as usize)).b32.s1
-                                                + (*mem.add((temp_ptr + 2) as usize)).b32.s1;
+                                            (*mem.add((temp_ptr + 3) as usize)).b32.s1 + (*mem.add((temp_ptr + 2) as usize)).b32.s1;
                                         free_node(temp_ptr, BOX_NODE_SIZE);
                                         wait = true;
                                     }
@@ -245,8 +212,7 @@ unsafe fn fire_up(c: i32) {
                             let box_reg_n = (*eqtb.add((BOX_BASE + n) as usize)).b32.s1;
                             temp_ptr = (*mem.add((box_reg_n + 5) as usize)).b32.s1;
                             free_node(box_reg_n, BOX_NODE_SIZE);
-                            (*eqtb.add((BOX_BASE + n) as usize)).b32.s1 =
-                                vpackage(temp_ptr, 0, (ADDITIONAL) as i16, MAX_HALFWORD);
+                            (*eqtb.add((BOX_BASE + n) as usize)).b32.s1 = vpackage(temp_ptr, 0, (ADDITIONAL) as i16, MAX_HALFWORD);
                         } else {
                             while (*mem.add(s as usize)).b32.s1 != TEX_NULL {
                                 s = (*mem.add(s as usize)).b32.s1;
@@ -275,11 +241,8 @@ unsafe fn fire_up(c: i32) {
                     find_sa_element((MARK_VAL) as i16, mark_class, true);
 
                     if (*mem.add((cur_ptr + 1) as usize)).b32.s1 == TEX_NULL {
-                        (*mem.add((cur_ptr + 1) as usize)).b32.s1 =
-                            (*mem.add((p + 1) as usize)).b32.s1;
-                        (*mem.add((*mem.add((p + 1) as usize)).b32.s1 as usize))
-                            .b32
-                            .s0 += 1;
+                        (*mem.add((cur_ptr + 1) as usize)).b32.s1 = (*mem.add((p + 1) as usize)).b32.s1;
+                        (*mem.add((*mem.add((p + 1) as usize)).b32.s1 as usize)).b32.s0 += 1;
                     }
 
                     if (*mem.add((cur_ptr + 2) as usize)).b32.s0 != TEX_NULL {
@@ -287,15 +250,11 @@ unsafe fn fire_up(c: i32) {
                     }
 
                     (*mem.add((cur_ptr + 2) as usize)).b32.s0 = (*mem.add((p + 1) as usize)).b32.s1;
-                    (*mem.add((*mem.add((p + 1) as usize)).b32.s1 as usize))
-                        .b32
-                        .s0 += 1;
+                    (*mem.add((*mem.add((p + 1) as usize)).b32.s1 as usize)).b32.s0 += 1;
                 } else {
                     if cur_mark[FIRST_MARK_CODE as usize] == TEX_NULL {
                         cur_mark[FIRST_MARK_CODE as usize] = (*mem.add((p + 1) as usize)).b32.s1;
-                        (*mem.add(cur_mark[FIRST_MARK_CODE as usize] as usize))
-                            .b32
-                            .s0 += 1;
+                        (*mem.add(cur_mark[FIRST_MARK_CODE as usize] as usize)).b32.s0 += 1;
                     }
 
                     if cur_mark[BOT_MARK_CODE as usize] != TEX_NULL {
@@ -311,9 +270,7 @@ unsafe fn fire_up(c: i32) {
             p = (*mem.add(prev_p as usize)).b32.s1;
         }
 
-        (*eqtb.add((GLUE_BASE + GLUE_PAR__split_top_skip) as usize))
-            .b32
-            .s1 = save_split_top_skip;
+        (*eqtb.add((GLUE_BASE + GLUE_PAR__split_top_skip) as usize)).b32.s1 = save_split_top_skip;
 
         if p != TEX_NULL {
             if (*mem.add(CONTRIB_HEAD as usize)).b32.s1 == TEX_NULL {
@@ -333,12 +290,7 @@ unsafe fn fire_up(c: i32) {
         (*eqtb.add((INT_BASE + INT_PAR__vbadness) as usize)).b32.s1 = INF_BAD;
         let save_vfuzz = (*eqtb.add((DIMEN_BASE + DIMEN_PAR__vfuzz) as usize)).b32.s1;
         (*eqtb.add((DIMEN_BASE + DIMEN_PAR__vfuzz) as usize)).b32.s1 = MAX_HALFWORD;
-        (*eqtb.add((BOX_BASE + 255) as usize)).b32.s1 = vpackage(
-            (*mem.add(PAGE_HEAD as usize)).b32.s1,
-            best_size,
-            (EXACTLY) as i16,
-            page_max_depth,
-        );
+        (*eqtb.add((BOX_BASE + 255) as usize)).b32.s1 = vpackage((*mem.add(PAGE_HEAD as usize)).b32.s1, best_size, (EXACTLY) as i16, page_max_depth);
         (*eqtb.add((INT_BASE + INT_PAR__vbadness) as usize)).b32.s1 = save_vbadness;
         (*eqtb.add((DIMEN_BASE + DIMEN_PAR__vfuzz) as usize)).b32.s1 = save_vfuzz;
 
@@ -375,34 +327,21 @@ unsafe fn fire_up(c: i32) {
             }
         }
 
-        if cur_mark[TOP_MARK_CODE as usize] != TEX_NULL
-            && cur_mark[FIRST_MARK_CODE as usize] == TEX_NULL
-        {
+        if cur_mark[TOP_MARK_CODE as usize] != TEX_NULL && cur_mark[FIRST_MARK_CODE as usize] == TEX_NULL {
             cur_mark[FIRST_MARK_CODE as usize] = cur_mark[TOP_MARK_CODE as usize];
             (*mem.add(cur_mark[TOP_MARK_CODE as usize] as usize)).b32.s0 += 1;
         }
 
-        if (*eqtb.add((LOCAL_BASE + LOCAL__output_routine) as usize))
-            .b32
-            .s1
-            != TEX_NULL
-        {
-            if dead_cycles
-                >= (*eqtb.add((INT_BASE + INT_PAR__max_dead_cycles) as usize))
-                    .b32
-                    .s1
-            {
+        if (*eqtb.add((LOCAL_BASE + LOCAL__output_routine) as usize)).b32.s1 != TEX_NULL {
+            if dead_cycles >= (*eqtb.add((INT_BASE + INT_PAR__max_dead_cycles) as usize)).b32.s1 {
                 error_here_with_diagnostic(b"Output loop---\0".as_ptr() as *const c_char);
                 print_int(dead_cycles);
                 print_cstr(b" consecutive dead cycles\0".as_ptr() as *const c_char);
                 capture_to_diagnostic(ptr::null_mut());
                 help_ptr = 3;
-                help_line[2] = b"I've concluded that your \\output is awry; it never does a\0"
-                    .as_ptr() as *const c_char;
-                help_line[1] = b"\\shipout, so I'm shipping \\box255 out myself. Next time\0"
-                    .as_ptr() as *const c_char;
-                help_line[0] = b"increase \\maxdeadcycles if you want me to be more patient!\0"
-                    .as_ptr() as *const c_char;
+                help_line[2] = b"I've concluded that your \\output is awry; it never does a\0".as_ptr() as *const c_char;
+                help_line[1] = b"\\shipout, so I'm shipping \\box255 out myself. Next time\0".as_ptr() as *const c_char;
+                help_line[0] = b"increase \\maxdeadcycles if you want me to be more patient!\0".as_ptr() as *const c_char;
                 error();
             } else {
                 output_active = true;
@@ -411,12 +350,7 @@ unsafe fn fire_up(c: i32) {
                 cur_list.mode = (-VMODE) as i16;
                 cur_list.aux.b32.s1 = IGNORE_DEPTH;
                 cur_list.mode_line = -line;
-                begin_token_list(
-                    (*eqtb.add((LOCAL_BASE + LOCAL__output_routine) as usize))
-                        .b32
-                        .s1,
-                    (OUTPUT_TEXT) as u16,
-                );
+                begin_token_list((*eqtb.add((LOCAL_BASE + LOCAL__output_routine) as usize)).b32.s1, (OUTPUT_TEXT) as u16);
                 new_save_level((OUTPUT_GROUP) as u8);
                 normal_paragraph();
                 scan_left_brace();
@@ -500,11 +434,8 @@ pub unsafe extern "C" fn build_page() {
                         }
 
                         let q = new_skip_param((GLUE_PAR__top_skip) as i16);
-                        if (*mem.add((temp_ptr + 1) as usize)).b32.s1
-                            > (*mem.add((p + 3) as usize)).b32.s1
-                        {
-                            (*mem.add((temp_ptr + 1) as usize)).b32.s1 -=
-                                (*mem.add((p + 3) as usize)).b32.s1;
+                        if (*mem.add((temp_ptr + 1) as usize)).b32.s1 > (*mem.add((p + 3) as usize)).b32.s1 {
+                            (*mem.add((temp_ptr + 1) as usize)).b32.s1 -= (*mem.add((p + 3) as usize)).b32.s1;
                         } else {
                             (*mem.add((temp_ptr + 1) as usize)).b32.s1 = 0;
                         }
@@ -543,9 +474,7 @@ pub unsafe extern "C" fn build_page() {
                         goto_done1 = true;
                     } else if (*mem.add(p as usize)).b32.s1 == TEX_NULL {
                         return;
-                    } else if (*mem.add((*mem.add(p as usize)).b32.s1 as usize)).b16.s1 as i32
-                        == GLUE_NODE
-                    {
+                    } else if (*mem.add((*mem.add(p as usize)).b32.s1 as usize)).b16.s1 as i32 == GLUE_NODE {
                         pi = 0;
                     } else {
                         goto_update_heights = true;
@@ -590,46 +519,31 @@ pub unsafe extern "C" fn build_page() {
                             (*mem.add((r + 3) as usize)).b32.s1 = 0;
                         } else {
                             (*mem.add((r + 3) as usize)).b32.s1 =
-                                (*mem.add((box_reg_n + 3) as usize)).b32.s1
-                                    + (*mem.add((box_reg_n + 2) as usize)).b32.s1;
+                                (*mem.add((box_reg_n + 3) as usize)).b32.s1 + (*mem.add((box_reg_n + 2) as usize)).b32.s1;
                         }
 
                         (*mem.add((r + 2) as usize)).b32.s0 = TEX_NULL;
                         let skip_q = (*eqtb.add((SKIP_BASE + n as i32) as usize)).b32.s1;
 
-                        let h: scaled_t =
-                            if (*eqtb.add((COUNT_BASE + n as i32) as usize)).b32.s1 == 1000 {
-                                (*mem.add((r + 3) as usize)).b32.s1
-                            } else {
-                                x_over_n((*mem.add((r + 3) as usize)).b32.s1, 1000)
-                                    * (*eqtb.add((COUNT_BASE + n as i32) as usize)).b32.s1
-                            };
+                        let h: scaled_t = if (*eqtb.add((COUNT_BASE + n as i32) as usize)).b32.s1 == 1000 {
+                            (*mem.add((r + 3) as usize)).b32.s1
+                        } else {
+                            x_over_n((*mem.add((r + 3) as usize)).b32.s1, 1000) * (*eqtb.add((COUNT_BASE + n as i32) as usize)).b32.s1
+                        };
 
                         page_so_far[0] -= h + (*mem.add((skip_q + 1) as usize)).b32.s1;
-                        page_so_far[(2 + (*mem.add(skip_q as usize)).b16.s1) as usize] +=
-                            (*mem.add((skip_q + 2) as usize)).b32.s1;
+                        page_so_far[(2 + (*mem.add(skip_q as usize)).b16.s1) as usize] += (*mem.add((skip_q + 2) as usize)).b32.s1;
                         page_so_far[6] += (*mem.add((skip_q + 3) as usize)).b32.s1;
 
-                        if (*mem.add(skip_q as usize)).b16.s0 as i32 != NORMAL
-                            && (*mem.add((skip_q + 3) as usize)).b32.s1 != 0
-                        {
-                            error_here_with_diagnostic(
-                                b"Infinite glue shrinkage inserted from \0".as_ptr()
-                                    as *const c_char,
-                            );
+                        if (*mem.add(skip_q as usize)).b16.s0 as i32 != NORMAL && (*mem.add((skip_q + 3) as usize)).b32.s1 != 0 {
+                            error_here_with_diagnostic(b"Infinite glue shrinkage inserted from \0".as_ptr() as *const c_char);
                             print_esc_cstr(b"skip\0".as_ptr() as *const c_char);
                             print_int(n as i32);
                             capture_to_diagnostic(ptr::null_mut());
                             help_ptr = 3;
-                            help_line[2] =
-                                b"The correction glue for page breaking with insertions\0".as_ptr()
-                                    as *const c_char;
-                            help_line[1] = b"must have finite shrinkability. But you may proceed,\0"
-                                .as_ptr()
-                                as *const c_char;
-                            help_line[0] =
-                                b"since the offensive shrinkability has been made finite.\0"
-                                    .as_ptr() as *const c_char;
+                            help_line[2] = b"The correction glue for page breaking with insertions\0".as_ptr() as *const c_char;
+                            help_line[1] = b"must have finite shrinkability. But you may proceed,\0".as_ptr() as *const c_char;
+                            help_line[0] = b"since the offensive shrinkability has been made finite.\0".as_ptr() as *const c_char;
                             error();
                         }
                     }
@@ -638,56 +552,39 @@ pub unsafe extern "C" fn build_page() {
                         insert_penalties += (*mem.add((p + 1) as usize)).b32.s1;
                     } else {
                         (*mem.add((r + 2) as usize)).b32.s1 = p;
-                        let page_delta =
-                            page_so_far[0] - page_so_far[1] - page_so_far[7] + page_so_far[6];
+                        let page_delta = page_so_far[0] - page_so_far[1] - page_so_far[7] + page_so_far[6];
 
-                        let h: scaled_t =
-                            if (*eqtb.add((COUNT_BASE + n as i32) as usize)).b32.s1 == 1000 {
-                                (*mem.add((p + 3) as usize)).b32.s1
-                            } else {
-                                x_over_n((*mem.add((p + 3) as usize)).b32.s1, 1000)
-                                    * (*eqtb.add((COUNT_BASE + n as i32) as usize)).b32.s1
-                            };
+                        let h: scaled_t = if (*eqtb.add((COUNT_BASE + n as i32) as usize)).b32.s1 == 1000 {
+                            (*mem.add((p + 3) as usize)).b32.s1
+                        } else {
+                            x_over_n((*mem.add((p + 3) as usize)).b32.s1, 1000) * (*eqtb.add((COUNT_BASE + n as i32) as usize)).b32.s1
+                        };
 
                         let scaled_n = (*eqtb.add((SCALED_BASE + n as i32) as usize)).b32.s1;
-                        if (h <= 0 || h <= page_delta)
-                            && ((*mem.add((p + 3) as usize)).b32.s1
-                                + (*mem.add((r + 3) as usize)).b32.s1
-                                <= scaled_n)
-                        {
+                        if (h <= 0 || h <= page_delta) && ((*mem.add((p + 3) as usize)).b32.s1 + (*mem.add((r + 3) as usize)).b32.s1 <= scaled_n) {
                             page_so_far[0] -= h;
-                            (*mem.add((r + 3) as usize)).b32.s1 +=
-                                (*mem.add((p + 3) as usize)).b32.s1;
+                            (*mem.add((r + 3) as usize)).b32.s1 += (*mem.add((p + 3) as usize)).b32.s1;
                         } else {
-                            let mut w: scaled_t =
-                                if (*eqtb.add((COUNT_BASE + n as i32) as usize)).b32.s1 <= 0 {
-                                    MAX_HALFWORD
-                                } else {
-                                    let mut val = page_so_far[0] - page_so_far[1] - page_so_far[7];
-                                    if (*eqtb.add((COUNT_BASE + n as i32) as usize)).b32.s1 != 1000
-                                    {
-                                        val = x_over_n(
-                                            val,
-                                            (*eqtb.add((COUNT_BASE + n as i32) as usize)).b32.s1,
-                                        ) * 1000;
-                                    }
-                                    val
-                                };
+                            let mut w: scaled_t = if (*eqtb.add((COUNT_BASE + n as i32) as usize)).b32.s1 <= 0 {
+                                MAX_HALFWORD
+                            } else {
+                                let mut val = page_so_far[0] - page_so_far[1] - page_so_far[7];
+                                if (*eqtb.add((COUNT_BASE + n as i32) as usize)).b32.s1 != 1000 {
+                                    val = x_over_n(val, (*eqtb.add((COUNT_BASE + n as i32) as usize)).b32.s1) * 1000;
+                                }
+                                val
+                            };
 
                             if w > scaled_n - (*mem.add((r + 3) as usize)).b32.s1 {
                                 w = scaled_n - (*mem.add((r + 3) as usize)).b32.s1;
                             }
 
-                            let split_q = vert_break(
-                                (*mem.add((p + 4) as usize)).b32.s0,
-                                w,
-                                (*mem.add((p + 2) as usize)).b32.s1,
-                            );
+                            let split_q = vert_break((*mem.add((p + 4) as usize)).b32.s0, w, (*mem.add((p + 2) as usize)).b32.s1);
                             (*mem.add((r + 3) as usize)).b32.s1 += best_height_plus_depth;
 
                             if (*eqtb.add((COUNT_BASE + n as i32) as usize)).b32.s1 != 1000 {
-                                best_height_plus_depth = x_over_n(best_height_plus_depth, 1000)
-                                    * (*eqtb.add((COUNT_BASE + n as i32) as usize)).b32.s1;
+                                best_height_plus_depth =
+                                    x_over_n(best_height_plus_depth, 1000) * (*eqtb.add((COUNT_BASE + n as i32) as usize)).b32.s1;
                             }
 
                             page_so_far[0] -= best_height_plus_depth;
@@ -746,8 +643,7 @@ pub unsafe extern "C" fn build_page() {
                         least_page_cost = c;
                         let mut r = (*mem.add(PAGE_INS_HEAD as usize)).b32.s1;
                         while r != PAGE_INS_HEAD {
-                            (*mem.add((r + 2) as usize)).b32.s0 =
-                                (*mem.add((r + 2) as usize)).b32.s1;
+                            (*mem.add((r + 2) as usize)).b32.s0 = (*mem.add((r + 2) as usize)).b32.s1;
                             r = (*mem.add(r as usize)).b32.s1;
                         }
                     }
@@ -777,29 +673,17 @@ pub unsafe extern "C" fn build_page() {
                     p
                 } else {
                     let mut glue_q = (*mem.add((p + 1) as usize)).b32.s0;
-                    page_so_far[(2 + (*mem.add(glue_q as usize)).b16.s1) as usize] +=
-                        (*mem.add((glue_q + 2) as usize)).b32.s1;
+                    page_so_far[(2 + (*mem.add(glue_q as usize)).b16.s1) as usize] += (*mem.add((glue_q + 2) as usize)).b32.s1;
                     page_so_far[6] += (*mem.add((glue_q + 3) as usize)).b32.s1;
 
-                    if (*mem.add(glue_q as usize)).b16.s0 as i32 != NORMAL
-                        && (*mem.add((glue_q + 3) as usize)).b32.s1 != 0
-                    {
-                        error_here_with_diagnostic(
-                            b"Infinite glue shrinkage found on current page\0".as_ptr()
-                                as *const c_char,
-                        );
+                    if (*mem.add(glue_q as usize)).b16.s0 as i32 != NORMAL && (*mem.add((glue_q + 3) as usize)).b32.s1 != 0 {
+                        error_here_with_diagnostic(b"Infinite glue shrinkage found on current page\0".as_ptr() as *const c_char);
                         capture_to_diagnostic(ptr::null_mut());
                         help_ptr = 4;
-                        help_line[3] = b"The page about to be output contains some infinitely\0"
-                            .as_ptr() as *const c_char;
-                        help_line[2] =
-                            b"shrinkable glue, e.g., `\\vss' or `\\vskip 0pt minus 1fil'.\0"
-                                .as_ptr() as *const c_char;
-                        help_line[1] =
-                            b"Such glue doesn't belong there; but you can safely proceed,\0"
-                                .as_ptr() as *const c_char;
-                        help_line[0] = b"since the offensive shrinkability has been made finite.\0"
-                            .as_ptr() as *const c_char;
+                        help_line[3] = b"The page about to be output contains some infinitely\0".as_ptr() as *const c_char;
+                        help_line[2] = b"shrinkable glue, e.g., `\\vss' or `\\vskip 0pt minus 1fil'.\0".as_ptr() as *const c_char;
+                        help_line[1] = b"Such glue doesn't belong there; but you can safely proceed,\0".as_ptr() as *const c_char;
+                        help_line[0] = b"since the offensive shrinkability has been made finite.\0".as_ptr() as *const c_char;
                         error();
 
                         let r = new_spec(glue_q);
@@ -830,11 +714,7 @@ pub unsafe extern "C" fn build_page() {
                 (*mem.add(CONTRIB_HEAD as usize)).b32.s1 = (*mem.add(p as usize)).b32.s1;
                 (*mem.add(p as usize)).b32.s1 = TEX_NULL;
 
-                if (*eqtb.add((INT_BASE + INT_PAR__saving_vdiscards) as usize))
-                    .b32
-                    .s1
-                    <= 0
-                {
+                if (*eqtb.add((INT_BASE + INT_PAR__saving_vdiscards) as usize)).b32.s1 <= 0 {
                     flush_node_list(p);
                 } else {
                     if disc_ptr[LAST_BOX_CODE as usize] == TEX_NULL {

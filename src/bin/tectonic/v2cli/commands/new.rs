@@ -21,11 +21,7 @@ impl TectonicCommand for InitCommand {
 
     fn execute(self, config: PersistentConfig, status: &mut dyn StatusBackend) -> Result<i32> {
         let path = env::current_dir()?;
-        tt_note!(
-            status,
-            "creating new document in this directory ({})",
-            path.display()
-        );
+        tt_note!(status, "creating new document in this directory ({})", path.display());
 
         let wc = WorkspaceCreator::new(path);
         ctry!(
@@ -52,11 +48,7 @@ impl TectonicCommand for NewCommand {
     fn customize(&self, _cc: &mut CommandCustomizations) {}
 
     fn execute(self, config: PersistentConfig, status: &mut dyn StatusBackend) -> Result<i32> {
-        tt_note!(
-            status,
-            "creating new document in directory `{}`",
-            self.path.display()
-        );
+        tt_note!(status, "creating new document in directory `{}`", self.path.display());
 
         let wc = WorkspaceCreator::new(self.path);
         ctry!(

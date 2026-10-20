@@ -111,12 +111,7 @@ impl CompileOptions {
             self.incremental_cache_dir.clone().unwrap_or_else(|| {
                 self.outdir
                     .clone()
-                    .unwrap_or_else(|| {
-                        Path::new(&self.input)
-                            .parent()
-                            .unwrap_or_else(|| Path::new("."))
-                            .to_owned()
-                    })
+                    .unwrap_or_else(|| Path::new(&self.input).parent().unwrap_or_else(|| Path::new(".")).to_owned())
                     .join(".tectonic-incremental")
             })
         });
@@ -132,8 +127,7 @@ impl CompileOptions {
             SecurityStance::MaybeAllowInsecures
         };
 
-        let mut sess_builder =
-            ProcessingSessionBuilder::new_with_security(SecuritySettings::new(stance));
+        let mut sess_builder = ProcessingSessionBuilder::new_with_security(SecuritySettings::new(stance));
         if let Some(path) = incremental_cache {
             sess_builder.incremental_cache_path(path);
         }
@@ -168,10 +162,7 @@ impl CompileOptions {
             // Don't provide an input path to the ProcessingSession, so it will default to stdin.
             sess_builder.tex_input_name("texput.tex");
             sess_builder.output_dir(Path::new(""));
-            tt_note!(
-                status,
-                "reading from standard input; outputs will appear under the base name \"texput\""
-            );
+            tt_note!(status, "reading from standard input; outputs will appear under the base name \"texput\"");
         } else {
             let input_path = Path::new(&input_path);
             sess_builder.primary_input_path(input_path);
@@ -197,10 +188,7 @@ impl CompileOptions {
 
         if let Some(output_dir) = self.outdir {
             if !output_dir.is_dir() {
-                return Err(Error::msg(format!(
-                    "output directory \"{}\" does not exist",
-                    output_dir.display()
-                )));
+                return Err(Error::msg(format!("output directory \"{}\" does not exist", output_dir.display())));
             }
             sess_builder.output_dir(output_dir);
         }
@@ -228,9 +216,7 @@ impl CompileOptions {
             } else if let Some(bundle) = detect_bundle(bundle.clone(), self.only_cached, None)? {
                 sess_builder.bundle(bundle);
             } else {
-                return Err(Error::msg(format!(
-                    "`{bundle}` doesn't specify a valid bundle."
-                )));
+                return Err(Error::msg(format!("`{bundle}` doesn't specify a valid bundle.")));
             }
         } else if let Ok(bundle) = maybe_return_test_bundle(None) {
             // TODO: this is ugly too.
@@ -245,19 +231,14 @@ impl CompileOptions {
 }
 
 pub(crate) fn parse_pdf_queue_mib(value: &str) -> std::result::Result<NonZeroUsize, String> {
-    let mib = value
-        .parse::<NonZeroUsize>()
-        .map_err(|error| error.to_string())?;
+    let mib = value.parse::<NonZeroUsize>().map_err(|error| error.to_string())?;
     mib.get()
         .checked_mul(1024 * 1024)
         .ok_or_else(|| "PDF queue size is too large".to_owned())?;
     Ok(mib)
 }
 
-pub(crate) fn run_and_report(
-    sess_builder: ProcessingSessionBuilder,
-    status: &mut dyn StatusBackend,
-) -> Result<ProcessingSession> {
+pub(crate) fn run_and_report(sess_builder: ProcessingSessionBuilder, status: &mut dyn StatusBackend) -> Result<ProcessingSession> {
     let mut sess = sess_builder.create(status)?;
     let result = sess.run(status);
 
@@ -267,17 +248,9 @@ pub(crate) fn run_and_report(
         let output = sess.get_stdout_content();
 
         if output.is_empty() {
-            tt_error!(
-                status,
-                "something bad happened inside {}, but no output was logged",
-                err.engine()
-            );
+            tt_error!(status, "something bad happened inside {}, but no output was logged", err.engine());
         } else {
-            tt_error!(
-                status,
-                "something bad happened inside {}; its output follows:\n",
-                err.engine()
-            );
+            tt_error!(status, "something bad happened inside {}; its output follows:\n", err.engine());
             status.dump_error_logs(&output);
         }
     }

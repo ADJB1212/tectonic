@@ -34,12 +34,7 @@ impl BibtexEngine {
     ///
     /// The *unstables* parameter controls unstable options that may change the behavior of
     /// `bibtex`.
-    pub fn process(
-        &mut self,
-        launcher: &mut CoreBridgeLauncher,
-        aux: &str,
-        unstables: &UnstableOptions,
-    ) -> Result<TexOutcome> {
+    pub fn process(&mut self, launcher: &mut CoreBridgeLauncher, aux: &str, unstables: &UnstableOptions) -> Result<TexOutcome> {
         let mut real_engine = RealBibtexEngine::default();
 
         if let Some(x) = unstables.min_crossrefs {

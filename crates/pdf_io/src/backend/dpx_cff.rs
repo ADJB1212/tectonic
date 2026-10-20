@@ -17,13 +17,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 use std::{collections::HashMap, ffi::CStr, sync::LazyLock};
 
@@ -67,10 +61,7 @@ mod performance_tests {
                 capacity = current;
             }
             assert!(growths <= 24, "{growths} reallocations");
-            assert_eq!(
-                cff_add_string(&mut font, c"custom0".as_ptr(), 0),
-                8192 + 391
-            );
+            assert_eq!(cff_add_string(&mut font, c"custom0".as_ptr(), 0), 8192 + 391);
             assert_eq!(cff_add_string(&mut font, c"custom0".as_ptr(), 1), 391);
             assert_eq!(cff_add_string(&mut font, c"space".as_ptr(), 0), 8193 + 391);
             cff_update_string(&mut font);
@@ -96,48 +87,31 @@ unsafe fn string_caches() -> *mut StringCaches {
 }
 
 unsafe fn string_index(strings: *mut cff_index) -> *mut StringIndex {
-    (*string_caches())
-        .0
-        .entry(strings as usize)
-        .or_insert_with(|| {
-            let count = (*strings).count as usize;
-            let mut index = StringIndex::default();
-            if count != 0 {
-                let offsets = core::slice::from_raw_parts((*strings).offset, count + 1);
-                index.offset_capacity = count + 1;
-                index.data_capacity = offsets[count] as usize - 1;
-                for (id, pair) in offsets.windows(2).enumerate() {
-                    let length = (pair[1] - pair[0]) as usize;
-                    let bytes = if length == 0 {
-                        &[]
-                    } else {
-                        core::slice::from_raw_parts(
-                            (*strings).data.add(pair[0] as usize - 1),
-                            length,
-                        )
-                    };
-                    index.names.entry(Box::from(bytes)).or_insert(id as u16);
-                }
+    (*string_caches()).0.entry(strings as usize).or_insert_with(|| {
+        let count = (*strings).count as usize;
+        let mut index = StringIndex::default();
+        if count != 0 {
+            let offsets = core::slice::from_raw_parts((*strings).offset, count + 1);
+            index.offset_capacity = count + 1;
+            index.data_capacity = offsets[count] as usize - 1;
+            for (id, pair) in offsets.windows(2).enumerate() {
+                let length = (pair[1] - pair[0]) as usize;
+                let bytes = if length == 0 {
+                    &[]
+                } else {
+                    core::slice::from_raw_parts((*strings).data.add(pair[0] as usize - 1), length)
+                };
+                index.names.entry(Box::from(bytes)).or_insert(id as u16);
             }
-            index
-        })
+        }
+        index
+    })
 }
 unsafe extern "C-unwind" {
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
-    fn ttstub_input_seek(
-        handle: rust_input_handle_t,
-        offset: ssize_t,
-        whence: ::core::ffi::c_int,
-    ) -> size_t;
-    fn ttstub_input_read(
-        handle: rust_input_handle_t,
-        data: *mut ::core::ffi::c_char,
-        len: size_t,
-    ) -> ssize_t;
+    fn ttstub_input_seek(handle: rust_input_handle_t, offset: ssize_t, whence: ::core::ffi::c_int) -> size_t;
+    fn ttstub_input_read(handle: rust_input_handle_t, data: *mut ::core::ffi::c_char, len: size_t) -> ssize_t;
     #[link_name = "__pdf_impl_tt_get_unsigned_byte"]
     fn tt_get_unsigned_byte(handle: rust_input_handle_t) -> ::core::ffi::c_uchar;
     #[link_name = "__pdf_impl_tt_get_unsigned_pair"]
@@ -145,11 +119,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_cff_release_dict"]
     fn cff_release_dict(dict: *mut cff_dict);
     #[link_name = "__pdf_impl_cff_dict_get"]
-    fn cff_dict_get(
-        dict: *mut cff_dict,
-        key: *const ::core::ffi::c_char,
-        idx: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_double;
+    fn cff_dict_get(dict: *mut cff_dict, key: *const ::core::ffi::c_char, idx: ::core::ffi::c_int) -> ::core::ffi::c_double;
     #[link_name = "__pdf_impl_cff_dict_known"]
     fn cff_dict_known(dict: *mut cff_dict, key: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_cff_dict_unpack"]
@@ -301,31 +271,21 @@ pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 pub const SEEK_SET: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const SEEK_CUR: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
     return false_0 != 0;
 }
-pub const FONTTYPE_CIDFONT: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const FONTTYPE_CIDFONT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const FONTTYPE_FONT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
-pub const ENCODING_STANDARD: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 3 as ::core::ffi::c_int;
-pub const ENCODING_EXPERT: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 4 as ::core::ffi::c_int;
-pub const CHARSETS_ISOADOBE: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 5 as ::core::ffi::c_int;
-pub const CHARSETS_EXPERT: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 6 as ::core::ffi::c_int;
-pub const CHARSETS_EXPSUB: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int;
+pub const ENCODING_STANDARD: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 3 as ::core::ffi::c_int;
+pub const ENCODING_EXPERT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 4 as ::core::ffi::c_int;
+pub const CHARSETS_ISOADOBE: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 5 as ::core::ffi::c_int;
+pub const CHARSETS_EXPERT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 6 as ::core::ffi::c_int;
+pub const CHARSETS_EXPSUB: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int;
 pub const HAVE_STANDARD_ENCODING: ::core::ffi::c_int = ENCODING_STANDARD | ENCODING_EXPERT;
-pub const HAVE_STANDARD_CHARSETS: ::core::ffi::c_int =
-    CHARSETS_ISOADOBE | CHARSETS_EXPERT | CHARSETS_EXPSUB;
+pub const HAVE_STANDARD_CHARSETS: ::core::ffi::c_int = CHARSETS_ISOADOBE | CHARSETS_EXPERT | CHARSETS_EXPSUB;
 pub const CFF_STDSTR_MAX: ::core::ffi::c_int = 391 as ::core::ffi::c_int;
 const cff_stdstr: [*const ::core::ffi::c_char; 391] = [
     b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
@@ -721,10 +681,7 @@ const cff_stdstr: [*const ::core::ffi::c_char; 391] = [
     b"Semibold\0" as *const u8 as *const ::core::ffi::c_char,
 ];
 pub const CFF_DEBUG_STR: [::core::ffi::c_char; 4] = crate::backend::c_char_array(*b"CFF\0");
-unsafe extern "C-unwind" fn get_unsigned(
-    mut handle: rust_input_handle_t,
-    mut n: ::core::ffi::c_int,
-) -> ::core::ffi::c_uint {
+unsafe extern "C-unwind" fn get_unsigned(mut handle: rust_input_handle_t, mut n: ::core::ffi::c_int) -> ::core::ffi::c_uint {
     let mut v: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
     loop {
         let fresh0 = n;
@@ -740,15 +697,11 @@ unsafe extern "C-unwind" fn get_unsigned(
 }
 #[unsafe(export_name = "__pdf_impl_cff_open")]
 pub unsafe extern "C-unwind" fn cff_open(
-    mut handle: rust_input_handle_t,
-    mut offset: ::core::ffi::c_int,
-    mut n: ::core::ffi::c_int,
+    mut handle: rust_input_handle_t, mut offset: ::core::ffi::c_int, mut n: ::core::ffi::c_int,
 ) -> *mut cff_font {
     let mut cff: *mut cff_font = ::core::ptr::null_mut::<cff_font>();
     let mut idx: *mut cff_index = ::core::ptr::null_mut::<cff_index>();
-    cff = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<cff_font>() as usize) as uint32_t)
-        as *mut cff_font;
+    cff = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<cff_font>() as usize) as uint32_t) as *mut cff_font;
     (*cff).fontname = ::core::ptr::null_mut::<::core::ffi::c_char>();
     (*cff).index = n;
     (*cff).handle = handle;
@@ -769,11 +722,7 @@ pub unsafe extern "C-unwind" fn cff_open(
     (*cff).num_fds = 0 as card8;
     (*cff).string = ::core::ptr::null_mut::<cff_index>();
     (*cff)._string = ::core::ptr::null_mut::<cff_index>();
-    crate::backend::runtime::input_seek(
-        (*cff).handle,
-        (*cff).offset.wrapping_add(0 as l_offset) as ssize_t,
-        SEEK_SET,
-    );
+    crate::backend::runtime::input_seek((*cff).handle, (*cff).offset.wrapping_add(0 as l_offset) as ssize_t, SEEK_SET);
     (*cff).header.major = tt_get_unsigned_byte((*cff).handle) as card8;
     (*cff).header.minor = tt_get_unsigned_byte((*cff).handle) as card8;
     (*cff).header.hdr_size = tt_get_unsigned_byte((*cff).handle) as card8;
@@ -783,9 +732,7 @@ pub unsafe extern "C-unwind" fn cff_open(
     {
         pdf_abort!(b"invalid offsize data\0" as *const u8 as *const ::core::ffi::c_char);
     }
-    if (*cff).header.major as ::core::ffi::c_int > 1 as ::core::ffi::c_int
-        || (*cff).header.minor as ::core::ffi::c_int > 0 as ::core::ffi::c_int
-    {
+    if (*cff).header.major as ::core::ffi::c_int > 1 as ::core::ffi::c_int || (*cff).header.minor as ::core::ffi::c_int > 0 as ::core::ffi::c_int {
         pdf_warning!(
             b"%s: CFF version %u.%u not supported.\0" as *const u8 as *const ::core::ffi::c_char,
             CFF_DEBUG_STR.as_ptr(),
@@ -797,9 +744,7 @@ pub unsafe extern "C-unwind" fn cff_open(
     }
     crate::backend::runtime::input_seek(
         (*cff).handle,
-        (*cff)
-            .offset
-            .wrapping_add((*cff).header.hdr_size as l_offset) as ssize_t,
+        (*cff).offset.wrapping_add((*cff).header.hdr_size as l_offset) as ssize_t,
         SEEK_SET,
     );
     idx = cff_get_index(cff);
@@ -828,66 +773,40 @@ pub unsafe extern "C-unwind" fn cff_open(
             .offset(-(1 as ::core::ffi::c_int as isize)),
     );
     if (*cff).topdict.is_null() {
-        pdf_abort!(
-            b"Parsing CFF Top DICT data failed...\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"Parsing CFF Top DICT data failed...\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     cff_release_index(idx);
-    if cff_dict_known(
-        (*cff).topdict,
-        b"CharstringType\0" as *const u8 as *const ::core::ffi::c_char,
-    ) != 0
+    if cff_dict_known((*cff).topdict, b"CharstringType\0" as *const u8 as *const ::core::ffi::c_char) != 0
         && cff_dict_get(
             (*cff).topdict,
             b"CharstringType\0" as *const u8 as *const ::core::ffi::c_char,
             0 as ::core::ffi::c_int,
         ) != 2 as ::core::ffi::c_int as ::core::ffi::c_double
     {
-        pdf_warning!(
-            b"Only Type 2 Charstrings supported...\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Only Type 2 Charstrings supported...\0" as *const u8 as *const ::core::ffi::c_char,);
         cff_close(cff);
         return ::core::ptr::null_mut::<cff_font>();
     }
-    if cff_dict_known(
-        (*cff).topdict,
-        b"SyntheticBase\0" as *const u8 as *const ::core::ffi::c_char,
-    ) != 0
-    {
-        pdf_warning!(
-            b"CFF Synthetic font not supported.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+    if cff_dict_known((*cff).topdict, b"SyntheticBase\0" as *const u8 as *const ::core::ffi::c_char) != 0 {
+        pdf_warning!(b"CFF Synthetic font not supported.\0" as *const u8 as *const ::core::ffi::c_char,);
         cff_close(cff);
         return ::core::ptr::null_mut::<cff_font>();
     }
     (*cff).string = cff_get_index(cff);
-    (*cff).gsubr_offset = crate::backend::runtime::input_seek((*cff).handle, 0 as ssize_t, SEEK_CUR)
-        .wrapping_sub(offset as size_t) as l_offset;
+    (*cff).gsubr_offset = crate::backend::runtime::input_seek((*cff).handle, 0 as ssize_t, SEEK_CUR).wrapping_sub(offset as size_t) as l_offset;
     offset = cff_dict_get(
         (*cff).topdict,
         b"CharStrings\0" as *const u8 as *const ::core::ffi::c_char,
         0 as ::core::ffi::c_int,
     ) as ::core::ffi::c_int;
-    crate::backend::runtime::input_seek(
-        (*cff).handle,
-        (*cff).offset.wrapping_add(offset as l_offset) as ssize_t,
-        SEEK_SET,
-    );
+    crate::backend::runtime::input_seek((*cff).handle, (*cff).offset.wrapping_add(offset as l_offset) as ssize_t, SEEK_SET);
     (*cff).num_glyphs = tt_get_unsigned_pair((*cff).handle) as card16;
-    if cff_dict_known(
-        (*cff).topdict,
-        b"ROS\0" as *const u8 as *const ::core::ffi::c_char,
-    ) != 0
-    {
+    if cff_dict_known((*cff).topdict, b"ROS\0" as *const u8 as *const ::core::ffi::c_char) != 0 {
         (*cff).flag |= FONTTYPE_CIDFONT;
     } else {
         (*cff).flag |= FONTTYPE_FONT;
     }
-    if cff_dict_known(
-        (*cff).topdict,
-        b"Encoding\0" as *const u8 as *const ::core::ffi::c_char,
-    ) != 0
-    {
+    if cff_dict_known((*cff).topdict, b"Encoding\0" as *const u8 as *const ::core::ffi::c_char) != 0 {
         offset = cff_dict_get(
             (*cff).topdict,
             b"Encoding\0" as *const u8 as *const ::core::ffi::c_char,
@@ -901,11 +820,7 @@ pub unsafe extern "C-unwind" fn cff_open(
     } else {
         (*cff).flag |= ENCODING_STANDARD;
     }
-    if cff_dict_known(
-        (*cff).topdict,
-        b"charset\0" as *const u8 as *const ::core::ffi::c_char,
-    ) != 0
-    {
+    if cff_dict_known((*cff).topdict, b"charset\0" as *const u8 as *const ::core::ffi::c_char) != 0 {
         offset = cff_dict_get(
             (*cff).topdict,
             b"charset\0" as *const u8 as *const ::core::ffi::c_char,
@@ -921,11 +836,7 @@ pub unsafe extern "C-unwind" fn cff_open(
     } else {
         (*cff).flag |= CHARSETS_ISOADOBE;
     }
-    crate::backend::runtime::input_seek(
-        (*cff).handle,
-        (*cff).offset.wrapping_add((*cff).gsubr_offset) as ssize_t,
-        SEEK_SET,
-    );
+    crate::backend::runtime::input_seek((*cff).handle, (*cff).offset.wrapping_add((*cff).gsubr_offset) as ssize_t, SEEK_SET);
     return cff;
 }
 #[unsafe(export_name = "__pdf_impl_cff_close")]
@@ -999,13 +910,9 @@ pub unsafe extern "C-unwind" fn cff_get_name(mut cff: *mut cff_font) -> *mut ::c
     let mut len: l_offset = 0;
     let mut idx: *mut cff_index = ::core::ptr::null_mut::<cff_index>();
     idx = (*cff).name;
-    len = (*(*idx)
-        .offset
-        .offset(((*cff).index + 1 as ::core::ffi::c_int) as isize))
-    .wrapping_sub(*(*idx).offset.offset((*cff).index as isize));
-    fontname = new((len.wrapping_add(1 as l_offset) as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
+    len = (*(*idx).offset.offset(((*cff).index + 1 as ::core::ffi::c_int) as isize)).wrapping_sub(*(*idx).offset.offset((*cff).index as isize));
+    fontname = new((len.wrapping_add(1 as l_offset) as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+        as *mut ::core::ffi::c_char;
     memcpy(
         fontname as *mut ::core::ffi::c_void,
         (*idx)
@@ -1018,47 +925,29 @@ pub unsafe extern "C-unwind" fn cff_get_name(mut cff: *mut cff_font) -> *mut ::c
     return fontname;
 }
 #[unsafe(export_name = "__pdf_impl_cff_set_name")]
-pub unsafe extern "C-unwind" fn cff_set_name(
-    mut cff: *mut cff_font,
-    mut name: *mut ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn cff_set_name(mut cff: *mut cff_font, mut name: *mut ::core::ffi::c_char) -> ::core::ffi::c_int {
     let mut idx: *mut cff_index = ::core::ptr::null_mut::<cff_index>();
     if strlen(name) > 127 as size_t {
-        pdf_abort!(
-            b"FontName string length too large...\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"FontName string length too large...\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     if !(*cff).name.is_null() {
         cff_release_index((*cff).name);
     }
-    idx = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<cff_index>() as usize) as uint32_t)
-        as *mut cff_index;
+    idx =
+        new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<cff_index>() as usize) as uint32_t) as *mut cff_index;
     (*cff).name = idx;
     (*idx).count = 1 as card16;
     (*idx).offsize = 1 as c_offsize;
-    (*idx).offset = new((2 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<l_offset>() as usize)
-        as uint32_t) as *mut l_offset;
+    (*idx).offset =
+        new((2 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<l_offset>() as usize) as uint32_t) as *mut l_offset;
     *(*idx).offset.offset(0 as ::core::ffi::c_int as isize) = 1 as l_offset;
-    *(*idx).offset.offset(1 as ::core::ffi::c_int as isize) =
-        strlen(name).wrapping_add(1 as size_t) as l_offset;
-    (*idx).data = new((strlen(name) as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<card8>() as usize) as uint32_t)
-        as *mut card8;
-    memmove(
-        (*idx).data as *mut ::core::ffi::c_void,
-        name as *const ::core::ffi::c_void,
-        strlen(name),
-    );
+    *(*idx).offset.offset(1 as ::core::ffi::c_int as isize) = strlen(name).wrapping_add(1 as size_t) as l_offset;
+    (*idx).data = new((strlen(name) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<card8>() as usize) as uint32_t) as *mut card8;
+    memmove((*idx).data as *mut ::core::ffi::c_void, name as *const ::core::ffi::c_void, strlen(name));
     return (5 as size_t).wrapping_add(strlen(name)) as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_cff_put_header")]
-pub unsafe extern "C-unwind" fn cff_put_header(
-    mut cff: *mut cff_font,
-    mut dest: *mut card8,
-    mut destlen: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn cff_put_header(mut cff: *mut cff_font, mut dest: *mut card8, mut destlen: ::core::ffi::c_int) -> ::core::ffi::c_int {
     if destlen < 4 as ::core::ffi::c_int {
         pdf_abort!(b"Not enough space available...\0" as *const u8 as *const ::core::ffi::c_char,);
     }
@@ -1092,16 +981,11 @@ unsafe fn read_index(cff: *mut cff_font, payload: bool) -> *mut cff_index {
     let mut input = crate::compat::input::ProbeInput {
         handle: unsafe { (*cff).handle },
     };
-    let header = crate::cff::IndexHeader::read(&mut input)
-        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+    let header = crate::cff::IndexHeader::read(&mut input).unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
     let mut data = Vec::new();
     if payload && header.count != 0 {
-        let position = input
-            .stream_position()
-            .unwrap_or_else(|_| pdf_abort!("Invalid CFF index position"));
-        let end = input
-            .seek(SeekFrom::End(0))
-            .unwrap_or_else(|_| pdf_abort!("Invalid CFF index position"));
+        let position = input.stream_position().unwrap_or_else(|_| pdf_abort!("Invalid CFF index position"));
+        let end = input.seek(SeekFrom::End(0)).unwrap_or_else(|_| pdf_abort!("Invalid CFF index position"));
         input
             .seek(SeekFrom::Start(position))
             .unwrap_or_else(|_| pdf_abort!("Invalid CFF index position"));
@@ -1109,16 +993,13 @@ unsafe fn read_index(cff: *mut cff_font, payload: bool) -> *mut cff_index {
             pdf_abort!("File ended prematurely\n");
         }
         data.resize(header.data_len(), 0);
-        input
-            .read_exact(&mut data)
-            .unwrap_or_else(|_| pdf_abort!("File ended prematurely\n"));
+        input.read_exact(&mut data).unwrap_or_else(|_| pdf_abort!("File ended prematurely\n"));
     }
     unsafe {
         let offsets = if header.offsets.is_empty() {
             core::ptr::null_mut()
         } else {
-            let output =
-                new((header.offsets.len() * core::mem::size_of::<u32>()) as u32).cast::<u32>();
+            let output = new((header.offsets.len() * core::mem::size_of::<u32>()) as u32).cast::<u32>();
             core::ptr::copy_nonoverlapping(header.offsets.as_ptr(), output, header.offsets.len());
             output
         };
@@ -1140,25 +1021,15 @@ unsafe fn read_index(cff: *mut cff_font, payload: bool) -> *mut cff_index {
     }
 }
 #[unsafe(export_name = "__pdf_impl_cff_pack_index")]
-pub unsafe extern "C-unwind" fn cff_pack_index(
-    mut idx: *mut cff_index,
-    mut dest: *mut card8,
-    mut destlen: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn cff_pack_index(mut idx: *mut cff_index, mut dest: *mut card8, mut destlen: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut datalen: size_t = 0;
     let mut i: card16 = 0;
     if ((*idx).count as ::core::ffi::c_int) < 1 as ::core::ffi::c_int {
         if destlen < 2 as ::core::ffi::c_int {
-            pdf_abort!(
-                b"Not enough space available...\0" as *const u8 as *const ::core::ffi::c_char,
-            );
+            pdf_abort!(b"Not enough space available...\0" as *const u8 as *const ::core::ffi::c_char,);
         }
-        memset(
-            dest as *mut ::core::ffi::c_void,
-            0 as ::core::ffi::c_int,
-            2 as size_t,
-        );
+        memset(dest as *mut ::core::ffi::c_void, 0 as ::core::ffi::c_int, 2 as size_t);
         return 2 as ::core::ffi::c_int;
     }
     len = cff_index_size(idx);
@@ -1168,8 +1039,7 @@ pub unsafe extern "C-unwind" fn cff_pack_index(
     }
     let fresh5 = dest;
     dest = dest.offset(1);
-    *fresh5 = ((*idx).count as ::core::ffi::c_int >> 8 as ::core::ffi::c_int
-        & 0xff as ::core::ffi::c_int) as card8;
+    *fresh5 = ((*idx).count as ::core::ffi::c_int >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
     let fresh6 = dest;
     dest = dest.offset(1);
     *fresh6 = ((*idx).count as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
@@ -1194,8 +1064,7 @@ pub unsafe extern "C-unwind" fn cff_pack_index(
         while i as ::core::ffi::c_int <= (*idx).count as ::core::ffi::c_int {
             let fresh10 = dest;
             dest = dest.offset(1);
-            *fresh10 = (*(*idx).offset.offset(i as isize) >> 8 as ::core::ffi::c_int
-                & 0xff as l_offset) as card8;
+            *fresh10 = (*(*idx).offset.offset(i as isize) >> 8 as ::core::ffi::c_int & 0xff as l_offset) as card8;
             let fresh11 = dest;
             dest = dest.offset(1);
             *fresh11 = (*(*idx).offset.offset(i as isize) & 0xff as l_offset) as card8;
@@ -1210,12 +1079,10 @@ pub unsafe extern "C-unwind" fn cff_pack_index(
         while i as ::core::ffi::c_int <= (*idx).count as ::core::ffi::c_int {
             let fresh13 = dest;
             dest = dest.offset(1);
-            *fresh13 = (*(*idx).offset.offset(i as isize) >> 16 as ::core::ffi::c_int
-                & 0xff as l_offset) as card8;
+            *fresh13 = (*(*idx).offset.offset(i as isize) >> 16 as ::core::ffi::c_int & 0xff as l_offset) as card8;
             let fresh14 = dest;
             dest = dest.offset(1);
-            *fresh14 = (*(*idx).offset.offset(i as isize) >> 8 as ::core::ffi::c_int
-                & 0xff as l_offset) as card8;
+            *fresh14 = (*(*idx).offset.offset(i as isize) >> 8 as ::core::ffi::c_int & 0xff as l_offset) as card8;
             let fresh15 = dest;
             dest = dest.offset(1);
             *fresh15 = (*(*idx).offset.offset(i as isize) & 0xff as l_offset) as card8;
@@ -1230,16 +1097,13 @@ pub unsafe extern "C-unwind" fn cff_pack_index(
         while i as ::core::ffi::c_int <= (*idx).count as ::core::ffi::c_int {
             let fresh17 = dest;
             dest = dest.offset(1);
-            *fresh17 = (*(*idx).offset.offset(i as isize) >> 24 as ::core::ffi::c_int
-                & 0xff as l_offset) as card8;
+            *fresh17 = (*(*idx).offset.offset(i as isize) >> 24 as ::core::ffi::c_int & 0xff as l_offset) as card8;
             let fresh18 = dest;
             dest = dest.offset(1);
-            *fresh18 = (*(*idx).offset.offset(i as isize) >> 16 as ::core::ffi::c_int
-                & 0xff as l_offset) as card8;
+            *fresh18 = (*(*idx).offset.offset(i as isize) >> 16 as ::core::ffi::c_int & 0xff as l_offset) as card8;
             let fresh19 = dest;
             dest = dest.offset(1);
-            *fresh19 = (*(*idx).offset.offset(i as isize) >> 8 as ::core::ffi::c_int
-                & 0xff as l_offset) as card8;
+            *fresh19 = (*(*idx).offset.offset(i as isize) >> 8 as ::core::ffi::c_int & 0xff as l_offset) as card8;
             let fresh20 = dest;
             dest = dest.offset(1);
             *fresh20 = (*(*idx).offset.offset(i as isize) & 0xff as l_offset) as card8;
@@ -1267,9 +1131,7 @@ pub unsafe extern "C-unwind" fn cff_index_size(mut idx: *mut cff_index) -> ::cor
         } else {
             (*idx).offsize = 4 as c_offsize;
         }
-        return ((3 as ::core::ffi::c_int
-            + (*idx).offsize as ::core::ffi::c_int
-                * ((*idx).count as ::core::ffi::c_int + 1 as ::core::ffi::c_int))
+        return ((3 as ::core::ffi::c_int + (*idx).offsize as ::core::ffi::c_int * ((*idx).count as ::core::ffi::c_int + 1 as ::core::ffi::c_int))
             as l_offset)
             .wrapping_add(datalen) as ::core::ffi::c_int;
     } else {
@@ -1279,16 +1141,13 @@ pub unsafe extern "C-unwind" fn cff_index_size(mut idx: *mut cff_index) -> ::cor
 #[unsafe(export_name = "__pdf_impl_cff_new_index")]
 pub unsafe extern "C-unwind" fn cff_new_index(mut count: card16) -> *mut cff_index {
     let mut idx: *mut cff_index = ::core::ptr::null_mut::<cff_index>();
-    idx = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<cff_index>() as usize) as uint32_t)
-        as *mut cff_index;
+    idx =
+        new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<cff_index>() as usize) as uint32_t) as *mut cff_index;
     (*idx).count = count;
     (*idx).offsize = 0 as c_offsize;
     if count as ::core::ffi::c_int > 0 as ::core::ffi::c_int {
-        (*idx).offset = new(
-            ((count as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<l_offset>() as usize) as uint32_t,
-        ) as *mut l_offset;
+        (*idx).offset = new(((count as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as uint32_t as usize)
+            .wrapping_mul(::core::mem::size_of::<l_offset>() as usize) as uint32_t) as *mut l_offset;
         *(*idx).offset.offset(0 as ::core::ffi::c_int as isize) = 1 as l_offset;
     } else {
         (*idx).offset = ::core::ptr::null_mut::<l_offset>();
@@ -1310,17 +1169,14 @@ pub unsafe extern "C-unwind" fn cff_release_index(mut idx: *mut cff_index) {
     }
 }
 #[unsafe(export_name = "__pdf_impl_cff_get_string")]
-pub unsafe extern "C-unwind" fn cff_get_string(
-    mut cff: *mut cff_font,
-    mut id: s_SID,
-) -> *mut ::core::ffi::c_char {
+pub unsafe extern "C-unwind" fn cff_get_string(mut cff: *mut cff_font, mut id: s_SID) -> *mut ::core::ffi::c_char {
     let mut result: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut len: ::core::ffi::c_int = 0;
     if (id as ::core::ffi::c_int) < CFF_STDSTR_MAX {
         len = strlen(cff_stdstr[id as usize]) as ::core::ffi::c_int;
-        result = new(((len + 1 as ::core::ffi::c_int) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_char;
+        result = new(
+            ((len + 1 as ::core::ffi::c_int) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t,
+        ) as *mut ::core::ffi::c_char;
         memcpy(
             result as *mut ::core::ffi::c_void,
             cff_stdstr[id as usize] as *const ::core::ffi::c_void,
@@ -1331,21 +1187,18 @@ pub unsafe extern "C-unwind" fn cff_get_string(
         let mut strings: *mut cff_index = (*cff).string;
         id = (id as ::core::ffi::c_int - CFF_STDSTR_MAX) as s_SID;
         if (id as ::core::ffi::c_int) < (*strings).count as ::core::ffi::c_int {
-            len = (*(*strings)
-                .offset
-                .offset((id as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as isize))
-            .wrapping_sub(*(*strings).offset.offset(id as isize))
-                as ::core::ffi::c_int;
-            result = new(((len + 1 as ::core::ffi::c_int) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t) as *mut ::core::ffi::c_char;
+            len = (*(*strings).offset.offset((id as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as isize))
+                .wrapping_sub(*(*strings).offset.offset(id as isize)) as ::core::ffi::c_int;
+            result = new(
+                ((len + 1 as ::core::ffi::c_int) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
+                    as uint32_t,
+            ) as *mut ::core::ffi::c_char;
             memmove(
                 result as *mut ::core::ffi::c_void,
                 (*strings)
                     .data
                     .offset(*(*strings).offset.offset(id as isize) as isize)
-                    .offset(-(1 as ::core::ffi::c_int as isize))
-                    as *const ::core::ffi::c_void,
+                    .offset(-(1 as ::core::ffi::c_int as isize)) as *const ::core::ffi::c_void,
                 len as size_t,
             );
             *result.offset(len as isize) = '\0' as i32 as ::core::ffi::c_char;
@@ -1354,10 +1207,7 @@ pub unsafe extern "C-unwind" fn cff_get_string(
     return result;
 }
 #[unsafe(export_name = "__pdf_impl_cff_get_sid")]
-pub unsafe extern "C-unwind" fn cff_get_sid(
-    mut cff: *mut cff_font,
-    mut str: *const ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn cff_get_sid(mut cff: *mut cff_font, mut str: *const ::core::ffi::c_char) -> ::core::ffi::c_int {
     if cff.is_null() || str.is_null() {
         return -(1 as ::core::ffi::c_int);
     }
@@ -1370,22 +1220,13 @@ pub unsafe extern "C-unwind" fn cff_get_sid(
     STANDARD_SIDS.get(bytes).map_or(-1, |&id| i32::from(id))
 }
 #[unsafe(export_name = "__pdf_impl_cff_get_seac_sid")]
-pub unsafe extern "C-unwind" fn cff_get_seac_sid(
-    mut cff: *mut cff_font,
-    mut str: *const ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn cff_get_seac_sid(mut cff: *mut cff_font, mut str: *const ::core::ffi::c_char) -> ::core::ffi::c_int {
     if cff.is_null() || str.is_null() {
         return -(1 as ::core::ffi::c_int);
     }
-    STANDARD_SIDS
-        .get(CStr::from_ptr(str).to_bytes())
-        .map_or(-1, |&id| i32::from(id))
+    STANDARD_SIDS.get(CStr::from_ptr(str).to_bytes()).map_or(-1, |&id| i32::from(id))
 }
-unsafe extern "C-unwind" fn cff_match_string(
-    mut cff: *mut cff_font,
-    mut str: *const ::core::ffi::c_char,
-    mut sid: s_SID,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn cff_match_string(mut cff: *mut cff_font, mut str: *const ::core::ffi::c_char, mut sid: s_SID) -> ::core::ffi::c_int {
     let mut i: card16 = 0;
     if (sid as ::core::ffi::c_int) < CFF_STDSTR_MAX {
         return if streq_ptr(str, cff_stdstr[sid as usize]) as ::core::ffi::c_int != 0 {
@@ -1395,10 +1236,7 @@ unsafe extern "C-unwind" fn cff_match_string(
         };
     } else {
         i = (sid as ::core::ffi::c_int - CFF_STDSTR_MAX) as card16;
-        if cff.is_null()
-            || (*cff).string.is_null()
-            || i as ::core::ffi::c_int >= (*(*cff).string).count as ::core::ffi::c_int
-        {
+        if cff.is_null() || (*cff).string.is_null() || i as ::core::ffi::c_int >= (*(*cff).string).count as ::core::ffi::c_int {
             pdf_abort!(b"Invalid SID\0" as *const u8 as *const ::core::ffi::c_char);
         }
         if strlen(str)
@@ -1412,8 +1250,7 @@ unsafe extern "C-unwind" fn cff_match_string(
                 (*(*cff).string)
                     .data
                     .offset(*(*(*cff).string).offset.offset(i as isize) as isize)
-                    .offset(-(1 as ::core::ffi::c_int as isize))
-                    as *const ::core::ffi::c_void,
+                    .offset(-(1 as ::core::ffi::c_int as isize)) as *const ::core::ffi::c_void,
                 strlen(str),
             ) == 0
             {
@@ -1437,11 +1274,7 @@ pub unsafe extern "C-unwind" fn cff_update_string(mut cff: *mut cff_font) {
     (*cff)._string = ::core::ptr::null_mut::<cff_index>();
 }
 #[unsafe(export_name = "__pdf_impl_cff_add_string")]
-pub unsafe extern "C-unwind" fn cff_add_string(
-    mut cff: *mut cff_font,
-    mut str: *const ::core::ffi::c_char,
-    mut unique: ::core::ffi::c_int,
-) -> s_SID {
+pub unsafe extern "C-unwind" fn cff_add_string(mut cff: *mut cff_font, mut str: *const ::core::ffi::c_char, mut unique: ::core::ffi::c_int) -> s_SID {
     let bytes = CStr::from_ptr(str).to_bytes();
     if cff.is_null() {
         pdf_abort!(b"CFF font not opened.\0" as *const u8 as *const ::core::ffi::c_char);
@@ -1463,22 +1296,14 @@ pub unsafe extern "C-unwind" fn cff_add_string(
     if count > u16::MAX as usize - CFF_STDSTR_MAX as usize {
         pdf_abort!("Too many CFF strings");
     }
-    let offset = if count == 0 {
-        1
-    } else {
-        *(*strings).offset.add(count) as usize
-    };
+    let offset = if count == 0 { 1 } else { *(*strings).offset.add(count) as usize };
     let end = offset
         .checked_add(bytes.len())
         .filter(|&end| end <= u32::MAX as usize)
         .unwrap_or_else(|| pdf_abort!("CFF strings are too large"));
     if count + 2 > (*cache).offset_capacity {
-        (*cache).offset_capacity = crate::compat::allocation::grow_capacity(
-            (*cache).offset_capacity,
-            count + 2,
-            core::mem::size_of::<l_offset>(),
-            16,
-        );
+        (*cache).offset_capacity =
+            crate::compat::allocation::grow_capacity((*cache).offset_capacity, count + 2, core::mem::size_of::<l_offset>(), 16);
         (*strings).offset = renew(
             (*strings).offset.cast(),
             ((*cache).offset_capacity * core::mem::size_of::<l_offset>()) as u32,
@@ -1486,26 +1311,18 @@ pub unsafe extern "C-unwind" fn cff_add_string(
         .cast();
     }
     if end - 1 > (*cache).data_capacity {
-        (*cache).data_capacity =
-            crate::compat::allocation::grow_capacity((*cache).data_capacity, end - 1, 1, 256);
+        (*cache).data_capacity = crate::compat::allocation::grow_capacity((*cache).data_capacity, end - 1, 1, 256);
         (*strings).data = renew((*strings).data.cast(), (*cache).data_capacity as u32).cast();
     }
     if count == 0 {
         *(*strings).offset = 1;
     }
     if !bytes.is_empty() {
-        core::ptr::copy_nonoverlapping(
-            bytes.as_ptr(),
-            (*strings).data.add(offset - 1),
-            bytes.len(),
-        );
+        core::ptr::copy_nonoverlapping(bytes.as_ptr(), (*strings).data.add(offset - 1), bytes.len());
     }
     *(*strings).offset.add(count + 1) = end as u32;
     (*strings).count += 1;
-    (*cache)
-        .names
-        .entry(Box::from(bytes))
-        .or_insert(count as u16);
+    (*cache).names.entry(Box::from(bytes)).or_insert(count as u16);
     (count + CFF_STDSTR_MAX as usize) as u16
 }
 unsafe fn copy_font_array<T: Copy>(values: &[T]) -> *mut T {
@@ -1548,11 +1365,7 @@ pub unsafe extern "C-unwind" fn cff_read_encoding(mut cff: *mut cff_font) -> ::c
     if (*cff).topdict.is_null() {
         pdf_abort!(b"Top DICT data not found\0" as *const u8 as *const ::core::ffi::c_char,);
     }
-    if cff_dict_known(
-        (*cff).topdict,
-        b"Encoding\0" as *const u8 as *const ::core::ffi::c_char,
-    ) == 0
-    {
+    if cff_dict_known((*cff).topdict, b"Encoding\0" as *const u8 as *const ::core::ffi::c_char) == 0 {
         (*cff).flag |= ENCODING_STANDARD;
         (*cff).encoding = ::core::ptr::null_mut::<cff_encoding>();
         return 0 as ::core::ffi::c_int;
@@ -1572,8 +1385,7 @@ pub unsafe extern "C-unwind" fn cff_read_encoding(mut cff: *mut cff_font) -> ::c
         return 0 as ::core::ffi::c_int;
     }
     let mut input = unsafe { seek_cff(cff, offset) };
-    let (parsed, length) = crate::cff::encoding(&mut input)
-        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+    let (parsed, length) = crate::cff::encoding(&mut input).unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
     unsafe {
         let (count, data) = match parsed.values {
             crate::cff::EncodingValues::Codes(codes) => (
@@ -1585,10 +1397,7 @@ pub unsafe extern "C-unwind" fn cff_read_encoding(mut cff: *mut cff_font) -> ::c
             crate::cff::EncodingValues::Ranges(ranges) => {
                 let ranges: Vec<_> = ranges
                     .into_iter()
-                    .map(|(first, n_left)| cff_range1 {
-                        first: first.into(),
-                        n_left,
-                    })
+                    .map(|(first, n_left)| cff_range1 { first: first.into(), n_left })
                     .collect();
                 (
                     ranges.len() as u8,
@@ -1598,11 +1407,7 @@ pub unsafe extern "C-unwind" fn cff_read_encoding(mut cff: *mut cff_font) -> ::c
                 )
             }
         };
-        let supplements: Vec<_> = parsed
-            .supplements
-            .into_iter()
-            .map(|(code, glyph)| cff_map { code, glyph })
-            .collect();
+        let supplements: Vec<_> = parsed.supplements.into_iter().map(|(code, glyph)| cff_map { code, glyph }).collect();
         let value = cff_encoding {
             format: parsed.format,
             num_entries: count,
@@ -1616,9 +1421,7 @@ pub unsafe extern "C-unwind" fn cff_read_encoding(mut cff: *mut cff_font) -> ::c
 }
 #[unsafe(export_name = "__pdf_impl_cff_pack_encoding")]
 pub unsafe extern "C-unwind" fn cff_pack_encoding(
-    mut cff: *mut cff_font,
-    mut dest: *mut card8,
-    mut destlen: ::core::ffi::c_int,
+    mut cff: *mut cff_font, mut dest: *mut card8, mut destlen: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut encoding: *mut cff_encoding = ::core::ptr::null_mut::<cff_encoding>();
@@ -1627,9 +1430,7 @@ pub unsafe extern "C-unwind" fn cff_pack_encoding(
         return 0 as ::core::ffi::c_int;
     }
     if destlen < 2 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"in cff_pack_encoding(): Buffer overflow\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"in cff_pack_encoding(): Buffer overflow\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     encoding = (*cff).encoding;
     let fresh31 = len;
@@ -1641,10 +1442,7 @@ pub unsafe extern "C-unwind" fn cff_pack_encoding(
     match (*encoding).format as ::core::ffi::c_int & !(0x80 as ::core::ffi::c_int) {
         0 => {
             if destlen < len + (*encoding).num_entries as ::core::ffi::c_int {
-                pdf_abort!(
-                    b"in cff_pack_encoding(): Buffer overflow\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+                pdf_abort!(b"in cff_pack_encoding(): Buffer overflow\0" as *const u8 as *const ::core::ffi::c_char,);
             }
             i = 0 as card16;
             while (i as ::core::ffi::c_int) < (*encoding).num_entries as ::core::ffi::c_int {
@@ -1655,25 +1453,18 @@ pub unsafe extern "C-unwind" fn cff_pack_encoding(
             }
         }
         1 => {
-            if destlen
-                < len + (*encoding).num_entries as ::core::ffi::c_int * 2 as ::core::ffi::c_int
-            {
-                pdf_abort!(
-                    b"in cff_pack_encoding(): Buffer overflow\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+            if destlen < len + (*encoding).num_entries as ::core::ffi::c_int * 2 as ::core::ffi::c_int {
+                pdf_abort!(b"in cff_pack_encoding(): Buffer overflow\0" as *const u8 as *const ::core::ffi::c_char,);
             }
             i = 0 as card16;
             while (i as ::core::ffi::c_int) < (*encoding).num_entries as ::core::ffi::c_int {
                 let fresh34 = len;
                 len = len + 1;
                 *dest.offset(fresh34 as isize) =
-                    ((*(*encoding).data.range1.offset(i as isize)).first as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int) as card8;
+                    ((*(*encoding).data.range1.offset(i as isize)).first as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
                 let fresh35 = len;
                 len = len + 1;
-                *dest.offset(fresh35 as isize) =
-                    (*(*encoding).data.range1.offset(i as isize)).n_left;
+                *dest.offset(fresh35 as isize) = (*(*encoding).data.range1.offset(i as isize)).n_left;
                 i = i.wrapping_add(1);
             }
         }
@@ -1682,15 +1473,8 @@ pub unsafe extern "C-unwind" fn cff_pack_encoding(
         }
     }
     if (*encoding).format as ::core::ffi::c_int & 0x80 as ::core::ffi::c_int != 0 {
-        if destlen
-            < len
-                + (*encoding).num_supps as ::core::ffi::c_int * 3 as ::core::ffi::c_int
-                + 1 as ::core::ffi::c_int
-        {
-            pdf_abort!(
-                b"in cff_pack_encoding(): Buffer overflow\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+        if destlen < len + (*encoding).num_supps as ::core::ffi::c_int * 3 as ::core::ffi::c_int + 1 as ::core::ffi::c_int {
+            pdf_abort!(b"in cff_pack_encoding(): Buffer overflow\0" as *const u8 as *const ::core::ffi::c_char,);
         }
         let fresh36 = len;
         len = len + 1;
@@ -1702,33 +1486,24 @@ pub unsafe extern "C-unwind" fn cff_pack_encoding(
             *dest.offset(fresh37 as isize) = (*(*encoding).supp.offset(i as isize)).code;
             let fresh38 = len;
             len = len + 1;
-            *dest.offset(fresh38 as isize) = ((*(*encoding).supp.offset(i as isize)).glyph
-                as ::core::ffi::c_int
-                >> 8 as ::core::ffi::c_int
-                & 0xff as ::core::ffi::c_int) as card8;
+            *dest.offset(fresh38 as isize) =
+                ((*(*encoding).supp.offset(i as isize)).glyph as ::core::ffi::c_int >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
             let fresh39 = len;
             len = len + 1;
-            *dest.offset(fresh39 as isize) = ((*(*encoding).supp.offset(i as isize)).glyph
-                as ::core::ffi::c_int
-                & 0xff as ::core::ffi::c_int) as card8;
+            *dest.offset(fresh39 as isize) =
+                ((*(*encoding).supp.offset(i as isize)).glyph as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
             i = i.wrapping_add(1);
         }
     }
     return len;
 }
 #[unsafe(export_name = "__pdf_impl_cff_encoding_lookup")]
-pub unsafe extern "C-unwind" fn cff_encoding_lookup(
-    mut cff: *mut cff_font,
-    mut code: card8,
-) -> card16 {
+pub unsafe extern "C-unwind" fn cff_encoding_lookup(mut cff: *mut cff_font, mut code: card8) -> card16 {
     let mut gid: card16 = 0 as card16;
     let mut encoding: *mut cff_encoding = ::core::ptr::null_mut::<cff_encoding>();
     let mut i: card16 = 0;
     if (*cff).flag & (ENCODING_STANDARD | ENCODING_EXPERT) != 0 {
-        pdf_abort!(
-            b"Predefined CFF encoding not supported yet\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"Predefined CFF encoding not supported yet\0" as *const u8 as *const ::core::ffi::c_char,);
     } else if (*cff).encoding.is_null() {
         pdf_abort!(b"Encoding data not available\0" as *const u8 as *const ::core::ffi::c_char,);
     }
@@ -1738,9 +1513,7 @@ pub unsafe extern "C-unwind" fn cff_encoding_lookup(
         0 => {
             i = 0 as card16;
             while (i as ::core::ffi::c_int) < (*encoding).num_entries as ::core::ffi::c_int {
-                if code as ::core::ffi::c_int
-                    == *(*encoding).data.codes.offset(i as isize) as ::core::ffi::c_int
-                {
+                if code as ::core::ffi::c_int == *(*encoding).data.codes.offset(i as isize) as ::core::ffi::c_int {
                     gid = (i as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as card16;
                     break;
                 } else {
@@ -1751,24 +1524,19 @@ pub unsafe extern "C-unwind" fn cff_encoding_lookup(
         1 => {
             i = 0 as card16;
             while (i as ::core::ffi::c_int) < (*encoding).num_entries as ::core::ffi::c_int {
-                if code as ::core::ffi::c_int
-                    >= (*(*encoding).data.range1.offset(i as isize)).first as ::core::ffi::c_int
+                if code as ::core::ffi::c_int >= (*(*encoding).data.range1.offset(i as isize)).first as ::core::ffi::c_int
                     && code as ::core::ffi::c_int
                         <= (*(*encoding).data.range1.offset(i as isize)).first as ::core::ffi::c_int
-                            + (*(*encoding).data.range1.offset(i as isize)).n_left
-                                as ::core::ffi::c_int
+                            + (*(*encoding).data.range1.offset(i as isize)).n_left as ::core::ffi::c_int
                 {
                     gid = (gid as ::core::ffi::c_int
-                        + (code as ::core::ffi::c_int
-                            - (*(*encoding).data.range1.offset(i as isize)).first
-                                as ::core::ffi::c_int
+                        + (code as ::core::ffi::c_int - (*(*encoding).data.range1.offset(i as isize)).first as ::core::ffi::c_int
                             + 1 as ::core::ffi::c_int)) as card16;
                     break;
                 } else {
                     gid = (gid as ::core::ffi::c_int
-                        + ((*(*encoding).data.range1.offset(i as isize)).n_left
-                            as ::core::ffi::c_int
-                            + 1 as ::core::ffi::c_int)) as card16;
+                        + ((*(*encoding).data.range1.offset(i as isize)).n_left as ::core::ffi::c_int + 1 as ::core::ffi::c_int))
+                        as card16;
                     i = i.wrapping_add(1);
                 }
             }
@@ -1780,15 +1548,10 @@ pub unsafe extern "C-unwind" fn cff_encoding_lookup(
             pdf_abort!(b"Unknown Encoding format.\0" as *const u8 as *const ::core::ffi::c_char,);
         }
     }
-    if gid as ::core::ffi::c_int == 0 as ::core::ffi::c_int
-        && (*encoding).format as ::core::ffi::c_int & 0x80 as ::core::ffi::c_int != 0
-    {
+    if gid as ::core::ffi::c_int == 0 as ::core::ffi::c_int && (*encoding).format as ::core::ffi::c_int & 0x80 as ::core::ffi::c_int != 0 {
         let mut map: *mut cff_map = ::core::ptr::null_mut::<cff_map>();
         if (*encoding).supp.is_null() {
-            pdf_abort!(
-                b"No CFF supplementary encoding data read.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_abort!(b"No CFF supplementary encoding data read.\0" as *const u8 as *const ::core::ffi::c_char,);
         }
         map = (*encoding).supp;
         i = 0 as card16;
@@ -1814,9 +1577,7 @@ pub unsafe extern "C-unwind" fn cff_release_encoding(mut encoding: *mut cff_enco
                 free((*encoding).data.range1 as *mut ::core::ffi::c_void);
             }
             _ => {
-                pdf_abort!(
-                    b"Unknown Encoding format.\0" as *const u8 as *const ::core::ffi::c_char,
-                );
+                pdf_abort!(b"Unknown Encoding format.\0" as *const u8 as *const ::core::ffi::c_char,);
             }
         }
         if (*encoding).format as ::core::ffi::c_int & 0x80 as ::core::ffi::c_int != 0 {
@@ -1835,11 +1596,7 @@ pub unsafe extern "C-unwind" fn cff_read_charsets(mut cff: *mut cff_font) -> ::c
     if (*cff).topdict.is_null() {
         pdf_abort!(b"Top DICT not available\0" as *const u8 as *const ::core::ffi::c_char,);
     }
-    if cff_dict_known(
-        (*cff).topdict,
-        b"charset\0" as *const u8 as *const ::core::ffi::c_char,
-    ) == 0
-    {
+    if cff_dict_known((*cff).topdict, b"charset\0" as *const u8 as *const ::core::ffi::c_char) == 0 {
         (*cff).flag |= CHARSETS_ISOADOBE;
         (*cff).charsets = ::core::ptr::null_mut::<cff_charsets>();
         return 0 as ::core::ffi::c_int;
@@ -1863,8 +1620,8 @@ pub unsafe extern "C-unwind" fn cff_read_charsets(mut cff: *mut cff_font) -> ::c
         return 0 as ::core::ffi::c_int;
     }
     let mut input = unsafe { seek_cff(cff, offset) };
-    let (parsed, length) = crate::cff::charset(&mut input, unsafe { (*cff).num_glyphs })
-        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+    let (parsed, length) =
+        crate::cff::charset(&mut input, unsafe { (*cff).num_glyphs }).unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
     unsafe {
         let value = match parsed {
             crate::cff::Charset::Glyphs(glyphs) => cff_charsets {
@@ -1877,10 +1634,7 @@ pub unsafe extern "C-unwind" fn cff_read_charsets(mut cff: *mut cff_font) -> ::c
             crate::cff::Charset::Ranges { format: 1, ranges } => {
                 let ranges: Vec<_> = ranges
                     .into_iter()
-                    .map(|(first, n_left)| cff_range1 {
-                        first,
-                        n_left: n_left as u8,
-                    })
+                    .map(|(first, n_left)| cff_range1 { first, n_left: n_left as u8 })
                     .collect();
                 cff_charsets {
                     format: 1,
@@ -1891,10 +1645,7 @@ pub unsafe extern "C-unwind" fn cff_read_charsets(mut cff: *mut cff_font) -> ::c
                 }
             }
             crate::cff::Charset::Ranges { ranges, .. } => {
-                let ranges: Vec<_> = ranges
-                    .into_iter()
-                    .map(|(first, n_left)| cff_range2 { first, n_left })
-                    .collect();
+                let ranges: Vec<_> = ranges.into_iter().map(|(first, n_left)| cff_range2 { first, n_left }).collect();
                 cff_charsets {
                     format: 2,
                     num_entries: ranges.len() as u16,
@@ -1910,9 +1661,7 @@ pub unsafe extern "C-unwind" fn cff_read_charsets(mut cff: *mut cff_font) -> ::c
 }
 #[unsafe(export_name = "__pdf_impl_cff_pack_charsets")]
 pub unsafe extern "C-unwind" fn cff_pack_charsets(
-    mut cff: *mut cff_font,
-    mut dest: *mut card8,
-    mut destlen: ::core::ffi::c_int,
+    mut cff: *mut cff_font, mut dest: *mut card8, mut destlen: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut i: card16 = 0;
@@ -1921,9 +1670,7 @@ pub unsafe extern "C-unwind" fn cff_pack_charsets(
         return 0 as ::core::ffi::c_int;
     }
     if destlen < 1 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"in cff_pack_charsets(): Buffer overflow\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"in cff_pack_charsets(): Buffer overflow\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     charset = (*cff).charsets;
     let fresh40 = len;
@@ -1931,91 +1678,64 @@ pub unsafe extern "C-unwind" fn cff_pack_charsets(
     *dest.offset(fresh40 as isize) = (*charset).format;
     match (*charset).format as ::core::ffi::c_int {
         0 => {
-            if destlen
-                < len + (*charset).num_entries as ::core::ffi::c_int * 2 as ::core::ffi::c_int
-            {
-                pdf_abort!(
-                    b"in cff_pack_charsets(): Buffer overflow\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+            if destlen < len + (*charset).num_entries as ::core::ffi::c_int * 2 as ::core::ffi::c_int {
+                pdf_abort!(b"in cff_pack_charsets(): Buffer overflow\0" as *const u8 as *const ::core::ffi::c_char,);
             }
             i = 0 as card16;
             while (i as ::core::ffi::c_int) < (*charset).num_entries as ::core::ffi::c_int {
                 let mut sid: s_SID = *(*charset).data.glyphs.offset(i as isize);
                 let fresh41 = len;
                 len = len + 1;
-                *dest.offset(fresh41 as isize) =
-                    (sid as ::core::ffi::c_int >> 8 as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int) as card8;
+                *dest.offset(fresh41 as isize) = (sid as ::core::ffi::c_int >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
                 let fresh42 = len;
                 len = len + 1;
-                *dest.offset(fresh42 as isize) =
-                    (sid as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
+                *dest.offset(fresh42 as isize) = (sid as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
                 i = i.wrapping_add(1);
             }
         }
         1 => {
-            if destlen
-                < len + (*charset).num_entries as ::core::ffi::c_int * 3 as ::core::ffi::c_int
-            {
-                pdf_abort!(
-                    b"in cff_pack_charsets(): Buffer overflow\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+            if destlen < len + (*charset).num_entries as ::core::ffi::c_int * 3 as ::core::ffi::c_int {
+                pdf_abort!(b"in cff_pack_charsets(): Buffer overflow\0" as *const u8 as *const ::core::ffi::c_char,);
             }
             i = 0 as card16;
             while (i as ::core::ffi::c_int) < (*charset).num_entries as ::core::ffi::c_int {
                 let fresh43 = len;
                 len = len + 1;
-                *dest.offset(fresh43 as isize) =
-                    ((*(*charset).data.range1.offset(i as isize)).first as ::core::ffi::c_int
-                        >> 8 as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int) as card8;
+                *dest.offset(fresh43 as isize) = ((*(*charset).data.range1.offset(i as isize)).first as ::core::ffi::c_int >> 8 as ::core::ffi::c_int
+                    & 0xff as ::core::ffi::c_int) as card8;
                 let fresh44 = len;
                 len = len + 1;
                 *dest.offset(fresh44 as isize) =
-                    ((*(*charset).data.range1.offset(i as isize)).first as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int) as card8;
+                    ((*(*charset).data.range1.offset(i as isize)).first as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
                 let fresh45 = len;
                 len = len + 1;
-                *dest.offset(fresh45 as isize) =
-                    (*(*charset).data.range1.offset(i as isize)).n_left;
+                *dest.offset(fresh45 as isize) = (*(*charset).data.range1.offset(i as isize)).n_left;
                 i = i.wrapping_add(1);
             }
         }
         2 => {
-            if destlen
-                < len + (*charset).num_entries as ::core::ffi::c_int * 4 as ::core::ffi::c_int
-            {
-                pdf_abort!(
-                    b"in cff_pack_charsets(): Buffer overflow\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+            if destlen < len + (*charset).num_entries as ::core::ffi::c_int * 4 as ::core::ffi::c_int {
+                pdf_abort!(b"in cff_pack_charsets(): Buffer overflow\0" as *const u8 as *const ::core::ffi::c_char,);
             }
             i = 0 as card16;
             while (i as ::core::ffi::c_int) < (*charset).num_entries as ::core::ffi::c_int {
                 let fresh46 = len;
                 len = len + 1;
-                *dest.offset(fresh46 as isize) =
-                    ((*(*charset).data.range2.offset(i as isize)).first as ::core::ffi::c_int
-                        >> 8 as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int) as card8;
+                *dest.offset(fresh46 as isize) = ((*(*charset).data.range2.offset(i as isize)).first as ::core::ffi::c_int >> 8 as ::core::ffi::c_int
+                    & 0xff as ::core::ffi::c_int) as card8;
                 let fresh47 = len;
                 len = len + 1;
                 *dest.offset(fresh47 as isize) =
-                    ((*(*charset).data.range2.offset(i as isize)).first as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int) as card8;
+                    ((*(*charset).data.range2.offset(i as isize)).first as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
                 let fresh48 = len;
                 len = len + 1;
-                *dest.offset(fresh48 as isize) =
-                    ((*(*charset).data.range2.offset(i as isize)).n_left as ::core::ffi::c_int
-                        >> 8 as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int) as card8;
+                *dest.offset(fresh48 as isize) = ((*(*charset).data.range2.offset(i as isize)).n_left as ::core::ffi::c_int
+                    >> 8 as ::core::ffi::c_int
+                    & 0xff as ::core::ffi::c_int) as card8;
                 let fresh49 = len;
                 len = len + 1;
                 *dest.offset(fresh49 as isize) =
-                    ((*(*charset).data.range2.offset(i as isize)).n_left as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int) as card8;
+                    ((*(*charset).data.range2.offset(i as isize)).n_left as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
                 i = i.wrapping_add(1);
             }
         }
@@ -2026,38 +1746,23 @@ pub unsafe extern "C-unwind" fn cff_pack_charsets(
     return len;
 }
 #[unsafe(export_name = "__pdf_impl_cff_get_glyphname")]
-pub unsafe extern "C-unwind" fn cff_get_glyphname(
-    mut cff: *mut cff_font,
-    mut gid: card16,
-) -> *mut ::core::ffi::c_char {
+pub unsafe extern "C-unwind" fn cff_get_glyphname(mut cff: *mut cff_font, mut gid: card16) -> *mut ::core::ffi::c_char {
     let mut sid: s_SID = 0;
     sid = cff_charsets_lookup_inverse(cff, gid) as s_SID;
     return cff_get_string(cff, sid);
 }
 #[unsafe(export_name = "__pdf_impl_cff_glyph_lookup")]
-pub unsafe extern "C-unwind" fn cff_glyph_lookup(
-    mut cff: *mut cff_font,
-    mut glyph: *const ::core::ffi::c_char,
-) -> card16 {
+pub unsafe extern "C-unwind" fn cff_glyph_lookup(mut cff: *mut cff_font, mut glyph: *const ::core::ffi::c_char) -> card16 {
     let mut gid: card16 = 0;
     let mut charset: *mut cff_charsets = ::core::ptr::null_mut::<cff_charsets>();
     let mut i: card16 = 0;
     let mut n: card16 = 0;
     if (*cff).flag & (CHARSETS_ISOADOBE | CHARSETS_EXPERT | CHARSETS_EXPSUB) != 0 {
-        pdf_abort!(
-            b"Predefined CFF charsets not supported yet\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"Predefined CFF charsets not supported yet\0" as *const u8 as *const ::core::ffi::c_char,);
     } else if (*cff).charsets.is_null() {
         pdf_abort!(b"Charsets data not available\0" as *const u8 as *const ::core::ffi::c_char,);
     }
-    if glyph.is_null()
-        || streq_ptr(
-            glyph,
-            b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
-        ) as ::core::ffi::c_int
-            != 0
-    {
+    if glyph.is_null() || streq_ptr(glyph, b".notdef\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0 {
         return 0 as card16;
     }
     charset = (*cff).charsets;
@@ -2077,15 +1782,12 @@ pub unsafe extern "C-unwind" fn cff_glyph_lookup(
             i = 0 as card16;
             while (i as ::core::ffi::c_int) < (*charset).num_entries as ::core::ffi::c_int {
                 n = 0 as card16;
-                while n as ::core::ffi::c_int
-                    <= (*(*charset).data.range1.offset(i as isize)).n_left as ::core::ffi::c_int
-                {
+                while n as ::core::ffi::c_int <= (*(*charset).data.range1.offset(i as isize)).n_left as ::core::ffi::c_int {
                     gid = gid.wrapping_add(1);
                     if cff_match_string(
                         cff,
                         glyph,
-                        ((*(*charset).data.range1.offset(i as isize)).first as ::core::ffi::c_int
-                            + n as ::core::ffi::c_int) as s_SID,
+                        ((*(*charset).data.range1.offset(i as isize)).first as ::core::ffi::c_int + n as ::core::ffi::c_int) as s_SID,
                     ) != 0
                     {
                         return gid;
@@ -2099,15 +1801,12 @@ pub unsafe extern "C-unwind" fn cff_glyph_lookup(
             i = 0 as card16;
             while (i as ::core::ffi::c_int) < (*charset).num_entries as ::core::ffi::c_int {
                 n = 0 as card16;
-                while n as ::core::ffi::c_int
-                    <= (*(*charset).data.range2.offset(i as isize)).n_left as ::core::ffi::c_int
-                {
+                while n as ::core::ffi::c_int <= (*(*charset).data.range2.offset(i as isize)).n_left as ::core::ffi::c_int {
                     gid = gid.wrapping_add(1);
                     if cff_match_string(
                         cff,
                         glyph,
-                        ((*(*charset).data.range2.offset(i as isize)).first as ::core::ffi::c_int
-                            + n as ::core::ffi::c_int) as s_SID,
+                        ((*(*charset).data.range2.offset(i as isize)).first as ::core::ffi::c_int + n as ::core::ffi::c_int) as s_SID,
                     ) != 0
                     {
                         return gid;
@@ -2124,25 +1823,16 @@ pub unsafe extern "C-unwind" fn cff_glyph_lookup(
     return 0 as card16;
 }
 #[unsafe(export_name = "__pdf_impl_cff_charsets_lookup")]
-pub unsafe extern "C-unwind" fn cff_charsets_lookup(
-    mut cff: *mut cff_font,
-    mut cid: card16,
-) -> card16 {
+pub unsafe extern "C-unwind" fn cff_charsets_lookup(mut cff: *mut cff_font, mut cid: card16) -> card16 {
     if (*cff).flag & (CHARSETS_ISOADOBE | CHARSETS_EXPERT | CHARSETS_EXPSUB) != 0 {
-        pdf_abort!(
-            b"Predefined CFF charsets not supported yet\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"Predefined CFF charsets not supported yet\0" as *const u8 as *const ::core::ffi::c_char,);
     } else if (*cff).charsets.is_null() {
         pdf_abort!(b"Charsets data not available\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     return cff_charsets_lookup_gid((*cff).charsets, cid);
 }
 #[unsafe(export_name = "__pdf_impl_cff_charsets_lookup_gid")]
-pub unsafe extern "C-unwind" fn cff_charsets_lookup_gid(
-    mut charset: *mut cff_charsets,
-    mut cid: card16,
-) -> card16 {
+pub unsafe extern "C-unwind" fn cff_charsets_lookup_gid(mut charset: *mut cff_charsets, mut cid: card16) -> card16 {
     let mut gid: card16 = 0 as card16;
     let mut i: card16 = 0;
     if cid as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
@@ -2152,9 +1842,7 @@ pub unsafe extern "C-unwind" fn cff_charsets_lookup_gid(
         0 => {
             i = 0 as card16;
             while (i as ::core::ffi::c_int) < (*charset).num_entries as ::core::ffi::c_int {
-                if cid as ::core::ffi::c_int
-                    == *(*charset).data.glyphs.offset(i as isize) as ::core::ffi::c_int
-                {
+                if cid as ::core::ffi::c_int == *(*charset).data.glyphs.offset(i as isize) as ::core::ffi::c_int {
                     gid = (i as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as card16;
                     return gid;
                 }
@@ -2164,46 +1852,38 @@ pub unsafe extern "C-unwind" fn cff_charsets_lookup_gid(
         1 => {
             i = 0 as card16;
             while (i as ::core::ffi::c_int) < (*charset).num_entries as ::core::ffi::c_int {
-                if cid as ::core::ffi::c_int
-                    >= (*(*charset).data.range1.offset(i as isize)).first as ::core::ffi::c_int
+                if cid as ::core::ffi::c_int >= (*(*charset).data.range1.offset(i as isize)).first as ::core::ffi::c_int
                     && cid as ::core::ffi::c_int
                         <= (*(*charset).data.range1.offset(i as isize)).first as ::core::ffi::c_int
-                            + (*(*charset).data.range1.offset(i as isize)).n_left
-                                as ::core::ffi::c_int
+                            + (*(*charset).data.range1.offset(i as isize)).n_left as ::core::ffi::c_int
                 {
                     gid = (gid as ::core::ffi::c_int
-                        + (cid as ::core::ffi::c_int
-                            - (*(*charset).data.range1.offset(i as isize)).first
-                                as ::core::ffi::c_int
+                        + (cid as ::core::ffi::c_int - (*(*charset).data.range1.offset(i as isize)).first as ::core::ffi::c_int
                             + 1 as ::core::ffi::c_int)) as card16;
                     return gid;
                 }
                 gid = (gid as ::core::ffi::c_int
-                    + ((*(*charset).data.range1.offset(i as isize)).n_left as ::core::ffi::c_int
-                        + 1 as ::core::ffi::c_int)) as card16;
+                    + ((*(*charset).data.range1.offset(i as isize)).n_left as ::core::ffi::c_int + 1 as ::core::ffi::c_int))
+                    as card16;
                 i = i.wrapping_add(1);
             }
         }
         2 => {
             i = 0 as card16;
             while (i as ::core::ffi::c_int) < (*charset).num_entries as ::core::ffi::c_int {
-                if cid as ::core::ffi::c_int
-                    >= (*(*charset).data.range2.offset(i as isize)).first as ::core::ffi::c_int
+                if cid as ::core::ffi::c_int >= (*(*charset).data.range2.offset(i as isize)).first as ::core::ffi::c_int
                     && cid as ::core::ffi::c_int
                         <= (*(*charset).data.range2.offset(i as isize)).first as ::core::ffi::c_int
-                            + (*(*charset).data.range2.offset(i as isize)).n_left
-                                as ::core::ffi::c_int
+                            + (*(*charset).data.range2.offset(i as isize)).n_left as ::core::ffi::c_int
                 {
                     gid = (gid as ::core::ffi::c_int
-                        + (cid as ::core::ffi::c_int
-                            - (*(*charset).data.range2.offset(i as isize)).first
-                                as ::core::ffi::c_int
+                        + (cid as ::core::ffi::c_int - (*(*charset).data.range2.offset(i as isize)).first as ::core::ffi::c_int
                             + 1 as ::core::ffi::c_int)) as card16;
                     return gid;
                 }
                 gid = (gid as ::core::ffi::c_int
-                    + ((*(*charset).data.range2.offset(i as isize)).n_left as ::core::ffi::c_int
-                        + 1 as ::core::ffi::c_int)) as card16;
+                    + ((*(*charset).data.range2.offset(i as isize)).n_left as ::core::ffi::c_int + 1 as ::core::ffi::c_int))
+                    as card16;
                 i = i.wrapping_add(1);
             }
         }
@@ -2214,15 +1894,9 @@ pub unsafe extern "C-unwind" fn cff_charsets_lookup_gid(
     return 0 as card16;
 }
 #[unsafe(export_name = "__pdf_impl_cff_charsets_lookup_inverse")]
-pub unsafe extern "C-unwind" fn cff_charsets_lookup_inverse(
-    mut cff: *mut cff_font,
-    mut gid: card16,
-) -> card16 {
+pub unsafe extern "C-unwind" fn cff_charsets_lookup_inverse(mut cff: *mut cff_font, mut gid: card16) -> card16 {
     if (*cff).flag & (CHARSETS_ISOADOBE | CHARSETS_EXPERT | CHARSETS_EXPSUB) != 0 {
-        pdf_abort!(
-            b"Predefined CFF charsets not supported yet\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"Predefined CFF charsets not supported yet\0" as *const u8 as *const ::core::ffi::c_char,);
     } else if (*cff).charsets.is_null() {
         pdf_abort!(b"Charsets data not available\0" as *const u8 as *const ::core::ffi::c_char,);
     }
@@ -2232,41 +1906,30 @@ pub unsafe extern "C-unwind" fn cff_charsets_lookup_inverse(
     return cff_charsets_lookup_cid((*cff).charsets, gid);
 }
 #[unsafe(export_name = "__pdf_impl_cff_charsets_lookup_cid")]
-pub unsafe extern "C-unwind" fn cff_charsets_lookup_cid(
-    mut charset: *mut cff_charsets,
-    mut gid: card16,
-) -> card16 {
+pub unsafe extern "C-unwind" fn cff_charsets_lookup_cid(mut charset: *mut cff_charsets, mut gid: card16) -> card16 {
     let mut sid: card16 = 0 as card16;
     let mut i: card16 = 0;
     match (*charset).format as ::core::ffi::c_int {
         0 => {
-            if gid as ::core::ffi::c_int - 1 as ::core::ffi::c_int
-                >= (*charset).num_entries as ::core::ffi::c_int
-            {
+            if gid as ::core::ffi::c_int - 1 as ::core::ffi::c_int >= (*charset).num_entries as ::core::ffi::c_int {
                 pdf_abort!(b"Invalid GID.\0" as *const u8 as *const ::core::ffi::c_char);
             }
             sid = *(*charset)
                 .data
                 .glyphs
-                .offset((gid as ::core::ffi::c_int - 1 as ::core::ffi::c_int) as isize)
-                as card16;
+                .offset((gid as ::core::ffi::c_int - 1 as ::core::ffi::c_int) as isize) as card16;
         }
         1 => {
             i = 0 as card16;
             while (i as ::core::ffi::c_int) < (*charset).num_entries as ::core::ffi::c_int {
-                if gid as ::core::ffi::c_int
-                    <= (*(*charset).data.range1.offset(i as isize)).n_left as ::core::ffi::c_int
-                        + 1 as ::core::ffi::c_int
-                {
-                    sid = (gid as ::core::ffi::c_int
-                        + (*(*charset).data.range1.offset(i as isize)).first as ::core::ffi::c_int
+                if gid as ::core::ffi::c_int <= (*(*charset).data.range1.offset(i as isize)).n_left as ::core::ffi::c_int + 1 as ::core::ffi::c_int {
+                    sid = (gid as ::core::ffi::c_int + (*(*charset).data.range1.offset(i as isize)).first as ::core::ffi::c_int
                         - 1 as ::core::ffi::c_int) as card16;
                     break;
                 } else {
                     gid = (gid as ::core::ffi::c_int
-                        - ((*(*charset).data.range1.offset(i as isize)).n_left
-                            as ::core::ffi::c_int
-                            + 1 as ::core::ffi::c_int)) as card16;
+                        - ((*(*charset).data.range1.offset(i as isize)).n_left as ::core::ffi::c_int + 1 as ::core::ffi::c_int))
+                        as card16;
                     i = i.wrapping_add(1);
                 }
             }
@@ -2277,19 +1940,14 @@ pub unsafe extern "C-unwind" fn cff_charsets_lookup_cid(
         2 => {
             i = 0 as card16;
             while (i as ::core::ffi::c_int) < (*charset).num_entries as ::core::ffi::c_int {
-                if gid as ::core::ffi::c_int
-                    <= (*(*charset).data.range2.offset(i as isize)).n_left as ::core::ffi::c_int
-                        + 1 as ::core::ffi::c_int
-                {
-                    sid = (gid as ::core::ffi::c_int
-                        + (*(*charset).data.range2.offset(i as isize)).first as ::core::ffi::c_int
+                if gid as ::core::ffi::c_int <= (*(*charset).data.range2.offset(i as isize)).n_left as ::core::ffi::c_int + 1 as ::core::ffi::c_int {
+                    sid = (gid as ::core::ffi::c_int + (*(*charset).data.range2.offset(i as isize)).first as ::core::ffi::c_int
                         - 1 as ::core::ffi::c_int) as card16;
                     break;
                 } else {
                     gid = (gid as ::core::ffi::c_int
-                        - ((*(*charset).data.range2.offset(i as isize)).n_left
-                            as ::core::ffi::c_int
-                            + 1 as ::core::ffi::c_int)) as card16;
+                        - ((*(*charset).data.range2.offset(i as isize)).n_left as ::core::ffi::c_int + 1 as ::core::ffi::c_int))
+                        as card16;
                     i = i.wrapping_add(1);
                 }
             }
@@ -2339,22 +1997,17 @@ pub unsafe extern "C-unwind" fn cff_read_fdselect(mut cff: *mut cff_font) -> ::c
         0 as ::core::ffi::c_int,
     ) as ::core::ffi::c_int;
     let mut input = unsafe { seek_cff(cff, offset) };
-    let (parsed, length) = crate::cff::fdselect(&mut input, unsafe { (*cff).num_glyphs })
-        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+    let (parsed, length) =
+        crate::cff::fdselect(&mut input, unsafe { (*cff).num_glyphs }).unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
     unsafe {
         let value = match parsed {
             crate::cff::FdSelect::Fds(fds) => cff_fdselect {
                 format: 0,
                 num_entries: fds.len() as u16,
-                data: C2RustUnnamed_1 {
-                    fds: copy_font_array(&fds),
-                },
+                data: C2RustUnnamed_1 { fds: copy_font_array(&fds) },
             },
             crate::cff::FdSelect::Ranges(ranges) => {
-                let ranges: Vec<_> = ranges
-                    .into_iter()
-                    .map(|(first, fd)| cff_range3 { first, fd })
-                    .collect();
+                let ranges: Vec<_> = ranges.into_iter().map(|(first, fd)| cff_range3 { first, fd }).collect();
                 cff_fdselect {
                     format: 3,
                     num_entries: ranges.len() as u16,
@@ -2370,9 +2023,7 @@ pub unsafe extern "C-unwind" fn cff_read_fdselect(mut cff: *mut cff_font) -> ::c
 }
 #[unsafe(export_name = "__pdf_impl_cff_pack_fdselect")]
 pub unsafe extern "C-unwind" fn cff_pack_fdselect(
-    mut cff: *mut cff_font,
-    mut dest: *mut card8,
-    mut destlen: ::core::ffi::c_int,
+    mut cff: *mut cff_font, mut dest: *mut card8, mut destlen: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut fdsel: *mut cff_fdselect = ::core::ptr::null_mut::<cff_fdselect>();
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
@@ -2381,9 +2032,7 @@ pub unsafe extern "C-unwind" fn cff_pack_fdselect(
         return 0 as ::core::ffi::c_int;
     }
     if destlen < 1 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"in cff_pack_fdselect(): Buffur overflow\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"in cff_pack_fdselect(): Buffur overflow\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     fdsel = (*cff).fdselect;
     let fresh50 = len;
@@ -2391,18 +2040,11 @@ pub unsafe extern "C-unwind" fn cff_pack_fdselect(
     *dest.offset(fresh50 as isize) = (*fdsel).format;
     match (*fdsel).format as ::core::ffi::c_int {
         0 => {
-            if (*fdsel).num_entries as ::core::ffi::c_int != (*cff).num_glyphs as ::core::ffi::c_int
-            {
-                pdf_abort!(
-                    b"in cff_pack_fdselect(): Invalid data\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+            if (*fdsel).num_entries as ::core::ffi::c_int != (*cff).num_glyphs as ::core::ffi::c_int {
+                pdf_abort!(b"in cff_pack_fdselect(): Invalid data\0" as *const u8 as *const ::core::ffi::c_char,);
             }
             if destlen < len + (*fdsel).num_entries as ::core::ffi::c_int {
-                pdf_abort!(
-                    b"in cff_pack_fdselect(): Buffer overflow\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+                pdf_abort!(b"in cff_pack_fdselect(): Buffer overflow\0" as *const u8 as *const ::core::ffi::c_char,);
             }
             i = 0 as card16;
             while (i as ::core::ffi::c_int) < (*fdsel).num_entries as ::core::ffi::c_int {
@@ -2414,57 +2056,41 @@ pub unsafe extern "C-unwind" fn cff_pack_fdselect(
         }
         3 => {
             if destlen < len + 2 as ::core::ffi::c_int {
-                pdf_abort!(
-                    b"in cff_pack_fdselect(): Buffer overflow\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+                pdf_abort!(b"in cff_pack_fdselect(): Buffer overflow\0" as *const u8 as *const ::core::ffi::c_char,);
             }
             len += 2 as ::core::ffi::c_int;
             i = 0 as card16;
             while (i as ::core::ffi::c_int) < (*fdsel).num_entries as ::core::ffi::c_int {
                 if destlen < len + 3 as ::core::ffi::c_int {
-                    pdf_abort!(
-                        b"in cff_pack_fdselect(): Buffer overflow\0" as *const u8
-                            as *const ::core::ffi::c_char,
-                    );
+                    pdf_abort!(b"in cff_pack_fdselect(): Buffer overflow\0" as *const u8 as *const ::core::ffi::c_char,);
                 }
                 let fresh52 = len;
                 len = len + 1;
-                *dest.offset(fresh52 as isize) =
-                    ((*(*fdsel).data.ranges.offset(i as isize)).first as ::core::ffi::c_int
-                        >> 8 as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int) as card8;
+                *dest.offset(fresh52 as isize) = ((*(*fdsel).data.ranges.offset(i as isize)).first as ::core::ffi::c_int >> 8 as ::core::ffi::c_int
+                    & 0xff as ::core::ffi::c_int) as card8;
                 let fresh53 = len;
                 len = len + 1;
                 *dest.offset(fresh53 as isize) =
-                    ((*(*fdsel).data.ranges.offset(i as isize)).first as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int) as card8;
+                    ((*(*fdsel).data.ranges.offset(i as isize)).first as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
                 let fresh54 = len;
                 len = len + 1;
                 *dest.offset(fresh54 as isize) = (*(*fdsel).data.ranges.offset(i as isize)).fd;
                 i = i.wrapping_add(1);
             }
             if destlen < len + 2 as ::core::ffi::c_int {
-                pdf_abort!(
-                    b"in cff_pack_fdselect(): Buffer overflow\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+                pdf_abort!(b"in cff_pack_fdselect(): Buffer overflow\0" as *const u8 as *const ::core::ffi::c_char,);
             }
             let fresh55 = len;
             len = len + 1;
-            *dest.offset(fresh55 as isize) = ((*cff).num_glyphs as ::core::ffi::c_int
-                >> 8 as ::core::ffi::c_int
-                & 0xff as ::core::ffi::c_int) as card8;
+            *dest.offset(fresh55 as isize) =
+                ((*cff).num_glyphs as ::core::ffi::c_int >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
             let fresh56 = len;
             len = len + 1;
-            *dest.offset(fresh56 as isize) =
-                ((*cff).num_glyphs as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
+            *dest.offset(fresh56 as isize) = ((*cff).num_glyphs as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
             *dest.offset(1 as ::core::ffi::c_int as isize) =
-                (len / 3 as ::core::ffi::c_int - 1 as ::core::ffi::c_int >> 8 as ::core::ffi::c_int
-                    & 0xff as ::core::ffi::c_int) as card8;
+                (len / 3 as ::core::ffi::c_int - 1 as ::core::ffi::c_int >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
             *dest.offset(2 as ::core::ffi::c_int as isize) =
-                (len / 3 as ::core::ffi::c_int - 1 as ::core::ffi::c_int
-                    & 0xff as ::core::ffi::c_int) as card8;
+                (len / 3 as ::core::ffi::c_int - 1 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
         }
         _ => {
             pdf_abort!(b"Unknown FDSelect format.\0" as *const u8 as *const ::core::ffi::c_char,);
@@ -2484,24 +2110,15 @@ pub unsafe extern "C-unwind" fn cff_release_fdselect(mut fdselect: *mut cff_fdse
     }
 }
 #[unsafe(export_name = "__pdf_impl_cff_fdselect_lookup")]
-pub unsafe extern "C-unwind" fn cff_fdselect_lookup(
-    mut cff: *mut cff_font,
-    mut gid: card16,
-) -> card8 {
+pub unsafe extern "C-unwind" fn cff_fdselect_lookup(mut cff: *mut cff_font, mut gid: card16) -> card8 {
     let mut fd: card8 = 0xff as card8;
     let mut fdsel: *mut cff_fdselect = ::core::ptr::null_mut::<cff_fdselect>();
     if (*cff).fdselect.is_null() {
-        pdf_abort!(
-            b"in cff_fdselect_lookup(): FDSelect not available\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"in cff_fdselect_lookup(): FDSelect not available\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     fdsel = (*cff).fdselect;
     if gid as ::core::ffi::c_int >= (*cff).num_glyphs as ::core::ffi::c_int {
-        pdf_abort!(
-            b"in cff_fdselect_lookup(): Invalid glyph index\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"in cff_fdselect_lookup(): Invalid glyph index\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     match (*fdsel).format as ::core::ffi::c_int {
         0 => {
@@ -2509,41 +2126,25 @@ pub unsafe extern "C-unwind" fn cff_fdselect_lookup(
         }
         3 => {
             if gid as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
-                fd = (*(*fdsel)
-                    .data
-                    .ranges
-                    .offset(0 as ::core::ffi::c_int as isize))
-                .fd;
+                fd = (*(*fdsel).data.ranges.offset(0 as ::core::ffi::c_int as isize)).fd;
             } else {
                 let mut i: card16 = 0;
                 i = 1 as card16;
                 while (i as ::core::ffi::c_int) < (*fdsel).num_entries as ::core::ffi::c_int {
-                    if (gid as ::core::ffi::c_int)
-                        < (*(*fdsel).data.ranges.offset(i as isize)).first as ::core::ffi::c_int
-                    {
+                    if (gid as ::core::ffi::c_int) < (*(*fdsel).data.ranges.offset(i as isize)).first as ::core::ffi::c_int {
                         break;
                     }
                     i = i.wrapping_add(1);
                 }
-                fd = (*(*fdsel)
-                    .data
-                    .ranges
-                    .offset((i as ::core::ffi::c_int - 1 as ::core::ffi::c_int) as isize))
-                .fd;
+                fd = (*(*fdsel).data.ranges.offset((i as ::core::ffi::c_int - 1 as ::core::ffi::c_int) as isize)).fd;
             }
         }
         _ => {
-            pdf_abort!(
-                b"in cff_fdselect_lookup(): Invalid FDSelect format\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_abort!(b"in cff_fdselect_lookup(): Invalid FDSelect format\0" as *const u8 as *const ::core::ffi::c_char,);
         }
     }
     if fd as ::core::ffi::c_int >= (*cff).num_fds as ::core::ffi::c_int {
-        pdf_abort!(
-            b"in cff_fdselect_lookup(): Invalid Font DICT index\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"in cff_fdselect_lookup(): Invalid Font DICT index\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     return fd;
 }
@@ -2559,24 +2160,16 @@ pub unsafe extern "C-unwind" fn cff_read_subrs(mut cff: *mut cff_font) -> ::core
         cff_read_private(cff);
     }
     if (*cff).gsubr.is_null() {
-        crate::backend::runtime::input_seek(
-            (*cff).handle,
-            (*cff).offset.wrapping_add((*cff).gsubr_offset) as ssize_t,
-            SEEK_SET,
-        );
+        crate::backend::runtime::input_seek((*cff).handle, (*cff).offset.wrapping_add((*cff).gsubr_offset) as ssize_t, SEEK_SET);
         (*cff).gsubr = cff_get_index(cff);
     }
-    (*cff).subrs = new(((*cff).num_fds as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<*mut cff_index>() as usize)
-        as uint32_t) as *mut *mut cff_index;
+    (*cff).subrs =
+        new(((*cff).num_fds as uint32_t as usize).wrapping_mul(::core::mem::size_of::<*mut cff_index>() as usize) as uint32_t) as *mut *mut cff_index;
     if (*cff).flag & FONTTYPE_CIDFONT != 0 {
         i = 0 as ::core::ffi::c_int;
         while i < (*cff).num_fds as ::core::ffi::c_int {
             if (*(*cff).private.offset(i as isize)).is_null()
-                || cff_dict_known(
-                    *(*cff).private.offset(i as isize),
-                    b"Subrs\0" as *const u8 as *const ::core::ffi::c_char,
-                ) == 0
+                || cff_dict_known(*(*cff).private.offset(i as isize), b"Subrs\0" as *const u8 as *const ::core::ffi::c_char) == 0
             {
                 let ref mut fresh21 = *(*cff).subrs.offset(i as isize);
                 *fresh21 = ::core::ptr::null_mut::<cff_index>();
@@ -2592,11 +2185,7 @@ pub unsafe extern "C-unwind" fn cff_read_subrs(mut cff: *mut cff_font) -> ::core
                         b"Subrs\0" as *const u8 as *const ::core::ffi::c_char,
                         0 as ::core::ffi::c_int,
                     )) as ::core::ffi::c_int;
-                crate::backend::runtime::input_seek(
-                    (*cff).handle,
-                    (*cff).offset.wrapping_add(offset as l_offset) as ssize_t,
-                    SEEK_SET,
-                );
+                crate::backend::runtime::input_seek((*cff).handle, (*cff).offset.wrapping_add(offset as l_offset) as ssize_t, SEEK_SET);
                 let ref mut fresh22 = *(*cff).subrs.offset(i as isize);
                 *fresh22 = cff_get_index(cff);
                 len += cff_index_size(*(*cff).subrs.offset(i as isize));
@@ -2623,11 +2212,7 @@ pub unsafe extern "C-unwind" fn cff_read_subrs(mut cff: *mut cff_font) -> ::core
                 b"Subrs\0" as *const u8 as *const ::core::ffi::c_char,
                 0 as ::core::ffi::c_int,
             )) as ::core::ffi::c_int;
-        crate::backend::runtime::input_seek(
-            (*cff).handle,
-            (*cff).offset.wrapping_add(offset as l_offset) as ssize_t,
-            SEEK_SET,
-        );
+        crate::backend::runtime::input_seek((*cff).handle, (*cff).offset.wrapping_add(offset as l_offset) as ssize_t, SEEK_SET);
         let ref mut fresh24 = *(*cff).subrs.offset(0 as ::core::ffi::c_int as isize);
         *fresh24 = cff_get_index(cff);
         len += cff_index_size(*(*cff).subrs.offset(0 as ::core::ffi::c_int as isize));
@@ -2642,10 +2227,7 @@ pub unsafe extern "C-unwind" fn cff_read_fdarray(mut cff: *mut cff_font) -> ::co
     let mut size: ::core::ffi::c_int = 0;
     let mut i: card16 = 0;
     if (*cff).topdict.is_null() {
-        pdf_abort!(
-            b"in cff_read_fdarray(): Top DICT not found\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"in cff_read_fdarray(): Top DICT not found\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     if (*cff).flag & FONTTYPE_CIDFONT == 0 {
         return 0 as ::core::ffi::c_int;
@@ -2655,26 +2237,19 @@ pub unsafe extern "C-unwind" fn cff_read_fdarray(mut cff: *mut cff_font) -> ::co
         b"FDArray\0" as *const u8 as *const ::core::ffi::c_char,
         0 as ::core::ffi::c_int,
     ) as ::core::ffi::c_int;
-    crate::backend::runtime::input_seek(
-        (*cff).handle,
-        (*cff).offset.wrapping_add(offset as l_offset) as ssize_t,
-        SEEK_SET,
-    );
+    crate::backend::runtime::input_seek((*cff).handle, (*cff).offset.wrapping_add(offset as l_offset) as ssize_t, SEEK_SET);
     idx = cff_get_index(cff);
     (*cff).num_fds = (*idx).count as card8;
-    (*cff).fdarray = new(((*idx).count as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<*mut cff_dict>() as usize)
-        as uint32_t) as *mut *mut cff_dict;
+    (*cff).fdarray =
+        new(((*idx).count as uint32_t as usize).wrapping_mul(::core::mem::size_of::<*mut cff_dict>() as usize) as uint32_t) as *mut *mut cff_dict;
     i = 0 as card16;
     while (i as ::core::ffi::c_int) < (*idx).count as ::core::ffi::c_int {
         let mut data: *mut card8 = (*idx)
             .data
             .offset(*(*idx).offset.offset(i as isize) as isize)
             .offset(-(1 as ::core::ffi::c_int as isize));
-        size = (*(*idx)
-            .offset
-            .offset((i as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as isize))
-        .wrapping_sub(*(*idx).offset.offset(i as isize)) as ::core::ffi::c_int;
+        size = (*(*idx).offset.offset((i as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as isize)).wrapping_sub(*(*idx).offset.offset(i as isize))
+            as ::core::ffi::c_int;
         if size > 0 as ::core::ffi::c_int {
             let ref mut fresh29 = *(*cff).fdarray.offset(i as isize);
             *fresh29 = cff_dict_unpack(data, data.offset(size as isize));
@@ -2699,9 +2274,8 @@ pub unsafe extern "C-unwind" fn cff_read_private(mut cff: *mut cff_font) -> ::co
         if (*cff).fdarray.is_null() {
             cff_read_fdarray(cff);
         }
-        (*cff).private = new(((*cff).num_fds as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<*mut cff_dict>() as usize)
-            as uint32_t) as *mut *mut cff_dict;
+        (*cff).private = new(((*cff).num_fds as uint32_t as usize).wrapping_mul(::core::mem::size_of::<*mut cff_dict>() as usize) as uint32_t)
+            as *mut *mut cff_dict;
         i = 0 as ::core::ffi::c_int;
         while i < (*cff).num_fds as ::core::ffi::c_int {
             if !(*(*cff).fdarray.offset(i as isize)).is_null()
@@ -2723,20 +2297,9 @@ pub unsafe extern "C-unwind" fn cff_read_private(mut cff: *mut cff_font) -> ::co
                     b"Private\0" as *const u8 as *const ::core::ffi::c_char,
                     1 as ::core::ffi::c_int,
                 ) as ::core::ffi::c_int;
-                crate::backend::runtime::input_seek(
-                    (*cff).handle,
-                    (*cff).offset.wrapping_add(offset as l_offset) as ssize_t,
-                    SEEK_SET,
-                );
-                data = new((size as uint32_t as usize)
-                    .wrapping_mul(::core::mem::size_of::<card8>() as usize)
-                    as uint32_t) as *mut card8;
-                if ttstub_input_read(
-                    (*cff).handle,
-                    data as *mut ::core::ffi::c_char,
-                    size as size_t,
-                ) != size as ssize_t
-                {
+                crate::backend::runtime::input_seek((*cff).handle, (*cff).offset.wrapping_add(offset as l_offset) as ssize_t, SEEK_SET);
+                data = new((size as uint32_t as usize).wrapping_mul(::core::mem::size_of::<card8>() as usize) as uint32_t) as *mut card8;
+                if ttstub_input_read((*cff).handle, data as *mut ::core::ffi::c_char, size as size_t) != size as ssize_t {
                     pdf_abort!(b"reading file failed\0" as *const u8 as *const ::core::ffi::c_char,);
                 }
                 let ref mut fresh25 = *(*cff).private.offset(i as isize);
@@ -2751,41 +2314,25 @@ pub unsafe extern "C-unwind" fn cff_read_private(mut cff: *mut cff_font) -> ::co
         }
     } else {
         (*cff).num_fds = 1 as card8;
-        (*cff).private = new((1 as ::core::ffi::c_int as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<*mut cff_dict>() as usize)
-            as uint32_t) as *mut *mut cff_dict;
-        if cff_dict_known(
-            (*cff).topdict,
-            b"Private\0" as *const u8 as *const ::core::ffi::c_char,
-        ) != 0
-            && {
-                size = cff_dict_get(
-                    (*cff).topdict,
-                    b"Private\0" as *const u8 as *const ::core::ffi::c_char,
-                    0 as ::core::ffi::c_int,
-                ) as ::core::ffi::c_int;
-                size > 0 as ::core::ffi::c_int
-            }
-        {
+        (*cff).private =
+            new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<*mut cff_dict>() as usize) as uint32_t)
+                as *mut *mut cff_dict;
+        if cff_dict_known((*cff).topdict, b"Private\0" as *const u8 as *const ::core::ffi::c_char) != 0 && {
+            size = cff_dict_get(
+                (*cff).topdict,
+                b"Private\0" as *const u8 as *const ::core::ffi::c_char,
+                0 as ::core::ffi::c_int,
+            ) as ::core::ffi::c_int;
+            size > 0 as ::core::ffi::c_int
+        } {
             offset = cff_dict_get(
                 (*cff).topdict,
                 b"Private\0" as *const u8 as *const ::core::ffi::c_char,
                 1 as ::core::ffi::c_int,
             ) as ::core::ffi::c_int;
-            crate::backend::runtime::input_seek(
-                (*cff).handle,
-                (*cff).offset.wrapping_add(offset as l_offset) as ssize_t,
-                SEEK_SET,
-            );
-            data = new((size as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<card8>() as usize)
-                as uint32_t) as *mut card8;
-            if ttstub_input_read(
-                (*cff).handle,
-                data as *mut ::core::ffi::c_char,
-                size as size_t,
-            ) != size as ssize_t
-            {
+            crate::backend::runtime::input_seek((*cff).handle, (*cff).offset.wrapping_add(offset as l_offset) as ssize_t, SEEK_SET);
+            data = new((size as uint32_t as usize).wrapping_mul(::core::mem::size_of::<card8>() as usize) as uint32_t) as *mut card8;
+            if ttstub_input_read((*cff).handle, data as *mut ::core::ffi::c_char, size as size_t) != size as ssize_t {
                 pdf_abort!(b"reading file failed\0" as *const u8 as *const ::core::ffi::c_char,);
             }
             let ref mut fresh27 = *(*cff).private.offset(0 as ::core::ffi::c_int as isize);
@@ -2802,34 +2349,15 @@ pub unsafe extern "C-unwind" fn cff_read_private(mut cff: *mut cff_font) -> ::co
 }
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn memcpy(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_void;
-    fn memmove(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
-    fn memset(
-        __b: *mut ::core::ffi::c_void,
-        __c: ::core::ffi::c_int,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
+    fn memcpy(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __n: size_t) -> *mut ::core::ffi::c_void;
+    fn memmove(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __len: size_t) -> *mut ::core::ffi::c_void;
+    fn memset(__b: *mut ::core::ffi::c_void, __c: ::core::ffi::c_int, __len: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_cff_open(
-    mut handle: rust_input_handle_t,
-    mut offset: ::core::ffi::c_int,
-    mut n: ::core::ffi::c_int,
-    _result: *mut *mut cff_font,
+    mut handle: rust_input_handle_t, mut offset: ::core::ffi::c_int, mut n: ::core::ffi::c_int, _result: *mut *mut cff_font,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_open(handle, offset, n) }) {
         Ok(value) => {
@@ -2852,10 +2380,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_close(mut cff: *mut cff_font) -> i32 {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_get_name(
-    mut cff: *mut cff_font,
-    _result: *mut *mut ::core::ffi::c_char,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_get_name(mut cff: *mut cff_font, _result: *mut *mut ::core::ffi::c_char) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_get_name(cff) }) {
         Ok(value) => {
             unsafe {
@@ -2868,9 +2393,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_get_name(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_cff_set_name(
-    mut cff: *mut cff_font,
-    mut name: *mut ::core::ffi::c_char,
-    _result: *mut ::core::ffi::c_int,
+    mut cff: *mut cff_font, mut name: *mut ::core::ffi::c_char, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_set_name(cff, name) }) {
         Ok(value) => {
@@ -2884,10 +2407,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_set_name(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_cff_put_header(
-    mut cff: *mut cff_font,
-    mut dest: *mut card8,
-    mut destlen: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut cff: *mut cff_font, mut dest: *mut card8, mut destlen: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_put_header(cff, dest, destlen) }) {
         Ok(value) => {
@@ -2900,10 +2420,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_put_header(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_get_index_header(
-    mut cff: *mut cff_font,
-    _result: *mut *mut cff_index,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_get_index_header(mut cff: *mut cff_font, _result: *mut *mut cff_index) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_get_index_header(cff) }) {
         Ok(value) => {
             unsafe {
@@ -2915,10 +2432,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_get_index_header(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_get_index(
-    mut cff: *mut cff_font,
-    _result: *mut *mut cff_index,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_get_index(mut cff: *mut cff_font, _result: *mut *mut cff_index) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_get_index(cff) }) {
         Ok(value) => {
             unsafe {
@@ -2931,10 +2445,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_get_index(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_cff_pack_index(
-    mut idx: *mut cff_index,
-    mut dest: *mut card8,
-    mut destlen: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut idx: *mut cff_index, mut dest: *mut card8, mut destlen: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_pack_index(idx, dest, destlen) }) {
         Ok(value) => {
@@ -2947,10 +2458,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_pack_index(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_index_size(
-    mut idx: *mut cff_index,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_index_size(mut idx: *mut cff_index, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_index_size(idx) }) {
         Ok(value) => {
             unsafe {
@@ -2962,10 +2470,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_index_size(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_new_index(
-    mut count: card16,
-    _result: *mut *mut cff_index,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_new_index(mut count: card16, _result: *mut *mut cff_index) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_new_index(count) }) {
         Ok(value) => {
             unsafe {
@@ -2987,11 +2492,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_release_index(mut idx: *mut cff_index) 
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_get_string(
-    mut cff: *mut cff_font,
-    mut id: s_SID,
-    _result: *mut *mut ::core::ffi::c_char,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_get_string(mut cff: *mut cff_font, mut id: s_SID, _result: *mut *mut ::core::ffi::c_char) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_get_string(cff, id) }) {
         Ok(value) => {
             unsafe {
@@ -3004,9 +2505,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_get_string(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_cff_get_sid(
-    mut cff: *mut cff_font,
-    mut str: *const ::core::ffi::c_char,
-    _result: *mut ::core::ffi::c_int,
+    mut cff: *mut cff_font, mut str: *const ::core::ffi::c_char, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_get_sid(cff, str) }) {
         Ok(value) => {
@@ -3020,9 +2519,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_get_sid(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_cff_get_seac_sid(
-    mut cff: *mut cff_font,
-    mut str: *const ::core::ffi::c_char,
-    _result: *mut ::core::ffi::c_int,
+    mut cff: *mut cff_font, mut str: *const ::core::ffi::c_char, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_get_seac_sid(cff, str) }) {
         Ok(value) => {
@@ -3046,10 +2543,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_update_string(mut cff: *mut cff_font) -
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_cff_add_string(
-    mut cff: *mut cff_font,
-    mut str: *const ::core::ffi::c_char,
-    mut unique: ::core::ffi::c_int,
-    _result: *mut s_SID,
+    mut cff: *mut cff_font, mut str: *const ::core::ffi::c_char, mut unique: ::core::ffi::c_int, _result: *mut s_SID,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_add_string(cff, str, unique) }) {
         Ok(value) => {
@@ -3062,10 +2556,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_add_string(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_read_encoding(
-    mut cff: *mut cff_font,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_read_encoding(mut cff: *mut cff_font, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_read_encoding(cff) }) {
         Ok(value) => {
             unsafe {
@@ -3078,10 +2569,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_read_encoding(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_cff_pack_encoding(
-    mut cff: *mut cff_font,
-    mut dest: *mut card8,
-    mut destlen: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut cff: *mut cff_font, mut dest: *mut card8, mut destlen: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_pack_encoding(cff, dest, destlen) }) {
         Ok(value) => {
@@ -3094,11 +2582,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_pack_encoding(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_encoding_lookup(
-    mut cff: *mut cff_font,
-    mut code: card8,
-    _result: *mut card16,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_encoding_lookup(mut cff: *mut cff_font, mut code: card8, _result: *mut card16) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_encoding_lookup(cff, code) }) {
         Ok(value) => {
             unsafe {
@@ -3120,10 +2604,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_release_encoding(mut encoding: *mut cff
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_read_charsets(
-    mut cff: *mut cff_font,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_read_charsets(mut cff: *mut cff_font, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_read_charsets(cff) }) {
         Ok(value) => {
             unsafe {
@@ -3136,10 +2617,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_read_charsets(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_cff_pack_charsets(
-    mut cff: *mut cff_font,
-    mut dest: *mut card8,
-    mut destlen: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut cff: *mut cff_font, mut dest: *mut card8, mut destlen: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_pack_charsets(cff, dest, destlen) }) {
         Ok(value) => {
@@ -3152,11 +2630,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_pack_charsets(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_get_glyphname(
-    mut cff: *mut cff_font,
-    mut gid: card16,
-    _result: *mut *mut ::core::ffi::c_char,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_get_glyphname(mut cff: *mut cff_font, mut gid: card16, _result: *mut *mut ::core::ffi::c_char) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_get_glyphname(cff, gid) }) {
         Ok(value) => {
             unsafe {
@@ -3168,11 +2642,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_get_glyphname(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_glyph_lookup(
-    mut cff: *mut cff_font,
-    mut glyph: *const ::core::ffi::c_char,
-    _result: *mut card16,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_glyph_lookup(mut cff: *mut cff_font, mut glyph: *const ::core::ffi::c_char, _result: *mut card16) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_glyph_lookup(cff, glyph) }) {
         Ok(value) => {
             unsafe {
@@ -3184,11 +2654,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_glyph_lookup(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_charsets_lookup(
-    mut cff: *mut cff_font,
-    mut cid: card16,
-    _result: *mut card16,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_charsets_lookup(mut cff: *mut cff_font, mut cid: card16, _result: *mut card16) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_charsets_lookup(cff, cid) }) {
         Ok(value) => {
             unsafe {
@@ -3200,11 +2666,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_charsets_lookup(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_charsets_lookup_gid(
-    mut charset: *mut cff_charsets,
-    mut cid: card16,
-    _result: *mut card16,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_charsets_lookup_gid(mut charset: *mut cff_charsets, mut cid: card16, _result: *mut card16) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_charsets_lookup_gid(charset, cid) }) {
         Ok(value) => {
             unsafe {
@@ -3216,11 +2678,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_charsets_lookup_gid(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_charsets_lookup_inverse(
-    mut cff: *mut cff_font,
-    mut gid: card16,
-    _result: *mut card16,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_charsets_lookup_inverse(mut cff: *mut cff_font, mut gid: card16, _result: *mut card16) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_charsets_lookup_inverse(cff, gid) }) {
         Ok(value) => {
             unsafe {
@@ -3232,11 +2690,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_charsets_lookup_inverse(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_charsets_lookup_cid(
-    mut charset: *mut cff_charsets,
-    mut gid: card16,
-    _result: *mut card16,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_charsets_lookup_cid(mut charset: *mut cff_charsets, mut gid: card16, _result: *mut card16) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_charsets_lookup_cid(charset, gid) }) {
         Ok(value) => {
             unsafe {
@@ -3258,10 +2712,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_release_charsets(mut charset: *mut cff_
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_read_fdselect(
-    mut cff: *mut cff_font,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_read_fdselect(mut cff: *mut cff_font, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_read_fdselect(cff) }) {
         Ok(value) => {
             unsafe {
@@ -3274,10 +2725,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_read_fdselect(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_cff_pack_fdselect(
-    mut cff: *mut cff_font,
-    mut dest: *mut card8,
-    mut destlen: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut cff: *mut cff_font, mut dest: *mut card8, mut destlen: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_pack_fdselect(cff, dest, destlen) }) {
         Ok(value) => {
@@ -3300,11 +2748,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_release_fdselect(mut fdselect: *mut cff
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_fdselect_lookup(
-    mut cff: *mut cff_font,
-    mut gid: card16,
-    _result: *mut card8,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_fdselect_lookup(mut cff: *mut cff_font, mut gid: card16, _result: *mut card8) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_fdselect_lookup(cff, gid) }) {
         Ok(value) => {
             unsafe {
@@ -3316,10 +2760,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_fdselect_lookup(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_read_subrs(
-    mut cff: *mut cff_font,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_read_subrs(mut cff: *mut cff_font, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_read_subrs(cff) }) {
         Ok(value) => {
             unsafe {
@@ -3331,10 +2772,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_read_subrs(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_read_fdarray(
-    mut cff: *mut cff_font,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_read_fdarray(mut cff: *mut cff_font, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_read_fdarray(cff) }) {
         Ok(value) => {
             unsafe {
@@ -3346,10 +2784,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_read_fdarray(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_read_private(
-    mut cff: *mut cff_font,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_read_private(mut cff: *mut cff_font, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_read_private(cff) }) {
         Ok(value) => {
             unsafe {

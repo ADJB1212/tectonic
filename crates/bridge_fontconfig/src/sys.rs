@@ -53,26 +53,12 @@ impl FcResult {
 }
 
 unsafe extern "C" {
-    pub fn FcPatternGetString(
-        p: *mut FcPattern,
-        object: *const libc::c_char,
-        n: libc::c_int,
-        s: *mut *const libc::c_char,
-    ) -> FcResult;
-    pub fn FcPatternGetInteger(
-        p: *mut FcPattern,
-        object: *const libc::c_char,
-        n: libc::c_int,
-        i: *mut libc::c_int,
-    ) -> FcResult;
+    pub fn FcPatternGetString(p: *mut FcPattern, object: *const libc::c_char, n: libc::c_int, s: *mut *const libc::c_char) -> FcResult;
+    pub fn FcPatternGetInteger(p: *mut FcPattern, object: *const libc::c_char, n: libc::c_int, i: *mut libc::c_int) -> FcResult;
     pub fn FcInit() -> FcBool;
     pub fn FcNameParse(name: *const libc::c_char) -> *mut FcPattern;
     pub fn FcObjectSetBuild(first: *const libc::c_char, ...) -> *mut FcObjectSet;
-    pub fn FcFontList(
-        config: *mut FcConfig,
-        p: *mut FcPattern,
-        os: *mut FcObjectSet,
-    ) -> *mut FcFontSet;
+    pub fn FcFontList(config: *mut FcConfig, p: *mut FcPattern, os: *mut FcObjectSet) -> *mut FcFontSet;
     pub fn FcConfigGetCurrent() -> *mut FcConfig;
     pub fn FcObjectSetDestroy(os: *mut FcObjectSet);
     pub fn FcPatternReference(pat: *mut FcPattern);

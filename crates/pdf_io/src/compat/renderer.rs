@@ -9,24 +9,9 @@ extern "C" fn tt_pdf_page_begin(unit: f64, precision: i32, autorotate: i32, dire
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn tt_pdf_page_text(
-    font: *const tt_pdf_render_font,
-    id: i32,
-    x: i32,
-    y: i32,
-    width: i32,
-    data: *const u8,
-    length: usize,
-) {
+unsafe extern "C" fn tt_pdf_page_text(font: *const tt_pdf_render_font, id: i32, x: i32, y: i32, width: i32, data: *const u8, length: usize) {
     unsafe {
-        crate::pipeline::page_text(
-            &*font,
-            id,
-            x,
-            y,
-            width,
-            core::slice::from_raw_parts(data, length),
-        );
+        crate::pipeline::page_text(&*font, id, x, y, width, core::slice::from_raw_parts(data, length));
     }
 }
 
@@ -117,36 +102,23 @@ pub struct tt_pdf_render_command {
 
 #[unsafe(export_name = "__pdf_impl_tt_pdf_render_page")]
 unsafe extern "C-unwind" fn tt_pdf_render_page(
-    commands: *const tt_pdf_render_command,
-    count: usize,
-    fonts: *const tt_pdf_render_font,
-    font_count: usize,
-    unit: c_double,
-    precision: c_int,
-    autorotate: c_int,
-    direction: c_int,
-    output: *mut c_void,
+    commands: *const tt_pdf_render_command, count: usize, fonts: *const tt_pdf_render_font, font_count: usize, unit: c_double, precision: c_int,
+    autorotate: c_int, direction: c_int, output: *mut c_void,
 ) -> c_int {
     use crate::error::{PdfError, PdfErrorKind};
     use crate::renderer::{Direction, PageRenderer, RenderCommand, RenderSettings, TextRun};
     let render = || -> Result<(), PdfError> {
         unsafe {
-            let commands = if count == 0 {
-                &[]
-            } else {
-                core::slice::from_raw_parts(commands, count)
-            };
+            let commands = if count == 0 { &[] } else { core::slice::from_raw_parts(commands, count) };
             let fonts = if font_count == 0 {
                 &[]
             } else {
                 core::slice::from_raw_parts(fonts, font_count)
             };
-            let output = output.cast::<Vec<u8>>().as_mut().ok_or_else(|| {
-                PdfError::new(
-                    PdfErrorKind::InvalidState,
-                    c"Missing renderer output".to_owned(),
-                )
-            })?;
+            let output = output
+                .cast::<Vec<u8>>()
+                .as_mut()
+                .ok_or_else(|| PdfError::new(PdfErrorKind::InvalidState, c"Missing renderer output".to_owned()))?;
             let mut renderer = PageRenderer::new(
                 fonts,
                 RenderSettings {
@@ -166,12 +138,8 @@ unsafe extern "C-unwind" fn tt_pdf_render_page(
                 renderer.command(match command.kind {
                     0 => RenderCommand::Bytes(data),
                     1 => RenderCommand::Text(TextRun {
-                        font: usize::try_from(command.font).map_err(|_| {
-                            PdfError::new(
-                                PdfErrorKind::MalformedInput,
-                                c"Invalid renderer font".to_owned(),
-                            )
-                        })?,
+                        font: usize::try_from(command.font)
+                            .map_err(|_| PdfError::new(PdfErrorKind::MalformedInput, c"Invalid renderer font".to_owned()))?,
                         x: command.x,
                         y: command.y,
                         width: command.width,
@@ -185,14 +153,9 @@ unsafe extern "C-unwind" fn tt_pdf_render_page(
                     },
                     3 => RenderCommand::Graphics,
                     4 => RenderCommand::Direction(Direction::try_from(command.x)?),
-                    5 => RenderCommand::ResetFonts {
-                        new_page: command.x != 0,
-                    },
+                    5 => RenderCommand::ResetFonts { new_page: command.x != 0 },
                     _ => {
-                        return Err(PdfError::new(
-                            PdfErrorKind::Unsupported,
-                            c"Unsupported renderer command".to_owned(),
-                        ));
+                        return Err(PdfError::new(PdfErrorKind::Unsupported, c"Unsupported renderer command".to_owned()));
                     }
                 })?;
             }
@@ -204,21 +167,11 @@ unsafe extern "C-unwind" fn tt_pdf_render_page(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_tt_pdf_render_page(
-    commands: *const tt_pdf_render_command,
-    count: usize,
-    fonts: *const tt_pdf_render_font,
-    font_count: usize,
-    unit: c_double,
-    precision: c_int,
-    autorotate: c_int,
-    direction: c_int,
-    output: *mut c_void,
-    _result: *mut c_int,
+    commands: *const tt_pdf_render_command, count: usize, fonts: *const tt_pdf_render_font, font_count: usize, unit: c_double, precision: c_int,
+    autorotate: c_int, direction: c_int, output: *mut c_void, _result: *mut c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe {
-        tt_pdf_render_page(
-            commands, count, fonts, font_count, unit, precision, autorotate, direction, output,
-        )
+        tt_pdf_render_page(commands, count, fonts, font_count, unit, precision, autorotate, direction, output)
     }) {
         Ok(value) => {
             unsafe {
@@ -231,14 +184,8 @@ pub unsafe extern "C" fn __pdf_entry_tt_pdf_render_page(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_sprint_matrix(
-    buf: *mut c_char,
-    matrix: *const pdf_tmatrix,
-    _result: *mut c_int,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        crate::backend::dpx_pdfdev::pdf_sprint_matrix(buf, matrix)
-    }) {
+pub unsafe extern "C" fn __pdf_entry_pdf_sprint_matrix(buf: *mut c_char, matrix: *const pdf_tmatrix, _result: *mut c_int) -> i32 {
+    match crate::backend::runtime::boundary(|| unsafe { crate::backend::dpx_pdfdev::pdf_sprint_matrix(buf, matrix) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -250,14 +197,8 @@ pub unsafe extern "C" fn __pdf_entry_pdf_sprint_matrix(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_sprint_rect(
-    buf: *mut c_char,
-    rect: *const pdf_rect,
-    _result: *mut c_int,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        crate::backend::dpx_pdfdev::pdf_sprint_rect(buf, rect)
-    }) {
+pub unsafe extern "C" fn __pdf_entry_pdf_sprint_rect(buf: *mut c_char, rect: *const pdf_rect, _result: *mut c_int) -> i32 {
+    match crate::backend::runtime::boundary(|| unsafe { crate::backend::dpx_pdfdev::pdf_sprint_rect(buf, rect) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -269,14 +210,8 @@ pub unsafe extern "C" fn __pdf_entry_pdf_sprint_rect(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_sprint_coord(
-    buf: *mut c_char,
-    c: *const pdf_coord,
-    _result: *mut c_int,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        crate::backend::dpx_pdfdev::pdf_sprint_coord(buf, c)
-    }) {
+pub unsafe extern "C" fn __pdf_entry_pdf_sprint_coord(buf: *mut c_char, c: *const pdf_coord, _result: *mut c_int) -> i32 {
+    match crate::backend::runtime::boundary(|| unsafe { crate::backend::dpx_pdfdev::pdf_sprint_coord(buf, c) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -288,14 +223,8 @@ pub unsafe extern "C" fn __pdf_entry_pdf_sprint_coord(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_sprint_length(
-    buf: *mut c_char,
-    value: c_double,
-    _result: *mut c_int,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        crate::backend::dpx_pdfdev::pdf_sprint_length(buf, value)
-    }) {
+pub unsafe extern "C" fn __pdf_entry_pdf_sprint_length(buf: *mut c_char, value: c_double, _result: *mut c_int) -> i32 {
+    match crate::backend::runtime::boundary(|| unsafe { crate::backend::dpx_pdfdev::pdf_sprint_length(buf, value) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -307,14 +236,8 @@ pub unsafe extern "C" fn __pdf_entry_pdf_sprint_length(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_sprint_number(
-    buf: *mut c_char,
-    value: c_double,
-    _result: *mut c_int,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        crate::backend::dpx_pdfdev::pdf_sprint_number(buf, value)
-    }) {
+pub unsafe extern "C" fn __pdf_entry_pdf_sprint_number(buf: *mut c_char, value: c_double, _result: *mut c_int) -> i32 {
+    match crate::backend::runtime::boundary(|| unsafe { crate::backend::dpx_pdfdev::pdf_sprint_number(buf, value) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -327,9 +250,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_sprint_number(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_transform_info_clear(info: *mut transform_info) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        crate::backend::dpx_pdfdev::transform_info_clear(info)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { crate::backend::dpx_pdfdev::transform_info_clear(info) }) {
         Ok(()) => 0,
         Err(()) => -1,
     }
@@ -337,9 +258,7 @@ pub unsafe extern "C" fn __pdf_entry_transform_info_clear(info: *mut transform_i
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_dev_unit_dviunit(_result: *mut c_double) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        crate::backend::dpx_pdfdev::dev_unit_dviunit()
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { crate::backend::dpx_pdfdev::dev_unit_dviunit() }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -351,13 +270,8 @@ pub unsafe extern "C" fn __pdf_entry_dev_unit_dviunit(_result: *mut c_double) ->
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_get_param(
-    param_type: c_int,
-    _result: *mut c_int,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        crate::backend::dpx_pdfdev::pdf_dev_get_param(param_type)
-    }) {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_get_param(param_type: c_int, _result: *mut c_int) -> i32 {
+    match crate::backend::runtime::boundary(|| unsafe { crate::backend::dpx_pdfdev::pdf_dev_get_param(param_type) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -370,9 +284,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_get_param(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_set_param(param_type: c_int, value: c_int) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        crate::backend::dpx_pdfdev::pdf_dev_set_param(param_type, value)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { crate::backend::dpx_pdfdev::pdf_dev_set_param(param_type, value) }) {
         Ok(()) => 0,
         Err(()) => -1,
     }
@@ -380,9 +292,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_set_param(param_type: c_int, value:
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_get_dirmode(_result: *mut c_int) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        crate::backend::dpx_pdfdev::pdf_dev_get_dirmode()
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { crate::backend::dpx_pdfdev::pdf_dev_get_dirmode() }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -395,39 +305,23 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_get_dirmode(_result: *mut c_int) ->
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_set_dirmode(text_dir: c_int) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        crate::backend::dpx_pdfdev::pdf_dev_set_dirmode(text_dir)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { crate::backend::dpx_pdfdev::pdf_dev_set_dirmode(text_dir) }) {
         Ok(()) => 0,
         Err(()) => -1,
     }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_set_rect(
-    rect: *mut pdf_rect,
-    x_user: i32,
-    y_user: i32,
-    width: i32,
-    height: i32,
-    depth: i32,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        crate::backend::dpx_pdfdev::pdf_dev_set_rect(rect, x_user, y_user, width, height, depth)
-    }) {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_set_rect(rect: *mut pdf_rect, x_user: i32, y_user: i32, width: i32, height: i32, depth: i32) -> i32 {
+    match crate::backend::runtime::boundary(|| unsafe { crate::backend::dpx_pdfdev::pdf_dev_set_rect(rect, x_user, y_user, width, height, depth) }) {
         Ok(()) => 0,
         Err(()) => -1,
     }
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_transform(
-    p: *mut pdf_coord,
-    matrix: *const pdf_tmatrix,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        crate::backend::dpx_pdfdraw::pdf_dev_transform(p, matrix)
-    }) {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_transform(p: *mut pdf_coord, matrix: *const pdf_tmatrix) -> i32 {
+    match crate::backend::runtime::boundary(|| unsafe { crate::backend::dpx_pdfdraw::pdf_dev_transform(p, matrix) }) {
         Ok(()) => 0,
         Err(()) => -1,
     }

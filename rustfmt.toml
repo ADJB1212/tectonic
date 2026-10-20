@@ -1,2 +1,4 @@
 edition = "2024"
 style_edition = "2024"
+fn_params_layout = "Compressed"
+max_width = 150

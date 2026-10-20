@@ -17,13 +17,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 
 #[cfg(test)]
@@ -86,15 +80,8 @@ mod performance_tests {
         };
         for group in &groups {
             for offset in [0, 1, 15, 16, 127] {
-                let expected = if offset <= 15 {
-                    (group.startGlyphID + offset) as u16
-                } else {
-                    0
-                };
-                assert_eq!(
-                    unsafe { lookup_cmap12(&mut map, group.startCharCode + offset) },
-                    expected
-                );
+                let expected = if offset <= 15 { (group.startGlyphID + offset) as u16 } else { 0 };
+                assert_eq!(unsafe { lookup_cmap12(&mut map, group.startCharCode + offset) }, expected);
             }
         }
         assert_eq!(unsafe { lookup_cmap12(&mut map, 0) }, 0);
@@ -106,31 +93,13 @@ mod performance_tests {
 }
 use crate::unicode::is_valid as UC_is_valid;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
-    fn sprintf(
-        _: *mut ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-    fn snprintf(
-        __str: *mut ::core::ffi::c_char,
-        __size: size_t,
-        __format: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
+    fn sprintf(_: *mut ::core::ffi::c_char, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
+    fn snprintf(__str: *mut ::core::ffi::c_char, __size: size_t, __format: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
     #[cfg_attr(windows, link_name = "_strdup")]
     fn strdup(__s1: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
-    fn ttstub_input_seek(
-        handle: rust_input_handle_t,
-        offset: ssize_t,
-        whence: ::core::ffi::c_int,
-    ) -> size_t;
+    fn ttstub_input_seek(handle: rust_input_handle_t, offset: ssize_t, whence: ::core::ffi::c_int) -> size_t;
     fn ttstub_input_close(handle: rust_input_handle_t) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_tt_get_unsigned_byte"]
     fn tt_get_unsigned_byte(handle: rust_input_handle_t) -> ::core::ffi::c_uchar;
@@ -153,11 +122,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_sfnt_locate_table"]
     fn sfnt_locate_table(sfont: *mut sfnt, tag: *const ::core::ffi::c_char) -> SFNT_ULONG;
     #[link_name = "__pdf_impl_agl_get_unicodes"]
-    fn agl_get_unicodes(
-        glyphstr: *const ::core::ffi::c_char,
-        unicodes: *mut int32_t,
-        max_uncodes: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn agl_get_unicodes(glyphstr: *const ::core::ffi::c_char, unicodes: *mut int32_t, max_uncodes: ::core::ffi::c_int) -> ::core::ffi::c_int;
     static mut CSI_UNICODE: CIDSysInfo;
     #[link_name = "__pdf_impl_CMap_set_silent"]
     fn CMap_set_silent(value: ::core::ffi::c_int);
@@ -175,32 +140,17 @@ unsafe extern "C-unwind" {
     fn CMap_set_CIDSysInfo(cmap: *mut CMap, csi: *const CIDSysInfo);
     #[link_name = "__pdf_impl_CMap_add_bfchar"]
     fn CMap_add_bfchar(
-        cmap: *mut CMap,
-        src: *const ::core::ffi::c_uchar,
-        srcdim: size_t,
-        dest: *const ::core::ffi::c_uchar,
-        destdim: size_t,
+        cmap: *mut CMap, src: *const ::core::ffi::c_uchar, srcdim: size_t, dest: *const ::core::ffi::c_uchar, destdim: size_t,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_CMap_add_cidchar"]
-    fn CMap_add_cidchar(
-        cmap: *mut CMap,
-        src: *const ::core::ffi::c_uchar,
-        srcdim: size_t,
-        dest: CID,
-    ) -> ::core::ffi::c_int;
+    fn CMap_add_cidchar(cmap: *mut CMap, src: *const ::core::ffi::c_uchar, srcdim: size_t, dest: CID) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_CMap_add_codespacerange"]
     fn CMap_add_codespacerange(
-        cmap: *mut CMap,
-        codelo: *const ::core::ffi::c_uchar,
-        codehi: *const ::core::ffi::c_uchar,
-        dim: size_t,
+        cmap: *mut CMap, codelo: *const ::core::ffi::c_uchar, codehi: *const ::core::ffi::c_uchar, dim: size_t,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_CMap_decode"]
     fn CMap_decode(
-        cmap: *mut CMap,
-        inbuf: *mut *const ::core::ffi::c_uchar,
-        inbytesleft: *mut size_t,
-        outbuf: *mut *mut ::core::ffi::c_uchar,
+        cmap: *mut CMap, inbuf: *mut *const ::core::ffi::c_uchar, inbytesleft: *mut size_t, outbuf: *mut *mut ::core::ffi::c_uchar,
         outbytesleft: *mut size_t,
     ) -> size_t;
     #[link_name = "__pdf_impl_CMap_cache_get"]
@@ -224,16 +174,10 @@ unsafe extern "C-unwind" {
     fn new(size: uint32_t) -> *mut ::core::ffi::c_void;
     #[link_name = "__pdf_impl_pdf_defineresource"]
     fn pdf_defineresource(
-        category: *const ::core::ffi::c_char,
-        resname: *const ::core::ffi::c_char,
-        object: *mut pdf_obj,
-        flags: ::core::ffi::c_int,
+        category: *const ::core::ffi::c_char, resname: *const ::core::ffi::c_char, object: *mut pdf_obj, flags: ::core::ffi::c_int,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_findresource"]
-    fn pdf_findresource(
-        category: *const ::core::ffi::c_char,
-        resname: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
+    fn pdf_findresource(category: *const ::core::ffi::c_char, resname: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_get_resource_reference"]
     fn pdf_get_resource_reference(res_id: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_ttc_read_offset"]
@@ -244,43 +188,25 @@ unsafe extern "C-unwind" {
     fn otl_gsub_release(gsub_list: *mut otl_gsub);
     #[link_name = "__pdf_impl_otl_gsub_select"]
     fn otl_gsub_select(
-        gsub_list: *mut otl_gsub,
-        script: *const ::core::ffi::c_char,
-        language: *const ::core::ffi::c_char,
-        feature: *const ::core::ffi::c_char,
+        gsub_list: *mut otl_gsub, script: *const ::core::ffi::c_char, language: *const ::core::ffi::c_char, feature: *const ::core::ffi::c_char,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_otl_gsub_add_feat"]
     fn otl_gsub_add_feat(
-        gsub_list: *mut otl_gsub,
-        script: *const ::core::ffi::c_char,
-        language: *const ::core::ffi::c_char,
-        feature: *const ::core::ffi::c_char,
+        gsub_list: *mut otl_gsub, script: *const ::core::ffi::c_char, language: *const ::core::ffi::c_char, feature: *const ::core::ffi::c_char,
         sfont: *mut sfnt,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_otl_gsub_apply"]
     fn otl_gsub_apply(gsub_list: *mut otl_gsub, gid: *mut USHORT) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_otl_gsub_add_feat_list"]
-    fn otl_gsub_add_feat_list(
-        gsub_list: *mut otl_gsub,
-        otl_tags: *const ::core::ffi::c_char,
-        sfont: *mut sfnt,
-    ) -> ::core::ffi::c_int;
+    fn otl_gsub_add_feat_list(gsub_list: *mut otl_gsub, otl_tags: *const ::core::ffi::c_char, sfont: *mut sfnt) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_otl_gsub_set_chain"]
-    fn otl_gsub_set_chain(
-        gsub_list: *mut otl_gsub,
-        otl_tags: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
+    fn otl_gsub_set_chain(gsub_list: *mut otl_gsub, otl_tags: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_otl_gsub_apply_chain"]
     fn otl_gsub_apply_chain(gsub_list: *mut otl_gsub, gid: *mut USHORT) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_otl_gsub_add_ToUnicode"]
     fn otl_gsub_add_ToUnicode(
-        cmap: *mut CMap,
-        used_chars: *mut ::core::ffi::c_char,
-        map_base: *mut int32_t,
-        map_sub: *mut int32_t,
-        num_glyphs: USHORT,
-        GIDToCIDMap: *mut uint16_t,
-        sfont: *mut sfnt,
+        cmap: *mut CMap, used_chars: *mut ::core::ffi::c_char, map_base: *mut int32_t, map_sub: *mut int32_t, num_glyphs: USHORT,
+        GIDToCIDMap: *mut uint16_t, sfont: *mut sfnt,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_tt_read_post_table"]
     fn tt_read_post_table(sfont: *mut sfnt) -> *mut tt_post_table;
@@ -289,17 +215,9 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_tt_get_glyphname"]
     fn tt_get_glyphname(post: *mut tt_post_table, gid: USHORT) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_UC_UTF16BE_encode_char"]
-    fn UC_UTF16BE_encode_char(
-        ucv: int32_t,
-        dstpp: *mut *mut ::core::ffi::c_uchar,
-        endptr: *mut ::core::ffi::c_uchar,
-    ) -> size_t;
+    fn UC_UTF16BE_encode_char(ucv: int32_t, dstpp: *mut *mut ::core::ffi::c_uchar, endptr: *mut ::core::ffi::c_uchar) -> size_t;
     #[link_name = "__pdf_impl_cff_open"]
-    fn cff_open(
-        handle: rust_input_handle_t,
-        offset: ::core::ffi::c_int,
-        idx: ::core::ffi::c_int,
-    ) -> *mut cff_font;
+    fn cff_open(handle: rust_input_handle_t, offset: ::core::ffi::c_int, idx: ::core::ffi::c_int) -> *mut cff_font;
     #[link_name = "__pdf_impl_cff_close"]
     fn cff_close(cff: *mut cff_font);
     #[link_name = "__pdf_impl_cff_read_charsets"]
@@ -309,11 +227,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_cff_get_string"]
     fn cff_get_string(cff: *mut cff_font, id: s_SID) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_cff_dict_get"]
-    fn cff_dict_get(
-        dict: *mut cff_dict,
-        key: *const ::core::ffi::c_char,
-        idx: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_double;
+    fn cff_dict_get(dict: *mut cff_dict, key: *const ::core::ffi::c_char, idx: ::core::ffi::c_int) -> ::core::ffi::c_double;
     #[link_name = "__pdf_impl_cff_dict_known"]
     fn cff_dict_known(dict: *mut cff_dict, key: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_tt_read_maxp_table"]
@@ -680,8 +594,7 @@ pub const __DARWIN_NULL: *mut ::core::ffi::c_void = ::core::ptr::null_mut::<::co
 pub const SEEK_SET: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const INVALID_HANDLE: uintptr_t = 0 as ::core::ffi::c_int as uintptr_t;
 pub const SFNT_TYPE_TRUETYPE: ::core::ffi::c_int = 1;
-pub const SFNT_TYPE_POSTSCRIPT: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
+pub const SFNT_TYPE_POSTSCRIPT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
 pub const SFNT_TYPE_TTC: ::core::ffi::c_int = 16;
 pub const SFNT_TYPE_DFONT: ::core::ffi::c_int = 256;
 pub const CMAP_TYPE_CODE_TO_CID: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
@@ -692,14 +605,10 @@ unsafe extern "C-unwind" fn read_cmap0(mut sfont: *mut sfnt, mut len: SFNT_ULONG
     let mut map: *mut cmap0 = ::core::ptr::null_mut::<cmap0>();
     let mut i: ::core::ffi::c_uint = 0;
     if len < 256 as SFNT_ULONG {
-        pdf_warning!(
-            b"invalid format 0 TT cmap subtable\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"invalid format 0 TT cmap subtable\0" as *const u8 as *const ::core::ffi::c_char,);
         return ::core::ptr::null_mut::<cmap0>();
     }
-    map = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<cmap0>() as usize) as uint32_t)
-        as *mut cmap0;
+    map = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<cmap0>() as usize) as uint32_t) as *mut cmap0;
     i = 0 as ::core::ffi::c_uint;
     while i < 256 as ::core::ffi::c_uint {
         (*map).glyphIndexArray[i as usize] = tt_get_unsigned_byte((*sfont).handle);
@@ -722,14 +631,10 @@ unsafe extern "C-unwind" fn read_cmap2(mut sfont: *mut sfnt, mut len: SFNT_ULONG
     let mut i: USHORT = 0;
     let mut n: USHORT = 0;
     if len < 512 as SFNT_ULONG {
-        pdf_warning!(
-            b"invalid fromt2 TT cmap subtable\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"invalid fromt2 TT cmap subtable\0" as *const u8 as *const ::core::ffi::c_char,);
         return ::core::ptr::null_mut::<cmap2>();
     }
-    map = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<cmap2>() as usize) as uint32_t)
-        as *mut cmap2;
+    map = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<cmap2>() as usize) as uint32_t) as *mut cmap2;
     i = 0 as USHORT;
     while (i as ::core::ffi::c_int) < 256 as ::core::ffi::c_int {
         (*map).subHeaderKeys[i as usize] = tt_get_unsigned_pair((*sfont).handle);
@@ -738,56 +643,38 @@ unsafe extern "C-unwind" fn read_cmap2(mut sfont: *mut sfnt, mut len: SFNT_ULONG
     n = 0 as USHORT;
     i = 0 as USHORT;
     while (i as ::core::ffi::c_int) < 256 as ::core::ffi::c_int {
-        (*map).subHeaderKeys[i as usize] = ((*map).subHeaderKeys[i as usize] as ::core::ffi::c_int
-            / 8 as ::core::ffi::c_int) as USHORT;
+        (*map).subHeaderKeys[i as usize] = ((*map).subHeaderKeys[i as usize] as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as USHORT;
         if (n as ::core::ffi::c_int) < (*map).subHeaderKeys[i as usize] as ::core::ffi::c_int {
             n = (*map).subHeaderKeys[i as usize];
         }
         i = i.wrapping_add(1);
     }
     n = (n as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as USHORT;
-    if len
-        < (512 as ::core::ffi::c_int + n as ::core::ffi::c_int * 8 as ::core::ffi::c_int)
-            as SFNT_ULONG
-    {
-        pdf_warning!(
-            b"invalid/truncated format2 TT cmap subtable\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+    if len < (512 as ::core::ffi::c_int + n as ::core::ffi::c_int * 8 as ::core::ffi::c_int) as SFNT_ULONG {
+        pdf_warning!(b"invalid/truncated format2 TT cmap subtable\0" as *const u8 as *const ::core::ffi::c_char,);
         free(map as *mut ::core::ffi::c_void);
         return ::core::ptr::null_mut::<cmap2>();
     }
-    (*map).subHeaders = new((n as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<SubHeader>() as usize)
-        as uint32_t) as *mut SubHeader;
+    (*map).subHeaders = new((n as uint32_t as usize).wrapping_mul(::core::mem::size_of::<SubHeader>() as usize) as uint32_t) as *mut SubHeader;
     i = 0 as USHORT;
     while (i as ::core::ffi::c_int) < n as ::core::ffi::c_int {
         (*(*map).subHeaders.offset(i as isize)).firstCode = tt_get_unsigned_pair((*sfont).handle);
         (*(*map).subHeaders.offset(i as isize)).entryCount = tt_get_unsigned_pair((*sfont).handle);
         (*(*map).subHeaders.offset(i as isize)).idDelta = tt_get_signed_pair((*sfont).handle);
-        (*(*map).subHeaders.offset(i as isize)).idRangeOffset =
-            tt_get_unsigned_pair((*sfont).handle);
-        if (*(*map).subHeaders.offset(i as isize)).idRangeOffset as ::core::ffi::c_int
-            != 0 as ::core::ffi::c_int
-        {
+        (*(*map).subHeaders.offset(i as isize)).idRangeOffset = tt_get_unsigned_pair((*sfont).handle);
+        if (*(*map).subHeaders.offset(i as isize)).idRangeOffset as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
             let ref mut fresh0 = (*(*map).subHeaders.offset(i as isize)).idRangeOffset;
             *fresh0 = (*fresh0 as ::core::ffi::c_int
-                - (2 as ::core::ffi::c_int
-                    + (n as ::core::ffi::c_int
-                        - i as ::core::ffi::c_int
-                        - 1 as ::core::ffi::c_int)
-                        * 8 as ::core::ffi::c_int)) as USHORT;
+                - (2 as ::core::ffi::c_int + (n as ::core::ffi::c_int - i as ::core::ffi::c_int - 1 as ::core::ffi::c_int) * 8 as ::core::ffi::c_int))
+                as USHORT;
         }
         i = i.wrapping_add(1);
     }
     n = (len
         .wrapping_sub(518 as SFNT_ULONG)
-        .wrapping_sub((n as ::core::ffi::c_int * 8 as ::core::ffi::c_int) as SFNT_ULONG)
-        as USHORT as ::core::ffi::c_int
+        .wrapping_sub((n as ::core::ffi::c_int * 8 as ::core::ffi::c_int) as SFNT_ULONG) as USHORT as ::core::ffi::c_int
         / 2 as ::core::ffi::c_int) as USHORT;
-    (*map).glyphIndexArray = new((n as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<USHORT>() as usize)
-        as uint32_t) as *mut USHORT;
+    (*map).glyphIndexArray = new((n as uint32_t as usize).wrapping_mul(::core::mem::size_of::<USHORT>() as usize) as uint32_t) as *mut USHORT;
     i = 0 as USHORT;
     while (i as ::core::ffi::c_int) < n as ::core::ffi::c_int {
         *(*map).glyphIndexArray.offset(i as isize) = tt_get_unsigned_pair((*sfont).handle);
@@ -817,17 +704,12 @@ unsafe extern "C-unwind" fn lookup_cmap2(mut map: *mut cmap2, mut cc: USHORT) ->
     firstCode = (*(*map).subHeaders.offset(i as isize)).firstCode;
     entryCount = (*(*map).subHeaders.offset(i as isize)).entryCount;
     idDelta = (*(*map).subHeaders.offset(i as isize)).idDelta;
-    idRangeOffset = ((*(*map).subHeaders.offset(i as isize)).idRangeOffset as ::core::ffi::c_int
-        / 2 as ::core::ffi::c_int) as USHORT;
-    if lo >= firstCode as ::core::ffi::c_int
-        && lo < firstCode as ::core::ffi::c_int + entryCount as ::core::ffi::c_int
-    {
-        idRangeOffset = (idRangeOffset as ::core::ffi::c_int
-            + (lo - firstCode as ::core::ffi::c_int)) as USHORT;
+    idRangeOffset = ((*(*map).subHeaders.offset(i as isize)).idRangeOffset as ::core::ffi::c_int / 2 as ::core::ffi::c_int) as USHORT;
+    if lo >= firstCode as ::core::ffi::c_int && lo < firstCode as ::core::ffi::c_int + entryCount as ::core::ffi::c_int {
+        idRangeOffset = (idRangeOffset as ::core::ffi::c_int + (lo - firstCode as ::core::ffi::c_int)) as USHORT;
         idx = *(*map).glyphIndexArray.offset(idRangeOffset as isize);
         if idx as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
-            idx = (idx as ::core::ffi::c_int + idDelta as ::core::ffi::c_int
-                & 0xffff as ::core::ffi::c_int) as USHORT;
+            idx = (idx as ::core::ffi::c_int + idDelta as ::core::ffi::c_int & 0xffff as ::core::ffi::c_int) as USHORT;
         }
     }
     return idx;
@@ -838,48 +720,36 @@ unsafe extern "C-unwind" fn read_cmap4(mut sfont: *mut sfnt, mut len: SFNT_ULONG
     let mut n: USHORT = 0;
     let mut segCount: USHORT = 0;
     if len < 8 as SFNT_ULONG {
-        pdf_warning!(
-            b"invalid format 4 TT cmap subtable\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"invalid format 4 TT cmap subtable\0" as *const u8 as *const ::core::ffi::c_char,);
         return ::core::ptr::null_mut::<cmap4>();
     }
-    map = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<cmap4>() as usize) as uint32_t)
-        as *mut cmap4;
+    map = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<cmap4>() as usize) as uint32_t) as *mut cmap4;
     segCount = tt_get_unsigned_pair((*sfont).handle);
     (*map).segCountX2 = segCount;
     (*map).searchRange = tt_get_unsigned_pair((*sfont).handle);
     (*map).entrySelector = tt_get_unsigned_pair((*sfont).handle);
     (*map).rangeShift = tt_get_unsigned_pair((*sfont).handle);
     segCount = (segCount as ::core::ffi::c_int / 2 as ::core::ffi::c_int) as USHORT;
-    (*map).endCount = new((segCount as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<USHORT>() as usize)
-        as uint32_t) as *mut USHORT;
+    (*map).endCount = new((segCount as uint32_t as usize).wrapping_mul(::core::mem::size_of::<USHORT>() as usize) as uint32_t) as *mut USHORT;
     i = 0 as USHORT;
     while (i as ::core::ffi::c_int) < segCount as ::core::ffi::c_int {
         *(*map).endCount.offset(i as isize) = tt_get_unsigned_pair((*sfont).handle);
         i = i.wrapping_add(1);
     }
     (*map).reservedPad = tt_get_unsigned_pair((*sfont).handle);
-    (*map).startCount = new((segCount as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<USHORT>() as usize)
-        as uint32_t) as *mut USHORT;
+    (*map).startCount = new((segCount as uint32_t as usize).wrapping_mul(::core::mem::size_of::<USHORT>() as usize) as uint32_t) as *mut USHORT;
     i = 0 as USHORT;
     while (i as ::core::ffi::c_int) < segCount as ::core::ffi::c_int {
         *(*map).startCount.offset(i as isize) = tt_get_unsigned_pair((*sfont).handle);
         i = i.wrapping_add(1);
     }
-    (*map).idDelta = new((segCount as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<USHORT>() as usize)
-        as uint32_t) as *mut USHORT;
+    (*map).idDelta = new((segCount as uint32_t as usize).wrapping_mul(::core::mem::size_of::<USHORT>() as usize) as uint32_t) as *mut USHORT;
     i = 0 as USHORT;
     while (i as ::core::ffi::c_int) < segCount as ::core::ffi::c_int {
         *(*map).idDelta.offset(i as isize) = tt_get_unsigned_pair((*sfont).handle);
         i = i.wrapping_add(1);
     }
-    (*map).idRangeOffset = new((segCount as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<USHORT>() as usize)
-        as uint32_t) as *mut USHORT;
+    (*map).idRangeOffset = new((segCount as uint32_t as usize).wrapping_mul(::core::mem::size_of::<USHORT>() as usize) as uint32_t) as *mut USHORT;
     i = 0 as USHORT;
     while (i as ::core::ffi::c_int) < segCount as ::core::ffi::c_int {
         *(*map).idRangeOffset.offset(i as isize) = tt_get_unsigned_pair((*sfont).handle);
@@ -892,9 +762,7 @@ unsafe extern "C-unwind" fn read_cmap4(mut sfont: *mut sfnt, mut len: SFNT_ULONG
     if n as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
         (*map).glyphIndexArray = ::core::ptr::null_mut::<USHORT>();
     } else {
-        (*map).glyphIndexArray = new((n as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<USHORT>() as usize)
-            as uint32_t) as *mut USHORT;
+        (*map).glyphIndexArray = new((n as uint32_t as usize).wrapping_mul(::core::mem::size_of::<USHORT>() as usize) as uint32_t) as *mut USHORT;
         i = 0 as USHORT;
         while (i as ::core::ffi::c_int) < n as ::core::ffi::c_int {
             *(*map).glyphIndexArray.offset(i as isize) = tt_get_unsigned_pair((*sfont).handle);
@@ -931,24 +799,19 @@ unsafe extern "C-unwind" fn lookup_cmap4(mut map: *mut cmap4, mut cc: USHORT) ->
         return 0;
     }
     if *(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
-        gid = (cc as ::core::ffi::c_int + *(*map).idDelta.offset(i as isize) as ::core::ffi::c_int
-            & 0xffff as ::core::ffi::c_int) as USHORT;
+        gid = (cc as ::core::ffi::c_int + *(*map).idDelta.offset(i as isize) as ::core::ffi::c_int & 0xffff as ::core::ffi::c_int) as USHORT;
     } else if cc as ::core::ffi::c_int == 0xffff as ::core::ffi::c_int
-        && *(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int
-            == 0xffff as ::core::ffi::c_int
+        && *(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int == 0xffff as ::core::ffi::c_int
     {
         gid = 0 as USHORT;
     } else {
         j = (*(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int
-            - (segCount as ::core::ffi::c_int - i as ::core::ffi::c_int) * 2 as ::core::ffi::c_int)
-            as USHORT;
+            - (segCount as ::core::ffi::c_int - i as ::core::ffi::c_int) * 2 as ::core::ffi::c_int) as USHORT;
         j = (cc as ::core::ffi::c_int - *(*map).startCount.offset(i as isize) as ::core::ffi::c_int
             + j as ::core::ffi::c_int / 2 as ::core::ffi::c_int) as USHORT;
         gid = *(*map).glyphIndexArray.offset(j as isize);
         if gid as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
-            gid = (gid as ::core::ffi::c_int
-                + *(*map).idDelta.offset(i as isize) as ::core::ffi::c_int
-                & 0xffff as ::core::ffi::c_int) as USHORT;
+            gid = (gid as ::core::ffi::c_int + *(*map).idDelta.offset(i as isize) as ::core::ffi::c_int & 0xffff as ::core::ffi::c_int) as USHORT;
         }
     }
     return gid;
@@ -957,19 +820,14 @@ unsafe extern "C-unwind" fn read_cmap6(mut sfont: *mut sfnt, mut len: SFNT_ULONG
     let mut map: *mut cmap6 = ::core::ptr::null_mut::<cmap6>();
     let mut i: USHORT = 0;
     if len < 4 as SFNT_ULONG {
-        pdf_warning!(
-            b"invalid foramt 6 TT cmap subtable\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"invalid foramt 6 TT cmap subtable\0" as *const u8 as *const ::core::ffi::c_char,);
         return ::core::ptr::null_mut::<cmap6>();
     }
-    map = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<cmap6>() as usize) as uint32_t)
-        as *mut cmap6;
+    map = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<cmap6>() as usize) as uint32_t) as *mut cmap6;
     (*map).firstCode = tt_get_unsigned_pair((*sfont).handle);
     (*map).entryCount = tt_get_unsigned_pair((*sfont).handle);
-    (*map).glyphIndexArray = new(((*map).entryCount as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<USHORT>() as usize)
-        as uint32_t) as *mut USHORT;
+    (*map).glyphIndexArray =
+        new(((*map).entryCount as uint32_t as usize).wrapping_mul(::core::mem::size_of::<USHORT>() as usize) as uint32_t) as *mut USHORT;
     i = 0 as USHORT;
     while (i as ::core::ffi::c_int) < (*map).entryCount as ::core::ffi::c_int {
         *(*map).glyphIndexArray.offset(i as isize) = tt_get_unsigned_pair((*sfont).handle);
@@ -995,18 +853,12 @@ unsafe extern "C-unwind" fn read_cmap12(mut sfont: *mut sfnt, mut len: SFNT_ULON
     let mut map: *mut cmap12 = ::core::ptr::null_mut::<cmap12>();
     let mut i: SFNT_ULONG = 0;
     if len < 4 as SFNT_ULONG {
-        pdf_warning!(
-            b"invalid format 12 TT cmap subtable\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"invalid format 12 TT cmap subtable\0" as *const u8 as *const ::core::ffi::c_char,);
         return ::core::ptr::null_mut::<cmap12>();
     }
-    map = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<cmap12>() as usize) as uint32_t)
-        as *mut cmap12;
+    map = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<cmap12>() as usize) as uint32_t) as *mut cmap12;
     (*map).nGroups = tt_get_unsigned_quad((*sfont).handle);
-    (*map).groups = new(((*map).nGroups as usize)
-        .wrapping_mul(::core::mem::size_of::<charGroup>() as usize)
-        as uint32_t) as *mut charGroup;
+    (*map).groups = new(((*map).nGroups as usize).wrapping_mul(::core::mem::size_of::<charGroup>() as usize) as uint32_t) as *mut charGroup;
     i = 0 as SFNT_ULONG;
     while i < (*map).nGroups {
         (*(*map).groups.offset(i as isize)).startCharCode = tt_get_unsigned_quad((*sfont).handle);
@@ -1027,25 +879,17 @@ unsafe extern "C-unwind" fn lookup_cmap12(mut map: *mut cmap12, mut cccc: SFNT_U
         return 0;
     }
     let groups = core::slice::from_raw_parts((*map).groups, (*map).nGroups as usize);
-    let Some(index) = groups
-        .partition_point(|group| group.startCharCode <= cccc)
-        .checked_sub(1)
-    else {
+    let Some(index) = groups.partition_point(|group| group.startCharCode <= cccc).checked_sub(1) else {
         return 0;
     };
     let group = &groups[index];
     if cccc > group.endCharCode {
         return 0;
     }
-    cccc.wrapping_sub(group.startCharCode)
-        .wrapping_add(group.startGlyphID) as u16
+    cccc.wrapping_sub(group.startCharCode).wrapping_add(group.startGlyphID) as u16
 }
 #[unsafe(export_name = "__pdf_impl_tt_cmap_read")]
-pub unsafe extern "C-unwind" fn tt_cmap_read(
-    mut sfont: *mut sfnt,
-    mut platform: USHORT,
-    mut encoding: USHORT,
-) -> *mut tt_cmap {
+pub unsafe extern "C-unwind" fn tt_cmap_read(mut sfont: *mut sfnt, mut platform: USHORT, mut encoding: USHORT) -> *mut tt_cmap {
     let mut cmap: *mut tt_cmap = ::core::ptr::null_mut::<tt_cmap>();
     let mut offset: SFNT_ULONG = 0;
     let mut length: SFNT_ULONG = 0 as SFNT_ULONG;
@@ -1054,10 +898,7 @@ pub unsafe extern "C-unwind" fn tt_cmap_read(
     let mut i: USHORT = 0;
     let mut n_subtabs: USHORT = 0;
     if sfont.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"sfont\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"sfont\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     offset = sfnt_locate_table(sfont, b"cmap\0" as *const u8 as *const ::core::ffi::c_char);
@@ -1067,9 +908,7 @@ pub unsafe extern "C-unwind" fn tt_cmap_read(
     while (i as ::core::ffi::c_int) < n_subtabs as ::core::ffi::c_int {
         p_id = tt_get_unsigned_pair((*sfont).handle);
         e_id = tt_get_unsigned_pair((*sfont).handle);
-        if p_id as ::core::ffi::c_int != platform as ::core::ffi::c_int
-            || e_id as ::core::ffi::c_int != encoding as ::core::ffi::c_int
-        {
+        if p_id as ::core::ffi::c_int != platform as ::core::ffi::c_int || e_id as ::core::ffi::c_int != encoding as ::core::ffi::c_int {
             tt_get_unsigned_quad((*sfont).handle);
             i = i.wrapping_add(1);
         } else {
@@ -1080,9 +919,7 @@ pub unsafe extern "C-unwind" fn tt_cmap_read(
     if i as ::core::ffi::c_int == n_subtabs as ::core::ffi::c_int {
         return ::core::ptr::null_mut::<tt_cmap>();
     }
-    cmap = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<tt_cmap>() as usize) as uint32_t)
-        as *mut tt_cmap;
+    cmap = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<tt_cmap>() as usize) as uint32_t) as *mut tt_cmap;
     (*cmap).map = NULL;
     (*cmap).platform = platform;
     (*cmap).encoding = encoding;
@@ -1091,11 +928,8 @@ pub unsafe extern "C-unwind" fn tt_cmap_read(
     if (*cmap).format as ::core::ffi::c_int <= 6 as ::core::ffi::c_int {
         length = tt_get_unsigned_pair((*sfont).handle) as SFNT_ULONG;
         (*cmap).language = tt_get_unsigned_pair((*sfont).handle) as SFNT_ULONG;
-    } else if tt_get_unsigned_pair((*sfont).handle) as ::core::ffi::c_int != 0 as ::core::ffi::c_int
-    {
-        pdf_warning!(
-            b"Unrecognized cmap subtable format.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+    } else if tt_get_unsigned_pair((*sfont).handle) as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
+        pdf_warning!(b"Unrecognized cmap subtable format.\0" as *const u8 as *const ::core::ffi::c_char,);
         tt_cmap_release(cmap);
         return ::core::ptr::null_mut::<tt_cmap>();
     } else {
@@ -1119,10 +953,7 @@ pub unsafe extern "C-unwind" fn tt_cmap_read(
             (*cmap).map = read_cmap12(sfont, length) as *mut ::core::ffi::c_void;
         }
         _ => {
-            pdf_warning!(
-                b"Unrecognized OpenType/TrueType cmap format.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"Unrecognized OpenType/TrueType cmap format.\0" as *const u8 as *const ::core::ffi::c_char,);
             tt_cmap_release(cmap);
             return ::core::ptr::null_mut::<tt_cmap>();
         }
@@ -1155,8 +986,7 @@ pub unsafe extern "C-unwind" fn tt_cmap_release(mut cmap: *mut tt_cmap) {
                 }
                 _ => {
                     pdf_warning!(
-                        b"Unrecognized OpenType/TrueType cmap format: %d\0" as *const u8
-                            as *const ::core::ffi::c_char,
+                        b"Unrecognized OpenType/TrueType cmap format: %d\0" as *const u8 as *const ::core::ffi::c_char,
                         (*cmap).format as ::core::ffi::c_int,
                     );
                 }
@@ -1166,25 +996,14 @@ pub unsafe extern "C-unwind" fn tt_cmap_release(mut cmap: *mut tt_cmap) {
     }
 }
 #[unsafe(export_name = "__pdf_impl_tt_cmap_lookup")]
-pub unsafe extern "C-unwind" fn tt_cmap_lookup(
-    mut cmap: *mut tt_cmap,
-    mut cc: SFNT_ULONG,
-) -> USHORT {
+pub unsafe extern "C-unwind" fn tt_cmap_lookup(mut cmap: *mut tt_cmap, mut cc: SFNT_ULONG) -> USHORT {
     let mut gid: USHORT = 0 as USHORT;
     if cmap.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"cmap\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"cmap\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
-    if cc as ::core::ffi::c_long > 0xffff as ::core::ffi::c_long
-        && ((*cmap).format as ::core::ffi::c_int) < 12 as ::core::ffi::c_int
-    {
-        pdf_warning!(
-            b"Four bytes charcode not supported in OpenType/TrueType cmap format 0...6.\0"
-                as *const u8 as *const ::core::ffi::c_char,
-        );
+    if cc as ::core::ffi::c_long > 0xffff as ::core::ffi::c_long && ((*cmap).format as ::core::ffi::c_int) < 12 as ::core::ffi::c_int {
+        pdf_warning!(b"Four bytes charcode not supported in OpenType/TrueType cmap format 0...6.\0" as *const u8 as *const ::core::ffi::c_char,);
         return 0 as USHORT;
     }
     match (*cmap).format as ::core::ffi::c_int {
@@ -1205,8 +1024,7 @@ pub unsafe extern "C-unwind" fn tt_cmap_lookup(
         }
         _ => {
             pdf_warning!(
-                b"Unrecognized OpenType/TrueType cmap subtable format: %d\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Unrecognized OpenType/TrueType cmap subtable format: %d\0" as *const u8 as *const ::core::ffi::c_char,
                 (*cmap).format as ::core::ffi::c_int,
             );
         }
@@ -1233,13 +1051,8 @@ const LRANGE_MAX: [::core::ffi::c_uchar; 4] = [
     0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
     0xff as ::core::ffi::c_int as ::core::ffi::c_uchar,
 ];
-pub const FONTTYPE_CIDFONT: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn create_GIDToCIDMap(
-    mut GIDToCIDMap: *mut uint16_t,
-    mut num_glyphs: uint16_t,
-    mut cffont: *mut cff_font,
-) {
+pub const FONTTYPE_CIDFONT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+unsafe extern "C-unwind" fn create_GIDToCIDMap(mut GIDToCIDMap: *mut uint16_t, mut num_glyphs: uint16_t, mut cffont: *mut cff_font) {
     let mut charset: *mut cff_charsets = ::core::ptr::null_mut::<cff_charsets>();
     let mut gid: uint16_t = 0;
     let mut i: uint16_t = 0;
@@ -1288,14 +1101,11 @@ unsafe extern "C-unwind" fn create_GIDToCIDMap(
             i = 0 as uint16_t;
             while (i as ::core::ffi::c_int) < (*charset).num_entries as ::core::ffi::c_int {
                 cid = (*ranges.offset(i as isize)).first as card16;
-                count = ((*ranges.offset(i as isize)).n_left as ::core::ffi::c_int
-                    + 1 as ::core::ffi::c_int) as card16;
+                count = ((*ranges.offset(i as isize)).n_left as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as card16;
                 loop {
                     let fresh7 = count;
                     count = count.wrapping_sub(1);
-                    if !(fresh7 as ::core::ffi::c_int > 0 as ::core::ffi::c_int
-                        && gid as ::core::ffi::c_int <= num_glyphs as ::core::ffi::c_int)
-                    {
+                    if !(fresh7 as ::core::ffi::c_int > 0 as ::core::ffi::c_int && gid as ::core::ffi::c_int <= num_glyphs as ::core::ffi::c_int) {
                         break;
                     }
                     *GIDToCIDMap.offset(gid as isize) = cid as uint16_t;
@@ -1311,8 +1121,7 @@ unsafe extern "C-unwind" fn create_GIDToCIDMap(
             let mut count_0: card16 = 0;
             ranges_0 = (*charset).data.range2;
             if (*charset).num_entries as ::core::ffi::c_int == 1 as ::core::ffi::c_int
-                && (*ranges_0.offset(0 as ::core::ffi::c_int as isize)).first as ::core::ffi::c_int
-                    == 1 as ::core::ffi::c_int
+                && (*ranges_0.offset(0 as ::core::ffi::c_int as isize)).first as ::core::ffi::c_int == 1 as ::core::ffi::c_int
             {
                 gid = 0 as uint16_t;
                 while (gid as ::core::ffi::c_int) < num_glyphs as ::core::ffi::c_int {
@@ -1324,13 +1133,11 @@ unsafe extern "C-unwind" fn create_GIDToCIDMap(
                 i = 0 as uint16_t;
                 while (i as ::core::ffi::c_int) < (*charset).num_entries as ::core::ffi::c_int {
                     cid_0 = (*ranges_0.offset(i as isize)).first as card16;
-                    count_0 = ((*ranges_0.offset(i as isize)).n_left as ::core::ffi::c_int
-                        + 1 as ::core::ffi::c_int) as card16;
+                    count_0 = ((*ranges_0.offset(i as isize)).n_left as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as card16;
                     loop {
                         let fresh8 = count_0;
                         count_0 = count_0.wrapping_sub(1);
-                        if !(fresh8 as ::core::ffi::c_int > 0 as ::core::ffi::c_int
-                            && gid as ::core::ffi::c_int <= num_glyphs as ::core::ffi::c_int)
+                        if !(fresh8 as ::core::ffi::c_int > 0 as ::core::ffi::c_int && gid as ::core::ffi::c_int <= num_glyphs as ::core::ffi::c_int)
                         {
                             break;
                         }
@@ -1356,19 +1163,12 @@ extern "C-unwind" fn is_PUA_or_presentation(mut uni: ::core::ffi::c_uint) -> boo
         || uni >= 0xe000 as ::core::ffi::c_uint && uni <= 0xf8ff as ::core::ffi::c_uint
         || uni >= 0xfb00 as ::core::ffi::c_uint && uni <= 0xfb4f as ::core::ffi::c_uint
         || uni >= 0xf900 as ::core::ffi::c_uint && uni <= 0xfaff as ::core::ffi::c_uint
-        || uni >= 0x2f800 as ::core::ffi::c_int as ::core::ffi::c_uint
-            && uni <= 0x2fa1f as ::core::ffi::c_int as ::core::ffi::c_uint
-        || uni >= 0xf0000 as ::core::ffi::c_int as ::core::ffi::c_uint
-            && uni <= 0xffffd as ::core::ffi::c_int as ::core::ffi::c_uint
-        || uni >= 0x100000 as ::core::ffi::c_int as ::core::ffi::c_uint
-            && uni <= 0x10fffd as ::core::ffi::c_int as ::core::ffi::c_uint
+        || uni >= 0x2f800 as ::core::ffi::c_int as ::core::ffi::c_uint && uni <= 0x2fa1f as ::core::ffi::c_int as ::core::ffi::c_uint
+        || uni >= 0xf0000 as ::core::ffi::c_int as ::core::ffi::c_uint && uni <= 0xffffd as ::core::ffi::c_int as ::core::ffi::c_uint
+        || uni >= 0x100000 as ::core::ffi::c_int as ::core::ffi::c_uint && uni <= 0x10fffd as ::core::ffi::c_int as ::core::ffi::c_uint
         || uni == 0xad as ::core::ffi::c_uint;
 }
-unsafe extern "C-unwind" fn lookup_glyph_name(
-    mut post: *mut tt_post_table,
-    mut cffont: *mut cff_font,
-    mut gid: USHORT,
-) -> *mut ::core::ffi::c_char {
+unsafe extern "C-unwind" fn lookup_glyph_name(mut post: *mut tt_post_table, mut cffont: *mut cff_font, mut gid: USHORT) -> *mut ::core::ffi::c_char {
     let mut name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     if !post.is_null() {
         name = tt_get_glyphname(post, gid);
@@ -1378,50 +1178,34 @@ unsafe extern "C-unwind" fn lookup_glyph_name(
     }
     return name;
 }
-unsafe extern "C-unwind" fn handle_subst_glyphs(
-    mut cmap: *mut CMap,
-    mut cmap_add: *mut CMap,
-    mut used_chars: *mut ::core::ffi::c_char,
-) -> int32_t {
+unsafe extern "C-unwind" fn handle_subst_glyphs(mut cmap: *mut CMap, mut cmap_add: *mut CMap, mut used_chars: *mut ::core::ffi::c_char) -> int32_t {
     let mut count: int32_t = 0 as int32_t;
     let mut cid: int32_t = 0;
     cid = 0 as ::core::ffi::c_int as int32_t;
     while cid < 65536 as int32_t {
-        if !(*used_chars.offset((cid / 8 as int32_t) as isize) as ::core::ffi::c_int
-            & (1 as ::core::ffi::c_int) << 7 as int32_t - cid % 8 as int32_t
+        if !(*used_chars.offset((cid / 8 as int32_t) as isize) as ::core::ffi::c_int & (1 as ::core::ffi::c_int) << 7 as int32_t - cid % 8 as int32_t
             == 0)
         {
             let mut buf: [::core::ffi::c_uchar; 256] = [0; 256];
             let mut inbytesleft: size_t = 2 as size_t;
             let mut outbytesleft: size_t = 254 as size_t;
             let mut len: size_t = 0;
-            let mut outbuf: *mut ::core::ffi::c_uchar = (&raw mut buf as *mut ::core::ffi::c_uchar)
-                .offset(2 as ::core::ffi::c_int as isize);
+            let mut outbuf: *mut ::core::ffi::c_uchar = (&raw mut buf as *mut ::core::ffi::c_uchar).offset(2 as ::core::ffi::c_int as isize);
             let mut inbuf: *const ::core::ffi::c_uchar = &raw mut buf as *mut ::core::ffi::c_uchar;
-            buf[0 as ::core::ffi::c_int as usize] =
-                (cid >> 8 as ::core::ffi::c_int & 0xff as int32_t) as ::core::ffi::c_uchar;
+            buf[0 as ::core::ffi::c_int as usize] = (cid >> 8 as ::core::ffi::c_int & 0xff as int32_t) as ::core::ffi::c_uchar;
             buf[1 as ::core::ffi::c_int as usize] = (cid & 0xff as int32_t) as ::core::ffi::c_uchar;
-            CMap_decode(
-                cmap_add,
-                &raw mut inbuf,
-                &raw mut inbytesleft,
-                &raw mut outbuf,
-                &raw mut outbytesleft,
-            );
+            CMap_decode(cmap_add, &raw mut inbuf, &raw mut inbytesleft, &raw mut outbuf, &raw mut outbytesleft);
             if inbytesleft == 0 as size_t {
                 len = (254 as size_t).wrapping_sub(outbytesleft);
                 CMap_add_bfchar(
                     cmap,
                     &raw mut buf as *mut ::core::ffi::c_uchar,
                     2 as size_t,
-                    (&raw mut buf as *mut ::core::ffi::c_uchar)
-                        .offset(2 as ::core::ffi::c_int as isize),
+                    (&raw mut buf as *mut ::core::ffi::c_uchar).offset(2 as ::core::ffi::c_int as isize),
                     len,
                 );
                 let ref mut fresh6 = *used_chars.offset((cid / 8 as int32_t) as isize);
-                *fresh6 = (*fresh6 as ::core::ffi::c_int
-                    & !((1 as ::core::ffi::c_int) << 7 as int32_t - cid % 8 as int32_t))
-                    as ::core::ffi::c_char;
+                *fresh6 = (*fresh6 as ::core::ffi::c_int & !((1 as ::core::ffi::c_int) << 7 as int32_t - cid % 8 as int32_t)) as ::core::ffi::c_char;
                 count += 1;
             }
         }
@@ -1430,11 +1214,7 @@ unsafe extern "C-unwind" fn handle_subst_glyphs(
     return count;
 }
 unsafe extern "C-unwind" fn add_ToUnicode_via_glyph_name(
-    mut cmap: *mut CMap,
-    mut used_chars: *mut ::core::ffi::c_char,
-    mut num_glyphs: USHORT,
-    mut GIDToCIDMap: *mut uint16_t,
-    mut sfont: *mut sfnt,
+    mut cmap: *mut CMap, mut used_chars: *mut ::core::ffi::c_char, mut num_glyphs: USHORT, mut GIDToCIDMap: *mut uint16_t, mut sfont: *mut sfnt,
     mut cffont: *mut cff_font,
 ) -> int32_t {
     let mut count: int32_t = 0 as int32_t;
@@ -1447,10 +1227,8 @@ unsafe extern "C-unwind" fn add_ToUnicode_via_glyph_name(
     gid = 0 as USHORT;
     while (gid as ::core::ffi::c_int) < num_glyphs as ::core::ffi::c_int {
         let mut cid: uint16_t = *GIDToCIDMap.offset(gid as isize);
-        if *used_chars.offset((cid as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize)
-            as ::core::ffi::c_int
-            & (1 as ::core::ffi::c_int)
-                << 7 as ::core::ffi::c_int - cid as ::core::ffi::c_int % 8 as ::core::ffi::c_int
+        if *used_chars.offset((cid as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize) as ::core::ffi::c_int
+            & (1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int - cid as ::core::ffi::c_int % 8 as ::core::ffi::c_int
             != 0
         {
             let mut name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -1458,58 +1236,31 @@ unsafe extern "C-unwind" fn add_ToUnicode_via_glyph_name(
             let mut unicode_count: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
             name = lookup_glyph_name(post, cffont, gid);
             if !name.is_null() {
-                unicode_count =
-                    agl_get_unicodes(name, &raw mut unicodes as *mut int32_t, MAX_UNICODES);
+                unicode_count = agl_get_unicodes(name, &raw mut unicodes as *mut int32_t, MAX_UNICODES);
                 free(name as *mut ::core::ffi::c_void);
                 if unicode_count > 0 as ::core::ffi::c_int {
-                    let mut buf: *mut ::core::ffi::c_uchar =
-                        ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-                    let mut p: *mut ::core::ffi::c_uchar =
-                        ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-                    let mut endptr: *mut ::core::ffi::c_uchar =
-                        ::core::ptr::null_mut::<::core::ffi::c_uchar>();
+                    let mut buf: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
+                    let mut p: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
+                    let mut endptr: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
                     let mut k: ::core::ffi::c_int = 0;
                     let mut len: size_t = 0 as size_t;
-                    buf = new(
-                        ((unicode_count * 4 as ::core::ffi::c_int + 2 as ::core::ffi::c_int)
-                            as uint32_t as usize)
-                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-                            as uint32_t,
-                    ) as *mut ::core::ffi::c_uchar;
+                    buf = new(((unicode_count * 4 as ::core::ffi::c_int + 2 as ::core::ffi::c_int) as uint32_t as usize)
+                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize) as uint32_t)
+                        as *mut ::core::ffi::c_uchar;
                     p = buf.offset(2 as ::core::ffi::c_int as isize);
-                    endptr = buf.offset(
-                        (unicode_count * 4 as ::core::ffi::c_int + 2 as ::core::ffi::c_int)
-                            as isize,
-                    );
+                    endptr = buf.offset((unicode_count * 4 as ::core::ffi::c_int + 2 as ::core::ffi::c_int) as isize);
                     k = 0 as ::core::ffi::c_int;
                     while k < unicode_count {
-                        len = len.wrapping_add(UC_UTF16BE_encode_char(
-                            unicodes[k as usize],
-                            &raw mut p,
-                            endptr,
-                        ));
+                        len = len.wrapping_add(UC_UTF16BE_encode_char(unicodes[k as usize], &raw mut p, endptr));
                         k += 1;
                     }
-                    *buf.offset(0 as ::core::ffi::c_int as isize) = (cid as ::core::ffi::c_int
-                        >> 8 as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int)
-                        as ::core::ffi::c_uchar;
-                    *buf.offset(1 as ::core::ffi::c_int as isize) = (cid as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int)
-                        as ::core::ffi::c_uchar;
-                    CMap_add_bfchar(
-                        cmap,
-                        buf,
-                        2 as size_t,
-                        buf.offset(2 as ::core::ffi::c_int as isize),
-                        len,
-                    );
-                    let ref mut fresh5 = *used_chars
-                        .offset((cid as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize);
+                    *buf.offset(0 as ::core::ffi::c_int as isize) =
+                        (cid as ::core::ffi::c_int >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+                    *buf.offset(1 as ::core::ffi::c_int as isize) = (cid as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+                    CMap_add_bfchar(cmap, buf, 2 as size_t, buf.offset(2 as ::core::ffi::c_int as isize), len);
+                    let ref mut fresh5 = *used_chars.offset((cid as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize);
                     *fresh5 = (*fresh5 as ::core::ffi::c_int
-                        & !((1 as ::core::ffi::c_int)
-                            << 7 as ::core::ffi::c_int
-                                - cid as ::core::ffi::c_int % 8 as ::core::ffi::c_int))
+                        & !((1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int - cid as ::core::ffi::c_int % 8 as ::core::ffi::c_int))
                         as ::core::ffi::c_char;
                     count += 1;
                     free(buf as *mut ::core::ffi::c_void);
@@ -1524,45 +1275,31 @@ unsafe extern "C-unwind" fn add_ToUnicode_via_glyph_name(
     return count;
 }
 pub const MAX_UNICODES: ::core::ffi::c_int = 32 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn create_inverse_cmap4(
-    mut map_base: *mut int32_t,
-    mut map_sub: *mut int32_t,
-    mut num_glyphs: USHORT,
-    mut map: *mut cmap4,
-) {
-    let mut segCount: USHORT =
-        ((*map).segCountX2 as ::core::ffi::c_int / 2 as ::core::ffi::c_int) as USHORT;
+unsafe extern "C-unwind" fn create_inverse_cmap4(mut map_base: *mut int32_t, mut map_sub: *mut int32_t, mut num_glyphs: USHORT, mut map: *mut cmap4) {
+    let mut segCount: USHORT = ((*map).segCountX2 as ::core::ffi::c_int / 2 as ::core::ffi::c_int) as USHORT;
     let mut i: USHORT = 0;
     let mut j: USHORT = 0;
     i = 0 as USHORT;
     while (i as ::core::ffi::c_int) < segCount as ::core::ffi::c_int {
         let mut c0: USHORT = *(*map).startCount.offset(i as isize);
         let mut c1: USHORT = *(*map).endCount.offset(i as isize);
-        let mut d: USHORT = (*(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int
-            / 2 as ::core::ffi::c_int
-            - (segCount as ::core::ffi::c_int - i as ::core::ffi::c_int))
-            as USHORT;
+        let mut d: USHORT = (*(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int / 2 as ::core::ffi::c_int
+            - (segCount as ::core::ffi::c_int - i as ::core::ffi::c_int)) as USHORT;
         j = 0 as USHORT;
         while j as ::core::ffi::c_int <= c1 as ::core::ffi::c_int - c0 as ::core::ffi::c_int {
             let mut ch: USHORT = (c0 as ::core::ffi::c_int + j as ::core::ffi::c_int) as USHORT;
             let mut gid: USHORT = 0;
-            if *(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int
-                == 0 as ::core::ffi::c_int
-            {
-                gid = (ch as ::core::ffi::c_int
-                    + *(*map).idDelta.offset(i as isize) as ::core::ffi::c_int
-                    & 0xffff as ::core::ffi::c_int) as USHORT;
+            if *(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
+                gid = (ch as ::core::ffi::c_int + *(*map).idDelta.offset(i as isize) as ::core::ffi::c_int & 0xffff as ::core::ffi::c_int) as USHORT;
             } else if c0 as ::core::ffi::c_int == 0xffff as ::core::ffi::c_int
                 && c1 as ::core::ffi::c_int == 0xffff as ::core::ffi::c_int
-                && *(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int
-                    == 0xffff as ::core::ffi::c_int
+                && *(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int == 0xffff as ::core::ffi::c_int
             {
                 gid = 0 as USHORT;
             } else {
                 gid = (*(*map)
                     .glyphIndexArray
-                    .offset((j as ::core::ffi::c_int + d as ::core::ffi::c_int) as isize)
-                    as ::core::ffi::c_int
+                    .offset((j as ::core::ffi::c_int + d as ::core::ffi::c_int) as isize) as ::core::ffi::c_int
                     + *(*map).idDelta.offset(i as isize) as ::core::ffi::c_int
                     & 0xffff as ::core::ffi::c_int) as USHORT;
             }
@@ -1577,10 +1314,7 @@ unsafe extern "C-unwind" fn create_inverse_cmap4(
     }
 }
 unsafe extern "C-unwind" fn create_inverse_cmap12(
-    mut map_base: *mut int32_t,
-    mut map_sub: *mut int32_t,
-    mut num_glyphs: USHORT,
-    mut map: *mut cmap12,
+    mut map_base: *mut int32_t, mut map_sub: *mut int32_t, mut num_glyphs: USHORT, mut map: *mut cmap12,
 ) {
     let mut i: SFNT_ULONG = 0;
     let mut ch: SFNT_ULONG = 0;
@@ -1588,13 +1322,8 @@ unsafe extern "C-unwind" fn create_inverse_cmap12(
     while i < (*map).nGroups {
         ch = (*(*map).groups.offset(i as isize)).startCharCode;
         while ch <= (*(*map).groups.offset(i as isize)).endCharCode {
-            let mut d: ::core::ffi::c_int = ch
-                .wrapping_sub((*(*map).groups.offset(i as isize)).startCharCode)
-                as ::core::ffi::c_int;
-            let mut gid: USHORT = ((*(*map).groups.offset(i as isize))
-                .startGlyphID
-                .wrapping_add(d as SFNT_ULONG)
-                & 0xffff as SFNT_ULONG) as USHORT;
+            let mut d: ::core::ffi::c_int = ch.wrapping_sub((*(*map).groups.offset(i as isize)).startCharCode) as ::core::ffi::c_int;
+            let mut gid: USHORT = ((*(*map).groups.offset(i as isize)).startGlyphID.wrapping_add(d as SFNT_ULONG) & 0xffff as SFNT_ULONG) as USHORT;
             if is_PUA_or_presentation(ch as ::core::ffi::c_uint) {
                 *map_sub.offset(gid as isize) = ch as int32_t;
             } else {
@@ -1606,10 +1335,7 @@ unsafe extern "C-unwind" fn create_inverse_cmap12(
     }
 }
 unsafe extern "C-unwind" fn create_ToUnicode_cmap(
-    mut ttcmap: *mut tt_cmap,
-    mut cmap_name: *const ::core::ffi::c_char,
-    mut cmap_add: *mut CMap,
-    mut used_chars: *const ::core::ffi::c_char,
+    mut ttcmap: *mut tt_cmap, mut cmap_name: *const ::core::ffi::c_char, mut cmap_add: *mut CMap, mut used_chars: *const ::core::ffi::c_char,
     mut sfont: *mut sfnt,
 ) -> *mut pdf_obj {
     let mut stream: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -1618,10 +1344,7 @@ unsafe extern "C-unwind" fn create_ToUnicode_cmap(
     let mut gid: USHORT = 0;
     let mut num_glyphs: USHORT = 0 as USHORT;
     if ttcmap.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"ttcmap\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"ttcmap\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     let mut maxp: *mut tt_maxp_table = ::core::ptr::null_mut::<tt_maxp_table>();
@@ -1630,12 +1353,8 @@ unsafe extern "C-unwind" fn create_ToUnicode_cmap(
         num_glyphs = (*maxp).numGlyphs;
         free(maxp as *mut ::core::ffi::c_void);
     }
-    map_base = new((num_glyphs as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<int32_t>() as usize) as uint32_t)
-        as *mut int32_t;
-    map_sub = new((num_glyphs as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<int32_t>() as usize) as uint32_t)
-        as *mut int32_t;
+    map_base = new((num_glyphs as uint32_t as usize).wrapping_mul(::core::mem::size_of::<int32_t>() as usize) as uint32_t) as *mut int32_t;
+    map_sub = new((num_glyphs as uint32_t as usize).wrapping_mul(::core::mem::size_of::<int32_t>() as usize) as uint32_t) as *mut int32_t;
     gid = 0 as USHORT;
     while (gid as ::core::ffi::c_int) < num_glyphs as ::core::ffi::c_int {
         *map_base.offset(gid as isize) = -(1 as ::core::ffi::c_int) as int32_t;
@@ -1656,29 +1375,18 @@ unsafe extern "C-unwind" fn create_ToUnicode_cmap(
     let mut cffont: *mut cff_font = ::core::ptr::null_mut::<cff_font>();
     let mut is_cidfont: ::core::ffi::c_char = 0 as ::core::ffi::c_char;
     let mut GIDToCIDMap: *mut uint16_t = ::core::ptr::null_mut::<uint16_t>();
-    let mut used_chars_copy: *mut ::core::ffi::c_char =
-        ::core::ptr::null_mut::<::core::ffi::c_char>();
+    let mut used_chars_copy: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     if (*sfont).type_0 == SFNT_TYPE_POSTSCRIPT {
         let mut offset: SFNT_ULONG = 0;
         offset = sfnt_find_table_pos(sfont, b"CFF \0" as *const u8 as *const ::core::ffi::c_char);
         if offset == 0 as SFNT_ULONG {
-            pdf_abort!(
-                b"\"CFF \" table not found. Must be found before... Can't continue.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_abort!(b"\"CFF \" table not found. Must be found before... Can't continue.\0" as *const u8 as *const ::core::ffi::c_char,);
         }
-        cffont = cff_open(
-            (*sfont).handle,
-            offset as ::core::ffi::c_int,
-            0 as ::core::ffi::c_int,
-        );
+        cffont = cff_open((*sfont).handle, offset as ::core::ffi::c_int, 0 as ::core::ffi::c_int);
         cff_read_charsets(cffont);
     }
-    is_cidfont = (!cffont.is_null() && (*cffont).flag & FONTTYPE_CIDFONT != 0) as ::core::ffi::c_int
-        as ::core::ffi::c_char;
-    GIDToCIDMap = new((num_glyphs as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<uint16_t>() as usize)
-        as uint32_t) as *mut uint16_t;
+    is_cidfont = (!cffont.is_null() && (*cffont).flag & FONTTYPE_CIDFONT != 0) as ::core::ffi::c_int as ::core::ffi::c_char;
+    GIDToCIDMap = new((num_glyphs as uint32_t as usize).wrapping_mul(::core::mem::size_of::<uint16_t>() as usize) as uint32_t) as *mut uint16_t;
     if is_cidfont != 0 {
         create_GIDToCIDMap(GIDToCIDMap, num_glyphs as uint16_t, cffont);
     } else {
@@ -1695,9 +1403,9 @@ unsafe extern "C-unwind" fn create_ToUnicode_cmap(
     CMap_set_CIDSysInfo(cmap, &raw mut CSI_UNICODE);
     CMap_add_codespacerange(cmap, SRANGE_MIN.as_ptr(), SRANGE_MAX.as_ptr(), 2 as size_t);
     count = 0 as ::core::ffi::c_int as int32_t;
-    used_chars_copy = new((8192 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
+    used_chars_copy =
+        new((8192 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+            as *mut ::core::ffi::c_char;
     memcpy(
         used_chars_copy as *mut ::core::ffi::c_void,
         used_chars as *const ::core::ffi::c_void,
@@ -1706,27 +1414,21 @@ unsafe extern "C-unwind" fn create_ToUnicode_cmap(
     gid = 0 as USHORT;
     while (gid as ::core::ffi::c_int) < num_glyphs as ::core::ffi::c_int {
         let mut cid: uint16_t = *GIDToCIDMap.offset(gid as isize);
-        if *used_chars_copy.offset((cid as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize)
-            as ::core::ffi::c_int
-            & (1 as ::core::ffi::c_int)
-                << 7 as ::core::ffi::c_int - cid as ::core::ffi::c_int % 8 as ::core::ffi::c_int
+        if *used_chars_copy.offset((cid as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize) as ::core::ffi::c_int
+            & (1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int - cid as ::core::ffi::c_int % 8 as ::core::ffi::c_int
             != 0
         {
             let mut ch: int32_t = 0;
             let mut src: [::core::ffi::c_uchar; 2] = [0; 2];
             let mut dst: [::core::ffi::c_uchar; 4] = [0; 4];
             let mut p: *mut ::core::ffi::c_uchar = &raw mut dst as *mut ::core::ffi::c_uchar;
-            let mut endptr: *mut ::core::ffi::c_uchar = (&raw mut dst as *mut ::core::ffi::c_uchar)
-                .offset(4 as ::core::ffi::c_int as isize);
+            let mut endptr: *mut ::core::ffi::c_uchar = (&raw mut dst as *mut ::core::ffi::c_uchar).offset(4 as ::core::ffi::c_int as isize);
             let mut len: size_t = 0;
             ch = *map_base.offset(gid as isize);
             if UC_is_valid(ch) {
                 src[0 as ::core::ffi::c_int as usize] =
-                    (cid as ::core::ffi::c_int >> 8 as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
-                src[1 as ::core::ffi::c_int as usize] = (cid as ::core::ffi::c_int
-                    & 0xff as ::core::ffi::c_int)
-                    as ::core::ffi::c_uchar;
+                    (cid as ::core::ffi::c_int >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+                src[1 as ::core::ffi::c_int as usize] = (cid as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
                 len = UC_UTF16BE_encode_char(ch, &raw mut p, endptr);
                 CMap_add_bfchar(
                     cmap,
@@ -1735,12 +1437,9 @@ unsafe extern "C-unwind" fn create_ToUnicode_cmap(
                     &raw mut dst as *mut ::core::ffi::c_uchar,
                     len,
                 );
-                let ref mut fresh3 = *used_chars_copy
-                    .offset((cid as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize);
+                let ref mut fresh3 = *used_chars_copy.offset((cid as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize);
                 *fresh3 = (*fresh3 as ::core::ffi::c_int
-                    & !((1 as ::core::ffi::c_int)
-                        << 7 as ::core::ffi::c_int
-                            - cid as ::core::ffi::c_int % 8 as ::core::ffi::c_int))
+                    & !((1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int - cid as ::core::ffi::c_int % 8 as ::core::ffi::c_int))
                     as ::core::ffi::c_char;
                 count += 1;
             }
@@ -1750,16 +1449,8 @@ unsafe extern "C-unwind" fn create_ToUnicode_cmap(
     if !cmap_add.is_null() {
         count += handle_subst_glyphs(cmap, cmap_add, used_chars_copy);
     } else {
-        count = (count as ::core::ffi::c_int
-            + otl_gsub_add_ToUnicode(
-                cmap,
-                used_chars_copy,
-                map_base,
-                map_sub,
-                num_glyphs,
-                GIDToCIDMap,
-                sfont,
-            )) as int32_t;
+        count = (count as ::core::ffi::c_int + otl_gsub_add_ToUnicode(cmap, used_chars_copy, map_base, map_sub, num_glyphs, GIDToCIDMap, sfont))
+            as int32_t;
     }
     count += add_ToUnicode_via_glyph_name(
         cmap,
@@ -1779,28 +1470,21 @@ unsafe extern "C-unwind" fn create_ToUnicode_cmap(
     gid = 0 as USHORT;
     while (gid as ::core::ffi::c_int) < num_glyphs as ::core::ffi::c_int {
         let mut cid_0: uint16_t = *GIDToCIDMap.offset(gid as isize);
-        if *used_chars_copy.offset((cid_0 as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize)
-            as ::core::ffi::c_int
-            & (1 as ::core::ffi::c_int)
-                << 7 as ::core::ffi::c_int - cid_0 as ::core::ffi::c_int % 8 as ::core::ffi::c_int
+        if *used_chars_copy.offset((cid_0 as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize) as ::core::ffi::c_int
+            & (1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int - cid_0 as ::core::ffi::c_int % 8 as ::core::ffi::c_int
             != 0
         {
             let mut ch_0: int32_t = 0;
             let mut src_0: [::core::ffi::c_uchar; 2] = [0; 2];
             let mut dst_0: [::core::ffi::c_uchar; 4] = [0; 4];
             let mut p_0: *mut ::core::ffi::c_uchar = &raw mut dst_0 as *mut ::core::ffi::c_uchar;
-            let mut endptr_0: *mut ::core::ffi::c_uchar = (&raw mut dst_0
-                as *mut ::core::ffi::c_uchar)
-                .offset(4 as ::core::ffi::c_int as isize);
+            let mut endptr_0: *mut ::core::ffi::c_uchar = (&raw mut dst_0 as *mut ::core::ffi::c_uchar).offset(4 as ::core::ffi::c_int as isize);
             let mut len_0: size_t = 0;
             ch_0 = *map_sub.offset(gid as isize);
             if UC_is_valid(ch_0) {
                 src_0[0 as ::core::ffi::c_int as usize] =
-                    (cid_0 as ::core::ffi::c_int >> 8 as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
-                src_0[1 as ::core::ffi::c_int as usize] = (cid_0 as ::core::ffi::c_int
-                    & 0xff as ::core::ffi::c_int)
-                    as ::core::ffi::c_uchar;
+                    (cid_0 as ::core::ffi::c_int >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+                src_0[1 as ::core::ffi::c_int as usize] = (cid_0 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
                 len_0 = UC_UTF16BE_encode_char(ch_0, &raw mut p_0, endptr_0);
                 CMap_add_bfchar(
                     cmap,
@@ -1809,12 +1493,9 @@ unsafe extern "C-unwind" fn create_ToUnicode_cmap(
                     &raw mut dst_0 as *mut ::core::ffi::c_uchar,
                     len_0,
                 );
-                let ref mut fresh4 = *used_chars_copy
-                    .offset((cid_0 as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize);
+                let ref mut fresh4 = *used_chars_copy.offset((cid_0 as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize);
                 *fresh4 = (*fresh4 as ::core::ffi::c_int
-                    & !((1 as ::core::ffi::c_int)
-                        << 7 as ::core::ffi::c_int
-                            - cid_0 as ::core::ffi::c_int % 8 as ::core::ffi::c_int))
+                    & !((1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int - cid_0 as ::core::ffi::c_int % 8 as ::core::ffi::c_int))
                     as ::core::ffi::c_char;
                 count += 1;
             }
@@ -1825,17 +1506,12 @@ unsafe extern "C-unwind" fn create_ToUnicode_cmap(
         gid = 0 as USHORT;
         while (gid as ::core::ffi::c_int) < num_glyphs as ::core::ffi::c_int {
             let mut cid_1: uint16_t = *GIDToCIDMap.offset(gid as isize);
-            if *used_chars_copy
-                .offset((cid_1 as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize)
-                as ::core::ffi::c_int
-                & (1 as ::core::ffi::c_int)
-                    << 7 as ::core::ffi::c_int
-                        - cid_1 as ::core::ffi::c_int % 8 as ::core::ffi::c_int
+            if *used_chars_copy.offset((cid_1 as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize) as ::core::ffi::c_int
+                & (1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int - cid_1 as ::core::ffi::c_int % 8 as ::core::ffi::c_int
                 != 0
             {
                 pdf_warning!(
-                    b"Unable to find ToUnicode mapping for glyph CID=%u (GID=%u)\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Unable to find ToUnicode mapping for glyph CID=%u (GID=%u)\0" as *const u8 as *const ::core::ffi::c_char,
                     cid_1 as ::core::ffi::c_int,
                     gid as ::core::ffi::c_int,
                 );
@@ -1883,9 +1559,7 @@ const CMAP_PLAT_ENCS: [cmap_plat_enc_rec; 6] = [
 ];
 #[unsafe(export_name = "__pdf_impl_otf_create_ToUnicode_stream")]
 pub unsafe extern "C-unwind" fn otf_create_ToUnicode_stream(
-    mut font_name: *const ::core::ffi::c_char,
-    mut ttc_index: uint32_t,
-    mut basefont: *const ::core::ffi::c_char,
+    mut font_name: *const ::core::ffi::c_char, mut ttc_index: uint32_t, mut basefont: *const ::core::ffi::c_char,
     mut used_chars: *const ::core::ffi::c_char,
 ) -> *mut pdf_obj {
     let mut cmap_ref: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -1899,21 +1573,11 @@ pub unsafe extern "C-unwind" fn otf_create_ToUnicode_stream(
     let mut cmap_add_id: ::core::ffi::c_int = 0;
     let mut i: size_t = 0;
     cmap_name = new((strlen(basefont)
-        .wrapping_add(strlen(
-            b"-UTF16\0" as *const u8 as *const ::core::ffi::c_char,
-        ))
+        .wrapping_add(strlen(b"-UTF16\0" as *const u8 as *const ::core::ffi::c_char))
         .wrapping_add(1 as size_t) as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
-    sprintf(
-        cmap_name,
-        b"%s-UTF16\0" as *const u8 as *const ::core::ffi::c_char,
-        basefont,
-    );
-    cmap_id = pdf_findresource(
-        b"CMap\0" as *const u8 as *const ::core::ffi::c_char,
-        cmap_name,
-    );
+        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
+    sprintf(cmap_name, b"%s-UTF16\0" as *const u8 as *const ::core::ffi::c_char, basefont);
+    cmap_id = pdf_findresource(b"CMap\0" as *const u8 as *const ::core::ffi::c_char, cmap_name);
     if cmap_id >= 0 as ::core::ffi::c_int {
         free(cmap_name as *mut ::core::ffi::c_void);
         cmap_ref = pdf_get_resource_reference(cmap_id);
@@ -1922,8 +1586,7 @@ pub unsafe extern "C-unwind" fn otf_create_ToUnicode_stream(
     if dpx_conf.verbose_level > VERBOSE_LEVEL_MIN {
         pdf_message!(b"\n\0" as *const u8 as *const ::core::ffi::c_char);
         pdf_message!(
-            b"otf_cmap>> Creating ToUnicode CMap for \"%s\"...\n\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"otf_cmap>> Creating ToUnicode CMap for \"%s\"...\n\0" as *const u8 as *const ::core::ffi::c_char,
             font_name,
         );
     }
@@ -1944,8 +1607,7 @@ pub unsafe extern "C-unwind" fn otf_create_ToUnicode_stream(
     }
     if sfont.is_null() {
         pdf_warning!(
-            b"Could not open OpenType/TrueType font file \"%s\"\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Could not open OpenType/TrueType font file \"%s\"\0" as *const u8 as *const ::core::ffi::c_char,
             font_name,
         );
         free(cmap_name as *mut ::core::ffi::c_void);
@@ -1959,10 +1621,7 @@ pub unsafe extern "C-unwind" fn otf_create_ToUnicode_stream(
         SFNT_TYPE_TTC => {
             offset = ttc_read_offset(sfont, ttc_index as SFNT_ULONG);
             if offset == 0 as SFNT_ULONG {
-                pdf_warning!(
-                    b"Invalid TTC index for font: %s\0" as *const u8 as *const ::core::ffi::c_char,
-                    font_name,
-                );
+                pdf_warning!(b"Invalid TTC index for font: %s\0" as *const u8 as *const ::core::ffi::c_char, font_name,);
                 sfnt_close(sfont);
                 crate::backend::runtime::input_close(handle);
                 free(cmap_name as *mut ::core::ffi::c_void);
@@ -1975,8 +1634,7 @@ pub unsafe extern "C-unwind" fn otf_create_ToUnicode_stream(
     }
     if sfnt_read_table_directory(sfont, offset) < 0 as ::core::ffi::c_int {
         pdf_warning!(
-            b"Could not read OpenType/TrueType table directory for font: %s\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Could not read OpenType/TrueType table directory for font: %s\0" as *const u8 as *const ::core::ffi::c_char,
             font_name,
         );
         sfnt_close(sfont);
@@ -1984,17 +1642,13 @@ pub unsafe extern "C-unwind" fn otf_create_ToUnicode_stream(
         free(cmap_name as *mut ::core::ffi::c_void);
         return ::core::ptr::null_mut::<pdf_obj>();
     }
-    let mut cmap_add_name: *mut ::core::ffi::c_char =
-        ::core::ptr::null_mut::<::core::ffi::c_char>();
+    let mut cmap_add_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut len: size_t = 0;
     len = strlen(font_name)
-        .wrapping_add(strlen(
-            b"-UCS32-Add\0" as *const u8 as *const ::core::ffi::c_char,
-        ))
+        .wrapping_add(strlen(b"-UCS32-Add\0" as *const u8 as *const ::core::ffi::c_char))
         .wrapping_add(32 as size_t);
-    cmap_add_name = new((len as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
+    cmap_add_name =
+        new((len as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
     snprintf(
         cmap_add_name,
         len,
@@ -2002,8 +1656,7 @@ pub unsafe extern "C-unwind" fn otf_create_ToUnicode_stream(
         font_name,
         ttc_index,
     );
-    *cmap_add_name.offset(len.wrapping_sub(1 as size_t) as isize) =
-        '\0' as i32 as ::core::ffi::c_char;
+    *cmap_add_name.offset(len.wrapping_sub(1 as size_t) as isize) = '\0' as i32 as ::core::ffi::c_char;
     cmap_add_id = CMap_cache_find(cmap_add_name);
     free(cmap_add_name as *mut ::core::ffi::c_void);
     if cmap_add_id < 0 as ::core::ffi::c_int {
@@ -2013,18 +1666,14 @@ pub unsafe extern "C-unwind" fn otf_create_ToUnicode_stream(
     }
     ttcmap = ::core::ptr::null_mut::<tt_cmap>();
     i = 0 as size_t;
-    while i
-        < (::core::mem::size_of::<[cmap_plat_enc_rec; 6]>() as usize)
-            .wrapping_div(::core::mem::size_of::<cmap_plat_enc_rec>() as usize)
-    {
+    while i < (::core::mem::size_of::<[cmap_plat_enc_rec; 6]>() as usize).wrapping_div(::core::mem::size_of::<cmap_plat_enc_rec>() as usize) {
         ttcmap = tt_cmap_read(
             sfont,
             CMAP_PLAT_ENCS[i as usize].platform as USHORT,
             CMAP_PLAT_ENCS[i as usize].encoding as USHORT,
         );
         if !ttcmap.is_null() {
-            if (*ttcmap).format as ::core::ffi::c_int == 4 as ::core::ffi::c_int
-                || (*ttcmap).format as ::core::ffi::c_int == 12 as ::core::ffi::c_int
+            if (*ttcmap).format as ::core::ffi::c_int == 4 as ::core::ffi::c_int || (*ttcmap).format as ::core::ffi::c_int == 12 as ::core::ffi::c_int
             {
                 break;
             }
@@ -2056,22 +1705,15 @@ pub unsafe extern "C-unwind" fn otf_create_ToUnicode_stream(
     }
     if cmap_ref.is_null() {
         pdf_warning!(
-            b"Creating ToUnicode CMap failed for \"%s\"\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Creating ToUnicode CMap failed for \"%s\"\0" as *const u8 as *const ::core::ffi::c_char,
             font_name,
         );
     }
     return cmap_ref;
 }
 unsafe extern "C-unwind" fn load_cmap4(
-    mut map: *mut cmap4,
-    mut GIDToCIDMap: *mut uint16_t,
-    mut num_glyphs: USHORT,
-    mut gsub_vert: *mut otl_gsub,
-    mut gsub_list: *mut otl_gsub,
-    mut cmap: *mut CMap,
-    mut map_base: *mut int32_t,
-    mut map_sub: *mut int32_t,
+    mut map: *mut cmap4, mut GIDToCIDMap: *mut uint16_t, mut num_glyphs: USHORT, mut gsub_vert: *mut otl_gsub, mut gsub_list: *mut otl_gsub,
+    mut cmap: *mut CMap, mut map_base: *mut int32_t, mut map_sub: *mut int32_t,
 ) {
     let mut c0: USHORT = 0;
     let mut c1: USHORT = 0;
@@ -2088,35 +1730,26 @@ unsafe extern "C-unwind" fn load_cmap4(
     while i >= 0 as ::core::ffi::c_int {
         c0 = *(*map).startCount.offset(i as isize);
         c1 = *(*map).endCount.offset(i as isize);
-        d = (*(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int
-            / 2 as ::core::ffi::c_int
-            - (segCount as ::core::ffi::c_int - i)) as USHORT;
+        d = (*(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int / 2 as ::core::ffi::c_int - (segCount as ::core::ffi::c_int - i))
+            as USHORT;
         j = 0 as USHORT;
         while j as ::core::ffi::c_int <= c1 as ::core::ffi::c_int - c0 as ::core::ffi::c_int {
             ch = (c0 as ::core::ffi::c_int + j as ::core::ffi::c_int) as USHORT;
-            if *(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int
-                == 0 as ::core::ffi::c_int
-            {
-                gid = (ch as ::core::ffi::c_int
-                    + *(*map).idDelta.offset(i as isize) as ::core::ffi::c_int
-                    & 0xffff as ::core::ffi::c_int) as USHORT;
+            if *(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
+                gid = (ch as ::core::ffi::c_int + *(*map).idDelta.offset(i as isize) as ::core::ffi::c_int & 0xffff as ::core::ffi::c_int) as USHORT;
             } else if c0 as ::core::ffi::c_int == 0xffff as ::core::ffi::c_int
                 && c1 as ::core::ffi::c_int == 0xffff as ::core::ffi::c_int
-                && *(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int
-                    == 0xffff as ::core::ffi::c_int
+                && *(*map).idRangeOffset.offset(i as isize) as ::core::ffi::c_int == 0xffff as ::core::ffi::c_int
             {
                 gid = 0 as USHORT;
             } else {
                 gid = (*(*map)
                     .glyphIndexArray
-                    .offset((j as ::core::ffi::c_int + d as ::core::ffi::c_int) as isize)
-                    as ::core::ffi::c_int
+                    .offset((j as ::core::ffi::c_int + d as ::core::ffi::c_int) as isize) as ::core::ffi::c_int
                     + *(*map).idDelta.offset(i as isize) as ::core::ffi::c_int
                     & 0xffff as ::core::ffi::c_int) as USHORT;
             }
-            if gid as ::core::ffi::c_int != 0 as ::core::ffi::c_int
-                && gid as ::core::ffi::c_int != 0xffff as ::core::ffi::c_int
-            {
+            if gid as ::core::ffi::c_int != 0 as ::core::ffi::c_int && gid as ::core::ffi::c_int != 0xffff as ::core::ffi::c_int {
                 if !gsub_list.is_null() {
                     otl_gsub_apply_chain(gsub_list, &raw mut gid);
                 }
@@ -2131,16 +1764,9 @@ unsafe extern "C-unwind" fn load_cmap4(
                 buf[0 as ::core::ffi::c_int as usize] = 0 as ::core::ffi::c_uchar;
                 buf[1 as ::core::ffi::c_int as usize] = 0 as ::core::ffi::c_uchar;
                 buf[2 as ::core::ffi::c_int as usize] =
-                    (ch as ::core::ffi::c_int >> 8 as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
-                buf[3 as ::core::ffi::c_int as usize] =
-                    (ch as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
-                CMap_add_cidchar(
-                    cmap,
-                    &raw mut buf as *mut ::core::ffi::c_uchar,
-                    4 as size_t,
-                    cid as CID,
-                );
+                    (ch as ::core::ffi::c_int >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+                buf[3 as ::core::ffi::c_int as usize] = (ch as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+                CMap_add_cidchar(cmap, &raw mut buf as *mut ::core::ffi::c_uchar, 4 as size_t, cid as CID);
                 if !map_base.is_null() && !map_sub.is_null() {
                     if is_PUA_or_presentation(ch as ::core::ffi::c_uint) {
                         *map_sub.offset(gid as isize) = ch as int32_t;
@@ -2155,14 +1781,8 @@ unsafe extern "C-unwind" fn load_cmap4(
     }
 }
 unsafe extern "C-unwind" fn load_cmap12(
-    mut map: *mut cmap12,
-    mut GIDToCIDMap: *mut uint16_t,
-    mut num_glyphs: USHORT,
-    mut gsub_vert: *mut otl_gsub,
-    mut gsub_list: *mut otl_gsub,
-    mut cmap: *mut CMap,
-    mut map_base: *mut int32_t,
-    mut map_sub: *mut int32_t,
+    mut map: *mut cmap12, mut GIDToCIDMap: *mut uint16_t, mut num_glyphs: USHORT, mut gsub_vert: *mut otl_gsub, mut gsub_list: *mut otl_gsub,
+    mut cmap: *mut CMap, mut map_base: *mut int32_t, mut map_sub: *mut int32_t,
 ) {
     let mut i: SFNT_ULONG = 0;
     let mut ch: SFNT_ULONG = 0;
@@ -2173,13 +1793,8 @@ unsafe extern "C-unwind" fn load_cmap12(
     while i < (*map).nGroups {
         ch = (*(*map).groups.offset(i as isize)).startCharCode;
         while ch <= (*(*map).groups.offset(i as isize)).endCharCode {
-            let mut d: ::core::ffi::c_int = ch
-                .wrapping_sub((*(*map).groups.offset(i as isize)).startCharCode)
-                as ::core::ffi::c_int;
-            gid = ((*(*map).groups.offset(i as isize))
-                .startGlyphID
-                .wrapping_add(d as SFNT_ULONG)
-                & 0xffff as SFNT_ULONG) as USHORT;
+            let mut d: ::core::ffi::c_int = ch.wrapping_sub((*(*map).groups.offset(i as isize)).startCharCode) as ::core::ffi::c_int;
+            gid = ((*(*map).groups.offset(i as isize)).startGlyphID.wrapping_add(d as SFNT_ULONG) & 0xffff as SFNT_ULONG) as USHORT;
             if !gsub_list.is_null() {
                 otl_gsub_apply_chain(gsub_list, &raw mut gid);
             }
@@ -2191,20 +1806,11 @@ unsafe extern "C-unwind" fn load_cmap12(
             } else {
                 0 as ::core::ffi::c_int
             }) as USHORT;
-            buf[0 as ::core::ffi::c_int as usize] =
-                (ch >> 24 as ::core::ffi::c_int & 0xff as SFNT_ULONG) as ::core::ffi::c_uchar;
-            buf[1 as ::core::ffi::c_int as usize] =
-                (ch >> 16 as ::core::ffi::c_int & 0xff as SFNT_ULONG) as ::core::ffi::c_uchar;
-            buf[2 as ::core::ffi::c_int as usize] =
-                (ch >> 8 as ::core::ffi::c_int & 0xff as SFNT_ULONG) as ::core::ffi::c_uchar;
-            buf[3 as ::core::ffi::c_int as usize] =
-                (ch & 0xff as SFNT_ULONG) as ::core::ffi::c_uchar;
-            CMap_add_cidchar(
-                cmap,
-                &raw mut buf as *mut ::core::ffi::c_uchar,
-                4 as size_t,
-                cid as CID,
-            );
+            buf[0 as ::core::ffi::c_int as usize] = (ch >> 24 as ::core::ffi::c_int & 0xff as SFNT_ULONG) as ::core::ffi::c_uchar;
+            buf[1 as ::core::ffi::c_int as usize] = (ch >> 16 as ::core::ffi::c_int & 0xff as SFNT_ULONG) as ::core::ffi::c_uchar;
+            buf[2 as ::core::ffi::c_int as usize] = (ch >> 8 as ::core::ffi::c_int & 0xff as SFNT_ULONG) as ::core::ffi::c_uchar;
+            buf[3 as ::core::ffi::c_int as usize] = (ch & 0xff as SFNT_ULONG) as ::core::ffi::c_uchar;
+            CMap_add_cidchar(cmap, &raw mut buf as *mut ::core::ffi::c_uchar, 4 as size_t, cid as CID);
             if !map_base.is_null() && !map_sub.is_null() {
                 if is_PUA_or_presentation(ch as ::core::ffi::c_uint) {
                     *map_sub.offset(gid as isize) = ch as int32_t;
@@ -2219,10 +1825,7 @@ unsafe extern "C-unwind" fn load_cmap12(
 }
 #[unsafe(export_name = "__pdf_impl_otf_load_Unicode_CMap")]
 pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
-    mut map_name: *const ::core::ffi::c_char,
-    mut ttc_index: uint32_t,
-    mut otl_tags: *const ::core::ffi::c_char,
-    mut wmode: ::core::ffi::c_int,
+    mut map_name: *const ::core::ffi::c_char, mut ttc_index: uint32_t, mut otl_tags: *const ::core::ffi::c_char, mut wmode: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut cmap_id: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut cmap_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -2243,14 +1846,11 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
     if !otl_tags.is_null() {
         let mut len: size_t = 0;
         len = strlen(map_name)
-            .wrapping_add(strlen(
-                b"-UCS4-H\0" as *const u8 as *const ::core::ffi::c_char,
-            ))
+            .wrapping_add(strlen(b"-UCS4-H\0" as *const u8 as *const ::core::ffi::c_char))
             .wrapping_add(strlen(otl_tags))
             .wrapping_add(32 as size_t);
-        cmap_name = new((len as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_char;
+        cmap_name = new((len as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+            as *mut ::core::ffi::c_char;
         if wmode != 0 {
             snprintf(
                 cmap_name,
@@ -2270,18 +1870,14 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
                 otl_tags,
             );
         }
-        *cmap_name.offset(len.wrapping_sub(1 as size_t) as isize) =
-            '\0' as i32 as ::core::ffi::c_char;
+        *cmap_name.offset(len.wrapping_sub(1 as size_t) as isize) = '\0' as i32 as ::core::ffi::c_char;
     } else {
         let mut len_0: size_t = 0;
         len_0 = strlen(map_name)
-            .wrapping_add(strlen(
-                b"-UCS4-H\0" as *const u8 as *const ::core::ffi::c_char,
-            ))
+            .wrapping_add(strlen(b"-UCS4-H\0" as *const u8 as *const ::core::ffi::c_char))
             .wrapping_add(32 as size_t);
-        cmap_name = new((len_0 as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_char;
+        cmap_name = new((len_0 as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+            as *mut ::core::ffi::c_char;
         if wmode != 0 {
             snprintf(
                 cmap_name,
@@ -2299,25 +1895,20 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
                 ttc_index,
             );
         }
-        *cmap_name.offset(len_0.wrapping_sub(1 as size_t) as isize) =
-            '\0' as i32 as ::core::ffi::c_char;
+        *cmap_name.offset(len_0.wrapping_sub(1 as size_t) as isize) = '\0' as i32 as ::core::ffi::c_char;
     }
     cmap_id = CMap_cache_find(cmap_name);
     if cmap_id >= 0 as ::core::ffi::c_int {
         free(cmap_name as *mut ::core::ffi::c_void);
         if dpx_conf.verbose_level > VERBOSE_LEVEL_MIN {
-            pdf_message!(
-                b"otf_cmap>> Found at cmap_id=%d.\n\0" as *const u8 as *const ::core::ffi::c_char,
-                cmap_id,
-            );
+            pdf_message!(b"otf_cmap>> Found at cmap_id=%d.\n\0" as *const u8 as *const ::core::ffi::c_char, cmap_id,);
         }
         return cmap_id;
     }
     if dpx_conf.verbose_level > VERBOSE_LEVEL_MIN {
         pdf_message!(b"\n\0" as *const u8 as *const ::core::ffi::c_char);
         pdf_message!(
-            b"otf_cmap>> Creating Unicode charmap for font=\"%s\" layout=\"%s\"\n\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"otf_cmap>> Creating Unicode charmap for font=\"%s\" layout=\"%s\"\n\0" as *const u8 as *const ::core::ffi::c_char,
             map_name,
             if !otl_tags.is_null() {
                 otl_tags
@@ -2342,8 +1933,7 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
     }
     if sfont.is_null() {
         pdf_warning!(
-            b"Could not open OpenType/TrueType/dfont font file \"%s\"\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Could not open OpenType/TrueType/dfont font file \"%s\"\0" as *const u8 as *const ::core::ffi::c_char,
             map_name,
         );
         free(cmap_name as *mut ::core::ffi::c_void);
@@ -2355,8 +1945,7 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
             offset = ttc_read_offset(sfont, ttc_index as SFNT_ULONG);
             if offset == 0 as SFNT_ULONG {
                 pdf_warning!(
-                    b"Offset=0 reurned for font=%s, TTC_index=%d\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Offset=0 reurned for font=%s, TTC_index=%d\0" as *const u8 as *const ::core::ffi::c_char,
                     map_name,
                     ttc_index,
                 );
@@ -2374,8 +1963,7 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
         }
         _ => {
             pdf_warning!(
-                b"Not a OpenType/TrueType/TTC font?: %s\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Not a OpenType/TrueType/TTC font?: %s\0" as *const u8 as *const ::core::ffi::c_char,
                 map_name,
             );
             free(cmap_name as *mut ::core::ffi::c_void);
@@ -2385,10 +1973,7 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
         }
     }
     if sfnt_read_table_directory(sfont, offset) < 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Could not read OpenType/TrueType table directory.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Could not read OpenType/TrueType table directory.\0" as *const u8 as *const ::core::ffi::c_char,);
         free(cmap_name as *mut ::core::ffi::c_void);
         sfnt_close(sfont);
         crate::backend::runtime::input_close(handle);
@@ -2398,9 +1983,7 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
     maxp = tt_read_maxp_table(sfont);
     num_glyphs = (*maxp).numGlyphs as uint16_t;
     free(maxp as *mut ::core::ffi::c_void);
-    GIDToCIDMap = new((num_glyphs as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<uint16_t>() as usize)
-        as uint32_t) as *mut uint16_t;
+    GIDToCIDMap = new((num_glyphs as uint32_t as usize).wrapping_mul(::core::mem::size_of::<uint16_t>() as usize) as uint32_t) as *mut uint16_t;
     memset(
         GIDToCIDMap as *mut ::core::ffi::c_void,
         0 as ::core::ffi::c_int,
@@ -2411,21 +1994,14 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
         let mut gid: card16 = 0;
         offset = sfnt_find_table_pos(sfont, b"CFF \0" as *const u8 as *const ::core::ffi::c_char);
         if offset == 0 as SFNT_ULONG {
-            pdf_warning!(
-                b"PS OpenType but no \"CFF \" table.. Maybe variable font? (not supported)\0"
-                    as *const u8 as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"PS OpenType but no \"CFF \" table.. Maybe variable font? (not supported)\0" as *const u8 as *const ::core::ffi::c_char,);
             free(cmap_name as *mut ::core::ffi::c_void);
             free(GIDToCIDMap as *mut ::core::ffi::c_void);
             sfnt_close(sfont);
             crate::backend::runtime::input_close(handle);
             return -(1 as ::core::ffi::c_int);
         }
-        cffont = cff_open(
-            (*sfont).handle,
-            offset as ::core::ffi::c_int,
-            0 as ::core::ffi::c_int,
-        );
+        cffont = cff_open((*sfont).handle, offset as ::core::ffi::c_int, 0 as ::core::ffi::c_int);
         if cffont.is_null() {
             free(cmap_name as *mut ::core::ffi::c_void);
             free(GIDToCIDMap as *mut ::core::ffi::c_void);
@@ -2443,11 +2019,7 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
                 gid = gid.wrapping_add(1);
             }
         } else {
-            if cff_dict_known(
-                (*cffont).topdict,
-                b"ROS\0" as *const u8 as *const ::core::ffi::c_char,
-            ) == 0
-            {
+            if cff_dict_known((*cffont).topdict, b"ROS\0" as *const u8 as *const ::core::ffi::c_char) == 0 {
                 csi.registry = strdup(b"Adobe\0" as *const u8 as *const ::core::ffi::c_char);
                 csi.ordering = strdup(b"Identity\0" as *const u8 as *const ::core::ffi::c_char);
                 csi.supplement = 0 as ::core::ffi::c_int;
@@ -2522,10 +2094,7 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
                     sfont,
                 ) < 0 as ::core::ffi::c_int
                 {
-                    pdf_warning!(
-                        b"GSUB feature vrt2/vert not found.\0" as *const u8
-                            as *const ::core::ffi::c_char,
-                    );
+                    pdf_warning!(b"GSUB feature vrt2/vert not found.\0" as *const u8 as *const ::core::ffi::c_char,);
                     otl_gsub_release(gsub_vert);
                     gsub_vert = ::core::ptr::null_mut::<otl_gsub>();
                 } else {
@@ -2551,8 +2120,7 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
             gsub_list = otl_gsub_new();
             if otl_gsub_add_feat_list(gsub_list, otl_tags, sfont) < 0 as ::core::ffi::c_int {
                 pdf_warning!(
-                    b"Reading GSUB feature table(s) failed for \"%s\"\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Reading GSUB feature table(s) failed for \"%s\"\0" as *const u8 as *const ::core::ffi::c_char,
                     otl_tags,
                 );
             } else {
@@ -2567,12 +2135,8 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
         CMap_set_wmode(cmap, wmode);
         CMap_add_codespacerange(cmap, LRANGE_MIN.as_ptr(), LRANGE_MAX.as_ptr(), 4 as size_t);
         CMap_set_CIDSysInfo(cmap, &raw mut csi);
-        map_base = new((num_glyphs as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<int32_t>() as usize)
-            as uint32_t) as *mut int32_t;
-        map_sub = new((num_glyphs as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<int32_t>() as usize)
-            as uint32_t) as *mut int32_t;
+        map_base = new((num_glyphs as uint32_t as usize).wrapping_mul(::core::mem::size_of::<int32_t>() as usize) as uint32_t) as *mut int32_t;
+        map_sub = new((num_glyphs as uint32_t as usize).wrapping_mul(::core::mem::size_of::<int32_t>() as usize) as uint32_t) as *mut int32_t;
         gid_1 = 0 as uint32_t;
         while gid_1 < num_glyphs as uint32_t {
             *map_base.offset(gid_1 as isize) = -(1 as ::core::ffi::c_int) as int32_t;
@@ -2615,18 +2179,14 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
         tt_cmap_release(ttcmap);
         if !otl_tags.is_null() {
             let mut tounicode: *mut CMap = ::core::ptr::null_mut::<CMap>();
-            let mut tounicode_name: *mut ::core::ffi::c_char =
-                ::core::ptr::null_mut::<::core::ffi::c_char>();
+            let mut tounicode_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
             let mut tounicode_id: ::core::ffi::c_int = 0;
             let mut name_len: size_t = 0;
             name_len = strlen(map_name)
-                .wrapping_add(strlen(
-                    b"-UCS32-Add\0" as *const u8 as *const ::core::ffi::c_char,
-                ))
+                .wrapping_add(strlen(b"-UCS32-Add\0" as *const u8 as *const ::core::ffi::c_char))
                 .wrapping_add(32 as size_t);
-            tounicode_name = new((name_len as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t) as *mut ::core::ffi::c_char;
+            tounicode_name = new((name_len as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+                as *mut ::core::ffi::c_char;
             snprintf(
                 tounicode_name,
                 name_len,
@@ -2634,8 +2194,7 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
                 map_name,
                 ttc_index,
             );
-            *tounicode_name.offset(name_len.wrapping_sub(1 as size_t) as isize) =
-                '\0' as i32 as ::core::ffi::c_char;
+            *tounicode_name.offset(name_len.wrapping_sub(1 as size_t) as isize) = '\0' as i32 as ::core::ffi::c_char;
             tounicode_id = CMap_cache_find(tounicode_name);
             if tounicode_id >= 0 as ::core::ffi::c_int {
                 tounicode = CMap_cache_get(tounicode_id);
@@ -2644,20 +2203,9 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
                 CMap_set_name(tounicode, tounicode_name);
                 CMap_set_type(tounicode, CMAP_TYPE_TO_UNICODE);
                 CMap_set_wmode(tounicode, 0 as ::core::ffi::c_int);
-                CMap_add_codespacerange(
-                    tounicode,
-                    SRANGE_MIN.as_ptr(),
-                    SRANGE_MAX.as_ptr(),
-                    2 as size_t,
-                );
+                CMap_add_codespacerange(tounicode, SRANGE_MIN.as_ptr(), SRANGE_MAX.as_ptr(), 2 as size_t);
                 CMap_set_CIDSysInfo(tounicode, &raw mut CSI_UNICODE);
-                CMap_add_bfchar(
-                    tounicode,
-                    SRANGE_MIN.as_ptr(),
-                    2 as size_t,
-                    SRANGE_MAX.as_ptr(),
-                    2 as size_t,
-                );
+                CMap_add_bfchar(tounicode, SRANGE_MIN.as_ptr(), 2 as size_t, SRANGE_MAX.as_ptr(), 2 as size_t);
                 tounicode_id = CMap_cache_add(tounicode);
             }
             free(tounicode_name as *mut ::core::ffi::c_void);
@@ -2667,27 +2215,19 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
                 let mut src: [::core::ffi::c_uchar; 2] = [0; 2];
                 let mut dst: [::core::ffi::c_uchar; 4] = [0; 4];
                 if cid as ::core::ffi::c_int > 0 as ::core::ffi::c_int {
-                    let mut ch: int32_t =
-                        if UC_is_valid(*map_base.offset(gid_1 as isize)) as ::core::ffi::c_int != 0
-                        {
-                            *map_base.offset(gid_1 as isize)
-                        } else {
-                            *map_sub.offset(gid_1 as isize)
-                        };
+                    let mut ch: int32_t = if UC_is_valid(*map_base.offset(gid_1 as isize)) as ::core::ffi::c_int != 0 {
+                        *map_base.offset(gid_1 as isize)
+                    } else {
+                        *map_sub.offset(gid_1 as isize)
+                    };
                     if UC_is_valid(ch) {
-                        let mut p: *mut ::core::ffi::c_uchar =
-                            &raw mut dst as *mut ::core::ffi::c_uchar;
-                        let mut endptr: *mut ::core::ffi::c_uchar = (&raw mut dst
-                            as *mut ::core::ffi::c_uchar)
-                            .offset(4 as ::core::ffi::c_int as isize);
+                        let mut p: *mut ::core::ffi::c_uchar = &raw mut dst as *mut ::core::ffi::c_uchar;
+                        let mut endptr: *mut ::core::ffi::c_uchar =
+                            (&raw mut dst as *mut ::core::ffi::c_uchar).offset(4 as ::core::ffi::c_int as isize);
                         let mut len_1: size_t = 0;
-                        src[0 as ::core::ffi::c_int as usize] = (cid as ::core::ffi::c_int
-                            >> 8 as ::core::ffi::c_int
-                            & 0xff as ::core::ffi::c_int)
-                            as ::core::ffi::c_uchar;
-                        src[1 as ::core::ffi::c_int as usize] = (cid as ::core::ffi::c_int
-                            & 0xff as ::core::ffi::c_int)
-                            as ::core::ffi::c_uchar;
+                        src[0 as ::core::ffi::c_int as usize] =
+                            (cid as ::core::ffi::c_int >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+                        src[1 as ::core::ffi::c_int as usize] = (cid as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
                         len_1 = UC_UTF16BE_encode_char(ch, &raw mut p, endptr);
                         if len_1 > 0 as size_t {
                             CMap_add_bfchar(
@@ -2715,9 +2255,7 @@ pub unsafe extern "C-unwind" fn otf_load_Unicode_CMap(
 }
 #[unsafe(export_name = "__pdf_impl_otf_try_load_GID_to_CID_map")]
 pub unsafe extern "C-unwind" fn otf_try_load_GID_to_CID_map(
-    mut map_name: *const ::core::ffi::c_char,
-    mut ttc_index: uint32_t,
-    mut wmode: ::core::ffi::c_int,
+    mut map_name: *const ::core::ffi::c_char, mut ttc_index: uint32_t, mut wmode: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut cmap_id: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut sfont: *mut sfnt = ::core::ptr::null_mut::<sfnt>();
@@ -2729,9 +2267,8 @@ pub unsafe extern "C-unwind" fn otf_try_load_GID_to_CID_map(
         return -(1 as ::core::ffi::c_int);
     }
     len = strlen(map_name).wrapping_add(32 as size_t);
-    cmap_name = new((len as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
+    cmap_name =
+        new((len as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
     snprintf(
         cmap_name,
         len,
@@ -2746,8 +2283,7 @@ pub unsafe extern "C-unwind" fn otf_try_load_GID_to_CID_map(
         free(cmap_name as *mut ::core::ffi::c_void);
         if dpx_conf.verbose_level > VERBOSE_LEVEL_MIN {
             pdf_message!(
-                b"otf_cmap>> GID-to-CID mapping found at cmap_id=%d.\n\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"otf_cmap>> GID-to-CID mapping found at cmap_id=%d.\n\0" as *const u8 as *const ::core::ffi::c_char,
                 cmap_id,
             );
         }
@@ -2769,8 +2305,7 @@ pub unsafe extern "C-unwind" fn otf_try_load_GID_to_CID_map(
     }
     if sfont.is_null() {
         pdf_warning!(
-            b"Could not open OpenType/TrueType/dfont font file \"%s\"\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Could not open OpenType/TrueType/dfont font file \"%s\"\0" as *const u8 as *const ::core::ffi::c_char,
             map_name,
         );
         free(cmap_name as *mut ::core::ffi::c_void);
@@ -2782,8 +2317,7 @@ pub unsafe extern "C-unwind" fn otf_try_load_GID_to_CID_map(
             offset = ttc_read_offset(sfont, ttc_index as SFNT_ULONG);
             if offset == 0 as SFNT_ULONG {
                 pdf_warning!(
-                    b"Invalid TTC index for font \"%s\": %d\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Invalid TTC index for font \"%s\": %d\0" as *const u8 as *const ::core::ffi::c_char,
                     map_name,
                     ttc_index,
                 );
@@ -2801,8 +2335,7 @@ pub unsafe extern "C-unwind" fn otf_try_load_GID_to_CID_map(
         }
         _ => {
             pdf_warning!(
-                b"Not a OpenType/TrueType/TTC font?: %s\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Not a OpenType/TrueType/TTC font?: %s\0" as *const u8 as *const ::core::ffi::c_char,
                 map_name,
             );
             sfnt_close(sfont);
@@ -2813,8 +2346,7 @@ pub unsafe extern "C-unwind" fn otf_try_load_GID_to_CID_map(
     }
     if sfnt_read_table_directory(sfont, offset) < 0 as ::core::ffi::c_int {
         pdf_warning!(
-            b"Could not read OpenType/TrueType table directory: %s\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Could not read OpenType/TrueType table directory: %s\0" as *const u8 as *const ::core::ffi::c_char,
             map_name,
         );
         sfnt_close(sfont);
@@ -2843,20 +2375,13 @@ pub unsafe extern "C-unwind" fn otf_try_load_GID_to_CID_map(
         free(maxp as *mut ::core::ffi::c_void);
         offset = sfnt_find_table_pos(sfont, b"CFF \0" as *const u8 as *const ::core::ffi::c_char);
         if offset == 0 as SFNT_ULONG {
-            pdf_warning!(
-                b"PS OpenType but no \"CFF \" table.. Maybe variable font? (not supported)\0"
-                    as *const u8 as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"PS OpenType but no \"CFF \" table.. Maybe variable font? (not supported)\0" as *const u8 as *const ::core::ffi::c_char,);
             free(cmap_name as *mut ::core::ffi::c_void);
             sfnt_close(sfont);
             crate::backend::runtime::input_close(handle);
             return -(1 as ::core::ffi::c_int);
         }
-        cffont = cff_open(
-            (*sfont).handle,
-            offset as ::core::ffi::c_int,
-            0 as ::core::ffi::c_int,
-        );
+        cffont = cff_open((*sfont).handle, offset as ::core::ffi::c_int, 0 as ::core::ffi::c_int);
         if !cffont.is_null() && (*cffont).flag & FONTTYPE_CIDFONT != 0 {
             let mut cmap: *mut CMap = ::core::ptr::null_mut::<CMap>();
             let mut gid: uint16_t = 0;
@@ -2866,11 +2391,7 @@ pub unsafe extern "C-unwind" fn otf_try_load_GID_to_CID_map(
                 ordering: ::core::ptr::null_mut::<::core::ffi::c_char>(),
                 supplement: 0 as ::core::ffi::c_int,
             };
-            if cff_dict_known(
-                (*cffont).topdict,
-                b"ROS\0" as *const u8 as *const ::core::ffi::c_char,
-            ) == 0
-            {
+            if cff_dict_known((*cffont).topdict, b"ROS\0" as *const u8 as *const ::core::ffi::c_char) == 0 {
                 csi.registry = strdup(b"Adobe\0" as *const u8 as *const ::core::ffi::c_char);
                 csi.ordering = strdup(b"Identity\0" as *const u8 as *const ::core::ffi::c_char);
                 csi.supplement = 0 as ::core::ffi::c_int;
@@ -2896,9 +2417,8 @@ pub unsafe extern "C-unwind" fn otf_try_load_GID_to_CID_map(
                 ) as ::core::ffi::c_int;
             }
             cff_read_charsets(cffont);
-            GIDToCIDMap = new((num_glyphs as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<uint16_t>() as usize)
-                as uint32_t) as *mut uint16_t;
+            GIDToCIDMap =
+                new((num_glyphs as uint32_t as usize).wrapping_mul(::core::mem::size_of::<uint16_t>() as usize) as uint32_t) as *mut uint16_t;
             memset(
                 GIDToCIDMap as *mut ::core::ffi::c_void,
                 0 as ::core::ffi::c_int,
@@ -2911,12 +2431,8 @@ pub unsafe extern "C-unwind" fn otf_try_load_GID_to_CID_map(
             CMap_set_wmode(cmap, wmode);
             CMap_add_codespacerange(
                 cmap,
-                (&raw const csrange as *const ::core::ffi::c_uchar)
-                    .offset(0 as ::core::ffi::c_int as isize)
-                    as *const ::core::ffi::c_uchar,
-                (&raw const csrange as *const ::core::ffi::c_uchar)
-                    .offset(2 as ::core::ffi::c_int as isize)
-                    as *const ::core::ffi::c_uchar,
+                (&raw const csrange as *const ::core::ffi::c_uchar).offset(0 as ::core::ffi::c_int as isize) as *const ::core::ffi::c_uchar,
+                (&raw const csrange as *const ::core::ffi::c_uchar).offset(2 as ::core::ffi::c_int as isize) as *const ::core::ffi::c_uchar,
                 2 as size_t,
             );
             CMap_set_CIDSysInfo(cmap, &raw mut csi);
@@ -2925,18 +2441,12 @@ pub unsafe extern "C-unwind" fn otf_try_load_GID_to_CID_map(
                 let mut src: [::core::ffi::c_uchar; 2] = [0; 2];
                 let mut dst: [::core::ffi::c_uchar; 2] = [0; 2];
                 src[0 as ::core::ffi::c_int as usize] =
-                    (gid as ::core::ffi::c_int >> 8 as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
-                src[1 as ::core::ffi::c_int as usize] = (gid as ::core::ffi::c_int
-                    & 0xff as ::core::ffi::c_int)
-                    as ::core::ffi::c_uchar;
-                dst[0 as ::core::ffi::c_int as usize] =
-                    (*GIDToCIDMap.offset(gid as isize) as ::core::ffi::c_int
-                        >> 8 as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+                    (gid as ::core::ffi::c_int >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+                src[1 as ::core::ffi::c_int as usize] = (gid as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+                dst[0 as ::core::ffi::c_int as usize] = (*GIDToCIDMap.offset(gid as isize) as ::core::ffi::c_int >> 8 as ::core::ffi::c_int
+                    & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
                 dst[1 as ::core::ffi::c_int as usize] =
-                    (*GIDToCIDMap.offset(gid as isize) as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+                    (*GIDToCIDMap.offset(gid as isize) as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
                 CMap_add_bfchar(
                     cmap,
                     &raw mut src as *mut ::core::ffi::c_uchar,
@@ -2950,8 +2460,7 @@ pub unsafe extern "C-unwind" fn otf_try_load_GID_to_CID_map(
             if dpx_conf.verbose_level > VERBOSE_LEVEL_MIN {
                 pdf_message!(b"\n\0" as *const u8 as *const ::core::ffi::c_char);
                 pdf_message!(
-                    b"otf_cmap>> Creating GID-to-CID mapping for font=\"%s\"\n\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"otf_cmap>> Creating GID-to-CID mapping for font=\"%s\"\n\0" as *const u8 as *const ::core::ffi::c_char,
                     map_name,
                 );
             }
@@ -2973,16 +2482,8 @@ pub unsafe extern "C-unwind" fn otf_try_load_GID_to_CID_map(
     return cmap_id;
 }
 unsafe extern "C" {
-    fn memcpy(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_void;
-    fn memset(
-        __b: *mut ::core::ffi::c_void,
-        __c: ::core::ffi::c_int,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memcpy(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __n: size_t) -> *mut ::core::ffi::c_void;
+    fn memset(__b: *mut ::core::ffi::c_void, __c: ::core::ffi::c_int, __len: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -2995,10 +2496,7 @@ pub struct otl_gsub {
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_tt_cmap_read(
-    mut sfont: *mut sfnt,
-    mut platform: USHORT,
-    mut encoding: USHORT,
-    _result: *mut *mut tt_cmap,
+    mut sfont: *mut sfnt, mut platform: USHORT, mut encoding: USHORT, _result: *mut *mut tt_cmap,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_cmap_read(sfont, platform, encoding) }) {
         Ok(value) => {
@@ -3021,11 +2519,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_cmap_release(mut cmap: *mut tt_cmap) -> 
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_cmap_lookup(
-    mut cmap: *mut tt_cmap,
-    mut cc: SFNT_ULONG,
-    _result: *mut USHORT,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_cmap_lookup(mut cmap: *mut tt_cmap, mut cc: SFNT_ULONG, _result: *mut USHORT) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_cmap_lookup(cmap, cc) }) {
         Ok(value) => {
             unsafe {
@@ -3038,15 +2532,10 @@ pub unsafe extern "C" fn __pdf_entry_tt_cmap_lookup(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_otf_create_ToUnicode_stream(
-    mut font_name: *const ::core::ffi::c_char,
-    mut ttc_index: uint32_t,
-    mut basefont: *const ::core::ffi::c_char,
-    mut used_chars: *const ::core::ffi::c_char,
-    _result: *mut *mut pdf_obj,
+    mut font_name: *const ::core::ffi::c_char, mut ttc_index: uint32_t, mut basefont: *const ::core::ffi::c_char,
+    mut used_chars: *const ::core::ffi::c_char, _result: *mut *mut pdf_obj,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        otf_create_ToUnicode_stream(font_name, ttc_index, basefont, used_chars)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { otf_create_ToUnicode_stream(font_name, ttc_index, basefont, used_chars) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -3058,15 +2547,10 @@ pub unsafe extern "C" fn __pdf_entry_otf_create_ToUnicode_stream(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_otf_load_Unicode_CMap(
-    mut map_name: *const ::core::ffi::c_char,
-    mut ttc_index: uint32_t,
-    mut otl_tags: *const ::core::ffi::c_char,
-    mut wmode: ::core::ffi::c_int,
+    mut map_name: *const ::core::ffi::c_char, mut ttc_index: uint32_t, mut otl_tags: *const ::core::ffi::c_char, mut wmode: ::core::ffi::c_int,
     _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        otf_load_Unicode_CMap(map_name, ttc_index, otl_tags, wmode)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { otf_load_Unicode_CMap(map_name, ttc_index, otl_tags, wmode) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -3078,14 +2562,9 @@ pub unsafe extern "C" fn __pdf_entry_otf_load_Unicode_CMap(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_otf_try_load_GID_to_CID_map(
-    mut map_name: *const ::core::ffi::c_char,
-    mut ttc_index: uint32_t,
-    mut wmode: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut map_name: *const ::core::ffi::c_char, mut ttc_index: uint32_t, mut wmode: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        otf_try_load_GID_to_CID_map(map_name, ttc_index, wmode)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { otf_try_load_GID_to_CID_map(map_name, ttc_index, wmode) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);

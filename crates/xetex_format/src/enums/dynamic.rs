@@ -83,12 +83,7 @@ impl<T: Copy + std::fmt::Debug> DynamicEnumResolver<T> {
     ///
     /// Besides creating the resolver type, this populates the symbol table with
     /// the symbols defined by this enum.
-    fn build(
-        version: FormatVersion,
-        symbols: &mut SymbolTable,
-        cat: SymbolCategory,
-        items: &[DynamicEnumItemDescription<T>],
-    ) -> Result<Self> {
+    fn build(version: FormatVersion, symbols: &mut SymbolTable, cat: SymbolCategory, items: &[DynamicEnumItemDescription<T>]) -> Result<Self> {
         let mut cur_val = -1;
         let mut values = BTreeMap::new();
 
@@ -107,19 +102,13 @@ impl<T: Copy + std::fmt::Debug> DynamicEnumResolver<T> {
                 DynamicEnumValueSource::ScaledSymbol(sym, f, d) => f * symbols.lookup(sym) + d,
             };
 
-            ensure!(
-                next_val >= cur_val,
-                "dynamic enum values must be nondecreasing"
-            );
+            ensure!(next_val >= cur_val, "dynamic enum values must be nondecreasing");
 
             cur_val = next_val;
             symbols.add(cat, item.symbol_name.to_owned(), cur_val)?;
 
             if let Some(v) = item.absval {
-                ensure!(
-                    values.insert(cur_val, v).is_none(),
-                    "duplicated dynamic enum variant value"
-                );
+                ensure!(values.insert(cur_val, v).is_none(), "duplicated dynamic enum variant value");
             }
         }
 

@@ -24,11 +24,7 @@ unsafe extern "C" {
     pub fn ttbc_global_engine_enter(api: *mut c_void) -> *mut c_void;
     pub fn ttbc_global_engine_exit();
     pub fn setjmp(env: *mut c_void) -> c_int;
-    pub fn tt_run_engine(
-        dump_name: *const c_char,
-        input_file_name: *const c_char,
-        build_date: libc::time_t,
-    ) -> super::xetex_xetexd::tt_history_t;
+    pub fn tt_run_engine(dump_name: *const c_char, input_file_name: *const c_char, build_date: libc::time_t) -> super::xetex_xetexd::tt_history_t;
 }
 
 #[unsafe(export_name = "tectonic_rust_tt_xetex_set_int_variable")]
@@ -53,20 +49,12 @@ pub unsafe extern "C" fn tt_xetex_set_int_variable(var_name: *const c_char, valu
 }
 
 #[unsafe(export_name = "tectonic_rust_tt_xetex_set_string_variable")]
-pub unsafe extern "C" fn tt_xetex_set_string_variable(
-    var_name: *const c_char,
-    value: *const c_char,
-) -> c_int {
+pub unsafe extern "C" fn tt_xetex_set_string_variable(var_name: *const c_char, value: *const c_char) -> c_int {
     1
 }
 
 #[unsafe(export_name = "tectonic_rust_tt_engine_xetex_main")]
-pub unsafe extern "C" fn tt_engine_xetex_main(
-    api: *mut c_void,
-    dump_name: *const c_char,
-    input_file_name: *const c_char,
-    build_date: u64,
-) -> c_int {
+pub unsafe extern "C" fn tt_engine_xetex_main(api: *mut c_void, dump_name: *const c_char, input_file_name: *const c_char, build_date: u64) -> c_int {
     unsafe {
         let pdf_document = tt_pdf_document_begin();
         if pdf_document.is_null() {

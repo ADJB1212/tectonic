@@ -158,12 +158,7 @@ define_categories! {
 }
 
 impl SymbolTable {
-    pub fn add<S: Into<String>>(
-        &mut self,
-        cat: SymbolCategory,
-        name: S,
-        value: isize,
-    ) -> Result<()> {
+    pub fn add<S: Into<String>>(&mut self, cat: SymbolCategory, name: S, value: isize) -> Result<()> {
         let name = name.into();
 
         if let Some(prev) = self.by_name.insert(name.clone(), value) {

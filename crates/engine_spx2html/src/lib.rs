@@ -23,8 +23,8 @@ mod specials;
 mod templating;
 
 use self::{
-    assets::Assets, emission::EmittingState, finalization::FinalizingState, fonts::FontEnsemble,
-    initialization::InitializationState, specials::Special,
+    assets::Assets, emission::EmittingState, finalization::FinalizingState, fonts::FontEnsemble, initialization::InitializationState,
+    specials::Special,
 };
 
 /// An engine that converts SPX to HTML.
@@ -128,12 +128,7 @@ impl Spx2HtmlEngine {
     /// Before calling this function, you must explicitly specify the output
     /// mode by calling either [`Self::do_not_emit_files`] or
     /// [`Self::output_base`]. If you do not, this function will panic.
-    pub fn process_to_filesystem(
-        &mut self,
-        hooks: &mut dyn DriverHooks,
-        status: &mut dyn StatusBackend,
-        spx: &str,
-    ) -> Result<()> {
+    pub fn process_to_filesystem(&mut self, hooks: &mut dyn DriverHooks, status: &mut dyn StatusBackend, spx: &str) -> Result<()> {
         let mut input = hooks.io().input_open_name(spx, status).must_exist()?;
 
         let out_base = match self.output {
@@ -180,9 +175,7 @@ struct Common<'a> {
 
 impl<'a> EngineState<'a> {
     pub fn new(
-        hooks: &'a mut dyn DriverHooks,
-        status: &'a mut dyn StatusBackend,
-        out_base: Option<&'a Path>,
+        hooks: &'a mut dyn DriverHooks, status: &'a mut dyn StatusBackend, out_base: Option<&'a Path>,
         precomputed_assets: Option<&'a AssetSpecification>,
     ) -> Self {
         Self {
@@ -280,27 +273,15 @@ impl XdvEvents for EngineState<'_> {
         }
     }
 
-    fn handle_text_and_glyphs(
-        &mut self,
-        font_num: TexFontNum,
-        text: &str,
-        _width: i32,
-        glyphs: &[u16],
-        x: &[i32],
-        y: &[i32],
-    ) -> Result<()> {
+    fn handle_text_and_glyphs(&mut self, font_num: TexFontNum, text: &str, _width: i32, glyphs: &[u16], x: &[i32], y: &[i32]) -> Result<()> {
         if self.in_endable_init() {
             self.state.ensure_initialized(&mut self.common)?;
         }
 
         match &mut self.state {
             State::Invalid => panic!("invalid spx2html state leaked"),
-            State::Initializing(s) => {
-                s.handle_text_and_glyphs(font_num, text, glyphs, x, y, &mut self.common)?
-            }
-            State::Emitting(s) => {
-                s.handle_text_and_glyphs(font_num, text, glyphs, x, y, &mut self.common)?
-            }
+            State::Initializing(s) => s.handle_text_and_glyphs(font_num, text, glyphs, x, y, &mut self.common)?,
+            State::Emitting(s) => s.handle_text_and_glyphs(font_num, text, glyphs, x, y, &mut self.common)?,
             State::Finalizing(s) => s.handle_text_and_glyphs(text, &mut self.common)?,
         }
 
@@ -308,40 +289,19 @@ impl XdvEvents for EngineState<'_> {
     }
 
     fn handle_define_native_font(
-        &mut self,
-        name: &str,
-        font_num: TexFontNum,
-        size: i32,
-        face_index: u32,
-        color_rgba: Option<u32>,
-        extend: Option<u32>,
-        slant: Option<u32>,
+        &mut self, name: &str, font_num: TexFontNum, size: i32, face_index: u32, color_rgba: Option<u32>, extend: Option<u32>, slant: Option<u32>,
         embolden: Option<u32>,
     ) -> Result<(), Self::Error> {
         match &mut self.state {
             State::Invalid => panic!("invalid spx2html state leaked"),
-            State::Initializing(s) => s.handle_define_native_font(
-                name,
-                font_num,
-                size,
-                face_index,
-                color_rgba,
-                extend,
-                slant,
-                embolden,
-                &mut self.common,
-            ),
+            State::Initializing(s) => {
+                s.handle_define_native_font(name, font_num, size, face_index, color_rgba, extend, slant, embolden, &mut self.common)
+            }
             _ => Ok(()),
         }
     }
 
-    fn handle_glyph_run(
-        &mut self,
-        font_num: TexFontNum,
-        glyphs: &[u16],
-        x: &[i32],
-        y: &[i32],
-    ) -> Result<(), Self::Error> {
+    fn handle_glyph_run(&mut self, font_num: TexFontNum, glyphs: &[u16], x: &[i32], y: &[i32]) -> Result<(), Self::Error> {
         self.state.ensure_initialized(&mut self.common)?;
 
         match &mut self.state {

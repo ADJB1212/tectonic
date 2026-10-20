@@ -23,11 +23,7 @@ pub unsafe extern "C" fn destroy_font_manager() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn findFontByName(
-    name: *const libc::c_char,
-    var: *mut libc::c_char,
-    size: f64,
-) -> RawPlatformFontRef {
+pub unsafe extern "C" fn findFontByName(name: *const libc::c_char, var: *mut libc::c_char, size: f64) -> RawPlatformFontRef {
     unsafe {
         let name = CStr::from_ptr(name);
         let var = if var.is_null() {
@@ -45,11 +41,7 @@ pub unsafe extern "C" fn findFontByName(
                 .unwrap_or(ptr::null_mut())
         });
         #[cfg(not(target_os = "macos"))]
-        FontManager::with_font_manager(|mgr| {
-            mgr.find_font(name, var, size)
-                .map(|pat| pat.as_ref().as_ptr())
-                .unwrap_or(ptr::null_mut())
-        })
+        FontManager::with_font_manager(|mgr| mgr.find_font(name, var, size).map(|pat| pat.as_ref().as_ptr()).unwrap_or(ptr::null_mut()))
     }
 }
 
@@ -60,9 +52,7 @@ pub extern "C" fn getReqEngine() -> libc::c_char {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn setReqEngine(engine: libc::c_char) {
-    FontManager::with_font_manager(|mgr| {
-        mgr.set_req_engine(Engine::try_from(engine as u8).unwrap())
-    })
+    FontManager::with_font_manager(|mgr| mgr.set_req_engine(Engine::try_from(engine as u8).unwrap()))
 }
 
 #[unsafe(no_mangle)]
@@ -81,9 +71,7 @@ pub unsafe extern "C" fn getDesignSize(font: XeTeXFont) -> f64 {
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ttxl_platfont_get_desc(font: RawPlatformFontRef) -> *const libc::c_char {
     match raw_to_rs(font) {
-        Some(font) => {
-            FontManager::with_font_manager(|mgr| mgr.get_platform_font_desc(&font).as_ptr())
-        }
+        Some(font) => FontManager::with_font_manager(|mgr| mgr.get_platform_font_desc(&font).as_ptr()),
         None => ptr::null_mut(),
     }
 }

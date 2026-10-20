@@ -41,8 +41,7 @@ mod inner {
 
         let mut sep = "cargo:include-path=";
 
-        let is_macos_external =
-            target_cfg!(target_os = "macos") && env::var("CARGO_FEATURE_EXTERNAL_HARFBUZZ").is_ok();
+        let is_macos_external = target_cfg!(target_os = "macos") && env::var("CARGO_FEATURE_EXTERNAL_HARFBUZZ").is_ok();
 
         dep.foreach_include_path(|p| {
             // HACK: On macOS, the default brew harfbuzz for some reason points into the harfbuzz
@@ -82,13 +81,9 @@ mod inner {
 
         if !test_file.exists() {
             eprintln!("error: no such file {}", test_file.display());
-            eprintln!(
-                "   if you have checked out from Git, you probably need to fetch submodules:"
-            );
+            eprintln!("   if you have checked out from Git, you probably need to fetch submodules:");
             eprintln!("       git submodule update --init");
-            eprintln!(
-                "   This is needed because we are attempting to compile a local copy of Harfbuzz."
-            );
+            eprintln!("   This is needed because we are attempting to compile a local copy of Harfbuzz.");
             std::process::exit(1);
         }
 
@@ -133,10 +128,7 @@ mod inner {
 
         let include_dir = PathBuf::from(env::var_os("OUT_DIR").unwrap());
 
-        print!(
-            "cargo:include-path={}",
-            include_dir.to_str().expect("non-string-friendly OUT_DIR")
-        );
+        print!("cargo:include-path={}", include_dir.to_str().expect("non-string-friendly OUT_DIR"));
 
         for item in graphite2_include_path.split(';') {
             print!(";{item}");

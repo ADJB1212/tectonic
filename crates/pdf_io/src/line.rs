@@ -2,11 +2,7 @@
 
 use std::mem::MaybeUninit;
 
-pub(crate) fn read_line(
-    buffer: &mut [MaybeUninit<u8>],
-    mut get: impl FnMut() -> Option<u8>,
-    mut unget: impl FnMut(u8),
-) -> Option<usize> {
+pub(crate) fn read_line(buffer: &mut [MaybeUninit<u8>], mut get: impl FnMut() -> Option<u8>, mut unget: impl FnMut(u8)) -> Option<usize> {
     if buffer.is_empty() {
         return None;
     }
@@ -73,24 +69,11 @@ mod tests {
 
     #[test]
     fn capacity_limits_do_not_consume_input() {
-        assert_eq!(
-            read_line(&mut [], || panic!("read"), |_| panic!("unread")),
-            None
-        );
-        assert_eq!(
-            read_line(
-                &mut [MaybeUninit::new(0xaa)],
-                || panic!("read"),
-                |_| panic!("unread")
-            ),
-            Some(0)
-        );
+        assert_eq!(read_line(&mut [], || panic!("read"), |_| panic!("unread")), None);
+        assert_eq!(read_line(&mut [MaybeUninit::new(0xaa)], || panic!("read"), |_| panic!("unread")), Some(0));
         let mut input = b"abc\n".iter().copied();
         let mut bytes = [MaybeUninit::new(0xaa); 3];
-        assert_eq!(
-            read_line(&mut bytes, || input.next(), |_| unreachable!()),
-            Some(2)
-        );
+        assert_eq!(read_line(&mut bytes, || input.next(), |_| unreachable!()), Some(2));
         let bytes = bytes.map(|byte| unsafe { byte.assume_init() });
         assert_eq!(bytes, [b'a', b'b', 0]);
         assert_eq!(input.next(), Some(b'c'));
@@ -102,10 +85,7 @@ mod tests {
         let mut input = b"abc\n".iter().copied();
         let length = read_line(&mut bytes, || input.next(), |_| unreachable!()).unwrap();
         assert_eq!(length, 3);
-        let initialized: Vec<u8> = bytes[..=length]
-            .iter()
-            .map(|byte| unsafe { byte.assume_init() })
-            .collect();
+        let initialized: Vec<u8> = bytes[..=length].iter().map(|byte| unsafe { byte.assume_init() }).collect();
         assert_eq!(initialized, b"abc\0");
     }
 }

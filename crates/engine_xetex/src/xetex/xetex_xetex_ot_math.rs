@@ -15,12 +15,7 @@ use std::ptr;
 use tectonic_bridge_harfbuzz::sys::hb_font_t;
 unsafe extern "C" {
     fn ttxl_get_hb_font(engine: XeTeXLayoutEngine) -> *mut hb_font_t;
-    fn getGlyphHeightDepth(
-        engine: XeTeXLayoutEngine,
-        glyph_id: u32,
-        height: *mut f32,
-        depth: *mut f32,
-    );
+    fn getGlyphHeightDepth(engine: XeTeXLayoutEngine, glyph_id: u32, height: *mut f32, depth: *mut f32);
     fn ttxl_font_get_point_size(font: XeTeXFont) -> f32;
     fn ttxl_font_points_to_units(font: XeTeXFont, points: f32) -> f32;
     fn ttxl_font_units_to_points(font: XeTeXFont, units: f32) -> f32;
@@ -73,8 +68,7 @@ pub const HB_OT_MATH_CONSTANT_STRETCH_STACK_GAP_BELOW_MIN: hb_ot_math_constant_t
 pub const HB_OT_MATH_CONSTANT_FRACTION_NUMERATOR_SHIFT_UP: hb_ot_math_constant_t = 32;
 pub const HB_OT_MATH_CONSTANT_FRACTION_NUMERATOR_DISPLAY_STYLE_SHIFT_UP: hb_ot_math_constant_t = 33;
 pub const HB_OT_MATH_CONSTANT_FRACTION_DENOMINATOR_SHIFT_DOWN: hb_ot_math_constant_t = 34;
-pub const HB_OT_MATH_CONSTANT_FRACTION_DENOMINATOR_DISPLAY_STYLE_SHIFT_DOWN: hb_ot_math_constant_t =
-    35;
+pub const HB_OT_MATH_CONSTANT_FRACTION_DENOMINATOR_DISPLAY_STYLE_SHIFT_DOWN: hb_ot_math_constant_t = 35;
 pub const HB_OT_MATH_CONSTANT_FRACTION_NUMERATOR_GAP_MIN: hb_ot_math_constant_t = 36;
 pub const HB_OT_MATH_CONSTANT_FRACTION_NUM_DISPLAY_STYLE_GAP_MIN: hb_ot_math_constant_t = 37;
 pub const HB_OT_MATH_CONSTANT_FRACTION_RULE_THICKNESS: hb_ot_math_constant_t = 38;
@@ -129,50 +123,26 @@ pub struct GlyphAssembly {
 }
 
 unsafe extern "C" {
-    fn hb_ot_math_get_constant(
-        font: *mut hb_font_t,
-        constant: hb_ot_math_constant_t,
-    ) -> hb_position_t;
+    fn hb_ot_math_get_constant(font: *mut hb_font_t, constant: hb_ot_math_constant_t) -> hb_position_t;
 
     fn hb_ot_math_get_glyph_variants(
-        font: *mut hb_font_t,
-        glyph: hb_codepoint_t,
-        direction: hb_direction_t,
-        start_offset: c_uint,
-        variants_count: *mut c_uint,
+        font: *mut hb_font_t, glyph: hb_codepoint_t, direction: hb_direction_t, start_offset: c_uint, variants_count: *mut c_uint,
         variants: *mut hb_ot_math_glyph_variant_t,
     ) -> c_uint;
 
     fn hb_ot_math_get_glyph_assembly(
-        font: *mut hb_font_t,
-        glyph: hb_codepoint_t,
-        direction: hb_direction_t,
-        start_offset: c_uint,
-        parts_count: *mut c_uint,
-        parts: *mut hb_ot_math_glyph_part_t,
-        italics_correction: *mut hb_position_t,
+        font: *mut hb_font_t, glyph: hb_codepoint_t, direction: hb_direction_t, start_offset: c_uint, parts_count: *mut c_uint,
+        parts: *mut hb_ot_math_glyph_part_t, italics_correction: *mut hb_position_t,
     ) -> c_uint;
 
-    fn hb_ot_math_get_glyph_italics_correction(
-        font: *mut hb_font_t,
-        glyph: hb_codepoint_t,
-    ) -> hb_position_t;
+    fn hb_ot_math_get_glyph_italics_correction(font: *mut hb_font_t, glyph: hb_codepoint_t) -> hb_position_t;
 
-    fn hb_ot_math_get_glyph_top_accent_attachment(
-        font: *mut hb_font_t,
-        glyph: hb_codepoint_t,
-    ) -> hb_position_t;
+    fn hb_ot_math_get_glyph_top_accent_attachment(font: *mut hb_font_t, glyph: hb_codepoint_t) -> hb_position_t;
 
-    fn hb_ot_math_get_min_connector_overlap(
-        font: *mut hb_font_t,
-        direction: hb_direction_t,
-    ) -> hb_position_t;
+    fn hb_ot_math_get_min_connector_overlap(font: *mut hb_font_t, direction: hb_direction_t) -> hb_position_t;
 
     fn hb_ot_math_get_glyph_kerning(
-        font: *mut hb_font_t,
-        glyph: hb_codepoint_t,
-        kern: hb_ot_math_kern_t,
-        correction_height: hb_position_t,
+        font: *mut hb_font_t, glyph: hb_codepoint_t, kern: hb_ot_math_kern_t, correction_height: hb_position_t,
     ) -> hb_position_t;
 }
 
@@ -323,13 +293,7 @@ pub unsafe extern "C" fn get_native_mathex_param(f: c_int, n: c_int) -> c_int {
 }
 
 #[unsafe(export_name = "get_ot_math_variant")]
-pub unsafe extern "C" fn get_ot_math_variant(
-    f: c_int,
-    g: c_int,
-    v: c_int,
-    adv: *mut i32,
-    horiz: c_int,
-) -> c_int {
+pub unsafe extern "C" fn get_ot_math_variant(f: c_int, g: c_int, v: c_int, adv: *mut i32, horiz: c_int) -> c_int {
     unsafe {
         let mut rval: hb_codepoint_t = g as hb_codepoint_t;
         *adv = -1;
@@ -338,24 +302,10 @@ pub unsafe extern "C" fn get_ot_math_variant(
             let engine = (*font_layout_engine.add(f as usize)) as XeTeXLayoutEngine;
             let font = getFont(engine);
             let hb_font = ttxl_get_hb_font(engine);
-            let mut variant: [hb_ot_math_glyph_variant_t; 1] = [hb_ot_math_glyph_variant_t {
-                glyph: 0,
-                advance: 0,
-            }];
+            let mut variant: [hb_ot_math_glyph_variant_t; 1] = [hb_ot_math_glyph_variant_t { glyph: 0, advance: 0 }];
             let mut count: c_uint = 1;
-            let direction = if horiz != 0 {
-                HB_DIRECTION_RTL
-            } else {
-                HB_DIRECTION_TTB
-            };
-            hb_ot_math_get_glyph_variants(
-                hb_font,
-                g as hb_codepoint_t,
-                direction,
-                v as c_uint,
-                &mut count,
-                variant.as_mut_ptr(),
-            );
+            let direction = if horiz != 0 { HB_DIRECTION_RTL } else { HB_DIRECTION_TTB };
+            hb_ot_math_get_glyph_variants(hb_font, g as hb_codepoint_t, direction, v as c_uint, &mut count, variant.as_mut_ptr());
 
             if count > 0 {
                 rval = variant[0].glyph;
@@ -375,11 +325,7 @@ pub unsafe extern "C" fn get_ot_assembly_ptr(f: c_int, g: c_int, horiz: c_int) -
         if (*font_area.add(f as usize)) == OTGR_FONT_FLAG as i32 {
             let engine = (*font_layout_engine.add(f as usize)) as XeTeXLayoutEngine;
             let hb_font = ttxl_get_hb_font(engine);
-            let direction = if horiz != 0 {
-                HB_DIRECTION_RTL
-            } else {
-                HB_DIRECTION_TTB
-            };
+            let direction = if horiz != 0 { HB_DIRECTION_RTL } else { HB_DIRECTION_TTB };
 
             let count = hb_ot_math_get_glyph_assembly(
                 hb_font,
@@ -394,18 +340,8 @@ pub unsafe extern "C" fn get_ot_assembly_ptr(f: c_int, g: c_int, horiz: c_int) -
             if count > 0 {
                 let a = xmalloc(std::mem::size_of::<GlyphAssembly>()) as *mut GlyphAssembly;
                 (*a).count = count;
-                (*a).parts =
-                    xmalloc((count as usize) * std::mem::size_of::<hb_ot_math_glyph_part_t>())
-                        as *mut hb_ot_math_glyph_part_t;
-                hb_ot_math_get_glyph_assembly(
-                    hb_font,
-                    g as hb_codepoint_t,
-                    direction,
-                    0,
-                    &mut (*a).count,
-                    (*a).parts,
-                    ptr::null_mut(),
-                );
+                (*a).parts = xmalloc((count as usize) * std::mem::size_of::<hb_ot_math_glyph_part_t>()) as *mut hb_ot_math_glyph_part_t;
+                hb_ot_math_get_glyph_assembly(hb_font, g as hb_codepoint_t, direction, 0, &mut (*a).count, (*a).parts, ptr::null_mut());
                 rval = a as *mut c_void;
             }
         }
@@ -522,20 +458,11 @@ const SUP_CMD: c_int = 0;
 const SUB_CMD: c_int = 1;
 
 #[unsafe(export_name = "get_ot_math_kern")]
-pub unsafe extern "C" fn get_ot_math_kern(
-    f: c_int,
-    g: c_int,
-    sf: c_int,
-    sg: c_int,
-    cmd: c_int,
-    shift_scaled: c_int,
-) -> c_int {
+pub unsafe extern "C" fn get_ot_math_kern(f: c_int, g: c_int, sf: c_int, sg: c_int, cmd: c_int, shift_scaled: c_int) -> c_int {
     unsafe {
         let mut rval: c_int = 0;
 
-        if (*font_area.add(f as usize)) == OTGR_FONT_FLAG as i32
-            && (*font_area.add(sf as usize)) == OTGR_FONT_FLAG as i32
-        {
+        if (*font_area.add(f as usize)) == OTGR_FONT_FLAG as i32 && (*font_area.add(sf as usize)) == OTGR_FONT_FLAG as i32 {
             let engine_f = (*font_layout_engine.add(f as usize)) as XeTeXLayoutEngine;
             let font = getFont(engine_f);
 
@@ -558,55 +485,27 @@ pub unsafe extern "C" fn get_ot_math_kern(
             let scale_factor = sf_size / f_size;
 
             if cmd == SUP_CMD {
-                let kern = getMathKernAt(
-                    f,
-                    g,
-                    shift - (scale_factor * (sg_depth as f32)) as c_int,
-                    HB_OT_MATH_KERN_TOP_RIGHT,
-                );
+                let kern = getMathKernAt(f, g, shift - (scale_factor * (sg_depth as f32)) as c_int, HB_OT_MATH_KERN_TOP_RIGHT);
 
                 let skern = getMathKernAt(sf, sg, -sg_depth, HB_OT_MATH_KERN_BOTTOM_LEFT);
                 let top_kern = kern + (scale_factor * (skern as f32)) as c_int;
 
                 let kern2 = getMathKernAt(f, g, g_height, HB_OT_MATH_KERN_TOP_RIGHT);
-                let skern2 = getMathKernAt(
-                    sf,
-                    sg,
-                    ((g_height - shift) as f32 / scale_factor) as c_int,
-                    HB_OT_MATH_KERN_BOTTOM_LEFT,
-                );
+                let skern2 = getMathKernAt(sf, sg, ((g_height - shift) as f32 / scale_factor) as c_int, HB_OT_MATH_KERN_BOTTOM_LEFT);
                 let bot_kern = kern2 + (scale_factor * (skern2 as f32)) as c_int;
 
-                rval = if top_kern > bot_kern {
-                    top_kern
-                } else {
-                    bot_kern
-                };
+                rval = if top_kern > bot_kern { top_kern } else { bot_kern };
             } else if cmd == SUB_CMD {
-                let kern = getMathKernAt(
-                    f,
-                    g,
-                    (scale_factor * (sg_height as f32)) as c_int - shift,
-                    HB_OT_MATH_KERN_BOTTOM_RIGHT,
-                );
+                let kern = getMathKernAt(f, g, (scale_factor * (sg_height as f32)) as c_int - shift, HB_OT_MATH_KERN_BOTTOM_RIGHT);
 
                 let skern = getMathKernAt(sf, sg, sg_height, HB_OT_MATH_KERN_TOP_LEFT);
                 let top_kern = kern + (scale_factor * (skern as f32)) as c_int;
 
                 let kern2 = getMathKernAt(f, g, -g_depth, HB_OT_MATH_KERN_BOTTOM_RIGHT);
-                let skern2 = getMathKernAt(
-                    sf,
-                    sg,
-                    ((shift - g_depth) as f32 / scale_factor) as c_int,
-                    HB_OT_MATH_KERN_TOP_LEFT,
-                );
+                let skern2 = getMathKernAt(sf, sg, ((shift - g_depth) as f32 / scale_factor) as c_int, HB_OT_MATH_KERN_TOP_LEFT);
                 let bot_kern = kern2 + (scale_factor * (skern2 as f32)) as c_int;
 
-                rval = if top_kern > bot_kern {
-                    top_kern
-                } else {
-                    bot_kern
-                };
+                rval = if top_kern > bot_kern { top_kern } else { bot_kern };
             } else {
                 panic!("unreachable math cmd");
             }
@@ -634,21 +533,14 @@ pub unsafe extern "C" fn ot_part_is_extender(a: *const GlyphAssembly, i: c_int) 
 }
 
 #[unsafe(export_name = "ot_part_start_connector")]
-pub unsafe extern "C" fn ot_part_start_connector(
-    f: c_int,
-    a: *const GlyphAssembly,
-    i: c_int,
-) -> c_int {
+pub unsafe extern "C" fn ot_part_start_connector(f: c_int, a: *const GlyphAssembly, i: c_int) -> c_int {
     unsafe {
         let mut rval = 0;
 
         if (*font_area.add(f as usize)) == OTGR_FONT_FLAG as i32 {
             let engine = (*font_layout_engine.add(f as usize)) as XeTeXLayoutEngine;
             let font = getFont(engine);
-            rval = D2Fix(ttxl_font_units_to_points(
-                font,
-                (*(*a).parts.add(i as usize)).start_connector_length as f32,
-            ) as f64);
+            rval = D2Fix(ttxl_font_units_to_points(font, (*(*a).parts.add(i as usize)).start_connector_length as f32) as f64);
         }
 
         rval
@@ -656,21 +548,14 @@ pub unsafe extern "C" fn ot_part_start_connector(
 }
 
 #[unsafe(export_name = "ot_part_end_connector")]
-pub unsafe extern "C" fn ot_part_end_connector(
-    f: c_int,
-    a: *const GlyphAssembly,
-    i: c_int,
-) -> c_int {
+pub unsafe extern "C" fn ot_part_end_connector(f: c_int, a: *const GlyphAssembly, i: c_int) -> c_int {
     unsafe {
         let mut rval = 0;
 
         if (*font_area.add(f as usize)) == OTGR_FONT_FLAG as i32 {
             let engine = (*font_layout_engine.add(f as usize)) as XeTeXLayoutEngine;
             let font = getFont(engine);
-            rval = D2Fix(ttxl_font_units_to_points(
-                font,
-                (*(*a).parts.add(i as usize)).end_connector_length as f32,
-            ) as f64);
+            rval = D2Fix(ttxl_font_units_to_points(font, (*(*a).parts.add(i as usize)).end_connector_length as f32) as f64);
         }
 
         rval
@@ -678,21 +563,14 @@ pub unsafe extern "C" fn ot_part_end_connector(
 }
 
 #[unsafe(export_name = "ot_part_full_advance")]
-pub unsafe extern "C" fn ot_part_full_advance(
-    f: c_int,
-    a: *const GlyphAssembly,
-    i: c_int,
-) -> c_int {
+pub unsafe extern "C" fn ot_part_full_advance(f: c_int, a: *const GlyphAssembly, i: c_int) -> c_int {
     unsafe {
         let mut rval = 0;
 
         if (*font_area.add(f as usize)) == OTGR_FONT_FLAG as i32 {
             let engine = (*font_layout_engine.add(f as usize)) as XeTeXLayoutEngine;
             let font = getFont(engine);
-            rval = D2Fix(ttxl_font_units_to_points(
-                font,
-                (*(*a).parts.add(i as usize)).full_advance as f32,
-            ) as f64);
+            rval = D2Fix(ttxl_font_units_to_points(font, (*(*a).parts.add(i as usize)).full_advance as f32) as f64);
         }
 
         rval

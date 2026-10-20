@@ -62,11 +62,7 @@ impl CachableBundle<'_, ItarFileIndex> for TestBundle {
         self.index.search(name)
     }
 
-    fn open_fileinfo(
-        &mut self,
-        info: &ItarFileInfo,
-        _: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn open_fileinfo(&mut self, info: &ItarFileInfo, _: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         self.requested();
         OpenResult::Ok(InputHandle::new_read_only(
             info.name(),
@@ -78,11 +74,7 @@ impl CachableBundle<'_, ItarFileIndex> for TestBundle {
 
 fn save_hash(root: &std::path::Path) {
     fs::create_dir_all(root.join("hashes")).unwrap();
-    fs::write(
-        root.join("hashes/cache-test"),
-        DigestData::zeros().to_string(),
-    )
-    .unwrap();
+    fs::write(root.join("hashes/cache-test"), DigestData::zeros().to_string()).unwrap();
     fs::write(root.join("hashes/cache-test.lock"), "0").unwrap();
 }
 
@@ -126,10 +118,7 @@ fn cache_only_does_not_download_missing_hash_or_index() {
     let bundle = TestBundle::default();
     let requests = bundle.requests.clone();
     let mut cache = BundleCache::new(Box::new(bundle), true, Some(root.path().into())).unwrap();
-    assert!(matches!(
-        cache.input_open_name("file.tex", &mut NoopStatusBackend {}),
-        OpenResult::Err(_)
-    ));
+    assert!(matches!(cache.input_open_name("file.tex", &mut NoopStatusBackend {}), OpenResult::Err(_)));
     assert_eq!(requests.get(), 0);
 }
 
@@ -139,22 +128,10 @@ fn loaded_index_is_reused_if_cached_index_is_removed() {
     let bundle = TestBundle::default();
     let requests = bundle.requests.clone();
     let mut cache = BundleCache::new(Box::new(bundle), false, Some(root.path().into())).unwrap();
-    drop(
-        cache
-            .input_open_name("file.tex", &mut NoopStatusBackend {})
-            .unwrap(),
-    );
+    drop(cache.input_open_name("file.tex", &mut NoopStatusBackend {}).unwrap());
     assert_eq!(requests.get(), 3);
 
-    fs::remove_file(
-        root.path()
-            .join(format!("data/{}.index", DigestData::zeros())),
-    )
-    .unwrap();
-    drop(
-        cache
-            .input_open_name("file.tex", &mut NoopStatusBackend {})
-            .unwrap(),
-    );
+    fs::remove_file(root.path().join(format!("data/{}.index", DigestData::zeros()))).unwrap();
+    drop(cache.input_open_name("file.tex", &mut NoopStatusBackend {}).unwrap());
     assert_eq!(requests.get(), 3);
 }

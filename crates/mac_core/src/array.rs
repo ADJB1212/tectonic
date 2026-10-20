@@ -12,14 +12,7 @@ impl<T: CoreType> CFArray<T> {
     /// Create a new, empty [`CFArray`].
     pub fn empty() -> CFArray<T> {
         // SAFETY: Valid to call with all null and zero length + default callbacks
-        let ptr = unsafe {
-            sys::CFArrayCreate(
-                ptr::null_mut(),
-                ptr::null_mut(),
-                0,
-                &sys::kCFTypeArrayCallBacks,
-            )
-        };
+        let ptr = unsafe { sys::CFArrayCreate(ptr::null_mut(), ptr::null_mut(), 0, &sys::kCFTypeArrayCallBacks) };
         let ptr = NonNull::new(ptr.cast_mut()).unwrap();
         // SAFETY: If non-null, pointer from CFArrayCreate is a new, owned CFArray.
         unsafe { CFArray::new_owned(ptr) }
@@ -63,8 +56,7 @@ impl<T: CoreType> CFArray<T> {
             panic!("Index {index} out of bounds for CFArray");
         }
         // SAFETY: Internal pointer is guaranteed valid. Index has been verified in-bounds.
-        let value =
-            unsafe { sys::CFArrayGetValueAtIndex(self.0.cast().as_ptr(), index as sys::CFIndex) };
+        let value = unsafe { sys::CFArrayGetValueAtIndex(self.0.cast().as_ptr(), index as sys::CFIndex) };
         let ptr = NonNull::new(value.cast_mut()).unwrap();
         // SAFETY: The returned value is a valid CFTypeRef for type T.
         //         new_borrowed calls CFRetain, giving us ownership of a new reference.

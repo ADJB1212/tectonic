@@ -6,9 +6,7 @@
 
 use tectonic_errors::prelude::*;
 
-use super::{
-    ArgKind, Command, CommandArgument, CommandBehavior, CommandPrimitive, PrimitiveExtraInit,
-};
+use super::{ArgKind, Command, CommandArgument, CommandBehavior, CommandPrimitive, PrimitiveExtraInit};
 use crate::{
     FormatVersion,
     enums::simple::*,
@@ -259,10 +257,8 @@ impl Command for ShorthandDef {
         const SKIP: CommandArgument = ShorthandDefCodes::Skip as CommandArgument;
         const MU_SKIP: CommandArgument = ShorthandDefCodes::MuSkip as CommandArgument;
         const TOKS: CommandArgument = ShorthandDefCodes::Tokens as CommandArgument;
-        const XETEX_MATH_CHAR_NUM: CommandArgument =
-            ShorthandDefCodes::XetexMathCharNum as CommandArgument;
-        const XETEX_MATH_CHAR: CommandArgument =
-            ShorthandDefCodes::XetexMathChar as CommandArgument;
+        const XETEX_MATH_CHAR_NUM: CommandArgument = ShorthandDefCodes::XetexMathCharNum as CommandArgument;
+        const XETEX_MATH_CHAR: CommandArgument = ShorthandDefCodes::XetexMathChar as CommandArgument;
 
         let s = match arg {
             CHAR => "chardef",

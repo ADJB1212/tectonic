@@ -60,20 +60,14 @@ pub(crate) fn decode_utf16be(bytes: &[u8]) -> Result<(i32, usize), DecodeError> 
             require(bytes, 4)?;
             let second = u16::from_be_bytes([bytes[2], bytes[3]]);
             // The legacy decoder masks the second word without validating its range.
-            Ok((
-                0x10000 + ((i32::from(first & 0x3ff) << 10) | i32::from(second & 0x3ff)),
-                4,
-            ))
+            Ok((0x10000 + ((i32::from(first & 0x3ff) << 10) | i32::from(second & 0x3ff)), 4))
         }
         0xdc00..=0xdfff => Err(DecodeError::UnexpectedLowSurrogate(first)),
         _ => Ok((i32::from(first), 2)),
     }
 }
 
-fn valid_string(
-    mut bytes: &[u8],
-    decode: impl Fn(&[u8]) -> Result<(i32, usize), DecodeError>,
-) -> bool {
+fn valid_string(mut bytes: &[u8], decode: impl Fn(&[u8]) -> Result<(i32, usize), DecodeError>) -> bool {
     if bytes.is_empty() {
         return false;
     }
@@ -96,10 +90,7 @@ pub(crate) fn is_valid_utf16be(bytes: &[u8]) -> bool {
 
 fn output(output: &mut [u8], length: usize) -> Result<&mut [u8], EncodeError> {
     let available = output.len();
-    output.get_mut(..length).ok_or(EncodeError::BufferTooSmall {
-        needed: length,
-        available,
-    })
+    output.get_mut(..length).ok_or(EncodeError::BufferTooSmall { needed: length, available })
 }
 
 pub(crate) fn encode_utf8(value: i32, buffer: &mut [u8]) -> Result<usize, EncodeError> {
@@ -131,11 +122,7 @@ pub(crate) fn encode_utf16be(value: i32, buffer: &mut [u8]) -> Result<usize, Enc
         bytes[2..].copy_from_slice(&(0xdc00 | (value & 0x3ff) as u16).to_be_bytes());
         Ok(4)
     } else {
-        let value = if (0..=0xffff).contains(&value) {
-            value as u16
-        } else {
-            0xfffd
-        };
+        let value = if (0..=0xffff).contains(&value) { value as u16 } else { 0xfffd };
         output(buffer, 2)?.copy_from_slice(&value.to_be_bytes());
         Ok(2)
     }
@@ -147,9 +134,7 @@ mod tests {
 
     #[test]
     fn round_trips_unicode_boundaries() {
-        for value in [
-            0, 0x7e, 0x7f, 0x80, 0x7ff, 0x800, 0xd7ff, 0xe000, 0xffff, 0x10000, 0x10ffff,
-        ] {
+        for value in [0, 0x7e, 0x7f, 0x80, 0x7ff, 0x800, 0xd7ff, 0xe000, 0xffff, 0x10000, 0x10ffff] {
             let mut bytes = [0; 6];
             let length = encode_utf8(value, &mut bytes).unwrap();
             assert_eq!(decode_utf8(&bytes[..length]), Ok((value, length)));
@@ -189,10 +174,7 @@ mod tests {
             &b"\xfc\x80\x80\x80\x80\x80"[..],
         ] {
             for length in 0..bytes.len() {
-                assert!(matches!(
-                    decode_utf8(&bytes[..length]),
-                    Err(DecodeError::Truncated { .. })
-                ));
+                assert!(matches!(decode_utf8(&bytes[..length]), Err(DecodeError::Truncated { .. })));
             }
         }
         for length in 0..4 {
@@ -203,14 +185,8 @@ mod tests {
         }
         assert_eq!(decode_utf8(&[0x80]), Err(DecodeError::InvalidLead(0x80)));
         assert_eq!(decode_utf8(&[0xff]), Err(DecodeError::InvalidLead(0xff)));
-        assert_eq!(
-            decode_utf8(&[0xc2, 0]),
-            Err(DecodeError::InvalidContinuation { offset: 1, byte: 0 })
-        );
-        assert_eq!(
-            decode_utf16be(&[0xdc, 0]),
-            Err(DecodeError::UnexpectedLowSurrogate(0xdc00))
-        );
+        assert_eq!(decode_utf8(&[0xc2, 0]), Err(DecodeError::InvalidContinuation { offset: 1, byte: 0 }));
+        assert_eq!(decode_utf16be(&[0xdc, 0]), Err(DecodeError::UnexpectedLowSurrogate(0xdc00)));
         assert!(!is_valid_utf8(&[0xed, 0xa0, 0x80]));
         assert!(!is_valid_utf8(&[0xf4, 0x90, 0x80, 0x80]));
         assert!(!is_valid_utf8(&[]));
@@ -235,10 +211,7 @@ mod tests {
             }
         }
         for value in [-1, 0xd800, 0xdfff, 0x110000, i32::MAX] {
-            assert_eq!(
-                encode_utf8(value, &mut [0; 4]),
-                Err(EncodeError::InvalidCodePoint(value))
-            );
+            assert_eq!(encode_utf8(value, &mut [0; 4]), Err(EncodeError::InvalidCodePoint(value)));
         }
     }
 }

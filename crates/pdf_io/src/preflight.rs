@@ -32,10 +32,7 @@ impl<'a> Page<'a> {
     }
 
     fn unsigned(&mut self, length: usize) -> Result<usize, ()> {
-        Ok(self
-            .take(length)?
-            .iter()
-            .fold(0, |value, byte| value * 256 + usize::from(*byte)))
+        Ok(self.take(length)?.iter().fold(0, |value, byte| value * 256 + usize::from(*byte)))
     }
 
     fn begin(&mut self) -> Result<(), ()> {
@@ -179,19 +176,11 @@ impl PageScanner {
 }
 
 pub(crate) fn clear_page_scanner() {
-    crate::compat::document::with_page_scanner(|scanner| {
-        *scanner.borrow_mut() = PageScanner::default()
-    });
+    crate::compat::document::with_page_scanner(|scanner| *scanner.borrow_mut() = PageScanner::default());
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn tt_pdf_scan_page(
-    handle: Option<InputId>,
-    start: u32,
-    end: u32,
-    xdv: i32,
-    output: *mut ScannedPage,
-) -> i32 {
+unsafe extern "C" fn tt_pdf_scan_page(handle: Option<InputId>, start: u32, end: u32, xdv: i32, output: *mut ScannedPage) -> i32 {
     unsafe {
         let Some(length) = end.checked_sub(start).filter(|&length| length > 0) else {
             return 0;
@@ -218,12 +207,7 @@ unsafe extern "C" fn tt_pdf_scan_page(
     }
 }
 
-fn preflight(
-    input: &mut (impl Read + Seek),
-    offsets: &[u32],
-    file_size: u32,
-    xdv: bool,
-) -> Result<bool, ()> {
+fn preflight(input: &mut (impl Read + Seek), offsets: &[u32], file_size: u32, xdv: bool) -> Result<bool, ()> {
     let mut bytes = Vec::new();
     for (index, &start) in offsets.iter().enumerate() {
         let end = offsets.get(index + 1).copied().unwrap_or(file_size);
@@ -232,16 +216,9 @@ fn preflight(
             return Err(());
         }
         bytes.resize(length, 0);
-        input
-            .seek(SeekFrom::Start(u64::from(start)))
-            .map_err(|_| ())?;
+        input.seek(SeekFrom::Start(u64::from(start))).map_err(|_| ())?;
         input.read_exact(&mut bytes).map_err(|_| ())?;
-        if !(Page {
-            bytes: &bytes,
-            position: 0,
-        })
-        .eligible(xdv)?
-        {
+        if !(Page { bytes: &bytes, position: 0 }).eligible(xdv)? {
             return Ok(false);
         }
     }
@@ -249,29 +226,18 @@ fn preflight(
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn tt_pdf_preflight_pages(
-    handle: Option<InputId>,
-    offsets: *const u32,
-    count: usize,
-    file_size: u32,
-    xdv: i32,
-) -> i32 {
+unsafe extern "C" fn tt_pdf_preflight_pages(handle: Option<InputId>, offsets: *const u32, count: usize, file_size: u32, xdv: i32) -> i32 {
     unsafe {
         if count == 0 {
             return 1;
         }
         let offsets = slice::from_raw_parts(offsets, count);
-        CoreBridgeState::with_global_state(|state| {
-            match preflight(
-                state.get_input(handle.expect("open DVI handle")),
-                offsets,
-                file_size,
-                xdv != 0,
-            ) {
+        CoreBridgeState::with_global_state(
+            |state| match preflight(state.get_input(handle.expect("open DVI handle")), offsets, file_size, xdv != 0) {
                 Ok(eligible) => i32::from(eligible),
                 Err(()) => -1,
-            }
-        })
+            },
+        )
     }
 }
 
@@ -321,10 +287,7 @@ mod tests {
         assert_eq!(scanner.bytes, page(&expected));
         assert_eq!(scanner.specials.len(), payloads.len());
         for (span, payload) in scanner.specials.iter().zip(payloads) {
-            assert_eq!(
-                &scanner.bytes[span.offset..span.offset + span.length],
-                payload
-            );
+            assert_eq!(&scanner.bytes[span.offset..span.offset + span.length], payload);
         }
     }
 
@@ -382,22 +345,8 @@ mod tests {
         }
         commands.extend_from_slice(&[65, 138, 141, 142, 147, 152, 161, 166, 171, 234, 250, 251]);
         let bytes = page(&commands);
-        assert_eq!(
-            Page {
-                bytes: &bytes,
-                position: 0
-            }
-            .eligible(true),
-            Ok(true)
-        );
-        assert_eq!(
-            Page {
-                bytes: &bytes,
-                position: 0
-            }
-            .eligible(false),
-            Err(())
-        );
+        assert_eq!(Page { bytes: &bytes, position: 0 }.eligible(true), Ok(true));
+        assert_eq!(Page { bytes: &bytes, position: 0 }.eligible(false), Err(()));
     }
 
     #[test]
@@ -416,14 +365,7 @@ mod tests {
         commands.extend_from_slice(&[0, 1]);
         commands.extend_from_slice(&[239; 10]);
         let bytes = page(&commands);
-        assert_eq!(
-            Page {
-                bytes: &bytes,
-                position: 0
-            }
-            .eligible(true),
-            Ok(true)
-        );
+        assert_eq!(Page { bytes: &bytes, position: 0 }.eligible(true), Ok(true));
         for end in 0..bytes.len() {
             assert!(
                 Page {
@@ -450,14 +392,7 @@ mod tests {
                 commands.extend_from_slice(&length[4 - width..]);
                 commands.extend_from_slice(special);
                 let bytes = page(&commands);
-                assert_eq!(
-                    Page {
-                        bytes: &bytes,
-                        position: 0
-                    }
-                    .eligible(true),
-                    Ok(expected)
-                );
+                assert_eq!(Page { bytes: &bytes, position: 0 }.eligible(true), Ok(expected));
             }
         }
     }
@@ -471,32 +406,13 @@ mod tests {
         let second = bytes.len() as u32;
         bytes.extend_from_slice(&page(b"Second page"));
         let size = bytes.len() as u32;
-        assert_eq!(
-            preflight(&mut Cursor::new(&bytes), &[17, second], size, true),
-            Ok(true)
-        );
-        assert_eq!(
-            preflight(&mut Cursor::new(&bytes), &[], size, true),
-            Ok(true)
-        );
-        assert_eq!(
-            preflight(&mut Cursor::new(&bytes), &[second, 17], size, true),
-            Err(())
-        );
-        assert_eq!(
-            preflight(&mut Cursor::new(&bytes), &[17, size + 1], size, true),
-            Err(())
-        );
+        assert_eq!(preflight(&mut Cursor::new(&bytes), &[17, second], size, true), Ok(true));
+        assert_eq!(preflight(&mut Cursor::new(&bytes), &[], size, true), Ok(true));
+        assert_eq!(preflight(&mut Cursor::new(&bytes), &[second, 17], size, true), Err(()));
+        assert_eq!(preflight(&mut Cursor::new(&bytes), &[17, size + 1], size, true), Err(()));
         for opcode in [139, 247, 248, 249, 255] {
             let bytes = page(&[opcode]);
-            assert_eq!(
-                Page {
-                    bytes: &bytes,
-                    position: 0
-                }
-                .eligible(true),
-                Err(())
-            );
+            assert_eq!(Page { bytes: &bytes, position: 0 }.eligible(true), Err(()));
         }
     }
 }

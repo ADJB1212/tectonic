@@ -195,16 +195,10 @@ impl StatusBackend for TermcolorStatusBackend {
 
     fn note_highlighted(&mut self, before: &str, highlighted: &str, after: &str) {
         if self.chatter > ChatterLevel::Minimal {
-            let stream = if self.always_stderr {
-                &mut self.stderr
-            } else {
-                &mut self.stdout
-            };
+            let stream = if self.always_stderr { &mut self.stderr } else { &mut self.stdout };
 
             write!(stream, "{before}").expect("write failed");
-            stream
-                .set_color(&self.highlight_spec)
-                .expect("write failed");
+            stream.set_color(&self.highlight_spec).expect("write failed");
             write!(stream, "{highlighted}").expect("write failed");
             stream.reset().expect("write failed");
             writeln!(stream, "{after}").expect("write failed");
@@ -212,18 +206,10 @@ impl StatusBackend for TermcolorStatusBackend {
     }
 
     fn dump_error_logs(&mut self, output: &[u8]) {
-        tt_error_styled!(
-            self,
-            "==============================================================================="
-        );
+        tt_error_styled!(self, "===============================================================================");
 
-        self.stderr
-            .write_all(output)
-            .expect("write to stderr failed");
+        self.stderr.write_all(output).expect("write to stderr failed");
 
-        tt_error_styled!(
-            self,
-            "==============================================================================="
-        );
+        tt_error_styled!(self, "===============================================================================");
     }
 }

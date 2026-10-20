@@ -8,39 +8,23 @@ pub(crate) fn seek_relative(input: &mut impl Seek, offset: i32) -> Result<(), Pd
     input
         .seek(SeekFrom::Current(i64::from(offset)))
         .map(|_| ())
-        .map_err(|error| {
-            PdfError::io(
-                c"io:  An OS command failed that should not have.\n".to_owned(),
-                error,
-            )
-            .during(IoOperation::Seek)
-        })
+        .map_err(|error| PdfError::io(c"io:  An OS command failed that should not have.\n".to_owned(), error).during(IoOperation::Seek))
 }
 
 pub(crate) fn file_size(input: &mut impl Seek) -> Result<i32, PdfError> {
-    let size = input.seek(SeekFrom::End(0)).map_err(|error| {
-        PdfError::io(
-            c"io:  An OS command failed that should not have.\n".to_owned(),
-            error,
-        )
-        .during(IoOperation::Seek)
-    })?;
+    let size = input
+        .seek(SeekFrom::End(0))
+        .map_err(|error| PdfError::io(c"io:  An OS command failed that should not have.\n".to_owned(), error).during(IoOperation::Seek))?;
     let size = i32::try_from(size).map_err(|_| {
         PdfError::new(
             PdfErrorKind::Unsupported,
-            format_message(format_args!(
-                "ftell: file size {size} exceeds 0x7fffffff.\n"
-            )),
+            format_message(format_args!("ftell: file size {size} exceeds 0x7fffffff.\n")),
         )
         .at(size)
     })?;
-    input.rewind().map_err(|error| {
-        PdfError::io(
-            c"io:  An OS command failed that should not have.\n".to_owned(),
-            error,
-        )
-        .during(IoOperation::Seek)
-    })?;
+    input
+        .rewind()
+        .map_err(|error| PdfError::io(c"io:  An OS command failed that should not have.\n".to_owned(), error).during(IoOperation::Seek))?;
     Ok(size)
 }
 
@@ -51,21 +35,15 @@ pub(crate) enum FontKind {
     Type1,
 }
 
-pub(crate) fn read_array<const N: usize>(
-    input: &mut impl Read,
-    offset: u64,
-) -> Result<[u8; N], PdfError> {
+pub(crate) fn read_array<const N: usize>(input: &mut impl Read, offset: u64) -> Result<[u8; N], PdfError> {
     let mut bytes = [0; N];
     let mut consumed = 0;
     while consumed < N {
         match input.read(&mut bytes[consumed..]) {
             Ok(0) => {
-                return Err(PdfError::new(
-                    PdfErrorKind::MalformedInput,
-                    c"File ended prematurely\n".to_owned(),
-                )
-                .at(offset + consumed as u64)
-                .during(IoOperation::Read));
+                return Err(PdfError::new(PdfErrorKind::MalformedInput, c"File ended prematurely\n".to_owned())
+                    .at(offset + consumed as u64)
+                    .during(IoOperation::Read));
             }
             Ok(length) => consumed += length,
             Err(error) if error.kind() == std::io::ErrorKind::Interrupted => {}
@@ -80,11 +58,9 @@ pub(crate) fn read_array<const N: usize>(
 }
 
 pub(crate) fn probe_font(input: &mut (impl Read + Seek), kind: FontKind) -> Result<bool, PdfError> {
-    input.rewind().map_err(|error| {
-        PdfError::io(c"Invalid PDF input seek".to_owned(), error)
-            .at(0)
-            .during(IoOperation::Seek)
-    })?;
+    input
+        .rewind()
+        .map_err(|error| PdfError::io(c"Invalid PDF input seek".to_owned(), error).at(0).during(IoOperation::Seek))?;
     let mut bytes = [0; 21];
     let length = match kind {
         FontKind::Type1 => 21,
@@ -92,11 +68,9 @@ pub(crate) fn probe_font(input: &mut (impl Read + Seek), kind: FontKind) -> Resu
     };
     let result = input.read_exact(&mut bytes[..length]);
     // Header probes always restore the input, including after a short read.
-    input.rewind().map_err(|error| {
-        PdfError::io(c"Invalid PDF input seek".to_owned(), error)
-            .at(0)
-            .during(IoOperation::Seek)
-    })?;
+    input
+        .rewind()
+        .map_err(|error| PdfError::io(c"Invalid PDF input seek".to_owned(), error).at(0).during(IoOperation::Seek))?;
     match result {
         Ok(()) => Ok(match kind {
             FontKind::TrueType => matches!(&bytes[..4], b"true" | b"\0\x01\0\0" | b"ttcf"),
@@ -104,17 +78,14 @@ pub(crate) fn probe_font(input: &mut (impl Read + Seek), kind: FontKind) -> Resu
             FontKind::Type1 => {
                 bytes[0] == 0x80
                     && bytes[1] <= 3
-                    && (bytes[6..].starts_with(b"%!PS-AdobeFont")
-                        || bytes[6..].starts_with(b"%!FontType1")
-                        || bytes[6..].starts_with(b"%!PS"))
+                    && (bytes[6..].starts_with(b"%!PS-AdobeFont") || bytes[6..].starts_with(b"%!FontType1") || bytes[6..].starts_with(b"%!PS"))
             }
         }),
-        Err(error) if error.kind() == std::io::ErrorKind::UnexpectedEof => Err(PdfError::new(
-            PdfErrorKind::MalformedInput,
-            c"File ended prematurely\n".to_owned(),
-        )
-        .at(0)
-        .during(IoOperation::Read)),
+        Err(error) if error.kind() == std::io::ErrorKind::UnexpectedEof => {
+            Err(PdfError::new(PdfErrorKind::MalformedInput, c"File ended prematurely\n".to_owned())
+                .at(0)
+                .during(IoOperation::Read))
+        }
         Err(error) => Err(PdfError::io(c"File ended prematurely\n".to_owned(), error)
             .at(0)
             .during(IoOperation::Read)),
@@ -169,10 +140,7 @@ mod tests {
         let error = file_size(&mut Large).unwrap_err();
         assert_eq!(error.kind, PdfErrorKind::Unsupported);
         assert_eq!(error.offset, Some(0x80000000));
-        assert_eq!(
-            error.message.as_c_str(),
-            c"ftell: file size 2147483648 exceeds 0x7fffffff.\n"
-        );
+        assert_eq!(error.message.as_c_str(), c"ftell: file size 2147483648 exceeds 0x7fffffff.\n");
     }
 
     #[test]
@@ -183,16 +151,11 @@ mod tests {
                 Err(io::Error::new(io::ErrorKind::PermissionDenied, "denied"))
             }
         }
-        let error = read_array::<4>(&mut Failing, 17)
-            .unwrap_err()
-            .in_file(b"font\xff.otf");
+        let error = read_array::<4>(&mut Failing, 17).unwrap_err().in_file(b"font\xff.otf");
         assert_eq!(error.kind, PdfErrorKind::Io);
         assert_eq!(error.offset, Some(17));
         assert_eq!(error.file.as_deref(), Some(&b"font\xff.otf"[..]));
-        let source = std::error::Error::source(&error)
-            .unwrap()
-            .downcast_ref::<io::Error>()
-            .unwrap();
+        let source = std::error::Error::source(&error).unwrap().downcast_ref::<io::Error>().unwrap();
         assert_eq!(source.kind(), io::ErrorKind::PermissionDenied);
         let error = read_array::<4>(&mut Cursor::new(b"ab"), 10).unwrap_err();
         assert_eq!(error.kind, PdfErrorKind::MalformedInput);

@@ -19,13 +19,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 unsafe extern "C-unwind" {
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
     static mut dpx_conf: _dpx_conf;
@@ -33,43 +27,18 @@ unsafe extern "C-unwind" {
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
     fn tt_tfm_next_diagnostic(kind: *mut ::core::ffi::c_int) -> *const ::core::ffi::c_char;
     fn tt_tfm_open(
-        name: *const ::core::ffi::c_char,
-        must_exist: ::core::ffi::c_int,
-        verbose: ::core::ffi::c_int,
-        error: *mut *const ::core::ffi::c_char,
+        name: *const ::core::ffi::c_char, must_exist: ::core::ffi::c_int, verbose: ::core::ffi::c_int, error: *mut *const ::core::ffi::c_char,
     ) -> ::core::ffi::c_int;
     fn tt_tfm_close_all();
     fn tt_tfm_reset();
-    fn tt_tfm_get_fw_width(
-        font_id: ::core::ffi::c_int,
-        ch: int32_t,
-        error: *mut *const ::core::ffi::c_char,
-    ) -> int32_t;
-    fn tt_tfm_get_fw_height(
-        font_id: ::core::ffi::c_int,
-        ch: int32_t,
-        error: *mut *const ::core::ffi::c_char,
-    ) -> int32_t;
-    fn tt_tfm_get_fw_depth(
-        font_id: ::core::ffi::c_int,
-        ch: int32_t,
-        error: *mut *const ::core::ffi::c_char,
-    ) -> int32_t;
+    fn tt_tfm_get_fw_width(font_id: ::core::ffi::c_int, ch: int32_t, error: *mut *const ::core::ffi::c_char) -> int32_t;
+    fn tt_tfm_get_fw_height(font_id: ::core::ffi::c_int, ch: int32_t, error: *mut *const ::core::ffi::c_char) -> int32_t;
+    fn tt_tfm_get_fw_depth(font_id: ::core::ffi::c_int, ch: int32_t, error: *mut *const ::core::ffi::c_char) -> int32_t;
     fn tt_tfm_string_width(
-        font_id: ::core::ffi::c_int,
-        text: *const ::core::ffi::c_uchar,
-        length: ::core::ffi::c_uint,
-        error: *mut *const ::core::ffi::c_char,
+        font_id: ::core::ffi::c_int, text: *const ::core::ffi::c_uchar, length: ::core::ffi::c_uint, error: *mut *const ::core::ffi::c_char,
     ) -> int32_t;
-    fn tt_tfm_get_width(
-        font_id: ::core::ffi::c_int,
-        ch: int32_t,
-        error: *mut *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_double;
-    fn tt_tfm_get_design_size(
-        font_id: ::core::ffi::c_int,
-        error: *mut *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_double;
+    fn tt_tfm_get_width(font_id: ::core::ffi::c_int, ch: int32_t, error: *mut *const ::core::ffi::c_char) -> ::core::ffi::c_double;
+    fn tt_tfm_get_design_size(font_id: ::core::ffi::c_int, error: *mut *const ::core::ffi::c_char) -> ::core::ffi::c_double;
     fn tt_tfm_is_jfm(font_id: ::core::ffi::c_int) -> ::core::ffi::c_int;
     fn tt_tfm_exists(name: *const ::core::ffi::c_char) -> bool;
 }
@@ -119,13 +88,9 @@ pub unsafe extern "C-unwind" fn tfm_reset_global_state() {
     tt_tfm_reset();
 }
 #[unsafe(export_name = "__pdf_impl_tfm_open")]
-pub unsafe extern "C-unwind" fn tfm_open(
-    mut tfm_name: *const ::core::ffi::c_char,
-    mut must_exist: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn tfm_open(mut tfm_name: *const ::core::ffi::c_char, mut must_exist: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut error: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-    let mut id: ::core::ffi::c_int =
-        tt_tfm_open(tfm_name, must_exist, dpx_conf.verbose_level, &raw mut error);
+    let mut id: ::core::ffi::c_int = tt_tfm_open(tfm_name, must_exist, dpx_conf.verbose_level, &raw mut error);
     tfm_flush(error);
     return id;
 }
@@ -134,40 +99,28 @@ pub unsafe extern "C-unwind" fn tfm_close_all() {
     tt_tfm_close_all();
 }
 #[unsafe(export_name = "__pdf_impl_tfm_get_fw_width")]
-pub unsafe extern "C-unwind" fn tfm_get_fw_width(
-    mut font_id: ::core::ffi::c_int,
-    mut ch: int32_t,
-) -> fixword {
+pub unsafe extern "C-unwind" fn tfm_get_fw_width(mut font_id: ::core::ffi::c_int, mut ch: int32_t) -> fixword {
     let mut error: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut width: fixword = tt_tfm_get_fw_width(font_id, ch, &raw mut error) as fixword;
     tfm_flush(error);
     return width;
 }
 #[unsafe(export_name = "__pdf_impl_tfm_get_fw_height")]
-pub unsafe extern "C-unwind" fn tfm_get_fw_height(
-    mut font_id: ::core::ffi::c_int,
-    mut ch: int32_t,
-) -> fixword {
+pub unsafe extern "C-unwind" fn tfm_get_fw_height(mut font_id: ::core::ffi::c_int, mut ch: int32_t) -> fixword {
     let mut error: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut height: fixword = tt_tfm_get_fw_height(font_id, ch, &raw mut error) as fixword;
     tfm_flush(error);
     return height;
 }
 #[unsafe(export_name = "__pdf_impl_tfm_get_fw_depth")]
-pub unsafe extern "C-unwind" fn tfm_get_fw_depth(
-    mut font_id: ::core::ffi::c_int,
-    mut ch: int32_t,
-) -> fixword {
+pub unsafe extern "C-unwind" fn tfm_get_fw_depth(mut font_id: ::core::ffi::c_int, mut ch: int32_t) -> fixword {
     let mut error: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut depth: fixword = tt_tfm_get_fw_depth(font_id, ch, &raw mut error) as fixword;
     tfm_flush(error);
     return depth;
 }
 #[unsafe(export_name = "__pdf_impl_tfm_get_width")]
-pub unsafe extern "C-unwind" fn tfm_get_width(
-    mut font_id: ::core::ffi::c_int,
-    mut ch: int32_t,
-) -> ::core::ffi::c_double {
+pub unsafe extern "C-unwind" fn tfm_get_width(mut font_id: ::core::ffi::c_int, mut ch: int32_t) -> ::core::ffi::c_double {
     let mut error: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut width: ::core::ffi::c_double = tt_tfm_get_width(font_id, ch, &raw mut error);
     tfm_flush(error);
@@ -175,9 +128,7 @@ pub unsafe extern "C-unwind" fn tfm_get_width(
 }
 #[unsafe(export_name = "__pdf_impl_tfm_string_width")]
 pub unsafe extern "C-unwind" fn tfm_string_width(
-    mut font_id: ::core::ffi::c_int,
-    mut s: *const ::core::ffi::c_uchar,
-    mut len: ::core::ffi::c_uint,
+    mut font_id: ::core::ffi::c_int, mut s: *const ::core::ffi::c_uchar, mut len: ::core::ffi::c_uint,
 ) -> fixword {
     let mut error: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut width: fixword = tt_tfm_string_width(font_id, s, len, &raw mut error) as fixword;
@@ -185,9 +136,7 @@ pub unsafe extern "C-unwind" fn tfm_string_width(
     return width;
 }
 #[unsafe(export_name = "__pdf_impl_tfm_get_design_size")]
-pub unsafe extern "C-unwind" fn tfm_get_design_size(
-    mut font_id: ::core::ffi::c_int,
-) -> ::core::ffi::c_double {
+pub unsafe extern "C-unwind" fn tfm_get_design_size(mut font_id: ::core::ffi::c_int) -> ::core::ffi::c_double {
     let mut error: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut design: ::core::ffi::c_double = tt_tfm_get_design_size(font_id, &raw mut error);
     tfm_flush(error);
@@ -213,9 +162,7 @@ pub unsafe extern "C" fn __pdf_entry_tfm_reset_global_state() -> i32 {
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_tfm_open(
-    mut tfm_name: *const ::core::ffi::c_char,
-    mut must_exist: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut tfm_name: *const ::core::ffi::c_char, mut must_exist: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tfm_open(tfm_name, must_exist) }) {
         Ok(value) => {
@@ -238,11 +185,7 @@ pub unsafe extern "C" fn __pdf_entry_tfm_close_all() -> i32 {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tfm_get_fw_width(
-    mut font_id: ::core::ffi::c_int,
-    mut ch: int32_t,
-    _result: *mut fixword,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tfm_get_fw_width(mut font_id: ::core::ffi::c_int, mut ch: int32_t, _result: *mut fixword) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tfm_get_fw_width(font_id, ch) }) {
         Ok(value) => {
             unsafe {
@@ -254,11 +197,7 @@ pub unsafe extern "C" fn __pdf_entry_tfm_get_fw_width(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tfm_get_fw_height(
-    mut font_id: ::core::ffi::c_int,
-    mut ch: int32_t,
-    _result: *mut fixword,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tfm_get_fw_height(mut font_id: ::core::ffi::c_int, mut ch: int32_t, _result: *mut fixword) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tfm_get_fw_height(font_id, ch) }) {
         Ok(value) => {
             unsafe {
@@ -270,11 +209,7 @@ pub unsafe extern "C" fn __pdf_entry_tfm_get_fw_height(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tfm_get_fw_depth(
-    mut font_id: ::core::ffi::c_int,
-    mut ch: int32_t,
-    _result: *mut fixword,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tfm_get_fw_depth(mut font_id: ::core::ffi::c_int, mut ch: int32_t, _result: *mut fixword) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tfm_get_fw_depth(font_id, ch) }) {
         Ok(value) => {
             unsafe {
@@ -286,11 +221,7 @@ pub unsafe extern "C" fn __pdf_entry_tfm_get_fw_depth(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tfm_get_width(
-    mut font_id: ::core::ffi::c_int,
-    mut ch: int32_t,
-    _result: *mut ::core::ffi::c_double,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tfm_get_width(mut font_id: ::core::ffi::c_int, mut ch: int32_t, _result: *mut ::core::ffi::c_double) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tfm_get_width(font_id, ch) }) {
         Ok(value) => {
             unsafe {
@@ -303,10 +234,7 @@ pub unsafe extern "C" fn __pdf_entry_tfm_get_width(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_tfm_string_width(
-    mut font_id: ::core::ffi::c_int,
-    mut s: *const ::core::ffi::c_uchar,
-    mut len: ::core::ffi::c_uint,
-    _result: *mut fixword,
+    mut font_id: ::core::ffi::c_int, mut s: *const ::core::ffi::c_uchar, mut len: ::core::ffi::c_uint, _result: *mut fixword,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tfm_string_width(font_id, s, len) }) {
         Ok(value) => {
@@ -319,10 +247,7 @@ pub unsafe extern "C" fn __pdf_entry_tfm_string_width(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tfm_get_design_size(
-    mut font_id: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_double,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tfm_get_design_size(mut font_id: ::core::ffi::c_int, _result: *mut ::core::ffi::c_double) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tfm_get_design_size(font_id) }) {
         Ok(value) => {
             unsafe {
@@ -334,10 +259,7 @@ pub unsafe extern "C" fn __pdf_entry_tfm_get_design_size(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tfm_is_jfm(
-    mut font_id: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tfm_is_jfm(mut font_id: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tfm_is_jfm(font_id) }) {
         Ok(value) => {
             unsafe {
@@ -349,10 +271,7 @@ pub unsafe extern "C" fn __pdf_entry_tfm_is_jfm(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tfm_exists(
-    mut tfm_name: *const ::core::ffi::c_char,
-    _result: *mut bool,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tfm_exists(mut tfm_name: *const ::core::ffi::c_char, _result: *mut bool) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tfm_exists(tfm_name) }) {
         Ok(value) => {
             unsafe {

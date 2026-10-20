@@ -20,8 +20,7 @@ use std::sync::LazyLock;
 
 /// Singleton initialized instance of the compilation target info
 #[cfg(not(test))]
-pub static TARGET_CONFIG: LazyLock<TargetConfiguration> =
-    LazyLock::new(TargetConfiguration::default);
+pub static TARGET_CONFIG: LazyLock<TargetConfiguration> = LazyLock::new(TargetConfiguration::default);
 
 #[cfg(test)]
 pub static TARGET_CONFIG: LazyLock<TargetConfiguration> = LazyLock::new(|| TargetConfiguration {
@@ -67,9 +66,7 @@ impl Default for TargetConfiguration {
     /// [environment variables](https://doc.rust-lang.org/cargo/reference/environment-variables.html)
     fn default() -> Self {
         fn getenv(var: &'static str) -> String {
-            std::env::var(var)
-                .unwrap_or_else(|_| String::new())
-                .to_uppercase()
+            std::env::var(var).unwrap_or_else(|_| String::new()).to_uppercase()
         }
 
         TargetConfiguration {
@@ -342,29 +339,14 @@ mod tests {
 
         assert!(target_cfg!(all(target_arch = "testarch")));
         assert!(!target_cfg!(all(target_arch = "wrong")));
-        assert!(target_cfg!(all(
-            target_arch = "testarch",
-            target_os = "testos"
-        )));
-        assert!(!target_cfg!(all(
-            target_arch = "testarch",
-            target_os = "wrong"
-        )));
+        assert!(target_cfg!(all(target_arch = "testarch", target_os = "testos")));
+        assert!(!target_cfg!(all(target_arch = "testarch", target_os = "wrong")));
 
         assert!(target_cfg!(any(target_arch = "testarch")));
         assert!(!target_cfg!(any(target_arch = "wrong")));
-        assert!(target_cfg!(any(
-            target_arch = "testarch",
-            target_os = "testos"
-        )));
-        assert!(target_cfg!(any(
-            target_arch = "testarch",
-            target_os = "wrong"
-        )));
-        assert!(!target_cfg!(any(
-            target_arch = "wrong1",
-            target_os = "wrong2"
-        )));
+        assert!(target_cfg!(any(target_arch = "testarch", target_os = "testos")));
+        assert!(target_cfg!(any(target_arch = "testarch", target_os = "wrong")));
+        assert!(!target_cfg!(any(target_arch = "wrong1", target_os = "wrong2")));
     }
 
     /// Even deeper recursion.
@@ -373,10 +355,7 @@ mod tests {
         assert!(target_cfg!(all(not(target_arch = "wrong"))));
         assert!(!target_cfg!(all(not(target_arch = "testarch"))));
 
-        assert!(target_cfg!(all(
-            target_arch = "testarch",
-            not(target_os = "wrong")
-        )));
+        assert!(target_cfg!(all(target_arch = "testarch", not(target_os = "wrong"))));
 
         assert!(target_cfg!(all(
             any(target_arch = "testarch", target_os = "wrong"),

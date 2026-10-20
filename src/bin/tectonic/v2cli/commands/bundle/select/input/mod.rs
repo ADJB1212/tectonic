@@ -24,9 +24,7 @@ impl<'a> Input {
     }
 
     #[allow(clippy::type_complexity)]
-    pub fn iter_files(
-        &'a mut self,
-    ) -> Box<dyn Iterator<Item = Result<(String, Box<dyn Read + 'a>)>> + 'a> {
+    pub fn iter_files(&'a mut self) -> Box<dyn Iterator<Item = Result<(String, Box<dyn Read + 'a>)>> + 'a> {
         match self {
             Self::Directory(x) => Box::new(x.iter_files()),
             Self::Tarball(x) => Box::new(x.iter_files()),

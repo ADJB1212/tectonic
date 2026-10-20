@@ -114,9 +114,7 @@ impl Language {
     /// Convert the provided string into a language tag
     pub fn from_string(str: &str) -> Language {
         // SAFETY: The provided string is not used past this call, and not read past len
-        Language(unsafe {
-            sys::hb_language_from_string(str.as_ptr().cast(), str.len() as libc::c_int)
-        })
+        Language(unsafe { sys::hb_language_from_string(str.as_ptr().cast(), str.len() as libc::c_int) })
     }
 
     /// Same as [`Self::from_string`], but accepts a C-string
@@ -253,15 +251,7 @@ impl BufferMut<'_> {
     /// Add UTF-16 codepoints to the contents of the buffer.
     pub fn add_utf16(&mut self, text: &[u16]) {
         // SAFETY: Internal pointer guaranteed valid. Provided text isn't held past this call.
-        unsafe {
-            sys::hb_buffer_add_utf16(
-                self.as_ptr_mut(),
-                text.as_ptr(),
-                text.len() as libc::c_int,
-                0,
-                text.len() as libc::c_int,
-            )
-        }
+        unsafe { sys::hb_buffer_add_utf16(self.as_ptr_mut(), text.as_ptr(), text.len() as libc::c_int, 0, text.len() as libc::c_int) }
     }
 
     /// Set properties that haven't been set manually based on the current contents of the buffer.
@@ -439,9 +429,7 @@ impl Face {
     /// of all font data. Retrieving all table won't work for faces created this way by default.
     pub fn new_tables<T: Fn(FaceRef<'_>, Tag) -> Option<Blob> + 'static>(f: T) -> Face {
         unsafe extern "C" fn get_table<T: Fn(FaceRef<'_>, Tag) -> Option<Blob> + 'static>(
-            face: *mut sys::hb_face_t,
-            tag: sys::hb_tag_t,
-            user_data: *mut (),
+            face: *mut sys::hb_face_t, tag: sys::hb_tag_t, user_data: *mut (),
         ) -> *mut sys::hb_blob_t {
             // SAFETY: Precondition of this function - it is only called with a T user-data
             let f = unsafe { &*user_data.cast::<T>() };
@@ -458,13 +446,7 @@ impl Face {
         // SAFETY: The created face will only call get_table in valid ways. The passed closure will
         //         be deallocated as its same type by `dealloc` when the face is destroyed, the
         //         static bound ensures it may live however long that is.
-        let face = unsafe {
-            sys::hb_face_create_for_tables(
-                get_table::<T>,
-                Box::into_raw(Box::new(f)).cast(),
-                Some(dealloc::<T>),
-            )
-        };
+        let face = unsafe { sys::hb_face_create_for_tables(get_table::<T>, Box::into_raw(Box::new(f)).cast(), Some(dealloc::<T>)) };
 
         Face(NonNull::new(face).unwrap())
     }
@@ -545,14 +527,7 @@ impl FontMut<'_> {
         //         invariants for ensuring all functions is contains will be valid. Data will be
         //         deallocated as its same type by `dealloc` when the font is destroyed, or when a
         //         new set of functions is set. The static bound ensures it may live that long.
-        unsafe {
-            sys::hb_font_set_funcs(
-                self.as_ptr_mut(),
-                funcs,
-                Box::into_raw(Box::new(data)).cast(),
-                Some(dealloc::<T>),
-            )
-        }
+        unsafe { sys::hb_font_set_funcs(self.as_ptr_mut(), funcs, Box::into_raw(Box::new(data)).cast(), Some(dealloc::<T>)) }
     }
 }
 
@@ -587,10 +562,7 @@ impl Drop for Font {
 }
 
 /// A borrowed reference to a [`ShapePlan`]
-pub struct ShapePlanRef<'a>(
-    NonNull<sys::hb_shape_plan_t>,
-    PhantomData<&'a sys::hb_shape_plan_t>,
-);
+pub struct ShapePlanRef<'a>(NonNull<sys::hb_shape_plan_t>, PhantomData<&'a sys::hb_shape_plan_t>);
 
 impl ShapePlanRef<'_> {
     fn as_ptr(&self) -> *mut sys::hb_shape_plan_t {
@@ -622,12 +594,7 @@ impl ShapePlanMut<'_> {
     }
 
     /// Shape a buffer using the provided [`Font`] and [`Feature`]s
-    pub fn execute(
-        &mut self,
-        font: FontRef<'_>,
-        mut buffer: BufferMut<'_>,
-        features: &[Feature],
-    ) -> bool {
+    pub fn execute(&mut self, font: FontRef<'_>, mut buffer: BufferMut<'_>, features: &[Feature]) -> bool {
         // SAFETY: Internal pointer guaranteed valid. The pointers from font and buffer are
         //         similarly guaranteed valid. Features will not be read past len and will not be
         //         used after this call.
@@ -660,12 +627,7 @@ impl ShapePlan {
     ///
     /// The shaper list will be the list of shapers to try. If `None`, then Harfbuzz will attempt
     /// to locate a default shaper to use.
-    pub fn new(
-        face: FaceRef<'_>,
-        props: &SegmentProperties,
-        features: &[Feature],
-        shaper_list: Option<&[*const libc::c_char]>,
-    ) -> ShapePlan {
+    pub fn new(face: FaceRef<'_>, props: &SegmentProperties, features: &[Feature], shaper_list: Option<&[*const libc::c_char]>) -> ShapePlan {
         if let Some(list) = shaper_list {
             assert!(list.last().unwrap().is_null());
         }
@@ -687,12 +649,7 @@ impl ShapePlan {
     /// Create a new shape plan for a given [`Face`], [`Feature`]s, and [`SegmentProperties`]. This
     /// shape plan is cached by Harfbuzz, which can make creation faster if the same arguments
     /// are expected to be used frequently.
-    pub fn new_cached(
-        face: FaceRef<'_>,
-        props: &SegmentProperties,
-        features: &[Feature],
-        shaper_list: Option<&[*const libc::c_char]>,
-    ) -> ShapePlan {
+    pub fn new_cached(face: FaceRef<'_>, props: &SegmentProperties, features: &[Feature], shaper_list: Option<&[*const libc::c_char]>) -> ShapePlan {
         if let Some(list) = shaper_list {
             assert!(list.last().unwrap().is_null());
         }
@@ -788,33 +745,18 @@ mod tests {
             font.as_mut().set_funcs(get_font_funcs(), ft_face);
 
             let mut buffer = Buffer::new();
-            buffer
-                .as_mut()
-                .add_utf16(&"Hello World!".encode_utf16().collect::<Vec<_>>());
+            buffer.as_mut().add_utf16(&"Hello World!".encode_utf16().collect::<Vec<_>>());
             buffer.as_mut().guess_segment_properties();
 
-            let plan1 = ShapePlan::new(
-                face.as_ref(),
-                &buffer.as_ref().get_segment_properties(),
-                &[],
-                None,
-            );
-            let plan2 = ShapePlan::new_cached(
-                face.as_ref(),
-                &buffer.as_ref().get_segment_properties(),
-                &[],
-                None,
-            );
+            let plan1 = ShapePlan::new(face.as_ref(), &buffer.as_ref().get_segment_properties(), &[], None);
+            let plan2 = ShapePlan::new_cached(face.as_ref(), &buffer.as_ref().get_segment_properties(), &[], None);
 
             for mut plan in [plan1, plan2] {
                 assert_eq!(plan.as_ref().get_shaper(), Some(c"ot"));
 
                 assert!(plan.as_mut().execute(font.as_ref(), buffer.as_mut(), &[]));
 
-                assert_eq!(
-                    buffer.as_ref().get_script().get_horizontal_direction(),
-                    Direction::Ltr
-                );
+                assert_eq!(buffer.as_ref().get_script().get_horizontal_direction(), Direction::Ltr);
 
                 let glyph_info = buffer.as_ref().glyph_info().unwrap();
                 assert_eq!(glyph_info.len(), 12);
@@ -837,9 +779,7 @@ mod tests {
                 assert_eq!(glyph_pos[1].y_offset, 0);
 
                 buffer.as_mut().reset();
-                buffer
-                    .as_mut()
-                    .add_utf16(&"Hello World!".encode_utf16().collect::<Vec<_>>());
+                buffer.as_mut().add_utf16(&"Hello World!".encode_utf16().collect::<Vec<_>>());
                 buffer.as_mut().guess_segment_properties();
             }
         }

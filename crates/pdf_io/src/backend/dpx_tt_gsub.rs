@@ -17,13 +17,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 use crate::unicode::is_valid as UC_is_valid;
 
@@ -48,11 +42,7 @@ mod performance_tests {
             range: core::ptr::null_mut(),
         };
         for gid in 0..=u16::MAX {
-            let expected = if gid % 7 == 0 && gid / 7 < 8192 {
-                i32::from(gid / 7)
-            } else {
-                -1
-            };
+            let expected = if gid % 7 == 0 && gid / 7 < 8192 { i32::from(gid / 7) } else { -1 };
             assert_eq!(unsafe { clt_lookup_coverage(&mut coverage, gid) }, expected);
         }
         coverage.format = 2;
@@ -72,50 +62,23 @@ mod performance_tests {
     }
 }
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
-    fn strchr(__s: *const ::core::ffi::c_char, __c: ::core::ffi::c_int)
-    -> *mut ::core::ffi::c_char;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-    fn strcpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
-    fn strncpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_char;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
+    fn strchr(__s: *const ::core::ffi::c_char, __c: ::core::ffi::c_int) -> *mut ::core::ffi::c_char;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    fn strcpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+    fn strncpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char, __n: size_t) -> *mut ::core::ffi::c_char;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
-    fn ttstub_input_seek(
-        handle: rust_input_handle_t,
-        offset: ssize_t,
-        whence: ::core::ffi::c_int,
-    ) -> size_t;
+    fn ttstub_input_seek(handle: rust_input_handle_t, offset: ssize_t, whence: ::core::ffi::c_int) -> size_t;
     #[link_name = "__pdf_impl_CMap_add_bfchar"]
     fn CMap_add_bfchar(
-        cmap: *mut CMap,
-        src: *const ::core::ffi::c_uchar,
-        srcdim: size_t,
-        dest: *const ::core::ffi::c_uchar,
-        destdim: size_t,
+        cmap: *mut CMap, src: *const ::core::ffi::c_uchar, srcdim: size_t, dest: *const ::core::ffi::c_uchar, destdim: size_t,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_otl_new_opt"]
     fn otl_new_opt() -> *mut otl_opt;
     #[link_name = "__pdf_impl_otl_release_opt"]
     fn otl_release_opt(opt: *mut otl_opt);
     #[link_name = "__pdf_impl_otl_parse_optstring"]
-    fn otl_parse_optstring(
-        opt: *mut otl_opt,
-        optstr: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
+    fn otl_parse_optstring(opt: *mut otl_opt, optstr: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_otl_match_optrule"]
     fn otl_match_optrule(opt: *mut otl_opt, tag: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_tt_get_signed_byte"]
@@ -136,11 +99,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_renew"]
     fn renew(p: *mut ::core::ffi::c_void, size: uint32_t) -> *mut ::core::ffi::c_void;
     #[link_name = "__pdf_impl_UC_UTF16BE_encode_char"]
-    fn UC_UTF16BE_encode_char(
-        ucv: int32_t,
-        dstpp: *mut *mut ::core::ffi::c_uchar,
-        endptr: *mut ::core::ffi::c_uchar,
-    ) -> size_t;
+    fn UC_UTF16BE_encode_char(ucv: int32_t, dstpp: *mut *mut ::core::ffi::c_uchar, endptr: *mut ::core::ffi::c_uchar) -> size_t;
 }
 pub type __darwin_size_t = usize;
 pub type __darwin_ssize_t = isize;
@@ -425,10 +384,7 @@ unsafe extern "C-unwind" fn mfree(mut ptr: *mut ::core::ffi::c_void) -> *mut ::c
     return NULL;
 }
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
@@ -439,10 +395,7 @@ pub const OTL_GSUB_TYPE_ALTERNATE: ::core::ffi::c_int = 3;
 pub const OTL_GSUB_TYPE_LIGATURE: ::core::ffi::c_int = 4;
 pub const OTL_GSUB_TYPE_ESUBST: ::core::ffi::c_int = 7;
 pub const VERBOSE_LEVEL_MIN: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn clt_read_record(
-    mut rec: *mut clt_record,
-    mut sfont: *mut sfnt,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn clt_read_record(mut rec: *mut clt_record, mut sfont: *mut sfnt) -> ::core::ffi::c_int {
     let mut i: ::core::ffi::c_int = 0;
     if !(!rec.is_null() && !sfont.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
@@ -460,10 +413,7 @@ unsafe extern "C-unwind" fn clt_read_record(
     (*rec).offset = tt_get_unsigned_pair((*sfont).handle) as Offset;
     return 6 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn clt_read_range(
-    mut rec: *mut clt_range,
-    mut sfont: *mut sfnt,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn clt_read_range(mut rec: *mut clt_range, mut sfont: *mut sfnt) -> ::core::ffi::c_int {
     if !(!rec.is_null() && !sfont.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
@@ -476,10 +426,7 @@ unsafe extern "C-unwind" fn clt_read_range(
     (*rec).StartCoverageIndex = tt_get_unsigned_pair((*sfont).handle);
     return 6 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn clt_read_record_list(
-    mut list: *mut clt_record_list,
-    mut sfont: *mut sfnt,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn clt_read_record_list(mut list: *mut clt_record_list, mut sfont: *mut sfnt) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0;
     let mut i: ::core::ffi::c_int = 0;
     if !(!list.is_null() && !sfont.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -494,9 +441,8 @@ unsafe extern "C-unwind" fn clt_read_record_list(
     if (*list).count as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
         (*list).record = ::core::ptr::null_mut::<clt_record>();
     } else {
-        (*list).record = new(((*list).count as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<clt_record>() as usize)
-            as uint32_t) as *mut clt_record;
+        (*list).record =
+            new(((*list).count as uint32_t as usize).wrapping_mul(::core::mem::size_of::<clt_record>() as usize) as uint32_t) as *mut clt_record;
         i = 0 as ::core::ffi::c_int;
         while i < (*list).count as ::core::ffi::c_int {
             len += clt_read_record((*list).record.offset(i as isize) as *mut clt_record, sfont);
@@ -511,10 +457,7 @@ unsafe extern "C-unwind" fn clt_release_record_list(mut list: *mut clt_record_li
         (*list).count = 0 as USHORT;
     }
 }
-unsafe extern "C-unwind" fn clt_read_number_list(
-    mut list: *mut clt_number_list,
-    mut sfont: *mut sfnt,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn clt_read_number_list(mut list: *mut clt_number_list, mut sfont: *mut sfnt) -> ::core::ffi::c_int {
     let mut i: ::core::ffi::c_int = 0;
     if !(!list.is_null() && !sfont.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
@@ -527,9 +470,7 @@ unsafe extern "C-unwind" fn clt_read_number_list(
     if (*list).count as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
         (*list).value = ::core::ptr::null_mut::<USHORT>();
     } else {
-        (*list).value = new(((*list).count as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<USHORT>() as usize)
-            as uint32_t) as *mut USHORT;
+        (*list).value = new(((*list).count as uint32_t as usize).wrapping_mul(::core::mem::size_of::<USHORT>() as usize) as uint32_t) as *mut USHORT;
         i = 0 as ::core::ffi::c_int;
         while i < (*list).count as ::core::ffi::c_int {
             *(*list).value.offset(i as isize) = tt_get_unsigned_pair((*sfont).handle);
@@ -544,10 +485,7 @@ unsafe extern "C-unwind" fn clt_release_number_list(mut list: *mut clt_number_li
         (*list).count = 0 as USHORT;
     }
 }
-unsafe extern "C-unwind" fn clt_read_script_table(
-    mut tab: *mut clt_script_table,
-    mut sfont: *mut sfnt,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn clt_read_script_table(mut tab: *mut clt_script_table, mut sfont: *mut sfnt) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0;
     if !(!tab.is_null() && !sfont.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
@@ -566,10 +504,7 @@ unsafe extern "C-unwind" fn clt_release_script_table(mut tab: *mut clt_script_ta
         clt_release_record_list(&raw mut (*tab).LangSysRecord);
     }
 }
-unsafe extern "C-unwind" fn clt_read_langsys_table(
-    mut tab: *mut clt_langsys_table,
-    mut sfont: *mut sfnt,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn clt_read_langsys_table(mut tab: *mut clt_langsys_table, mut sfont: *mut sfnt) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0;
     if !(!tab.is_null() && !sfont.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
@@ -589,10 +524,7 @@ unsafe extern "C-unwind" fn clt_release_langsys_table(mut tab: *mut clt_langsys_
         clt_release_number_list(&raw mut (*tab).FeatureIndex);
     }
 }
-unsafe extern "C-unwind" fn clt_read_feature_table(
-    mut tab: *mut clt_feature_table,
-    mut sfont: *mut sfnt,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn clt_read_feature_table(mut tab: *mut clt_feature_table, mut sfont: *mut sfnt) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0;
     if !(!tab.is_null() && !sfont.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
@@ -611,10 +543,7 @@ unsafe extern "C-unwind" fn clt_release_feature_table(mut tab: *mut clt_feature_
         clt_release_number_list(&raw mut (*tab).LookupListIndex);
     }
 }
-unsafe extern "C-unwind" fn clt_read_lookup_table(
-    mut tab: *mut clt_lookup_table,
-    mut sfont: *mut sfnt,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn clt_read_lookup_table(mut tab: *mut clt_lookup_table, mut sfont: *mut sfnt) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0;
     if !(!tab.is_null() && !sfont.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
@@ -634,10 +563,7 @@ unsafe extern "C-unwind" fn clt_release_lookup_table(mut tab: *mut clt_lookup_ta
         clt_release_number_list(&raw mut (*tab).SubTableList);
     }
 }
-unsafe extern "C-unwind" fn clt_read_coverage(
-    mut cov: *mut clt_coverage,
-    mut sfont: *mut sfnt,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn clt_read_coverage(mut cov: *mut clt_coverage, mut sfont: *mut sfnt) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0;
     let mut i: ::core::ffi::c_int = 0;
     if !(!cov.is_null() && !sfont.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -655,13 +581,11 @@ unsafe extern "C-unwind" fn clt_read_coverage(
             if (*cov).count as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
                 (*cov).list = ::core::ptr::null_mut::<GlyphID>();
             } else {
-                (*cov).list = new(((*cov).count as uint32_t as usize)
-                    .wrapping_mul(::core::mem::size_of::<USHORT>() as usize)
-                    as uint32_t) as *mut USHORT as *mut GlyphID;
+                (*cov).list = new(((*cov).count as uint32_t as usize).wrapping_mul(::core::mem::size_of::<USHORT>() as usize) as uint32_t)
+                    as *mut USHORT as *mut GlyphID;
                 i = 0 as ::core::ffi::c_int;
                 while i < (*cov).count as ::core::ffi::c_int {
-                    *(*cov).list.offset(i as isize) =
-                        tt_get_unsigned_pair((*sfont).handle) as GlyphID;
+                    *(*cov).list.offset(i as isize) = tt_get_unsigned_pair((*sfont).handle) as GlyphID;
                     i += 1;
                 }
             }
@@ -672,9 +596,8 @@ unsafe extern "C-unwind" fn clt_read_coverage(
             if (*cov).count as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
                 (*cov).range = ::core::ptr::null_mut::<clt_range>();
             } else {
-                (*cov).range = new(((*cov).count as uint32_t as usize)
-                    .wrapping_mul(::core::mem::size_of::<clt_range>() as usize)
-                    as uint32_t) as *mut clt_range;
+                (*cov).range =
+                    new(((*cov).count as uint32_t as usize).wrapping_mul(::core::mem::size_of::<clt_range>() as usize) as uint32_t) as *mut clt_range;
                 i = 0 as ::core::ffi::c_int;
                 while i < (*cov).count as ::core::ffi::c_int {
                     len += clt_read_range((*cov).range.offset(i as isize) as *mut clt_range, sfont);
@@ -705,16 +628,10 @@ unsafe extern "C-unwind" fn clt_release_coverage(mut cov: *mut clt_coverage) {
     }
     (*cov).count = 0 as USHORT;
 }
-unsafe extern "C-unwind" fn clt_lookup_coverage(
-    mut cov: *mut clt_coverage,
-    mut gid: USHORT,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn clt_lookup_coverage(mut cov: *mut clt_coverage, mut gid: USHORT) -> ::core::ffi::c_int {
     let mut i: ::core::ffi::c_int = 0;
     if cov.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"cov\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"cov\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if (*cov).count == 0 && matches!((*cov).format, 1 | 2) {
@@ -732,8 +649,7 @@ unsafe extern "C-unwind" fn clt_lookup_coverage(
             let ranges = core::slice::from_raw_parts((*cov).range, (*cov).count as usize);
             let index = ranges.partition_point(|range| range.End < gid);
             if let Some(range) = ranges.get(index).filter(|range| range.Start <= gid) {
-                return i32::from(range.StartCoverageIndex) + i32::from(gid)
-                    - i32::from(range.Start);
+                return i32::from(range.StartCoverageIndex) + i32::from(gid) - i32::from(range.Start);
             }
         }
         _ => {
@@ -742,10 +658,7 @@ unsafe extern "C-unwind" fn clt_lookup_coverage(
     }
     return -(1 as ::core::ffi::c_int);
 }
-unsafe extern "C-unwind" fn otl_gsub_read_single(
-    mut subtab: *mut otl_gsub_subtab,
-    mut sfont: *mut sfnt,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn otl_gsub_read_single(mut subtab: *mut otl_gsub_subtab, mut sfont: *mut sfnt) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0;
     let mut offset: SFNT_ULONG = 0;
     let mut cov_offset: Offset = 0;
@@ -756,32 +669,25 @@ unsafe extern "C-unwind" fn otl_gsub_read_single(
         );
     } else {
     };
-    offset =
-        crate::backend::runtime::input_seek((*sfont).handle, 0 as ssize_t, SEEK_CUR) as SFNT_ULONG;
+    offset = crate::backend::runtime::input_seek((*sfont).handle, 0 as ssize_t, SEEK_CUR) as SFNT_ULONG;
     (*subtab).LookupType = OTL_GSUB_TYPE_SINGLE as USHORT;
     (*subtab).SubstFormat = tt_get_unsigned_pair((*sfont).handle);
     len = 2 as ::core::ffi::c_int;
     if (*subtab).SubstFormat as ::core::ffi::c_int == 1 as ::core::ffi::c_int {
         let mut data: *mut otl_gsub_single1 = ::core::ptr::null_mut::<otl_gsub_single1>();
-        data = new((1 as ::core::ffi::c_int as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<otl_gsub_single1>() as usize)
-            as uint32_t) as *mut otl_gsub_single1;
+        data = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<otl_gsub_single1>() as usize) as uint32_t)
+            as *mut otl_gsub_single1;
         (*subtab).table.single1 = data;
         cov_offset = tt_get_unsigned_pair((*sfont).handle) as Offset;
         (*data).DeltaGlyphID = tt_get_signed_pair((*sfont).handle);
         len += 4 as ::core::ffi::c_int;
-        crate::backend::runtime::input_seek(
-            (*sfont).handle,
-            offset.wrapping_add(cov_offset as SFNT_ULONG) as ssize_t,
-            SEEK_SET,
-        );
+        crate::backend::runtime::input_seek((*sfont).handle, offset.wrapping_add(cov_offset as SFNT_ULONG) as ssize_t, SEEK_SET);
         len += clt_read_coverage(&raw mut (*data).coverage, sfont);
     } else if (*subtab).SubstFormat as ::core::ffi::c_int == 2 as ::core::ffi::c_int {
         let mut data_0: *mut otl_gsub_single2 = ::core::ptr::null_mut::<otl_gsub_single2>();
         let mut count: USHORT = 0;
-        data_0 = new((1 as ::core::ffi::c_int as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<otl_gsub_single2>() as usize)
-            as uint32_t) as *mut otl_gsub_single2;
+        data_0 = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<otl_gsub_single2>() as usize) as uint32_t)
+            as *mut otl_gsub_single2;
         (*subtab).table.single2 = data_0;
         cov_offset = tt_get_unsigned_pair((*sfont).handle) as Offset;
         (*data_0).GlyphCount = tt_get_unsigned_pair((*sfont).handle);
@@ -789,32 +695,23 @@ unsafe extern "C-unwind" fn otl_gsub_read_single(
         if (*data_0).GlyphCount as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
             (*data_0).Substitute = ::core::ptr::null_mut::<GlyphID>();
         } else {
-            (*data_0).Substitute = new(((*data_0).GlyphCount as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<GlyphID>() as usize)
-                as uint32_t) as *mut GlyphID;
+            (*data_0).Substitute =
+                new(((*data_0).GlyphCount as uint32_t as usize).wrapping_mul(::core::mem::size_of::<GlyphID>() as usize) as uint32_t) as *mut GlyphID;
             count = 0 as USHORT;
             while (count as ::core::ffi::c_int) < (*data_0).GlyphCount as ::core::ffi::c_int {
-                *(*data_0).Substitute.offset(count as isize) =
-                    tt_get_unsigned_pair((*sfont).handle) as GlyphID;
+                *(*data_0).Substitute.offset(count as isize) = tt_get_unsigned_pair((*sfont).handle) as GlyphID;
                 count = count.wrapping_add(1);
             }
             len += 2 as ::core::ffi::c_int * (*data_0).GlyphCount as ::core::ffi::c_int;
         }
-        crate::backend::runtime::input_seek(
-            (*sfont).handle,
-            offset.wrapping_add(cov_offset as SFNT_ULONG) as ssize_t,
-            SEEK_SET,
-        );
+        crate::backend::runtime::input_seek((*sfont).handle, offset.wrapping_add(cov_offset as SFNT_ULONG) as ssize_t, SEEK_SET);
         len += clt_read_coverage(&raw mut (*data_0).coverage, sfont);
     } else {
         pdf_abort!(b"unexpected SubstFormat\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     return len;
 }
-unsafe extern "C-unwind" fn otl_gsub_read_alternate(
-    mut subtab: *mut otl_gsub_subtab,
-    mut sfont: *mut sfnt,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn otl_gsub_read_alternate(mut subtab: *mut otl_gsub_subtab, mut sfont: *mut sfnt) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0;
     let mut i: USHORT = 0;
     let mut j: USHORT = 0;
@@ -832,22 +729,19 @@ unsafe extern "C-unwind" fn otl_gsub_read_alternate(
         );
     } else {
     };
-    offset =
-        crate::backend::runtime::input_seek((*sfont).handle, 0 as ssize_t, SEEK_CUR) as SFNT_ULONG;
+    offset = crate::backend::runtime::input_seek((*sfont).handle, 0 as ssize_t, SEEK_CUR) as SFNT_ULONG;
     (*subtab).LookupType = OTL_GSUB_TYPE_ALTERNATE as USHORT;
     (*subtab).SubstFormat = tt_get_unsigned_pair((*sfont).handle);
     if (*subtab).SubstFormat as ::core::ffi::c_int != 1 as ::core::ffi::c_int {
         pdf_warning!(
-            b"Unknown GSUB SubstFormat for Alternate: %u\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Unknown GSUB SubstFormat for Alternate: %u\0" as *const u8 as *const ::core::ffi::c_char,
             (*subtab).SubstFormat as ::core::ffi::c_int,
         );
         return -(1 as ::core::ffi::c_int);
     }
     len = 2 as ::core::ffi::c_int;
-    data = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<otl_gsub_alternate1>() as usize)
-        as uint32_t) as *mut otl_gsub_alternate1;
+    data = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<otl_gsub_alternate1>() as usize) as uint32_t)
+        as *mut otl_gsub_alternate1;
     (*subtab).table.alternate1 = data;
     cov_offset = tt_get_unsigned_pair((*sfont).handle) as Offset;
     len += 2 as ::core::ffi::c_int;
@@ -856,33 +750,27 @@ unsafe extern "C-unwind" fn otl_gsub_read_alternate(
     if (*data).AlternateSetCount as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
         (*data).AlternateSet = ::core::ptr::null_mut::<otl_gsub_altset>();
     } else {
-        (*data).AlternateSet = new(((*data).AlternateSetCount as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<otl_gsub_altset>() as usize)
-            as uint32_t) as *mut otl_gsub_altset;
+        (*data).AlternateSet =
+            new(((*data).AlternateSetCount as uint32_t as usize).wrapping_mul(::core::mem::size_of::<otl_gsub_altset>() as usize) as uint32_t)
+                as *mut otl_gsub_altset;
         i = 0 as USHORT;
         while (i as ::core::ffi::c_int) < (*data).AlternateSetCount as ::core::ffi::c_int {
             let mut altset: *mut otl_gsub_altset = ::core::ptr::null_mut::<otl_gsub_altset>();
             let mut altset_offset: SFNT_ULONG = 0;
             altset = (*data).AlternateSet.offset(i as isize) as *mut otl_gsub_altset;
-            altset_offset =
-                offset.wrapping_add(*altset_offsets.value.offset(i as isize) as SFNT_ULONG);
-            crate::backend::runtime::input_seek(
-                (*sfont).handle,
-                altset_offset as ssize_t,
-                SEEK_SET,
-            );
+            altset_offset = offset.wrapping_add(*altset_offsets.value.offset(i as isize) as SFNT_ULONG);
+            crate::backend::runtime::input_seek((*sfont).handle, altset_offset as ssize_t, SEEK_SET);
             (*altset).GlyphCount = tt_get_unsigned_pair((*sfont).handle);
             len += 2 as ::core::ffi::c_int;
             if (*altset).GlyphCount as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
                 (*altset).Alternate = ::core::ptr::null_mut::<GlyphID>();
             } else {
-                (*altset).Alternate = new(((*altset).GlyphCount as uint32_t as usize)
-                    .wrapping_mul(::core::mem::size_of::<GlyphID>() as usize)
-                    as uint32_t) as *mut GlyphID;
+                (*altset).Alternate =
+                    new(((*altset).GlyphCount as uint32_t as usize).wrapping_mul(::core::mem::size_of::<GlyphID>() as usize) as uint32_t)
+                        as *mut GlyphID;
                 j = 0 as USHORT;
                 while (j as ::core::ffi::c_int) < (*altset).GlyphCount as ::core::ffi::c_int {
-                    *(*altset).Alternate.offset(j as isize) =
-                        tt_get_unsigned_pair((*sfont).handle) as GlyphID;
+                    *(*altset).Alternate.offset(j as isize) = tt_get_unsigned_pair((*sfont).handle) as GlyphID;
                     len += 2 as ::core::ffi::c_int;
                     j = j.wrapping_add(1);
                 }
@@ -891,18 +779,11 @@ unsafe extern "C-unwind" fn otl_gsub_read_alternate(
         }
         clt_release_number_list(&raw mut altset_offsets);
     }
-    crate::backend::runtime::input_seek(
-        (*sfont).handle,
-        offset.wrapping_add(cov_offset as SFNT_ULONG) as ssize_t,
-        SEEK_SET,
-    );
+    crate::backend::runtime::input_seek((*sfont).handle, offset.wrapping_add(cov_offset as SFNT_ULONG) as ssize_t, SEEK_SET);
     len += clt_read_coverage(&raw mut (*data).coverage, sfont);
     return len;
 }
-unsafe extern "C-unwind" fn otl_gsub_read_ligature(
-    mut subtab: *mut otl_gsub_subtab,
-    mut sfont: *mut sfnt,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn otl_gsub_read_ligature(mut subtab: *mut otl_gsub_subtab, mut sfont: *mut sfnt) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0;
     let mut i: USHORT = 0;
     let mut j: USHORT = 0;
@@ -920,22 +801,19 @@ unsafe extern "C-unwind" fn otl_gsub_read_ligature(
         );
     } else {
     };
-    offset =
-        crate::backend::runtime::input_seek((*sfont).handle, 0 as ssize_t, SEEK_CUR) as SFNT_ULONG;
+    offset = crate::backend::runtime::input_seek((*sfont).handle, 0 as ssize_t, SEEK_CUR) as SFNT_ULONG;
     (*subtab).LookupType = OTL_GSUB_TYPE_LIGATURE as USHORT;
     (*subtab).SubstFormat = tt_get_unsigned_pair((*sfont).handle);
     if (*subtab).SubstFormat as ::core::ffi::c_int != 1 as ::core::ffi::c_int {
         pdf_warning!(
-            b"Unknown GSUB SubstFormat for Ligature: %u\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Unknown GSUB SubstFormat for Ligature: %u\0" as *const u8 as *const ::core::ffi::c_char,
             (*subtab).SubstFormat as ::core::ffi::c_int,
         );
         return -(1 as ::core::ffi::c_int);
     }
     len = 2 as ::core::ffi::c_int;
-    data = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<otl_gsub_ligature1>() as usize)
-        as uint32_t) as *mut otl_gsub_ligature1;
+    data = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<otl_gsub_ligature1>() as usize) as uint32_t)
+        as *mut otl_gsub_ligature1;
     (*subtab).table.ligature1 = data;
     cov_offset = tt_get_unsigned_pair((*sfont).handle) as Offset;
     len += 2 as ::core::ffi::c_int;
@@ -944,9 +822,9 @@ unsafe extern "C-unwind" fn otl_gsub_read_ligature(
     if (*data).LigSetCount as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
         (*data).LigatureSet = ::core::ptr::null_mut::<otl_gsub_ligset>();
     } else {
-        (*data).LigatureSet = new(((*data).LigSetCount as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<otl_gsub_ligset>() as usize)
-            as uint32_t) as *mut otl_gsub_ligset;
+        (*data).LigatureSet =
+            new(((*data).LigSetCount as uint32_t as usize).wrapping_mul(::core::mem::size_of::<otl_gsub_ligset>() as usize) as uint32_t)
+                as *mut otl_gsub_ligset;
         i = 0 as USHORT;
         while (i as ::core::ffi::c_int) < (*data).LigSetCount as ::core::ffi::c_int {
             let mut ligset_tab: clt_number_list = clt_number_list {
@@ -957,61 +835,44 @@ unsafe extern "C-unwind" fn otl_gsub_read_ligature(
             let mut ligset_offset: SFNT_ULONG = 0;
             let mut count: USHORT = 0;
             ligset = (*data).LigatureSet.offset(i as isize) as *mut otl_gsub_ligset;
-            ligset_offset =
-                offset.wrapping_add(*ligset_offsets.value.offset(i as isize) as SFNT_ULONG);
-            crate::backend::runtime::input_seek(
-                (*sfont).handle,
-                ligset_offset as ssize_t,
-                SEEK_SET,
-            );
+            ligset_offset = offset.wrapping_add(*ligset_offsets.value.offset(i as isize) as SFNT_ULONG);
+            crate::backend::runtime::input_seek((*sfont).handle, ligset_offset as ssize_t, SEEK_SET);
             len += clt_read_number_list(&raw mut ligset_tab, sfont);
             (*ligset).LigatureCount = ligset_tab.count;
             if ligset_tab.count as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
                 (*ligset).Ligature = ::core::ptr::null_mut::<otl_gsub_ligtab>();
             } else {
-                (*ligset).Ligature = new((ligset_tab.count as uint32_t as usize)
-                    .wrapping_mul(::core::mem::size_of::<otl_gsub_ligtab>() as usize)
-                    as uint32_t) as *mut otl_gsub_ligtab;
+                (*ligset).Ligature =
+                    new((ligset_tab.count as uint32_t as usize).wrapping_mul(::core::mem::size_of::<otl_gsub_ligtab>() as usize) as uint32_t)
+                        as *mut otl_gsub_ligtab;
                 j = 0 as USHORT;
                 while (j as ::core::ffi::c_int) < ligset_tab.count as ::core::ffi::c_int {
                     crate::backend::runtime::input_seek(
                         (*sfont).handle,
-                        ligset_offset
-                            .wrapping_add(*ligset_tab.value.offset(j as isize) as SFNT_ULONG)
-                            as ssize_t,
+                        ligset_offset.wrapping_add(*ligset_tab.value.offset(j as isize) as SFNT_ULONG) as ssize_t,
                         SEEK_SET,
                     );
-                    (*(*ligset).Ligature.offset(j as isize)).LigGlyph =
-                        tt_get_unsigned_pair((*sfont).handle) as GlyphID;
-                    (*(*ligset).Ligature.offset(j as isize)).CompCount =
-                        tt_get_unsigned_pair((*sfont).handle);
-                    if (*(*ligset).Ligature.offset(j as isize)).CompCount as ::core::ffi::c_int
-                        == 0 as ::core::ffi::c_int
-                    {
+                    (*(*ligset).Ligature.offset(j as isize)).LigGlyph = tt_get_unsigned_pair((*sfont).handle) as GlyphID;
+                    (*(*ligset).Ligature.offset(j as isize)).CompCount = tt_get_unsigned_pair((*sfont).handle);
+                    if (*(*ligset).Ligature.offset(j as isize)).CompCount as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
                         let ref mut fresh1 = (*(*ligset).Ligature.offset(j as isize)).Component;
                         *fresh1 = ::core::ptr::null_mut::<GlyphID>();
                     } else {
                         let ref mut fresh2 = (*(*ligset).Ligature.offset(j as isize)).Component;
-                        *fresh2 = new((((*(*ligset).Ligature.offset(j as isize)).CompCount
-                            as ::core::ffi::c_int
-                            - 1 as ::core::ffi::c_int)
-                            as uint32_t as usize)
-                            .wrapping_mul(::core::mem::size_of::<GlyphID>() as usize)
-                            as uint32_t) as *mut GlyphID;
+                        *fresh2 = new(
+                            (((*(*ligset).Ligature.offset(j as isize)).CompCount as ::core::ffi::c_int - 1 as ::core::ffi::c_int) as uint32_t
+                                as usize)
+                                .wrapping_mul(::core::mem::size_of::<GlyphID>() as usize) as uint32_t,
+                        ) as *mut GlyphID;
                         count = 0 as USHORT;
                         while (count as ::core::ffi::c_int)
-                            < (*(*ligset).Ligature.offset(j as isize)).CompCount
-                                as ::core::ffi::c_int
-                                - 1 as ::core::ffi::c_int
+                            < (*(*ligset).Ligature.offset(j as isize)).CompCount as ::core::ffi::c_int - 1 as ::core::ffi::c_int
                         {
-                            *(*(*ligset).Ligature.offset(j as isize))
-                                .Component
-                                .offset(count as isize) =
+                            *(*(*ligset).Ligature.offset(j as isize)).Component.offset(count as isize) =
                                 tt_get_unsigned_pair((*sfont).handle) as GlyphID;
                             count = count.wrapping_add(1);
                         }
-                        len += 4 as ::core::ffi::c_int
-                            + count as ::core::ffi::c_int * 2 as ::core::ffi::c_int;
+                        len += 4 as ::core::ffi::c_int + count as ::core::ffi::c_int * 2 as ::core::ffi::c_int;
                     }
                     j = j.wrapping_add(1);
                 }
@@ -1021,11 +882,7 @@ unsafe extern "C-unwind" fn otl_gsub_read_ligature(
         }
     }
     clt_release_number_list(&raw mut ligset_offsets);
-    crate::backend::runtime::input_seek(
-        (*sfont).handle,
-        offset.wrapping_add(cov_offset as SFNT_ULONG) as ssize_t,
-        SEEK_SET,
-    );
+    crate::backend::runtime::input_seek((*sfont).handle, offset.wrapping_add(cov_offset as SFNT_ULONG) as ssize_t, SEEK_SET);
     len += clt_read_coverage(&raw mut (*data).coverage, sfont);
     return len;
 }
@@ -1052,10 +909,7 @@ unsafe extern "C-unwind" fn otl_gsub_release_single(mut subtab: *mut otl_gsub_su
                 (*subtab).table.single2 = ::core::ptr::null_mut::<otl_gsub_single2>();
             }
             _ => {
-                pdf_abort!(
-                    b"Unknown format for single substitution\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+                pdf_abort!(b"Unknown format for single substitution\0" as *const u8 as *const ::core::ffi::c_char,);
             }
         }
     }
@@ -1074,14 +928,10 @@ unsafe extern "C-unwind" fn otl_gsub_release_ligature(mut subtab: *mut otl_gsub_
                 j = 0 as USHORT;
                 while (j as ::core::ffi::c_int) < (*ligset).LigatureCount as ::core::ffi::c_int {
                     let ref mut fresh0 = (*(*ligset).Ligature.offset(j as isize)).Component;
-                    *fresh0 = mfree(
-                        (*(*ligset).Ligature.offset(j as isize)).Component
-                            as *mut ::core::ffi::c_void,
-                    ) as *mut GlyphID;
+                    *fresh0 = mfree((*(*ligset).Ligature.offset(j as isize)).Component as *mut ::core::ffi::c_void) as *mut GlyphID;
                     j = j.wrapping_add(1);
                 }
-                (*ligset).Ligature =
-                    mfree((*ligset).Ligature as *mut ::core::ffi::c_void) as *mut otl_gsub_ligtab;
+                (*ligset).Ligature = mfree((*ligset).Ligature as *mut ::core::ffi::c_void) as *mut otl_gsub_ligtab;
                 i = i.wrapping_add(1);
             }
             free((*data).LigatureSet as *mut ::core::ffi::c_void);
@@ -1102,8 +952,7 @@ unsafe extern "C-unwind" fn otl_gsub_release_alternate(mut subtab: *mut otl_gsub
             while (i as ::core::ffi::c_int) < (*data).AlternateSetCount as ::core::ffi::c_int {
                 let mut altset: *mut otl_gsub_altset = ::core::ptr::null_mut::<otl_gsub_altset>();
                 altset = (*data).AlternateSet.offset(i as isize) as *mut otl_gsub_altset;
-                (*altset).Alternate =
-                    mfree((*altset).Alternate as *mut ::core::ffi::c_void) as *mut GlyphID;
+                (*altset).Alternate = mfree((*altset).Alternate as *mut ::core::ffi::c_void) as *mut GlyphID;
                 i = i.wrapping_add(1);
             }
             free((*data).AlternateSet as *mut ::core::ffi::c_void);
@@ -1114,10 +963,7 @@ unsafe extern "C-unwind" fn otl_gsub_release_alternate(mut subtab: *mut otl_gsub
         (*subtab).table.alternate1 = ::core::ptr::null_mut::<otl_gsub_alternate1>();
     }
 }
-unsafe extern "C-unwind" fn otl_gsub_read_header(
-    mut head: *mut otl_gsub_header,
-    mut sfont: *mut sfnt,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn otl_gsub_read_header(mut head: *mut otl_gsub_header, mut sfont: *mut sfnt) -> ::core::ffi::c_int {
     if !(!head.is_null() && !sfont.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
@@ -1131,10 +977,7 @@ unsafe extern "C-unwind" fn otl_gsub_read_header(
     (*head).LookupList = tt_get_unsigned_pair((*sfont).handle) as Offset;
     return 10 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn otl_gsub_read_feat(
-    mut gsub: *mut otl_gsub_tab,
-    mut sfont: *mut sfnt,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn otl_gsub_read_feat(mut gsub: *mut otl_gsub_tab, mut sfont: *mut sfnt) -> ::core::ffi::c_int {
     let mut feat_idx: ::core::ffi::c_int = 0;
     let mut script_idx: ::core::ffi::c_int = 0;
     let mut gsub_offset: SFNT_ULONG = 0;
@@ -1195,8 +1038,7 @@ unsafe extern "C-unwind" fn otl_gsub_read_feat(
     while script_idx < script_list.count as ::core::ffi::c_int {
         if otl_match_optrule(
             script,
-            &raw mut (*script_list.record.offset(script_idx as isize)).tag
-                as *mut ::core::ffi::c_char,
+            &raw mut (*script_list.record.offset(script_idx as isize)).tag as *mut ::core::ffi::c_char,
         ) != 0
         {
             let mut script_tab: clt_script_table = clt_script_table {
@@ -1209,15 +1051,10 @@ unsafe extern "C-unwind" fn otl_gsub_read_feat(
             let mut langsys_idx: ::core::ffi::c_int = 0;
             offset = gsub_offset
                 .wrapping_add(head.ScriptList as SFNT_ULONG)
-                .wrapping_add(
-                    (*script_list.record.offset(script_idx as isize)).offset as SFNT_ULONG,
-                );
+                .wrapping_add((*script_list.record.offset(script_idx as isize)).offset as SFNT_ULONG);
             crate::backend::runtime::input_seek((*sfont).handle, offset as ssize_t, SEEK_SET);
             clt_read_script_table(&raw mut script_tab, sfont);
-            if otl_match_optrule(
-                language,
-                b"dflt\0" as *const u8 as *const ::core::ffi::c_char,
-            ) != 0
+            if otl_match_optrule(language, b"dflt\0" as *const u8 as *const ::core::ffi::c_char) != 0
                 && script_tab.DefaultLangSys as ::core::ffi::c_int != 0 as ::core::ffi::c_int
             {
                 let mut langsys_tab: clt_langsys_table = clt_langsys_table {
@@ -1230,20 +1067,11 @@ unsafe extern "C-unwind" fn otl_gsub_read_feat(
                 };
                 if dpx_conf.verbose_level > VERBOSE_LEVEL_MIN {
                     pdf_message!(
-                        b"otl_gsub>> OTL script-language enabled: %c%c%c%c.dflt\n\0" as *const u8
-                            as *const ::core::ffi::c_char,
-                        (*script_list.record.offset(script_idx as isize)).tag
-                            [0 as ::core::ffi::c_int as usize]
-                            as ::core::ffi::c_int,
-                        (*script_list.record.offset(script_idx as isize)).tag
-                            [1 as ::core::ffi::c_int as usize]
-                            as ::core::ffi::c_int,
-                        (*script_list.record.offset(script_idx as isize)).tag
-                            [2 as ::core::ffi::c_int as usize]
-                            as ::core::ffi::c_int,
-                        (*script_list.record.offset(script_idx as isize)).tag
-                            [3 as ::core::ffi::c_int as usize]
-                            as ::core::ffi::c_int,
+                        b"otl_gsub>> OTL script-language enabled: %c%c%c%c.dflt\n\0" as *const u8 as *const ::core::ffi::c_char,
+                        (*script_list.record.offset(script_idx as isize)).tag[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
+                        (*script_list.record.offset(script_idx as isize)).tag[1 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
+                        (*script_list.record.offset(script_idx as isize)).tag[2 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
+                        (*script_list.record.offset(script_idx as isize)).tag[3 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
                     );
                 }
                 crate::backend::runtime::input_seek(
@@ -1252,38 +1080,24 @@ unsafe extern "C-unwind" fn otl_gsub_read_feat(
                     SEEK_SET,
                 );
                 clt_read_langsys_table(&raw mut langsys_tab, sfont);
-                if otl_match_optrule(
-                    feature,
-                    b"____\0" as *const u8 as *const ::core::ffi::c_char,
-                ) != 0
-                    && langsys_tab.ReqFeatureIndex as ::core::ffi::c_int
-                        != 0xffff as ::core::ffi::c_int
+                if otl_match_optrule(feature, b"____\0" as *const u8 as *const ::core::ffi::c_char) != 0
+                    && langsys_tab.ReqFeatureIndex as ::core::ffi::c_int != 0xffff as ::core::ffi::c_int
                 {
-                    feat_bits[(langsys_tab.ReqFeatureIndex as ::core::ffi::c_int
-                        / 8 as ::core::ffi::c_int) as usize] =
-                        (feat_bits[(langsys_tab.ReqFeatureIndex as ::core::ffi::c_int
-                            / 8 as ::core::ffi::c_int) as usize]
-                            as ::core::ffi::c_int
+                    feat_bits[(langsys_tab.ReqFeatureIndex as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as usize] =
+                        (feat_bits[(langsys_tab.ReqFeatureIndex as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as usize] as ::core::ffi::c_int
                             | (1 as ::core::ffi::c_int)
-                                << 7 as ::core::ffi::c_int
-                                    - langsys_tab.ReqFeatureIndex as ::core::ffi::c_int
-                                        % 8 as ::core::ffi::c_int)
+                                << 7 as ::core::ffi::c_int - langsys_tab.ReqFeatureIndex as ::core::ffi::c_int % 8 as ::core::ffi::c_int)
                             as ::core::ffi::c_uchar;
                 }
                 feat_idx = 0 as ::core::ffi::c_int;
                 while feat_idx < langsys_tab.FeatureIndex.count as ::core::ffi::c_int {
-                    feat_bits[(*langsys_tab.FeatureIndex.value.offset(feat_idx as isize)
-                        as ::core::ffi::c_int
-                        / 8 as ::core::ffi::c_int) as usize] =
-                        (feat_bits[(*langsys_tab.FeatureIndex.value.offset(feat_idx as isize)
-                            as ::core::ffi::c_int
-                            / 8 as ::core::ffi::c_int) as usize]
+                    feat_bits[(*langsys_tab.FeatureIndex.value.offset(feat_idx as isize) as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as usize] =
+                        (feat_bits
+                            [(*langsys_tab.FeatureIndex.value.offset(feat_idx as isize) as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as usize]
                             as ::core::ffi::c_int
                             | (1 as ::core::ffi::c_int)
                                 << 7 as ::core::ffi::c_int
-                                    - *langsys_tab.FeatureIndex.value.offset(feat_idx as isize)
-                                        as ::core::ffi::c_int
-                                        % 8 as ::core::ffi::c_int)
+                                    - *langsys_tab.FeatureIndex.value.offset(feat_idx as isize) as ::core::ffi::c_int % 8 as ::core::ffi::c_int)
                             as ::core::ffi::c_uchar;
                     feat_idx += 1;
                 }
@@ -1292,13 +1106,8 @@ unsafe extern "C-unwind" fn otl_gsub_read_feat(
             langsys_idx = 0 as ::core::ffi::c_int;
             while langsys_idx < script_tab.LangSysRecord.count as ::core::ffi::c_int {
                 let mut langsys_rec: *mut clt_record = ::core::ptr::null_mut::<clt_record>();
-                langsys_rec =
-                    script_tab.LangSysRecord.record.offset(langsys_idx as isize) as *mut clt_record;
-                if otl_match_optrule(
-                    language,
-                    &raw mut (*langsys_rec).tag as *mut ::core::ffi::c_char,
-                ) != 0
-                {
+                langsys_rec = script_tab.LangSysRecord.record.offset(langsys_idx as isize) as *mut clt_record;
+                if otl_match_optrule(language, &raw mut (*langsys_rec).tag as *mut ::core::ffi::c_char) != 0 {
                     let mut langsys_tab_0: clt_langsys_table = clt_langsys_table {
                         LookupOrder: 0,
                         ReqFeatureIndex: 0,
@@ -1309,29 +1118,15 @@ unsafe extern "C-unwind" fn otl_gsub_read_feat(
                     };
                     if dpx_conf.verbose_level > VERBOSE_LEVEL_MIN {
                         pdf_message!(
-                            b"otl_gsub>> OTL script-language enabled: %c%c%c%c.%c%c%c%c\n\0"
-                                as *const u8
-                                as *const ::core::ffi::c_char,
-                            (*script_list.record.offset(script_idx as isize)).tag
-                                [0 as ::core::ffi::c_int as usize]
-                                as ::core::ffi::c_int,
-                            (*script_list.record.offset(script_idx as isize)).tag
-                                [1 as ::core::ffi::c_int as usize]
-                                as ::core::ffi::c_int,
-                            (*script_list.record.offset(script_idx as isize)).tag
-                                [2 as ::core::ffi::c_int as usize]
-                                as ::core::ffi::c_int,
-                            (*script_list.record.offset(script_idx as isize)).tag
-                                [3 as ::core::ffi::c_int as usize]
-                                as ::core::ffi::c_int,
-                            (*langsys_rec).tag[0 as ::core::ffi::c_int as usize]
-                                as ::core::ffi::c_int,
-                            (*langsys_rec).tag[1 as ::core::ffi::c_int as usize]
-                                as ::core::ffi::c_int,
-                            (*langsys_rec).tag[2 as ::core::ffi::c_int as usize]
-                                as ::core::ffi::c_int,
-                            (*langsys_rec).tag[3 as ::core::ffi::c_int as usize]
-                                as ::core::ffi::c_int,
+                            b"otl_gsub>> OTL script-language enabled: %c%c%c%c.%c%c%c%c\n\0" as *const u8 as *const ::core::ffi::c_char,
+                            (*script_list.record.offset(script_idx as isize)).tag[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
+                            (*script_list.record.offset(script_idx as isize)).tag[1 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
+                            (*script_list.record.offset(script_idx as isize)).tag[2 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
+                            (*script_list.record.offset(script_idx as isize)).tag[3 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
+                            (*langsys_rec).tag[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
+                            (*langsys_rec).tag[1 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
+                            (*langsys_rec).tag[2 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
+                            (*langsys_rec).tag[3 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
                         );
                     }
                     crate::backend::runtime::input_seek(
@@ -1340,43 +1135,25 @@ unsafe extern "C-unwind" fn otl_gsub_read_feat(
                         SEEK_SET,
                     );
                     clt_read_langsys_table(&raw mut langsys_tab_0, sfont);
-                    if otl_match_optrule(
-                        feature,
-                        b"____\0" as *const u8 as *const ::core::ffi::c_char,
-                    ) != 0
-                        || langsys_tab_0.ReqFeatureIndex as ::core::ffi::c_int
-                            != 0xffff as ::core::ffi::c_int
+                    if otl_match_optrule(feature, b"____\0" as *const u8 as *const ::core::ffi::c_char) != 0
+                        || langsys_tab_0.ReqFeatureIndex as ::core::ffi::c_int != 0xffff as ::core::ffi::c_int
                     {
-                        feat_bits[(langsys_tab_0.ReqFeatureIndex as ::core::ffi::c_int
-                            / 8 as ::core::ffi::c_int)
-                            as usize] =
-                            (feat_bits[(langsys_tab_0.ReqFeatureIndex as ::core::ffi::c_int
-                                / 8 as ::core::ffi::c_int)
-                                as usize] as ::core::ffi::c_int
-                                | (1 as ::core::ffi::c_int)
-                                    << 7 as ::core::ffi::c_int
-                                        - langsys_tab_0.ReqFeatureIndex as ::core::ffi::c_int
-                                            % 8 as ::core::ffi::c_int)
-                                as ::core::ffi::c_uchar;
+                        feat_bits[(langsys_tab_0.ReqFeatureIndex as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as usize] = (feat_bits
+                            [(langsys_tab_0.ReqFeatureIndex as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as usize]
+                            as ::core::ffi::c_int
+                            | (1 as ::core::ffi::c_int)
+                                << 7 as ::core::ffi::c_int - langsys_tab_0.ReqFeatureIndex as ::core::ffi::c_int % 8 as ::core::ffi::c_int)
+                            as ::core::ffi::c_uchar;
                     }
                     feat_idx = 0 as ::core::ffi::c_int;
                     while feat_idx < langsys_tab_0.FeatureIndex.count as ::core::ffi::c_int {
-                        feat_bits[(*langsys_tab_0.FeatureIndex.value.offset(feat_idx as isize)
-                            as ::core::ffi::c_int
-                            / 8 as ::core::ffi::c_int)
-                            as usize] = (feat_bits[(*langsys_tab_0
-                            .FeatureIndex
-                            .value
-                            .offset(feat_idx as isize)
-                            as ::core::ffi::c_int
-                            / 8 as ::core::ffi::c_int)
-                            as usize]
+                        feat_bits[(*langsys_tab_0.FeatureIndex.value.offset(feat_idx as isize) as ::core::ffi::c_int / 8 as ::core::ffi::c_int)
+                            as usize] = (feat_bits
+                            [(*langsys_tab_0.FeatureIndex.value.offset(feat_idx as isize) as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as usize]
                             as ::core::ffi::c_int
                             | (1 as ::core::ffi::c_int)
                                 << 7 as ::core::ffi::c_int
-                                    - *langsys_tab_0.FeatureIndex.value.offset(feat_idx as isize)
-                                        as ::core::ffi::c_int
-                                        % 8 as ::core::ffi::c_int)
+                                    - *langsys_tab_0.FeatureIndex.value.offset(feat_idx as isize) as ::core::ffi::c_int % 8 as ::core::ffi::c_int)
                             as ::core::ffi::c_uchar;
                         feat_idx += 1;
                     }
@@ -1395,20 +1172,16 @@ unsafe extern "C-unwind" fn otl_gsub_read_feat(
     crate::backend::runtime::input_seek((*sfont).handle, offset as ssize_t, SEEK_SET);
     clt_read_number_list(&raw mut lookup_list, sfont);
     if dpx_conf.verbose_level > VERBOSE_LEVEL_MIN {
-        pdf_message!(
-            b"otl_gsub>> Reading OTL feature(s):\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_message!(b"otl_gsub>> Reading OTL feature(s):\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     feat_idx = 0 as ::core::ffi::c_int;
     while feat_idx < feature_list.count as ::core::ffi::c_int {
         if feat_bits[(feat_idx / 8 as ::core::ffi::c_int) as usize] as ::core::ffi::c_int
-            & (1 as ::core::ffi::c_int)
-                << 7 as ::core::ffi::c_int - feat_idx % 8 as ::core::ffi::c_int
+            & (1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int - feat_idx % 8 as ::core::ffi::c_int
             != 0
             && otl_match_optrule(
                 feature,
-                &raw mut (*feature_list.record.offset(feat_idx as isize)).tag
-                    as *mut ::core::ffi::c_char,
+                &raw mut (*feature_list.record.offset(feat_idx as isize)).tag as *mut ::core::ffi::c_char,
             ) != 0
         {
             let mut feature_table: clt_feature_table = clt_feature_table {
@@ -1422,25 +1195,15 @@ unsafe extern "C-unwind" fn otl_gsub_read_feat(
             if dpx_conf.verbose_level > VERBOSE_LEVEL_MIN {
                 pdf_message!(
                     b" %c%c%c%c\0" as *const u8 as *const ::core::ffi::c_char,
-                    (*feature_list.record.offset(feat_idx as isize)).tag
-                        [0 as ::core::ffi::c_int as usize]
-                        as ::core::ffi::c_int,
-                    (*feature_list.record.offset(feat_idx as isize)).tag
-                        [1 as ::core::ffi::c_int as usize]
-                        as ::core::ffi::c_int,
-                    (*feature_list.record.offset(feat_idx as isize)).tag
-                        [2 as ::core::ffi::c_int as usize]
-                        as ::core::ffi::c_int,
-                    (*feature_list.record.offset(feat_idx as isize)).tag
-                        [3 as ::core::ffi::c_int as usize]
-                        as ::core::ffi::c_int,
+                    (*feature_list.record.offset(feat_idx as isize)).tag[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
+                    (*feature_list.record.offset(feat_idx as isize)).tag[1 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
+                    (*feature_list.record.offset(feat_idx as isize)).tag[2 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
+                    (*feature_list.record.offset(feat_idx as isize)).tag[3 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
                 );
             }
             offset = gsub_offset
                 .wrapping_add(head.FeatureList as SFNT_ULONG)
-                .wrapping_add(
-                    (*feature_list.record.offset(feat_idx as isize)).offset as SFNT_ULONG,
-                );
+                .wrapping_add((*feature_list.record.offset(feat_idx as isize)).offset as SFNT_ULONG);
             crate::backend::runtime::input_seek((*sfont).handle, offset as ssize_t, SEEK_SET);
             clt_read_feature_table(&raw mut feature_table, sfont);
             i = 0 as ::core::ffi::c_int;
@@ -1457,12 +1220,9 @@ unsafe extern "C-unwind" fn otl_gsub_read_feat(
                 let mut st_idx: ::core::ffi::c_int = 0;
                 let mut r: ::core::ffi::c_int = 0;
                 let mut n_st: ::core::ffi::c_int = 0;
-                ll_idx =
-                    *feature_table.LookupListIndex.value.offset(i as isize) as ::core::ffi::c_int;
+                ll_idx = *feature_table.LookupListIndex.value.offset(i as isize) as ::core::ffi::c_int;
                 if ll_idx >= lookup_list.count as ::core::ffi::c_int {
-                    pdf_abort!(
-                        b"invalid Lookup index.\0" as *const u8 as *const ::core::ffi::c_char,
-                    );
+                    pdf_abort!(b"invalid Lookup index.\0" as *const u8 as *const ::core::ffi::c_char,);
                 }
                 offset = gsub_offset
                     .wrapping_add(head.LookupList as SFNT_ULONG)
@@ -1476,8 +1236,7 @@ unsafe extern "C-unwind" fn otl_gsub_read_feat(
                 {
                     if dpx_conf.verbose_level > VERBOSE_LEVEL_MIN {
                         pdf_warning!(
-                            b"Skipping unsupported GSUB subtable: LookupType=%d\0" as *const u8
-                                as *const ::core::ffi::c_char,
+                            b"Skipping unsupported GSUB subtable: LookupType=%d\0" as *const u8 as *const ::core::ffi::c_char,
                             lookup_table.LookupType as ::core::ffi::c_int,
                         );
                     }
@@ -1487,17 +1246,9 @@ unsafe extern "C-unwind" fn otl_gsub_read_feat(
                         pdf_abort!("Too many GSUB subtables");
                     }
                     if required > subtab_capacity {
-                        subtab_capacity = crate::compat::allocation::grow_capacity(
-                            subtab_capacity,
-                            required,
-                            core::mem::size_of::<otl_gsub_subtab>(),
-                            16,
-                        );
-                        subtab = renew(
-                            subtab.cast(),
-                            (subtab_capacity * core::mem::size_of::<otl_gsub_subtab>()) as u32,
-                        )
-                        .cast();
+                        subtab_capacity =
+                            crate::compat::allocation::grow_capacity(subtab_capacity, required, core::mem::size_of::<otl_gsub_subtab>(), 16);
+                        subtab = renew(subtab.cast(), (subtab_capacity * core::mem::size_of::<otl_gsub_subtab>()) as u32).cast();
                     }
                     n_st = 0 as ::core::ffi::c_int;
                     st_idx = 0 as ::core::ffi::c_int;
@@ -1505,77 +1256,47 @@ unsafe extern "C-unwind" fn otl_gsub_read_feat(
                         offset = gsub_offset
                             .wrapping_add(head.LookupList as SFNT_ULONG)
                             .wrapping_add(*lookup_list.value.offset(ll_idx as isize) as SFNT_ULONG)
-                            .wrapping_add(*lookup_table.SubTableList.value.offset(st_idx as isize)
-                                as SFNT_ULONG);
-                        crate::backend::runtime::input_seek(
-                            (*sfont).handle,
-                            offset as ssize_t,
-                            SEEK_SET,
-                        );
+                            .wrapping_add(*lookup_table.SubTableList.value.offset(st_idx as isize) as SFNT_ULONG);
+                        crate::backend::runtime::input_seek((*sfont).handle, offset as ssize_t, SEEK_SET);
                         match lookup_table.LookupType as ::core::ffi::c_int {
                             OTL_GSUB_TYPE_SINGLE => {
                                 r = otl_gsub_read_single(
-                                    subtab
-                                        .offset((num_subtabs as ::core::ffi::c_int + n_st) as isize)
-                                        as *mut otl_gsub_subtab,
+                                    subtab.offset((num_subtabs as ::core::ffi::c_int + n_st) as isize) as *mut otl_gsub_subtab,
                                     sfont,
                                 );
                                 if r <= 0 as ::core::ffi::c_int {
-                                    pdf_warning!(
-                                        b"Reading GSUB subtable (single) failed...\0" as *const u8
-                                            as *const ::core::ffi::c_char,
-                                    );
+                                    pdf_warning!(b"Reading GSUB subtable (single) failed...\0" as *const u8 as *const ::core::ffi::c_char,);
                                 } else {
                                     if dpx_conf.verbose_level > VERBOSE_LEVEL_MIN {
-                                        pdf_message!(
-                                            b"(single)\0" as *const u8
-                                                as *const ::core::ffi::c_char,
-                                        );
+                                        pdf_message!(b"(single)\0" as *const u8 as *const ::core::ffi::c_char,);
                                     }
                                     n_st += 1;
                                 }
                             }
                             OTL_GSUB_TYPE_ALTERNATE => {
                                 r = otl_gsub_read_alternate(
-                                    subtab
-                                        .offset((num_subtabs as ::core::ffi::c_int + n_st) as isize)
-                                        as *mut otl_gsub_subtab,
+                                    subtab.offset((num_subtabs as ::core::ffi::c_int + n_st) as isize) as *mut otl_gsub_subtab,
                                     sfont,
                                 );
                                 if r <= 0 as ::core::ffi::c_int {
-                                    pdf_warning!(
-                                        b"Reading GSUB subtable (alternate) failed...\0"
-                                            as *const u8
-                                            as *const ::core::ffi::c_char,
-                                    );
+                                    pdf_warning!(b"Reading GSUB subtable (alternate) failed...\0" as *const u8 as *const ::core::ffi::c_char,);
                                 } else {
                                     if dpx_conf.verbose_level > VERBOSE_LEVEL_MIN {
-                                        pdf_message!(
-                                            b"(alternate)\0" as *const u8
-                                                as *const ::core::ffi::c_char,
-                                        );
+                                        pdf_message!(b"(alternate)\0" as *const u8 as *const ::core::ffi::c_char,);
                                     }
                                     n_st += 1;
                                 }
                             }
                             OTL_GSUB_TYPE_LIGATURE => {
                                 r = otl_gsub_read_ligature(
-                                    subtab
-                                        .offset((num_subtabs as ::core::ffi::c_int + n_st) as isize)
-                                        as *mut otl_gsub_subtab,
+                                    subtab.offset((num_subtabs as ::core::ffi::c_int + n_st) as isize) as *mut otl_gsub_subtab,
                                     sfont,
                                 );
                                 if r <= 0 as ::core::ffi::c_int {
-                                    pdf_warning!(
-                                        b"Reading GSUB subtable (ligature) failed...\0" as *const u8
-                                            as *const ::core::ffi::c_char,
-                                    );
+                                    pdf_warning!(b"Reading GSUB subtable (ligature) failed...\0" as *const u8 as *const ::core::ffi::c_char,);
                                 } else {
                                     if dpx_conf.verbose_level > VERBOSE_LEVEL_MIN {
-                                        pdf_message!(
-                                            b"(ligature)\0" as *const u8
-                                                as *const ::core::ffi::c_char,
-                                        );
+                                        pdf_message!(b"(ligature)\0" as *const u8 as *const ::core::ffi::c_char,);
                                     }
                                     n_st += 1;
                                 }
@@ -1588,81 +1309,52 @@ unsafe extern "C-unwind" fn otl_gsub_read_feat(
                                 if !(SubstFormat as ::core::ffi::c_int != 1 as ::core::ffi::c_int) {
                                     ExtensionLookupType = tt_get_unsigned_pair((*sfont).handle);
                                     ExtensionOffset = tt_get_unsigned_quad((*sfont).handle);
-                                    crate::backend::runtime::input_seek(
-                                        (*sfont).handle,
-                                        offset.wrapping_add(ExtensionOffset) as ssize_t,
-                                        SEEK_SET,
-                                    );
+                                    crate::backend::runtime::input_seek((*sfont).handle, offset.wrapping_add(ExtensionOffset) as ssize_t, SEEK_SET);
                                     match ExtensionLookupType as ::core::ffi::c_int {
                                         OTL_GSUB_TYPE_SINGLE => {
                                             r = otl_gsub_read_single(
-                                                subtab.offset(
-                                                    (num_subtabs as ::core::ffi::c_int + n_st)
-                                                        as isize,
-                                                )
-                                                    as *mut otl_gsub_subtab,
+                                                subtab.offset((num_subtabs as ::core::ffi::c_int + n_st) as isize) as *mut otl_gsub_subtab,
                                                 sfont,
                                             );
                                             if r <= 0 as ::core::ffi::c_int {
                                                 pdf_warning!(
-                                                    b"Reading GSUB subtable (ext:single) failed...\0" as * const
-                                                    u8 as * const ::core::ffi::c_char,
+                                                    b"Reading GSUB subtable (ext:single) failed...\0" as *const u8 as *const ::core::ffi::c_char,
                                                 );
                                             } else {
                                                 if dpx_conf.verbose_level > VERBOSE_LEVEL_MIN {
-                                                    pdf_message!(
-                                                        b"(ext:single)\0" as *const u8
-                                                            as *const ::core::ffi::c_char,
-                                                    );
+                                                    pdf_message!(b"(ext:single)\0" as *const u8 as *const ::core::ffi::c_char,);
                                                 }
                                                 n_st += 1;
                                             }
                                         }
                                         OTL_GSUB_TYPE_ALTERNATE => {
                                             r = otl_gsub_read_alternate(
-                                                subtab.offset(
-                                                    (num_subtabs as ::core::ffi::c_int + n_st)
-                                                        as isize,
-                                                )
-                                                    as *mut otl_gsub_subtab,
+                                                subtab.offset((num_subtabs as ::core::ffi::c_int + n_st) as isize) as *mut otl_gsub_subtab,
                                                 sfont,
                                             );
                                             if r <= 0 as ::core::ffi::c_int {
                                                 pdf_warning!(
-                                                    b"Reading GSUB subtable (alternate) failed...\0"
-                                                        as *const u8
-                                                        as *const ::core::ffi::c_char,
+                                                    b"Reading GSUB subtable (alternate) failed...\0" as *const u8 as *const ::core::ffi::c_char,
                                                 );
                                             } else {
                                                 if dpx_conf.verbose_level > VERBOSE_LEVEL_MIN {
-                                                    pdf_message!(
-                                                        b"(alternate)\0" as *const u8
-                                                            as *const ::core::ffi::c_char,
-                                                    );
+                                                    pdf_message!(b"(alternate)\0" as *const u8 as *const ::core::ffi::c_char,);
                                                 }
                                                 n_st += 1;
                                             }
                                         }
                                         OTL_GSUB_TYPE_LIGATURE => {
                                             r = otl_gsub_read_ligature(
-                                                subtab.offset(
-                                                    (num_subtabs as ::core::ffi::c_int + n_st)
-                                                        as isize,
-                                                )
-                                                    as *mut otl_gsub_subtab,
+                                                subtab.offset((num_subtabs as ::core::ffi::c_int + n_st) as isize) as *mut otl_gsub_subtab,
                                                 sfont,
                                             );
                                             if r <= 0 as ::core::ffi::c_int {
                                                 pdf_warning!(
-                                                    b"Reading GSUB subtable (ext:ligature) failed...\0" as *
-                                                    const u8 as * const ::core::ffi::c_char,
+                                                    b"Reading GSUB subtable (ext:ligature) failed...\0" as *const u8 as *const ::core::ffi::c_char,
                                                 );
                                             } else {
                                                 if dpx_conf.verbose_level > VERBOSE_LEVEL_MIN {
-                                                    pdf_message!(
-                                                        b"(ext:ligature)\0" as *const u8
-                                                            as *const ::core::ffi::c_char,
-                                                    );
+                                                    pdf_message!(b"(ext:ligature)\0" as *const u8 as *const ::core::ffi::c_char,);
                                                 }
                                                 n_st += 1;
                                             }
@@ -1705,10 +1397,7 @@ unsafe extern "C-unwind" fn otl_gsub_read_feat(
     }
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn otl_gsub_apply_single(
-    mut subtab: *mut otl_gsub_subtab,
-    mut gid: *mut USHORT,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn otl_gsub_apply_single(mut subtab: *mut otl_gsub_subtab, mut gid: *mut USHORT) -> ::core::ffi::c_int {
     let mut idx: ::core::ffi::c_int = 0;
     if !(!subtab.is_null() && !gid.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
@@ -1722,8 +1411,7 @@ unsafe extern "C-unwind" fn otl_gsub_apply_single(
         data = (*subtab).table.single1;
         idx = clt_lookup_coverage(&raw mut (*data).coverage, *gid);
         if idx >= 0 as ::core::ffi::c_int {
-            *gid =
-                (*gid as ::core::ffi::c_int + (*data).DeltaGlyphID as ::core::ffi::c_int) as USHORT;
+            *gid = (*gid as ::core::ffi::c_int + (*data).DeltaGlyphID as ::core::ffi::c_int) as USHORT;
             return 0 as ::core::ffi::c_int;
         }
     } else if (*subtab).SubstFormat as ::core::ffi::c_int == 2 as ::core::ffi::c_int {
@@ -1738,9 +1426,7 @@ unsafe extern "C-unwind" fn otl_gsub_apply_single(
     return -(1 as ::core::ffi::c_int);
 }
 unsafe extern "C-unwind" fn otl_gsub_apply_alternate(
-    mut subtab: *mut otl_gsub_subtab,
-    mut alt_idx: USHORT,
-    mut gid: *mut USHORT,
+    mut subtab: *mut otl_gsub_subtab, mut alt_idx: USHORT, mut gid: *mut USHORT,
 ) -> ::core::ffi::c_int {
     let mut idx: ::core::ffi::c_int = 0;
     if !(!subtab.is_null() && !gid.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -1770,10 +1456,7 @@ unsafe extern "C-unwind" fn otl_gsub_apply_alternate(
     return -(1 as ::core::ffi::c_int);
 }
 unsafe extern "C-unwind" fn glyph_seq_cmp(
-    mut glyph_seq0: *mut GlyphID,
-    mut n_glyphs0: USHORT,
-    mut glyph_seq1: *mut GlyphID,
-    mut n_glyphs1: USHORT,
+    mut glyph_seq0: *mut GlyphID, mut n_glyphs0: USHORT, mut glyph_seq1: *mut GlyphID, mut n_glyphs1: USHORT,
 ) -> ::core::ffi::c_int {
     let mut i: USHORT = 0;
     if n_glyphs0 as ::core::ffi::c_int != n_glyphs1 as ::core::ffi::c_int {
@@ -1781,25 +1464,18 @@ unsafe extern "C-unwind" fn glyph_seq_cmp(
     }
     i = 0 as USHORT;
     while (i as ::core::ffi::c_int) < n_glyphs0 as ::core::ffi::c_int {
-        if *glyph_seq0.offset(i as isize) as ::core::ffi::c_int
-            != *glyph_seq1.offset(i as isize) as ::core::ffi::c_int
-        {
-            return *glyph_seq0.offset(i as isize) as ::core::ffi::c_int
-                - *glyph_seq1.offset(i as isize) as ::core::ffi::c_int;
+        if *glyph_seq0.offset(i as isize) as ::core::ffi::c_int != *glyph_seq1.offset(i as isize) as ::core::ffi::c_int {
+            return *glyph_seq0.offset(i as isize) as ::core::ffi::c_int - *glyph_seq1.offset(i as isize) as ::core::ffi::c_int;
         }
         i = i.wrapping_add(1);
     }
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn otl_gsub_apply_ligature(
-    mut subtab: *mut otl_gsub_subtab,
-    mut gid_in: *mut USHORT,
-    mut num_gids: USHORT,
-    mut gid_out: *mut USHORT,
+    mut subtab: *mut otl_gsub_subtab, mut gid_in: *mut USHORT, mut num_gids: USHORT, mut gid_out: *mut USHORT,
 ) -> ::core::ffi::c_int {
     let mut idx: ::core::ffi::c_int = 0;
-    if !(!subtab.is_null() && !gid_out.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0
-    {
+    if !(!subtab.is_null() && !gid_out.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"subtab && gid_out\0" as *const u8 as *const ::core::ffi::c_char
@@ -1812,10 +1488,7 @@ unsafe extern "C-unwind" fn otl_gsub_apply_ligature(
     if (*subtab).SubstFormat as ::core::ffi::c_int == 1 as ::core::ffi::c_int {
         let mut data: *mut otl_gsub_ligature1 = ::core::ptr::null_mut::<otl_gsub_ligature1>();
         data = (*subtab).table.ligature1;
-        idx = clt_lookup_coverage(
-            &raw mut (*data).coverage,
-            *gid_in.offset(0 as ::core::ffi::c_int as isize),
-        );
+        idx = clt_lookup_coverage(&raw mut (*data).coverage, *gid_in.offset(0 as ::core::ffi::c_int as isize));
         if idx >= 0 as ::core::ffi::c_int && idx < (*data).LigSetCount as ::core::ffi::c_int {
             let mut ligset: *mut otl_gsub_ligset = ::core::ptr::null_mut::<otl_gsub_ligset>();
             let mut j: USHORT = 0;
@@ -1826,8 +1499,7 @@ unsafe extern "C-unwind" fn otl_gsub_apply_ligature(
                     gid_in.offset(1 as ::core::ffi::c_int as isize) as *mut GlyphID,
                     (num_gids as ::core::ffi::c_int - 1 as ::core::ffi::c_int) as USHORT,
                     (*(*ligset).Ligature.offset(j as isize)).Component,
-                    ((*(*ligset).Ligature.offset(j as isize)).CompCount as ::core::ffi::c_int
-                        - 1 as ::core::ffi::c_int) as USHORT,
+                    ((*(*ligset).Ligature.offset(j as isize)).CompCount as ::core::ffi::c_int - 1 as ::core::ffi::c_int) as USHORT,
                 ) == 0
                 {
                     *gid_out = (*(*ligset).Ligature.offset(j as isize)).LigGlyph as USHORT;
@@ -1843,9 +1515,8 @@ pub const GSUB_LIST_MAX: ::core::ffi::c_int = 32 as ::core::ffi::c_int;
 #[unsafe(export_name = "__pdf_impl_otl_gsub_new")]
 pub unsafe extern "C-unwind" fn otl_gsub_new() -> *mut otl_gsub {
     let mut gsub_list: *mut otl_gsub = ::core::ptr::null_mut::<otl_gsub>();
-    gsub_list = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<otl_gsub>() as usize) as uint32_t)
-        as *mut otl_gsub;
+    gsub_list =
+        new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<otl_gsub>() as usize) as uint32_t) as *mut otl_gsub;
     (*gsub_list).num_gsubs = 0 as ::core::ffi::c_int;
     (*gsub_list).select = -(1 as ::core::ffi::c_int);
     (*gsub_list).first = ::core::ptr::null_mut::<gsub_entry>();
@@ -1864,11 +1535,8 @@ unsafe extern "C-unwind" fn clear_chain(mut gsub_list: *mut otl_gsub) {
 }
 #[unsafe(export_name = "__pdf_impl_otl_gsub_add_feat")]
 pub unsafe extern "C-unwind" fn otl_gsub_add_feat(
-    mut gsub_list: *mut otl_gsub,
-    mut script: *const ::core::ffi::c_char,
-    mut language: *const ::core::ffi::c_char,
-    mut feature: *const ::core::ffi::c_char,
-    mut sfont: *mut sfnt,
+    mut gsub_list: *mut otl_gsub, mut script: *const ::core::ffi::c_char, mut language: *const ::core::ffi::c_char,
+    mut feature: *const ::core::ffi::c_char, mut sfont: *mut sfnt,
 ) -> ::core::ffi::c_int {
     let mut retval: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut i: ::core::ffi::c_int = 0;
@@ -1878,8 +1546,7 @@ pub unsafe extern "C-unwind" fn otl_gsub_add_feat(
     }
     i = 0 as ::core::ffi::c_int;
     while i < (*gsub_list).num_gsubs {
-        gsub = (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(i as isize)
-            as *mut otl_gsub_tab;
+        gsub = (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(i as isize) as *mut otl_gsub_tab;
         if streq_ptr(script, (*gsub).script) as ::core::ffi::c_int != 0
             && streq_ptr(language, (*gsub).language) as ::core::ffi::c_int != 0
             && streq_ptr(feature, (*gsub).feature) as ::core::ffi::c_int != 0
@@ -1889,25 +1556,15 @@ pub unsafe extern "C-unwind" fn otl_gsub_add_feat(
         }
         i += 1;
     }
-    gsub =
-        (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(i as isize) as *mut otl_gsub_tab;
-    (*gsub).script = new(
-        (strlen(script).wrapping_add(1 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t,
-    ) as *mut ::core::ffi::c_char;
+    gsub = (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(i as isize) as *mut otl_gsub_tab;
+    (*gsub).script = new((strlen(script).wrapping_add(1 as size_t) as uint32_t as usize)
+        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
     strcpy((*gsub).script, script);
-    (*gsub).language = new(
-        (strlen(language).wrapping_add(1 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t,
-    ) as *mut ::core::ffi::c_char;
+    (*gsub).language = new((strlen(language).wrapping_add(1 as size_t) as uint32_t as usize)
+        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
     strcpy((*gsub).language, language);
-    (*gsub).feature = new(
-        (strlen(feature).wrapping_add(1 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t,
-    ) as *mut ::core::ffi::c_char;
+    (*gsub).feature = new((strlen(feature).wrapping_add(1 as size_t) as uint32_t as usize)
+        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
     strcpy((*gsub).feature, feature);
     if dpx_conf.verbose_level > VERBOSE_LEVEL_MIN {
         pdf_message!(b"\n\0" as *const u8 as *const ::core::ffi::c_char);
@@ -1933,18 +1590,12 @@ pub unsafe extern "C-unwind" fn otl_gsub_add_feat(
     return retval;
 }
 unsafe extern "C-unwind" fn scan_otl_tag(
-    mut otl_tags: *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
-    mut script: *mut ::core::ffi::c_char,
-    mut language: *mut ::core::ffi::c_char,
-    mut feature: *mut ::core::ffi::c_char,
+    mut otl_tags: *const ::core::ffi::c_char, mut endptr: *const ::core::ffi::c_char, mut script: *mut ::core::ffi::c_char,
+    mut language: *mut ::core::ffi::c_char, mut feature: *mut ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut period: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-    if !(!script.is_null() && !language.is_null() && !feature.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!script.is_null() && !language.is_null() && !feature.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"script && language && feature\0" as *const u8 as *const ::core::ffi::c_char
@@ -1956,11 +1607,7 @@ unsafe extern "C-unwind" fn scan_otl_tag(
     }
     memset(script as *mut ::core::ffi::c_void, ' ' as i32, 4 as size_t);
     *script.offset(4 as ::core::ffi::c_int as isize) = 0 as ::core::ffi::c_char;
-    memset(
-        language as *mut ::core::ffi::c_void,
-        ' ' as i32,
-        4 as size_t,
-    );
+    memset(language as *mut ::core::ffi::c_void, ' ' as i32, 4 as size_t);
     *language.offset(4 as ::core::ffi::c_int as isize) = 0 as ::core::ffi::c_char;
     memset(feature as *mut ::core::ffi::c_void, ' ' as i32, 4 as size_t);
     *feature.offset(4 as ::core::ffi::c_int as isize) = 0 as ::core::ffi::c_char;
@@ -1968,33 +1615,18 @@ unsafe extern "C-unwind" fn scan_otl_tag(
     period = strchr(p, '.' as i32);
     if !period.is_null() && period < endptr {
         if period < p.offset(5 as ::core::ffi::c_int as isize) {
-            strncpy(
-                script,
-                p,
-                period.offset_from(p) as ::core::ffi::c_long as size_t,
-            );
+            strncpy(script, p, period.offset_from(p) as ::core::ffi::c_long as size_t);
         } else {
-            pdf_warning!(
-                b"Invalid OTL script tag found: %s\0" as *const u8 as *const ::core::ffi::c_char,
-                p,
-            );
+            pdf_warning!(b"Invalid OTL script tag found: %s\0" as *const u8 as *const ::core::ffi::c_char, p,);
             return -(1 as ::core::ffi::c_int);
         }
         p = period.offset(1 as ::core::ffi::c_int as isize);
         period = strchr(p, '.' as i32);
         if !period.is_null() && period < endptr {
             if period < p.offset(5 as ::core::ffi::c_int as isize) {
-                strncpy(
-                    language,
-                    p,
-                    period.offset_from(p) as ::core::ffi::c_long as size_t,
-                );
+                strncpy(language, p, period.offset_from(p) as ::core::ffi::c_long as size_t);
             } else {
-                pdf_warning!(
-                    b"Invalid OTL lanuage tag found: %s\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                    p,
-                );
+                pdf_warning!(b"Invalid OTL lanuage tag found: %s\0" as *const u8 as *const ::core::ffi::c_char, p,);
                 return -(1 as ::core::ffi::c_int);
             }
             p = period.offset(1 as ::core::ffi::c_int as isize);
@@ -2004,16 +1636,10 @@ unsafe extern "C-unwind" fn scan_otl_tag(
         strcpy(language, b"*\0" as *const u8 as *const ::core::ffi::c_char);
     }
     if p.offset(4 as ::core::ffi::c_int as isize) <= endptr {
-        strncpy(
-            feature,
-            p,
-            endptr.offset_from(p) as ::core::ffi::c_long as size_t,
-        );
+        strncpy(feature, p, endptr.offset_from(p) as ::core::ffi::c_long as size_t);
         p = endptr;
     } else {
-        pdf_warning!(
-            b"No valid OTL feature tag specified.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"No valid OTL feature tag specified.\0" as *const u8 as *const ::core::ffi::c_char,);
         return -(1 as ::core::ffi::c_int);
     }
     return 0 as ::core::ffi::c_int;
@@ -2029,8 +1655,7 @@ pub unsafe extern "C-unwind" fn otl_gsub_release(mut gsub_list: *mut otl_gsub) {
     }
     i = 0 as ::core::ffi::c_int;
     while i < (*gsub_list).num_gsubs {
-        gsub = (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(i as isize)
-            as *mut otl_gsub_tab;
+        gsub = (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(i as isize) as *mut otl_gsub_tab;
         free((*gsub).script as *mut ::core::ffi::c_void);
         free((*gsub).language as *mut ::core::ffi::c_void);
         free((*gsub).feature as *mut ::core::ffi::c_void);
@@ -2060,10 +1685,7 @@ pub unsafe extern "C-unwind" fn otl_gsub_release(mut gsub_list: *mut otl_gsub) {
     free(gsub_list as *mut ::core::ffi::c_void);
 }
 #[unsafe(export_name = "__pdf_impl_otl_gsub_apply")]
-pub unsafe extern "C-unwind" fn otl_gsub_apply(
-    mut gsub_list: *mut otl_gsub,
-    mut gid: *mut USHORT,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn otl_gsub_apply(mut gsub_list: *mut otl_gsub, mut gid: *mut USHORT) -> ::core::ffi::c_int {
     let mut retval: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut gsub: *mut otl_gsub_tab = ::core::ptr::null_mut::<otl_gsub_tab>();
     let mut subtab: *mut otl_gsub_subtab = ::core::ptr::null_mut::<otl_gsub_subtab>();
@@ -2076,8 +1698,7 @@ pub unsafe extern "C-unwind" fn otl_gsub_apply(
     if i < 0 as ::core::ffi::c_int || i >= (*gsub_list).num_gsubs {
         pdf_abort!(b"GSUB not selected...\0" as *const u8 as *const ::core::ffi::c_char);
     }
-    gsub =
-        (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(i as isize) as *mut otl_gsub_tab;
+    gsub = (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(i as isize) as *mut otl_gsub_tab;
     j = 0 as ::core::ffi::c_int;
     while retval < 0 as ::core::ffi::c_int && j < (*gsub).num_subtables {
         subtab = (*gsub).subtables.offset(j as isize) as *mut otl_gsub_subtab;
@@ -2092,11 +1713,7 @@ pub unsafe extern "C-unwind" fn otl_gsub_apply(
     return retval;
 }
 #[unsafe(export_name = "__pdf_impl_otl_gsub_apply_alt")]
-pub unsafe extern "C-unwind" fn otl_gsub_apply_alt(
-    mut gsub_list: *mut otl_gsub,
-    mut alt_idx: USHORT,
-    mut gid: *mut USHORT,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn otl_gsub_apply_alt(mut gsub_list: *mut otl_gsub, mut alt_idx: USHORT, mut gid: *mut USHORT) -> ::core::ffi::c_int {
     let mut retval: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut gsub: *mut otl_gsub_tab = ::core::ptr::null_mut::<otl_gsub_tab>();
     let mut subtab: *mut otl_gsub_subtab = ::core::ptr::null_mut::<otl_gsub_subtab>();
@@ -2109,8 +1726,7 @@ pub unsafe extern "C-unwind" fn otl_gsub_apply_alt(
     if i < 0 as ::core::ffi::c_int || i >= (*gsub_list).num_gsubs {
         pdf_abort!(b"GSUB not selected...\0" as *const u8 as *const ::core::ffi::c_char);
     }
-    gsub =
-        (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(i as isize) as *mut otl_gsub_tab;
+    gsub = (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(i as isize) as *mut otl_gsub_tab;
     j = 0 as ::core::ffi::c_int;
     while retval < 0 as ::core::ffi::c_int && j < (*gsub).num_subtables {
         subtab = (*gsub).subtables.offset(j as isize) as *mut otl_gsub_subtab;
@@ -2126,10 +1742,7 @@ pub unsafe extern "C-unwind" fn otl_gsub_apply_alt(
 }
 #[unsafe(export_name = "__pdf_impl_otl_gsub_apply_lig")]
 pub unsafe extern "C-unwind" fn otl_gsub_apply_lig(
-    mut gsub_list: *mut otl_gsub,
-    mut gid_in: *mut USHORT,
-    mut num_gids: USHORT,
-    mut gid_out: *mut USHORT,
+    mut gsub_list: *mut otl_gsub, mut gid_in: *mut USHORT, mut num_gids: USHORT, mut gid_out: *mut USHORT,
 ) -> ::core::ffi::c_int {
     let mut retval: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut gsub: *mut otl_gsub_tab = ::core::ptr::null_mut::<otl_gsub_tab>();
@@ -2143,8 +1756,7 @@ pub unsafe extern "C-unwind" fn otl_gsub_apply_lig(
     if i < 0 as ::core::ffi::c_int || i >= (*gsub_list).num_gsubs {
         pdf_abort!(b"GSUB not selected...\0" as *const u8 as *const ::core::ffi::c_char);
     }
-    gsub =
-        (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(i as isize) as *mut otl_gsub_tab;
+    gsub = (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(i as isize) as *mut otl_gsub_tab;
     j = 0 as ::core::ffi::c_int;
     while retval < 0 as ::core::ffi::c_int && j < (*gsub).num_subtables {
         subtab = (*gsub).subtables.offset(j as isize) as *mut otl_gsub_subtab;
@@ -2159,17 +1771,14 @@ pub unsafe extern "C-unwind" fn otl_gsub_apply_lig(
     return retval;
 }
 unsafe extern "C-unwind" fn gsub_find(
-    mut gsub_list: *mut otl_gsub,
-    mut script: *const ::core::ffi::c_char,
-    mut language: *const ::core::ffi::c_char,
+    mut gsub_list: *mut otl_gsub, mut script: *const ::core::ffi::c_char, mut language: *const ::core::ffi::c_char,
     mut feature: *const ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
     let mut i: ::core::ffi::c_int = 0;
     let mut gsub: *mut otl_gsub_tab = ::core::ptr::null_mut::<otl_gsub_tab>();
     i = 0 as ::core::ffi::c_int;
     while i < (*gsub_list).num_gsubs {
-        gsub = (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(i as isize)
-            as *mut otl_gsub_tab;
+        gsub = (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(i as isize) as *mut otl_gsub_tab;
         if streq_ptr((*gsub).script, script) as ::core::ffi::c_int != 0
             && streq_ptr((*gsub).language, language) as ::core::ffi::c_int != 0
             && streq_ptr((*gsub).feature, feature) as ::core::ffi::c_int != 0
@@ -2182,19 +1791,14 @@ unsafe extern "C-unwind" fn gsub_find(
 }
 #[unsafe(export_name = "__pdf_impl_otl_gsub_select")]
 pub unsafe extern "C-unwind" fn otl_gsub_select(
-    mut gsub_list: *mut otl_gsub,
-    mut script: *const ::core::ffi::c_char,
-    mut language: *const ::core::ffi::c_char,
+    mut gsub_list: *mut otl_gsub, mut script: *const ::core::ffi::c_char, mut language: *const ::core::ffi::c_char,
     mut feature: *const ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
     (*gsub_list).select = gsub_find(gsub_list, script, language, feature);
     return (*gsub_list).select;
 }
 #[unsafe(export_name = "__pdf_impl_otl_gsub_set_chain")]
-pub unsafe extern "C-unwind" fn otl_gsub_set_chain(
-    mut gsub_list: *mut otl_gsub,
-    mut otl_tags: *const ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn otl_gsub_set_chain(mut gsub_list: *mut otl_gsub, mut otl_tags: *const ::core::ffi::c_char) -> ::core::ffi::c_int {
     let mut prev: *mut gsub_entry = ::core::ptr::null_mut::<gsub_entry>();
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut nextptr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
@@ -2227,9 +1831,8 @@ pub unsafe extern "C-unwind" fn otl_gsub_set_chain(
             );
             if idx >= 0 as ::core::ffi::c_int && idx <= (*gsub_list).num_gsubs {
                 let mut entry: *mut gsub_entry = ::core::ptr::null_mut::<gsub_entry>();
-                entry = new((1 as ::core::ffi::c_int as uint32_t as usize)
-                    .wrapping_mul(::core::mem::size_of::<gsub_entry>() as usize)
-                    as uint32_t) as *mut gsub_entry;
+                entry = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<gsub_entry>() as usize) as uint32_t)
+                    as *mut gsub_entry;
                 if (*gsub_list).first.is_null() {
                     (*gsub_list).first = entry;
                 }
@@ -2250,9 +1853,7 @@ pub unsafe extern "C-unwind" fn otl_gsub_set_chain(
 }
 #[unsafe(export_name = "__pdf_impl_otl_gsub_add_feat_list")]
 pub unsafe extern "C-unwind" fn otl_gsub_add_feat_list(
-    mut gsub_list: *mut otl_gsub,
-    mut otl_tags: *const ::core::ffi::c_char,
-    mut sfont: *mut sfnt,
+    mut gsub_list: *mut otl_gsub, mut otl_tags: *const ::core::ffi::c_char, mut sfont: *mut sfnt,
 ) -> ::core::ffi::c_int {
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut nextptr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
@@ -2302,10 +1903,7 @@ pub unsafe extern "C-unwind" fn otl_gsub_add_feat_list(
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_otl_gsub_apply_chain")]
-pub unsafe extern "C-unwind" fn otl_gsub_apply_chain(
-    mut gsub_list: *mut otl_gsub,
-    mut gid: *mut USHORT,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn otl_gsub_apply_chain(mut gsub_list: *mut otl_gsub, mut gid: *mut USHORT) -> ::core::ffi::c_int {
     let mut retval: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut gsub: *mut otl_gsub_tab = ::core::ptr::null_mut::<otl_gsub_tab>();
     let mut subtab: *mut otl_gsub_subtab = ::core::ptr::null_mut::<otl_gsub_subtab>();
@@ -2319,8 +1917,7 @@ pub unsafe extern "C-unwind" fn otl_gsub_apply_chain(
     while !entry.is_null() {
         idx = (*entry).index;
         if !(idx < 0 as ::core::ffi::c_int || idx >= (*gsub_list).num_gsubs) {
-            gsub = (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(idx as isize)
-                as *mut otl_gsub_tab;
+            gsub = (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(idx as isize) as *mut otl_gsub_tab;
             i = 0 as ::core::ffi::c_int;
             retval = -(1 as ::core::ffi::c_int);
             while retval < 0 as ::core::ffi::c_int && i < (*gsub).num_subtables {
@@ -2339,43 +1936,29 @@ pub unsafe extern "C-unwind" fn otl_gsub_apply_chain(
     return retval;
 }
 unsafe extern "C-unwind" fn add_glyph_if_valid(
-    mut cmap: *mut CMap,
-    mut used_chars: *mut ::core::ffi::c_char,
-    mut map_base: *mut int32_t,
-    mut map_sub: *mut int32_t,
-    mut num_glyphs: USHORT,
-    mut GIDToCIDMap: *mut uint16_t,
-    mut gid: USHORT,
-    mut gid_sub: USHORT,
+    mut cmap: *mut CMap, mut used_chars: *mut ::core::ffi::c_char, mut map_base: *mut int32_t, mut map_sub: *mut int32_t, mut num_glyphs: USHORT,
+    mut GIDToCIDMap: *mut uint16_t, mut gid: USHORT, mut gid_sub: USHORT,
 ) -> ::core::ffi::c_int {
     let mut count: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut src: [::core::ffi::c_uchar; 2] = [0; 2];
     let mut dst: [::core::ffi::c_uchar; 4] = [0; 4];
     let mut p: *mut ::core::ffi::c_uchar = &raw mut dst as *mut ::core::ffi::c_uchar;
-    let mut endptr: *mut ::core::ffi::c_uchar =
-        (&raw mut dst as *mut ::core::ffi::c_uchar).offset(4 as ::core::ffi::c_int as isize);
+    let mut endptr: *mut ::core::ffi::c_uchar = (&raw mut dst as *mut ::core::ffi::c_uchar).offset(4 as ::core::ffi::c_int as isize);
     let mut len: size_t = 0;
     let mut cid_sub: uint16_t = 0;
-    if gid_sub as ::core::ffi::c_int >= num_glyphs as ::core::ffi::c_int
-        || gid as ::core::ffi::c_int >= num_glyphs as ::core::ffi::c_int
-    {
+    if gid_sub as ::core::ffi::c_int >= num_glyphs as ::core::ffi::c_int || gid as ::core::ffi::c_int >= num_glyphs as ::core::ffi::c_int {
         return 0 as ::core::ffi::c_int;
     }
     cid_sub = *GIDToCIDMap.offset(gid_sub as isize);
-    if *used_chars.offset((cid_sub as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize)
-        as ::core::ffi::c_int
-        & (1 as ::core::ffi::c_int)
-            << 7 as ::core::ffi::c_int - cid_sub as ::core::ffi::c_int % 8 as ::core::ffi::c_int
+    if *used_chars.offset((cid_sub as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize) as ::core::ffi::c_int
+        & (1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int - cid_sub as ::core::ffi::c_int % 8 as ::core::ffi::c_int
         != 0
     {
         let mut ch: int32_t = *map_base.offset(gid as isize);
         if UC_is_valid(ch) {
             src[0 as ::core::ffi::c_int as usize] =
-                (cid_sub as ::core::ffi::c_int >> 8 as ::core::ffi::c_int
-                    & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
-            src[1 as ::core::ffi::c_int as usize] = (cid_sub as ::core::ffi::c_int
-                & 0xff as ::core::ffi::c_int)
-                as ::core::ffi::c_uchar;
+                (cid_sub as ::core::ffi::c_int >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+            src[1 as ::core::ffi::c_int as usize] = (cid_sub as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
             len = UC_UTF16BE_encode_char(ch, &raw mut p, endptr);
             CMap_add_bfchar(
                 cmap,
@@ -2384,23 +1967,17 @@ unsafe extern "C-unwind" fn add_glyph_if_valid(
                 &raw mut dst as *mut ::core::ffi::c_uchar,
                 len,
             );
-            let ref mut fresh4 = *used_chars
-                .offset((cid_sub as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize);
+            let ref mut fresh4 = *used_chars.offset((cid_sub as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize);
             *fresh4 = (*fresh4 as ::core::ffi::c_int
-                & !((1 as ::core::ffi::c_int)
-                    << 7 as ::core::ffi::c_int
-                        - cid_sub as ::core::ffi::c_int % 8 as ::core::ffi::c_int))
+                & !((1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int - cid_sub as ::core::ffi::c_int % 8 as ::core::ffi::c_int))
                 as ::core::ffi::c_char;
             count = 1 as ::core::ffi::c_int;
         } else {
             ch = *map_sub.offset(gid as isize);
             if UC_is_valid(ch) {
                 src[0 as ::core::ffi::c_int as usize] =
-                    (cid_sub as ::core::ffi::c_int >> 8 as ::core::ffi::c_int
-                        & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
-                src[1 as ::core::ffi::c_int as usize] = (cid_sub as ::core::ffi::c_int
-                    & 0xff as ::core::ffi::c_int)
-                    as ::core::ffi::c_uchar;
+                    (cid_sub as ::core::ffi::c_int >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+                src[1 as ::core::ffi::c_int as usize] = (cid_sub as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
                 len = UC_UTF16BE_encode_char(ch, &raw mut p, endptr);
                 CMap_add_bfchar(
                     cmap,
@@ -2409,12 +1986,9 @@ unsafe extern "C-unwind" fn add_glyph_if_valid(
                     &raw mut dst as *mut ::core::ffi::c_uchar,
                     len,
                 );
-                let ref mut fresh5 = *used_chars
-                    .offset((cid_sub as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize);
+                let ref mut fresh5 = *used_chars.offset((cid_sub as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize);
                 *fresh5 = (*fresh5 as ::core::ffi::c_int
-                    & !((1 as ::core::ffi::c_int)
-                        << 7 as ::core::ffi::c_int
-                            - cid_sub as ::core::ffi::c_int % 8 as ::core::ffi::c_int))
+                    & !((1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int - cid_sub as ::core::ffi::c_int % 8 as ::core::ffi::c_int))
                     as ::core::ffi::c_char;
                 count = 1 as ::core::ffi::c_int;
             }
@@ -2423,13 +1997,8 @@ unsafe extern "C-unwind" fn add_glyph_if_valid(
     return count;
 }
 unsafe extern "C-unwind" fn add_ToUnicode_single(
-    mut cmap: *mut CMap,
-    mut used_chars: *mut ::core::ffi::c_char,
-    mut subtab: *mut otl_gsub_subtab,
-    mut map_base: *mut int32_t,
-    mut map_sub: *mut int32_t,
-    mut num_glyphs: USHORT,
-    mut GIDToCIDMap: *mut uint16_t,
+    mut cmap: *mut CMap, mut used_chars: *mut ::core::ffi::c_char, mut subtab: *mut otl_gsub_subtab, mut map_base: *mut int32_t,
+    mut map_sub: *mut int32_t, mut num_glyphs: USHORT, mut GIDToCIDMap: *mut uint16_t,
 ) -> ::core::ffi::c_int {
     let mut count: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut idx: ::core::ffi::c_int = 0;
@@ -2437,10 +2006,7 @@ unsafe extern "C-unwind" fn add_ToUnicode_single(
     let mut gid: USHORT = 0;
     let mut gid_sub: USHORT = 0;
     if subtab.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"subtab\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"subtab\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if (*subtab).SubstFormat as ::core::ffi::c_int == 1 as ::core::ffi::c_int {
@@ -2453,19 +2019,8 @@ unsafe extern "C-unwind" fn add_ToUnicode_single(
                 idx = 0 as ::core::ffi::c_int;
                 while idx < (*cov).count as ::core::ffi::c_int {
                     gid = *(*cov).list.offset(idx as isize) as USHORT;
-                    gid_sub = (gid as ::core::ffi::c_int
-                        + (*data).DeltaGlyphID as ::core::ffi::c_int)
-                        as USHORT;
-                    count += add_glyph_if_valid(
-                        cmap,
-                        used_chars,
-                        map_base,
-                        map_sub,
-                        num_glyphs,
-                        GIDToCIDMap,
-                        gid,
-                        gid_sub,
-                    );
+                    gid_sub = (gid as ::core::ffi::c_int + (*data).DeltaGlyphID as ::core::ffi::c_int) as USHORT;
+                    count += add_glyph_if_valid(cmap, used_chars, map_base, map_sub, num_glyphs, GIDToCIDMap, gid, gid_sub);
                     idx += 1;
                 }
             }
@@ -2473,27 +2028,13 @@ unsafe extern "C-unwind" fn add_ToUnicode_single(
                 i = 0 as USHORT;
                 while (i as ::core::ffi::c_int) < (*cov).count as ::core::ffi::c_int {
                     gid = (*(*cov).range.offset(i as isize)).Start as USHORT;
-                    while gid as ::core::ffi::c_int
-                        <= (*(*cov).range.offset(i as isize)).End as ::core::ffi::c_int
+                    while gid as ::core::ffi::c_int <= (*(*cov).range.offset(i as isize)).End as ::core::ffi::c_int
                         && (gid as ::core::ffi::c_int) < num_glyphs as ::core::ffi::c_int
                     {
-                        idx = (*(*cov).range.offset(i as isize)).StartCoverageIndex
-                            as ::core::ffi::c_int
-                            + gid as ::core::ffi::c_int
+                        idx = (*(*cov).range.offset(i as isize)).StartCoverageIndex as ::core::ffi::c_int + gid as ::core::ffi::c_int
                             - (*(*cov).range.offset(i as isize)).Start as ::core::ffi::c_int;
-                        gid_sub = (gid as ::core::ffi::c_int
-                            + (*data).DeltaGlyphID as ::core::ffi::c_int)
-                            as USHORT;
-                        count += add_glyph_if_valid(
-                            cmap,
-                            used_chars,
-                            map_base,
-                            map_sub,
-                            num_glyphs,
-                            GIDToCIDMap,
-                            gid,
-                            gid_sub,
-                        );
+                        gid_sub = (gid as ::core::ffi::c_int + (*data).DeltaGlyphID as ::core::ffi::c_int) as USHORT;
+                        count += add_glyph_if_valid(cmap, used_chars, map_base, map_sub, num_glyphs, GIDToCIDMap, gid, gid_sub);
                         gid = gid.wrapping_add(1);
                     }
                     i = i.wrapping_add(1);
@@ -2511,20 +2052,9 @@ unsafe extern "C-unwind" fn add_ToUnicode_single(
                 idx = 0 as ::core::ffi::c_int;
                 while idx < (*cov_0).count as ::core::ffi::c_int {
                     gid = *(*cov_0).list.offset(idx as isize) as USHORT;
-                    if idx >= 0 as ::core::ffi::c_int
-                        && idx < (*data_0).GlyphCount as ::core::ffi::c_int
-                    {
+                    if idx >= 0 as ::core::ffi::c_int && idx < (*data_0).GlyphCount as ::core::ffi::c_int {
                         gid_sub = *(*data_0).Substitute.offset(idx as isize) as USHORT;
-                        count += add_glyph_if_valid(
-                            cmap,
-                            used_chars,
-                            map_base,
-                            map_sub,
-                            num_glyphs,
-                            GIDToCIDMap,
-                            gid,
-                            gid_sub,
-                        );
+                        count += add_glyph_if_valid(cmap, used_chars, map_base, map_sub, num_glyphs, GIDToCIDMap, gid, gid_sub);
                     }
                     idx += 1;
                 }
@@ -2533,28 +2063,14 @@ unsafe extern "C-unwind" fn add_ToUnicode_single(
                 i = 0 as USHORT;
                 while (i as ::core::ffi::c_int) < (*cov_0).count as ::core::ffi::c_int {
                     gid = (*(*cov_0).range.offset(i as isize)).Start as USHORT;
-                    while gid as ::core::ffi::c_int
-                        <= (*(*cov_0).range.offset(i as isize)).End as ::core::ffi::c_int
+                    while gid as ::core::ffi::c_int <= (*(*cov_0).range.offset(i as isize)).End as ::core::ffi::c_int
                         && (gid as ::core::ffi::c_int) < num_glyphs as ::core::ffi::c_int
                     {
-                        idx = (*(*cov_0).range.offset(i as isize)).StartCoverageIndex
-                            as ::core::ffi::c_int
-                            + gid as ::core::ffi::c_int
+                        idx = (*(*cov_0).range.offset(i as isize)).StartCoverageIndex as ::core::ffi::c_int + gid as ::core::ffi::c_int
                             - (*(*cov_0).range.offset(i as isize)).Start as ::core::ffi::c_int;
-                        if idx >= 0 as ::core::ffi::c_int
-                            && idx < (*data_0).GlyphCount as ::core::ffi::c_int
-                        {
+                        if idx >= 0 as ::core::ffi::c_int && idx < (*data_0).GlyphCount as ::core::ffi::c_int {
                             gid_sub = *(*data_0).Substitute.offset(idx as isize) as USHORT;
-                            count += add_glyph_if_valid(
-                                cmap,
-                                used_chars,
-                                map_base,
-                                map_sub,
-                                num_glyphs,
-                                GIDToCIDMap,
-                                gid,
-                                gid_sub,
-                            );
+                            count += add_glyph_if_valid(cmap, used_chars, map_base, map_sub, num_glyphs, GIDToCIDMap, gid, gid_sub);
                         }
                         gid = gid.wrapping_add(1);
                     }
@@ -2567,15 +2083,8 @@ unsafe extern "C-unwind" fn add_ToUnicode_single(
     return count;
 }
 unsafe extern "C-unwind" fn add_alternate1_inverse_map(
-    mut cmap: *mut CMap,
-    mut used_chars: *mut ::core::ffi::c_char,
-    mut map_base: *mut int32_t,
-    mut map_sub: *mut int32_t,
-    mut num_glyphs: USHORT,
-    mut GIDToCIDMap: *mut uint16_t,
-    mut gid: USHORT,
-    mut idx: ::core::ffi::c_int,
-    mut data: *mut otl_gsub_alternate1,
+    mut cmap: *mut CMap, mut used_chars: *mut ::core::ffi::c_char, mut map_base: *mut int32_t, mut map_sub: *mut int32_t, mut num_glyphs: USHORT,
+    mut GIDToCIDMap: *mut uint16_t, mut gid: USHORT, mut idx: ::core::ffi::c_int, mut data: *mut otl_gsub_alternate1,
 ) -> int32_t {
     let mut count: int32_t = 0 as int32_t;
     if idx >= 0 as ::core::ffi::c_int && idx < (*data).AlternateSetCount as ::core::ffi::c_int {
@@ -2588,40 +2097,23 @@ unsafe extern "C-unwind" fn add_alternate1_inverse_map(
         i = 0 as USHORT;
         while (i as ::core::ffi::c_int) < (*altset).GlyphCount as ::core::ffi::c_int {
             let mut gid_alt: USHORT = *(*altset).Alternate.offset(i as isize) as USHORT;
-            count = (count as ::core::ffi::c_int
-                + add_glyph_if_valid(
-                    cmap,
-                    used_chars,
-                    map_base,
-                    map_sub,
-                    num_glyphs,
-                    GIDToCIDMap,
-                    gid,
-                    gid_alt,
-                )) as int32_t;
+            count = (count as ::core::ffi::c_int + add_glyph_if_valid(cmap, used_chars, map_base, map_sub, num_glyphs, GIDToCIDMap, gid, gid_alt))
+                as int32_t;
             i = i.wrapping_add(1);
         }
     }
     return count;
 }
 unsafe extern "C-unwind" fn add_ToUnicode_alternate(
-    mut cmap: *mut CMap,
-    mut used_chars: *mut ::core::ffi::c_char,
-    mut subtab: *mut otl_gsub_subtab,
-    mut map_base: *mut int32_t,
-    mut map_sub: *mut int32_t,
-    mut num_glyphs: USHORT,
-    mut GIDToCIDMap: *mut uint16_t,
+    mut cmap: *mut CMap, mut used_chars: *mut ::core::ffi::c_char, mut subtab: *mut otl_gsub_subtab, mut map_base: *mut int32_t,
+    mut map_sub: *mut int32_t, mut num_glyphs: USHORT, mut GIDToCIDMap: *mut uint16_t,
 ) -> int32_t {
     let mut count: int32_t = 0 as int32_t;
     let mut i: USHORT = 0;
     let mut gid: USHORT = 0;
     let mut idx: USHORT = 0;
     if subtab.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"subtab\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"subtab\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if (*subtab).SubstFormat as ::core::ffi::c_int == 1 as ::core::ffi::c_int {
@@ -2654,15 +2146,11 @@ unsafe extern "C-unwind" fn add_ToUnicode_alternate(
                 i = 0 as USHORT;
                 while (i as ::core::ffi::c_int) < (*cov).count as ::core::ffi::c_int {
                     gid = (*(*cov).range.offset(i as isize)).Start as USHORT;
-                    while gid as ::core::ffi::c_int
-                        <= (*(*cov).range.offset(i as isize)).End as ::core::ffi::c_int
+                    while gid as ::core::ffi::c_int <= (*(*cov).range.offset(i as isize)).End as ::core::ffi::c_int
                         && (gid as ::core::ffi::c_int) < num_glyphs as ::core::ffi::c_int
                     {
-                        idx = ((*(*cov).range.offset(i as isize)).StartCoverageIndex
-                            as ::core::ffi::c_int
-                            + gid as ::core::ffi::c_int
-                            - (*(*cov).range.offset(i as isize)).Start as ::core::ffi::c_int)
-                            as USHORT;
+                        idx = ((*(*cov).range.offset(i as isize)).StartCoverageIndex as ::core::ffi::c_int + gid as ::core::ffi::c_int
+                            - (*(*cov).range.offset(i as isize)).Start as ::core::ffi::c_int) as USHORT;
                         count += add_alternate1_inverse_map(
                             cmap,
                             used_chars,
@@ -2685,15 +2173,8 @@ unsafe extern "C-unwind" fn add_ToUnicode_alternate(
     return count;
 }
 unsafe extern "C-unwind" fn add_ligature1_inverse_map(
-    mut cmap: *mut CMap,
-    mut used_chars: *mut ::core::ffi::c_char,
-    mut map_base: *mut int32_t,
-    mut map_sub: *mut int32_t,
-    mut num_glyphs: USHORT,
-    mut GIDToCIDMap: *mut uint16_t,
-    mut gid_1: USHORT,
-    mut idx: ::core::ffi::c_int,
-    mut data: *mut otl_gsub_ligature1,
+    mut cmap: *mut CMap, mut used_chars: *mut ::core::ffi::c_char, mut map_base: *mut int32_t, mut map_sub: *mut int32_t, mut num_glyphs: USHORT,
+    mut GIDToCIDMap: *mut uint16_t, mut gid_1: USHORT, mut idx: ::core::ffi::c_int, mut data: *mut otl_gsub_ligature1,
 ) -> int32_t {
     let mut count: int32_t = 0 as int32_t;
     if idx >= 0 as ::core::ffi::c_int && idx < (*data).LigSetCount as ::core::ffi::c_int {
@@ -2706,23 +2187,16 @@ unsafe extern "C-unwind" fn add_ligature1_inverse_map(
             let mut gid_sub: USHORT = (*(*ligset).Ligature.offset(j as isize)).LigGlyph as USHORT;
             if (gid_sub as ::core::ffi::c_int) < num_glyphs as ::core::ffi::c_int {
                 let mut cid: uint16_t = *GIDToCIDMap.offset(gid_sub as isize);
-                if *used_chars
-                    .offset((cid as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize)
-                    as ::core::ffi::c_int
-                    & (1 as ::core::ffi::c_int)
-                        << 7 as ::core::ffi::c_int
-                            - cid as ::core::ffi::c_int % 8 as ::core::ffi::c_int
+                if *used_chars.offset((cid as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize) as ::core::ffi::c_int
+                    & (1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int - cid as ::core::ffi::c_int % 8 as ::core::ffi::c_int
                     != 0
                 {
                     let mut ch: int32_t = 0;
                     let mut ucv: *mut int32_t = ::core::ptr::null_mut::<int32_t>();
                     let mut comp_count: USHORT = (*(*ligset).Ligature.offset(j as isize)).CompCount;
                     let mut fail_count: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-                    ucv = new((comp_count as uint32_t as usize)
-                        .wrapping_mul(::core::mem::size_of::<int32_t>() as usize)
-                        as uint32_t) as *mut int32_t;
-                    ch = if UC_is_valid(*map_base.offset(gid_1 as isize)) as ::core::ffi::c_int != 0
-                    {
+                    ucv = new((comp_count as uint32_t as usize).wrapping_mul(::core::mem::size_of::<int32_t>() as usize) as uint32_t) as *mut int32_t;
+                    ch = if UC_is_valid(*map_base.offset(gid_1 as isize)) as ::core::ffi::c_int != 0 {
                         *map_base.offset(gid_1 as isize)
                     } else {
                         *map_sub.offset(gid_1 as isize)
@@ -2735,25 +2209,16 @@ unsafe extern "C-unwind" fn add_ligature1_inverse_map(
                     };
                     i = 0 as USHORT;
                     while (i as ::core::ffi::c_int)
-                        < (*(*ligset).Ligature.offset(j as isize)).CompCount as ::core::ffi::c_int
-                            - 1 as ::core::ffi::c_int
+                        < (*(*ligset).Ligature.offset(j as isize)).CompCount as ::core::ffi::c_int - 1 as ::core::ffi::c_int
                     {
-                        let mut gid: USHORT = *(*(*ligset).Ligature.offset(j as isize))
-                            .Component
-                            .offset(i as isize)
-                            as USHORT;
+                        let mut gid: USHORT = *(*(*ligset).Ligature.offset(j as isize)).Component.offset(i as isize) as USHORT;
                         if (gid as ::core::ffi::c_int) < num_glyphs as ::core::ffi::c_int {
-                            ch = if UC_is_valid(*map_base.offset(gid as isize))
-                                as ::core::ffi::c_int
-                                != 0
-                            {
+                            ch = if UC_is_valid(*map_base.offset(gid as isize)) as ::core::ffi::c_int != 0 {
                                 *map_base.offset(gid as isize)
                             } else {
                                 *map_sub.offset(gid as isize)
                             };
-                            *ucv.offset(
-                                (i as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as isize,
-                            ) = ch;
+                            *ucv.offset((i as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as isize) = ch;
                             fail_count += if UC_is_valid(ch) as ::core::ffi::c_int != 0 {
                                 0 as ::core::ffi::c_int
                             } else {
@@ -2766,53 +2231,27 @@ unsafe extern "C-unwind" fn add_ligature1_inverse_map(
                     }
                     if fail_count == 0 as ::core::ffi::c_int {
                         let mut src: [::core::ffi::c_uchar; 2] = [0; 2];
-                        let mut dst: *mut ::core::ffi::c_uchar =
-                            ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-                        let mut p: *mut ::core::ffi::c_uchar =
-                            ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-                        let mut endptr: *mut ::core::ffi::c_uchar =
-                            ::core::ptr::null_mut::<::core::ffi::c_uchar>();
+                        let mut dst: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
+                        let mut p: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
+                        let mut endptr: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
                         let mut len: size_t = 0 as size_t;
-                        src[0 as ::core::ffi::c_int as usize] = (cid as ::core::ffi::c_int
-                            >> 8 as ::core::ffi::c_int
-                            & 0xff as ::core::ffi::c_int)
-                            as ::core::ffi::c_uchar;
-                        src[1 as ::core::ffi::c_int as usize] = (cid as ::core::ffi::c_int
-                            & 0xff as ::core::ffi::c_int)
-                            as ::core::ffi::c_uchar;
-                        dst = new(
-                            ((comp_count as ::core::ffi::c_int * 4 as ::core::ffi::c_int)
-                                as uint32_t as usize)
-                                .wrapping_mul(
-                                    ::core::mem::size_of::<::core::ffi::c_uchar>() as usize
-                                ) as uint32_t,
-                        ) as *mut ::core::ffi::c_uchar;
+                        src[0 as ::core::ffi::c_int as usize] =
+                            (cid as ::core::ffi::c_int >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+                        src[1 as ::core::ffi::c_int as usize] = (cid as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+                        dst = new(((comp_count as ::core::ffi::c_int * 4 as ::core::ffi::c_int) as uint32_t as usize)
+                            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize) as uint32_t)
+                            as *mut ::core::ffi::c_uchar;
                         p = dst;
-                        endptr = dst.offset(
-                            (comp_count as ::core::ffi::c_int * 4 as ::core::ffi::c_int) as isize,
-                        );
+                        endptr = dst.offset((comp_count as ::core::ffi::c_int * 4 as ::core::ffi::c_int) as isize);
                         i = 0 as USHORT;
                         while (i as ::core::ffi::c_int) < comp_count as ::core::ffi::c_int {
-                            len = len.wrapping_add(UC_UTF16BE_encode_char(
-                                *ucv.offset(i as isize),
-                                &raw mut p,
-                                endptr,
-                            ));
+                            len = len.wrapping_add(UC_UTF16BE_encode_char(*ucv.offset(i as isize), &raw mut p, endptr));
                             i = i.wrapping_add(1);
                         }
-                        CMap_add_bfchar(
-                            cmap,
-                            &raw mut src as *mut ::core::ffi::c_uchar,
-                            2 as size_t,
-                            dst,
-                            len,
-                        );
-                        let ref mut fresh3 = *used_chars
-                            .offset((cid as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize);
+                        CMap_add_bfchar(cmap, &raw mut src as *mut ::core::ffi::c_uchar, 2 as size_t, dst, len);
+                        let ref mut fresh3 = *used_chars.offset((cid as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize);
                         *fresh3 = (*fresh3 as ::core::ffi::c_int
-                            & !((1 as ::core::ffi::c_int)
-                                << 7 as ::core::ffi::c_int
-                                    - cid as ::core::ffi::c_int % 8 as ::core::ffi::c_int))
+                            & !((1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int - cid as ::core::ffi::c_int % 8 as ::core::ffi::c_int))
                             as ::core::ffi::c_char;
                         count += 1;
                         free(dst as *mut ::core::ffi::c_void);
@@ -2826,23 +2265,15 @@ unsafe extern "C-unwind" fn add_ligature1_inverse_map(
     return count;
 }
 unsafe extern "C-unwind" fn add_ToUnicode_ligature(
-    mut cmap: *mut CMap,
-    mut used_chars: *mut ::core::ffi::c_char,
-    mut subtab: *mut otl_gsub_subtab,
-    mut map_base: *mut int32_t,
-    mut map_sub: *mut int32_t,
-    mut num_glyphs: USHORT,
-    mut GIDToCIDMap: *mut uint16_t,
+    mut cmap: *mut CMap, mut used_chars: *mut ::core::ffi::c_char, mut subtab: *mut otl_gsub_subtab, mut map_base: *mut int32_t,
+    mut map_sub: *mut int32_t, mut num_glyphs: USHORT, mut GIDToCIDMap: *mut uint16_t,
 ) -> int32_t {
     let mut count: int32_t = 0 as int32_t;
     let mut i: USHORT = 0;
     let mut idx: USHORT = 0;
     let mut gid: USHORT = 0;
     if subtab.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"subtab\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"subtab\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if (*subtab).SubstFormat as ::core::ffi::c_int == 1 as ::core::ffi::c_int {
@@ -2875,15 +2306,11 @@ unsafe extern "C-unwind" fn add_ToUnicode_ligature(
                 i = 0 as USHORT;
                 while (i as ::core::ffi::c_int) < (*cov).count as ::core::ffi::c_int {
                     gid = (*(*cov).range.offset(i as isize)).Start as USHORT;
-                    while gid as ::core::ffi::c_int
-                        <= (*(*cov).range.offset(i as isize)).End as ::core::ffi::c_int
+                    while gid as ::core::ffi::c_int <= (*(*cov).range.offset(i as isize)).End as ::core::ffi::c_int
                         && (gid as ::core::ffi::c_int) < num_glyphs as ::core::ffi::c_int
                     {
-                        idx = ((*(*cov).range.offset(i as isize)).StartCoverageIndex
-                            as ::core::ffi::c_int
-                            + gid as ::core::ffi::c_int
-                            - (*(*cov).range.offset(i as isize)).Start as ::core::ffi::c_int)
-                            as USHORT;
+                        idx = ((*(*cov).range.offset(i as isize)).StartCoverageIndex as ::core::ffi::c_int + gid as ::core::ffi::c_int
+                            - (*(*cov).range.offset(i as isize)).Start as ::core::ffi::c_int) as USHORT;
                         if (gid as ::core::ffi::c_int) < num_glyphs as ::core::ffi::c_int {
                             count += add_ligature1_inverse_map(
                                 cmap,
@@ -2909,13 +2336,8 @@ unsafe extern "C-unwind" fn add_ToUnicode_ligature(
 }
 #[unsafe(export_name = "__pdf_impl_otl_gsub_add_ToUnicode")]
 pub unsafe extern "C-unwind" fn otl_gsub_add_ToUnicode(
-    mut cmap: *mut CMap,
-    mut used_chars: *mut ::core::ffi::c_char,
-    mut map_base: *mut int32_t,
-    mut map_sub: *mut int32_t,
-    mut num_glyphs: USHORT,
-    mut GIDToCIDMap: *mut uint16_t,
-    mut sfont: *mut sfnt,
+    mut cmap: *mut CMap, mut used_chars: *mut ::core::ffi::c_char, mut map_base: *mut int32_t, mut map_sub: *mut int32_t, mut num_glyphs: USHORT,
+    mut GIDToCIDMap: *mut uint16_t, mut sfont: *mut sfnt,
 ) -> ::core::ffi::c_int {
     let mut count: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut gsub_list: *mut otl_gsub = ::core::ptr::null_mut::<otl_gsub>();
@@ -2933,44 +2355,19 @@ pub unsafe extern "C-unwind" fn otl_gsub_add_ToUnicode(
     );
     i = 0 as ::core::ffi::c_int;
     while i < (*gsub_list).num_gsubs {
-        gsub = (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(i as isize)
-            as *mut otl_gsub_tab;
+        gsub = (&raw mut (*gsub_list).gsubs as *mut otl_gsub_tab).offset(i as isize) as *mut otl_gsub_tab;
         j = 0 as ::core::ffi::c_int;
         while j < (*gsub).num_subtables {
             subtab = (*gsub).subtables.offset(j as isize) as *mut otl_gsub_subtab;
             match (*subtab).LookupType as ::core::ffi::c_int {
                 OTL_GSUB_TYPE_SINGLE => {
-                    count += add_ToUnicode_single(
-                        cmap,
-                        used_chars,
-                        subtab,
-                        map_base,
-                        map_sub,
-                        num_glyphs,
-                        GIDToCIDMap,
-                    );
+                    count += add_ToUnicode_single(cmap, used_chars, subtab, map_base, map_sub, num_glyphs, GIDToCIDMap);
                 }
                 OTL_GSUB_TYPE_ALTERNATE => {
-                    count += add_ToUnicode_alternate(
-                        cmap,
-                        used_chars,
-                        subtab,
-                        map_base,
-                        map_sub,
-                        num_glyphs,
-                        GIDToCIDMap,
-                    ) as ::core::ffi::c_int;
+                    count += add_ToUnicode_alternate(cmap, used_chars, subtab, map_base, map_sub, num_glyphs, GIDToCIDMap) as ::core::ffi::c_int;
                 }
                 OTL_GSUB_TYPE_LIGATURE => {
-                    count += add_ToUnicode_ligature(
-                        cmap,
-                        used_chars,
-                        subtab,
-                        map_base,
-                        map_sub,
-                        num_glyphs,
-                        GIDToCIDMap,
-                    ) as ::core::ffi::c_int;
+                    count += add_ToUnicode_ligature(cmap, used_chars, subtab, map_base, map_sub, num_glyphs, GIDToCIDMap) as ::core::ffi::c_int;
                 }
                 _ => {}
             }
@@ -2983,11 +2380,7 @@ pub unsafe extern "C-unwind" fn otl_gsub_add_ToUnicode(
 }
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memset(
-        __b: *mut ::core::ffi::c_void,
-        __c: ::core::ffi::c_int,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memset(__b: *mut ::core::ffi::c_void, __c: ::core::ffi::c_int, __len: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -3008,16 +2401,10 @@ pub unsafe extern "C" fn __pdf_entry_otl_gsub_new(_result: *mut *mut otl_gsub) -
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_otl_gsub_add_feat(
-    mut gsub_list: *mut otl_gsub,
-    mut script: *const ::core::ffi::c_char,
-    mut language: *const ::core::ffi::c_char,
-    mut feature: *const ::core::ffi::c_char,
-    mut sfont: *mut sfnt,
-    _result: *mut ::core::ffi::c_int,
+    mut gsub_list: *mut otl_gsub, mut script: *const ::core::ffi::c_char, mut language: *const ::core::ffi::c_char,
+    mut feature: *const ::core::ffi::c_char, mut sfont: *mut sfnt, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        otl_gsub_add_feat(gsub_list, script, language, feature, sfont)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { otl_gsub_add_feat(gsub_list, script, language, feature, sfont) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -3038,11 +2425,7 @@ pub unsafe extern "C" fn __pdf_entry_otl_gsub_release(mut gsub_list: *mut otl_gs
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_otl_gsub_apply(
-    mut gsub_list: *mut otl_gsub,
-    mut gid: *mut USHORT,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_otl_gsub_apply(mut gsub_list: *mut otl_gsub, mut gid: *mut USHORT, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { otl_gsub_apply(gsub_list, gid) }) {
         Ok(value) => {
             unsafe {
@@ -3055,14 +2438,9 @@ pub unsafe extern "C" fn __pdf_entry_otl_gsub_apply(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_otl_gsub_apply_alt(
-    mut gsub_list: *mut otl_gsub,
-    mut alt_idx: USHORT,
-    mut gid: *mut USHORT,
-    _result: *mut ::core::ffi::c_int,
+    mut gsub_list: *mut otl_gsub, mut alt_idx: USHORT, mut gid: *mut USHORT, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        otl_gsub_apply_alt(gsub_list, alt_idx, gid)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { otl_gsub_apply_alt(gsub_list, alt_idx, gid) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -3074,15 +2452,9 @@ pub unsafe extern "C" fn __pdf_entry_otl_gsub_apply_alt(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_otl_gsub_apply_lig(
-    mut gsub_list: *mut otl_gsub,
-    mut gid_in: *mut USHORT,
-    mut num_gids: USHORT,
-    mut gid_out: *mut USHORT,
-    _result: *mut ::core::ffi::c_int,
+    mut gsub_list: *mut otl_gsub, mut gid_in: *mut USHORT, mut num_gids: USHORT, mut gid_out: *mut USHORT, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        otl_gsub_apply_lig(gsub_list, gid_in, num_gids, gid_out)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { otl_gsub_apply_lig(gsub_list, gid_in, num_gids, gid_out) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -3094,15 +2466,10 @@ pub unsafe extern "C" fn __pdf_entry_otl_gsub_apply_lig(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_otl_gsub_select(
-    mut gsub_list: *mut otl_gsub,
-    mut script: *const ::core::ffi::c_char,
-    mut language: *const ::core::ffi::c_char,
-    mut feature: *const ::core::ffi::c_char,
-    _result: *mut ::core::ffi::c_int,
+    mut gsub_list: *mut otl_gsub, mut script: *const ::core::ffi::c_char, mut language: *const ::core::ffi::c_char,
+    mut feature: *const ::core::ffi::c_char, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        otl_gsub_select(gsub_list, script, language, feature)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { otl_gsub_select(gsub_list, script, language, feature) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -3114,9 +2481,7 @@ pub unsafe extern "C" fn __pdf_entry_otl_gsub_select(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_otl_gsub_set_chain(
-    mut gsub_list: *mut otl_gsub,
-    mut otl_tags: *const ::core::ffi::c_char,
-    _result: *mut ::core::ffi::c_int,
+    mut gsub_list: *mut otl_gsub, mut otl_tags: *const ::core::ffi::c_char, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { otl_gsub_set_chain(gsub_list, otl_tags) }) {
         Ok(value) => {
@@ -3130,14 +2495,9 @@ pub unsafe extern "C" fn __pdf_entry_otl_gsub_set_chain(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_otl_gsub_add_feat_list(
-    mut gsub_list: *mut otl_gsub,
-    mut otl_tags: *const ::core::ffi::c_char,
-    mut sfont: *mut sfnt,
-    _result: *mut ::core::ffi::c_int,
+    mut gsub_list: *mut otl_gsub, mut otl_tags: *const ::core::ffi::c_char, mut sfont: *mut sfnt, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        otl_gsub_add_feat_list(gsub_list, otl_tags, sfont)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { otl_gsub_add_feat_list(gsub_list, otl_tags, sfont) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -3149,9 +2509,7 @@ pub unsafe extern "C" fn __pdf_entry_otl_gsub_add_feat_list(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_otl_gsub_apply_chain(
-    mut gsub_list: *mut otl_gsub,
-    mut gid: *mut USHORT,
-    _result: *mut ::core::ffi::c_int,
+    mut gsub_list: *mut otl_gsub, mut gid: *mut USHORT, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { otl_gsub_apply_chain(gsub_list, gid) }) {
         Ok(value) => {
@@ -3165,26 +2523,11 @@ pub unsafe extern "C" fn __pdf_entry_otl_gsub_apply_chain(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_otl_gsub_add_ToUnicode(
-    mut cmap: *mut CMap,
-    mut used_chars: *mut ::core::ffi::c_char,
-    mut map_base: *mut int32_t,
-    mut map_sub: *mut int32_t,
-    mut num_glyphs: USHORT,
-    mut GIDToCIDMap: *mut uint16_t,
-    mut sfont: *mut sfnt,
-    _result: *mut ::core::ffi::c_int,
+    mut cmap: *mut CMap, mut used_chars: *mut ::core::ffi::c_char, mut map_base: *mut int32_t, mut map_sub: *mut int32_t, mut num_glyphs: USHORT,
+    mut GIDToCIDMap: *mut uint16_t, mut sfont: *mut sfnt, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        otl_gsub_add_ToUnicode(
-            cmap,
-            used_chars,
-            map_base,
-            map_sub,
-            num_glyphs,
-            GIDToCIDMap,
-            sfont,
-        )
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { otl_gsub_add_ToUnicode(cmap, used_chars, map_base, map_sub, num_glyphs, GIDToCIDMap, sfont) })
+    {
         Ok(value) => {
             unsafe {
                 _result.write(value);

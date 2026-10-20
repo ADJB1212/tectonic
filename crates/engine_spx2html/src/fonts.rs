@@ -75,23 +75,11 @@ impl FontEnsemble {
     /// but unused.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn register_tex_font(
-        &mut self,
-        font_num: TexFontNum,
-        size: FixedPoint,
-        face_index: u32,
-        color_rgba: Option<u32>,
-        extend: Option<u32>,
-        slant: Option<u32>,
-        embolden: Option<u32>,
-        name: &str,
-        common: &mut Common,
+        &mut self, font_num: TexFontNum, size: FixedPoint, face_index: u32, color_rgba: Option<u32>, extend: Option<u32>, slant: Option<u32>,
+        embolden: Option<u32>, name: &str, common: &mut Common,
     ) -> Result<()> {
         let key = (name.to_owned(), face_index);
-        let fid = if let Some(&fid) = self
-            .tex_name_map
-            .get(&key)
-            .or_else(|| self.src_index_map.get(&key))
-        {
+        let fid = if let Some(&fid) = self.tex_name_map.get(&key).or_else(|| self.src_index_map.get(&key)) {
             fid
         } else {
             let mut loaded = None;
@@ -101,11 +89,7 @@ impl FontEnsemble {
                     loaded = Some(fid);
                     break;
                 }
-                match common
-                    .hooks
-                    .io()
-                    .input_open_name(&path_key.0, common.status)
-                {
+                match common.hooks.io().input_open_name(&path_key.0, common.status) {
                     OpenResult::Ok(ih) => {
                         loaded = Some(self.load_font_file(path_key, ih, common)?);
                         break;
@@ -134,12 +118,7 @@ impl FontEnsemble {
         Ok(())
     }
 
-    fn load_font_file(
-        &mut self,
-        key: (String, u32),
-        mut ih: InputHandle,
-        common: &mut Common,
-    ) -> Result<FontId> {
+    fn load_font_file(&mut self, key: (String, u32), mut ih: InputHandle, common: &mut Common) -> Result<FontId> {
         let (texpath, face_index) = (&key.0, key.1);
         let fid = self.font_files.len();
 
@@ -150,9 +129,7 @@ impl FontEnsemble {
         );
 
         let (name, digest_opt) = ih.into_name_digest();
-        common
-            .hooks
-            .event_input_closed(name, digest_opt, common.status);
+        common.hooks.event_input_closed(name, digest_opt, common.status);
 
         let ffd = atry!(
             FontFileData::from_opentype(contents, face_index);
@@ -160,8 +137,7 @@ impl FontEnsemble {
         );
 
         let out_rel_path = texpath.rsplit('/').next().unwrap();
-        self.font_files
-            .push(Font::new(texpath.as_str(), face_index, out_rel_path, ffd));
+        self.font_files.push(Font::new(texpath.as_str(), face_index, out_rel_path, ffd));
 
         self.src_index_map.insert(key, fid);
 
@@ -169,12 +145,7 @@ impl FontEnsemble {
     }
 
     /// Load a font that is *not* defined in the input SPX file.
-    fn load_external_font(
-        &mut self,
-        texpath: impl Into<String>,
-        face_index: u32,
-        common: &mut Common,
-    ) -> Result<FontId> {
+    fn load_external_font(&mut self, texpath: impl Into<String>, face_index: u32, common: &mut Common) -> Result<FontId> {
         let key = (texpath.into(), face_index);
         if let Some(&fid) = self.src_index_map.get(&key) {
             return Ok(fid);
@@ -194,12 +165,7 @@ impl FontEnsemble {
     /// For the time being, the full quartet of bold/italic variations must be
     /// defined in order to declare a family.
     pub fn register_family(
-        &mut self,
-        name: String,
-        regular: TexFontNum,
-        bold: TexFontNum,
-        italic: TexFontNum,
-        bold_italic: TexFontNum,
+        &mut self, name: String, regular: TexFontNum, bold: TexFontNum, italic: TexFontNum, bold_italic: TexFontNum,
     ) -> Result<()> {
         let regular = self.lookup_tex(regular)?.fid;
         let bold = self.lookup_tex(bold)?.fid;
@@ -236,10 +202,7 @@ impl FontEnsemble {
     ///
     /// If the TeX font number is undefined, a default of 10.0 is returned.
     pub fn get_font_size(&self, fnum: TexFontNum) -> FixedPoint {
-        self.tex_fonts
-            .get(&fnum)
-            .map(|tfi| tfi.size)
-            .unwrap_or(655360)
+        self.tex_fonts.get(&fnum).map(|tfi| tfi.size).unwrap_or(655360)
     }
 
     /// Get the width of the space character in a SPX font.
@@ -256,15 +219,9 @@ impl FontEnsemble {
     ///
     /// The return value is only `Err` if the font number is undeclared. If the
     /// glyph's metrics are not defined in the font, `Ok(None)` is returned.
-    pub fn get_glyph_metrics(
-        &mut self,
-        fnum: TexFontNum,
-        glyph: GlyphId,
-    ) -> Result<Option<GlyphMetrics>> {
+    pub fn get_glyph_metrics(&mut self, fnum: TexFontNum, glyph: GlyphId) -> Result<Option<GlyphMetrics>> {
         let tfi = self.lookup_tex(fnum)?;
-        Ok(self.font_files[tfi.fid]
-            .details
-            .lookup_metrics(glyph, tfi.size))
+        Ok(self.font_files[tfi.fid].details.lookup_metrics(glyph, tfi.size))
     }
 
     /// Get information needed to render a glyph in a canvas context.
@@ -278,10 +235,7 @@ impl FontEnsemble {
     /// If we're unable to figure out a way to render the desired glyph, a
     /// warning is logged to the status backend.
     pub fn process_glyph_for_canvas(
-        &mut self,
-        fnum: TexFontNum,
-        glyph: GlyphId,
-        status: &mut dyn StatusBackend,
+        &mut self, fnum: TexFontNum, glyph: GlyphId, status: &mut dyn StatusBackend,
     ) -> (Option<(char, String)>, FixedPoint, f32) {
         // Can't borrow `self` in the map() closure.
         let font_files = &mut self.font_files;
@@ -314,10 +268,7 @@ impl FontEnsemble {
     /// warning is logged to the status backend.
     #[allow(clippy::type_complexity)]
     pub fn process_glyphs_as_text<'a>(
-        &'a mut self,
-        font_num: TexFontNum,
-        glyphs: &'a [GlyphId],
-        status: &'a mut dyn StatusBackend,
+        &'a mut self, font_num: TexFontNum, glyphs: &'a [GlyphId], status: &'a mut dyn StatusBackend,
     ) -> Result<impl Iterator<Item = (usize, Option<(char, String)>, FixedPoint)> + 'a> {
         // Can't use lookup_tex() here since the borrow checker treats it as
         // borrowing all of `self`, not just the `tex_fonts` member.
@@ -342,12 +293,7 @@ impl FontEnsemble {
     /// identifier of a font family, which is defined as the TexFontNum of its
     /// "regular" font. The *cur_af* argument defines the currently active font
     /// within that family, as identified with a [`FamilyRelativeFontId`].
-    pub fn analyze_font_for_family(
-        &self,
-        fnum: TexFontNum,
-        cur_ffid: TexFontNum,
-        cur_af: FamilyRelativeFontId,
-    ) -> FontFamilyAnalysis {
+    pub fn analyze_font_for_family(&self, fnum: TexFontNum, cur_ffid: TexFontNum, cur_af: FamilyRelativeFontId) -> FontFamilyAnalysis {
         if let Ok(tf) = self.lookup_tex(fnum) {
             if let Ok(tc) = self.lookup_tex(cur_ffid)
                 && let Some(cur_fam) = self.font_families.get(&tc.fid)
@@ -358,10 +304,7 @@ impl FontEnsemble {
                 } else {
                     // No. Figure out what we need to do.
                     let desired_af = cur_fam.font_num_to_relative_id(tf.fid);
-                    FontFamilyAnalysis::Reachable(
-                        cur_fam.path_to_new_font(cur_af, desired_af),
-                        desired_af,
-                    )
+                    FontFamilyAnalysis::Reachable(cur_fam.path_to_new_font(cur_af, desired_af), desired_af)
                 };
             }
 
@@ -375,12 +318,7 @@ impl FontEnsemble {
     ///
     /// The font size is specified in CSS "rem" units, which need to be
     /// calculated with the *rems_per_tex* parameter.
-    pub fn write_styling_span_html<W: Write>(
-        &self,
-        fnum: TexFontNum,
-        rems_per_tex: f32,
-        mut dest: W,
-    ) -> Result<()> {
+    pub fn write_styling_span_html<W: Write>(&self, fnum: TexFontNum, rems_per_tex: f32, mut dest: W) -> Result<()> {
         let tfi = self.lookup_tex(fnum)?;
         let rel_size = tfi.size as f32 * rems_per_tex;
 
@@ -422,31 +360,18 @@ impl FontEnsemble {
             };
 
             let filename = ffad.source.clone();
-            assets
-                .0
-                .insert(filename.clone(), syntax::AssetOrigin::FontFile(ffad));
+            assets.0.insert(filename.clone(), syntax::AssetOrigin::FontFile(ffad));
             fid_to_filename.push(filename);
         }
 
         for ffi in self.font_families.values() {
             let mut faces = HashMap::new();
 
-            faces.insert(
-                syntax::FaceType::Regular,
-                fid_to_filename[ffi.regular].clone(),
-            );
+            faces.insert(syntax::FaceType::Regular, fid_to_filename[ffi.regular].clone());
             faces.insert(syntax::FaceType::Bold, fid_to_filename[ffi.bold].clone());
-            faces.insert(
-                syntax::FaceType::Italic,
-                fid_to_filename[ffi.italic].clone(),
-            );
-            faces.insert(
-                syntax::FaceType::BoldItalic,
-                fid_to_filename[ffi.bold_italic].clone(),
-            );
-            css_data
-                .0
-                .insert(ffi.name.clone(), syntax::FontFamilyAssetData { faces });
+            faces.insert(syntax::FaceType::Italic, fid_to_filename[ffi.italic].clone());
+            faces.insert(syntax::FaceType::BoldItalic, fid_to_filename[ffi.bold_italic].clone());
+            css_data.0.insert(ffi.name.clone(), syntax::FontFamilyAssetData { faces });
         }
 
         (assets, css_data)
@@ -454,11 +379,7 @@ impl FontEnsemble {
 
     /// Check that the fonts defined at runtime match the serialized assets, and
     /// set up the runtime variant glyphs to align with the precomputed ones.
-    pub(crate) fn match_to_precomputed(
-        &mut self,
-        precomputed: &syntax::Assets,
-        common: &mut Common,
-    ) -> Result<()> {
+    pub(crate) fn match_to_precomputed(&mut self, precomputed: &syntax::Assets, common: &mut Common) -> Result<()> {
         let mut fid_to_filename = Vec::new();
 
         // For the existing font file data, we need to check that they're
@@ -480,11 +401,7 @@ impl FontEnsemble {
                     font.details.match_to_precomputed(ff);
                 }
 
-                Some(other) => bail!(
-                    "precomputed asset `{}` should be a font file, but it is {}",
-                    font.out_rel_path,
-                    other
-                ),
+                Some(other) => bail!("precomputed asset `{}` should be a font file, but it is {}", font.out_rel_path, other),
 
                 None => bail!(
                     "precomputed assets for this session should contain a font file named `{}`",
@@ -530,11 +447,7 @@ impl FontEnsemble {
         // Now we can check the runtime families. A helper closure uses
         // fnum_to_filename to deal with the different faces to check.
 
-        let check_face = |fam_name: &str,
-                          fid: FontId,
-                          ft: syntax::FaceType,
-                          pff: &syntax::FontFamilyAssetData|
-         -> Result<()> {
+        let check_face = |fam_name: &str, fid: FontId, ft: syntax::FaceType, pff: &syntax::FontFamilyAssetData| -> Result<()> {
             let runtime_file = &fid_to_filename[fid];
 
             if let Some(pre_file) = pff.faces.get(&ft) {
@@ -548,11 +461,7 @@ impl FontEnsemble {
                     runtime_file
                 );
             } else {
-                bail!(
-                    "this session defines unexpected face {:?} for font family {}",
-                    ft,
-                    fam_name
-                );
+                bail!("this session defines unexpected face {:?} for font family {}", ft, fam_name);
             }
 
             Ok(())
@@ -567,10 +476,7 @@ impl FontEnsemble {
                 check_face(fam_name, ffi.italic, syntax::FaceType::Italic, pff)?;
                 check_face(fam_name, ffi.bold_italic, syntax::FaceType::BoldItalic, pff)?;
             } else {
-                bail!(
-                    "precomputed assets for this session should define a font family named {}",
-                    fam_name
-                );
+                bail!("precomputed assets for this session should define a font family named {}", fam_name);
             }
         }
 
@@ -621,11 +527,7 @@ impl Iterator for GlyphTextProcessingIterator<'_> {
 }
 
 /// Get information about how to render a desired glyph from a font.
-fn get_text_info(
-    font: &mut Font,
-    glyph: GlyphId,
-    status: &mut dyn StatusBackend,
-) -> Option<(char, String)> {
+fn get_text_info(font: &mut Font, glyph: GlyphId, status: &mut dyn StatusBackend) -> Option<(char, String)> {
     let text_info = font.details.lookup_mapping(glyph).map(|mc| {
         let (mut ch, need_alt) = match mc {
             MapEntry::Direct(c) => (c, false),
@@ -741,12 +643,7 @@ struct Font {
 }
 
 impl Font {
-    pub fn new(
-        src_tex_path: impl Into<String>,
-        face_index: u32,
-        out_rel_path: impl Into<String>,
-        details: FontFileData,
-    ) -> Self {
+    pub fn new(src_tex_path: impl Into<String>, face_index: u32, out_rel_path: impl Into<String>, details: FontFileData) -> Self {
         let src_tex_path = src_tex_path.into();
         let out_rel_path = out_rel_path.into();
         let family_name = out_rel_path.replace(|c: char| !c.is_alphanumeric(), "_");
@@ -775,9 +672,7 @@ impl Font {
                 FamilyRelativeFontId::Regular => "",
                 FamilyRelativeFontId::Bold => "\n    font-weight: bold;",
                 FamilyRelativeFontId::Italic => "\n    font-style: italic;",
-                FamilyRelativeFontId::BoldItalic => {
-                    "\n    font-weight: bold;\n    font-style: italic;"
-                }
+                FamilyRelativeFontId::BoldItalic => "\n    font-weight: bold;\n    font-style: italic;",
                 FamilyRelativeFontId::Other(_) => unreachable!(),
             };
 
@@ -798,9 +693,7 @@ impl Font {
     /// the appropriate font, given that we might need to select one of the
     /// "variants" generated to make unusual glyphs available.
     fn selection_style_text(&self, variant_map_index: Option<usize>) -> String {
-        let var_text = variant_map_index
-            .map(|i| format!("vg{i}"))
-            .unwrap_or_default();
+        let var_text = variant_map_index.map(|i| format!("vg{i}")).unwrap_or_default();
 
         let extra = match self.family_relation {
             FamilyRelativeFontId::Regular => "",
@@ -854,11 +747,7 @@ impl FontFamily {
     /// desired font is in fact different than the current font. However, there
     /// are some noop cases below so that we can make the compiler happy about
     /// covering all of our enum variants.
-    fn path_to_new_font(
-        &self,
-        cur: FamilyRelativeFontId,
-        desired: FamilyRelativeFontId,
-    ) -> PathToNewFont {
+    fn path_to_new_font(&self, cur: FamilyRelativeFontId, desired: FamilyRelativeFontId) -> PathToNewFont {
         match desired {
             FamilyRelativeFontId::Other(_) => PathToNewFont {
                 close_all: true,
@@ -1001,20 +890,12 @@ mod tests {
     }
 
     impl IoProvider for TestHooks {
-        fn input_open_name(
-            &mut self,
-            name: &str,
-            _: &mut dyn StatusBackend,
-        ) -> OpenResult<InputHandle> {
+        fn input_open_name(&mut self, name: &str, _: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
             self.opens.push(name.to_owned());
             if name != "font.otf" {
                 return OpenResult::NotAvailable;
             }
-            OpenResult::Ok(InputHandle::new(
-                name,
-                Cursor::new(self.contents.to_vec()),
-                InputOrigin::Other,
-            ))
+            OpenResult::Ok(InputHandle::new(name, Cursor::new(self.contents.to_vec()), InputOrigin::Other))
         }
     }
 
@@ -1023,12 +904,7 @@ mod tests {
             self
         }
 
-        fn event_input_closed(
-            &mut self,
-            _: String,
-            _: Option<DigestData>,
-            _: &mut dyn StatusBackend,
-        ) {
+        fn event_input_closed(&mut self, _: String, _: Option<DigestData>, _: &mut dyn StatusBackend) {
             self.closes += 1;
         }
     }
@@ -1049,21 +925,10 @@ mod tests {
                 out_base: None,
                 precomputed_assets: None,
             };
-            for (num, name, size) in [
-                (1, "font", 655360),
-                (2, "font", 786432),
-                (3, "font.otf", 917504),
-            ] {
-                fonts
-                    .register_tex_font(num, size, 0, None, None, None, None, name, &mut common)
-                    .unwrap();
+            for (num, name, size) in [(1, "font", 655360), (2, "font", 786432), (3, "font.otf", 917504)] {
+                fonts.register_tex_font(num, size, 0, None, None, None, None, name, &mut common).unwrap();
             }
-            assert_eq!(
-                fonts
-                    .load_external_font("font.otf", 0, &mut common)
-                    .unwrap(),
-                0
-            );
+            assert_eq!(fonts.load_external_font("font.otf", 0, &mut common).unwrap(), 0);
         }
         assert_eq!(hooks.opens, ["font", "font.otf"]);
         assert_eq!(hooks.closes, 1);
@@ -1088,11 +953,7 @@ mod tests {
                 out_base: None,
                 precomputed_assets: None,
             };
-            assert!(
-                fonts
-                    .load_external_font("font.otf", 0, &mut common)
-                    .is_err()
-            );
+            assert!(fonts.load_external_font("font.otf", 0, &mut common).is_err());
         }
         hooks.contents = FONT;
         {
@@ -1102,12 +963,7 @@ mod tests {
                 out_base: None,
                 precomputed_assets: None,
             };
-            assert_eq!(
-                fonts
-                    .load_external_font("font.otf", 0, &mut common)
-                    .unwrap(),
-                0
-            );
+            assert_eq!(fonts.load_external_font("font.otf", 0, &mut common).unwrap(), 0);
         }
         assert_eq!(hooks.opens, ["font.otf", "font.otf"]);
         assert_eq!(fonts.font_files.len(), 1);

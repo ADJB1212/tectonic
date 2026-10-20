@@ -51,12 +51,7 @@ impl<K, V, const N: usize> Pairs for [(K, V); N] {
         }
 
         // SAFETY: All values in both arrays have been initialized
-        unsafe {
-            (
-                mem::transmute_copy::<_, [K; N]>(&keys),
-                mem::transmute_copy::<_, [V; N]>(&values),
-            )
-        }
+        unsafe { (mem::transmute_copy::<_, [K; N]>(&keys), mem::transmute_copy::<_, [V; N]>(&values)) }
     }
 }
 

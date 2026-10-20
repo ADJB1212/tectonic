@@ -36,10 +36,7 @@ pub struct FontSet(NonNull<sys::FcFontSet>);
 impl FontSet {
     /// Get all available fonts
     pub fn all() -> FontSet {
-        FontSet::new(
-            Pattern::from_name(c"").unwrap().as_ref(),
-            ObjectSet::all().as_ref(),
-        )
+        FontSet::new(Pattern::from_name(c"").unwrap().as_ref(), ObjectSet::all().as_ref())
     }
 
     /// Load all fonts matching the provided pattern, getting the properties specified in the object
@@ -47,13 +44,7 @@ impl FontSet {
     pub fn new(pattern: PatternRef<'_>, objects: ObjectSetRef<'_>) -> FontSet {
         super::init();
         // SAFETY: Pattern and object font reference pointers guaranteed valid
-        let ptr = unsafe {
-            sys::FcFontList(
-                sys::FcConfigGetCurrent(),
-                pattern.as_ptr(),
-                objects.as_ptr(),
-            )
-        };
+        let ptr = unsafe { sys::FcFontList(sys::FcConfigGetCurrent(), pattern.as_ptr(), objects.as_ptr()) };
         FontSet(NonNull::new(ptr).unwrap())
     }
 

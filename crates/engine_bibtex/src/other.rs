@@ -60,8 +60,7 @@ impl OtherData {
 
     pub fn check_field_overflow(&mut self, fields: usize) {
         while fields > self.field_info.len() {
-            self.field_info
-                .resize(self.field_info.len() + MAX_FIELDS, StrNumber::invalid());
+            self.field_info.resize(self.field_info.len() + MAX_FIELDS, StrNumber::invalid());
         }
     }
 

@@ -79,10 +79,7 @@ pub fn ensure_plain_format() -> Result<PathBuf> {
                 .process(&mut launcher, "UNUSED.fmt", "plain.tex")?;
         }
 
-        let mut temp_fmt = tempfile::Builder::new()
-            .prefix("plain_fmt")
-            .rand_bytes(6)
-            .tempfile_in(test_path(&[]))?;
+        let mut temp_fmt = tempfile::Builder::new().prefix("plain_fmt").rand_bytes(6).tempfile_in(test_path(&[]))?;
         temp_fmt.write_all(&mem.files.borrow().get("plain.fmt").unwrap().data)?;
         temp_fmt.persist(&fmt_path)?;
     }
@@ -106,11 +103,7 @@ impl<'a, E: DefinitelySame + Debug> Expected<'a, E> {
         }
     }
 
-    pub fn res(
-        mut self,
-        expected: StdResult<TexOutcome, E>,
-        found: StdResult<TexOutcome, E>,
-    ) -> Self {
+    pub fn res(mut self, expected: StdResult<TexOutcome, E>, found: StdResult<TexOutcome, E>) -> Self {
         self.result.push((expected, found));
         self
     }
@@ -124,9 +117,7 @@ impl<'a, E: DefinitelySame + Debug> Expected<'a, E> {
         let mut failures = Vec::new();
         for (expected, found) in &self.result {
             if !found.definitely_same(expected) {
-                failures.push(format!(
-                    "Expected engine result {expected:?}, got {found:?}"
-                ));
+                failures.push(format!("Expected engine result {expected:?}, got {found:?}"));
             }
         }
         for file in &self.files {
@@ -212,11 +203,7 @@ impl<'a> ExpectedFile<'a> {
         // Special SyncTeX rooting. We need a *mega* hack since there is a
         // byte-offset field whose value depends on the length of the file
         // prefix.
-        let root = format!(
-            "{}{}",
-            pbase.parent().unwrap().to_str().unwrap(),
-            std::path::MAIN_SEPARATOR
-        );
+        let root = format!("{}{}", pbase.parent().unwrap().to_str().unwrap(), std::path::MAIN_SEPARATOR);
         let contents = String::from_utf8(contents)
             .unwrap()
             .replace("${ROOT}", &root)
@@ -254,23 +241,18 @@ impl<'a> ExpectedFile<'a> {
         {
             let mut n = self.expect_name.clone();
             n.push_str(".expected");
-            let mut f = File::create(&n)
-                .map_err(|_| format!("failed to create {n} for test failure diagnosis"))?;
+            let mut f = File::create(&n).map_err(|_| format!("failed to create {n} for test failure diagnosis"))?;
             f.write_all(&self.contents)
                 .map_err(|_| format!("failed to write {n} for test failure diagnosis"))?;
         }
         {
             let mut n = self.expect_name.clone();
             n.push_str(".observed");
-            let mut f = File::create(&n)
-                .map_err(|_| format!("failed to create {n} for test failure diagnosis"))?;
+            let mut f = File::create(&n).map_err(|_| format!("failed to create {n} for test failure diagnosis"))?;
             f.write_all(observed)
                 .map_err(|_| format!("failed to write {n} for test failure diagnosis"))?;
         }
-        Err(format!(
-            "difference in {}; contents saved to disk",
-            self.name
-        ))
+        Err(format!("difference in {}; contents saved to disk", self.name))
     }
 
     fn finish(&self) -> core::result::Result<(), String> {
@@ -281,11 +263,7 @@ impl<'a> ExpectedFile<'a> {
                     if let Some(file) = files.get(&self.name) {
                         self.finish_data(&file.data)
                     } else {
-                        Err(format!(
-                            "{:?} not in {:?}",
-                            self.name,
-                            files.keys().collect::<Vec<_>>()
-                        ))
+                        Err(format!("{:?} not in {:?}", self.name, files.keys().collect::<Vec<_>>()))
                     }
                 } else {
                     let mut buf = Vec::new();
@@ -294,10 +272,7 @@ impl<'a> ExpectedFile<'a> {
                     self.finish_data(&buf)
                 }
             }
-            None => Err(format!(
-                "No expected output provided for file {}",
-                self.name
-            )),
+            None => Err(format!("No expected output provided for file {}", self.name)),
         }
     }
 }

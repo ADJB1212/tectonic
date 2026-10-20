@@ -13,9 +13,7 @@ pub(crate) struct IndexHeader {
 impl IndexHeader {
     pub(crate) fn read(input: &mut impl Read) -> Result<Self, PdfError> {
         fn read(input: &mut impl Read, bytes: &mut [u8]) -> Result<(), PdfError> {
-            input
-                .read_exact(bytes)
-                .map_err(|e| PdfError::io(c"File ended prematurely\n".into(), e))
+            input.read_exact(bytes).map_err(|e| PdfError::io(c"File ended prematurely\n".into(), e))
         }
         let mut count = [0; 2];
         read(input, &mut count)?;
@@ -49,27 +47,17 @@ impl IndexHeader {
         if offsets[0] != 1 {
             return Err(error("Invalid CFF Index offset data", 3));
         }
-        Ok(Self {
-            count,
-            width,
-            offsets,
-        })
+        Ok(Self { count, width, offsets })
     }
 
     pub(crate) fn data_len(&self) -> usize {
-        self.offsets
-            .last()
-            .map_or(0, |offset| (*offset - 1) as usize)
+        self.offsets.last().map_or(0, |offset| (*offset - 1) as usize)
     }
 }
 
 pub(crate) fn integer(bytes: &[u8]) -> Result<(f64, usize), PdfError> {
     let mut cursor = ByteCursor::new(bytes);
-    let mut read = |width| {
-        cursor
-            .read_signed(width)
-            .map_err(|_| error("Invalid CFF integer", cursor.offset()))
-    };
+    let mut read = |width| cursor.read_signed(width).map_err(|_| error("Invalid CFF integer", cursor.offset()));
     let Some(&first) = bytes.first() else {
         return Err(error("Invalid CFF integer", 0));
     };
@@ -83,24 +71,8 @@ pub(crate) fn integer(bytes: &[u8]) -> Result<(f64, usize), PdfError> {
             read(4)?
         }
         32..=246 => i32::from(first) - 139,
-        247..=250 => {
-            (i32::from(first) - 247) * 256
-                + i32::from(
-                    *bytes
-                        .get(1)
-                        .ok_or_else(|| error("Invalid CFF integer", 1))?,
-                )
-                + 108
-        }
-        251..=254 => {
-            -(i32::from(first) - 251) * 256
-                - i32::from(
-                    *bytes
-                        .get(1)
-                        .ok_or_else(|| error("Invalid CFF integer", 1))?,
-                )
-                - 108
-        }
+        247..=250 => (i32::from(first) - 247) * 256 + i32::from(*bytes.get(1).ok_or_else(|| error("Invalid CFF integer", 1))?) + 108,
+        251..=254 => -(i32::from(first) - 251) * 256 - i32::from(*bytes.get(1).ok_or_else(|| error("Invalid CFF integer", 1))?) - 108,
         _ => return Err(error("Invalid CFF integer", 0)),
     };
     let consumed = match first {
@@ -130,9 +102,7 @@ pub(crate) fn real(bytes: &[u8]) -> Result<(f64, usize), PdfError> {
                     if part == 0 && byte != 255 {
                         return Err(error("Invalid CFF real", offset));
                     }
-                    let value: f64 = encoded
-                        .parse()
-                        .map_err(|_| error("Invalid CFF real", offset))?;
+                    let value: f64 = encoded.parse().map_err(|_| error("Invalid CFF real", offset))?;
                     if !value.is_finite() {
                         return Err(error("Invalid CFF real", offset));
                     }
@@ -160,10 +130,7 @@ pub(crate) enum DictError {
     Underflow,
 }
 
-pub(crate) fn dictionary(
-    bytes: &[u8],
-    operator: impl Fn(usize) -> Option<bool>,
-) -> Result<(Vec<DictEntry>, bool), DictError> {
+pub(crate) fn dictionary(bytes: &[u8], operator: impl Fn(usize) -> Option<bool>) -> Result<(Vec<DictEntry>, bool), DictError> {
     let mut pos = 0;
     let mut stack = Vec::new();
     let mut entries = Vec::new();
@@ -199,12 +166,7 @@ pub(crate) fn dictionary(
             if stack.len() >= 64 {
                 return Err(DictError::Overflow);
             }
-            let (value, consumed) = if byte == 30 {
-                real(&bytes[pos..])
-            } else {
-                integer(&bytes[pos..])
-            }
-            .map_err(|_| DictError::Parse)?;
+            let (value, consumed) = if byte == 30 { real(&bytes[pos..]) } else { integer(&bytes[pos..]) }.map_err(|_| DictError::Parse)?;
             stack.push(value);
             pos += consumed;
         }
@@ -220,9 +182,9 @@ struct Reader<'a, R> {
 impl<R: Read> Reader<'_, R> {
     fn value(&mut self, width: usize) -> Result<u32, PdfError> {
         let mut bytes = [0; 4];
-        self.input.read_exact(&mut bytes[..width]).map_err(|e| {
-            PdfError::io(c"File ended prematurely\n".into(), e).at(self.offset as u64)
-        })?;
+        self.input
+            .read_exact(&mut bytes[..width])
+            .map_err(|e| PdfError::io(c"File ended prematurely\n".into(), e).at(self.offset as u64))?;
         self.offset += width;
         ByteCursor::new(&bytes[..width])
             .read_unsigned(width)
@@ -244,11 +206,7 @@ pub(crate) enum Charset {
 pub(crate) fn charset(input: &mut impl Read, glyphs: u16) -> Result<(Charset, usize), PdfError> {
     let mut input = Reader { input, offset: 0 };
     let format = input.byte()?;
-    let mut remaining = usize::from(
-        glyphs
-            .checked_sub(1)
-            .ok_or_else(|| error("Charset data possibly broken", 0))?,
-    );
+    let mut remaining = usize::from(glyphs.checked_sub(1).ok_or_else(|| error("Charset data possibly broken", 0))?);
     if format == 0 {
         let mut values = Vec::with_capacity(remaining);
         for _ in 0..remaining {
@@ -262,11 +220,7 @@ pub(crate) fn charset(input: &mut impl Read, glyphs: u16) -> Result<(Charset, us
     let mut ranges = Vec::new();
     while remaining > 0 {
         let first = input.pair()?;
-        let left = if format == 1 {
-            u16::from(input.byte()?)
-        } else {
-            input.pair()?
-        };
+        let left = if format == 1 { u16::from(input.byte()?) } else { input.pair()? };
         let count = usize::from(left) + 1;
         if count > remaining || first.checked_add(left).is_none() {
             return Err(error("Charset data possibly broken", input.offset));
@@ -320,14 +274,7 @@ pub(crate) fn encoding(input: &mut impl Read) -> Result<(Encoding, usize), PdfEr
             supplements.push((input.byte()?, input.pair()?));
         }
     }
-    Ok((
-        Encoding {
-            format,
-            values,
-            supplements,
-        },
-        input.offset,
-    ))
+    Ok((Encoding { format, values, supplements }, input.offset))
 }
 
 pub(crate) enum FdSelect {
@@ -351,11 +298,7 @@ pub(crate) fn fdselect(input: &mut impl Read, glyphs: u16) -> Result<(FdSelect, 
             for _ in 0..count {
                 let first = input.pair()?;
                 let fd = input.byte()?;
-                if first >= glyphs
-                    || ranges
-                        .last()
-                        .is_some_and(|&(previous, _)| first <= previous)
-                {
+                if first >= glyphs || ranges.last().is_some_and(|&(previous, _)| first <= previous) {
                     return Err(error("Invalid FDSelect range.", input.offset));
                 }
                 ranges.push((first, fd));
@@ -364,10 +307,7 @@ pub(crate) fn fdselect(input: &mut impl Read, glyphs: u16) -> Result<(FdSelect, 
                 return Err(error("Range not starting with 0.", input.offset));
             }
             if input.pair()? != glyphs {
-                return Err(error(
-                    "Sentinel value mismatched with number of glyphs.",
-                    input.offset,
-                ));
+                return Err(error("Sentinel value mismatched with number of glyphs.", input.offset));
             }
             Ok((FdSelect::Ranges(ranges), input.offset))
         }
@@ -402,10 +342,7 @@ mod tests {
     #[test]
     fn operands_accept_exact_end_and_reject_truncation() {
         assert_eq!(integer(&[28, 255, 254]).unwrap(), (-2.0, 3));
-        assert_eq!(
-            integer(&[29, 128, 0, 0, 0]).unwrap(),
-            (f64::from(i32::MIN), 5)
-        );
+        assert_eq!(integer(&[29, 128, 0, 0, 0]).unwrap(), (f64::from(i32::MIN), 5));
         for bytes in [&[28][..], &[29, 1], &[247], &[254]] {
             assert!(integer(bytes).is_err());
         }
@@ -424,18 +361,9 @@ mod tests {
         assert!(!garbage);
         assert_eq!(entries[0].values, [1.0, 2.0]);
         assert_eq!(entries[1].values, [3.0]);
-        assert!(matches!(
-            dictionary(&[12], operators),
-            Err(DictError::Parse)
-        ));
-        assert!(matches!(
-            dictionary(&[0], operators),
-            Err(DictError::Underflow)
-        ));
-        assert!(matches!(
-            dictionary(&[139; 65], operators),
-            Err(DictError::Overflow)
-        ));
+        assert!(matches!(dictionary(&[12], operators), Err(DictError::Parse)));
+        assert!(matches!(dictionary(&[0], operators), Err(DictError::Underflow)));
+        assert!(matches!(dictionary(&[139; 65], operators), Err(DictError::Overflow)));
         assert!(dictionary(&[2, 12, 1], |_| None).is_ok());
     }
 
@@ -444,8 +372,7 @@ mod tests {
         assert!(charset(&mut &[1, 0, 10, 3][..], 4).is_err());
         assert!(charset(&mut &[2, 255, 255, 0, 1][..], 3).is_err());
         assert!(charset(&mut &[0][..], 0).is_err());
-        let (Charset::Ranges { ranges, .. }, length) = charset(&mut &[1, 0, 10, 2][..], 4).unwrap()
-        else {
+        let (Charset::Ranges { ranges, .. }, length) = charset(&mut &[1, 0, 10, 2][..], 4).unwrap() else {
             panic!()
         };
         assert_eq!(ranges, [(10, 2)]);
@@ -454,9 +381,7 @@ mod tests {
         assert!(encoding(&mut &[128, 1, 5, 1, 0][..]).is_err());
         assert!(fdselect(&mut &[3, 0, 0, 0, 1][..], 1).is_err());
         assert!(fdselect(&mut &[3, 0, 2, 0, 0, 0, 0, 0, 1, 0, 2][..], 2).is_err());
-        let (FdSelect::Ranges(ranges), length) =
-            fdselect(&mut &[3, 0, 1, 0, 0, 4, 0, 2][..], 2).unwrap()
-        else {
+        let (FdSelect::Ranges(ranges), length) = fdselect(&mut &[3, 0, 1, 0, 0, 4, 0, 2][..], 2).unwrap() else {
             panic!()
         };
         assert_eq!(ranges, [(0, 4)]);

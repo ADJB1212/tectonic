@@ -11,11 +11,7 @@ use crate::{GetUrlBackend, RangeReader};
 
 const MAX_HTTP_REDIRECTS_ALLOWED: u32 = 10;
 
-fn get_url_generic(
-    handle: &mut Easy,
-    url: &str,
-    range: Option<(u64, usize)>,
-) -> Result<Cursor<Vec<u8>>> {
+fn get_url_generic(handle: &mut Easy, url: &str, range: Option<(u64, usize)>) -> Result<Cursor<Vec<u8>>> {
     handle.url(url)?;
     handle.follow_location(true)?;
     handle.max_redirections(MAX_HTTP_REDIRECTS_ALLOWED)?;
@@ -38,11 +34,7 @@ fn get_url_generic(
     let code = handle.response_code()?;
 
     if !(200..300).contains(&code) {
-        bail!(
-            "unsuccessful HTTP GET status code {} for url `{}`",
-            code,
-            url
-        );
+        bail!("unsuccessful HTTP GET status code {} for url `{}`", code, url);
     }
 
     Ok(Cursor::new(buf))
@@ -56,9 +48,7 @@ pub struct CurlBackend {
 
 impl Default for CurlBackend {
     fn default() -> Self {
-        CurlBackend {
-            handle: Easy::new(),
-        }
+        CurlBackend { handle: Easy::new() }
     }
 }
 

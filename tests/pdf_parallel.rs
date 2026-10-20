@@ -30,21 +30,12 @@ Shared resources and cycles.\bye";
 Imported twice.\bye";
     let mut expected: Option<Vec<u8>> = None;
     for (workers, legacy) in [(Some(1), false), (None, false), (None, true)] {
-        let (pdf, _, _, _) =
-            compile_pdf_with_backend(&mut memory, source, true, workers, legacy, 1024);
+        let (pdf, _, _, _) = compile_pdf_with_backend(&mut memory, source, true, workers, legacy, 1024);
         check_cross_references(&pdf);
         let streams = decoded_streams_with_objects(&pdf, true);
         assert!(pdf.windows(6).any(|bytes| bytes == b"/Cycle"));
-        assert!(
-            streams
-                .iter()
-                .any(|stream| stream.windows(5).any(|bytes| bytes == b"/Next"))
-        );
-        assert!(
-            streams
-                .iter()
-                .any(|stream| stream.windows(5).any(|bytes| bytes == b"/Prev"))
-        );
+        assert!(streams.iter().any(|stream| stream.windows(5).any(|bytes| bytes == b"/Next")));
+        assert!(streams.iter().any(|stream| stream.windows(5).any(|bytes| bytes == b"/Prev")));
         if let Some(root) = std::env::var_os("TECTONIC_PDF_BENCH_DIR") {
             let backend = if legacy {
                 "legacy"
@@ -54,11 +45,7 @@ Imported twice.\bye";
                 "auto"
             };
             std::fs::create_dir_all(&root).unwrap();
-            std::fs::write(
-                std::path::Path::new(&root).join(format!("imported-{backend}.pdf")),
-                &pdf,
-            )
-            .unwrap();
+            std::fs::write(std::path::Path::new(&root).join(format!("imported-{backend}.pdf")), &pdf).unwrap();
         }
         if let Some(expected) = &expected {
             assert_eq!(decoded_streams(&pdf), decoded_streams(expected));
@@ -71,29 +58,14 @@ Imported twice.\bye";
     }
 }
 
-fn compile_pdf(
-    memory: &mut MemoryIo,
-    source: &str,
-    compression: bool,
-) -> (Vec<u8>, Duration, Duration) {
-    let (pdf, tex, conversion, _) =
-        compile_pdf_with_backend(memory, source, compression, None, false, 64 * 1024 * 1024);
+fn compile_pdf(memory: &mut MemoryIo, source: &str, compression: bool) -> (Vec<u8>, Duration, Duration) {
+    let (pdf, tex, conversion, _) = compile_pdf_with_backend(memory, source, compression, None, false, 64 * 1024 * 1024);
     (pdf, tex, conversion)
 }
 
 fn compile_pdf_with_backend(
-    memory: &mut MemoryIo,
-    source: &str,
-    compression: bool,
-    workers: Option<usize>,
-    legacy: bool,
-    queued_bytes: usize,
-) -> (
-    Vec<u8>,
-    Duration,
-    Duration,
-    Option<tectonic::PdfBuildStatistics>,
-) {
+    memory: &mut MemoryIo, source: &str, compression: bool, workers: Option<usize>, legacy: bool, queued_bytes: usize,
+) -> (Vec<u8>, Duration, Duration, Option<tectonic::PdfBuildStatistics>) {
     util::set_test_root();
     let mut format = SingleInputFileIo::new(&util::ensure_plain_format().unwrap());
     let mut assets = FilesystemIo::new(&util::test_path(&["assets"]), false, false, HashSet::new());
@@ -104,9 +76,7 @@ fn compile_pdf_with_backend(
         let mut status = NoopStatusBackend {};
         let mut launcher = CoreBridgeLauncher::new(&mut hooks, &mut status);
         let start = Instant::now();
-        TexEngine::default()
-            .process(&mut launcher, "plain.fmt", "batch.tex")
-            .unwrap();
+        TexEngine::default().process(&mut launcher, "plain.fmt", "batch.tex").unwrap();
         let tex_time = start.elapsed();
         let start = Instant::now();
         let mut engine = XdvipdfmxEngine::default();
@@ -133,21 +103,12 @@ fn decoded_streams(pdf: &[u8]) -> Vec<Vec<u8>> {
 fn decoded_streams_with_objects(pdf: &[u8], include_objects: bool) -> Vec<Vec<u8>> {
     let mut streams = Vec::new();
     let mut cursor = 0;
-    while let Some(start) = pdf[cursor..]
-        .windows(8)
-        .position(|bytes| bytes == b"\nstream\n")
-    {
+    while let Some(start) = pdf[cursor..].windows(8).position(|bytes| bytes == b"\nstream\n") {
         let start = cursor + start;
-        let object_start = pdf[..start]
-            .windows(5)
-            .rposition(|bytes| bytes == b" obj\n")
-            .unwrap()
-            + 5;
+        let object_start = pdf[..start].windows(5).rposition(|bytes| bytes == b" obj\n").unwrap() + 5;
         let (dictionary, data) = read_stream(&pdf[object_start..]);
         cursor = start + 8 + data.len();
-        if !include_objects
-            && (dictionary.contains("/Type/ObjStm") || dictionary.contains("/Type/XRef"))
-        {
+        if !include_objects && (dictionary.contains("/Type/ObjStm") || dictionary.contains("/Type/XRef")) {
             continue;
         }
         let mut decoded = Vec::new();
@@ -163,13 +124,12 @@ fn decoded_streams_with_objects(pdf: &[u8], include_objects: bool) -> Vec<Vec<u8
 }
 
 fn page_document() -> String {
-    let mut source =
-        String::from("\\nopagenumbers\\font\\native=\"[lmroman12-regular]\" at 12pt\n");
+    let mut source = String::from("\\nopagenumbers\\font\\native=\"[lmroman12-regular]\" at 12pt\n");
     for page in 0..24 {
-        source.push_str(&format!("Page {page}. {{\\native Native office ffi AVATAR}} \\vrule width 8pt height 12pt\\par\n"));
-        source.push_str(
-            &"Text with (parentheses), \\char92 and relative positioning.\\par\n".repeat(32),
-        );
+        source.push_str(&format!(
+            "Page {page}. {{\\native Native office ffi AVATAR}} \\vrule width 8pt height 12pt\\par\n"
+        ));
+        source.push_str(&"Text with (parentheses), \\char92 and relative positioning.\\par\n".repeat(32));
         source.push_str("\\vfill\\eject\n");
     }
     source.push_str("\\bye\n");
@@ -216,15 +176,12 @@ fn buffered_text_input_preserves_encodings_and_line_endings_across_refills() {
     memory.create_entry("encoded.tex", text.as_bytes().to_vec());
     let (expected, _, _) = compile_pdf(&mut memory, source, true);
     let expected = decoded_streams(&expected);
-    for actual_text in [
-        b"/ActualText (\xfe\xff\xd8\x34\xdd\\036 \xac)".as_slice(),
-        b"/ActualText (office)",
-    ] {
-        assert!(expected.iter().any(|stream| {
-            stream
-                .windows(actual_text.len())
-                .any(|bytes| bytes == actual_text)
-        }));
+    for actual_text in [b"/ActualText (\xfe\xff\xd8\x34\xdd\\036 \xac)".as_slice(), b"/ActualText (office)"] {
+        assert!(
+            expected
+                .iter()
+                .any(|stream| { stream.windows(actual_text.len()).any(|bytes| bytes == actual_text) })
+        );
     }
 
     let padded = format!("%{}\n{text}", " ".repeat(8189));
@@ -232,25 +189,12 @@ fn buffered_text_input_preserves_encodings_and_line_endings_across_refills() {
     utf8_bom.extend_from_slice(padded.as_bytes());
     let crlf = format!("%{}\r\n{text}", " ".repeat(8190));
     let cr = format!("%{}\r{text}", " ".repeat(8190));
-    let mut inputs = vec![
-        padded.into_bytes(),
-        utf8_bom,
-        crlf.into_bytes(),
-        cr.into_bytes(),
-    ];
+    let mut inputs = vec![padded.into_bytes(), utf8_bom, crlf.into_bytes(), cr.into_bytes()];
     let utf16 = format!("%{}\n{text}", " ".repeat(4093));
     for little_endian in [false, true] {
-        let mut bytes = if little_endian {
-            vec![0xff, 0xfe]
-        } else {
-            vec![0xfe, 0xff]
-        };
+        let mut bytes = if little_endian { vec![0xff, 0xfe] } else { vec![0xfe, 0xff] };
         for unit in utf16.encode_utf16() {
-            bytes.extend_from_slice(&if little_endian {
-                unit.to_le_bytes()
-            } else {
-                unit.to_be_bytes()
-            });
+            bytes.extend_from_slice(&if little_endian { unit.to_le_bytes() } else { unit.to_be_bytes() });
         }
         inputs.push(bytes);
     }
@@ -326,11 +270,7 @@ fn rust_font_map_loading_matches_mapline_options_and_legacy_syntax() {
         let (expected, _, _) = compile_pdf(&mut memory, &source, true);
         memory.create_entry("pdftex.map", record.as_bytes().to_vec());
         let (pdf, _, _) = compile_pdf(&mut memory, "\\nopagenumbers Font map test.\\bye", true);
-        assert_eq!(
-            decoded_streams(&pdf),
-            decoded_streams(&expected),
-            "{record}"
-        );
+        assert_eq!(decoded_streams(&pdf), decoded_streams(&expected), "{record}");
     }
     memory.create_entry("pdftex.map", b"cmr10 CMR10 <\"cmr10.pf\\142\"".to_vec());
     let (pdf, _, _) = compile_pdf(&mut memory, "\\nopagenumbers Font map test.\\bye", true);
@@ -344,35 +284,18 @@ fn page_workers_preserve_content_and_deterministic_output_under_backpressure() {
     let source = page_document();
     for compression in [false, true] {
         let mut memory = MemoryIo::new(true);
-        let (legacy, _, _, _) =
-            compile_pdf_with_backend(&mut memory, &source, compression, Some(1), true, 1);
+        let (legacy, _, _, _) = compile_pdf_with_backend(&mut memory, &source, compression, Some(1), true, 1);
         let expected = decoded_streams(&legacy);
         let mut deterministic = None;
-        for (workers, queued_bytes) in
-            [(1, 1), (3, 1), (3, 64 * 1024 * 1024), (1, 64 * 1024 * 1024)]
-        {
-            let (pdf, _, _, statistics) = compile_pdf_with_backend(
-                &mut memory,
-                &source,
-                compression,
-                Some(workers),
-                false,
-                queued_bytes,
-            );
+        for (workers, queued_bytes) in [(1, 1), (3, 1), (3, 64 * 1024 * 1024), (1, 64 * 1024 * 1024)] {
+            let (pdf, _, _, statistics) = compile_pdf_with_backend(&mut memory, &source, compression, Some(workers), false, queued_bytes);
             let statistics = statistics.unwrap();
             assert_eq!(statistics.rendered_pages, 24);
             assert!(!statistics.serial_page_fallback);
             check_cross_references(&pdf);
-            assert_eq!(
-                decoded_streams(&pdf),
-                expected,
-                "workers={workers}, compression={compression}"
-            );
+            assert_eq!(decoded_streams(&pdf), expected, "workers={workers}, compression={compression}");
             if let Some(expected) = &deterministic {
-                assert!(
-                    pdf == *expected,
-                    "worker or queue limits changed deterministic PDF bytes"
-                );
+                assert!(pdf == *expected, "worker or queue limits changed deterministic PDF bytes");
             } else {
                 deterministic = Some(pdf);
             }
@@ -386,17 +309,15 @@ fn page_workers_preserve_images_colors_backgrounds_links_and_destinations() {
     memory.create_entry("small.bmp", bmp_image(64, 64));
     let mut source = String::from("\\nopagenumbers\n");
     for page in 0..8 {
-        source.push_str(&format!("\\special{{background rgb 0.9 0.8 0.7}}\\special{{color push rgb 0 0 1}}\\special{{pdf:dest (page{page}) [ @thispage /Fit ]}}\n"));
-        source.push_str(
-            "Colored text.\\special{color pop}\\par\\special{pdf:image width 20pt (small.bmp)}\n",
-        );
+        source.push_str(&format!(
+            "\\special{{background rgb 0.9 0.8 0.7}}\\special{{color push rgb 0 0 1}}\\special{{pdf:dest (page{page}) [ @thispage /Fit ]}}\n"
+        ));
+        source.push_str("Colored text.\\special{color pop}\\par\\special{pdf:image width 20pt (small.bmp)}\n");
         source.push_str("\\special{pdf:bann << /Type /Annot /Subtype /Link /A << /S /URI /URI (https://example.com) >> >>}Link text\\special{pdf:eann}\\vfill\\eject\n");
     }
     source.push_str("\\bye\n");
-    let (legacy, _, _, _) =
-        compile_pdf_with_backend(&mut memory, &source, true, Some(1), true, 1024);
-    let (parallel, _, _, statistics) =
-        compile_pdf_with_backend(&mut memory, &source, true, Some(3), false, 1024);
+    let (legacy, _, _, _) = compile_pdf_with_backend(&mut memory, &source, true, Some(1), true, 1024);
+    let (parallel, _, _, statistics) = compile_pdf_with_backend(&mut memory, &source, true, Some(3), false, 1024);
     let statistics = statistics.unwrap();
     assert_eq!(statistics.rendered_pages, 8);
     assert!(!statistics.serial_page_fallback);
@@ -407,8 +328,7 @@ fn page_workers_preserve_images_colors_backgrounds_links_and_destinations() {
         let root = std::path::Path::new(&root);
         std::fs::write(root.join("features-legacy.pdf"), legacy).unwrap();
         std::fs::write(root.join("features-auto.pdf"), parallel).unwrap();
-        let (one, _, _, _) =
-            compile_pdf_with_backend(&mut memory, &source, true, Some(1), false, 1024);
+        let (one, _, _, _) = compile_pdf_with_backend(&mut memory, &source, true, Some(1), false, 1024);
         std::fs::write(root.join("features-one.pdf"), one).unwrap();
     }
 }
@@ -417,10 +337,8 @@ fn page_workers_preserve_images_colors_backgrounds_links_and_destinations() {
 fn unknown_specials_use_legacy_page_rendering_without_replaying_side_effects() {
     let source = "\\nopagenumbers\\special{pdf:literal direct /FallbackTest BMC}First\\special{pdf:literal direct EMC}\\eject Second\\bye";
     let mut memory = MemoryIo::new(true);
-    let (legacy, _, _, _) =
-        compile_pdf_with_backend(&mut memory, source, true, Some(1), true, 1024);
-    let (parallel, _, _, statistics) =
-        compile_pdf_with_backend(&mut memory, source, true, Some(3), false, 1024);
+    let (legacy, _, _, _) = compile_pdf_with_backend(&mut memory, source, true, Some(1), true, 1024);
+    let (parallel, _, _, statistics) = compile_pdf_with_backend(&mut memory, source, true, Some(3), false, 1024);
     let statistics = statistics.unwrap();
     assert_eq!(statistics.rendered_pages, 0);
     assert!(statistics.serial_page_fallback);
@@ -434,25 +352,19 @@ fn native_abort_with_queued_pages_allows_another_pdf_build() {
     let mut memory = MemoryIo::new(true);
     let mut format = SingleInputFileIo::new(&util::ensure_plain_format().unwrap());
     let mut assets = FilesystemIo::new(&util::test_path(&["assets"]), false, false, HashSet::new());
-    let mut primary = BufferedPrimaryIo::from_text(
-        "\\nopagenumbers First\\eject Second\\eject {\\bf Missing font outline}\\bye",
-    );
+    let mut primary = BufferedPrimaryIo::from_text("\\nopagenumbers First\\eject Second\\eject {\\bf Missing font outline}\\bye");
     {
         let io = IoStack::new(vec![&mut memory, &mut primary, &mut format, &mut assets]);
         let mut hooks = MinimalDriver::new(io);
         let mut status = NoopStatusBackend {};
         let mut launcher = CoreBridgeLauncher::new(&mut hooks, &mut status);
-        TexEngine::default()
-            .process(&mut launcher, "plain.fmt", "batch.tex")
-            .unwrap();
+        TexEngine::default().process(&mut launcher, "plain.fmt", "batch.tex").unwrap();
         let mut engine = XdvipdfmxEngine::default();
         engine.pdf_build_options(tectonic::PdfBuildOptions {
             workers: std::num::NonZeroUsize::new(3),
             queued_bytes: std::num::NonZeroUsize::new(1024 * 1024).unwrap(),
         });
-        let error = engine
-            .process(&mut launcher, "batch.xdv", "batch.pdf")
-            .unwrap_err();
+        let error = engine.process(&mut launcher, "batch.xdv", "batch.pdf").unwrap_err();
         assert!(error.to_string().contains("physical"), "{error}");
         assert_eq!(engine.statistics().unwrap().rendered_pages, 2);
     }
@@ -479,10 +391,7 @@ fn malformed_dvi_preflight_keeps_native_diagnostics_and_allows_another_build() {
             .legacy_backend(legacy)
             .process(&mut launcher, "batch.xdv", "batch.pdf")
             .unwrap_err();
-        assert!(
-            error.to_string().contains("Unexpected opcode 247"),
-            "{error}"
-        );
+        assert!(error.to_string().contains("Unexpected opcode 247"), "{error}");
     }
     let (pdf, _, _) = compile_pdf(&mut memory, "Successful subsequent build.\\bye", true);
     check_cross_references(&pdf);
@@ -493,35 +402,21 @@ fn corrupt_png_errors_return_through_rust_and_allow_another_build() {
     let mut memory = MemoryIo::new(true);
     let original = png_alpha_image(8, 8);
     memory.create_entry("recovery.png", original.clone());
-    let source =
-        "\\nopagenumbers Before\\eject\\special{pdf:image width 20pt (recovery.png)}After\\bye";
+    let source = "\\nopagenumbers Before\\eject\\special{pdf:image width 20pt (recovery.png)}After\\bye";
     let (expected, _, _) = compile_pdf(&mut memory, source, true);
-    let idat = original
-        .windows(4)
-        .position(|bytes| bytes == b"IDAT")
-        .unwrap();
+    let idat = original.windows(4).position(|bytes| bytes == b"IDAT").unwrap();
     let mut bad_crc = original.clone();
     bad_crc[29] ^= 1;
-    for damaged in [
-        bad_crc,
-        original[..idat + 6].to_vec(),
-        original[..original.len() - 5].to_vec(),
-    ] {
+    for damaged in [bad_crc, original[..idat + 6].to_vec(), original[..original.len() - 5].to_vec()] {
         memory.create_entry("recovery.png", damaged);
-        let mut assets =
-            FilesystemIo::new(&util::test_path(&["assets"]), false, false, HashSet::new());
+        let mut assets = FilesystemIo::new(&util::test_path(&["assets"]), false, false, HashSet::new());
         {
             let io = IoStack::new(vec![&mut memory, &mut assets]);
             let mut hooks = MinimalDriver::new(io);
             let mut status = NoopStatusBackend {};
             let mut launcher = CoreBridgeLauncher::new(&mut hooks, &mut status);
-            let error = XdvipdfmxEngine::default()
-                .process(&mut launcher, "batch.xdv", "batch.pdf")
-                .unwrap_err();
-            assert!(
-                error.to_string().contains("PNG") || error.to_string().contains("CRC"),
-                "{error}"
-            );
+            let error = XdvipdfmxEngine::default().process(&mut launcher, "batch.xdv", "batch.pdf").unwrap_err();
+            assert!(error.to_string().contains("PNG") || error.to_string().contains("CRC"), "{error}");
         }
         memory.create_entry("recovery.png", original.clone());
         let (pdf, _, _) = compile_pdf(&mut memory, source, true);
@@ -533,22 +428,12 @@ fn corrupt_png_errors_return_through_rust_and_allow_another_build() {
 #[test]
 fn resource_workers_preserve_metadata_and_large_stream_bytes_across_limits() {
     let mut memory = MemoryIo::new(true);
-    let source = attachment_document(
-        &mut memory,
-        &[16 * 1024, 2 * 1024 * 1024 + 17, 600 * 1024, 32 * 1024],
-    );
+    let source = attachment_document(&mut memory, &[16 * 1024, 2 * 1024 * 1024 + 17, 600 * 1024, 32 * 1024]);
     let (legacy, _, _, _) = compile_pdf_with_backend(&mut memory, &source, true, Some(1), true, 1);
     let expected = decoded_streams(&legacy);
     let mut deterministic = None;
     for (workers, queued_bytes) in [(1, 1), (3, 1), (3, 64 * 1024 * 1024)] {
-        let (pdf, _, _, statistics) = compile_pdf_with_backend(
-            &mut memory,
-            &source,
-            true,
-            Some(workers),
-            false,
-            queued_bytes,
-        );
+        let (pdf, _, _, statistics) = compile_pdf_with_backend(&mut memory, &source, true, Some(workers), false, queued_bytes);
         let statistics = statistics.unwrap();
         assert!(statistics.serial_page_fallback);
         assert!(statistics.compressed_streams >= 3);
@@ -565,9 +450,7 @@ fn resource_workers_preserve_metadata_and_large_stream_bytes_across_limits() {
 fn attachment_document(memory: &mut MemoryIo, lengths: &[usize]) -> String {
     let mut source = String::from("\\nopagenumbers\nBatch compression test.\n");
     for (index, &length) in lengths.iter().enumerate() {
-        let data: Vec<_> = (0..length)
-            .map(|offset| ((offset * 31 + index) % 251) as u8)
-            .collect();
+        let data: Vec<_> = (0..length).map(|offset| ((offset * 31 + index) % 251) as u8).collect();
         memory.create_entry(&format!("payload{index}.bin"), data);
         let metadata = if index == 0 { " /Type /Metadata" } else { "" };
         source.push_str(&format!(
@@ -605,21 +488,13 @@ fn batched_streams_preserve_data_across_batch_limits_and_engine_runs() {
                 stream.to_vec()
             };
             assert_eq!(data.len(), length);
-            assert!(
-                data.iter()
-                    .enumerate()
-                    .all(|(offset, &byte)| byte == ((offset * 31 + index) % 251) as u8)
-            );
+            assert!(data.iter().enumerate().all(|(offset, &byte)| byte == ((offset * 31 + index) % 251) as u8));
         }
     }
 }
 
 fn check_cross_references(pdf: &[u8]) {
-    let startxref = pdf
-        .windows(10)
-        .rposition(|bytes| bytes == b"startxref\n")
-        .unwrap()
-        + 10;
+    let startxref = pdf.windows(10).rposition(|bytes| bytes == b"startxref\n").unwrap() + 10;
     let offset = std::str::from_utf8(&pdf[startxref..])
         .unwrap()
         .lines()
@@ -628,15 +503,8 @@ fn check_cross_references(pdf: &[u8]) {
         .parse::<usize>()
         .unwrap();
     let xref = &pdf[offset..];
-    let header_end = xref
-        .windows(5)
-        .position(|bytes| bytes == b" obj\n")
-        .unwrap();
-    assert!(
-        xref[..header_end]
-            .iter()
-            .all(|byte| byte.is_ascii_digit() || *byte == b' ')
-    );
+    let header_end = xref.windows(5).position(|bytes| bytes == b" obj\n").unwrap();
+    assert!(xref[..header_end].iter().all(|byte| byte.is_ascii_digit() || *byte == b' '));
     let (dictionary, stream) = stream_data(xref, b"/Type/XRef");
     let widths: Vec<usize> = dictionary
         .split("/W[")
@@ -658,11 +526,7 @@ fn check_cross_references(pdf: &[u8]) {
     };
     let row_bytes: usize = widths.iter().sum();
     assert_eq!(entries.len() % row_bytes, 0);
-    let integer = |bytes: &[u8]| {
-        bytes
-            .iter()
-            .fold(0usize, |value, &byte| value * 256 + usize::from(byte))
-    };
+    let integer = |bytes: &[u8]| bytes.iter().fold(0usize, |value, &byte| value * 256 + usize::from(byte));
     for (label, entry) in entries.chunks_exact(row_bytes).enumerate() {
         if integer(&entry[..widths[0]]) == 1 {
             let offset = integer(&entry[widths[0]..widths[0] + widths[1]]);
@@ -677,7 +541,9 @@ fn batched_page_streams_preserve_graphics_and_cross_references() {
     let commands = "0 0 1 1 re S ".repeat(128);
     let mut source = String::from("\\nopagenumbers\n");
     for page in 0..70 {
-        source.push_str(&format!("Page {page}.\\special{{pdf:literal direct /PageTest{page} BMC {commands}EMC}}\\vfill\\eject\n"));
+        source.push_str(&format!(
+            "Page {page}.\\special{{pdf:literal direct /PageTest{page} BMC {commands}EMC}}\\vfill\\eject\n"
+        ));
     }
     source.push_str("\\bye\n");
     for compression in [true, false] {
@@ -686,16 +552,9 @@ fn batched_page_streams_preserve_graphics_and_cross_references() {
         check_cross_references(&pdf);
         let mut found = HashSet::new();
         let mut cursor = 0;
-        while let Some(start) = pdf[cursor..]
-            .windows(8)
-            .position(|bytes| bytes == b"\nstream\n")
-        {
+        while let Some(start) = pdf[cursor..].windows(8).position(|bytes| bytes == b"\nstream\n") {
             let start = cursor + start;
-            let object_start = pdf[..start]
-                .windows(5)
-                .rposition(|bytes| bytes == b" obj\n")
-                .unwrap()
-                + 5;
+            let object_start = pdf[..start].windows(5).rposition(|bytes| bytes == b" obj\n").unwrap() + 5;
             let (dictionary, stream) = read_stream(&pdf[object_start..]);
             cursor = start + 8 + stream.len();
             let data = if dictionary.contains("/FlateDecode") {
@@ -707,12 +566,7 @@ fn batched_page_streams_preserve_graphics_and_cross_references() {
             };
             if let Some(start) = data.windows(9).position(|bytes| bytes == b"/PageTest") {
                 let content = std::str::from_utf8(&data[start..]).unwrap();
-                let page: usize = content[9..]
-                    .split_whitespace()
-                    .next()
-                    .unwrap()
-                    .parse()
-                    .unwrap();
+                let page: usize = content[9..].split_whitespace().next().unwrap().parse().unwrap();
                 assert!(content.starts_with(&format!("/PageTest{page} BMC {commands}EMC")));
                 assert!((1024..16 * 1024).contains(&data.len()));
                 assert_eq!(dictionary.contains("/FlateDecode"), compression);
@@ -734,65 +588,41 @@ fn benchmark_single_pdf_compilation() {
         let source = if workload == "attachments" {
             attachment_document(&mut memory, &vec![128 * 1024; 128])
         } else if workload == "native" {
-            format!(
-                "\\font\\native=\"[lmroman12-regular]\"\\native\n{}",
-                page_document()
-            )
+            format!("\\font\\native=\"[lmroman12-regular]\"\\native\n{}", page_document())
         } else if workload == "images" {
             let mut source = String::from("\\nopagenumbers\n");
             for image in 0..16 {
                 let name = format!("benchmark{image}.bmp");
                 memory.create_entry(&name, bmp_image(1024, 1024));
-                source.push_str(&format!(
-                    "Image {image}.\\special{{pdf:image width 200pt ({name})}}\\vfill\\eject\n"
-                ));
+                source.push_str(&format!("Image {image}.\\special{{pdf:image width 200pt ({name})}}\\vfill\\eject\n"));
             }
             source.push_str("\\bye\n");
             source
         } else if workload == "graphics" {
             format!(
                 "\\nopagenumbers\n{}\\bye\n",
-                format!(
-                    "{}\\vfill\\eject\n",
-                    "\\vrule width 8pt height 12pt ".repeat(500)
-                )
-                .repeat(100)
+                format!("{}\\vfill\\eject\n", "\\vrule width 8pt height 12pt ".repeat(500)).repeat(100)
             )
         } else {
             let paragraph = "The quick brown fox jumps over the lazy dog. This paragraph exercises line breaking, font output, and page layout in a single document.\\par\n";
             let page = format!("{}\\vfill\\eject\n", paragraph.repeat(20));
             format!("\\nopagenumbers\n{}\\bye\n", page.repeat(200))
         };
-        for (label, workers, legacy) in [
-            ("legacy", None, true),
-            ("one", Some(1), false),
-            ("auto", None, false),
-        ] {
+        for (label, workers, legacy) in [("legacy", None, true), ("one", Some(1), false), ("auto", None, false)] {
             if std::env::var("TECTONIC_PDF_BENCH_BACKEND").is_ok_and(|selected| selected != label) {
                 continue;
             }
             let mut tex_times = Vec::new();
             let mut pdf_times = Vec::new();
             for iteration in 0..6 {
-                let (bytes, tex, pdf, statistics) = compile_pdf_with_backend(
-                    &mut memory,
-                    &source,
-                    true,
-                    workers,
-                    legacy,
-                    64 * 1024 * 1024,
-                );
+                let (bytes, tex, pdf, statistics) = compile_pdf_with_backend(&mut memory, &source, true, workers, legacy, 64 * 1024 * 1024);
                 if iteration == 5 {
                     if let Some(statistics) = statistics {
                         eprintln!("{statistics:?}");
                     }
                     if let Some(root) = std::env::var_os("TECTONIC_PDF_BENCH_DIR") {
                         std::fs::create_dir_all(&root).unwrap();
-                        std::fs::write(
-                            std::path::Path::new(&root).join(format!("{workload}-{label}.pdf")),
-                            bytes,
-                        )
-                        .unwrap();
+                        std::fs::write(std::path::Path::new(&root).join(format!("{workload}-{label}.pdf")), bytes).unwrap();
                     }
                 }
                 if iteration > 0 {
@@ -813,25 +643,14 @@ fn benchmark_single_pdf_compilation() {
 }
 
 fn stream_data<'a>(pdf: &'a [u8], marker: &[u8]) -> (&'a str, &'a [u8]) {
-    let offset = pdf
-        .windows(marker.len())
-        .position(|bytes| bytes == marker)
-        .unwrap();
-    let object_start = pdf[..offset]
-        .windows(5)
-        .rposition(|bytes| bytes == b" obj\n")
-        .unwrap()
-        + 5;
+    let offset = pdf.windows(marker.len()).position(|bytes| bytes == marker).unwrap();
+    let object_start = pdf[..offset].windows(5).rposition(|bytes| bytes == b" obj\n").unwrap() + 5;
     let stream = &pdf[object_start..];
     read_stream(stream)
 }
 
 fn read_stream(stream: &[u8]) -> (&str, &[u8]) {
-    let body_start = stream
-        .windows(8)
-        .position(|bytes| bytes == b"\nstream\n")
-        .unwrap()
-        + 8;
+    let body_start = stream.windows(8).position(|bytes| bytes == b"\nstream\n").unwrap() + 8;
     let dictionary = std::str::from_utf8(&stream[..body_start]).unwrap();
     let length = dictionary
         .split("/Length")
@@ -908,16 +727,8 @@ fn decode_png_predictor(filtered: &[u8], width: usize, height: usize) -> Vec<u8>
         for (column, &byte) in filtered[1..].iter().enumerate() {
             let index = row * row_bytes + column;
             let left = if column >= 3 { pixels[index - 3] } else { 0 };
-            let up = if row > 0 {
-                pixels[index - row_bytes]
-            } else {
-                0
-            };
-            let corner = if row > 0 && column >= 3 {
-                pixels[index - row_bytes - 3]
-            } else {
-                0
-            };
+            let up = if row > 0 { pixels[index - row_bytes] } else { 0 };
+            let corner = if row > 0 && column >= 3 { pixels[index - row_bytes - 3] } else { 0 };
             let prediction = match filtered[0] {
                 0 => 0,
                 1 => left,
@@ -971,9 +782,7 @@ fn compiled_pdf_preserves_large_compressed_attachments_images_and_transparency()
         let mut hooks = MinimalDriver::new(io);
         let mut status = NoopStatusBackend {};
         let mut launcher = CoreBridgeLauncher::new(&mut hooks, &mut status);
-        TexEngine::default()
-            .process(&mut launcher, "plain.fmt", "parallel.tex")
-            .unwrap();
+        TexEngine::default().process(&mut launcher, "plain.fmt", "parallel.tex").unwrap();
         XdvipdfmxEngine::default()
             .enable_deterministic_tags(true)
             .process(&mut launcher, "parallel.xdv", "parallel.pdf")
@@ -991,23 +800,13 @@ fn compiled_pdf_preserves_large_compressed_attachments_images_and_transparency()
     assert_eq!(decoded, payload);
 
     let (dictionary, stream) = stream_data(pdf, b"/Subtype/Image");
-    assert!(
-        dictionary
-            .split("/Predictor")
-            .nth(1)
-            .unwrap()
-            .trim_start()
-            .starts_with("15")
-    );
+    assert!(dictionary.split("/Predictor").nth(1).unwrap().trim_start().starts_with("15"));
     decoded.clear();
     ZlibDecoder::new(stream).read_to_end(&mut decoded).unwrap();
     let pixels = decode_png_predictor(&decoded, width, height);
     for (index, pixel) in pixels.as_chunks::<3>().0.iter().enumerate() {
         let (x, y) = (index % width, index / width);
-        assert_eq!(
-            pixel,
-            &[(y % 251) as u8, (x % 251) as u8, ((x + y) % 251) as u8]
-        );
+        assert_eq!(pixel, &[(y % 251) as u8, (x % 251) as u8, ((x + y) % 251) as u8]);
     }
 
     let (dictionary, stream) = stream_data(pdf, b"/Predictor 2");

@@ -1,14 +1,8 @@
 use crate::c_api::PlatformFontRef;
-use crate::manager::{
-    FontInfo, FontManager, FontManagerBackend, FontMaps, NameCollection,
-    base_get_op_size_rec_and_style_flags,
-};
+use crate::manager::{FontInfo, FontManager, FontManagerBackend, FontMaps, NameCollection, base_get_op_size_rec_and_style_flags};
 use std::borrow::Cow;
 use std::ffi::{CStr, CString};
-use tectonic_mac_core::{
-    CFArray, CFDictionary, CFSet, CFString, CFUrl, CTFont, CTFontDescriptor, CoreType,
-    FontAttribute, FontNameKey,
-};
+use tectonic_mac_core::{CFArray, CFDictionary, CFSet, CFString, CFUrl, CTFont, CTFontDescriptor, CoreType, FontAttribute, FontNameKey};
 
 fn find_fonts_with_name(name: CFString, key: FontAttribute) -> CFArray<CTFontDescriptor> {
     let attributes = CFDictionary::new([(key.to_str(), name.into_ty())]);
@@ -21,11 +15,7 @@ fn find_fonts_with_name(name: CFString, key: FontAttribute) -> CFArray<CTFontDes
 fn find_font_with_name(name: CFString, key: FontAttribute) -> Option<CTFontDescriptor> {
     let matches = find_fonts_with_name(name, key);
 
-    if !matches.is_empty() {
-        Some(matches.get(0))
-    } else {
-        None
-    }
+    if !matches.is_empty() { Some(matches.get(0)) } else { None }
 }
 
 fn append_name_to_list(font: &CTFont, name_list: &mut Vec<CString>, name_key: FontNameKey) {
@@ -110,8 +100,7 @@ impl FontManagerBackend for MacBackend {
         if let Some(hyph) = hyph {
             let family = CString::new(&name.to_bytes()[..hyph]).unwrap();
             let family_str = CFString::new(&*family);
-            let family_members =
-                find_fonts_with_name(family_str.clone(), FontAttribute::FamilyName);
+            let family_members = find_fonts_with_name(family_str.clone(), FontAttribute::FamilyName);
             if !family_members.is_empty() {
                 self.add_fonts_to_caches(maps, &family_members);
                 return;

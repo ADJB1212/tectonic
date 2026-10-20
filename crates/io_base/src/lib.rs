@@ -125,11 +125,7 @@ pub struct InputHandle {
 impl InputHandle {
     /// Create a new InputHandle wrapping an underlying type that implements
     /// `InputFeatures`.
-    pub fn new<T: 'static + InputFeatures>(
-        name: impl Into<String>,
-        inner: T,
-        origin: InputOrigin,
-    ) -> InputHandle {
+    pub fn new<T: 'static + InputFeatures>(name: impl Into<String>, inner: T, origin: InputOrigin) -> InputHandle {
         InputHandle {
             name: name.into(),
             inner: Box::new(inner),
@@ -143,11 +139,7 @@ impl InputHandle {
     }
 
     /// Create a new InputHandle in read-only mode.
-    pub fn new_read_only<T: 'static + InputFeatures>(
-        name: impl Into<String>,
-        inner: T,
-        origin: InputOrigin,
-    ) -> InputHandle {
+    pub fn new_read_only<T: 'static + InputFeatures>(name: impl Into<String>, inner: T, origin: InputOrigin) -> InputHandle {
         InputHandle {
             name: name.into(),
             inner: Box::new(inner),
@@ -247,10 +239,7 @@ impl InputHandle {
 
     /// Here's the `ungetc()` emulation.
     pub fn ungetc(&mut self, byte: u8) -> Result<()> {
-        ensure!(
-            self.ungetc_char.is_none(),
-            "internal problem: cannot ungetc() more than once in a row"
-        );
+        ensure!(self.ungetc_char.is_none(), "internal problem: cannot ungetc() more than once in a row");
         self.ungetc_char = Some(byte);
         Ok(())
     }
@@ -409,9 +398,7 @@ impl<T> OpenResult<T> {
         match self {
             OpenResult::Ok(t) => Ok(t),
             OpenResult::Err(e) => Err(e),
-            OpenResult::NotAvailable => {
-                Err(io::Error::new(io::ErrorKind::NotFound, "not found").into())
-            }
+            OpenResult::NotAvailable => Err(io::Error::new(io::ErrorKind::NotFound, "not found").into()),
         }
     }
 }
@@ -451,11 +438,7 @@ pub trait IoProvider: AsIoProviderMut {
     }
 
     /// Open the named file for input.
-    fn input_open_name(
-        &mut self,
-        _name: &str,
-        _status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_name(&mut self, _name: &str, _status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         OpenResult::NotAvailable
     }
 
@@ -474,11 +457,7 @@ pub trait IoProvider: AsIoProviderMut {
     /// provider that delegates to other I/O providers, you should implement
     /// this function fully, and then provide a simple implementation of
     /// [`Self::input_open_name`] that drops the pathing information.
-    fn input_open_name_with_abspath(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<(InputHandle, Option<PathBuf>)> {
+    fn input_open_name_with_abspath(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<(InputHandle, Option<PathBuf>)> {
         match self.input_open_name(name, status) {
             OpenResult::Ok(h) => OpenResult::Ok((h, None)),
             OpenResult::Err(e) => OpenResult::Err(e),
@@ -499,10 +478,7 @@ pub trait IoProvider: AsIoProviderMut {
     ///
     /// This method is as to [`Self::input_open_primary`] as
     /// [`Self::input_open_name_with_abspath`] is to [`Self::input_open_name`].
-    fn input_open_primary_with_abspath(
-        &mut self,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<(InputHandle, Option<PathBuf>)> {
+    fn input_open_primary_with_abspath(&mut self, status: &mut dyn StatusBackend) -> OpenResult<(InputHandle, Option<PathBuf>)> {
         match self.input_open_primary(status) {
             OpenResult::Ok(h) => OpenResult::Ok((h, None)),
             OpenResult::Err(e) => OpenResult::Err(e),
@@ -515,23 +491,14 @@ pub trait IoProvider: AsIoProviderMut {
     /// specially: namely, to munge the filename to one that includes the
     /// current version of the Tectonic engine, since the format contents
     /// depend sensitively on the engine internals.
-    fn input_open_format(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_format(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         self.input_open_name(name, status)
     }
 
     /// Save an a format dump in some way that this provider may be able to
     /// recover in the future. This awkward interface is needed to write
     /// formats with their special munged file names.
-    fn write_format(
-        &mut self,
-        _name: &str,
-        _data: &[u8],
-        _status: &mut dyn StatusBackend,
-    ) -> Result<()> {
+    fn write_format(&mut self, _name: &str, _data: &[u8], _status: &mut dyn StatusBackend) -> Result<()> {
         bail!("this I/O layer cannot save format files");
     }
 }
@@ -545,19 +512,11 @@ impl<P: IoProvider + ?Sized> IoProvider for Box<P> {
         (**self).output_open_stdout()
     }
 
-    fn input_open_name(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_name(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         (**self).input_open_name(name, status)
     }
 
-    fn input_open_name_with_abspath(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<(InputHandle, Option<PathBuf>)> {
+    fn input_open_name_with_abspath(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<(InputHandle, Option<PathBuf>)> {
         (**self).input_open_name_with_abspath(name, status)
     }
 
@@ -565,27 +524,15 @@ impl<P: IoProvider + ?Sized> IoProvider for Box<P> {
         (**self).input_open_primary(status)
     }
 
-    fn input_open_primary_with_abspath(
-        &mut self,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<(InputHandle, Option<PathBuf>)> {
+    fn input_open_primary_with_abspath(&mut self, status: &mut dyn StatusBackend) -> OpenResult<(InputHandle, Option<PathBuf>)> {
         (**self).input_open_primary_with_abspath(status)
     }
 
-    fn input_open_format(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_format(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         (**self).input_open_format(name, status)
     }
 
-    fn write_format(
-        &mut self,
-        name: &str,
-        data: &[u8],
-        status: &mut dyn StatusBackend,
-    ) -> Result<()> {
+    fn write_format(&mut self, name: &str, data: &[u8], status: &mut dyn StatusBackend) -> Result<()> {
         (**self).write_format(name, data, status)
     }
 }
@@ -680,11 +627,7 @@ fn try_normalize_tex_path(path: &str) -> Option<String> {
         .join("/");
 
     if r.is_empty() {
-        if has_root {
-            Some("/".into())
-        } else {
-            Some(".".into())
-        }
+        if has_root { Some("/".into()) } else { Some(".".into()) }
     } else {
         Some(r)
     }
@@ -717,13 +660,7 @@ mod tests {
 
     #[test]
     fn normalized_tex_paths_are_borrowed() {
-        for path in [
-            "",
-            "file.tex",
-            "path/to/file.tex",
-            "/absolute/file.tex",
-            "file with spaces.tex",
-        ] {
+        for path in ["", "file.tex", "path/to/file.tex", "/absolute/file.tex", "file with spaces.tex"] {
             assert!(matches!(normalize_tex_path(path), Cow::Borrowed(p) if p == path));
         }
         for (path, normalized) in [
@@ -774,11 +711,7 @@ mod tests {
     #[test]
     fn closing_partial_input_hashes_the_remaining_bytes() {
         let contents = b"file contents";
-        let mut input = InputHandle::new(
-            "file",
-            io::Cursor::new(contents.to_vec()),
-            InputOrigin::Other,
-        );
+        let mut input = InputHandle::new("file", io::Cursor::new(contents.to_vec()), InputOrigin::Other);
         input.read_exact(&mut [0; 4]).unwrap();
         input.scan_remainder().unwrap();
 
@@ -799,40 +732,19 @@ mod tests {
         assert_eq!(try_normalize_tex_path("././/./"), Some(".".into()));
         assert_eq!(try_normalize_tex_path("/././/."), Some("/".into()));
 
-        assert_eq!(
-            try_normalize_tex_path("my/path/file.txt"),
-            Some("my/path/file.txt".into())
-        );
+        assert_eq!(try_normalize_tex_path("my/path/file.txt"), Some("my/path/file.txt".into()));
         // preserve spaces
-        assert_eq!(
-            try_normalize_tex_path("  my/pa  th/file .txt "),
-            Some("  my/pa  th/file .txt ".into())
-        );
-        assert_eq!(
-            try_normalize_tex_path("/my/path/file.txt"),
-            Some("/my/path/file.txt".into())
-        );
-        assert_eq!(
-            try_normalize_tex_path("./my///path/././file.txt"),
-            Some("my/path/file.txt".into())
-        );
-        assert_eq!(
-            try_normalize_tex_path("./../my/../../../file.txt"),
-            Some("../../../file.txt".into())
-        );
-        assert_eq!(
-            try_normalize_tex_path("././my//../path/../here/file.txt"),
-            Some("here/file.txt".into())
-        );
+        assert_eq!(try_normalize_tex_path("  my/pa  th/file .txt "), Some("  my/pa  th/file .txt ".into()));
+        assert_eq!(try_normalize_tex_path("/my/path/file.txt"), Some("/my/path/file.txt".into()));
+        assert_eq!(try_normalize_tex_path("./my///path/././file.txt"), Some("my/path/file.txt".into()));
+        assert_eq!(try_normalize_tex_path("./../my/../../../file.txt"), Some("../../../file.txt".into()));
+        assert_eq!(try_normalize_tex_path("././my//../path/../here/file.txt"), Some("here/file.txt".into()));
         assert_eq!(
             try_normalize_tex_path("./my/.././/path/../../here//file.txt"),
             Some("../here/file.txt".into())
         );
 
         assert_eq!(try_normalize_tex_path("/my/../../file.txt"), None);
-        assert_eq!(
-            try_normalize_tex_path("/my/./.././path//../../file.txt"),
-            None
-        );
+        assert_eq!(try_normalize_tex_path("/my/./.././path//../../file.txt"), None);
     }
 }

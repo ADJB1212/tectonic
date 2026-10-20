@@ -22,26 +22,16 @@ impl CTFontDescriptor {
     /// Overlapping attributes are replaced.
     pub fn copy_with_attrs(&self, attrs: &CFDictionary<CFString, CFType>) -> CTFontDescriptor {
         // SAFETY: Self and attrs are guaranteed to be valid
-        let ptr = unsafe {
-            sys::CTFontDescriptorCreateCopyWithAttributes(self.as_type_ref(), attrs.as_type_ref())
-        };
+        let ptr = unsafe { sys::CTFontDescriptorCreateCopyWithAttributes(self.as_type_ref(), attrs.as_type_ref()) };
         let ptr = NonNull::new(ptr.cast_mut()).unwrap();
         // SAFETY: If non-null, pointer from CTFontDescriptorCreateCopyWithAttributes is a new, owned CTFontDescriptor.
         unsafe { CTFontDescriptor::new_owned(ptr) }
     }
 
     /// Find all loaded fonts that contain the provided mandatory properties.
-    pub fn matching_font_descriptors(
-        &self,
-        mandatory: &CFSet<CFString>,
-    ) -> CFArray<CTFontDescriptor> {
+    pub fn matching_font_descriptors(&self, mandatory: &CFSet<CFString>) -> CFArray<CTFontDescriptor> {
         // SAFETY: Self and mandatory are guaranteed to be valid
-        let ptr = unsafe {
-            sys::CTFontDescriptorCreateMatchingFontDescriptors(
-                self.as_type_ref(),
-                mandatory.as_type_ref(),
-            )
-        };
+        let ptr = unsafe { sys::CTFontDescriptorCreateMatchingFontDescriptors(self.as_type_ref(), mandatory.as_type_ref()) };
         NonNull::new(ptr.cast_mut())
             // SAFETY: If non-null, pointer from CTFontDescriptorCreateMatchingFontDescriptors is a
             //         new, owned CFArray of CTFontDescriptor

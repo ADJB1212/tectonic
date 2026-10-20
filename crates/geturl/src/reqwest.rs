@@ -29,11 +29,7 @@ impl GetUrlBackend for ReqwestBackend {
     fn get_url(&mut self, url: &str) -> Result<Response> {
         let res = self.client.get_or_init(Client::new).get(url).send()?;
         if !res.status().is_success() {
-            bail!(
-                "unexpected HTTP response code {} for URL {}",
-                res.status(),
-                url
-            );
+            bail!("unexpected HTTP response code {} for URL {}", res.status(), url);
         }
         Ok(res)
     }
@@ -68,31 +64,16 @@ impl GetUrlBackend for ReqwestBackend {
                     .next_back()
                     .map(|file| file.contains('.') || file == original_filename)
                     .unwrap_or(true);
-                if follow {
-                    attempt.follow()
-                } else {
-                    attempt.stop()
-                }
+                if follow { attempt.follow() } else { attempt.stop() }
             } else {
                 attempt.follow()
             }
         });
 
-        let res = Client::builder()
-            .redirect(redirect_policy)
-            .build()?
-            .head(url)
-            .send()?;
+        let res = Client::builder().redirect(redirect_policy).build()?.head(url).send()?;
 
-        if !(res.status().is_success()
-            || res.status() == StatusCode::FOUND
-            || res.status() == StatusCode::TEMPORARY_REDIRECT)
-        {
-            bail!(
-                "unexpected HTTP response code {} for URL {}",
-                res.status(),
-                url
-            );
+        if !(res.status().is_success() || res.status() == StatusCode::FOUND || res.status() == StatusCode::TEMPORARY_REDIRECT) {
+            bail!("unexpected HTTP response code {} for URL {}", res.status(), url);
         }
 
         let final_url: String = res.url().clone().into();
@@ -115,10 +96,7 @@ pub struct ReqwestRangeReader {
 
 impl ReqwestRangeReader {
     fn new(url: &str, client: Client) -> ReqwestRangeReader {
-        ReqwestRangeReader {
-            url: url.to_owned(),
-            client,
-        }
+        ReqwestRangeReader { url: url.to_owned(), client }
     }
 }
 
@@ -134,11 +112,7 @@ impl RangeReader for ReqwestRangeReader {
             .send()?;
 
         if res.status() != StatusCode::PARTIAL_CONTENT {
-            bail!(
-                "unexpected HTTP response code {} for URL {}",
-                res.status(),
-                self.url
-            );
+            bail!("unexpected HTTP response code {} for URL {}", res.status(), self.url);
         }
 
         Ok(res)
@@ -161,9 +135,7 @@ mod tests {
         let url = format!("http://{}/file", listener.local_addr().unwrap());
         let server = thread::spawn(move || {
             let (mut stream, _) = listener.accept().unwrap();
-            stream
-                .set_read_timeout(Some(Duration::from_secs(5)))
-                .unwrap();
+            stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
             let mut reader = BufReader::new(stream.try_clone().unwrap());
 
             for ranged in [false, false, true] {
@@ -177,36 +149,18 @@ mod tests {
                     }
                 }
                 assert!(request.starts_with("GET /file HTTP/1.1\r\n"));
-                assert_eq!(
-                    request
-                        .to_ascii_lowercase()
-                        .contains("range: bytes=2-5\r\n"),
-                    ranged
-                );
-                let status = if ranged {
-                    "206 Partial Content"
-                } else {
-                    "200 OK"
-                };
+                assert_eq!(request.to_ascii_lowercase().contains("range: bytes=2-5\r\n"), ranged);
+                let status = if ranged { "206 Partial Content" } else { "200 OK" };
                 write!(stream, "HTTP/1.1 {status}\r\nContent-Length: 4\r\n\r\ndata").unwrap();
             }
         });
 
         let mut backend = ReqwestBackend {
-            client: Client::builder()
-                .no_proxy()
-                .timeout(Duration::from_secs(5))
-                .build()
-                .unwrap()
-                .into(),
+            client: Client::builder().no_proxy().timeout(Duration::from_secs(5)).build().unwrap().into(),
         };
         let mut contents = String::new();
         for _ in 0..2 {
-            backend
-                .get_url(&url)
-                .unwrap()
-                .read_to_string(&mut contents)
-                .unwrap();
+            backend.get_url(&url).unwrap().read_to_string(&mut contents).unwrap();
         }
         backend
             .open_range_reader(&url)

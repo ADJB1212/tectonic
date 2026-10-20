@@ -7,11 +7,7 @@ static DECIMAL_DIVISORS: std::sync::LazyLock<[f64; 310]> =
     std::sync::LazyLock::new(|| std::array::from_fn(|power| 10.0f64.powf(f64::from(power as u32))));
 
 pub(crate) fn error(message: &'static str, offset: usize) -> PdfError {
-    PdfError::new(
-        PdfErrorKind::MalformedInput,
-        std::ffi::CString::new(message).unwrap(),
-    )
-    .at(offset as u64)
+    PdfError::new(PdfErrorKind::MalformedInput, std::ffi::CString::new(message).unwrap()).at(offset as u64)
 }
 
 pub(crate) fn white(byte: u8) -> bool {
@@ -23,10 +19,7 @@ pub(crate) fn delimiter(byte: u8) -> bool {
 }
 
 pub(crate) fn skip_line(bytes: &[u8]) -> usize {
-    let mut pos = bytes
-        .iter()
-        .position(|b| matches!(b, b'\r' | b'\n'))
-        .unwrap_or(bytes.len());
+    let mut pos = bytes.iter().position(|b| matches!(b, b'\r' | b'\n')).unwrap_or(bytes.len());
     if bytes.get(pos) == Some(&b'\r') {
         pos += 1;
     }
@@ -70,10 +63,7 @@ pub(crate) fn number_length(bytes: &[u8], unsigned: bool) -> usize {
 
 pub(crate) fn number(bytes: &[u8]) -> Result<(f64, usize), PdfError> {
     let mut pos = skip_white(bytes);
-    if !bytes
-        .get(pos)
-        .is_some_and(|b| b.is_ascii_digit() || b".+-".contains(b))
-    {
+    if !bytes.get(pos).is_some_and(|b| b.is_ascii_digit() || b".+-".contains(b)) {
         return Err(error("Could not find a numeric object.", pos));
     }
     let sign = if bytes[pos] == b'-' { -1.0 } else { 1.0 };
@@ -154,17 +144,11 @@ pub(crate) enum PsNumber {
 
 pub(crate) fn ps_number(bytes: &[u8]) -> Option<(PsNumber, usize)> {
     let start = bytes.iter().position(|&b| !white(b))?;
-    let len = bytes[start..]
-        .iter()
-        .position(|&b| ps_delimiter(b))
-        .unwrap_or(bytes.len() - start);
+    let len = bytes[start..].iter().position(|&b| ps_delimiter(b)).unwrap_or(bytes.len() - start);
     let token = std::str::from_utf8(&bytes[start..start + len]).ok()?;
     if let Some((base, digits)) = token.split_once('#') {
         let base: u32 = base.parse().ok()?;
-        if !(2..=36).contains(&base)
-            || digits.is_empty()
-            || (base == 16 && digits.starts_with(['x', 'X']))
-        {
+        if !(2..=36).contains(&base) || digits.is_empty() || (base == 16 && digits.starts_with(['x', 'X'])) {
             return None;
         }
         let value = i64::from_str_radix(digits, base).ok()?;
@@ -175,23 +159,14 @@ pub(crate) fn ps_number(bytes: &[u8]) -> Option<(PsNumber, usize)> {
     {
         return Some((PsNumber::Integer(value as i32), start + len));
     }
-    if !token
-        .as_bytes()
-        .first()
-        .is_some_and(|b| b.is_ascii_digit() || b".+-".contains(b))
-    {
+    if !token.as_bytes().first().is_some_and(|b| b.is_ascii_digit() || b".+-".contains(b)) {
         return None;
     }
     let value: f64 = token.parse().ok()?;
-    value
-        .is_finite()
-        .then_some((PsNumber::Real(value), start + len))
+    value.is_finite().then_some((PsNumber::Real(value), start + len))
 }
 
-pub(crate) fn ps_name(
-    bytes: &[u8],
-    mut warning: impl FnMut(&'static str),
-) -> Option<(Vec<u8>, usize)> {
+pub(crate) fn ps_name(bytes: &[u8], mut warning: impl FnMut(&'static str)) -> Option<(Vec<u8>, usize)> {
     if bytes.first() != Some(&b'/') {
         return None;
     }
@@ -209,11 +184,7 @@ pub(crate) fn ps_name(
             if hi.is_some() {
                 pos += 1;
             }
-            let lo = if hi.is_some() {
-                hex_digit(bytes[pos])
-            } else {
-                None
-            };
+            let lo = if hi.is_some() { hex_digit(bytes[pos]) } else { None };
             if lo.is_some() {
                 pos += 1;
             }
@@ -273,10 +244,7 @@ pub(crate) fn ps_hex(bytes: &[u8], mut invalid: impl FnMut(u8)) -> Option<(Vec<u
     }
 }
 
-pub(crate) fn name(
-    bytes: &[u8],
-    mut warning: impl FnMut(&'static str),
-) -> Result<(Vec<u8>, usize), PdfError> {
+pub(crate) fn name(bytes: &[u8], mut warning: impl FnMut(&'static str)) -> Result<(Vec<u8>, usize), PdfError> {
     if bytes.first() != Some(&b'/') {
         return Err(error("Could not find a name object.", 0));
     }
@@ -320,12 +288,7 @@ pub(crate) fn name(
     Ok((output, pos))
 }
 
-pub(crate) fn literal(
-    bytes: &[u8],
-    limit: usize,
-    tainted: bool,
-    postscript: bool,
-) -> Result<(Vec<u8>, usize), PdfError> {
+pub(crate) fn literal(bytes: &[u8], limit: usize, tainted: bool, postscript: bool) -> Result<(Vec<u8>, usize), PdfError> {
     if bytes.first() != Some(&b'(') {
         return Err(error("Could not find a string object.", 0));
     }
@@ -402,10 +365,7 @@ pub(crate) fn literal(
             _ => output.push(byte),
         }
     }
-    Err(error(
-        "Unbalanced parens/truncated PDF literal string.",
-        pos,
-    ))
+    Err(error("Unbalanced parens/truncated PDF literal string.", pos))
 }
 
 #[cfg(test)]
@@ -439,20 +399,12 @@ mod tests {
         assert!(reference(b"4294967296 0 R").is_none());
         assert!(reference(b"1 65536 R").is_none());
         assert!(reference(b"1 0 Rubbish").is_none());
-        assert_eq!(
-            reference(b"4294967295 65535 R"),
-            Some((u32::MAX, u16::MAX, 18))
-        );
+        assert_eq!(reference(b"4294967295 65535 R"), Some((u32::MAX, u16::MAX, 18)));
     }
 
     #[test]
     fn literal_bytes_escapes_and_tainted_pairs_are_preserved() {
-        assert_eq!(
-            literal(b"(a(b)\\n\\777\\q\r\nz)tail", 100, false, false)
-                .unwrap()
-                .0,
-            b"a(b)\n\xffq\nz"
-        );
+        assert_eq!(literal(b"(a(b)\\n\\777\\q\r\nz)tail", 100, false, false).unwrap().0, b"a(b)\n\xffq\nz");
         assert_eq!(literal(b"(\x81\\)", 100, true, false).unwrap().0, b"\x81\\");
         assert!(literal(b"(abc)", 2, false, false).is_err());
         assert_eq!(literal(b"(abc)", 3, false, false).unwrap().0, b"abc");
@@ -461,10 +413,7 @@ mod tests {
     #[test]
     fn names_use_owned_bytes_and_report_bad_escapes() {
         let mut warnings = Vec::new();
-        assert_eq!(
-            name(b"/a#20b#00#zz#", |w| warnings.push(w)).unwrap(),
-            (b"a b".to_vec(), 13)
-        );
+        assert_eq!(name(b"/a#20b#00#zz#", |w| warnings.push(w)).unwrap(), (b"a b".to_vec(), 13));
         assert_eq!(warnings.len(), 3);
         let input = [b"/".as_slice(), &[b'x'; 65540]].concat();
         assert_eq!(name(&input, |_| {}).unwrap().0.len(), 65536);

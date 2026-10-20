@@ -21,12 +21,7 @@ pub(crate) struct Templating {
 }
 
 impl Templating {
-    pub(crate) fn new(
-        tera: tera::Tera,
-        context: tera::Context,
-        next_template_path: String,
-        next_output_path: String,
-    ) -> Self {
+    pub(crate) fn new(tera: tera::Tera, context: tera::Context, next_template_path: String, next_output_path: String) -> Self {
         Templating {
             tera,
             context,
@@ -43,19 +38,11 @@ impl Templating {
         self.next_output_path = arg.into();
     }
 
-    pub(crate) fn handle_set_template_variable(
-        &mut self,
-        remainder: &str,
-        common: &mut Common,
-    ) -> Result<()> {
+    pub(crate) fn handle_set_template_variable(&mut self, remainder: &str, common: &mut Common) -> Result<()> {
         if let Some((varname, varval)) = remainder.split_once(' ') {
             self.set_variable(varname, varval);
         } else {
-            tt_warning!(
-                common.status,
-                "ignoring malformatted tdux:setTemplateVariable special `{}`",
-                remainder
-            );
+            tt_warning!(common.status, "ignoring malformatted tdux:setTemplateVariable special `{}`", remainder);
         }
 
         Ok(())
@@ -73,19 +60,14 @@ impl Templating {
 
     pub(crate) fn emit(&mut self, common: &mut Common) -> Result<()> {
         if self.next_template_path.is_empty() {
-            bail!(
-                "need to emit HTML content but no template has been specified; is your document HTML-compatible?"
-            );
+            bail!("need to emit HTML content but no template has been specified; is your document HTML-compatible?");
         }
 
         if self.next_output_path.is_empty() {
-            bail!(
-                "need to emit HTML content but no output path has been specified; is your document HTML-compatible?"
-            );
+            bail!("need to emit HTML content but no output path has been specified; is your document HTML-compatible?");
         }
 
-        let (out_path, n_levels) =
-            crate::assets::create_output_path(&self.next_output_path, common)?;
+        let (out_path, n_levels) = crate::assets::create_output_path(&self.next_output_path, common)?;
 
         if n_levels < 2 {
             self.context.insert("tduxRelTop", "");
@@ -116,9 +98,7 @@ impl Templating {
         );
 
         let (name, digest_opt) = ih.into_name_digest();
-        common
-            .hooks
-            .event_input_closed(name, digest_opt, common.status);
+        common.hooks.event_input_closed(name, digest_opt, common.status);
 
         // Ready to render!
 

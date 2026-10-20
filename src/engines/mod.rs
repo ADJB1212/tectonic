@@ -14,6 +14,4 @@ pub mod spx2html;
 pub mod tex;
 pub mod xdvipdfmx;
 
-pub use self::{
-    bibtex::BibtexEngine, spx2html::Spx2HtmlEngine, tex::TexEngine, xdvipdfmx::XdvipdfmxEngine,
-};
+pub use self::{bibtex::BibtexEngine, spx2html::Spx2HtmlEngine, tex::TexEngine, xdvipdfmx::XdvipdfmxEngine};

@@ -46,10 +46,7 @@ const ETEX_PENALTIES_PARS: &[EtexPenaltiesPar] = &[
 
 /// Get information about the e-TeX penalties parameters used in a specific
 /// engine format version.
-pub fn get_etex_penalties_pars_for_version(
-    version: FormatVersion,
-    symbols: &mut SymbolTable,
-) -> Result<Vec<EtexPenaltiesPar>> {
+pub fn get_etex_penalties_pars_for_version(version: FormatVersion, symbols: &mut SymbolTable) -> Result<Vec<EtexPenaltiesPar>> {
     let mut r = Vec::new();
     let mut n = 0;
 

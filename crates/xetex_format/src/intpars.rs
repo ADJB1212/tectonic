@@ -561,21 +561,14 @@ const INT_PARS: &[IntPar] = &[
 
 /// Get information about the integer parameters used in a specific engine
 /// format version.
-pub fn get_intpars_for_version(
-    version: FormatVersion,
-    symbols: &mut SymbolTable,
-) -> Result<Vec<IntPar>> {
+pub fn get_intpars_for_version(version: FormatVersion, symbols: &mut SymbolTable) -> Result<Vec<IntPar>> {
     let mut r = Vec::new();
     let mut n = 0;
 
     for p in INT_PARS {
         if version >= p.since && version <= p.until {
             r.push(*p);
-            symbols.add(
-                SymbolCategory::IntPars,
-                format!("INT_PAR__{}", p.name.to_lowercase()),
-                n,
-            )?;
+            symbols.add(SymbolCategory::IntPars, format!("INT_PAR__{}", p.name.to_lowercase()), n)?;
             n += 1;
         }
     }

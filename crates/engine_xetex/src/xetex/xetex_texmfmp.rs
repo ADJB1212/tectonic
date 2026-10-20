@@ -69,11 +69,7 @@ pub unsafe extern "C" fn tt_checkpoint_clock(cp: *mut tt_checkpoint) {
             (&raw mut start_time_str).cast::<c_char>() as *mut libc::c_void,
             TIME_STR_SIZE,
         );
-        tt_checkpoint_string(
-            cp,
-            b"last_source_name\0".as_ptr() as *const c_char,
-            &raw mut last_source_name,
-        );
+        tt_checkpoint_string(cp, b"last_source_name\0".as_ptr() as *const c_char, &raw mut last_source_name);
         tt_checkpoint_field(
             cp,
             b"last_lineno\0".as_ptr() as *const c_char,
@@ -121,17 +117,9 @@ pub unsafe extern "C" fn makepdftime(t: time_t, time_str: *mut c_char, utc: bool
 
         let mut off = 60 * (lt.tm_hour - gmt.tm_hour) + lt.tm_min - gmt.tm_min;
         if lt.tm_year != gmt.tm_year {
-            off += if lt.tm_year > gmt.tm_year {
-                1440
-            } else {
-                -1440
-            };
+            off += if lt.tm_year > gmt.tm_year { 1440 } else { -1440 };
         } else if lt.tm_yday != gmt.tm_yday {
-            off += if lt.tm_yday > gmt.tm_yday {
-                1440
-            } else {
-                -1440
-            };
+            off += if lt.tm_yday > gmt.tm_yday { 1440 } else { -1440 };
         }
 
         if off == 0 {
@@ -151,11 +139,7 @@ pub unsafe extern "C" fn makepdftime(t: time_t, time_str: *mut c_char, utc: bool
 #[unsafe(export_name = "init_start_time")]
 pub unsafe extern "C" fn init_start_time(source_date_epoch: time_t) {
     unsafe {
-        makepdftime(
-            source_date_epoch,
-            (&raw mut start_time_str).cast::<c_char>(),
-            true,
-        );
+        makepdftime(source_date_epoch, (&raw mut start_time_str).cast::<c_char>(), true);
     }
 }
 
@@ -176,13 +160,7 @@ pub unsafe extern "C" fn getcreationdate() {
 }
 
 #[unsafe(export_name = "get_date_and_time")]
-pub unsafe extern "C" fn get_date_and_time(
-    source_date_epoch: time_t,
-    minutes: *mut i32,
-    day: *mut i32,
-    month: *mut i32,
-    year: *mut i32,
-) {
+pub unsafe extern "C" fn get_date_and_time(source_date_epoch: time_t, minutes: *mut i32, day: *mut i32, month: *mut i32, year: *mut i32) {
     unsafe {
         let tmptr = libc::localtime(&source_date_epoch);
         if !tmptr.is_null() {
@@ -285,11 +263,7 @@ pub unsafe extern "C" fn getfiledump(s: i32, offset: c_int, length: c_int) {
         }
 
         super::bridge::ttstub_input_seek(handle, (offset as libc::c_long) as isize, libc::SEEK_SET);
-        let actual = super::bridge::ttstub_input_read(
-            handle,
-            file_buffer.as_mut_ptr().cast(),
-            length as size_t,
-        );
+        let actual = super::bridge::ttstub_input_read(handle, file_buffer.as_mut_ptr().cast(), length as size_t);
         super::bridge::ttstub_input_close(handle);
 
         if actual > 0 {
@@ -339,10 +313,7 @@ pub unsafe extern "C" fn gettexstring(s: str_number) -> *mut c_char {
         let mut written = 0;
         for c in char::decode_utf16(units.iter().copied()) {
             let mut encoded = [0; 4];
-            let bytes = c
-                .unwrap_or(char::REPLACEMENT_CHARACTER)
-                .encode_utf8(&mut encoded)
-                .as_bytes();
+            let bytes = c.unwrap_or(char::REPLACEMENT_CHARACTER).encode_utf8(&mut encoded).as_bytes();
             std::ptr::copy_nonoverlapping(bytes.as_ptr(), name.add(written), bytes.len());
             written += bytes.len();
         }
@@ -502,10 +473,7 @@ mod tests {
 
             for (bytes, expected) in [
                 (b"ASCII".as_slice(), "ASCII"),
-                (
-                    "\u{e4}\u{20ac}\u{1f600}\u{10ffff}".as_bytes(),
-                    "\u{e4}\u{20ac}\u{1f600}\u{10ffff}",
-                ),
+                ("\u{e4}\u{20ac}\u{1f600}\u{10ffff}".as_bytes(), "\u{e4}\u{20ac}\u{1f600}\u{10ffff}"),
                 (b"\xf0\x9f".as_slice(), "\u{fffd}"),
                 (b"\xc0\xaf".as_slice(), "\u{fffd}\u{fffd}"),
             ] {
@@ -577,10 +545,7 @@ mod tests {
                 append_hex_to_pool(&bytes);
                 assert_eq!({ pool_ptr }, (3 + length * 2) as i32);
                 assert_eq!(pool[2], 0x1234);
-                assert_eq!(
-                    String::from_utf16(&pool[3..3 + length * 2]).unwrap(),
-                    expected
-                );
+                assert_eq!(String::from_utf16(&pool[3..3 + length * 2]).unwrap(), expected);
             }
         }
     }

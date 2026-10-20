@@ -79,12 +79,7 @@ unsafe fn pooled_string<'a>(s: i32) -> &'a [u16] {
 }
 
 pub(super) unsafe fn str_eq_buf_bmp(s: str_number, start: i32, len: i32) -> bool {
-    unsafe {
-        super::xetex_simd::eq_utf16_utf32(
-            pooled_string(s),
-            std::slice::from_raw_parts(buffer.add(start as usize), len as usize),
-        )
-    }
+    unsafe { super::xetex_simd::eq_utf16_utf32(pooled_string(s), std::slice::from_raw_parts(buffer.add(start as usize), len as usize)) }
 }
 
 #[unsafe(export_name = "load_pool_strings")]
@@ -326,10 +321,7 @@ mod tests {
             "string index standard: {:?}",
             measure::<std::collections::hash_map::RandomState>(&strings)
         );
-        eprintln!(
-            "string index Fx: {:?}",
-            measure::<rustc_hash::FxBuildHasher>(&strings)
-        );
+        eprintln!("string index Fx: {:?}", measure::<rustc_hash::FxBuildHasher>(&strings));
     }
 
     #[test]

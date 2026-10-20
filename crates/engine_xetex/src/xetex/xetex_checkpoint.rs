@@ -188,11 +188,7 @@ pub unsafe extern "C" fn tt_checkpoint_restored() -> bool {
 #[unsafe(export_name = "tt_checkpoint_register_glyph")]
 pub unsafe extern "C" fn tt_checkpoint_register_glyph(node: i32) {
     unsafe {
-        glyph_nodes[node as usize] = if !(*mem.add((node + 5) as usize)).ptr.is_null() {
-            1
-        } else {
-            0
-        };
+        glyph_nodes[node as usize] = if !(*mem.add((node + 5) as usize)).ptr.is_null() { 1 } else { 0 };
     }
 }
 
@@ -229,11 +225,7 @@ pub unsafe extern "C" fn tt_checkpoint_set(bytes: *const u8, length: usize, reco
         skipped_dispatches = 0;
         last_capture = 0;
         if record || !bytes.is_null() {
-            std::ptr::write_bytes(
-                (&raw mut glyph_nodes).cast::<u8>(),
-                0,
-                (MEM_TOP + 1) as usize,
-            );
+            std::ptr::write_bytes((&raw mut glyph_nodes).cast::<u8>(), 0, (MEM_TOP + 1) as usize);
             tt_checkpoint_ext_reset();
         }
     }
@@ -247,12 +239,7 @@ pub unsafe extern "C" fn tt_checkpoint_disallow() {
 }
 
 #[unsafe(export_name = "tt_checkpoint_field")]
-pub unsafe extern "C" fn tt_checkpoint_field(
-    cp: *mut tt_checkpoint,
-    name: *const c_char,
-    value: *mut c_void,
-    length: usize,
-) {
+pub unsafe extern "C" fn tt_checkpoint_field(cp: *mut tt_checkpoint, name: *const c_char, value: *mut c_void, length: usize) {
     unsafe {
         let cp = &mut *cp;
         let mut header: [u64; 2] = [14695981039346656037u64, length as u64];
@@ -269,11 +256,7 @@ pub unsafe extern "C" fn tt_checkpoint_field(
         if cp.restoring {
             if cp.position > cp.length
                 || header_size > cp.length - cp.position
-                || libc::memcmp(
-                    cp.bytes.add(cp.position) as *const c_void,
-                    header.as_ptr() as *const c_void,
-                    header_size,
-                ) != 0
+                || libc::memcmp(cp.bytes.add(cp.position) as *const c_void, header.as_ptr() as *const c_void, header_size) != 0
                 || length > cp.length - cp.position - header_size
             {
                 cp.valid = false;
@@ -292,11 +275,7 @@ pub unsafe extern "C" fn tt_checkpoint_field(
                 cp.capacity = required + 1024 * 1024;
                 cp.bytes = xrealloc(cp.bytes as *mut c_void, cp.capacity) as *mut u8;
             }
-            std::ptr::copy_nonoverlapping(
-                header.as_ptr() as *const u8,
-                cp.bytes.add(cp.length),
-                header_size,
-            );
+            std::ptr::copy_nonoverlapping(header.as_ptr() as *const u8, cp.bytes.add(cp.length), header_size);
             cp.length += header_size;
             std::ptr::copy_nonoverlapping(value as *const u8, cp.bytes.add(cp.length), length);
             cp.length += length;
@@ -305,13 +284,7 @@ pub unsafe extern "C" fn tt_checkpoint_field(
 }
 
 #[unsafe(export_name = "tt_checkpoint_array")]
-pub unsafe extern "C" fn tt_checkpoint_array(
-    cp: *mut tt_checkpoint,
-    name: *const c_char,
-    value: *mut *mut c_void,
-    count: usize,
-    item_size: usize,
-) {
+pub unsafe extern "C" fn tt_checkpoint_array(cp: *mut tt_checkpoint, name: *const c_char, value: *mut *mut c_void, count: usize, item_size: usize) {
     unsafe {
         let cp_ref = &mut *cp;
         if !cp_ref.valid || item_size == 0 || count > (256 * 1024 * 1024) / item_size {
@@ -335,26 +308,16 @@ pub unsafe extern "C" fn tt_checkpoint_array(
 
 #[unsafe(export_name = "tt_checkpoint_used_array")]
 pub unsafe extern "C" fn tt_checkpoint_used_array(
-    cp: *mut tt_checkpoint,
-    name: *const c_char,
-    value: *mut *mut c_void,
-    capacity: usize,
-    used: usize,
-    item_size: usize,
+    cp: *mut tt_checkpoint, name: *const c_char, value: *mut *mut c_void, capacity: usize, used: usize, item_size: usize,
 ) {
     unsafe {
         let cp_ref = &mut *cp;
-        if !cp_ref.valid
-            || used > capacity
-            || item_size == 0
-            || capacity > (256 * 1024 * 1024) / item_size
-        {
+        if !cp_ref.valid || used > capacity || item_size == 0 || capacity > (256 * 1024 * 1024) / item_size {
             cp_ref.valid = false;
             return;
         }
         if cp_ref.restoring {
-            if cp_ref.position > cp_ref.length || used * item_size > cp_ref.length - cp_ref.position
-            {
+            if cp_ref.position > cp_ref.length || used * item_size > cp_ref.length - cp_ref.position {
                 cp_ref.valid = false;
                 return;
             }
@@ -365,13 +328,7 @@ pub unsafe extern "C" fn tt_checkpoint_used_array(
 }
 
 #[unsafe(export_name = "tt_checkpoint_rle")]
-pub unsafe extern "C" fn tt_checkpoint_rle(
-    cp: *mut tt_checkpoint,
-    name: *const c_char,
-    value: *mut *mut c_void,
-    count: usize,
-    item_size: usize,
-) {
+pub unsafe extern "C" fn tt_checkpoint_rle(cp: *mut tt_checkpoint, name: *const c_char, value: *mut *mut c_void, count: usize, item_size: usize) {
     unsafe {
         let cp_ref = &mut *cp;
         if !cp_ref.valid || item_size == 0 || count > (256 * 1024 * 1024) / item_size {
@@ -434,11 +391,7 @@ pub unsafe extern "C" fn tt_checkpoint_rle(
                         if next + 2 < count {
                             if item_size == std::mem::size_of::<u64>() {
                                 let (mut a, mut b, mut c): (u64, u64, u64) = (0, 0, 0);
-                                std::ptr::copy_nonoverlapping(
-                                    items.add(next * item_size),
-                                    &mut a as *mut u64 as *mut u8,
-                                    std::mem::size_of::<u64>(),
-                                );
+                                std::ptr::copy_nonoverlapping(items.add(next * item_size), &mut a as *mut u64 as *mut u8, std::mem::size_of::<u64>());
                                 std::ptr::copy_nonoverlapping(
                                     items.add((next + 1) * item_size),
                                     &mut b as *mut u64 as *mut u8,
@@ -476,33 +429,14 @@ pub unsafe extern "C" fn tt_checkpoint_rle(
                 (&mut repeated as *mut usize).cast(),
                 std::mem::size_of::<usize>(),
             );
-            tt_checkpoint_field(
-                cp,
-                c"literal".as_ptr(),
-                (&mut literal as *mut usize).cast(),
-                std::mem::size_of::<usize>(),
-            );
-            tt_checkpoint_field(
-                cp,
-                c"stride".as_ptr(),
-                (&mut stride as *mut u64).cast(),
-                std::mem::size_of::<u64>(),
-            );
-            if !(*cp).valid
-                || repeated > count - position
-                || literal > count - position
-                || (repeated == 0) == (literal == 0)
-            {
+            tt_checkpoint_field(cp, c"literal".as_ptr(), (&mut literal as *mut usize).cast(), std::mem::size_of::<usize>());
+            tt_checkpoint_field(cp, c"stride".as_ptr(), (&mut stride as *mut u64).cast(), std::mem::size_of::<u64>());
+            if !(*cp).valid || repeated > count - position || literal > count - position || (repeated == 0) == (literal == 0) {
                 (*cp).valid = false;
                 return;
             }
             let length = if repeated != 0 { 1 } else { literal };
-            tt_checkpoint_field(
-                cp,
-                name,
-                items.add(position * item_size) as *mut c_void,
-                length * item_size,
-            );
+            tt_checkpoint_field(cp, name, items.add(position * item_size) as *mut c_void, length * item_size);
             if (*cp).restoring && (*cp).valid && repeated != 0 {
                 if item_size == std::mem::size_of::<u64>() {
                     let mut word: u64 = 0;
@@ -527,11 +461,7 @@ pub unsafe extern "C" fn tt_checkpoint_rle(
                         return;
                     }
                     for i in 1..repeated {
-                        std::ptr::copy_nonoverlapping(
-                            items.add(position * item_size),
-                            items.add((position + i) * item_size),
-                            item_size,
-                        );
+                        std::ptr::copy_nonoverlapping(items.add(position * item_size), items.add((position + i) * item_size), item_size);
                     }
                 }
             }
@@ -565,22 +495,16 @@ pub unsafe extern "C" fn tt_checkpoint_memory(cp: *mut tt_checkpoint) {
                 std::mem::size_of::<memory_word>(),
             );
             if (*cp).valid {
-                mem = xmalloc(((MEM_TOP + 2) as usize) * std::mem::size_of::<memory_word>())
-                    as *mut memory_word;
+                mem = xmalloc(((MEM_TOP + 2) as usize) * std::mem::size_of::<memory_word>()) as *mut memory_word;
                 std::ptr::copy_nonoverlapping(low, mem, (lo_mem_max + 1) as usize);
-                std::ptr::copy_nonoverlapping(
-                    high,
-                    mem.add(hi_mem_min as usize),
-                    (MEM_TOP + 1 - hi_mem_min) as usize,
-                );
+                std::ptr::copy_nonoverlapping(high, mem.add(hi_mem_min as usize), (MEM_TOP + 1 - hi_mem_min) as usize);
             }
             libc::free(low as *mut c_void);
             libc::free(high as *mut c_void);
             return;
         }
         let original = mem;
-        mem =
-            xcalloc((MEM_TOP + 1) as usize, std::mem::size_of::<memory_word>()) as *mut memory_word;
+        mem = xcalloc((MEM_TOP + 1) as usize, std::mem::size_of::<memory_word>()) as *mut memory_word;
         std::ptr::copy_nonoverlapping(original, mem, (lo_mem_max + 1) as usize);
         std::ptr::copy_nonoverlapping(
             original.add(hi_mem_min as usize),
@@ -633,11 +557,7 @@ pub unsafe extern "C" fn tt_checkpoint_memory(cp: *mut tt_checkpoint) {
 }
 
 #[unsafe(export_name = "tt_checkpoint_string")]
-pub unsafe extern "C" fn tt_checkpoint_string(
-    cp: *mut tt_checkpoint,
-    name: *const c_char,
-    value: *mut *mut c_char,
-) {
+pub unsafe extern "C" fn tt_checkpoint_string(cp: *mut tt_checkpoint, name: *const c_char, value: *mut *mut c_char) {
     unsafe {
         if !(*cp).valid {
             return;
@@ -649,12 +569,7 @@ pub unsafe extern "C" fn tt_checkpoint_string(
         } else {
             libc::strlen(*value) + 1
         };
-        tt_checkpoint_field(
-            cp,
-            c"length".as_ptr(),
-            (&mut length as *mut usize).cast(),
-            std::mem::size_of::<usize>(),
-        );
+        tt_checkpoint_field(cp, c"length".as_ptr(), (&mut length as *mut usize).cast(), std::mem::size_of::<usize>());
         if !(*cp).valid {
             return;
         }
@@ -695,13 +610,7 @@ unsafe fn checkpoint_glyphs(cp: *mut tt_checkpoint) {
             if (*cp).restoring {
                 (*mem.add((node + 5) as usize)).ptr = std::ptr::null_mut();
             }
-            tt_checkpoint_array(
-                cp,
-                c"glyph".as_ptr(),
-                &mut (*mem.add((node + 5) as usize)).ptr,
-                length,
-                1,
-            );
+            tt_checkpoint_array(cp, c"glyph".as_ptr(), &mut (*mem.add((node + 5) as usize)).ptr, length, 1);
         }
     }
 }
@@ -765,12 +674,7 @@ pub unsafe extern "C" fn tt_checkpoint_resume() -> bool {
 
 unsafe fn capture(action: u8) {
     unsafe {
-        if !tt_checkpoint_enabled
-            || !allowed
-            || in_initex_mode
-            || shell_escape_enabled
-            || semantic_pagination_enabled
-        {
+        if !tt_checkpoint_enabled || !allowed || in_initex_mode || shell_escape_enabled || semantic_pagination_enabled {
             return;
         }
         if in_open < 1 || expand_depth_count != 0 {
@@ -869,8 +773,7 @@ pub unsafe extern "C" fn tt_checkpoint_before_input() {
         }
         let name = gettexstring((*hash.add(cur_cs as usize)).s1);
         if !name.is_null() {
-            let input = libc::strcmp(name, c"input".as_ptr()) == 0
-                || libc::strcmp(name, c"include".as_ptr()) == 0;
+            let input = libc::strcmp(name, c"input".as_ptr()) == 0 || libc::strcmp(name, c"include".as_ptr()) == 0;
             libc::free(name as *mut c_void);
             if input {
                 capture(2);

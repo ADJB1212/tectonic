@@ -16,13 +16,7 @@ pub(crate) struct DirectoryHeader {
 impl DirectoryHeader {
     pub(crate) fn read(input: &mut impl Read, offset: u64) -> Result<Self, PdfError> {
         let bytes = crate::input::read_array::<12>(input, offset)?;
-        Self::parse(&bytes).map_err(|_| {
-            PdfError::new(
-                PdfErrorKind::MalformedInput,
-                c"File ended prematurely\n".to_owned(),
-            )
-            .at(offset)
-        })
+        Self::parse(&bytes).map_err(|_| PdfError::new(PdfErrorKind::MalformedInput, c"File ended prematurely\n".to_owned()).at(offset))
     }
     pub(crate) fn parse(bytes: &[u8]) -> Result<Self, ReadError> {
         let mut cursor = ByteCursor::new(bytes);
@@ -47,13 +41,7 @@ pub(crate) struct TableRecord {
 impl TableRecord {
     pub(crate) fn read(input: &mut impl Read, offset: u64) -> Result<Self, PdfError> {
         let bytes = crate::input::read_array::<16>(input, offset)?;
-        Self::parse(&bytes).map_err(|_| {
-            PdfError::new(
-                PdfErrorKind::MalformedInput,
-                c"File ended prematurely\n".to_owned(),
-            )
-            .at(offset)
-        })
+        Self::parse(&bytes).map_err(|_| PdfError::new(PdfErrorKind::MalformedInput, c"File ended prematurely\n".to_owned()).at(offset))
     }
     pub(crate) fn parse(bytes: &[u8]) -> Result<Self, ReadError> {
         let mut cursor = ByteCursor::new(bytes);
@@ -110,9 +98,7 @@ mod tests {
                 range_shift: 16,
             })
         );
-        let bytes = [
-            0xff, b'h', b'e', b'a', b'd', 0x80, 0, 0, 1, 0xff, 0xff, 0xff, 0xff, 0, 0, 0, 3,
-        ];
+        let bytes = [0xff, b'h', b'e', b'a', b'd', 0x80, 0, 0, 1, 0xff, 0xff, 0xff, 0xff, 0, 0, 0, 3];
         assert_eq!(
             TableRecord::parse(&bytes[1..]),
             Ok(TableRecord {
@@ -128,11 +114,7 @@ mod tests {
     fn reports_every_truncated_directory_prefix() {
         for length in 0..12 {
             let error = DirectoryHeader::parse(&[0; 12][..length]).unwrap_err();
-            let offset = if length < 4 {
-                0
-            } else {
-                4 + (length - 4) / 2 * 2
-            };
+            let offset = if length < 4 { 0 } else { 4 + (length - 4) / 2 * 2 };
             assert_eq!(
                 error,
                 ReadError::Truncated {

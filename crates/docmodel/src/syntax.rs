@@ -8,10 +8,7 @@
 
 use std::path::PathBuf;
 
-use crate::document::{
-    BuildTargetType, DEFAULT_INDEX_FILE, DEFAULT_POSTAMBLE_FILE, DEFAULT_PREAMBLE_FILE, InputFile,
-    OutputProfile,
-};
+use crate::document::{BuildTargetType, DEFAULT_INDEX_FILE, DEFAULT_POSTAMBLE_FILE, DEFAULT_PREAMBLE_FILE, InputFile, OutputProfile};
 use serde::{Deserialize, Serialize, Serializer};
 
 // This file is an exercise in Rust type conversion.
@@ -75,9 +72,7 @@ pub enum TomlInputFile {
 impl From<&InputFile> for TomlInputFile {
     fn from(val: &InputFile) -> TomlInputFile {
         match val {
-            InputFile::Inline(inline) => TomlInputFile::Inline {
-                inline: inline.clone(),
-            },
+            InputFile::Inline(inline) => TomlInputFile::Inline { inline: inline.clone() },
             InputFile::File(f) => TomlInputFile::Path(f.clone()),
         }
     }
@@ -132,24 +127,9 @@ impl From<&TomlOutputProfile> for OutputProfile {
                 }
             } else {
                 vec![
-                    TomlInputFile::Path(
-                        val.preamble_file
-                            .clone()
-                            .unwrap_or_else(|| DEFAULT_PREAMBLE_FILE.to_string()),
-                    )
-                    .into(),
-                    TomlInputFile::Path(
-                        val.index_file
-                            .clone()
-                            .unwrap_or_else(|| DEFAULT_INDEX_FILE.to_string()),
-                    )
-                    .into(),
-                    TomlInputFile::Path(
-                        val.postamble_file
-                            .clone()
-                            .unwrap_or_else(|| DEFAULT_POSTAMBLE_FILE.to_string()),
-                    )
-                    .into(),
+                    TomlInputFile::Path(val.preamble_file.clone().unwrap_or_else(|| DEFAULT_PREAMBLE_FILE.to_string())).into(),
+                    TomlInputFile::Path(val.index_file.clone().unwrap_or_else(|| DEFAULT_INDEX_FILE.to_string())).into(),
+                    TomlInputFile::Path(val.postamble_file.clone().unwrap_or_else(|| DEFAULT_POSTAMBLE_FILE.to_string())).into(),
                 ]
             }
         };
@@ -157,12 +137,7 @@ impl From<&TomlOutputProfile> for OutputProfile {
         OutputProfile {
             name: val.name.clone(),
             target_type: val.target_type.into(),
-            tex_format: val
-                .tex_format
-                .as_ref()
-                .map(|s| s.as_ref())
-                .unwrap_or("latex")
-                .to_owned(),
+            tex_format: val.tex_format.as_ref().map(|s| s.as_ref()).unwrap_or("latex").to_owned(),
             inputs,
             shell_escape: val.shell_escape.unwrap_or(shell_escape_default),
             shell_escape_cwd: val.shell_escape_cwd.clone(),
@@ -173,14 +148,9 @@ impl From<&TomlOutputProfile> for OutputProfile {
 
 impl From<&OutputProfile> for TomlOutputProfile {
     fn from(rt: &OutputProfile) -> Self {
-        let tex_format = if rt.tex_format == "latex" {
-            None
-        } else {
-            Some(rt.tex_format.clone())
-        };
+        let tex_format = if rt.tex_format == "latex" { None } else { Some(rt.tex_format.clone()) };
 
-        let inputs: StringOrInputVec =
-            StringOrInputVec::Vec(rt.inputs.clone().iter().map(TomlInputFile::from).collect());
+        let inputs: StringOrInputVec = StringOrInputVec::Vec(rt.inputs.clone().iter().map(TomlInputFile::from).collect());
 
         let shell_escape = if !rt.shell_escape { None } else { Some(true) };
         let shell_escape_cwd = rt.shell_escape_cwd.clone();

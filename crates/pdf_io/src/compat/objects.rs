@@ -51,18 +51,14 @@ pub(crate) unsafe fn count(object: *mut Object) -> u32 {
 pub(crate) unsafe fn retain(object: *mut Object) {
     unsafe {
         let count = &mut (&mut *(*state()).leases.get())[(*object).id.0];
-        *count = count
-            .checked_add(1)
-            .expect("PDF compatibility lease overflow");
+        *count = count.checked_add(1).expect("PDF compatibility lease overflow");
     }
 }
 
 pub(crate) unsafe fn release(object: *mut Object) -> bool {
     unsafe {
         let count = &mut (&mut *(*state()).leases.get())[(*object).id.0];
-        *count = count
-            .checked_sub(1)
-            .expect("Released PDF compatibility handle");
+        *count = count.checked_sub(1).expect("Released PDF compatibility handle");
         *count == 0
     }
 }
@@ -149,15 +145,9 @@ impl<T> StableStore<T> {
             let chunk_size = chunk_size::<T>();
             let chunks = &mut *self.chunks.get();
             if index.is_multiple_of(chunk_size) {
-                chunks.push(
-                    (0..chunk_size)
-                        .map(|_| UnsafeCell::new(MaybeUninit::uninit()))
-                        .collect(),
-                );
+                chunks.push((0..chunk_size).map(|_| UnsafeCell::new(MaybeUninit::uninit())).collect());
             }
-            let pointer = chunks[index / chunk_size][index % chunk_size]
-                .get()
-                .cast::<T>();
+            let pointer = chunks[index / chunk_size][index % chunk_size].get().cast::<T>();
             pointer.write(value);
             self.len.set(index + 1);
             index
@@ -168,11 +158,7 @@ impl<T> StableStore<T> {
     pub(crate) unsafe fn pointer(&self, index: usize) -> *mut T {
         assert!(index < self.len.get());
         let chunk_size = chunk_size::<T>();
-        unsafe {
-            (&*self.chunks.get())[index / chunk_size][index % chunk_size]
-                .get()
-                .cast()
-        }
+        unsafe { (&*self.chunks.get())[index / chunk_size][index % chunk_size].get().cast() }
     }
 
     pub(crate) fn len(&self) -> usize {

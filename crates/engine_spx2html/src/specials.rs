@@ -61,12 +61,7 @@ impl<'a> Special<'a> {
             "startFontFamilyTagAssociations" => Special::StartFontFamilyTagAssociations,
             "endFontFamilyTagAssociations" => Special::EndFontFamilyTagAssociations,
             _ => {
-                tt_warning!(
-                    status,
-                    "ignoring unrecognized Tectonic special: tdux:{} {}",
-                    cmd,
-                    remainder
-                );
+                tt_warning!(status, "ignoring unrecognized Tectonic special: tdux:{} {}", cmd, remainder);
                 return None;
             }
         })

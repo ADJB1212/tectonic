@@ -13,84 +13,57 @@
 )]
 
 use super::xetex_checkpoint::{tt_checkpoint, tt_checkpoint_field};
-use super::xetex_constants::{
-    BATCH_MODE, CALL, ERROR_STOP_MODE, FONT_BASE, HASH_BASE, MEM_TOP, NORMAL, SCROLL_MODE,
-    TEX_NULL, TOO_BIG_CHAR,
-};
+use super::xetex_constants::{BATCH_MODE, CALL, ERROR_STOP_MODE, FONT_BASE, HASH_BASE, MEM_TOP, NORMAL, SCROLL_MODE, TEX_NULL, TOO_BIG_CHAR};
 use super::xetex_core::scaled_t;
 use super::xetex_errors::{HISTORY_FATAL_ERROR, confusion, error, overflow, ttstub_output_flush};
 use super::xetex_ext::ttstub_input_read;
 use super::xetex_ini::{compress_trie, first_fit, new_trie_op, trie_fix, trie_pack};
-use super::xetex_io::{
-    _tt_abort, INVALID_HANDLE, ttstub_input_close, ttstub_input_open, xcalloc, xmalloc,
-};
+use super::xetex_io::{_tt_abort, INVALID_HANDLE, ttstub_input_close, ttstub_input_open, xcalloc, xmalloc};
 use super::xetex_output::{
-    capture_to_diagnostic, error_here_with_diagnostic, print, print_char, print_cstr, print_int,
-    print_ln, print_nl_cstr, print_scaled,
+    capture_to_diagnostic, error_here_with_diagnostic, print, print_char, print_cstr, print_int, print_ln, print_nl_cstr, print_scaled,
 };
 use super::xetex_stringpool::{EMPTY_STRING, length, make_string};
 use super::xetex_xetex0::{
-    back_error, back_input, eq_define, eq_word_define, find_font_dimen, find_sa_element,
-    flush_list, geq_define, geq_word_define, get_avail, get_node, get_r_token, get_token,
-    get_x_token, gsa_def, make_name_string, max_hyphenatable_length, pack_job_name, print_cmd_chr,
-    read_toks, sa_def, scan_char_class, scan_char_class_not_ignored, scan_char_num, scan_dimen,
-    scan_fifteen_bit_int, scan_font_ident, scan_glue, scan_glyph_number, scan_int, scan_keyword,
-    scan_left_brace, scan_math_class_int, scan_math_fam_int, scan_optional_equals,
-    scan_register_num, scan_toks, scan_usv_num, scan_xetex_math_char_int, show_cur_cmd_chr,
-    trap_zero_glue,
+    back_error, back_input, eq_define, eq_word_define, find_font_dimen, find_sa_element, flush_list, geq_define, geq_word_define, get_avail,
+    get_node, get_r_token, get_token, get_x_token, gsa_def, make_name_string, max_hyphenatable_length, pack_job_name, print_cmd_chr, read_toks,
+    sa_def, scan_char_class, scan_char_class_not_ignored, scan_char_num, scan_dimen, scan_fifteen_bit_int, scan_font_ident, scan_glue,
+    scan_glyph_number, scan_int, scan_keyword, scan_left_brace, scan_math_class_int, scan_math_fam_int, scan_optional_equals, scan_register_num,
+    scan_toks, scan_usv_num, scan_xetex_math_char_int, show_cur_cmd_chr, trap_zero_glue,
 };
 use super::xetex_xetexd::{
-    _xeq_level_array, LR_problems, LR_ptr, TEX_format_default, UTF16_code, active_width,
-    adjust_tail, after_token, align_ptr, align_state, area_delimiter, arith_error, avail, b16x4,
-    b32x2, bad, base_ptr, bchar, bchar_label, best_height_plus_depth, breadth_max, buf_size,
-    buffer, cancel_boundary, char_base, cond_ptr, cs_count, cur_align, cur_area, cur_boundary,
-    cur_box, cur_c, cur_chr, cur_cmd, cur_cs, cur_dir, cur_ext, cur_f, cur_group, cur_h,
-    cur_h_offset, cur_head, cur_i, cur_if, cur_input, cur_l, cur_lang, cur_level, cur_list,
-    cur_loop, cur_mark, cur_name, cur_order, cur_page_height, cur_page_width, cur_pre_head,
-    cur_pre_tail, cur_ptr, cur_q, cur_r, cur_span, cur_tail, cur_tok, cur_v, cur_v_offset, cur_val,
-    cur_val_level, cur_val1, dead_cycles, def_ref, deletions_allowed, delta, depth_base,
-    depth_threshold, dig, disc_ptr, doing_leaders, doing_special, dyn_used, edit_name_start, empty,
-    eof_seen, epochseconds, eqtb, eqtb_top, error_count, error_line, expand_depth,
-    expand_depth_count, ext_delimiter, exten_base, false_bchar, file_line_error_style_p,
-    file_name_quote_char, file_offset, first, first_count, first_p, fmem_ptr, font_area, font_bc,
-    font_bchar, font_check, font_dsize, font_ec, font_false_bchar, font_flags, font_glue,
-    font_in_short_display, font_info, font_layout_engine, font_letter_space, font_mapping,
-    font_max, font_mem_size, font_name, font_params, font_ptr, font_size, font_used, force_eof,
-    format_default_length, format_ident, full_source_filename_stack, gave_char_warning_help,
-    global_prev_p, grp_stack, half_error_line, halt_on_error_p, hash, hash_extra, hash_high,
-    hash_top, hash_used, hc, height_base, help_line, help_ptr, hf, hi_mem_min, history,
-    hlist_stack, hlist_stack_level, hu, hyf, hyf_distance, hyf_next, hyf_num, hyph_count,
-    hyph_index, hyph_link, hyph_list, hyph_next, hyph_size, hyph_start, hyph_word, hyphen_char,
-    hyphen_passed, if_limit, if_line, if_stack, in_initex_mode, in_open, init_lft, init_lig,
-    init_list, init_pool_ptr, init_str_ptr, input_file, input_ptr, input_stack, ins_disc,
-    insert_penalties, insert_src_special_auto, insert_src_special_every_math,
-    insert_src_special_every_par, insert_src_special_every_vbox, interaction, is_hyph,
-    is_in_csname, italic_base, j_random, job_name, just_box, kern_base, last, last_badness,
-    last_bop, last_glue, last_kern, last_leftmost_char, last_node_type, last_penalty,
-    last_rightmost_char, lft_hit, lig_kern_base, lig_stack, ligature_present, line, line_stack,
-    lo_mem_max, loaded_font_flags, loaded_font_letter_space, loaded_font_mapping, log_file,
-    log_opened, long_help_seen, long_state, mag_set, main_f, main_h, main_i, main_j, main_k,
-    main_p, main_pp, main_ppp, main_s, max_buf_stack, max_h, max_hyph_char, max_in_open,
-    max_in_stack, max_nest_stack, max_op_used, max_param_stack, max_print_line, max_push,
-    max_reg_help_line, max_reg_num, max_save_stack, max_strings, max_v, mem, mem_end, memory_word,
-    microseconds, name_in_progress, name_length, name_length16, name_of_file, name_of_file16,
-    native_font_type_flag, native_len, native_text, native_text_size, nest, nest_ptr, nest_size,
-    no_new_control_sequence, null_character, old_setting, op_start, open_parens, output_active,
-    output_file_extension, pack_begin_line, packed_UTF16_code, page_contents, page_so_far,
-    page_tail, par_loc, par_token, param_base, param_ptr, param_size, param_stack, pdf_last_x_pos,
-    pdf_last_y_pos, pool_free, pool_pointer, pool_ptr, pool_size, pre_adjust_tail, prev_class,
-    prim, prim_used, pseudo_files, pstack, quoted_filename, radix, random_seed, randoms, read_file,
-    read_open, rover, rt_hit, rule_dp, rule_ht, rule_wd, rust_input_handle_t, rust_output_handle_t,
-    rust_stdout, sa_chain, sa_level, sa_null, sa_root, save_native_len, save_ptr, save_size,
-    save_stack, scanner_status, selector, semantic_pagination_enabled, set_box_allowed,
-    shell_escape_enabled, shown_mode, skew_char, skip_line, source_filename_stack, space_class,
-    spec_log, stack_size, stop_at_space, str_number, str_pool, str_ptr, str_start,
-    string_vacancies, strings_free, synctex_enabled, tally, temp_ptr, term_offset, tex_remainder,
-    texmf_log_name, total_pages, total_shrink, total_stretch, trick_buf, trick_count, trie_c,
-    trie_hash, trie_l, trie_max, trie_min, trie_not_ready, trie_o, trie_op_lang, trie_op_ptr,
-    trie_op_val, trie_ptr, trie_r, trie_size, trie_trc, trie_trl, trie_tro, trie_used, two_to_the,
-    use_err_help, used_tectonic_coda_tokens, var_used, warning_index, width_base, write_file,
-    write_loc, write_open, xtx_ligature_present,
+    _xeq_level_array, LR_problems, LR_ptr, TEX_format_default, UTF16_code, active_width, adjust_tail, after_token, align_ptr, align_state,
+    area_delimiter, arith_error, avail, b16x4, b32x2, bad, base_ptr, bchar, bchar_label, best_height_plus_depth, breadth_max, buf_size, buffer,
+    cancel_boundary, char_base, cond_ptr, cs_count, cur_align, cur_area, cur_boundary, cur_box, cur_c, cur_chr, cur_cmd, cur_cs, cur_dir, cur_ext,
+    cur_f, cur_group, cur_h, cur_h_offset, cur_head, cur_i, cur_if, cur_input, cur_l, cur_lang, cur_level, cur_list, cur_loop, cur_mark, cur_name,
+    cur_order, cur_page_height, cur_page_width, cur_pre_head, cur_pre_tail, cur_ptr, cur_q, cur_r, cur_span, cur_tail, cur_tok, cur_v, cur_v_offset,
+    cur_val, cur_val_level, cur_val1, dead_cycles, def_ref, deletions_allowed, delta, depth_base, depth_threshold, dig, disc_ptr, doing_leaders,
+    doing_special, dyn_used, edit_name_start, empty, eof_seen, epochseconds, eqtb, eqtb_top, error_count, error_line, expand_depth,
+    expand_depth_count, ext_delimiter, exten_base, false_bchar, file_line_error_style_p, file_name_quote_char, file_offset, first, first_count,
+    first_p, fmem_ptr, font_area, font_bc, font_bchar, font_check, font_dsize, font_ec, font_false_bchar, font_flags, font_glue,
+    font_in_short_display, font_info, font_layout_engine, font_letter_space, font_mapping, font_max, font_mem_size, font_name, font_params, font_ptr,
+    font_size, font_used, force_eof, format_default_length, format_ident, full_source_filename_stack, gave_char_warning_help, global_prev_p,
+    grp_stack, half_error_line, halt_on_error_p, hash, hash_extra, hash_high, hash_top, hash_used, hc, height_base, help_line, help_ptr, hf,
+    hi_mem_min, history, hlist_stack, hlist_stack_level, hu, hyf, hyf_distance, hyf_next, hyf_num, hyph_count, hyph_index, hyph_link, hyph_list,
+    hyph_next, hyph_size, hyph_start, hyph_word, hyphen_char, hyphen_passed, if_limit, if_line, if_stack, in_initex_mode, in_open, init_lft,
+    init_lig, init_list, init_pool_ptr, init_str_ptr, input_file, input_ptr, input_stack, ins_disc, insert_penalties, insert_src_special_auto,
+    insert_src_special_every_math, insert_src_special_every_par, insert_src_special_every_vbox, interaction, is_hyph, is_in_csname, italic_base,
+    j_random, job_name, just_box, kern_base, last, last_badness, last_bop, last_glue, last_kern, last_leftmost_char, last_node_type, last_penalty,
+    last_rightmost_char, lft_hit, lig_kern_base, lig_stack, ligature_present, line, line_stack, lo_mem_max, loaded_font_flags,
+    loaded_font_letter_space, loaded_font_mapping, log_file, log_opened, long_help_seen, long_state, mag_set, main_f, main_h, main_i, main_j, main_k,
+    main_p, main_pp, main_ppp, main_s, max_buf_stack, max_h, max_hyph_char, max_in_open, max_in_stack, max_nest_stack, max_op_used, max_param_stack,
+    max_print_line, max_push, max_reg_help_line, max_reg_num, max_save_stack, max_strings, max_v, mem, mem_end, memory_word, microseconds,
+    name_in_progress, name_length, name_length16, name_of_file, name_of_file16, native_font_type_flag, native_len, native_text, native_text_size,
+    nest, nest_ptr, nest_size, no_new_control_sequence, null_character, old_setting, op_start, open_parens, output_active, output_file_extension,
+    pack_begin_line, packed_UTF16_code, page_contents, page_so_far, page_tail, par_loc, par_token, param_base, param_ptr, param_size, param_stack,
+    pdf_last_x_pos, pdf_last_y_pos, pool_free, pool_pointer, pool_ptr, pool_size, pre_adjust_tail, prev_class, prim, prim_used, pseudo_files, pstack,
+    quoted_filename, radix, random_seed, randoms, read_file, read_open, rover, rt_hit, rule_dp, rule_ht, rule_wd, rust_input_handle_t,
+    rust_output_handle_t, rust_stdout, sa_chain, sa_level, sa_null, sa_root, save_native_len, save_ptr, save_size, save_stack, scanner_status,
+    selector, semantic_pagination_enabled, set_box_allowed, shell_escape_enabled, shown_mode, skew_char, skip_line, source_filename_stack,
+    space_class, spec_log, stack_size, stop_at_space, str_number, str_pool, str_ptr, str_start, string_vacancies, strings_free, synctex_enabled,
+    tally, temp_ptr, term_offset, tex_remainder, texmf_log_name, total_pages, total_shrink, total_stretch, trick_buf, trick_count, trie_c, trie_hash,
+    trie_l, trie_max, trie_min, trie_not_ready, trie_o, trie_op_lang, trie_op_ptr, trie_op_val, trie_ptr, trie_r, trie_size, trie_trc, trie_trl,
+    trie_tro, trie_used, two_to_the, use_err_help, used_tectonic_coda_tokens, var_used, warning_index, width_base, write_file, write_loc, write_open,
+    xtx_ligature_present,
 };
 
 use std::ffi::{c_char, c_int, c_uint, c_void};
@@ -196,9 +169,7 @@ pub unsafe extern "C" fn swap_items(p: *mut c_char, nitems: usize, size: usize) 
     let bytes = std::slice::from_raw_parts_mut(p.cast::<u8>(), nitems * size);
     if bytes.len() >= 16 * 1024 * 1024 {
         use rayon::prelude::*;
-        bytes
-            .par_chunks_mut(256 * 1024)
-            .for_each(|chunk| swap_item_bytes(chunk, size));
+        bytes.par_chunks_mut(256 * 1024).for_each(|chunk| swap_item_bytes(chunk, size));
     } else {
         swap_item_bytes(bytes, size);
     }
@@ -227,22 +198,12 @@ fn swap_item_bytes(bytes: &mut [u8], size: usize) {
 // ---------------------------------------------------------------------------
 
 #[unsafe(export_name = "do_dump")]
-pub unsafe extern "C" fn do_dump(
-    p: *mut c_char,
-    item_size: usize,
-    nitems: usize,
-    out_file: rust_output_handle_t,
-) {
+pub unsafe extern "C" fn do_dump(p: *mut c_char, item_size: usize, nitems: usize, out_file: rust_output_handle_t) {
     swap_items(p, nitems, item_size);
 
     let r = ttstub_output_write(out_file, p, item_size * nitems);
     if r != item_size * nitems {
-        _tt_abort(
-            c"could not write %zu %zu-byte item(s) to %s".as_ptr(),
-            nitems,
-            item_size,
-            name_of_file,
-        );
+        _tt_abort(c"could not write %zu %zu-byte item(s) to %s".as_ptr(), nitems, item_size, name_of_file);
     }
 
     swap_items(p, nitems, item_size);
@@ -253,20 +214,10 @@ pub unsafe extern "C" fn do_dump(
 // ---------------------------------------------------------------------------
 
 #[unsafe(export_name = "do_undump")]
-pub unsafe extern "C" fn do_undump(
-    p: *mut c_char,
-    item_size: usize,
-    nitems: usize,
-    in_file: rust_input_handle_t,
-) {
+pub unsafe extern "C" fn do_undump(p: *mut c_char, item_size: usize, nitems: usize, in_file: rust_input_handle_t) {
     let r = ttstub_input_read(in_file, p, item_size * nitems);
     if r < 0 || (r as usize) != item_size * nitems {
-        _tt_abort(
-            c"could not undump %zu %zu-byte item(s) from %s".as_ptr(),
-            nitems,
-            item_size,
-            name_of_file,
-        );
+        _tt_abort(c"could not undump %zu %zu-byte item(s) from %s".as_ptr(), nitems, item_size, name_of_file);
     }
 
     swap_items(p, nitems, item_size);
@@ -285,46 +236,26 @@ unsafe fn undump_slice<T>(ptr: *mut T, len: usize, fmt_in: rust_input_handle_t) 
 #[inline]
 unsafe fn dump_int(x: i32, fmt_out: rust_output_handle_t) {
     let mut val = x;
-    do_dump(
-        (&raw mut val) as *mut c_char,
-        std::mem::size_of::<i32>(),
-        1,
-        fmt_out,
-    );
+    do_dump((&raw mut val) as *mut c_char, std::mem::size_of::<i32>(), 1, fmt_out);
 }
 
 #[inline]
 unsafe fn undump_int(fmt_in: rust_input_handle_t) -> i32 {
     let mut val = 0i32;
-    do_undump(
-        (&raw mut val) as *mut c_char,
-        std::mem::size_of::<i32>(),
-        1,
-        fmt_in,
-    );
+    do_undump((&raw mut val) as *mut c_char, std::mem::size_of::<i32>(), 1, fmt_in);
     val
 }
 
 #[inline]
 unsafe fn dump_b32(x: b32x2, fmt_out: rust_output_handle_t) {
     let mut val = x;
-    do_dump(
-        (&raw mut val) as *mut c_char,
-        std::mem::size_of::<b32x2>(),
-        1,
-        fmt_out,
-    );
+    do_dump((&raw mut val) as *mut c_char, std::mem::size_of::<b32x2>(), 1, fmt_out);
 }
 
 #[inline]
 unsafe fn undump_b32(fmt_in: rust_input_handle_t) -> b32x2 {
     let mut val = std::mem::zeroed::<b32x2>();
-    do_undump(
-        (&raw mut val) as *mut c_char,
-        std::mem::size_of::<b32x2>(),
-        1,
-        fmt_in,
-    );
+    do_undump((&raw mut val) as *mut c_char, std::mem::size_of::<b32x2>(), 1, fmt_in);
     val
 }
 
@@ -338,10 +269,7 @@ macro_rules! undump_checked_things {
         for i in 0..len {
             let item = *local_base_ptr.add(i);
             if item < low || item > high {
-                _tt_abort(
-                    c"item %u of .fmt array out of bounds".as_ptr(),
-                    i as libc::c_uint,
-                );
+                _tt_abort(c"item %u of .fmt array out of bounds".as_ptr(), i as libc::c_uint);
             }
         }
     }};
@@ -447,11 +375,7 @@ pub unsafe extern "C" fn new_patterns() {
 
                         loop {
                             if hyf[l as usize] != 0 {
-                                v = new_trie_op(
-                                    (k - l) as small_number,
-                                    hyf[l as usize] as small_number,
-                                    v,
-                                );
+                                v = new_trie_op((k - l) as small_number, hyf[l as usize] as small_number, v);
                             }
                             if l > 0 {
                                 l -= 1;
@@ -625,13 +549,11 @@ pub unsafe extern "C" fn init_trie() {
     op_start[0] = -(MIN_TRIE_OP as i32);
 
     for j_val in 1..=BIGGEST_LANG {
-        op_start[j_val as usize] =
-            op_start[(j_val - 1) as usize] + trie_used[(j_val - 1) as usize] as i32;
+        op_start[j_val as usize] = op_start[(j_val - 1) as usize] + trie_used[(j_val - 1) as usize] as i32;
     }
 
     for j_val in 1..=trie_op_ptr {
-        *TRIE_OP_HASH(j_val) =
-            op_start[trie_op_lang[j_val as usize] as usize] + trie_op_val[j_val as usize] as i32;
+        *TRIE_OP_HASH(j_val) = op_start[trie_op_lang[j_val as usize] as usize] + trie_op_val[j_val as usize] as i32;
     }
 
     for j_val in 1..=trie_op_ptr {
@@ -782,10 +704,8 @@ pub unsafe extern "C" fn new_hyph_exceptions() {
                             error_here_with_diagnostic(c"Not a letter".as_ptr());
                             capture_to_diagnostic(std::ptr::null_mut());
                             help_ptr = 2;
-                            help_line[1] =
-                                c"Letters in \\hyphenation words must have \\lccode>0.".as_ptr();
-                            help_line[0] =
-                                c"Proceed; I'll ignore the character I just read.".as_ptr();
+                            help_line[1] = c"Letters in \\hyphenation words must have \\lccode>0.".as_ptr();
+                            help_line[0] = c"Proceed; I'll ignore the character I just read.".as_ptr();
                             error();
                         } else if (n as i32) < max_hyphenatable_length() {
                             n += 1;
@@ -819,10 +739,8 @@ pub unsafe extern "C" fn new_hyph_exceptions() {
                         h = 0;
 
                         for j_idx in 1..=n {
-                            h = ((h + h + (hc[j_idx as usize] as hyph_pointer))
-                                % (HYPH_PRIME as hyph_pointer));
-                            *str_pool.add(pool_ptr as usize) =
-                                hc[j_idx as usize] as packed_UTF16_code;
+                            h = ((h + h + (hc[j_idx as usize] as hyph_pointer)) % (HYPH_PRIME as hyph_pointer));
+                            *str_pool.add(pool_ptr as usize) = hc[j_idx as usize] as packed_UTF16_code;
                             pool_ptr += 1;
                         }
 
@@ -948,9 +866,7 @@ pub unsafe extern "C" fn prefixed_command() {
             print_char(b'\'' as i32);
             capture_to_diagnostic(std::ptr::null_mut());
             help_ptr = 1;
-            help_line[0] =
-                c"I'll pretend you didn't say \\long or \\outer or \\global or \\protected."
-                    .as_ptr();
+            help_line[0] = c"I'll pretend you didn't say \\long or \\outer or \\global or \\protected.".as_ptr();
             back_error();
             return;
         }
@@ -979,8 +895,7 @@ pub unsafe extern "C" fn prefixed_command() {
         print_char(b'\'' as i32);
         capture_to_diagnostic(std::ptr::null_mut());
         help_ptr = 1;
-        help_line[0] =
-            c"I'll pretend you didn't say \\long or \\outer or \\protected here.".as_ptr();
+        help_line[0] = c"I'll pretend you didn't say \\long or \\outer or \\protected here.".as_ptr();
         error();
     }
 
@@ -1077,8 +992,7 @@ pub unsafe extern "C" fn prefixed_command() {
                 error_here_with_diagnostic(c"vestigial MLTeX shorthand encountered??".as_ptr());
                 capture_to_diagnostic(std::ptr::null_mut());
                 help_ptr = 1;
-                help_line[0] =
-                    c"This should never happen in Tectonic, where MLTeX has been excised.".as_ptr();
+                help_line[0] = c"This should never happen in Tectonic, where MLTeX has been excised.".as_ptr();
                 error();
             } else {
                 n = cur_chr;
@@ -1184,17 +1098,9 @@ pub unsafe extern "C" fn prefixed_command() {
                                 }
                                 MU_SKIP_DEF_CODE => {
                                     if a >= 4 {
-                                        geq_define(
-                                            p,
-                                            (ASSIGN_MU_GLUE) as u16,
-                                            MU_SKIP_BASE + cur_val,
-                                        );
+                                        geq_define(p, (ASSIGN_MU_GLUE) as u16, MU_SKIP_BASE + cur_val);
                                     } else {
-                                        eq_define(
-                                            p,
-                                            (ASSIGN_MU_GLUE) as u16,
-                                            MU_SKIP_BASE + cur_val,
-                                        );
+                                        eq_define(p, (ASSIGN_MU_GLUE) as u16, MU_SKIP_BASE + cur_val);
                                     }
                                 }
                                 TOKS_DEF_CODE => {
@@ -1257,11 +1163,7 @@ pub unsafe extern "C" fn prefixed_command() {
                 scan_char_class_not_ignored();
                 cur_ptr = cur_val;
                 scan_char_class_not_ignored();
-                find_sa_element(
-                    (INTER_CHAR_VAL) as i16,
-                    cur_ptr * CHAR_CLASS_LIMIT + cur_val,
-                    true,
-                );
+                find_sa_element((INTER_CHAR_VAL) as i16, cur_ptr * CHAR_CLASS_LIMIT + cur_val, true);
                 cur_chr = cur_ptr;
                 e = true;
             }
@@ -1299,11 +1201,7 @@ pub unsafe extern "C" fn prefixed_command() {
                             scan_char_class_not_ignored();
                             cur_ptr = cur_val;
                             scan_char_class_not_ignored();
-                            find_sa_element(
-                                (INTER_CHAR_VAL) as i16,
-                                cur_ptr * CHAR_CLASS_LIMIT + cur_val,
-                                false,
-                            );
+                            find_sa_element((INTER_CHAR_VAL) as i16, cur_ptr * CHAR_CLASS_LIMIT + cur_val, false);
                             if cur_ptr == TEX_NULL {
                                 q = TEX_NULL;
                             } else {
@@ -1549,9 +1447,7 @@ pub unsafe extern "C" fn prefixed_command() {
                 if cur_val == 32768 {
                     cur_val = ACTIVE_MATH_CHAR;
                 } else {
-                    cur_val = set_class(cur_val / 4096)
-                        + set_family((cur_val % 4096) / 256)
-                        + (cur_val % 256);
+                    cur_val = set_class(cur_val / 4096) + set_family((cur_val % 4096) / 256) + (cur_val % 256);
                 }
 
                 if a >= 4 {
@@ -1600,8 +1496,7 @@ pub unsafe extern "C" fn prefixed_command() {
                 print_esc_cstr(c"setbox".as_ptr());
                 capture_to_diagnostic(std::ptr::null_mut());
                 help_ptr = 2;
-                help_line[1] =
-                    c"Sorry, \\setbox is not allowed after \\halign in a display,".as_ptr();
+                help_line[1] = c"Sorry, \\setbox is not allowed after \\halign in a display,".as_ptr();
                 help_line[0] = c"or between \\accent and an accented character.".as_ptr();
                 error();
             }
@@ -1715,9 +1610,7 @@ pub unsafe extern "C" fn prefixed_command() {
                     *skew_char.add(f as usize) = cur_val;
                 }
             } else {
-                if *font_area.add(f as usize) == (AAT_FONT_FLAG) as i32
-                    || *font_area.add(f as usize) == (OTGR_FONT_FLAG) as i32
-                {
+                if *font_area.add(f as usize) == (AAT_FONT_FLAG) as i32 || *font_area.add(f as usize) == (OTGR_FONT_FLAG) as i32 {
                     scan_glyph_number(f);
                 } else {
                     scan_char_num();
@@ -1817,10 +1710,7 @@ pub unsafe extern "C" fn store_fmt_file() {
 
     fmt_out = ttstub_output_open(name_of_file, 0);
     if fmt_out == INVALID_HANDLE {
-        _tt_abort(
-            c"cannot open format output file \"%s\"".as_ptr(),
-            name_of_file,
-        );
+        _tt_abort(c"cannot open format output file \"%s\"".as_ptr(), name_of_file);
     }
 
     print_nl_cstr(c"Beginning to dump on file ".as_ptr());
@@ -1891,11 +1781,7 @@ pub unsafe extern "C" fn store_fmt_file() {
     x = x + lo_mem_max + 1 - p;
     dump_int(hi_mem_min, fmt_out);
     dump_int(avail, fmt_out);
-    dump_slice(
-        mem.add(hi_mem_min as usize),
-        (mem_end + 1 - hi_mem_min) as usize,
-        fmt_out,
-    );
+    dump_slice(mem.add(hi_mem_min as usize), (mem_end + 1 - hi_mem_min) as usize, fmt_out);
 
     x = x + mem_end + 1 - hi_mem_min;
     p = avail;
@@ -1931,10 +1817,8 @@ pub unsafe extern "C" fn store_fmt_file() {
                     l = j;
                     while j < INT_BASE - 1 {
                         if (*eqtb.add(j as usize)).b32.s1 != (*eqtb.add((j + 1) as usize)).b32.s1
-                            || (*eqtb.add(j as usize)).b16.s1
-                                != (*eqtb.add((j + 1) as usize)).b16.s1
-                            || (*eqtb.add(j as usize)).b16.s0
-                                != (*eqtb.add((j + 1) as usize)).b16.s0
+                            || (*eqtb.add(j as usize)).b16.s1 != (*eqtb.add((j + 1) as usize)).b16.s1
+                            || (*eqtb.add(j as usize)).b16.s0 != (*eqtb.add((j + 1) as usize)).b16.s0
                         {
                             break;
                         }
@@ -1993,21 +1877,13 @@ pub unsafe extern "C" fn store_fmt_file() {
     }
 
     if hash_high > 0 {
-        dump_slice(
-            eqtb.add((EQTB_SIZE + 1) as usize),
-            hash_high as usize,
-            fmt_out,
-        );
+        dump_slice(eqtb.add((EQTB_SIZE + 1) as usize), hash_high as usize, fmt_out);
     }
 
     dump_int(par_loc, fmt_out);
     dump_int(write_loc, fmt_out);
 
-    dump_slice(
-        (&raw mut prim).cast::<b32x2>(),
-        (PRIM_SIZE + 1) as usize,
-        fmt_out,
-    );
+    dump_slice((&raw mut prim).cast::<b32x2>(), (PRIM_SIZE + 1) as usize, fmt_out);
 
     /* control sequences */
 
@@ -2028,11 +1904,7 @@ pub unsafe extern "C" fn store_fmt_file() {
         fmt_out,
     );
     if hash_high > 0 {
-        dump_slice(
-            hash.add((EQTB_SIZE + 1) as usize),
-            hash_high as usize,
-            fmt_out,
-        );
+        dump_slice(hash.add((EQTB_SIZE + 1) as usize), hash_high as usize, fmt_out);
     }
 
     dump_int(cs_count, fmt_out);
@@ -2046,121 +1918,29 @@ pub unsafe extern "C" fn store_fmt_file() {
     dump_int(fmem_ptr, fmt_out);
     dump_slice(font_info, fmem_ptr as usize, fmt_out);
     dump_int(font_ptr, fmt_out);
-    dump_slice(
-        font_check.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        font_size.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        font_dsize.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        font_params.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        hyphen_char.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        skew_char.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        font_name.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        font_area.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        font_bc.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        font_ec.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        char_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        width_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        height_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        depth_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        italic_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        lig_kern_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        kern_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        exten_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        param_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        font_glue.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        bchar_label.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        font_bchar.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
-    dump_slice(
-        font_false_bchar.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_out,
-    );
+    dump_slice(font_check.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(font_size.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(font_dsize.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(font_params.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(hyphen_char.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(skew_char.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(font_name.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(font_area.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(font_bc.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(font_ec.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(char_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(width_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(height_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(depth_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(italic_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(lig_kern_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(kern_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(exten_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(param_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(font_glue.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(bchar_label.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(font_bchar.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
+    dump_slice(font_false_bchar.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_out);
 
     for k_val in FONT_BASE..=font_ptr {
         print_nl_cstr(c"\\font".as_ptr());
@@ -2173,9 +1953,7 @@ pub unsafe extern "C" fn store_fmt_file() {
         {
             print_file_name(*font_name.add(k_val as usize), EMPTY_STRING, EMPTY_STRING);
 
-            error_here_with_diagnostic(
-                c"Can't \\dump a format with native fonts or font-mappings".as_ptr(),
-            );
+            error_here_with_diagnostic(c"Can't \\dump a format with native fonts or font-mappings".as_ptr());
             capture_to_diagnostic(std::ptr::null_mut());
 
             help_ptr = 3;
@@ -2184,11 +1962,7 @@ pub unsafe extern "C" fn store_fmt_file() {
             help_line[0] = c"(Load them at runtime, not as part of the format file.)".as_ptr();
             error();
         } else {
-            print_file_name(
-                *font_name.add(k_val as usize),
-                *font_area.add(k_val as usize),
-                EMPTY_STRING,
-            );
+            print_file_name(*font_name.add(k_val as usize), *font_area.add(k_val as usize), EMPTY_STRING);
         }
 
         if *font_size.add(k_val as usize) != *font_dsize.add(k_val as usize) {
@@ -2218,10 +1992,7 @@ pub unsafe extern "C" fn store_fmt_file() {
 
     for k_val in 0..=hyph_size {
         if *hyph_word.add(k_val as usize) != 0 {
-            dump_int(
-                k_val + 65536 * (*hyph_link.add(k_val as usize) as i32),
-                fmt_out,
-            );
+            dump_int(k_val + 65536 * (*hyph_link.add(k_val as usize) as i32), fmt_out);
             dump_int(*hyph_word.add(k_val as usize), fmt_out);
             dump_int(*hyph_list.add(k_val as usize), fmt_out);
         }
@@ -2246,21 +2017,9 @@ pub unsafe extern "C" fn store_fmt_file() {
     dump_slice(trie_trc, (trie_max + 1) as usize, fmt_out);
     dump_int(max_hyph_char, fmt_out);
     dump_int(trie_op_ptr, fmt_out);
-    dump_slice(
-        (&raw mut hyf_distance).cast::<small_number>().add(1),
-        trie_op_ptr as usize,
-        fmt_out,
-    );
-    dump_slice(
-        (&raw mut hyf_num).cast::<small_number>().add(1),
-        trie_op_ptr as usize,
-        fmt_out,
-    );
-    dump_slice(
-        (&raw mut hyf_next).cast::<u16>().add(1),
-        trie_op_ptr as usize,
-        fmt_out,
-    );
+    dump_slice((&raw mut hyf_distance).cast::<small_number>().add(1), trie_op_ptr as usize, fmt_out);
+    dump_slice((&raw mut hyf_num).cast::<small_number>().add(1), trie_op_ptr as usize, fmt_out);
+    dump_slice((&raw mut hyf_next).cast::<u16>().add(1), trie_op_ptr as usize, fmt_out);
 
     print_nl_cstr(c"Hyphenation trie of length ".as_ptr());
     print_int(trie_max);
@@ -2384,8 +2143,7 @@ pub unsafe extern "C" fn load_fmt_file() -> bool {
     (*eqtb.add(UNDEFINED_CONTROL_SEQUENCE as usize)).b16.s0 = LEVEL_ZERO as u16;
 
     let undefined = *eqtb.add(UNDEFINED_CONTROL_SEQUENCE as usize);
-    std::slice::from_raw_parts_mut(eqtb.add((EQTB_SIZE + 1) as usize), hash_extra as usize)
-        .fill(undefined);
+    std::slice::from_raw_parts_mut(eqtb.add((EQTB_SIZE + 1) as usize), hash_extra as usize).fill(undefined);
 
     max_reg_num = 32767;
     max_reg_help_line = c"A register number must be between 0 and 32767.".as_ptr();
@@ -2483,10 +2241,7 @@ pub unsafe extern "C" fn load_fmt_file() -> bool {
     loop {
         undump_slice(mem.add(p as usize), (q + 2 - p) as usize, fmt_in);
         p = q + (*mem.add(q as usize)).b32.s0;
-        if p > lo_mem_max
-            || (q >= (*mem.add((q + 1) as usize)).b32.s1
-                && (*mem.add((q + 1) as usize)).b32.s1 != rover)
-        {
+        if p > lo_mem_max || (q >= (*mem.add((q + 1) as usize)).b32.s1 && (*mem.add((q + 1) as usize)).b32.s1 != rover) {
             _tt_abort(c"fatal format file error".as_ptr());
         }
         q = (*mem.add((q + 1) as usize)).b32.s1;
@@ -2513,11 +2268,7 @@ pub unsafe extern "C" fn load_fmt_file() -> bool {
 
     mem_end = MEM_TOP;
 
-    undump_slice(
-        mem.add(hi_mem_min as usize),
-        (mem_end + 1 - hi_mem_min) as usize,
-        fmt_in,
-    );
+    undump_slice(mem.add(hi_mem_min as usize), (mem_end + 1 - hi_mem_min) as usize, fmt_in);
     var_used = undump_int(fmt_in);
     dyn_used = undump_int(fmt_in);
 
@@ -2550,11 +2301,7 @@ pub unsafe extern "C" fn load_fmt_file() -> bool {
     }
 
     if hash_high > 0 {
-        undump_slice(
-            eqtb.add((EQTB_SIZE + 1) as usize),
-            hash_high as usize,
-            fmt_in,
-        );
+        undump_slice(eqtb.add((EQTB_SIZE + 1) as usize), hash_high as usize, fmt_in);
     }
 
     x = undump_int(fmt_in);
@@ -2608,11 +2355,7 @@ pub unsafe extern "C" fn load_fmt_file() -> bool {
     );
 
     if hash_high > 0 {
-        undump_slice(
-            hash.add((EQTB_SIZE + 1) as usize),
-            hash_high as usize,
-            fmt_in,
-        );
+        undump_slice(hash.add((EQTB_SIZE + 1) as usize), hash_high as usize, fmt_in);
     }
 
     cs_count = undump_int(fmt_in);
@@ -2677,133 +2420,29 @@ pub unsafe extern "C" fn load_fmt_file() -> bool {
         *font_mapping.add(k_idx as usize) = std::ptr::null_mut();
     }
 
-    undump_slice(
-        font_check.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_in,
-    );
-    undump_slice(
-        font_size.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_in,
-    );
-    undump_slice(
-        font_dsize.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_in,
-    );
-    undump_checked_things!(
-        MIN_HALFWORD,
-        MAX_HALFWORD,
-        font_params.add(FONT_BASE as usize),
-        font_ptr + 1,
-        fmt_in
-    );
-    undump_slice(
-        hyphen_char.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_in,
-    );
-    undump_slice(
-        skew_char.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_in,
-    );
-    undump_upper_check_things!(
-        str_ptr,
-        font_name.add(FONT_BASE as usize),
-        font_ptr + 1,
-        fmt_in
-    );
-    undump_upper_check_things!(
-        str_ptr,
-        font_area.add(FONT_BASE as usize),
-        font_ptr + 1,
-        fmt_in
-    );
-    undump_slice(
-        font_bc.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_in,
-    );
-    undump_slice(
-        font_ec.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_in,
-    );
-    undump_slice(
-        char_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_in,
-    );
-    undump_slice(
-        width_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_in,
-    );
-    undump_slice(
-        height_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_in,
-    );
-    undump_slice(
-        depth_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_in,
-    );
-    undump_slice(
-        italic_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_in,
-    );
-    undump_slice(
-        lig_kern_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_in,
-    );
-    undump_slice(
-        kern_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_in,
-    );
-    undump_slice(
-        exten_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_in,
-    );
-    undump_slice(
-        param_base.add(FONT_BASE as usize),
-        (font_ptr + 1) as usize,
-        fmt_in,
-    );
-    undump_checked_things!(
-        MIN_HALFWORD,
-        lo_mem_max,
-        font_glue.add(FONT_BASE as usize),
-        font_ptr + 1,
-        fmt_in
-    );
-    undump_checked_things!(
-        0,
-        fmem_ptr - 1,
-        bchar_label.add(FONT_BASE as usize),
-        font_ptr + 1,
-        fmt_in
-    );
-    undump_checked_things!(
-        0,
-        TOO_BIG_CHAR,
-        font_bchar.add(FONT_BASE as usize),
-        font_ptr + 1,
-        fmt_in
-    );
-    undump_checked_things!(
-        0,
-        TOO_BIG_CHAR,
-        font_false_bchar.add(FONT_BASE as usize),
-        font_ptr + 1,
-        fmt_in
-    );
+    undump_slice(font_check.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_in);
+    undump_slice(font_size.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_in);
+    undump_slice(font_dsize.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_in);
+    undump_checked_things!(MIN_HALFWORD, MAX_HALFWORD, font_params.add(FONT_BASE as usize), font_ptr + 1, fmt_in);
+    undump_slice(hyphen_char.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_in);
+    undump_slice(skew_char.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_in);
+    undump_upper_check_things!(str_ptr, font_name.add(FONT_BASE as usize), font_ptr + 1, fmt_in);
+    undump_upper_check_things!(str_ptr, font_area.add(FONT_BASE as usize), font_ptr + 1, fmt_in);
+    undump_slice(font_bc.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_in);
+    undump_slice(font_ec.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_in);
+    undump_slice(char_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_in);
+    undump_slice(width_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_in);
+    undump_slice(height_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_in);
+    undump_slice(depth_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_in);
+    undump_slice(italic_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_in);
+    undump_slice(lig_kern_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_in);
+    undump_slice(kern_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_in);
+    undump_slice(exten_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_in);
+    undump_slice(param_base.add(FONT_BASE as usize), (font_ptr + 1) as usize, fmt_in);
+    undump_checked_things!(MIN_HALFWORD, lo_mem_max, font_glue.add(FONT_BASE as usize), font_ptr + 1, fmt_in);
+    undump_checked_things!(0, fmem_ptr - 1, bchar_label.add(FONT_BASE as usize), font_ptr + 1, fmt_in);
+    undump_checked_things!(0, TOO_BIG_CHAR, font_bchar.add(FONT_BASE as usize), font_ptr + 1, fmt_in);
+    undump_checked_things!(0, TOO_BIG_CHAR, font_false_bchar.add(FONT_BASE as usize), font_ptr + 1, fmt_in);
 
     /* hyphenations */
 
@@ -2918,22 +2557,9 @@ pub unsafe extern "C" fn load_fmt_file() -> bool {
     j = x;
     trie_op_ptr = j;
 
-    undump_slice(
-        (&raw mut hyf_distance).cast::<small_number>().add(1),
-        j as usize,
-        fmt_in,
-    );
-    undump_slice(
-        (&raw mut hyf_num).cast::<small_number>().add(1),
-        j as usize,
-        fmt_in,
-    );
-    undump_upper_check_things!(
-        MAX_TRIE_OP,
-        (&raw mut hyf_next).cast::<u16>().add(1),
-        j,
-        fmt_in
-    );
+    undump_slice((&raw mut hyf_distance).cast::<small_number>().add(1), j as usize, fmt_in);
+    undump_slice((&raw mut hyf_num).cast::<small_number>().add(1), j as usize, fmt_in);
+    undump_upper_check_things!(MAX_TRIE_OP, (&raw mut hyf_next).cast::<u16>().add(1), j, fmt_in);
 
     for k_idx in 0..=BIGGEST_LANG {
         trie_used[k_idx as usize] = 0;
@@ -2993,11 +2619,7 @@ unsafe fn cp_val<T>(cp: *mut tt_checkpoint, name: *const c_char, val: *mut T) {
 
 macro_rules! cp_value {
     ($cp:expr, $var:ident) => {
-        cp_val(
-            $cp,
-            concat!(stringify!($var), "\0").as_ptr() as *const c_char,
-            &raw mut $var,
-        );
+        cp_val($cp, concat!(stringify!($var), "\0").as_ptr() as *const c_char, &raw mut $var);
     };
 }
 
@@ -3436,11 +3058,7 @@ pub unsafe extern "C" fn tt_checkpoint_engine(cp: *mut tt_checkpoint) {
         ((UNDEFINED_CONTROL_SEQUENCE + 1 - HASH_BASE) as usize) * std::mem::size_of::<b32x2>(),
     );
 
-    let hash_extra_ptr = if hash_high != 0 {
-        hash.add((EQTB_SIZE + 1) as usize)
-    } else {
-        hash
-    };
+    let hash_extra_ptr = if hash_high != 0 { hash.add((EQTB_SIZE + 1) as usize) } else { hash };
     tt_checkpoint_field(
         cp,
         c"hash_extra".as_ptr(),
@@ -3492,11 +3110,7 @@ pub unsafe extern "C" fn tt_checkpoint_engine(cp: *mut tt_checkpoint) {
         font_layout_engine = xcalloc_array::<*mut c_void>(font_max as usize);
         font_mapping = xcalloc_array::<*mut c_void>(font_max as usize);
         loaded_font_mapping = std::ptr::null_mut();
-        libc::memset(
-            (&raw mut read_file).cast::<c_void>(),
-            0,
-            std::mem::size_of::<[*mut UFILE; 16]>(),
-        );
+        libc::memset((&raw mut read_file).cast::<c_void>(), 0, std::mem::size_of::<[*mut UFILE; 16]>());
         libc::memset(
             (&raw mut help_line).cast::<*const c_char>() as *mut c_void,
             0,
@@ -3515,12 +3129,7 @@ pub unsafe extern "C" fn tt_checkpoint_engine(cp: *mut tt_checkpoint) {
             *input_file.add(i as usize) = xcalloc(1, std::mem::size_of::<UFILE>()) as *mut UFILE;
         }
         let f = *input_file.add(i as usize);
-        tt_checkpoint_field(
-            cp,
-            c"input".as_ptr(),
-            f as *mut c_void,
-            std::mem::size_of::<UFILE>(),
-        );
+        tt_checkpoint_field(cp, c"input".as_ptr(), f as *mut c_void, std::mem::size_of::<UFILE>());
         if cp_ref.restoring
             && (!(*f).conversionData.is_null()
                 || (*f).input.length > std::mem::size_of_val(&(*f).input.bytes)
@@ -3532,18 +3141,13 @@ pub unsafe extern "C" fn tt_checkpoint_engine(cp: *mut tt_checkpoint) {
         }
     }
 
-    if cp_ref.restoring
-        && (!tt_xetex_checkpoint_handle_valid(rust_stdout, true)
-            || (log_opened && !tt_xetex_checkpoint_handle_valid(log_file, true)))
+    if cp_ref.restoring && (!tt_xetex_checkpoint_handle_valid(rust_stdout, true) || (log_opened && !tt_xetex_checkpoint_handle_valid(log_file, true)))
     {
         cp_ref.valid = false;
     }
 
     for i in 0..16 {
-        if cp_ref.restoring
-            && write_open[i]
-            && !tt_xetex_checkpoint_handle_valid(write_file[i], true)
-        {
+        if cp_ref.restoring && write_open[i] && !tt_xetex_checkpoint_handle_valid(write_file[i], true) {
             cp_ref.valid = false;
         }
     }

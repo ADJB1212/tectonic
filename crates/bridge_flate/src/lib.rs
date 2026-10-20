@@ -57,11 +57,7 @@ impl From<Status> for FlateResult {
 /// length on success or zero on error.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn tectonic_flate_compress(
-    output_ptr: *mut u8,
-    output_len: *mut u64,
-    input_ptr: *const u8,
-    input_len: u64,
-    compression_level: u32,
+    output_ptr: *mut u8, output_len: *mut u64, input_ptr: *const u8, input_len: u64, compression_level: u32,
 ) -> FlateResult {
     unsafe {
         let input = slice::from_raw_parts(input_ptr, input_len as usize);
@@ -86,12 +82,7 @@ pub unsafe extern "C" fn tectonic_flate_compress(
 ///
 /// This is a C API function, so it is unsafe.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn tectonic_flate_decompress(
-    output_ptr: *mut u8,
-    output_len: *mut u64,
-    input_ptr: *const u8,
-    input_len: u64,
-) -> FlateResult {
+pub unsafe extern "C" fn tectonic_flate_decompress(output_ptr: *mut u8, output_len: *mut u64, input_ptr: *const u8, input_len: u64) -> FlateResult {
     unsafe {
         let mut dc = Decompress::new(true);
 
@@ -123,9 +114,7 @@ impl Decompressor<'_> {
         }
 
         let inslice = &self.input_data[self.deflate.total_in() as usize..];
-        let status = self
-            .deflate
-            .decompress(inslice, output, FlushDecompress::None)?;
+        let status = self.deflate.decompress(inslice, output, FlushDecompress::None)?;
         let delta = self.deflate.total_out() - self.amount_written;
         self.amount_written = self.deflate.total_out();
 
@@ -149,10 +138,7 @@ impl Decompressor<'_> {
 ///
 /// This is a C API function, so it is unsafe.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn tectonic_flate_new_decompressor(
-    input_ptr: *const u8,
-    input_len: u64,
-) -> *mut libc::c_void {
+pub unsafe extern "C" fn tectonic_flate_new_decompressor(input_ptr: *const u8, input_len: u64) -> *mut libc::c_void {
     unsafe {
         let input = slice::from_raw_parts(input_ptr, input_len as usize);
 
@@ -180,11 +166,7 @@ pub unsafe extern "C" fn tectonic_flate_new_decompressor(
 ///
 /// This is a C API function, so it is unsafe.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn tectonic_flate_decompress_chunk(
-    handle: *mut libc::c_void,
-    output_ptr: *mut u8,
-    output_len: *mut u64,
-) -> libc::c_int {
+pub unsafe extern "C" fn tectonic_flate_decompress_chunk(handle: *mut libc::c_void, output_ptr: *mut u8, output_len: *mut u64) -> libc::c_int {
     unsafe {
         let mut dc = Box::from_raw(handle.cast::<Decompressor>());
         let output = slice::from_raw_parts_mut(output_ptr, *output_len as usize);

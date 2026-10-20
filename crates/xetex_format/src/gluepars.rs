@@ -134,21 +134,14 @@ const GLUE_PARS: &[GluePar] = &[
 
 /// Get information about the glue parameters used in a specific engine format
 /// version.
-pub fn get_gluepars_for_version(
-    version: FormatVersion,
-    symbols: &mut SymbolTable,
-) -> Result<Vec<GluePar>> {
+pub fn get_gluepars_for_version(version: FormatVersion, symbols: &mut SymbolTable) -> Result<Vec<GluePar>> {
     let mut r = Vec::new();
     let mut n = 0;
 
     for p in GLUE_PARS {
         if version >= p.since {
             r.push(*p);
-            symbols.add(
-                SymbolCategory::GluePars,
-                format!("GLUE_PAR__{}", p.name.to_lowercase()),
-                n,
-            )?;
+            symbols.add(SymbolCategory::GluePars, format!("GLUE_PAR__{}", p.name.to_lowercase()), n)?;
             n += 1;
         }
     }

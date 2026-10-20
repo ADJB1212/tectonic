@@ -89,11 +89,7 @@ impl Document {
     /// data stream. In many circumstances you shouldn’t use it; instead you
     /// should open a [`crate::workspace::Workspace`] and get a [`Document`]
     /// through it.
-    pub fn new_from_toml<P1: Into<PathBuf>, P2: Into<PathBuf>, R: Read>(
-        src_dir: P1,
-        build_dir: P2,
-        toml_data: &mut R,
-    ) -> Result<Self> {
+    pub fn new_from_toml<P1: Into<PathBuf>, P2: Into<PathBuf>, R: Read>(src_dir: P1, build_dir: P2, toml_data: &mut R) -> Result<Self> {
         let mut toml_text = String::new();
         toml_data.read_to_string(&mut toml_text)?;
         let doc: syntax::TomlDocument = toml::from_str(&toml_text)?;
@@ -104,10 +100,7 @@ impl Document {
             let output: OutputProfile = toml_output.into();
 
             if outputs.insert(output.name.clone(), output).is_some() {
-                bail!(
-                    "duplicated output name `{}` in TOML specification",
-                    toml_output.name
-                );
+                bail!("duplicated output name `{}` in TOML specification", toml_output.name);
             }
         }
 
@@ -133,11 +126,7 @@ impl Document {
     /// TOML rewriting should be used, to preserve the user's file structure,
     /// comments, etc.
     pub fn create_toml(&self) -> Result<()> {
-        let outputs = self
-            .outputs
-            .values()
-            .map(syntax::TomlOutputProfile::from)
-            .collect();
+        let outputs = self.outputs.values().map(syntax::TomlOutputProfile::from).collect();
 
         let extra_paths = if self.extra_paths.is_empty() {
             None
@@ -281,11 +270,7 @@ pub enum InputFile {
 impl Document {
     /// Create a new in-memory Document, based on the settings of a
     /// WorkspaceCreator object.
-    pub(crate) fn create_for(
-        wc: &WorkspaceCreator,
-        bundle_loc: String,
-        extra_paths: Vec<PathBuf>,
-    ) -> Result<Self> {
+    pub(crate) fn create_for(wc: &WorkspaceCreator, bundle_loc: String, extra_paths: Vec<PathBuf>) -> Result<Self> {
         let src_dir = wc.root_dir.clone();
 
         let mut build_dir = src_dir.clone();
@@ -340,10 +325,7 @@ pub(crate) fn default_outputs() -> HashMap<String, OutputProfile> {
             name: "default".to_owned(),
             target_type: BuildTargetType::Pdf,
             tex_format: "latex".to_owned(),
-            inputs: DEFAULT_INPUTS
-                .iter()
-                .map(|x| InputFile::File(x.to_string()))
-                .collect(),
+            inputs: DEFAULT_INPUTS.iter().map(|x| InputFile::File(x.to_string())).collect(),
             shell_escape: false,
             shell_escape_cwd: None,
             synctex: false,
@@ -374,10 +356,7 @@ mod tests {
         let doc = Document::new_from_toml(".", ".", &mut c).unwrap();
         assert_eq!(
             doc.outputs.get("o").unwrap().inputs,
-            DEFAULT_INPUTS
-                .iter()
-                .map(|x| InputFile::File(x.to_string()))
-                .collect::<Vec<InputFile>>()
+            DEFAULT_INPUTS.iter().map(|x| InputFile::File(x.to_string())).collect::<Vec<InputFile>>()
         );
     }
 

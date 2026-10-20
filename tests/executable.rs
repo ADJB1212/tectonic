@@ -71,10 +71,10 @@ fn prep_tectonic(cwd: &Path, args: &[&str]) -> Command {
         Command::new(tectonic)
     };
 
-    command.args(args).current_dir(cwd).env(
-        tectonic::test_util::TEST_ROOT_ENV_VAR,
-        TEST_ROOT.as_os_str(),
-    );
+    command
+        .args(args)
+        .current_dir(cwd)
+        .env(tectonic::test_util::TEST_ROOT_ENV_VAR, TEST_ROOT.as_os_str());
     command
 }
 
@@ -99,17 +99,12 @@ fn run_tectonic_until(cwd: &Path, args: &[&str], mut kill: impl FnMut() -> bool)
     // Ignore if the child already died
     // TODO: This causes coverage to not be reported
     let _ = child.kill();
-    child
-        .wait_with_output()
-        .expect("tectonic failed to execute")
+    child.wait_with_output().expect("tectonic failed to execute")
 }
 
 fn run_tectonic_with_stdin(cwd: &Path, args: &[&str], stdin: &str) -> Output {
     let mut command = prep_tectonic(cwd, args);
-    command
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+    command.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
     println!("running {command:?}");
     let mut child = command.spawn().expect("tectonic failed to start");
     match write!(child.stdin.as_mut().unwrap(), "{stdin}") {
@@ -118,16 +113,11 @@ fn run_tectonic_with_stdin(cwd: &Path, args: &[&str], stdin: &str) -> Output {
         Err(e) if e.kind() == ErrorKind::BrokenPipe => (),
         Err(e) => panic!("failed to send data to tectonic subprocess: {e:?}"),
     }
-    child
-        .wait_with_output()
-        .expect("failed to wait on tectonic subprocess")
+    child.wait_with_output().expect("failed to wait on tectonic subprocess")
 }
 
 fn setup_and_copy_files(files: &[&str]) -> TempDir {
-    let tempdir = tempfile::Builder::new()
-        .prefix("tectonic_executable_test")
-        .tempdir()
-        .unwrap();
+    let tempdir = tempfile::Builder::new().prefix("tectonic_executable_test").tempdir().unwrap();
 
     let executable_test_dir = if let Some(v) = env::var_os("CARGO_MANIFEST_DIR") {
         PathBuf::from(v)
@@ -185,10 +175,7 @@ fn check_file(tempdir: &TempDir, rest: &str) {
     p.push(rest);
 
     if !p.is_file() {
-        panic!(
-            "file \"{}\" should have been created but wasn\'t",
-            p.to_string_lossy()
-        );
+        panic!("file \"{}\" should have been created but wasn\'t", p.to_string_lossy());
     }
 }
 
@@ -266,11 +253,7 @@ fn bad_outfmt_1() {
 fn pdf_resource_options_reject_zero_and_overflow_before_building() {
     let overflow = usize::MAX.to_string();
     for command in [vec![], vec!["-X", "compile"], vec!["-X", "build"]] {
-        for (flag, value) in [
-            ("--pdf-workers", "0"),
-            ("--pdf-queue-mib", "0"),
-            ("--pdf-queue-mib", overflow.as_str()),
-        ] {
+        for (flag, value) in [("--pdf-workers", "0"), ("--pdf-queue-mib", "0"), ("--pdf-queue-mib", overflow.as_str())] {
             let mut args = command.clone();
             args.extend([flag, value]);
             if command.last().copied() != Some("build") {
@@ -295,10 +278,7 @@ fn pdf_worker_limits_work_for_classic_compile_and_workspace_build() {
         check_file(&tempdir, "texput.pdf");
     }
     let (_workspace, path) = setup_v2();
-    success_or_panic(&run_tectonic(
-        &path,
-        &["-X", "build", "--pdf-workers=1", "--pdf-queue-mib=1"],
-    ));
+    success_or_panic(&run_tectonic(&path, &["-X", "build", "--pdf-workers=1", "--pdf-queue-mib=1"]));
     assert!(path.join("build/default/default.pdf").is_file());
 }
 
@@ -314,30 +294,20 @@ fn run_with_biber_exe(executable: Option<&str>, args: &str, stdin: &str, files: 
     let test_cmd = if let Some(exe) = executable {
         format!("{exe} {args}")
     } else if cfg!(windows) {
-        format!(
-            "cmd /c {} {}",
-            util::test_path(&["fake-biber.bat"]).display(),
-            args
-        )
+        format!("cmd /c {} {}", util::test_path(&["fake-biber.bat"]).display(), args)
     } else {
         format!("{} {}", util::test_path(&["fake-biber.sh"]).display(), args)
     };
 
     command.env("TECTONIC_TEST_FAKE_BIBER", &test_cmd);
 
-    command
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+    command.stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::piped());
     println!("running {command:?}");
     let mut child = command.spawn().expect("tectonic failed to start");
 
-    write!(child.stdin.as_mut().unwrap(), "{stdin}")
-        .expect("failed to send data to tectonic subprocess");
+    write!(child.stdin.as_mut().unwrap(), "{stdin}").expect("failed to send data to tectonic subprocess");
 
-    child
-        .wait_with_output()
-        .expect("failed to wait on tectonic subprocess")
+    child.wait_with_output().expect("failed to wait on tectonic subprocess")
 }
 
 const BIBER_TRIGGER_TEX: &str = r#"
@@ -483,8 +453,7 @@ fn biber_issue_844() {
 #[test]
 fn bibtex_multiple_aux_files() {
     let fmt_arg = get_plain_format_arg();
-    let tempdir =
-        setup_and_copy_files(&["bibtex_multiple_aux_files.tex", "refs.bib", "catchkey.bst"]);
+    let tempdir = setup_and_copy_files(&["bibtex_multiple_aux_files.tex", "refs.bib", "catchkey.bst"]);
     let output = run_tectonic(tempdir.path(), &[&fmt_arg, "bibtex_multiple_aux_files.tex"]);
     success_or_panic(&output);
 }
@@ -500,11 +469,7 @@ fn keep_logs_on_error() {
     // No input files here, but output files are created.
     let fmt_arg = get_plain_format_arg();
     let tempdir = setup_and_copy_files(&[]);
-    let output = run_tectonic_with_stdin(
-        tempdir.path(),
-        &[&fmt_arg, "-", "--keep-logs"],
-        "no end to this file",
-    );
+    let output = run_tectonic_with_stdin(tempdir.path(), &[&fmt_arg, "-", "--keep-logs"], "no end to this file");
     error_or_panic(&output);
 
     let mut log = String::new();
@@ -522,19 +487,11 @@ fn no_color_option() {
     let fmt_arg = get_plain_format_arg();
 
     let tempdir = setup_and_copy_files(&[]);
-    let output_nocolor = run_tectonic_with_stdin(
-        tempdir.path(),
-        &[&fmt_arg, "-", "--color=never"],
-        "no end to this file",
-    );
+    let output_nocolor = run_tectonic_with_stdin(tempdir.path(), &[&fmt_arg, "-", "--color=never"], "no end to this file");
 
     // Output is not a terminal, so these two should be the same
     let tempdir = setup_and_copy_files(&[]);
-    let output_autocolor = run_tectonic_with_stdin(
-        tempdir.path(),
-        &[&fmt_arg, "-", "--color=auto"],
-        "no end to this file",
-    );
+    let output_autocolor = run_tectonic_with_stdin(tempdir.path(), &[&fmt_arg, "-", "--color=auto"], "no end to this file");
 
     assert_eq!(output_nocolor, output_autocolor);
 
@@ -547,14 +504,7 @@ fn outdir_option() {
     let fmt_arg = get_plain_format_arg();
     let tempdir = setup_and_copy_files(&["subdirectory/content/1.tex"]);
 
-    let output = run_tectonic(
-        tempdir.path(),
-        &[
-            &fmt_arg,
-            "subdirectory/content/1.tex",
-            "--outdir=subdirectory",
-        ],
-    );
+    let output = run_tectonic(tempdir.path(), &[&fmt_arg, "subdirectory/content/1.tex", "--outdir=subdirectory"]);
     success_or_panic(&output);
     check_file(&tempdir, "subdirectory/1.pdf");
 }
@@ -569,11 +519,7 @@ fn outdir_option_bad() {
 
     let output = run_tectonic(
         tempdir.path(),
-        &[
-            &fmt_arg,
-            "subdirectory/content/1.tex",
-            "--outdir=subdirectory/non_existent",
-        ],
+        &[&fmt_arg, "subdirectory/content/1.tex", "--outdir=subdirectory/non_existent"],
     );
     success_or_panic(&output);
 }
@@ -586,29 +532,16 @@ fn outdir_option_is_file() {
     let fmt_arg = get_plain_format_arg();
     let tempdir = setup_and_copy_files(&["test space.tex", "subdirectory/content/1.tex"]);
 
-    let output = run_tectonic(
-        tempdir.path(),
-        &[
-            &fmt_arg,
-            "subdirectory/content/1.tex",
-            "--outdir=test space.tex",
-        ],
-    );
+    let output = run_tectonic(tempdir.path(), &[&fmt_arg, "subdirectory/content/1.tex", "--outdir=test space.tex"]);
     success_or_panic(&output);
 }
 
 #[test] // GitHub #31
 fn relative_include() {
     let fmt_arg = get_plain_format_arg();
-    let tempdir = setup_and_copy_files(&[
-        "subdirectory/relative_include.tex",
-        "subdirectory/content/1.tex",
-    ]);
+    let tempdir = setup_and_copy_files(&["subdirectory/relative_include.tex", "subdirectory/content/1.tex"]);
 
-    let output = run_tectonic(
-        tempdir.path(),
-        &[&fmt_arg, "subdirectory/relative_include.tex"],
-    );
+    let output = run_tectonic(tempdir.path(), &[&fmt_arg, "subdirectory/relative_include.tex"]);
     success_or_panic(&output);
     check_file(&tempdir, "subdirectory/relative_include.pdf");
 }
@@ -628,11 +561,7 @@ fn stdin_content() {
     // No input files here, but output files are created.
     let fmt_arg = get_plain_format_arg();
     let tempdir = setup_and_copy_files(&[]);
-    let output = run_tectonic_with_stdin(
-        tempdir.path(),
-        &[&fmt_arg, "-"],
-        "Standard input content.\\bye",
-    );
+    let output = run_tectonic_with_stdin(tempdir.path(), &[&fmt_arg, "-"], "Standard input content.\\bye");
     success_or_panic(&output);
 }
 
@@ -648,10 +577,7 @@ fn bundle_overrides() {
     let arg_good_bundle = ["--bundle", "test-bundle://"];
 
     // test with a bad bundle
-    let output = run_tectonic(
-        &temppath,
-        &[&arg_bad_bundle[..], &[fmt_arg, filename]].concat(),
-    );
+    let output = run_tectonic(&temppath, &[&arg_bad_bundle[..], &[fmt_arg, filename]].concat());
     error_or_panic(&output);
 
     // test with a good bundle (override)
@@ -665,30 +591,9 @@ fn bundle_overrides() {
     // test `-X compile`
     #[cfg(feature = "serialization")]
     valid_args.extend([
-        [
-            &["-X"],
-            &["compile"],
-            &arg_good_bundle[..],
-            &[fmt_arg],
-            &[filename],
-        ]
-        .concat(),
-        [
-            &["-X"],
-            &["compile"],
-            &[fmt_arg],
-            &arg_good_bundle[..],
-            &[filename],
-        ]
-        .concat(),
-        [
-            &["-X"],
-            &["compile"],
-            &[fmt_arg],
-            &[filename],
-            &arg_good_bundle[..],
-        ]
-        .concat(),
+        [&["-X"], &["compile"], &arg_good_bundle[..], &[fmt_arg], &[filename]].concat(),
+        [&["-X"], &["compile"], &[fmt_arg], &arg_good_bundle[..], &[filename]].concat(),
+        [&["-X"], &["compile"], &[fmt_arg], &[filename], &arg_good_bundle[..]].concat(),
     ]);
 
     for args in valid_args {
@@ -727,10 +632,7 @@ fn v2_bundle_overrides() {
     let (_tempdir, temppath) = setup_v2();
 
     // `--bundle` is ignored
-    let output = run_tectonic(
-        &temppath,
-        &[&["-X"], &["build"], &arg_bad_bundle[..]].concat(),
-    );
+    let output = run_tectonic(&temppath, &[&["-X"], &["build"], &arg_bad_bundle[..]].concat());
     success_or_panic(&output);
 }
 
@@ -929,11 +831,7 @@ fn shell_escape() {
     let fmt_arg = get_plain_format_arg();
     let tempdir = setup_and_copy_files(&[]);
 
-    let output = run_tectonic_with_stdin(
-        tempdir.path(),
-        &[&fmt_arg, "-", "-Zshell-escape"],
-        SHELL_ESCAPE_TEST_DOC,
-    );
+    let output = run_tectonic_with_stdin(tempdir.path(), &[&fmt_arg, "-", "-Zshell-escape"], SHELL_ESCAPE_TEST_DOC);
     success_or_panic(&output);
 }
 
@@ -945,11 +843,7 @@ fn shell_escape_arg_err() {
     let fmt_arg = get_plain_format_arg();
     let tempdir = setup_and_copy_files(&[]);
 
-    let output = run_tectonic_with_stdin(
-        tempdir.path(),
-        &[&fmt_arg, "-", "-Zshell-escape=false"],
-        SHELL_ESCAPE_TEST_DOC,
-    );
+    let output = run_tectonic_with_stdin(tempdir.path(), &[&fmt_arg, "-", "-Zshell-escape=false"], SHELL_ESCAPE_TEST_DOC);
     error_or_panic(&output);
 }
 
@@ -959,11 +853,7 @@ fn shell_escape_cli_override() {
     let fmt_arg = get_plain_format_arg();
     let tempdir = setup_and_copy_files(&[]);
 
-    let output = run_tectonic_with_stdin(
-        tempdir.path(),
-        &[&fmt_arg, "--untrusted", "-", "-Zshell-escape"],
-        SHELL_ESCAPE_TEST_DOC,
-    );
+    let output = run_tectonic_with_stdin(tempdir.path(), &[&fmt_arg, "--untrusted", "-", "-Zshell-escape"], SHELL_ESCAPE_TEST_DOC);
     error_or_panic(&output);
 }
 
@@ -985,12 +875,9 @@ fn shell_escape_env_override() {
 
     println!("running {command:?}");
     let mut child = command.spawn().expect("tectonic failed to start");
-    write!(child.stdin.as_mut().unwrap(), "{SHELL_ESCAPE_TEST_DOC}")
-        .expect("failed to send data to tectonic subprocess");
+    write!(child.stdin.as_mut().unwrap(), "{SHELL_ESCAPE_TEST_DOC}").expect("failed to send data to tectonic subprocess");
 
-    let output = child
-        .wait_with_output()
-        .expect("failed to wait on tectonic subprocess");
+    let output = child.wait_with_output().expect("failed to wait on tectonic subprocess");
 
     error_or_panic(&output);
 }
@@ -1010,24 +897,14 @@ fn extra_search_paths() {
 
     let output = run_tectonic_with_stdin(
         tempdir.path(),
-        &[
-            &fmt_arg,
-            "-",
-            "--hide=subdirectory/content/1.tex",
-            "-Zsearch-path=subdirectory/content",
-        ],
+        &[&fmt_arg, "-", "--hide=subdirectory/content/1.tex", "-Zsearch-path=subdirectory/content"],
         "\\input 1.tex\n\\bye",
     );
     error_or_panic(&output);
 
     let output = run_tectonic_with_stdin(
         tempdir.path(),
-        &[
-            &fmt_arg,
-            "-",
-            "-Zsearch-path=subdirectory/content",
-            "--untrusted",
-        ],
+        &[&fmt_arg, "-", "-Zsearch-path=subdirectory/content", "--untrusted"],
         "\\input 1.tex\n\\bye",
     );
     error_or_panic(&output);
@@ -1058,13 +935,7 @@ Unicode quoted text: “office affinity”. {}\par
         paragraph.repeat(12)
     );
     fs::write(tempdir.path().join("layout.tex"), text).unwrap();
-    let args = [
-        format.as_str(),
-        "--outfmt=xdv",
-        "--synctex",
-        "-Zdeterministic-mode",
-        "layout.tex",
-    ];
+    let args = [format.as_str(), "--outfmt=xdv", "--synctex", "-Zdeterministic-mode", "layout.tex"];
     let mut expected = None;
     for workers in ["1", "3", "1"] {
         let output = prep_tectonic(tempdir.path(), &args)
@@ -1075,9 +946,7 @@ Unicode quoted text: “office affinity”. {}\par
         let xdv = fs::read(tempdir.path().join("layout.xdv")).unwrap();
         let synctex = fs::read(tempdir.path().join("layout.synctex.gz")).unwrap();
         let mut decoded = Vec::new();
-        flate2::read::GzDecoder::new(synctex.as_slice())
-            .read_to_end(&mut decoded)
-            .unwrap();
+        flate2::read::GzDecoder::new(synctex.as_slice()).read_to_end(&mut decoded).unwrap();
         let result = (xdv, decoded);
         if let Some(expected) = &expected {
             assert_eq!(&result, expected);

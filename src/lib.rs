@@ -170,17 +170,14 @@ pub fn latex_to_pdf<T: AsRef<str>>(latex: T) -> Result<Vec<u8>> {
             .output_format(driver::OutputFormat::Pdf)
             .do_not_write_output_files();
 
-        let mut sess =
-            ctry!(sb.create(&mut status); "failed to initialize the LaTeX processing session");
+        let mut sess = ctry!(sb.create(&mut status); "failed to initialize the LaTeX processing session");
         ctry!(sess.run(&mut status); "the LaTeX engine failed");
         sess.into_file_data()
     };
 
     match files.remove("texput.pdf") {
         Some(file) => Ok(file.data),
-        None => Err(Error::msg(
-            "LaTeX didn't report failure, but no PDF was created (??)",
-        )),
+        None => Err(Error::msg("LaTeX didn't report failure, but no PDF was created (??)")),
     }
 }
 

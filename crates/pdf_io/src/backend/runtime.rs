@@ -5,8 +5,7 @@ use std::{
     panic::{AssertUnwindSafe, catch_unwind, resume_unwind},
 };
 use tectonic_bridge_core::{
-    CoreBridgeState, InputId, ttbc_input_close, ttbc_input_seek, ttbc_issue_warning,
-    ttbc_output_open_stdout, ttbc_output_write,
+    CoreBridgeState, InputId, ttbc_input_close, ttbc_input_seek, ttbc_issue_warning, ttbc_output_open_stdout, ttbc_output_write,
 };
 
 thread_local! {
@@ -42,9 +41,7 @@ pub(crate) fn catch_backend<T>(call: impl FnOnce() -> Result<T, PdfError>) -> Re
     }
 }
 
-fn backend_error(
-    error: Box<dyn std::any::Any + Send>,
-) -> Result<PdfError, Box<dyn std::any::Any + Send>> {
+fn backend_error(error: Box<dyn std::any::Any + Send>) -> Result<PdfError, Box<dyn std::any::Any + Send>> {
     match error.downcast::<TypedAbort>() {
         Ok(error) => Ok(error.0),
         Err(error) => match error.downcast::<Abort>() {
@@ -58,10 +55,7 @@ pub fn boundary<T>(call: impl FnOnce() -> T) -> Result<T, ()> {
     match catch_unwind(AssertUnwindSafe(call)) {
         Ok(value) => Ok(value),
         Err(error) => {
-            let message = backend_error(error).map_or_else(
-                |_| c"Rust PDF backend failed".to_owned(),
-                |error| error.message,
-            );
+            let message = backend_error(error).map_or_else(|_| c"Rust PDF backend failed".to_owned(), |error| error.message);
             ERROR.with(|error| *error.borrow_mut() = Some(message));
             Err(())
         }
@@ -89,23 +83,16 @@ pub extern "C" fn tt_pdf_last_error() -> *const c_char {
 }
 
 pub fn emit(message: &CStr, warning: bool) {
-    let (quiet, last_warning) =
-        crate::compat::document::with_diagnostics(|state| (state.quiet, state.last_warning));
+    let (quiet, last_warning) = crate::compat::document::with_diagnostics(|state| (state.quiet, state.last_warning));
     if quiet > i32::from(warning) {
         return;
     }
-    let result =
-        CoreBridgeState::with_global_state(|state| emit_to(state, message, warning, last_warning));
+    let result = CoreBridgeState::with_global_state(|state| emit_to(state, message, warning, last_warning));
     legacy_result(result);
     crate::compat::document::with_diagnostics(|state| state.last_warning = warning);
 }
 
-pub(crate) fn emit_to(
-    state: &mut CoreBridgeState<'_>,
-    message: &CStr,
-    warning: bool,
-    preceded_by_warning: bool,
-) -> Result<(), PdfError> {
+pub(crate) fn emit_to(state: &mut CoreBridgeState<'_>, message: &CStr, warning: bool, preceded_by_warning: bool) -> Result<(), PdfError> {
     let write = |state: &mut CoreBridgeState<'_>, bytes: &[u8]| -> Result<(), PdfError> {
         let Some(handle) = ttbc_output_open_stdout(state) else {
             return Err(PdfError::new(
@@ -181,42 +168,27 @@ pub(crate) fn input_id(handle: usize) -> Option<InputId> {
 }
 
 pub unsafe fn input_seek(handle: usize, offset: isize, whence: c_int) -> usize {
-    legacy_result(CoreBridgeState::with_global_state(|state| {
-        seek_input(state, handle, offset, whence)
-    }))
+    legacy_result(CoreBridgeState::with_global_state(|state| seek_input(state, handle, offset, whence)))
 }
 
-pub(crate) fn seek_input(
-    state: &mut CoreBridgeState<'_>,
-    handle: usize,
-    offset: isize,
-    whence: c_int,
-) -> Result<usize, PdfError> {
+pub(crate) fn seek_input(state: &mut CoreBridgeState<'_>, handle: usize, offset: isize, whence: c_int) -> Result<usize, PdfError> {
     let mut error = 0;
     let position = unsafe { ttbc_input_seek(state, input_id(handle), offset, whence, &mut error) };
     if error != 0 {
-        return Err(PdfError::new(
-            PdfErrorKind::InvalidState,
-            c"Invalid PDF input seek".to_owned(),
-        ));
+        return Err(PdfError::new(PdfErrorKind::InvalidState, c"Invalid PDF input seek".to_owned()));
     }
     Ok(position)
 }
 
 pub fn input_close(handle: usize) -> c_int {
-    legacy_result(CoreBridgeState::with_global_state(|state| {
-        close_input(state, handle)
-    }));
+    legacy_result(CoreBridgeState::with_global_state(|state| close_input(state, handle)));
     0
 }
 
 pub(crate) fn close_input(state: &mut CoreBridgeState<'_>, handle: usize) -> Result<(), PdfError> {
     let error = ttbc_input_close(state, input_id(handle));
     if error != 0 {
-        return Err(PdfError::new(
-            PdfErrorKind::Io,
-            c"Could not close PDF input".to_owned(),
-        ));
+        return Err(PdfError::new(PdfErrorKind::Io, c"Could not close PDF input".to_owned()));
     }
     Ok(())
 }

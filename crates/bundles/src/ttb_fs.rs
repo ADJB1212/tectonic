@@ -24,9 +24,7 @@ use tectonic_status_base::StatusBackend;
 /// We assume that `fileinfo` points to a valid file in this bundle.
 fn read_fileinfo<'a>(fileinfo: &TTBFileInfo, reader: &'a mut File) -> Result<Box<dyn Read + 'a>> {
     reader.seek(SeekFrom::Start(fileinfo.start))?;
-    Ok(Box::new(GzDecoder::new(
-        reader.take(fileinfo.gzip_len as u64),
-    )))
+    Ok(Box::new(GzDecoder::new(reader.take(fileinfo.gzip_len as u64))))
 }
 
 /// A bundle backed by a ZIP file.
@@ -82,11 +80,7 @@ impl TTBFsBundle<TTBFileIndex> {
 }
 
 impl IoProvider for TTBFsBundle<TTBFileIndex> {
-    fn input_open_name(
-        &mut self,
-        name: &str,
-        _status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_name(&mut self, name: &str, _status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         // Fetch index if it is empty
         if self.index.is_empty()
             && let Err(e) = self.fill_index()
@@ -110,11 +104,7 @@ impl IoProvider for TTBFsBundle<TTBFileIndex> {
             }
         };
 
-        OpenResult::Ok(InputHandle::new_read_only(
-            name,
-            Cursor::new(v),
-            InputOrigin::Other,
-        ))
+        OpenResult::Ok(InputHandle::new_read_only(name, Cursor::new(v), InputOrigin::Other))
     }
 }
 

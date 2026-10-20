@@ -34,9 +34,7 @@ impl ObjectSet {
     /// Get all [Properties](Property) as an [`ObjectSet`]
     pub fn all() -> ObjectSet {
         use Property::*;
-        ObjectSet::new(&[
-            Family, Style, Slant, Weight, Width, File, Index, FullName, FontFormat,
-        ])
+        ObjectSet::new(&[Family, Style, Slant, Weight, Width, File, Index, FullName, FontFormat])
     }
 
     /// Convert into a borrowed reference.

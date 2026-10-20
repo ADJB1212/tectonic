@@ -19,35 +19,15 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 use crate::numbers::scaled_fixword as sqxfw;
 unsafe extern "C-unwind" {
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-    fn strcpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    fn strcpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
-    fn ttstub_input_open(
-        path: *const ::core::ffi::c_char,
-        format: ttbc_file_format,
-        is_gz: ::core::ffi::c_int,
-    ) -> rust_input_handle_t;
-    fn ttstub_input_read(
-        handle: rust_input_handle_t,
-        data: *mut ::core::ffi::c_char,
-        len: size_t,
-    ) -> ssize_t;
+    fn ttstub_input_open(path: *const ::core::ffi::c_char, format: ttbc_file_format, is_gz: ::core::ffi::c_int) -> rust_input_handle_t;
+    fn ttstub_input_read(handle: rust_input_handle_t, data: *mut ::core::ffi::c_char, len: size_t) -> ssize_t;
     fn ttstub_input_close(handle: rust_input_handle_t) -> ::core::ffi::c_int;
     static mut __stderrp: *mut FILE;
     fn fprintf(_: *mut FILE, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
@@ -60,11 +40,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_tt_get_unsigned_num"]
     fn tt_get_unsigned_num(handle: rust_input_handle_t, num: ::core::ffi::c_uchar) -> uint32_t;
     #[link_name = "__pdf_impl_tt_get_positive_quad"]
-    fn tt_get_positive_quad(
-        handle: rust_input_handle_t,
-        type_0: *const ::core::ffi::c_char,
-        name: *const ::core::ffi::c_char,
-    ) -> uint32_t;
+    fn tt_get_positive_quad(handle: rust_input_handle_t, type_0: *const ::core::ffi::c_char, name: *const ::core::ffi::c_char) -> uint32_t;
     static mut dpx_conf: _dpx_conf;
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_dvi_vf_init"]
@@ -114,10 +90,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_renew"]
     fn renew(p: *mut ::core::ffi::c_void, size: uint32_t) -> *mut ::core::ffi::c_void;
     #[link_name = "__pdf_impl_tfm_open"]
-    fn tfm_open(
-        tex_name: *const ::core::ffi::c_char,
-        must_exist: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn tfm_open(tex_name: *const ::core::ffi::c_char, must_exist: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_tfm_is_jfm"]
     fn tfm_is_jfm(font_id: ::core::ffi::c_int) -> ::core::ffi::c_int;
 }
@@ -174,23 +147,9 @@ pub struct __sFILE {
     pub _lbfsize: ::core::ffi::c_int,
     pub _cookie: *mut ::core::ffi::c_void,
     pub _close: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void) -> ::core::ffi::c_int>,
-    pub _read: Option<
-        unsafe extern "C-unwind" fn(
-            *mut ::core::ffi::c_void,
-            *mut ::core::ffi::c_char,
-            ::core::ffi::c_int,
-        ) -> ::core::ffi::c_int,
-    >,
-    pub _seek: Option<
-        unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, fpos_t, ::core::ffi::c_int) -> fpos_t,
-    >,
-    pub _write: Option<
-        unsafe extern "C-unwind" fn(
-            *mut ::core::ffi::c_void,
-            *const ::core::ffi::c_char,
-            ::core::ffi::c_int,
-        ) -> ::core::ffi::c_int,
-    >,
+    pub _read: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, *mut ::core::ffi::c_char, ::core::ffi::c_int) -> ::core::ffi::c_int>,
+    pub _seek: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, fpos_t, ::core::ffi::c_int) -> fpos_t>,
+    pub _write: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, *const ::core::ffi::c_char, ::core::ffi::c_int) -> ::core::ffi::c_int>,
     pub _ub: __sbuf,
     pub _extra: *mut __sFILEX,
     pub _ur: ::core::ffi::c_int,
@@ -311,10 +270,7 @@ pub const POST: ::core::ffi::c_int = 248 as ::core::ffi::c_int;
 pub const PTEXDIR: ::core::ffi::c_int = 255;
 pub const INVALID_HANDLE: uintptr_t = 0 as ::core::ffi::c_int as uintptr_t;
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
@@ -332,8 +288,7 @@ pub unsafe extern "C-unwind" fn vf_reset_global_state() {
 }
 unsafe extern "C-unwind" fn read_header(handle: rust_input_handle_t, font: i32) {
     let mut input = crate::compat::input::ProbeInput { handle };
-    let design_size = crate::vfont::header(&mut input)
-        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+    let design_size = crate::vfont::header(&mut input).unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
     unsafe {
         (*(*document_state()).vf_fonts.add(font as usize)).design_size = design_size;
     }
@@ -344,8 +299,7 @@ unsafe extern "C-unwind" fn resize_vf_fonts(mut size: ::core::ffi::c_int) {
     if size as ::core::ffi::c_uint > (*__pdf_state).max_vf_fonts {
         (*__pdf_state).vf_fonts = renew(
             (*__pdf_state).vf_fonts as *mut ::core::ffi::c_void,
-            (size as uint32_t as usize).wrapping_mul(::core::mem::size_of::<vf>() as usize)
-                as uint32_t,
+            (size as uint32_t as usize).wrapping_mul(::core::mem::size_of::<vf>() as usize) as uint32_t,
         ) as *mut vf;
         i = (*__pdf_state).max_vf_fonts as ::core::ffi::c_int;
         while i < size {
@@ -369,14 +323,11 @@ unsafe extern "C-unwind" fn resize_one_vf_font(mut a_vf: *mut vf, mut size: ::co
         };
         (*a_vf).ch_pkt = renew(
             (*a_vf).ch_pkt as *mut ::core::ffi::c_void,
-            (size as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<*mut ::core::ffi::c_uchar>() as usize)
-                as uint32_t,
+            (size as uint32_t as usize).wrapping_mul(::core::mem::size_of::<*mut ::core::ffi::c_uchar>() as usize) as uint32_t,
         ) as *mut *mut ::core::ffi::c_uchar;
         (*a_vf).pkt_len = renew(
             (*a_vf).pkt_len as *mut ::core::ffi::c_void,
-            (size as uint32_t as usize).wrapping_mul(::core::mem::size_of::<uint32_t>() as usize)
-                as uint32_t,
+            (size as uint32_t as usize).wrapping_mul(::core::mem::size_of::<uint32_t>() as usize) as uint32_t,
         ) as *mut uint32_t;
         i = (*a_vf).num_chars;
         while i < size {
@@ -390,21 +341,14 @@ unsafe extern "C-unwind" fn resize_one_vf_font(mut a_vf: *mut vf, mut size: ::co
 }
 unsafe extern "C-unwind" fn process_vf_file(handle: rust_input_handle_t, thisfont: i32) {
     let input = crate::compat::input::ProbeInput { handle };
-    let mut records = crate::vfont::Records::new(input)
-        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+    let mut records = crate::vfont::Records::new(input).unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
     loop {
-        let record = records
-            .next()
-            .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+        let record = records.next().unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
         unsafe {
             match record {
                 crate::vfont::Record::End => break,
                 crate::vfont::Record::Unknown(code) => {
-                    fprintf(
-                        crate::backend::runtime::stderr().cast(),
-                        c"Quitting on code=%d\n".as_ptr(),
-                        code as i32,
-                    );
+                    fprintf(crate::backend::runtime::stderr().cast(), c"Quitting on code=%d\n".as_ptr(), code as i32);
                     break;
                 }
                 crate::vfont::Record::Character { code, mut packet } => {
@@ -413,11 +357,7 @@ unsafe extern "C-unwind" fn process_vf_file(handle: rust_input_handle_t, thisfon
                     if code >= font.num_chars {
                         resize_one_vf_font(font, code + 1);
                     }
-                    let pointer = if packet.is_empty() {
-                        core::ptr::null_mut()
-                    } else {
-                        packet.as_mut_ptr()
-                    };
+                    let pointer = if packet.is_empty() { core::ptr::null_mut() } else { packet.as_mut_ptr() };
                     *font.ch_pkt.add(code as usize) = pointer;
                     *font.pkt_len.add(code as usize) = packet.len() as u32;
                     state.packets.insert((thisfont, code), packet);
@@ -464,28 +404,18 @@ unsafe fn install_font(thisfont: i32, record: crate::vfont::Font) {
         });
         font.num_dev_fonts += 1;
         (*dev).tfm_id = tfm_open((*dev).name, 1);
-        (*dev).dev_id = dvi_locate_font(
-            (*dev).name,
-            sqxfw(font.ptsize as i32, (*dev).size as fixword) as spt_t,
-        ) as i32;
+        (*dev).dev_id = dvi_locate_font((*dev).name, sqxfw(font.ptsize as i32, (*dev).size as fixword) as spt_t) as i32;
     }
 }
 #[unsafe(export_name = "__pdf_impl_vf_locate_font")]
-pub unsafe extern "C-unwind" fn vf_locate_font(
-    mut tex_name: *const ::core::ffi::c_char,
-    mut ptsize: spt_t,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn vf_locate_font(mut tex_name: *const ::core::ffi::c_char, mut ptsize: spt_t) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut thisfont: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut i: ::core::ffi::c_int = 0;
     let mut vf_handle: rust_input_handle_t = INVALID_HANDLE;
     i = 0 as ::core::ffi::c_int;
     while (i as ::core::ffi::c_uint) < (*__pdf_state).num_vf_fonts {
-        if streq_ptr(
-            (*(*__pdf_state).vf_fonts.offset(i as isize)).tex_name,
-            tex_name,
-        ) as ::core::ffi::c_int
-            != 0
+        if streq_ptr((*(*__pdf_state).vf_fonts.offset(i as isize)).tex_name, tex_name) as ::core::ffi::c_int != 0
             && (*(*__pdf_state).vf_fonts.offset(i as isize)).ptsize == ptsize
         {
             break;
@@ -510,23 +440,15 @@ pub unsafe extern "C-unwind" fn vf_locate_font(
         );
     }
     if (*__pdf_state).num_vf_fonts >= (*__pdf_state).max_vf_fonts {
-        resize_vf_fonts(
-            (*__pdf_state).max_vf_fonts.wrapping_add(VF_ALLOC_SIZE) as ::core::ffi::c_int
-        );
+        resize_vf_fonts((*__pdf_state).max_vf_fonts.wrapping_add(VF_ALLOC_SIZE) as ::core::ffi::c_int);
     }
     let fresh0 = (*__pdf_state).num_vf_fonts;
     (*__pdf_state).num_vf_fonts = (*__pdf_state).num_vf_fonts.wrapping_add(1);
     thisfont = fresh0 as ::core::ffi::c_int;
     let ref mut fresh1 = (*(*__pdf_state).vf_fonts.offset(thisfont as isize)).tex_name;
-    *fresh1 = new(
-        (strlen(tex_name).wrapping_add(1 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t,
-    ) as *mut ::core::ffi::c_char;
-    strcpy(
-        (*(*__pdf_state).vf_fonts.offset(thisfont as isize)).tex_name,
-        tex_name,
-    );
+    *fresh1 = new((strlen(tex_name).wrapping_add(1 as size_t) as uint32_t as usize)
+        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
+    strcpy((*(*__pdf_state).vf_fonts.offset(thisfont as isize)).tex_name, tex_name);
     (*(*__pdf_state).vf_fonts.offset(thisfont as isize)).ptsize = ptsize;
     (*(*__pdf_state).vf_fonts.offset(thisfont as isize)).num_chars = 0 as ::core::ffi::c_uint;
     let ref mut fresh2 = (*(*__pdf_state).vf_fonts.offset(thisfont as isize)).ch_pkt;
@@ -571,35 +493,17 @@ unsafe extern "C-unwind" fn get_pkt_signed_num(start: *mut *mut u8, end: *mut u8
     read_packet_number(start, end, num, true)
 }
 
-unsafe extern "C-unwind" fn get_pkt_unsigned_num(
-    start: *mut *mut u8,
-    end: *mut u8,
-    num: u8,
-) -> i32 {
+unsafe extern "C-unwind" fn get_pkt_unsigned_num(start: *mut *mut u8, end: *mut u8, num: u8) -> i32 {
     read_packet_number(start, end, num, false)
 }
-unsafe extern "C-unwind" fn vf_putrule(
-    mut start: *mut *mut ::core::ffi::c_uchar,
-    mut end: *mut ::core::ffi::c_uchar,
-    mut ptsize: spt_t,
-) {
+unsafe extern "C-unwind" fn vf_putrule(mut start: *mut *mut ::core::ffi::c_uchar, mut end: *mut ::core::ffi::c_uchar, mut ptsize: spt_t) {
     let mut height: int32_t = get_pkt_signed_num(start, end, 3 as ::core::ffi::c_uchar);
     let mut width: int32_t = get_pkt_signed_num(start, end, 3 as ::core::ffi::c_uchar);
-    dvi_rule(
-        sqxfw(ptsize as int32_t, width as fixword),
-        sqxfw(ptsize as int32_t, height as fixword),
-    );
+    dvi_rule(sqxfw(ptsize as int32_t, width as fixword), sqxfw(ptsize as int32_t, height as fixword));
 }
-unsafe extern "C-unwind" fn vf_setrule(
-    mut start: *mut *mut ::core::ffi::c_uchar,
-    mut end: *mut ::core::ffi::c_uchar,
-    mut ptsize: spt_t,
-) {
+unsafe extern "C-unwind" fn vf_setrule(mut start: *mut *mut ::core::ffi::c_uchar, mut end: *mut ::core::ffi::c_uchar, mut ptsize: spt_t) {
     let mut height: int32_t = get_pkt_signed_num(start, end, 3 as ::core::ffi::c_uchar);
-    let mut s_width: int32_t = sqxfw(
-        ptsize as int32_t,
-        get_pkt_signed_num(start, end, 3 as ::core::ffi::c_uchar) as fixword,
-    );
+    let mut s_width: int32_t = sqxfw(ptsize as int32_t, get_pkt_signed_num(start, end, 3 as ::core::ffi::c_uchar) as fixword);
     dvi_rule(s_width, sqxfw(ptsize as int32_t, height as fixword));
     dvi_right(s_width);
 }
@@ -607,28 +511,14 @@ unsafe extern "C-unwind" fn vf_fnt(mut font_id: int32_t, mut vf_font: ::core::ff
     let __pdf_state = unsafe { document_state() };
     let mut i: ::core::ffi::c_int = 0;
     i = 0 as ::core::ffi::c_int;
-    while (i as ::core::ffi::c_uint)
-        < (*(*__pdf_state).vf_fonts.offset(vf_font as isize)).num_dev_fonts
-    {
-        if font_id
-            == (*(*(*__pdf_state).vf_fonts.offset(vf_font as isize))
-                .dev_fonts
-                .offset(i as isize))
-            .font_id
-        {
+    while (i as ::core::ffi::c_uint) < (*(*__pdf_state).vf_fonts.offset(vf_font as isize)).num_dev_fonts {
+        if font_id == (*(*(*__pdf_state).vf_fonts.offset(vf_font as isize)).dev_fonts.offset(i as isize)).font_id {
             break;
         }
         i += 1;
     }
-    if (i as ::core::ffi::c_uint)
-        < (*(*__pdf_state).vf_fonts.offset(vf_font as isize)).num_dev_fonts
-    {
-        dvi_set_font(
-            (*(*(*__pdf_state).vf_fonts.offset(vf_font as isize))
-                .dev_fonts
-                .offset(i as isize))
-            .dev_id,
-        );
+    if (i as ::core::ffi::c_uint) < (*(*__pdf_state).vf_fonts.offset(vf_font as isize)).num_dev_fonts {
+        dvi_set_font((*(*(*__pdf_state).vf_fonts.offset(vf_font as isize)).dev_fonts.offset(i as isize)).dev_id);
     } else {
         fprintf(
             crate::backend::runtime::stderr().cast(),
@@ -637,21 +527,12 @@ unsafe extern "C-unwind" fn vf_fnt(mut font_id: int32_t, mut vf_font: ::core::ff
         );
     };
 }
-unsafe extern "C-unwind" fn vf_xxx(
-    mut len: int32_t,
-    mut start: *mut *mut ::core::ffi::c_uchar,
-    mut end: *mut ::core::ffi::c_uchar,
-) {
+unsafe extern "C-unwind" fn vf_xxx(mut len: int32_t, mut start: *mut *mut ::core::ffi::c_uchar, mut end: *mut ::core::ffi::c_uchar) {
     if *start <= end.offset(-(len as isize)) {
         let mut buffer: *mut ::core::ffi::c_uchar = new(((len + 1 as int32_t) as uint32_t as usize)
             .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-            as uint32_t)
-            as *mut ::core::ffi::c_uchar;
-        memcpy(
-            buffer as *mut ::core::ffi::c_void,
-            *start as *const ::core::ffi::c_void,
-            len as size_t,
-        );
+            as uint32_t) as *mut ::core::ffi::c_uchar;
+        memcpy(buffer as *mut ::core::ffi::c_void, *start as *const ::core::ffi::c_void, len as size_t);
         *buffer.offset(len as isize) = '\0' as i32 as ::core::ffi::c_uchar;
         let mut p: *mut ::core::ffi::c_uchar = buffer;
         while p < buffer.offset(len as isize) && *p as ::core::ffi::c_int == ' ' as i32 {
@@ -674,10 +555,7 @@ unsafe extern "C-unwind" fn vf_xxx(
         }
         free(buffer as *mut ::core::ffi::c_void);
     } else {
-        pdf_abort!(
-            b"Premature end of DVI byte stream in VF font.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"Premature end of DVI byte stream in VF font.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     *start = (*start).offset(len as isize);
 }
@@ -691,24 +569,17 @@ pub unsafe extern "C-unwind" fn vf_set_char(mut ch: int32_t, mut vf_font: ::core
     let mut default_font: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     if (vf_font as ::core::ffi::c_uint) < (*__pdf_state).num_vf_fonts {
         ptsize = (*(*__pdf_state).vf_fonts.offset(vf_font as isize)).ptsize;
-        if (*(*__pdf_state).vf_fonts.offset(vf_font as isize)).num_dev_fonts
-            > 0 as ::core::ffi::c_uint
-        {
+        if (*(*__pdf_state).vf_fonts.offset(vf_font as isize)).num_dev_fonts > 0 as ::core::ffi::c_uint {
             default_font = (*(*(*__pdf_state).vf_fonts.offset(vf_font as isize))
                 .dev_fonts
                 .offset(0 as ::core::ffi::c_int as isize))
             .dev_id;
         }
         dvi_vf_init(default_font);
-        if ch as ::core::ffi::c_uint
-            >= (*(*__pdf_state).vf_fonts.offset(vf_font as isize)).num_chars
-            || {
-                start = *(*(*__pdf_state).vf_fonts.offset(vf_font as isize))
-                    .ch_pkt
-                    .offset(ch as isize);
-                start.is_null()
-            }
-        {
+        if ch as ::core::ffi::c_uint >= (*(*__pdf_state).vf_fonts.offset(vf_font as isize)).num_chars || {
+            start = *(*(*__pdf_state).vf_fonts.offset(vf_font as isize)).ch_pkt.offset(ch as isize);
+            start.is_null()
+        } {
             if tfm_is_jfm(
                 (*(*(*__pdf_state).vf_fonts.offset(vf_font as isize))
                     .dev_fonts
@@ -716,35 +587,31 @@ pub unsafe extern "C-unwind" fn vf_set_char(mut ch: int32_t, mut vf_font: ::core
                 .tfm_id,
             ) != 0
                 && ch < 0x1000000 as int32_t
-                && dpx_conf.compat_mode as ::core::ffi::c_uint
-                    != dpx_mode_xdv_mode as ::core::ffi::c_int as ::core::ffi::c_uint
+                && dpx_conf.compat_mode as ::core::ffi::c_uint != dpx_mode_xdv_mode as ::core::ffi::c_int as ::core::ffi::c_uint
             {
                 if dpx_conf.verbose_level == 1 as ::core::ffi::c_int {
-                    if (*(*__pdf_state).vf_fonts.offset(vf_font as isize)).message_flag
-                        as ::core::ffi::c_int
-                        == 0 as ::core::ffi::c_int
-                    {
+                    if (*(*__pdf_state).vf_fonts.offset(vf_font as isize)).message_flag as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
                         pdf_warning!(
-                            b"Fallback multibyte character in virtual font: VF:%s to TFM:%s\0"
-                                as *const u8
-                                as *const ::core::ffi::c_char,
+                            b"Fallback multibyte character in virtual font: VF:%s to TFM:%s\0" as *const u8 as *const ::core::ffi::c_char,
                             (*(*__pdf_state).vf_fonts.offset(vf_font as isize)).tex_name,
                             (*(*(*__pdf_state).vf_fonts.offset(vf_font as isize))
                                 .dev_fonts
                                 .offset(0 as ::core::ffi::c_int as isize))
                             .name,
                         );
-                        (*(*__pdf_state).vf_fonts.offset(vf_font as isize)).message_flag =
-                            1 as ::core::ffi::c_uchar;
+                        (*(*__pdf_state).vf_fonts.offset(vf_font as isize)).message_flag = 1 as ::core::ffi::c_uchar;
                     }
                 }
                 if dpx_conf.verbose_level > 1 as ::core::ffi::c_int {
                     pdf_warning!(
-                        b"Fallback multibyte character in virtual font: VF:%s char=0x%06x(%d) to TFM:%s\0"
-                        as * const u8 as * const ::core::ffi::c_char, (* (*__pdf_state).vf_fonts
-                        .offset(vf_font as isize)).tex_name, ch, ch, (* (* (*__pdf_state).vf_fonts
-                        .offset(vf_font as isize)).dev_fonts.offset(0 as
-                        ::core::ffi::c_int as isize)).name,
+                        b"Fallback multibyte character in virtual font: VF:%s char=0x%06x(%d) to TFM:%s\0" as *const u8 as *const ::core::ffi::c_char,
+                        (*(*__pdf_state).vf_fonts.offset(vf_font as isize)).tex_name,
+                        ch,
+                        ch,
+                        (*(*(*__pdf_state).vf_fonts.offset(vf_font as isize))
+                            .dev_fonts
+                            .offset(0 as ::core::ffi::c_int as isize))
+                        .name,
                     );
                 }
                 dvi_set(ch);
@@ -759,17 +626,12 @@ pub unsafe extern "C-unwind" fn vf_set_char(mut ch: int32_t, mut vf_font: ::core
             );
             fprintf(
                 crate::backend::runtime::stderr().cast(),
-                b"Tried to set a nonexistent character in a virtual font\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Tried to set a nonexistent character in a virtual font\0" as *const u8 as *const ::core::ffi::c_char,
             );
             end = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
             start = end;
         } else {
-            end = start.offset(
-                *(*(*__pdf_state).vf_fonts.offset(vf_font as isize))
-                    .pkt_len
-                    .offset(ch as isize) as isize,
-            );
+            end = start.offset(*(*(*__pdf_state).vf_fonts.offset(vf_font as isize)).pkt_len.offset(ch as isize) as isize);
         }
         while !start.is_null() && start < end {
             let fresh10 = start;
@@ -784,10 +646,7 @@ pub unsafe extern "C-unwind" fn vf_set_char(mut ch: int32_t, mut vf_font: ::core
                     ));
                 }
                 SET4 => {
-                    pdf_abort!(
-                        b"Multibyte (>24 bits) character in VF packet.\nI can't handle this!\0"
-                            as *const u8 as *const ::core::ffi::c_char,
-                    );
+                    pdf_abort!(b"Multibyte (>24 bits) character in VF packet.\nI can't handle this!\0" as *const u8 as *const ::core::ffi::c_char,);
                 }
                 SET_RULE => {
                     vf_setrule(&raw mut start, end, ptsize);
@@ -800,10 +659,7 @@ pub unsafe extern "C-unwind" fn vf_set_char(mut ch: int32_t, mut vf_font: ::core
                     ));
                 }
                 PUT4 => {
-                    pdf_abort!(
-                        b"Multibyte (>24 bits) character in VF packet.\nI can't handle this!\0"
-                            as *const u8 as *const ::core::ffi::c_char,
-                    );
+                    pdf_abort!(b"Multibyte (>24 bits) character in VF packet.\nI can't handle this!\0" as *const u8 as *const ::core::ffi::c_char,);
                 }
                 PUT_RULE => {
                     vf_putrule(&raw mut start, end, ptsize);
@@ -818,11 +674,7 @@ pub unsafe extern "C-unwind" fn vf_set_char(mut ch: int32_t, mut vf_font: ::core
                 RIGHT1 | RIGHT2 | RIGHT3 | RIGHT4 => {
                     dvi_right(sqxfw(
                         ptsize as int32_t,
-                        get_pkt_signed_num(
-                            &raw mut start,
-                            end,
-                            (opcode as ::core::ffi::c_int - RIGHT1) as ::core::ffi::c_uchar,
-                        ) as fixword,
+                        get_pkt_signed_num(&raw mut start, end, (opcode as ::core::ffi::c_int - RIGHT1) as ::core::ffi::c_uchar) as fixword,
                     ));
                 }
                 W0 => {
@@ -831,11 +683,7 @@ pub unsafe extern "C-unwind" fn vf_set_char(mut ch: int32_t, mut vf_font: ::core
                 W1 | W2 | W3 | W4 => {
                     dvi_w(sqxfw(
                         ptsize as int32_t,
-                        get_pkt_signed_num(
-                            &raw mut start,
-                            end,
-                            (opcode as ::core::ffi::c_int - W1) as ::core::ffi::c_uchar,
-                        ) as fixword,
+                        get_pkt_signed_num(&raw mut start, end, (opcode as ::core::ffi::c_int - W1) as ::core::ffi::c_uchar) as fixword,
                     ));
                 }
                 X0 => {
@@ -844,21 +692,13 @@ pub unsafe extern "C-unwind" fn vf_set_char(mut ch: int32_t, mut vf_font: ::core
                 X1 | X2 | X3 | X4 => {
                     dvi_x(sqxfw(
                         ptsize as int32_t,
-                        get_pkt_signed_num(
-                            &raw mut start,
-                            end,
-                            (opcode as ::core::ffi::c_int - X1) as ::core::ffi::c_uchar,
-                        ) as fixword,
+                        get_pkt_signed_num(&raw mut start, end, (opcode as ::core::ffi::c_int - X1) as ::core::ffi::c_uchar) as fixword,
                     ));
                 }
                 DOWN1 | DOWN2 | DOWN3 | DOWN4 => {
                     dvi_down(sqxfw(
                         ptsize as int32_t,
-                        get_pkt_signed_num(
-                            &raw mut start,
-                            end,
-                            (opcode as ::core::ffi::c_int - DOWN1) as ::core::ffi::c_uchar,
-                        ) as fixword,
+                        get_pkt_signed_num(&raw mut start, end, (opcode as ::core::ffi::c_int - DOWN1) as ::core::ffi::c_uchar) as fixword,
                     ));
                 }
                 Y0 => {
@@ -867,11 +707,7 @@ pub unsafe extern "C-unwind" fn vf_set_char(mut ch: int32_t, mut vf_font: ::core
                 Y1 | Y2 | Y3 | Y4 => {
                     dvi_y(sqxfw(
                         ptsize as int32_t,
-                        get_pkt_signed_num(
-                            &raw mut start,
-                            end,
-                            (opcode as ::core::ffi::c_int - Y1) as ::core::ffi::c_uchar,
-                        ) as fixword,
+                        get_pkt_signed_num(&raw mut start, end, (opcode as ::core::ffi::c_int - Y1) as ::core::ffi::c_uchar) as fixword,
                     ));
                 }
                 Z0 => {
@@ -880,35 +716,19 @@ pub unsafe extern "C-unwind" fn vf_set_char(mut ch: int32_t, mut vf_font: ::core
                 Z1 | Z2 | Z3 | Z4 => {
                     dvi_z(sqxfw(
                         ptsize as int32_t,
-                        get_pkt_signed_num(
-                            &raw mut start,
-                            end,
-                            (opcode as ::core::ffi::c_int - Z1) as ::core::ffi::c_uchar,
-                        ) as fixword,
+                        get_pkt_signed_num(&raw mut start, end, (opcode as ::core::ffi::c_int - Z1) as ::core::ffi::c_uchar) as fixword,
                     ));
                 }
                 FNT1 | FNT2 | FNT3 | FNT4 => {
                     vf_fnt(
-                        get_pkt_signed_num(
-                            &raw mut start,
-                            end,
-                            (opcode as ::core::ffi::c_int - FNT1) as ::core::ffi::c_uchar,
-                        ),
+                        get_pkt_signed_num(&raw mut start, end, (opcode as ::core::ffi::c_int - FNT1) as ::core::ffi::c_uchar),
                         vf_font,
                     );
                 }
                 XXX1 | XXX2 | XXX3 | XXX4 => {
-                    let mut len: int32_t = get_pkt_unsigned_num(
-                        &raw mut start,
-                        end,
-                        (opcode as ::core::ffi::c_int - XXX1) as ::core::ffi::c_uchar,
-                    );
+                    let mut len: int32_t = get_pkt_unsigned_num(&raw mut start, end, (opcode as ::core::ffi::c_int - XXX1) as ::core::ffi::c_uchar);
                     if len < 0 as int32_t {
-                        pdf_warning!(
-                            b"VF: Special with %d bytes???\0" as *const u8
-                                as *const ::core::ffi::c_char,
-                            len,
-                        );
+                        pdf_warning!(b"VF: Special with %d bytes???\0" as *const u8 as *const ::core::ffi::c_char, len,);
                     } else {
                         vf_xxx(len, &raw mut start, end);
                     }
@@ -919,9 +739,7 @@ pub unsafe extern "C-unwind" fn vf_set_char(mut ch: int32_t, mut vf_font: ::core
                 _ => {
                     if opcode as ::core::ffi::c_int <= SET_CHAR_127 {
                         dvi_set(opcode as int32_t);
-                    } else if opcode as ::core::ffi::c_int >= FNT_NUM_0
-                        && opcode as ::core::ffi::c_int <= FNT_NUM_63
-                    {
+                    } else if opcode as ::core::ffi::c_int >= FNT_NUM_0 && opcode as ::core::ffi::c_int <= FNT_NUM_63 {
                         vf_fnt(opcode as int32_t - FNT_NUM_0 as int32_t, vf_font);
                     } else {
                         fprintf(
@@ -929,10 +747,7 @@ pub unsafe extern "C-unwind" fn vf_set_char(mut ch: int32_t, mut vf_font: ::core
                             b"Unexpected opcode: %d\n\0" as *const u8 as *const ::core::ffi::c_char,
                             opcode as ::core::ffi::c_int,
                         );
-                        pdf_abort!(
-                            b"Unexpected opcode in vf file\n\0" as *const u8
-                                as *const ::core::ffi::c_char,
-                        );
+                        pdf_abort!(b"Unexpected opcode in vf file\n\0" as *const u8 as *const ::core::ffi::c_char,);
                     }
                 }
             }
@@ -955,19 +770,14 @@ pub unsafe extern "C-unwind" fn vf_close_all_fonts() {
     let mut one_font: *mut font_def = ::core::ptr::null_mut::<font_def>();
     i = 0 as ::core::ffi::c_uint;
     while i < (*__pdf_state).num_vf_fonts {
-        if !(*(*__pdf_state).vf_fonts.offset(i as isize))
-            .ch_pkt
-            .is_null()
-        {
+        if !(*(*__pdf_state).vf_fonts.offset(i as isize)).ch_pkt.is_null() {
             free((*(*__pdf_state).vf_fonts.offset(i as isize)).ch_pkt as *mut ::core::ffi::c_void);
         }
         free((*(*__pdf_state).vf_fonts.offset(i as isize)).pkt_len as *mut ::core::ffi::c_void);
         free((*(*__pdf_state).vf_fonts.offset(i as isize)).tex_name as *mut ::core::ffi::c_void);
         j = 0 as ::core::ffi::c_uint;
         while j < (*(*__pdf_state).vf_fonts.offset(i as isize)).num_dev_fonts {
-            one_font = (*(*__pdf_state).vf_fonts.offset(i as isize))
-                .dev_fonts
-                .offset(j as isize) as *mut font_def;
+            one_font = (*(*__pdf_state).vf_fonts.offset(i as isize)).dev_fonts.offset(j as isize) as *mut font_def;
             free((*one_font).directory as *mut ::core::ffi::c_void);
             free((*one_font).name as *mut ::core::ffi::c_void);
             j = j.wrapping_add(1);
@@ -980,16 +790,8 @@ pub unsafe extern "C-unwind" fn vf_close_all_fonts() {
 }
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn memcpy(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
+    fn memcpy(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __n: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -1008,9 +810,7 @@ pub unsafe extern "C" fn __pdf_entry_vf_reset_global_state() -> i32 {
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_vf_locate_font(
-    mut tex_name: *const ::core::ffi::c_char,
-    mut ptsize: spt_t,
-    _result: *mut ::core::ffi::c_int,
+    mut tex_name: *const ::core::ffi::c_char, mut ptsize: spt_t, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { vf_locate_font(tex_name, ptsize) }) {
         Ok(value) => {
@@ -1023,10 +823,7 @@ pub unsafe extern "C" fn __pdf_entry_vf_locate_font(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_vf_set_char(
-    mut ch: int32_t,
-    mut vf_font: ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_vf_set_char(mut ch: int32_t, mut vf_font: ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { vf_set_char(ch, vf_font) }) {
         Ok(value) => {
             let _ = value;

@@ -32,11 +32,7 @@ fn read_fileinfo(fileinfo: &TTBFileInfo, reader: &mut DefaultRangeReader) -> Res
     Ok(Box::new(GzDecoder::new(stream)))
 }
 
-fn read_file_with_retries(
-    reader: &mut DefaultRangeReader,
-    info: &TTBFileInfo,
-    status: &mut dyn StatusBackend,
-) -> OpenResult<Vec<u8>> {
+fn read_file_with_retries(reader: &mut DefaultRangeReader, info: &TTBFileInfo, status: &mut dyn StatusBackend) -> OpenResult<Vec<u8>> {
     if info.gzip_len == 0 {
         return OpenResult::Ok(Vec::new());
     }
@@ -58,10 +54,7 @@ fn read_file_with_retries(
             }
         };
 
-        match stream
-            .take(u64::from(info.real_len) + 1)
-            .read_to_end(&mut bytes)
-        {
+        match stream.take(u64::from(info.real_len) + 1).read_to_end(&mut bytes) {
             Ok(_) if bytes.len() == info.real_len as usize => return OpenResult::Ok(bytes),
             result => {
                 let error = match result {
@@ -76,10 +69,7 @@ fn read_file_with_retries(
         }
     }
 
-    OpenResult::Err(anyhow!(
-        "failed to download \"{}\"; please check your network connection.",
-        info.name
-    ))
+    OpenResult::Err(anyhow!("failed to download \"{}\"; please check your network connection.", info.name))
 }
 
 /// Access ttbv1 bundle hosted on the internet.
@@ -129,11 +119,7 @@ impl TTBNetBundle<TTBFileIndex> {
         }
         self.connect_reader()?;
         let mut header: [u8; 70] = [0u8; 70];
-        self.reader
-            .as_mut()
-            .unwrap()
-            .read_range(0, 70)?
-            .read_exact(&mut header)?;
+        self.reader.as_mut().unwrap().read_range(0, 70)?.read_exact(&mut header)?;
         let header = TTBv1Header::try_from(header)?;
         self.header = Some(header);
         Ok(header)
@@ -152,11 +138,7 @@ impl TTBNetBundle<TTBFileIndex> {
 }
 
 impl IoProvider for TTBNetBundle<TTBFileIndex> {
-    fn input_open_name(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_name(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         if let Err(e) = self.ensure_index() {
             return OpenResult::Err(e);
         };
@@ -222,32 +204,20 @@ impl CachableBundle<'_, TTBFileIndex> for TTBNetBundle<TTBFileIndex> {
         )
     }
 
-    fn open_fileinfo(
-        &mut self,
-        info: &TTBFileInfo,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn open_fileinfo(&mut self, info: &TTBFileInfo, status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         tt_note!(status, "downloading {}", info.name);
 
         if let Err(e) = self.connect_reader() {
             return OpenResult::Err(e);
         }
         match read_file_with_retries(self.reader.as_mut().unwrap(), info, status) {
-            OpenResult::Ok(bytes) => OpenResult::Ok(InputHandle::new_read_only(
-                info.name.clone(),
-                Cursor::new(bytes),
-                InputOrigin::Other,
-            )),
+            OpenResult::Ok(bytes) => OpenResult::Ok(InputHandle::new_read_only(info.name.clone(), Cursor::new(bytes), InputOrigin::Other)),
             OpenResult::NotAvailable => OpenResult::NotAvailable,
             OpenResult::Err(e) => OpenResult::Err(e),
         }
     }
 
-    fn batch_open(
-        &mut self,
-        infos: &[TTBFileInfo],
-        status: &mut dyn StatusBackend,
-    ) -> Vec<OpenResult<Vec<u8>>> {
+    fn batch_open(&mut self, infos: &[TTBFileInfo], status: &mut dyn StatusBackend) -> Vec<OpenResult<Vec<u8>>> {
         batch::open(
             &self.url,
             infos,
@@ -269,10 +239,7 @@ mod tests {
     };
     use tectonic_status_base::NoopStatusBackend;
 
-    fn serve_files(
-        files: Vec<(u64, Vec<u8>)>,
-        request_count: usize,
-    ) -> (String, thread::JoinHandle<Vec<u64>>) {
+    fn serve_files(files: Vec<(u64, Vec<u8>)>, request_count: usize) -> (String, thread::JoinHandle<Vec<u64>>) {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         listener.set_nonblocking(true).unwrap();
         let url = format!("http://{}/bundle.ttb", listener.local_addr().unwrap());
@@ -291,9 +258,7 @@ mod tests {
                     }
                 };
                 stream.set_nonblocking(false).unwrap();
-                stream
-                    .set_read_timeout(Some(Duration::from_secs(5)))
-                    .unwrap();
+                stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
                 let mut reader = BufReader::new(&stream);
                 let mut range = None;
                 loop {
@@ -358,10 +323,7 @@ mod tests {
         assert!(bundle.supports_batch_open());
         assert!(bundle.batch_open(&[], &mut NoopStatusBackend {}).is_empty());
 
-        let results = bundle.batch_open(
-            &[second, empty, oversized, first],
-            &mut NoopStatusBackend {},
-        );
+        let results = bundle.batch_open(&[second, empty, oversized, first], &mut NoopStatusBackend {});
         let mut results = results.into_iter();
         assert_eq!(results.next().unwrap().unwrap(), contents[1]);
         assert!(results.next().unwrap().unwrap().is_empty());
@@ -380,10 +342,7 @@ mod tests {
             info.real_len = real_len;
             let (url, server) = serve_files(vec![(100, compressed)], NET_RETRY_ATTEMPTS);
             let mut bundle = TTBNetBundle::new(url).unwrap();
-            assert!(matches!(
-                bundle.open_fileinfo(&info, &mut NoopStatusBackend {}),
-                OpenResult::Err(_)
-            ));
+            assert!(matches!(bundle.open_fileinfo(&info, &mut NoopStatusBackend {}), OpenResult::Err(_)));
             assert_eq!(server.join().unwrap(), vec![100; NET_RETRY_ATTEMPTS]);
         }
     }
@@ -422,11 +381,7 @@ mod tests {
         let listener = TcpListener::bind("127.0.0.1:0").unwrap();
         listener.set_nonblocking(true).unwrap();
         let url = format!("http://{}/bundle.ttb", listener.local_addr().unwrap());
-        let responses = [
-            header,
-            compressed[..compressed.len() - 4].to_vec(),
-            compressed.clone(),
-        ];
+        let responses = [header, compressed[..compressed.len() - 4].to_vec(), compressed.clone()];
         let server = thread::spawn(move || {
             let deadline = Instant::now() + Duration::from_secs(10);
             let mut ranges = Vec::new();
@@ -442,9 +397,7 @@ mod tests {
                     }
                 };
                 stream.set_nonblocking(false).unwrap();
-                stream
-                    .set_read_timeout(Some(Duration::from_secs(5)))
-                    .unwrap();
+                stream.set_read_timeout(Some(Duration::from_secs(5))).unwrap();
                 let mut reader = BufReader::new(&stream);
                 loop {
                     let mut line = String::new();
@@ -477,9 +430,7 @@ mod tests {
             path: "file.tex".into(),
             hash: None,
         };
-        let mut handle = bundle
-            .open_fileinfo(&info, &mut NoopStatusBackend {})
-            .unwrap();
+        let mut handle = bundle.open_fileinfo(&info, &mut NoopStatusBackend {}).unwrap();
         let mut actual = Vec::new();
         handle.read_to_end(&mut actual).unwrap();
         assert_eq!(actual, contents);

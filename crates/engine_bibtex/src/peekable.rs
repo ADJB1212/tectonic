@@ -23,18 +23,10 @@ pub(crate) struct PeekableInput {
 }
 
 impl PeekableInput {
-    pub(crate) fn open(
-        ctx: &mut Bibtex<'_, '_>,
-        path: &CStr,
-        format: FileFormat,
-    ) -> Result<PeekableInput, BibtexError> {
+    pub(crate) fn open(ctx: &mut Bibtex<'_, '_>, path: &CStr, format: FileFormat) -> Result<PeekableInput, BibtexError> {
         let id = ctx.engine.input_open(path.to_str().unwrap(), format, false);
 
-        if let Some(id) = id {
-            Ok(Self::new(id))
-        } else {
-            Err(BibtexError::Fatal)
-        }
+        if let Some(id) = id { Ok(Self::new(id)) } else { Err(BibtexError::Fatal) }
     }
 
     fn new(id: InputId) -> Self {
@@ -122,11 +114,7 @@ impl PeekableInput {
     }
 }
 
-pub(crate) fn input_ln(
-    engine: &mut CoreBridgeState<'_>,
-    peekable: &mut PeekableInput,
-    buffers: &mut GlobalBuffer,
-) -> bool {
+pub(crate) fn input_ln(engine: &mut CoreBridgeState<'_>, peekable: &mut PeekableInput, buffers: &mut GlobalBuffer) -> bool {
     buffers.set_init(BufTy::Base, 0);
     let mut last = 0;
     if peekable.eof(engine) {
@@ -214,11 +202,7 @@ mod tests {
     }
 
     impl IoProvider for TestIo {
-        fn input_open_name(
-            &mut self,
-            name: &str,
-            _: &mut dyn StatusBackend,
-        ) -> OpenResult<InputHandle> {
+        fn input_open_name(&mut self, name: &str, _: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
             OpenResult::Ok(InputHandle::new_read_only(
                 name,
                 CountingInput {
@@ -231,11 +215,7 @@ mod tests {
         }
     }
 
-    fn with_input(
-        contents: &[u8],
-        max_read: usize,
-        f: impl FnOnce(&mut CoreBridgeState<'_>, &mut PeekableInput),
-    ) -> usize {
+    fn with_input(contents: &[u8], max_read: usize, f: impl FnOnce(&mut CoreBridgeState<'_>, &mut PeekableInput)) -> usize {
         let reads = Rc::new(Cell::new(0));
         let mut hooks = MinimalDriver::new(TestIo {
             contents: contents.to_vec(),
@@ -246,9 +226,7 @@ mod tests {
         let mut launcher = CoreBridgeLauncher::new(&mut hooks, &mut status);
         launcher
             .with_global_lock(|engine| {
-                let id = engine
-                    .input_open("input.bib", FileFormat::Bib, false)
-                    .unwrap();
+                let id = engine.input_open("input.bib", FileFormat::Bib, false).unwrap();
                 let mut input = PeekableInput::new(id);
                 f(engine, &mut input);
                 assert!(!engine.input_close(id));
@@ -276,20 +254,13 @@ mod tests {
 
     #[test]
     fn lines_handle_short_reads_crlf_and_terminal_cr() {
-        with_input(
-            b"alpha  \r\n\r\nbeta\ngamma\rdelta\r",
-            1,
-            |engine, input| {
-                let mut buffers = GlobalBuffer::new();
-                for expected in [b"alpha".as_slice(), b"", b"beta", b"gamma", b"delta"] {
-                    assert!(input_ln(engine, input, &mut buffers));
-                    assert_eq!(
-                        &buffers.buffer(BufTy::Base)[..buffers.init(BufTy::Base)],
-                        expected
-                    );
-                }
-                assert!(!input_ln(engine, input, &mut buffers));
-            },
-        );
+        with_input(b"alpha  \r\n\r\nbeta\ngamma\rdelta\r", 1, |engine, input| {
+            let mut buffers = GlobalBuffer::new();
+            for expected in [b"alpha".as_slice(), b"", b"beta", b"gamma", b"delta"] {
+                assert!(input_ln(engine, input, &mut buffers));
+                assert_eq!(&buffers.buffer(BufTy::Base)[..buffers.init(BufTy::Base)], expected);
+            }
+            assert!(!input_ln(engine, input, &mut buffers));
+        });
     }
 }

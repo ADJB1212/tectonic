@@ -17,34 +17,13 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-    fn strcpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
-    fn sprintf(
-        _: *mut ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    fn strcpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+    fn sprintf(_: *mut ::core::ffi::c_char, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_new_name"]
     fn pdf_new_name(name: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_new_dict"]
@@ -52,19 +31,11 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_lookup_dict"]
     fn pdf_lookup_dict(dict: *mut pdf_obj, key: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_new_stream"]
     fn pdf_new_stream(flags: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_stream"]
-    fn pdf_add_stream(
-        stream: *mut pdf_obj,
-        stream_data_ptr: *const ::core::ffi::c_void,
-        stream_data_len: ::core::ffi::c_int,
-    );
+    fn pdf_add_stream(stream: *mut pdf_obj, stream_data_ptr: *const ::core::ffi::c_void, stream_data_len: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_get_font_data"]
     fn pdf_get_font_data(font_id: ::core::ffi::c_int) -> *mut pdf_font;
     #[link_name = "__pdf_impl_CIDFont_get_usedchars"]
@@ -77,9 +48,7 @@ unsafe extern "C-unwind" {
     fn CIDFont_is_UCSFont(font: *mut pdf_font) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_CIDFont_type0_t1create_ToUnicode_stream"]
     fn CIDFont_type0_t1create_ToUnicode_stream(
-        filename: *const ::core::ffi::c_char,
-        fontname: *const ::core::ffi::c_char,
-        used_chars: *const ::core::ffi::c_char,
+        filename: *const ::core::ffi::c_char, fontname: *const ::core::ffi::c_char, used_chars: *const ::core::ffi::c_char,
     ) -> *mut pdf_obj;
     static mut dpx_conf: _dpx_conf;
     fn dpx_message(fmt: *const ::core::ffi::c_char, ...);
@@ -88,25 +57,16 @@ unsafe extern "C-unwind" {
     fn new(size: uint32_t) -> *mut ::core::ffi::c_void;
     #[link_name = "__pdf_impl_otf_create_ToUnicode_stream"]
     fn otf_create_ToUnicode_stream(
-        map_name: *const ::core::ffi::c_char,
-        ttc_index: uint32_t,
-        basefont: *const ::core::ffi::c_char,
-        used_chars: *const ::core::ffi::c_char,
+        map_name: *const ::core::ffi::c_char, ttc_index: uint32_t, basefont: *const ::core::ffi::c_char, used_chars: *const ::core::ffi::c_char,
     ) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_load_ToUnicode_stream"]
     fn pdf_load_ToUnicode_stream(ident: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_defineresource"]
     fn pdf_defineresource(
-        category: *const ::core::ffi::c_char,
-        resname: *const ::core::ffi::c_char,
-        object: *mut pdf_obj,
-        flags: ::core::ffi::c_int,
+        category: *const ::core::ffi::c_char, resname: *const ::core::ffi::c_char, object: *mut pdf_obj, flags: ::core::ffi::c_int,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_findresource"]
-    fn pdf_findresource(
-        category: *const ::core::ffi::c_char,
-        resname: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
+    fn pdf_findresource(category: *const ::core::ffi::c_char, resname: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_get_resource_reference"]
     fn pdf_get_resource_reference(res_id: ::core::ffi::c_int) -> *mut pdf_obj;
 }
@@ -185,49 +145,29 @@ pub const dpx_mode_normal_mode: dpx_mode = 0;
 pub const __DARWIN_NULL: *mut ::core::ffi::c_void = ::core::ptr::null_mut::<::core::ffi::c_void>();
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
     return false_0 != 0;
 }
-pub const STREAM_COMPRESS: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const STREAM_COMPRESS: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const PDF_FONT_FONTTYPE_CIDTYPE0: ::core::ffi::c_int = 5;
 pub const PDF_FONT_FONTTYPE_CIDTYPE2: ::core::ffi::c_int = 6;
-pub const PDF_FONT_FLAG_USEDCHAR_SHARED: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 3 as ::core::ffi::c_int;
-pub const CIDFONT_FLAG_TYPE1: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 8 as ::core::ffi::c_int;
-pub const CIDFONT_FLAG_TYPE1C: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 9 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn try_load_ToUnicode_file(
-    mut cmap_base: *mut ::core::ffi::c_char,
-) -> *mut pdf_obj {
+pub const PDF_FONT_FLAG_USEDCHAR_SHARED: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 3 as ::core::ffi::c_int;
+pub const CIDFONT_FLAG_TYPE1: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 8 as ::core::ffi::c_int;
+pub const CIDFONT_FLAG_TYPE1C: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 9 as ::core::ffi::c_int;
+unsafe extern "C-unwind" fn try_load_ToUnicode_file(mut cmap_base: *mut ::core::ffi::c_char) -> *mut pdf_obj {
     let mut tounicode: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut cmap_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     cmap_name = new((strlen(cmap_base)
-        .wrapping_add(strlen(
-            b"-UTF16\0" as *const u8 as *const ::core::ffi::c_char,
-        ))
+        .wrapping_add(strlen(b"-UTF16\0" as *const u8 as *const ::core::ffi::c_char))
         .wrapping_add(1 as size_t) as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
-    sprintf(
-        cmap_name,
-        b"%s-UTF16\0" as *const u8 as *const ::core::ffi::c_char,
-        cmap_base,
-    );
+        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
+    sprintf(cmap_name, b"%s-UTF16\0" as *const u8 as *const ::core::ffi::c_char, cmap_base);
     tounicode = pdf_read_ToUnicode_file(cmap_name);
     if tounicode.is_null() {
-        sprintf(
-            cmap_name,
-            b"%s-UCS2\0" as *const u8 as *const ::core::ffi::c_char,
-            cmap_base,
-        );
+        sprintf(cmap_name, b"%s-UCS2\0" as *const u8 as *const ::core::ffi::c_char, cmap_base);
         tounicode = pdf_read_ToUnicode_file(cmap_name);
     }
     free(cmap_name as *mut ::core::ffi::c_void);
@@ -239,18 +179,13 @@ unsafe extern "C-unwind" fn Type0Font_attach_ToUnicode_stream(mut font: *mut pdf
     let mut csi: *mut CIDSysInfo = ::core::ptr::null_mut::<CIDSysInfo>();
     let mut fontname: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     if cidfont.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"cidfont\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"cidfont\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if CIDFont_is_ACCFont(cidfont) != 0 {
         return;
     } else if CIDFont_is_UCSFont(cidfont) != 0 {
-        tounicode = pdf_read_ToUnicode_file(
-            b"Adobe-Identity-UCS2\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        tounicode = pdf_read_ToUnicode_file(b"Adobe-Identity-UCS2\0" as *const u8 as *const ::core::ffi::c_char);
         if tounicode.is_null() {
             tounicode = pdf_new_name(b"Identity-H\0" as *const u8 as *const ::core::ffi::c_char);
         }
@@ -264,11 +199,8 @@ unsafe extern "C-unwind" fn Type0Font_attach_ToUnicode_stream(mut font: *mut pdf
     tounicode = ::core::ptr::null_mut::<pdf_obj>();
     csi = &raw mut (*cidfont).cid.csi;
     if (*cidfont).cid.options.embed != 0 {
-        fontname = new(
-            (strlen((*cidfont).fontname).wrapping_add(8 as size_t) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t,
-        ) as *mut ::core::ffi::c_char;
+        fontname = new((strlen((*cidfont).fontname).wrapping_add(8 as size_t) as uint32_t as usize)
+            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
         sprintf(
             fontname,
             b"%s+%s\0" as *const u8 as *const ::core::ffi::c_char,
@@ -276,37 +208,22 @@ unsafe extern "C-unwind" fn Type0Font_attach_ToUnicode_stream(mut font: *mut pdf
             (*cidfont).fontname,
         );
     } else {
-        fontname = new(
-            (strlen((*cidfont).fontname).wrapping_add(1 as size_t) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t,
-        ) as *mut ::core::ffi::c_char;
+        fontname = new((strlen((*cidfont).fontname).wrapping_add(1 as size_t) as uint32_t as usize)
+            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
         strcpy(fontname, (*cidfont).fontname);
     }
     match (*cidfont).subtype {
         PDF_FONT_FONTTYPE_CIDTYPE2 => {
-            if strcmp(
-                (*csi).registry,
-                b"Adobe\0" as *const u8 as *const ::core::ffi::c_char,
-            ) == 0
-                && strcmp(
-                    (*csi).ordering,
-                    b"Identity\0" as *const u8 as *const ::core::ffi::c_char,
-                ) == 0
+            if strcmp((*csi).registry, b"Adobe\0" as *const u8 as *const ::core::ffi::c_char) == 0
+                && strcmp((*csi).ordering, b"Identity\0" as *const u8 as *const ::core::ffi::c_char) == 0
             {
-                tounicode = otf_create_ToUnicode_stream(
-                    (*cidfont).ident,
-                    (*cidfont).index,
-                    fontname,
-                    (*font).usedchars,
-                );
+                tounicode = otf_create_ToUnicode_stream((*cidfont).ident, (*cidfont).index, fontname, (*font).usedchars);
             } else {
-                let mut cmap_base: *mut ::core::ffi::c_char =
-                    new((strlen((*csi).registry)
-                        .wrapping_add(strlen((*csi).ordering))
-                        .wrapping_add(2 as size_t) as uint32_t as usize)
-                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                        as uint32_t) as *mut ::core::ffi::c_char;
+                let mut cmap_base: *mut ::core::ffi::c_char = new((strlen((*csi).registry)
+                    .wrapping_add(strlen((*csi).ordering))
+                    .wrapping_add(2 as size_t) as uint32_t as usize)
+                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
+                    as uint32_t) as *mut ::core::ffi::c_char;
                 sprintf(
                     cmap_base,
                     b"%s-%s\0" as *const u8 as *const ::core::ffi::c_char,
@@ -319,27 +236,13 @@ unsafe extern "C-unwind" fn Type0Font_attach_ToUnicode_stream(mut font: *mut pdf
         }
         _ => {
             if (*cidfont).flags & CIDFONT_FLAG_TYPE1C != 0 {
-                tounicode = otf_create_ToUnicode_stream(
-                    (*cidfont).ident,
-                    (*cidfont).index,
-                    fontname,
-                    (*font).usedchars,
-                );
+                tounicode = otf_create_ToUnicode_stream((*cidfont).ident, (*cidfont).index, fontname, (*font).usedchars);
             } else if (*cidfont).flags & CIDFONT_FLAG_TYPE1 != 0 {
-                tounicode = CIDFont_type0_t1create_ToUnicode_stream(
-                    (*cidfont).ident,
-                    fontname,
-                    (*font).usedchars,
-                );
+                tounicode = CIDFont_type0_t1create_ToUnicode_stream((*cidfont).ident, fontname, (*font).usedchars);
             } else {
                 tounicode = try_load_ToUnicode_file((*cidfont).fontname);
                 if tounicode.is_null() {
-                    tounicode = otf_create_ToUnicode_stream(
-                        (*cidfont).ident,
-                        (*cidfont).index,
-                        fontname,
-                        (*font).usedchars,
-                    );
+                    tounicode = otf_create_ToUnicode_stream((*cidfont).ident, (*cidfont).index, fontname, (*font).usedchars);
                 }
             }
         }
@@ -353,8 +256,7 @@ unsafe extern "C-unwind" fn Type0Font_attach_ToUnicode_stream(mut font: *mut pdf
         );
     } else {
         pdf_warning!(
-            b"Failed to load ToUnicode CMap for font \"%s\"\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Failed to load ToUnicode CMap for font \"%s\"\0" as *const u8 as *const ::core::ffi::c_char,
             (*cidfont).filename,
         );
     };
@@ -364,20 +266,13 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type0(mut font: *mut pdf_font) {
     if font.is_null() || (*font).reference.is_null() {
         return;
     }
-    if pdf_lookup_dict(
-        (*font).resource,
-        b"ToUnicode\0" as *const u8 as *const ::core::ffi::c_char,
-    )
-    .is_null()
-    {
+    if pdf_lookup_dict((*font).resource, b"ToUnicode\0" as *const u8 as *const ::core::ffi::c_char).is_null() {
         Type0Font_attach_ToUnicode_stream(font);
     }
 }
 #[unsafe(export_name = "__pdf_impl_pdf_font_open_type0")]
 pub unsafe extern "C-unwind" fn pdf_font_open_type0(
-    mut font: *mut pdf_font,
-    mut cid_id: ::core::ffi::c_int,
-    mut wmode: ::core::ffi::c_int,
+    mut font: *mut pdf_font, mut cid_id: ::core::ffi::c_int, mut wmode: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut cidfont: *mut pdf_font = ::core::ptr::null_mut::<pdf_font>();
     let mut csi: *mut CIDSysInfo = ::core::ptr::null_mut::<CIDSysInfo>();
@@ -389,11 +284,8 @@ pub unsafe extern "C-unwind" fn pdf_font_open_type0(
     (*font).type0.wmode = wmode;
     (*font).type0.descendant = cid_id;
     if (*cidfont).cid.options.embed != 0 {
-        fontname = new(
-            (strlen((*cidfont).fontname).wrapping_add(8 as size_t) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t,
-        ) as *mut ::core::ffi::c_char;
+        fontname = new((strlen((*cidfont).fontname).wrapping_add(8 as size_t) as uint32_t as usize)
+            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
         sprintf(
             fontname,
             b"%s+%s\0" as *const u8 as *const ::core::ffi::c_char,
@@ -401,28 +293,20 @@ pub unsafe extern "C-unwind" fn pdf_font_open_type0(
             (*cidfont).fontname,
         );
     } else {
-        fontname = new(
-            (strlen((*cidfont).fontname).wrapping_add(1 as size_t) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t,
-        ) as *mut ::core::ffi::c_char;
+        fontname = new((strlen((*cidfont).fontname).wrapping_add(1 as size_t) as uint32_t as usize)
+            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
         strcpy(fontname, (*cidfont).fontname);
     }
     if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
-        pdf_message!(
-            b"(CID:%s)\0" as *const u8 as *const ::core::ffi::c_char,
-            fontname
-        );
+        pdf_message!(b"(CID:%s)\0" as *const u8 as *const ::core::ffi::c_char, fontname);
     }
     match (*cidfont).subtype {
         PDF_FONT_FONTTYPE_CIDTYPE0 => {
             (*font).fontname = new((strlen(fontname)
-                .wrapping_add(strlen(
-                    b"Identity-V\0" as *const u8 as *const ::core::ffi::c_char,
-                ))
+                .wrapping_add(strlen(b"Identity-V\0" as *const u8 as *const ::core::ffi::c_char))
                 .wrapping_add(2 as size_t) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t) as *mut ::core::ffi::c_char;
+                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+                as *mut ::core::ffi::c_char;
             sprintf(
                 (*font).fontname,
                 b"%s-%s\0" as *const u8 as *const ::core::ffi::c_char,
@@ -440,22 +324,14 @@ pub unsafe extern "C-unwind" fn pdf_font_open_type0(
             }
         }
         PDF_FONT_FONTTYPE_CIDTYPE2 => {
-            (*font).fontname = new(
-                (strlen(fontname).wrapping_add(1 as size_t) as uint32_t as usize)
-                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                    as uint32_t,
-            ) as *mut ::core::ffi::c_char;
+            (*font).fontname = new((strlen(fontname).wrapping_add(1 as size_t) as uint32_t as usize)
+                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+                as *mut ::core::ffi::c_char;
             strcpy((*font).fontname, fontname);
             csi = &raw mut (*cidfont).cid.csi;
             if csi.is_null()
-                || strcmp(
-                    (*csi).registry,
-                    b"Adobe\0" as *const u8 as *const ::core::ffi::c_char,
-                ) == 0
-                    && strcmp(
-                        (*csi).ordering,
-                        b"Identity\0" as *const u8 as *const ::core::ffi::c_char,
-                    ) == 0
+                || strcmp((*csi).registry, b"Adobe\0" as *const u8 as *const ::core::ffi::c_char) == 0
+                    && strcmp((*csi).ordering, b"Identity\0" as *const u8 as *const ::core::ffi::c_char) == 0
             {
                 (*font).usedchars = CIDFont_get_usedchars(cidfont);
                 (*font).flags |= PDF_FONT_FLAG_USEDCHAR_SHARED;
@@ -520,10 +396,8 @@ unsafe extern "C-unwind" fn create_dummy_CMap() -> *mut pdf_obj {
     );
     pdf_add_stream(
         stream,
-        b"\n100 beginbfrange\n\0" as *const u8 as *const ::core::ffi::c_char
-            as *const ::core::ffi::c_void,
-        strlen(b"\n100 beginbfrange\n\0" as *const u8 as *const ::core::ffi::c_char)
-            as ::core::ffi::c_int,
+        b"\n100 beginbfrange\n\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
+        strlen(b"\n100 beginbfrange\n\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int,
     );
     i = 0 as ::core::ffi::c_int;
     while i < 0x64 as ::core::ffi::c_int {
@@ -534,26 +408,18 @@ unsafe extern "C-unwind" fn create_dummy_CMap() -> *mut pdf_obj {
             i,
             i,
         );
-        pdf_add_stream(
-            stream,
-            &raw mut buf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-            n,
-        );
+        pdf_add_stream(stream, &raw mut buf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void, n);
         i += 1;
     }
     pdf_add_stream(
         stream,
-        b"endbfrange\n\n\0" as *const u8 as *const ::core::ffi::c_char
-            as *const ::core::ffi::c_void,
-        strlen(b"endbfrange\n\n\0" as *const u8 as *const ::core::ffi::c_char)
-            as ::core::ffi::c_int,
+        b"endbfrange\n\n\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
+        strlen(b"endbfrange\n\n\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int,
     );
     pdf_add_stream(
         stream,
-        b"\n100 beginbfrange\n\0" as *const u8 as *const ::core::ffi::c_char
-            as *const ::core::ffi::c_void,
-        strlen(b"\n100 beginbfrange\n\0" as *const u8 as *const ::core::ffi::c_char)
-            as ::core::ffi::c_int,
+        b"\n100 beginbfrange\n\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
+        strlen(b"\n100 beginbfrange\n\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int,
     );
     i = 0x64 as ::core::ffi::c_int;
     while i < 0xc8 as ::core::ffi::c_int {
@@ -564,26 +430,18 @@ unsafe extern "C-unwind" fn create_dummy_CMap() -> *mut pdf_obj {
             i,
             i,
         );
-        pdf_add_stream(
-            stream,
-            &raw mut buf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-            n,
-        );
+        pdf_add_stream(stream, &raw mut buf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void, n);
         i += 1;
     }
     pdf_add_stream(
         stream,
-        b"endbfrange\n\n\0" as *const u8 as *const ::core::ffi::c_char
-            as *const ::core::ffi::c_void,
-        strlen(b"endbfrange\n\n\0" as *const u8 as *const ::core::ffi::c_char)
-            as ::core::ffi::c_int,
+        b"endbfrange\n\n\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
+        strlen(b"endbfrange\n\n\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int,
     );
     pdf_add_stream(
         stream,
-        b"\n48 beginbfrange\n\0" as *const u8 as *const ::core::ffi::c_char
-            as *const ::core::ffi::c_void,
-        strlen(b"\n48 beginbfrange\n\0" as *const u8 as *const ::core::ffi::c_char)
-            as ::core::ffi::c_int,
+        b"\n48 beginbfrange\n\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
+        strlen(b"\n48 beginbfrange\n\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int,
     );
     i = 0xc8 as ::core::ffi::c_int;
     while i <= 0xd7 as ::core::ffi::c_int {
@@ -594,11 +452,7 @@ unsafe extern "C-unwind" fn create_dummy_CMap() -> *mut pdf_obj {
             i,
             i,
         );
-        pdf_add_stream(
-            stream,
-            &raw mut buf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-            n,
-        );
+        pdf_add_stream(stream, &raw mut buf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void, n);
         i += 1;
     }
     i = 0xe0 as ::core::ffi::c_int;
@@ -610,19 +464,13 @@ unsafe extern "C-unwind" fn create_dummy_CMap() -> *mut pdf_obj {
             i,
             i,
         );
-        pdf_add_stream(
-            stream,
-            &raw mut buf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-            n,
-        );
+        pdf_add_stream(stream, &raw mut buf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void, n);
         i += 1;
     }
     pdf_add_stream(
         stream,
-        b"endbfrange\n\n\0" as *const u8 as *const ::core::ffi::c_char
-            as *const ::core::ffi::c_void,
-        strlen(b"endbfrange\n\n\0" as *const u8 as *const ::core::ffi::c_char)
-            as ::core::ffi::c_int,
+        b"endbfrange\n\n\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
+        strlen(b"endbfrange\n\n\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int,
     );
     pdf_add_stream(
         stream,
@@ -633,10 +481,9 @@ unsafe extern "C-unwind" fn create_dummy_CMap() -> *mut pdf_obj {
 }
 pub const CMAP_PART0: [::core::ffi::c_char; 250] = crate::backend::c_char_array(*b"%!PS-Adobe-3.0 Resource-CMap\n%%DocumentNeededResources: ProcSet (CIDInit)\n%%IncludeResource: ProcSet (CIDInit)\n%%BeginResource: CMap (Adobe-Identity-UCS2)\n%%Title: (Adobe-Identity-UCS2 Adobe UCS2 0)\n%%Version: 1.0\n%%Copyright:\n%% ---\n%%EndComments\n\n\0");
 pub const CMAP_PART1: [::core::ffi::c_char; 300] = crate::backend::c_char_array(*b"/CIDInit /ProcSet findresource begin\n\n12 dict begin\n\nbegincmap\n\n/CIDSystemInfo 3 dict dup begin\n  /Registry (Adobe) def\n  /Ordering (UCS2) def\n  /Supplement 0 def\nend def\n\n/CMapName /Adobe-Identity-UCS2 def\n/CMapVersion 1.0 def\n/CMapType 2 def\n\n2 begincodespacerange\n<0000> <FFFF>\nendcodespacerange\n\0");
-pub const CMAP_PART3: [::core::ffi::c_char; 86] = crate::backend::c_char_array(*b"endcmap\n\nCMapName currentdict /CMap defineresource pop\n\nend\nend\n\n%%EndResource\n%%EOF\n\0");
-unsafe extern "C-unwind" fn pdf_read_ToUnicode_file(
-    mut cmap_name: *const ::core::ffi::c_char,
-) -> *mut pdf_obj {
+pub const CMAP_PART3: [::core::ffi::c_char; 86] =
+    crate::backend::c_char_array(*b"endcmap\n\nCMapName currentdict /CMap defineresource pop\n\nend\nend\n\n%%EndResource\n%%EOF\n\0");
+unsafe extern "C-unwind" fn pdf_read_ToUnicode_file(mut cmap_name: *const ::core::ffi::c_char) -> *mut pdf_obj {
     let mut stream: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut res_id: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     if cmap_name.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -646,15 +493,9 @@ unsafe extern "C-unwind" fn pdf_read_ToUnicode_file(
         );
     } else {
     };
-    res_id = pdf_findresource(
-        b"CMap\0" as *const u8 as *const ::core::ffi::c_char,
-        cmap_name,
-    );
+    res_id = pdf_findresource(b"CMap\0" as *const u8 as *const ::core::ffi::c_char, cmap_name);
     if res_id < 0 as ::core::ffi::c_int {
-        if streq_ptr(
-            cmap_name,
-            b"Adobe-Identity-UCS2\0" as *const u8 as *const ::core::ffi::c_char,
-        ) {
+        if streq_ptr(cmap_name, b"Adobe-Identity-UCS2\0" as *const u8 as *const ::core::ffi::c_char) {
             stream = create_dummy_CMap();
         } else {
             stream = pdf_load_ToUnicode_stream(cmap_name);
@@ -694,13 +535,9 @@ pub unsafe extern "C" fn __pdf_entry_pdf_font_load_type0(mut font: *mut pdf_font
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_font_open_type0(
-    mut font: *mut pdf_font,
-    mut cid_id: ::core::ffi::c_int,
-    mut wmode: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut font: *mut pdf_font, mut cid_id: ::core::ffi::c_int, mut wmode: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { pdf_font_open_type0(font, cid_id, wmode) })
-    {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_font_open_type0(font, cid_id, wmode) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);

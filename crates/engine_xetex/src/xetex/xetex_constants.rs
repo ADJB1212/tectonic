@@ -46,215 +46,187 @@ pub const FONT_ID_BASE: i32 = FROZEN_NULL_FONT;
 #[macro_export]
 macro_rules! GLUEPAR {
     ($p:ident) => {
-        (*$crate::xetex::xetex_xetexd::eqtb.offset(
-            ($crate::xetex::xetex_format::GLUE_BASE + $crate::xetex::xetex_format::$p) as isize,
-        ))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::GLUE_BASE + $crate::xetex::xetex_format::$p) as isize))
+            .b32
+            .s1
     };
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::GLUE_BASE + ($p as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::GLUE_BASE + ($p as i32)) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! SKIP_REG {
     ($n:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::SKIP_BASE + ($n as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::SKIP_BASE + ($n as i32)) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! MU_SKIP_REG {
     ($n:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::MU_SKIP_BASE + ($n as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::MU_SKIP_BASE + ($n as i32)) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! LOCAL {
     ($p:ident) => {
-        (*$crate::xetex::xetex_xetexd::eqtb.offset(
-            ($crate::xetex::xetex_format::LOCAL_BASE + $crate::xetex::xetex_format::$p) as isize,
-        ))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::LOCAL_BASE + $crate::xetex::xetex_format::$p) as isize))
+            .b32
+            .s1
     };
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::LOCAL_BASE + ($p as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::LOCAL_BASE + ($p as i32)) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! TOKS_REG {
     ($n:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::TOKS_BASE + ($n as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::TOKS_BASE + ($n as i32)) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! ETEX_PENALTIES_PAR {
     ($p:ident) => {
-        (*$crate::xetex::xetex_xetexd::eqtb.offset(
-            ($crate::xetex::xetex_format::ETEX_PEN_BASE + $crate::xetex::xetex_format::$p) as isize,
-        ))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::ETEX_PEN_BASE + $crate::xetex::xetex_format::$p) as isize))
+            .b32
+            .s1
     };
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::ETEX_PEN_BASE + ($p as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::ETEX_PEN_BASE + ($p as i32)) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! BOX_REG {
     ($n:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::BOX_BASE + ($n as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::BOX_BASE + ($n as i32)) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! MATH_FONT {
     ($n:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::MATH_FONT_BASE + ($n as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::MATH_FONT_BASE + ($n as i32)) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! CAT_CODE {
     ($n:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::CAT_CODE_BASE + ($n as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::CAT_CODE_BASE + ($n as i32)) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! LC_CODE {
     ($n:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::LC_CODE_BASE + ($n as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::LC_CODE_BASE + ($n as i32)) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! UC_CODE {
     ($n:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::UC_CODE_BASE + ($n as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::UC_CODE_BASE + ($n as i32)) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! SF_CODE {
     ($n:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::SF_CODE_BASE + ($n as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::SF_CODE_BASE + ($n as i32)) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! MATH_CODE {
     ($n:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::MATH_CODE_BASE + ($n as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::MATH_CODE_BASE + ($n as i32)) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! INTPAR {
     ($n:ident) => {
-        (*$crate::xetex::xetex_xetexd::eqtb.offset(
-            ($crate::xetex::xetex_format::INT_BASE + $crate::xetex::xetex_format::$n) as isize,
-        ))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::INT_BASE + $crate::xetex::xetex_format::$n) as isize))
+            .b32
+            .s1
     };
     ($n:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::INT_BASE + ($n as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::INT_BASE + ($n as i32)) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! COUNT_REG {
     ($n:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::COUNT_BASE + ($n as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::COUNT_BASE + ($n as i32)) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! DEL_CODE {
     ($n:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::DEL_CODE_BASE + ($n as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::DEL_CODE_BASE + ($n as i32)) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! DIMENPAR {
     ($n:ident) => {
-        (*$crate::xetex::xetex_xetexd::eqtb.offset(
-            ($crate::xetex::xetex_format::DIMEN_BASE + $crate::xetex::xetex_format::$n) as isize,
-        ))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::DIMEN_BASE + $crate::xetex::xetex_format::$n) as isize))
+            .b32
+            .s1
     };
     ($n:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::DIMEN_BASE + ($n as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::DIMEN_BASE + ($n as i32)) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! SCALED_REG {
     ($n:expr) => {
-        (*$crate::xetex::xetex_xetexd::eqtb
-            .offset(($crate::xetex::xetex_format::SCALED_BASE + ($n as i32)) as isize))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::eqtb.offset(($crate::xetex::xetex_format::SCALED_BASE + ($n as i32)) as isize))
+            .b32
+            .s1
     };
 }
 

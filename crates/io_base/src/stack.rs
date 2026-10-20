@@ -52,11 +52,7 @@ impl IoProvider for IoStack<'_> {
         OpenResult::NotAvailable
     }
 
-    fn input_open_name(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_name(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         for item in &mut self.items {
             let r = item.input_open_name(name, status);
 
@@ -69,11 +65,7 @@ impl IoProvider for IoStack<'_> {
         OpenResult::NotAvailable
     }
 
-    fn input_open_name_with_abspath(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<(InputHandle, Option<PathBuf>)> {
+    fn input_open_name_with_abspath(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<(InputHandle, Option<PathBuf>)> {
         for item in &mut self.items {
             let r = item.input_open_name_with_abspath(name, status);
 
@@ -99,10 +91,7 @@ impl IoProvider for IoStack<'_> {
         OpenResult::NotAvailable
     }
 
-    fn input_open_primary_with_abspath(
-        &mut self,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<(InputHandle, Option<PathBuf>)> {
+    fn input_open_primary_with_abspath(&mut self, status: &mut dyn StatusBackend) -> OpenResult<(InputHandle, Option<PathBuf>)> {
         for item in &mut self.items {
             let r = item.input_open_primary_with_abspath(status);
 
@@ -115,11 +104,7 @@ impl IoProvider for IoStack<'_> {
         OpenResult::NotAvailable
     }
 
-    fn input_open_format(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_format(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         for item in &mut self.items {
             let r = item.input_open_format(name, status);
 

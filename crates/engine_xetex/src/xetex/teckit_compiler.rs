@@ -14,33 +14,17 @@ pub const kCompilerOpts_FormMask: UInt32 = 0x0000000F;
 pub const kCompilerOpts_Compress: UInt32 = 0x00000010;
 pub const kCompilerOpts_XML: UInt32 = 0x00000020;
 
-pub type TECkit_ErrorFn = Option<
-    unsafe extern "C" fn(
-        userData: *mut libc::c_void,
-        msg: *const libc::c_char,
-        param: *const libc::c_char,
-        line: UInt32,
-    ),
->;
+pub type TECkit_ErrorFn =
+    Option<unsafe extern "C" fn(userData: *mut libc::c_void, msg: *const libc::c_char, param: *const libc::c_char, line: UInt32)>;
 
 unsafe extern "C" {
     pub fn TECkit_Compile(
-        txt: *mut libc::c_char,
-        len: UInt32,
-        doCompression: Byte,
-        errFunc: TECkit_ErrorFn,
-        userData: *mut libc::c_void,
-        outTable: *mut *mut Byte,
+        txt: *mut libc::c_char, len: UInt32, doCompression: Byte, errFunc: TECkit_ErrorFn, userData: *mut libc::c_void, outTable: *mut *mut Byte,
         outLen: *mut UInt32,
     ) -> TECkit_Status;
 
     pub fn TECkit_CompileOpt(
-        txt: *mut libc::c_char,
-        len: UInt32,
-        errFunc: TECkit_ErrorFn,
-        userData: *mut libc::c_void,
-        outTable: *mut *mut Byte,
-        outLen: *mut UInt32,
+        txt: *mut libc::c_char, len: UInt32, errFunc: TECkit_ErrorFn, userData: *mut libc::c_void, outTable: *mut *mut Byte, outLen: *mut UInt32,
         opts: UInt32,
     ) -> TECkit_Status;
 

@@ -217,12 +217,7 @@ impl TexEngine {
     /// setting affects some of the names used by the engine internally,
     /// including the name it uses to create its main output files. The
     /// traditional default value is `"texput"`.
-    pub fn process(
-        &mut self,
-        launcher: &mut CoreBridgeLauncher,
-        format_file_name: &str,
-        input_file_name: &str,
-    ) -> Result<TexOutcome> {
+    pub fn process(&mut self, launcher: &mut CoreBridgeLauncher, format_file_name: &str, input_file_name: &str) -> Result<TexOutcome> {
         let cformat = CString::new(format_file_name)?;
         let cinput = CString::new(input_file_name)?;
 
@@ -243,21 +238,13 @@ impl TexEngine {
                 let (bytes, length) = self
                     .checkpoint
                     .as_ref()
-                    .map_or((std::ptr::null(), 0), |checkpoint| {
-                        (checkpoint.native.as_ptr(), checkpoint.native.len())
-                    });
+                    .map_or((std::ptr::null(), 0), |checkpoint| (checkpoint.native.as_ptr(), checkpoint.native.len()));
                 tt_checkpoint_set(bytes, length, self.checkpointing);
-                tt_xetex_set_int_variable(
-                    c"shell_escape_enabled".as_ptr(),
-                    self.shell_escape_enabled.into(),
-                );
+                tt_xetex_set_int_variable(c"shell_escape_enabled".as_ptr(), self.shell_escape_enabled.into());
                 tt_xetex_set_int_variable(c"halt_on_error_p".as_ptr(), self.halt_on_error.into());
                 tt_xetex_set_int_variable(c"in_initex_mode".as_ptr(), self.initex_mode.into());
                 tt_xetex_set_int_variable(c"synctex_enabled".as_ptr(), self.synctex_enabled.into());
-                tt_xetex_set_int_variable(
-                    c"semantic_pagination_enabled".as_ptr(),
-                    self.semantic_pagination_enabled.into(),
-                );
+                tt_xetex_set_int_variable(c"semantic_pagination_enabled".as_ptr(), self.semantic_pagination_enabled.into());
 
                 tt_engine_xetex_main(
                     state,
@@ -304,32 +291,15 @@ pub extern "C" fn tt_xetex_checkpoint_ready() -> bool {
 /// # Safety
 /// `checkpoint` must reference the active native checkpoint transaction.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn tt_xetex_checkpoint_layout(
-    checkpoint: *mut std::ffi::c_void,
-    restoring: bool,
-) -> bool {
+pub unsafe extern "C" fn tt_xetex_checkpoint_layout(checkpoint: *mut std::ffi::c_void, restoring: bool) -> bool {
     unsafe extern "C" {
-        fn tt_checkpoint_field(
-            checkpoint: *mut std::ffi::c_void,
-            name: *const std::ffi::c_char,
-            value: *mut std::ffi::c_void,
-            length: usize,
-        );
+        fn tt_checkpoint_field(checkpoint: *mut std::ffi::c_void, name: *const std::ffi::c_char, value: *mut std::ffi::c_void, length: usize);
     }
     use tectonic_xetex_layout::{ProtrusionCode, protrusion_codes, restore_protrusion_codes};
-    let mut codes = if restoring {
-        Vec::new()
-    } else {
-        protrusion_codes()
-    };
+    let mut codes = if restoring { Vec::new() } else { protrusion_codes() };
     let mut count = codes.len() as u64;
     unsafe {
-        tt_checkpoint_field(
-            checkpoint,
-            c"protrusion_count".as_ptr(),
-            (&mut count as *mut u64).cast(),
-            8,
-        );
+        tt_checkpoint_field(checkpoint, c"protrusion_count".as_ptr(), (&mut count as *mut u64).cast(), 8);
     }
     if count > 1_000_000 {
         return false;
@@ -381,16 +351,10 @@ pub mod c_api {
         pub fn tt_checkpoint_set(bytes: *const u8, length: usize, enabled: bool);
         pub fn tt_checkpoint_skipped() -> u64;
         pub fn tt_checkpoint_restored() -> bool;
-        pub fn tt_xetex_set_int_variable(
-            var_name: *const libc::c_char,
-            value: libc::c_int,
-        ) -> libc::c_int;
+        pub fn tt_xetex_set_int_variable(var_name: *const libc::c_char, value: libc::c_int) -> libc::c_int;
 
         pub fn tt_engine_xetex_main(
-            api: &mut CoreBridgeState,
-            dump_name: *const libc::c_char,
-            input_file_name: *const libc::c_char,
-            build_date: u64,
+            api: &mut CoreBridgeState, dump_name: *const libc::c_char, input_file_name: *const libc::c_char, build_date: u64,
         ) -> libc::c_int;
     }
 }

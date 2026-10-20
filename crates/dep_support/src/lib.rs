@@ -51,10 +51,7 @@ impl Default for Configuration {
 
         let semi_static_mode = env::var("TECTONIC_PKGCONFIG_FORCE_SEMI_STATIC").is_ok();
 
-        Configuration {
-            backend,
-            semi_static_mode,
-        }
+        Configuration { backend, semi_static_mode }
     }
 }
 
@@ -129,12 +126,8 @@ impl DepState {
                         let target = env::var("TARGET").unwrap_or_default();
 
                         if target == "x86_64-pc-windows-msvc" {
-                            println!(
-                                "cargo:warning=you may need to export VCPKGRS_TRIPLET=x64-windows-static-release ..."
-                            );
-                            println!(
-                                "cargo:warning=... which is a custom triplet used by Tectonic's cargo-vcpkg integration"
-                            );
+                            println!("cargo:warning=you may need to export VCPKGRS_TRIPLET=x64-windows-static-release ...");
+                            println!("cargo:warning=... which is a custom triplet used by Tectonic's cargo-vcpkg integration");
                         }
                     }
 
@@ -161,11 +154,7 @@ impl<'a, T: Spec> Dependency<'a, T> {
     pub fn probe(spec: T, config: &'a Configuration) -> Self {
         let state = DepState::new(&spec, config);
 
-        Dependency {
-            config,
-            spec,
-            state,
-        }
+        Dependency { config, spec, state }
     }
 
     /// Invoke a callback for each C/C++ include directory injected by our
@@ -221,11 +210,7 @@ impl<'a, T: Spec> Dependency<'a, T> {
                                 // let's jump through the hoops of testing
                                 // whether the static archive seems findable.
                                 let libname = format!("lib{libbase}.a");
-                                state
-                                    .libs
-                                    .link_paths
-                                    .iter()
-                                    .any(|d| d.join(&libname).exists())
+                                state.libs.link_paths.iter().any(|d| d.join(&libname).exists())
                             }
                         };
 
@@ -247,8 +232,7 @@ impl<'a, T: Spec> Dependency<'a, T> {
 
             DepState::VcPkg(_) => {
                 for dep in self.spec.get_vcpkg_spec() {
-                    vcpkg::find_package(dep)
-                        .unwrap_or_else(|e| panic!("failed to load package {dep} from vcpkg: {e}"));
+                    vcpkg::find_package(dep).unwrap_or_else(|e| panic!("failed to load package {dep} from vcpkg: {e}"));
                 }
             }
         }

@@ -77,12 +77,7 @@ impl ContentState {
     }
 
     /// Figure out if we need to push a space into the text content right now.
-    fn is_space_needed(
-        &self,
-        x0: i32,
-        cur_space_width: Option<FixedPoint>,
-        do_auto_spaces: bool,
-    ) -> bool {
+    fn is_space_needed(&self, x0: i32, cur_space_width: Option<FixedPoint>, do_auto_spaces: bool) -> bool {
         // We never want a leading space.
         if self.current_content.is_empty() {
             return false;
@@ -130,12 +125,7 @@ impl ContentState {
     }
 
     /// Maybe push a space into the text content right now, if we think we need one.
-    fn push_space_if_needed(
-        &mut self,
-        x0: i32,
-        cur_space_width: Option<FixedPoint>,
-        do_auto_spaces: bool,
-    ) {
+    fn push_space_if_needed(&mut self, x0: i32, cur_space_width: Option<FixedPoint>, do_auto_spaces: bool) {
         if self.is_space_needed(x0, cur_space_width, do_auto_spaces) {
             self.current_content.push(' ');
         }
@@ -256,15 +246,9 @@ struct RuleInfo {
 
 impl EmittingState {
     pub(crate) fn new_from_init(
-        fonts: FontEnsemble,
-        main_body_font_num: Option<TexFontNum>,
-        templating: Templating,
-        tag_associations: HashMap<Element, TexFontNum>,
+        fonts: FontEnsemble, main_body_font_num: Option<TexFontNum>, templating: Templating, tag_associations: HashMap<Element, TexFontNum>,
     ) -> Result<Self> {
-        let rems_per_tex = 1.0
-            / main_body_font_num
-                .map(|fnum| fonts.get_font_size(fnum))
-                .unwrap_or(65536) as f32;
+        let rems_per_tex = 1.0 / main_body_font_num.map(|fnum| fonts.get_font_size(fnum)).unwrap_or(65536) as f32;
 
         Ok(EmittingState {
             templating,
@@ -291,8 +275,7 @@ impl EmittingState {
     /// access to the `fonts` and `content` items separately.
     fn push_space_if_needed(&mut self, x0: i32, fnum: Option<TexFontNum>) {
         let cur_space_width = self.fonts.maybe_get_font_space_width(fnum);
-        self.content
-            .push_space_if_needed(x0, cur_space_width, self.cur_elstate().do_auto_spaces);
+        self.content.push_space_if_needed(x0, cur_space_width, self.cur_elstate().do_auto_spaces);
     }
 
     fn create_elem(&self, name: &str, is_start: bool, common: &mut Common) -> Element {
@@ -368,11 +351,7 @@ impl EmittingState {
         let new_item = {
             let cur = self.cur_elstate();
 
-            let font_family_id = self
-                .tag_associations
-                .get(&el)
-                .copied()
-                .unwrap_or(cur.font_family_id);
+            let font_family_id = self.tag_associations.get(&el).copied().unwrap_or(cur.font_family_id);
 
             ElementState {
                 elem: Some(el),
@@ -405,22 +384,11 @@ impl EmittingState {
         }
 
         if n_closed != 1 {
-            tt_warning!(
-                common.status,
-                "imbalanced tags; had to close {} to find `{}`",
-                n_closed,
-                name
-            );
+            tt_warning!(common.status, "imbalanced tags; had to close {} to find `{}`", n_closed, name);
         }
     }
 
-    pub(crate) fn handle_special(
-        &mut self,
-        x: i32,
-        y: i32,
-        special: Special<'_>,
-        common: &mut Common,
-    ) -> Result<()> {
+    pub(crate) fn handle_special(&mut self, x: i32, y: i32, special: Special<'_>, common: &mut Common) -> Result<()> {
         match special {
             Special::AutoStartParagraph => {
                 if self.cur_elstate().do_auto_tags {
@@ -467,11 +435,7 @@ impl EmittingState {
                         self.handle_end_canvas(common)?;
                     }
                 } else {
-                    tt_warning!(
-                        common.status,
-                        "ignoring unpaired tdux:c[anvas]e[nd] special for `{}`",
-                        kind
-                    );
+                    tt_warning!(common.status, "ignoring unpaired tdux:c[anvas]e[nd] special for `{}`", kind);
                 }
                 Ok(())
             }
@@ -503,9 +467,7 @@ impl EmittingState {
                 Ok(())
             }
 
-            Special::SetTemplateVariable(spec) => {
-                self.templating.handle_set_template_variable(spec, common)
-            }
+            Special::SetTemplateVariable(spec) => self.templating.handle_set_template_variable(spec, common),
 
             Special::ProvideFile(_) | Special::ProvideSpecial(_) => {
                 self.assets.try_handle_special(special, common);
@@ -537,33 +499,19 @@ impl EmittingState {
     /// ```
     ///
     /// More ...
-    fn handle_flexible_start_tag(
-        &mut self,
-        x: i32,
-        _y: i32,
-        remainder: &str,
-        common: &mut Common,
-    ) -> Result<()> {
+    fn handle_flexible_start_tag(&mut self, x: i32, _y: i32, remainder: &str, common: &mut Common) -> Result<()> {
         let mut lines = remainder.lines();
 
         let tagname = match lines.next() {
             Some(t) => t,
             None => {
-                tt_warning!(
-                    common.status,
-                    "ignoring TDUX flexible start tag -- no tag name: {:?}",
-                    remainder
-                );
+                tt_warning!(common.status, "ignoring TDUX flexible start tag -- no tag name: {:?}", remainder);
                 return Ok(());
             }
         };
 
         if !tagname.chars().all(char::is_alphanumeric) {
-            tt_warning!(
-                common.status,
-                "ignoring TDUX flexible start tag -- invalid tag name: {:?}",
-                remainder
-            );
+            tt_warning!(common.status, "ignoring TDUX flexible start tag -- invalid tag name: {:?}", remainder);
             return Ok(());
         }
 
@@ -572,11 +520,7 @@ impl EmittingState {
         let mut elstate = {
             let cur = self.cur_elstate();
 
-            let font_family_id = self
-                .tag_associations
-                .get(&el)
-                .copied()
-                .unwrap_or(cur.font_family_id);
+            let font_family_id = self.tag_associations.get(&el).copied().unwrap_or(cur.font_family_id);
 
             ElementState {
                 elem: Some(el),
@@ -597,11 +541,7 @@ impl EmittingState {
                 if !cls.is_empty() {
                     classes.push(cls.to_owned());
                 } else {
-                    tt_warning!(
-                        common.status,
-                        "ignoring TDUX flexible start tag class -- invalid name: {:?}",
-                        cls
-                    );
+                    tt_warning!(common.status, "ignoring TDUX flexible start tag class -- invalid name: {:?}", cls);
                 }
             } else if let Some(rest) = line.strip_prefix('S') {
                 // For later: apply any restrictions to names/values here?
@@ -609,22 +549,14 @@ impl EmittingState {
                 let name = match bits.next() {
                     Some(n) => n,
                     None => {
-                        tt_warning!(
-                            common.status,
-                            "ignoring TDUX flexible start tag style -- no name: {:?}",
-                            rest
-                        );
+                        tt_warning!(common.status, "ignoring TDUX flexible start tag style -- no name: {:?}", rest);
                         continue;
                     }
                 };
                 let value = match bits.next() {
                     Some(v) => v,
                     None => {
-                        tt_warning!(
-                            common.status,
-                            "ignoring TDUX flexible start tag style -- no value: {:?}",
-                            rest
-                        );
+                        tt_warning!(common.status, "ignoring TDUX flexible start tag style -- no value: {:?}", rest);
                         continue;
                     }
                 };
@@ -634,20 +566,12 @@ impl EmittingState {
                 let mut bits = rest.splitn(2, ' ');
                 let name = match bits.next() {
                     Some("class") | Some("style") => {
-                        tt_warning!(
-                            common.status,
-                            "ignoring TDUX flexible start tag attr -- use C/S command: {:?}",
-                            rest
-                        );
+                        tt_warning!(common.status, "ignoring TDUX flexible start tag attr -- use C/S command: {:?}", rest);
                         continue;
                     }
                     Some(n) => n,
                     None => {
-                        tt_warning!(
-                            common.status,
-                            "ignoring TDUX flexible start tag attr -- no name: {:?}",
-                            rest
-                        );
+                        tt_warning!(common.status, "ignoring TDUX flexible start tag attr -- no name: {:?}", rest);
                         continue;
                     }
                 };
@@ -657,20 +581,12 @@ impl EmittingState {
                 let mut bits = rest.splitn(2, ' ');
                 let name = match bits.next() {
                     Some("class") | Some("style") => {
-                        tt_warning!(
-                            common.status,
-                            "ignoring TDUX flexible start tag attr -- use C/S command: {:?}",
-                            rest
-                        );
+                        tt_warning!(common.status, "ignoring TDUX flexible start tag attr -- use C/S command: {:?}", rest);
                         continue;
                     }
                     Some(n) => n,
                     None => {
-                        tt_warning!(
-                            common.status,
-                            "ignoring TDUX flexible start tag attr -- no name: {:?}",
-                            rest
-                        );
+                        tt_warning!(common.status, "ignoring TDUX flexible start tag attr -- no name: {:?}", rest);
                         continue;
                     }
                 };
@@ -680,11 +596,7 @@ impl EmittingState {
             } else if line == "NAT" {
                 elstate.do_auto_tags = false;
             } else {
-                tt_warning!(
-                    common.status,
-                    "ignoring unrecognized TDUX flexible start tag command: {:?}",
-                    line
-                );
+                tt_warning!(common.status, "ignoring unrecognized TDUX flexible start tag command: {:?}", line);
             }
         }
 
@@ -703,8 +615,7 @@ impl EmittingState {
                     self.content.push_char(' ');
                 }
 
-                self.content
-                    .push_with_html_double_quoted_attribute_escaping(c);
+                self.content.push_with_html_double_quoted_attribute_escaping(c);
             }
 
             self.content.push_char('\"');
@@ -721,11 +632,9 @@ impl EmittingState {
                     self.content.push_char(';');
                 }
 
-                self.content
-                    .push_with_html_double_quoted_attribute_escaping(name);
+                self.content.push_with_html_double_quoted_attribute_escaping(name);
                 self.content.push_char(':');
-                self.content
-                    .push_with_html_double_quoted_attribute_escaping(value);
+                self.content.push_with_html_double_quoted_attribute_escaping(value);
             }
 
             self.content.push_char('\"');
@@ -747,8 +656,7 @@ impl EmittingState {
             self.content.push_str("=\"");
 
             if let Some(v) = maybe_value {
-                self.content
-                    .push_with_html_double_quoted_attribute_escaping(v);
+                self.content.push_with_html_double_quoted_attribute_escaping(v);
             }
 
             self.content.push_char('\"');
@@ -760,13 +668,7 @@ impl EmittingState {
     }
 
     pub(crate) fn handle_text_and_glyphs(
-        &mut self,
-        font_num: TexFontNum,
-        text: &str,
-        glyphs: &[u16],
-        xs: &[i32],
-        ys: &[i32],
-        common: &mut Common,
+        &mut self, font_num: TexFontNum, text: &str, glyphs: &[u16], xs: &[i32], ys: &[i32], common: &mut Common,
     ) -> Result<()> {
         if let Some(c) = self.current_canvas.as_mut() {
             for i in 0..glyphs.len() {
@@ -798,21 +700,13 @@ impl EmittingState {
             };
 
             let cur_space_width = self.fonts.maybe_get_font_space_width(Some(font_num));
-            self.content
-                .update_content_pos(xs[idx] + advance, cur_space_width);
+            self.content.update_content_pos(xs[idx] + advance, cur_space_width);
         }
 
         Ok(())
     }
 
-    pub(crate) fn handle_glyph_run(
-        &mut self,
-        font_num: TexFontNum,
-        glyphs: &[u16],
-        xs: &[i32],
-        ys: &[i32],
-        common: &mut Common,
-    ) -> Result<()> {
+    pub(crate) fn handle_glyph_run(&mut self, font_num: TexFontNum, glyphs: &[u16], xs: &[i32], ys: &[i32], common: &mut Common) -> Result<()> {
         if let Some(c) = self.current_canvas.as_mut() {
             for i in 0..glyphs.len() {
                 c.glyphs.push(GlyphInfo {
@@ -848,10 +742,7 @@ impl EmittingState {
                     let ch_as_str = ch.encode_utf8(&mut ch_str_buf);
 
                     // XXX this is (part of) push_space_if_needed
-                    if self
-                        .content
-                        .is_space_needed(xs[idx], cur_space_width, do_auto_spaces)
-                    {
+                    if self.content.is_space_needed(xs[idx], cur_space_width, do_auto_spaces) {
                         self.content.push_char(' ');
                     }
 
@@ -860,8 +751,7 @@ impl EmittingState {
                     write!(self.content, "</span>").unwrap();
                 }
 
-                self.content
-                    .update_content_pos(xs[idx] + advance, cur_space_width);
+                self.content.update_content_pos(xs[idx] + advance, cur_space_width);
             }
         }
 
@@ -871,11 +761,7 @@ impl EmittingState {
     fn set_up_for_font(&mut self, x0: i32, fnum: TexFontNum, common: &mut Common) {
         let (cur_ffid, cur_af, cur_is_autofont) = {
             let cur = self.cur_elstate();
-            (
-                cur.font_family_id,
-                cur.active_font,
-                cur.origin == ElementOrigin::FontAuto,
-            )
+            (cur.font_family_id, cur.active_font, cur.origin == ElementOrigin::FontAuto)
         };
 
         let (path, desired_af) = match self.fonts.analyze_font_for_family(fnum, cur_ffid, cur_af) {
@@ -946,9 +832,7 @@ impl EmittingState {
 
         if path.select_explicitly {
             self.push_space_if_needed(x0, Some(fnum));
-            self.fonts
-                .write_styling_span_html(fnum, self.rems_per_tex, &mut self.content)
-                .unwrap();
+            self.fonts.write_styling_span_html(fnum, self.rems_per_tex, &mut self.content).unwrap();
             self.elem_stack.push(ElementState {
                 elem: Some(Element::Span),
                 origin: ElementOrigin::FontAuto,
@@ -958,14 +842,7 @@ impl EmittingState {
         }
     }
 
-    pub(crate) fn handle_rule(
-        &mut self,
-        x: i32,
-        y: i32,
-        height: i32,
-        width: i32,
-        common: &mut Common,
-    ) -> Result<()> {
+    pub(crate) fn handle_rule(&mut self, x: i32, y: i32, height: i32, width: i32, common: &mut Common) -> Result<()> {
         // Rules with non-positive dimensions are not drawn. Perhaps there are
         // tricky cases where they should affect the computation of the canvas
         // bounding box, but my first guess is that it is fine to just ignore
@@ -984,10 +861,7 @@ impl EmittingState {
         } else {
             // Not sure what to do here. Does this even happen in
             // non-pathological cases?
-            tt_warning!(
-                common.status,
-                "ignoring rule outside of Tectonic HTML canvas"
-            );
+            tt_warning!(common.status, "ignoring rule outside of Tectonic HTML canvas");
         }
 
         Ok(())
@@ -1080,9 +954,7 @@ impl EmittingState {
         let mut ch_str_buf = [0u8; 4];
 
         for gi in canvas.glyphs.drain(..) {
-            let (text_info, size, baseline_factor) =
-                self.fonts
-                    .process_glyph_for_canvas(gi.font_num, gi.glyph, common.status);
+            let (text_info, size, baseline_factor) = self.fonts.process_glyph_for_canvas(gi.font_num, gi.glyph, common.status);
 
             // The size of the font being used for this glyph, in rems; that is,
             // relative to the main body font.
@@ -1112,8 +984,7 @@ impl EmittingState {
                 // container, in which case the box height is the `font-size`
                 // setting.
 
-                let top_rem =
-                    (-y_min_tex + gi.dy) as f32 * self.rems_per_tex - baseline_factor * rel_size;
+                let top_rem = (-y_min_tex + gi.dy) as f32 * self.rems_per_tex - baseline_factor * rel_size;
 
                 // Stringify the character so that we can use html_escape in
                 // case it's a `<` or whatever.
@@ -1161,10 +1032,7 @@ impl EmittingState {
             (
                 "span",
                 "canvas-inline",
-                format!(
-                    "; vertical-align: {}rem",
-                    -y_max_tex as f32 * self.rems_per_tex
-                ),
+                format!("; vertical-align: {}rem", -y_max_tex as f32 * self.rems_per_tex),
             )
         } else {
             ("div", "canvas-block", "".to_owned())
@@ -1192,14 +1060,12 @@ impl EmittingState {
         self.content.push_str(&inner_content);
         write!(self.content, "</{}>", element.name()).unwrap();
         let cur_space_width = self.fonts.maybe_get_font_space_width(None);
-        self.content
-            .update_content_pos(x_max_tex + canvas.x0, cur_space_width);
+        self.content.update_content_pos(x_max_tex + canvas.x0, cur_space_width);
         Ok(())
     }
 
     fn finish_file(&mut self, common: &mut Common) -> Result<()> {
-        self.templating
-            .set_variable("tduxContent", self.content.take());
+        self.templating.set_variable("tduxContent", self.content.take());
         self.templating.emit(common)?;
 
         let cur_space_width = self.fonts.maybe_get_font_space_width(None);

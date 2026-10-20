@@ -153,11 +153,7 @@ where
     fn index(&mut self) -> &mut T;
 
     /// Open the file that `info` points to.
-    fn open_fileinfo(
-        &mut self,
-        info: &T::InfoType,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle>;
+    fn open_fileinfo(&mut self, info: &T::InfoType, status: &mut dyn StatusBackend) -> OpenResult<InputHandle>;
 
     /// Fetch a batch of files, returning the raw bytes of each one in the same
     /// order as `infos`.
@@ -167,11 +163,7 @@ where
     /// on-demand behavior because the cache only calls this method when
     /// [`Self::supports_batch_open`] is true. Per-file failures are reported
     /// in-band so that one bad file doesn't sink the whole batch.
-    fn batch_open(
-        &mut self,
-        infos: &[T::InfoType],
-        _status: &mut dyn StatusBackend,
-    ) -> Vec<OpenResult<Vec<u8>>> {
+    fn batch_open(&mut self, infos: &[T::InfoType], _status: &mut dyn StatusBackend) -> Vec<OpenResult<Vec<u8>>> {
         infos.iter().map(|_| OpenResult::NotAvailable).collect()
     }
 
@@ -184,9 +176,7 @@ where
     fn get_location(&mut self) -> String;
 }
 
-impl<'this, T: FileIndex<'this>, B: CachableBundle<'this, T> + ?Sized> CachableBundle<'this, T>
-    for Box<B>
-{
+impl<'this, T: FileIndex<'this>, B: CachableBundle<'this, T> + ?Sized> CachableBundle<'this, T> for Box<B> {
     fn supports_batch_open(&self) -> bool {
         (**self).supports_batch_open()
     }
@@ -207,19 +197,11 @@ impl<'this, T: FileIndex<'this>, B: CachableBundle<'this, T> + ?Sized> CachableB
         (**self).index()
     }
 
-    fn open_fileinfo(
-        &mut self,
-        info: &T::InfoType,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn open_fileinfo(&mut self, info: &T::InfoType, status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         (**self).open_fileinfo(info, status)
     }
 
-    fn batch_open(
-        &mut self,
-        infos: &[T::InfoType],
-        status: &mut dyn StatusBackend,
-    ) -> Vec<OpenResult<Vec<u8>>> {
+    fn batch_open(&mut self, infos: &[T::InfoType], status: &mut dyn StatusBackend) -> Vec<OpenResult<Vec<u8>>> {
         (**self).batch_open(infos, status)
     }
 
@@ -232,38 +214,23 @@ impl<'this, T: FileIndex<'this>, B: CachableBundle<'this, T> + ?Sized> CachableB
 /// detecting its type.
 ///
 /// Returns None if auto-detection fails.
-pub fn detect_bundle(
-    source: String,
-    only_cached: bool,
-    custom_cache_dir: Option<PathBuf>,
-) -> Result<Option<Box<dyn Bundle>>> {
+pub fn detect_bundle(source: String, only_cached: bool, custom_cache_dir: Option<PathBuf>) -> Result<Option<Box<dyn Bundle>>> {
     use url::Url;
 
     // Parse URL and detect bundle type
     if let Ok(url) = Url::parse(&source) {
         if url.scheme() == "https" || url.scheme() == "http" {
             if source.ends_with("ttb") {
-                let bundle = BundleCache::new(
-                    Box::new(TTBNetBundle::new(source)?),
-                    only_cached,
-                    custom_cache_dir,
-                )?;
+                let bundle = BundleCache::new(Box::new(TTBNetBundle::new(source)?), only_cached, custom_cache_dir)?;
                 return Ok(Some(Box::new(bundle)));
             } else {
-                let bundle = BundleCache::new(
-                    Box::new(ItarBundle::new(source)?),
-                    only_cached,
-                    custom_cache_dir,
-                )?;
+                let bundle = BundleCache::new(Box::new(ItarBundle::new(source)?), only_cached, custom_cache_dir)?;
                 return Ok(Some(Box::new(bundle)));
             }
         } else if url.scheme() == "file" {
-            let file_path = url.to_file_path().map_err(|_| {
-                std::io::Error::new(
-                    std::io::ErrorKind::InvalidInput,
-                    "failed to parse local path",
-                )
-            })?;
+            let file_path = url
+                .to_file_path()
+                .map_err(|_| std::io::Error::new(std::io::ErrorKind::InvalidInput, "failed to parse local path"))?;
             return bundle_from_path(file_path);
         } else {
             return Ok(None);
@@ -313,8 +280,7 @@ pub fn detect_bundle(
 /// webservice.
 pub fn get_fallback_bundle_url(format_version: u32) -> String {
     let bundle_locked = option_env!("TECTONIC_BUNDLE_LOCKED").unwrap_or("");
-    let bundle_prefix =
-        option_env!("TECTONIC_BUNDLE_PREFIX").unwrap_or(TECTONIC_BUNDLE_PREFIX_DEFAULT);
+    let bundle_prefix = option_env!("TECTONIC_BUNDLE_PREFIX").unwrap_or(TECTONIC_BUNDLE_PREFIX_DEFAULT);
 
     // Simply return the locked url when it is specified:
     if !bundle_locked.is_empty() {

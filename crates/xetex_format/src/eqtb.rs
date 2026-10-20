@@ -99,15 +99,10 @@ pub struct EqtbEntry {
 }
 
 impl EquivalenciesTable {
-    pub(crate) fn parse<'a>(
-        input: &'a [u8],
-        engine: &Engine,
-        hash_high: i32,
-    ) -> IResult<&'a [u8], Self> {
+    pub(crate) fn parse<'a>(input: &'a [u8], engine: &Engine, hash_high: i32) -> IResult<&'a [u8], Self> {
         let eqtb_size = engine.symbols.lookup("EQTB_SIZE") as usize;
         let eqtb_top = engine.symbols.lookup("EQTB_TOP") as usize;
-        let undefined_control_sequence =
-            engine.symbols.lookup("UNDEFINED_CONTROL_SEQUENCE") as EqtbPointer;
+        let undefined_control_sequence = engine.symbols.lookup("UNDEFINED_CONTROL_SEQUENCE") as EqtbPointer;
         let undefined_cs_cmd = engine.symbols.lookup("UNDEFINED_CS") as CommandCode;
 
         let mut eqtb = vec![0; (eqtb_top + 1) * SIZEOF_MEMORY_WORD];
@@ -119,10 +114,7 @@ impl EquivalenciesTable {
         let ucs_ofs = undefined_control_sequence as usize * base::SIZEOF_MEMORY_WORD;
 
         for x in (eqtb_size + 1)..(eqtb_top + 1) {
-            eqtb.copy_within(
-                ucs_ofs..ucs_ofs + SIZEOF_MEMORY_WORD,
-                x * SIZEOF_MEMORY_WORD,
-            );
+            eqtb.copy_within(ucs_ofs..ucs_ofs + SIZEOF_MEMORY_WORD, x * SIZEOF_MEMORY_WORD);
         }
 
         let mut k = 1; // really `active_base`, but that will never change
@@ -146,10 +138,7 @@ impl EquivalenciesTable {
             let (ii, m) = parseutils::ranged_be_i32(0, (eqtb_size + 1 - k) as i32)(ii)?;
 
             for j in k..k + m as usize {
-                eqtb.copy_within(
-                    (k - 1) * SIZEOF_MEMORY_WORD..k * SIZEOF_MEMORY_WORD,
-                    j * SIZEOF_MEMORY_WORD,
-                );
+                eqtb.copy_within((k - 1) * SIZEOF_MEMORY_WORD..k * SIZEOF_MEMORY_WORD, j * SIZEOF_MEMORY_WORD);
             }
 
             input = ii;
@@ -223,28 +212,16 @@ pub fn initialize_eqtb_symbols(version: FormatVersion, symbols: &mut SymbolTable
     symbols.add(SymbolCategory::Eqtb, "HASH_BASE", hash_base)?;
 
     let frozen_control_sequence_base = hash_base + hash_size;
-    symbols.add(
-        SymbolCategory::Eqtb,
-        "FROZEN_CONTROL_SEQUENCE",
-        frozen_control_sequence_base,
-    )?;
+    symbols.add(SymbolCategory::Eqtb, "FROZEN_CONTROL_SEQUENCE", frozen_control_sequence_base)?;
 
     let prim_eqtb_base = frozen_control_sequence_base + n_frozen_primitives;
     symbols.add(SymbolCategory::Eqtb, "PRIM_EQTB_BASE", prim_eqtb_base)?;
 
     let frozen_null_font_loc = prim_eqtb_base + prim_size;
-    symbols.add(
-        SymbolCategory::Eqtb,
-        "FROZEN_NULL_FONT",
-        frozen_null_font_loc,
-    )?;
+    symbols.add(SymbolCategory::Eqtb, "FROZEN_NULL_FONT", frozen_null_font_loc)?;
 
     let undefined_control_sequence = frozen_null_font_loc + max_fonts + 1;
-    symbols.add(
-        SymbolCategory::Eqtb,
-        "UNDEFINED_CONTROL_SEQUENCE",
-        undefined_control_sequence,
-    )?;
+    symbols.add(SymbolCategory::Eqtb, "UNDEFINED_CONTROL_SEQUENCE", undefined_control_sequence)?;
 
     let glue_base = undefined_control_sequence + 1;
     symbols.add(SymbolCategory::Eqtb, "GLUE_BASE", glue_base)?;
@@ -295,11 +272,7 @@ pub fn initialize_eqtb_symbols(version: FormatVersion, symbols: &mut SymbolTable
     let int_base = if version > 32 {
         char_sub_code_base
     } else {
-        symbols.add(
-            SymbolCategory::Eqtb,
-            "CHAR_SUB_CODE_BASE",
-            char_sub_code_base,
-        )?;
+        symbols.add(SymbolCategory::Eqtb, "CHAR_SUB_CODE_BASE", char_sub_code_base)?;
 
         char_sub_code_base + base::NUMBER_USVS as isize
     };

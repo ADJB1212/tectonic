@@ -5,9 +5,7 @@
 
 use tectonic_errors::prelude::*;
 
-use super::{
-    ArgKind, Command, CommandArgument, CommandBehavior, CommandPrimitive, PrimitiveExtraInit,
-};
+use super::{ArgKind, Command, CommandArgument, CommandBehavior, CommandPrimitive, PrimitiveExtraInit};
 use crate::{FormatVersion, symbols::SymbolTable};
 
 /// Relax!
@@ -83,10 +81,7 @@ impl CommandBehavior for CarRet {
     fn build(_version: FormatVersion, symbols: &mut SymbolTable) -> Result<Self> {
         let cr_code = symbols.lookup("CR_CODE") as CommandArgument;
         let cr_cr_code = symbols.lookup("CR_CR_CODE") as CommandArgument;
-        Ok(CarRet {
-            cr_code,
-            cr_cr_code,
-        })
+        Ok(CarRet { cr_code, cr_cr_code })
     }
 }
 

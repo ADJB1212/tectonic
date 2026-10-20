@@ -17,37 +17,16 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
     fn __error() -> *mut ::core::ffi::c_int;
     fn fabs(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn floor(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
-    fn sprintf(
-        _: *mut ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-    fn strtod(
-        _: *const ::core::ffi::c_char,
-        _: *mut *mut ::core::ffi::c_char,
-    ) -> ::core::ffi::c_double;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
+    fn sprintf(_: *mut ::core::ffi::c_char, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
+    fn strtod(_: *const ::core::ffi::c_char, _: *mut *mut ::core::ffi::c_char) -> ::core::ffi::c_double;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_new"]
@@ -58,11 +37,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_cff_get_string"]
     fn cff_get_string(cff: *mut cff_font, id: s_SID) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_cff_add_string"]
-    fn cff_add_string(
-        cff: *mut cff_font,
-        str: *const ::core::ffi::c_char,
-        unique: ::core::ffi::c_int,
-    ) -> s_SID;
+    fn cff_add_string(cff: *mut cff_font, str: *const ::core::ffi::c_char, unique: ::core::ffi::c_int) -> s_SID;
 }
 pub type __darwin_size_t = usize;
 pub type uintptr_t = usize;
@@ -213,31 +188,24 @@ unsafe extern "C-unwind" fn mfree(mut ptr: *mut ::core::ffi::c_void) -> *mut ::c
     return NULL;
 }
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
     return false_0 != 0;
 }
 pub const CFF_INT_MAX: ::core::ffi::c_int = 0x7fffffff as ::core::ffi::c_int;
-pub const CFF_INT_MIN: ::core::ffi::c_int =
-    -(0x7fffffff as ::core::ffi::c_int) - 1 as ::core::ffi::c_int;
+pub const CFF_INT_MIN: ::core::ffi::c_int = -(0x7fffffff as ::core::ffi::c_int) - 1 as ::core::ffi::c_int;
 pub const CFF_DEBUG_STR: [::core::ffi::c_char; 4] = crate::backend::c_char_array(*b"CFF\0");
-pub const CFF_TYPE_INTEGER: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const CFF_TYPE_INTEGER: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const CFF_TYPE_REAL: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
 pub const CFF_TYPE_NUMBER: ::core::ffi::c_int = CFF_TYPE_INTEGER | CFF_TYPE_REAL;
-pub const CFF_TYPE_BOOLEAN: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
+pub const CFF_TYPE_BOOLEAN: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
 pub const CFF_TYPE_SID: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 3 as ::core::ffi::c_int;
 pub const CFF_TYPE_ARRAY: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 4 as ::core::ffi::c_int;
 pub const CFF_TYPE_DELTA: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 5 as ::core::ffi::c_int;
 pub const CFF_TYPE_ROS: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 6 as ::core::ffi::c_int;
-pub const CFF_TYPE_OFFSET: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int;
+pub const CFF_TYPE_OFFSET: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int;
 pub const CFF_TYPE_SZOFF: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 8 as ::core::ffi::c_int;
 pub const WORK_BUFFER_SIZE: ::core::ffi::c_int = 1024 as ::core::ffi::c_int;
 pub const CFF_PARSE_OK: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
@@ -248,14 +216,11 @@ pub const DICT_ENTRY_MAX: ::core::ffi::c_int = 16 as ::core::ffi::c_int;
 #[unsafe(export_name = "__pdf_impl_cff_new_dict")]
 pub unsafe extern "C-unwind" fn cff_new_dict() -> *mut cff_dict {
     let mut dict: *mut cff_dict = ::core::ptr::null_mut::<cff_dict>();
-    dict = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<cff_dict>() as usize) as uint32_t)
-        as *mut cff_dict;
+    dict = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<cff_dict>() as usize) as uint32_t) as *mut cff_dict;
     (*dict).max = DICT_ENTRY_MAX;
     (*dict).count = 0 as ::core::ffi::c_int;
-    (*dict).entries = new(((*dict).max as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<cff_dict_entry>() as usize)
-        as uint32_t) as *mut cff_dict_entry;
+    (*dict).entries =
+        new(((*dict).max as uint32_t as usize).wrapping_mul(::core::mem::size_of::<cff_dict_entry>() as usize) as uint32_t) as *mut cff_dict_entry;
     return dict;
 }
 #[unsafe(export_name = "__pdf_impl_cff_release_dict")]
@@ -525,10 +490,7 @@ const dict_operator: [C2RustUnnamed_2; 61] = [
     },
 ];
 #[unsafe(export_name = "__pdf_impl_cff_dict_unpack")]
-pub unsafe extern "C-unwind" fn cff_dict_unpack(
-    data: *mut card8,
-    end: *mut card8,
-) -> *mut cff_dict {
+pub unsafe extern "C-unwind" fn cff_dict_unpack(data: *mut card8, end: *mut card8) -> *mut cff_dict {
     let bytes = if data >= end {
         &[]
     } else {
@@ -539,10 +501,7 @@ pub unsafe extern "C-unwind" fn cff_dict_unpack(
         if op.opname.is_null() || op.argtype < 0 {
             None
         } else {
-            Some(matches!(
-                op.argtype,
-                CFF_TYPE_NUMBER | CFF_TYPE_BOOLEAN | CFF_TYPE_SID | CFF_TYPE_OFFSET
-            ))
+            Some(matches!(op.argtype, CFF_TYPE_NUMBER | CFF_TYPE_BOOLEAN | CFF_TYPE_SID | CFF_TYPE_OFFSET))
         }
     });
     let (entries, garbage) = parsed.unwrap_or_else(|error| {
@@ -567,28 +526,20 @@ pub unsafe extern "C-unwind" fn cff_dict_unpack(
                 )
                 .cast();
             }
-            let values =
-                new((entry.values.len() * core::mem::size_of::<f64>()) as u32).cast::<f64>();
+            let values = new((entry.values.len() * core::mem::size_of::<f64>()) as u32).cast::<f64>();
             core::ptr::copy_nonoverlapping(entry.values.as_ptr(), values, entry.values.len());
-            (*dict)
-                .entries
-                .add((*dict).count as usize)
-                .write(cff_dict_entry {
-                    id: entry.operator as i32,
-                    key: dict_operator[entry.operator].opname,
-                    count: entry.values.len() as i32,
-                    values,
-                });
+            (*dict).entries.add((*dict).count as usize).write(cff_dict_entry {
+                id: entry.operator as i32,
+                key: dict_operator[entry.operator].opname,
+                count: entry.values.len() as i32,
+                values,
+            });
             (*dict).count += 1;
         }
         dict
     }
 }
-unsafe extern "C-unwind" fn pack_integer(
-    mut dest: *mut card8,
-    mut destlen: ::core::ffi::c_int,
-    mut value: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn pack_integer(mut dest: *mut card8, mut destlen: ::core::ffi::c_int, mut value: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     if value >= -(107 as ::core::ffi::c_int) && value <= 107 as ::core::ffi::c_int {
         if destlen < 1 as ::core::ffi::c_int {
@@ -597,8 +548,7 @@ unsafe extern "C-unwind" fn pack_integer(
                 CFF_DEBUG_STR.as_ptr(),
             );
         }
-        *dest.offset(0 as ::core::ffi::c_int as isize) =
-            (value + 139 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
+        *dest.offset(0 as ::core::ffi::c_int as isize) = (value + 139 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
         len = 1 as ::core::ffi::c_int;
     } else if value >= 108 as ::core::ffi::c_int && value <= 1131 as ::core::ffi::c_int {
         if destlen < 2 as ::core::ffi::c_int {
@@ -610,10 +560,8 @@ unsafe extern "C-unwind" fn pack_integer(
         value = (0xf700 as ::core::ffi::c_uint)
             .wrapping_add(value as ::core::ffi::c_uint)
             .wrapping_sub(108 as ::core::ffi::c_uint) as ::core::ffi::c_int;
-        *dest.offset(0 as ::core::ffi::c_int as isize) =
-            (value >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
-        *dest.offset(1 as ::core::ffi::c_int as isize) =
-            (value & 0xff as ::core::ffi::c_int) as card8;
+        *dest.offset(0 as ::core::ffi::c_int as isize) = (value >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
+        *dest.offset(1 as ::core::ffi::c_int as isize) = (value & 0xff as ::core::ffi::c_int) as card8;
         len = 2 as ::core::ffi::c_int;
     } else if value >= -(1131 as ::core::ffi::c_int) && value <= -(108 as ::core::ffi::c_int) {
         if destlen < 2 as ::core::ffi::c_int {
@@ -625,10 +573,8 @@ unsafe extern "C-unwind" fn pack_integer(
         value = (0xfb00 as ::core::ffi::c_uint)
             .wrapping_sub(value as ::core::ffi::c_uint)
             .wrapping_sub(108 as ::core::ffi::c_uint) as ::core::ffi::c_int;
-        *dest.offset(0 as ::core::ffi::c_int as isize) =
-            (value >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
-        *dest.offset(1 as ::core::ffi::c_int as isize) =
-            (value & 0xff as ::core::ffi::c_int) as card8;
+        *dest.offset(0 as ::core::ffi::c_int as isize) = (value >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
+        *dest.offset(1 as ::core::ffi::c_int as isize) = (value & 0xff as ::core::ffi::c_int) as card8;
         len = 2 as ::core::ffi::c_int;
     } else if value >= -(32768 as ::core::ffi::c_int) && value <= 32767 as ::core::ffi::c_int {
         if destlen < 3 as ::core::ffi::c_int {
@@ -638,10 +584,8 @@ unsafe extern "C-unwind" fn pack_integer(
             );
         }
         *dest.offset(0 as ::core::ffi::c_int as isize) = 28 as card8;
-        *dest.offset(1 as ::core::ffi::c_int as isize) =
-            (value >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
-        *dest.offset(2 as ::core::ffi::c_int as isize) =
-            (value & 0xff as ::core::ffi::c_int) as card8;
+        *dest.offset(1 as ::core::ffi::c_int as isize) = (value >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
+        *dest.offset(2 as ::core::ffi::c_int as isize) = (value & 0xff as ::core::ffi::c_int) as card8;
         len = 3 as ::core::ffi::c_int;
     } else {
         if destlen < 5 as ::core::ffi::c_int {
@@ -651,23 +595,15 @@ unsafe extern "C-unwind" fn pack_integer(
             );
         }
         *dest.offset(0 as ::core::ffi::c_int as isize) = 29 as card8;
-        *dest.offset(1 as ::core::ffi::c_int as isize) =
-            (value >> 24 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
-        *dest.offset(2 as ::core::ffi::c_int as isize) =
-            (value >> 16 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
-        *dest.offset(3 as ::core::ffi::c_int as isize) =
-            (value >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
-        *dest.offset(4 as ::core::ffi::c_int as isize) =
-            (value & 0xff as ::core::ffi::c_int) as card8;
+        *dest.offset(1 as ::core::ffi::c_int as isize) = (value >> 24 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
+        *dest.offset(2 as ::core::ffi::c_int as isize) = (value >> 16 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
+        *dest.offset(3 as ::core::ffi::c_int as isize) = (value >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
+        *dest.offset(4 as ::core::ffi::c_int as isize) = (value & 0xff as ::core::ffi::c_int) as card8;
         len = 5 as ::core::ffi::c_int;
     }
     return len;
 }
-unsafe extern "C-unwind" fn pack_real(
-    mut dest: *mut card8,
-    mut destlen: ::core::ffi::c_int,
-    mut value: ::core::ffi::c_double,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn pack_real(mut dest: *mut card8, mut destlen: ::core::ffi::c_int, mut value: ::core::ffi::c_double) -> ::core::ffi::c_int {
     let mut i: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut pos: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
     let mut buffer: [::core::ffi::c_char; 32] = [0; 32];
@@ -697,9 +633,7 @@ unsafe extern "C-unwind" fn pack_real(
         let mut ch: ::core::ffi::c_uchar = 0 as ::core::ffi::c_uchar;
         if buffer[i as usize] as ::core::ffi::c_int == '.' as i32 {
             ch = 0xa as ::core::ffi::c_uchar;
-        } else if buffer[i as usize] as ::core::ffi::c_int >= '0' as i32
-            && buffer[i as usize] as ::core::ffi::c_int <= '9' as i32
-        {
+        } else if buffer[i as usize] as ::core::ffi::c_int >= '0' as i32 && buffer[i as usize] as ::core::ffi::c_int <= '9' as i32 {
             ch = (buffer[i as usize] as ::core::ffi::c_int - '0' as i32) as ::core::ffi::c_uchar;
         } else if buffer[i as usize] as ::core::ffi::c_int == 'e' as i32 {
             i += 1;
@@ -724,8 +658,7 @@ unsafe extern "C-unwind" fn pack_real(
             let ref mut fresh22 = *dest.offset((pos / 2 as ::core::ffi::c_int) as isize);
             *fresh22 = (*fresh22 as ::core::ffi::c_int + ch as ::core::ffi::c_int) as card8;
         } else {
-            *dest.offset((pos / 2 as ::core::ffi::c_int) as isize) =
-                ((ch as ::core::ffi::c_int) << 4 as ::core::ffi::c_int) as card8;
+            *dest.offset((pos / 2 as ::core::ffi::c_int) as isize) = ((ch as ::core::ffi::c_int) << 4 as ::core::ffi::c_int) as card8;
         }
         pos += 1;
         i += 1;
@@ -747,10 +680,7 @@ unsafe extern "C-unwind" fn pack_real(
     return pos / 2 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn cff_dict_put_number(
-    mut value: ::core::ffi::c_double,
-    mut dest: *mut card8,
-    mut destlen: ::core::ffi::c_int,
-    mut type_0: ::core::ffi::c_int,
+    mut value: ::core::ffi::c_double, mut dest: *mut card8, mut destlen: ::core::ffi::c_int, mut type_0: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut nearint: ::core::ffi::c_double = 0.;
@@ -765,51 +695,33 @@ unsafe extern "C-unwind" fn cff_dict_put_number(
             );
         }
         *dest.offset(0 as ::core::ffi::c_int as isize) = 29 as card8;
-        *dest.offset(1 as ::core::ffi::c_int as isize) =
-            (lvalue >> 24 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
-        *dest.offset(2 as ::core::ffi::c_int as isize) =
-            (lvalue >> 16 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
-        *dest.offset(3 as ::core::ffi::c_int as isize) =
-            (lvalue >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
-        *dest.offset(4 as ::core::ffi::c_int as isize) =
-            (lvalue & 0xff as ::core::ffi::c_int) as card8;
+        *dest.offset(1 as ::core::ffi::c_int as isize) = (lvalue >> 24 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
+        *dest.offset(2 as ::core::ffi::c_int as isize) = (lvalue >> 16 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
+        *dest.offset(3 as ::core::ffi::c_int as isize) = (lvalue >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
+        *dest.offset(4 as ::core::ffi::c_int as isize) = (lvalue & 0xff as ::core::ffi::c_int) as card8;
         len = 5 as ::core::ffi::c_int;
-    } else if value > CFF_INT_MAX as ::core::ffi::c_double
-        || value < CFF_INT_MIN as ::core::ffi::c_double
-        || fabs(value - nearint) > 1.0e-5f64
-    {
+    } else if value > CFF_INT_MAX as ::core::ffi::c_double || value < CFF_INT_MIN as ::core::ffi::c_double || fabs(value - nearint) > 1.0e-5f64 {
         len = pack_real(dest, destlen, value);
     } else {
         len = pack_integer(dest, destlen, nearint as ::core::ffi::c_int);
     }
     return len;
 }
-unsafe extern "C-unwind" fn put_dict_entry(
-    mut de: *mut cff_dict_entry,
-    mut dest: *mut card8,
-    mut destlen: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn put_dict_entry(mut de: *mut cff_dict_entry, mut dest: *mut card8, mut destlen: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut i: ::core::ffi::c_int = 0;
     let mut type_0: ::core::ffi::c_int = 0;
     let mut id: ::core::ffi::c_int = 0;
     if (*de).count > 0 as ::core::ffi::c_int {
         id = (*de).id;
-        if dict_operator[id as usize].argtype == CFF_TYPE_OFFSET
-            || dict_operator[id as usize].argtype == CFF_TYPE_SZOFF
-        {
+        if dict_operator[id as usize].argtype == CFF_TYPE_OFFSET || dict_operator[id as usize].argtype == CFF_TYPE_SZOFF {
             type_0 = CFF_TYPE_OFFSET;
         } else {
             type_0 = CFF_TYPE_NUMBER;
         }
         i = 0 as ::core::ffi::c_int;
         while i < (*de).count {
-            len += cff_dict_put_number(
-                *(*de).values.offset(i as isize),
-                dest.offset(len as isize),
-                destlen - len,
-                type_0,
-            );
+            len += cff_dict_put_number(*(*de).values.offset(i as isize), dest.offset(len as isize), destlen - len, type_0);
             i += 1;
         }
         if id >= 0 as ::core::ffi::c_int && id < CFF_LAST_DICT_OP1 {
@@ -824,10 +736,7 @@ unsafe extern "C-unwind" fn put_dict_entry(
             *dest.offset(fresh19 as isize) = id as card8;
         } else if id >= 0 as ::core::ffi::c_int && id < CFF_LAST_DICT_OP {
             if len + 2 as ::core::ffi::c_int > destlen {
-                pdf_abort!(
-                    b"in cff_dict_pack(): Buffer overflow\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+                pdf_abort!(b"in cff_dict_pack(): Buffer overflow\0" as *const u8 as *const ::core::ffi::c_char,);
             }
             let fresh20 = len;
             len = len + 1;
@@ -845,11 +754,7 @@ unsafe extern "C-unwind" fn put_dict_entry(
     return len;
 }
 #[unsafe(export_name = "__pdf_impl_cff_dict_pack")]
-pub unsafe extern "C-unwind" fn cff_dict_pack(
-    mut dict: *mut cff_dict,
-    mut dest: *mut card8,
-    mut destlen: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn cff_dict_pack(mut dict: *mut cff_dict, mut dest: *mut card8, mut destlen: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut i: ::core::ffi::c_int = 0;
     i = 0 as ::core::ffi::c_int;
@@ -858,11 +763,7 @@ pub unsafe extern "C-unwind" fn cff_dict_pack(
             (*(*dict).entries.offset(i as isize)).key,
             b"ROS\0" as *const u8 as *const ::core::ffi::c_char,
         ) {
-            len += put_dict_entry(
-                (*dict).entries.offset(i as isize) as *mut cff_dict_entry,
-                dest,
-                destlen,
-            );
+            len += put_dict_entry((*dict).entries.offset(i as isize) as *mut cff_dict_entry, dest, destlen);
             break;
         } else {
             i += 1;
@@ -886,11 +787,7 @@ pub unsafe extern "C-unwind" fn cff_dict_pack(
     return len;
 }
 #[unsafe(export_name = "__pdf_impl_cff_dict_add")]
-pub unsafe extern "C-unwind" fn cff_dict_add(
-    mut dict: *mut cff_dict,
-    mut key: *const ::core::ffi::c_char,
-    mut count: ::core::ffi::c_int,
-) {
+pub unsafe extern "C-unwind" fn cff_dict_add(mut dict: *mut cff_dict, mut key: *const ::core::ffi::c_char, mut count: ::core::ffi::c_int) {
     let mut id: ::core::ffi::c_int = 0;
     let mut i: ::core::ffi::c_int = 0;
     id = 0 as ::core::ffi::c_int;
@@ -914,8 +811,7 @@ pub unsafe extern "C-unwind" fn cff_dict_add(
         if (*(*dict).entries.offset(i as isize)).id == id {
             if (*(*dict).entries.offset(i as isize)).count != count {
                 pdf_abort!(
-                    b"%s: Inconsistent DICT argument number.\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"%s: Inconsistent DICT argument number.\0" as *const u8 as *const ::core::ffi::c_char,
                     CFF_DEBUG_STR.as_ptr(),
                 );
             }
@@ -927,9 +823,7 @@ pub unsafe extern "C-unwind" fn cff_dict_add(
         (*dict).max += 8 as ::core::ffi::c_int;
         (*dict).entries = renew(
             (*dict).entries as *mut ::core::ffi::c_void,
-            ((*dict).max as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<cff_dict_entry>() as usize)
-                as uint32_t,
+            ((*dict).max as uint32_t as usize).wrapping_mul(::core::mem::size_of::<cff_dict_entry>() as usize) as uint32_t,
         ) as *mut cff_dict_entry;
     }
     (*(*dict).entries.offset((*dict).count as isize)).id = id;
@@ -938,14 +832,12 @@ pub unsafe extern "C-unwind" fn cff_dict_add(
     (*(*dict).entries.offset((*dict).count as isize)).count = count;
     if count > 0 as ::core::ffi::c_int {
         let ref mut fresh1 = (*(*dict).entries.offset((*dict).count as isize)).values;
-        *fresh1 = new((count as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_double>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_double;
+        *fresh1 = new((count as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_double>() as usize) as uint32_t)
+            as *mut ::core::ffi::c_double;
         memset(
             (*(*dict).entries.offset((*dict).count as isize)).values as *mut ::core::ffi::c_void,
             0 as ::core::ffi::c_int,
-            (::core::mem::size_of::<::core::ffi::c_double>() as size_t)
-                .wrapping_mul(count as size_t),
+            (::core::mem::size_of::<::core::ffi::c_double>() as size_t).wrapping_mul(count as size_t),
         );
     } else {
         let ref mut fresh2 = (*(*dict).entries.offset((*dict).count as isize)).values;
@@ -954,28 +846,20 @@ pub unsafe extern "C-unwind" fn cff_dict_add(
     (*dict).count += 1 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_cff_dict_remove")]
-pub unsafe extern "C-unwind" fn cff_dict_remove(
-    mut dict: *mut cff_dict,
-    mut key: *const ::core::ffi::c_char,
-) {
+pub unsafe extern "C-unwind" fn cff_dict_remove(mut dict: *mut cff_dict, mut key: *const ::core::ffi::c_char) {
     let mut i: ::core::ffi::c_int = 0;
     i = 0 as ::core::ffi::c_int;
     while i < (*dict).count {
         if streq_ptr(key, (*(*dict).entries.offset(i as isize)).key) {
             (*(*dict).entries.offset(i as isize)).count = 0 as ::core::ffi::c_int;
             let ref mut fresh3 = (*(*dict).entries.offset(i as isize)).values;
-            *fresh3 =
-                mfree((*(*dict).entries.offset(i as isize)).values as *mut ::core::ffi::c_void)
-                    as *mut ::core::ffi::c_double;
+            *fresh3 = mfree((*(*dict).entries.offset(i as isize)).values as *mut ::core::ffi::c_void) as *mut ::core::ffi::c_double;
         }
         i += 1;
     }
 }
 #[unsafe(export_name = "__pdf_impl_cff_dict_known")]
-pub unsafe extern "C-unwind" fn cff_dict_known(
-    mut dict: *mut cff_dict,
-    mut key: *const ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn cff_dict_known(mut dict: *mut cff_dict, mut key: *const ::core::ffi::c_char) -> ::core::ffi::c_int {
     let mut i: ::core::ffi::c_int = 0;
     i = 0 as ::core::ffi::c_int;
     while i < (*dict).count {
@@ -990,9 +874,7 @@ pub unsafe extern "C-unwind" fn cff_dict_known(
 }
 #[unsafe(export_name = "__pdf_impl_cff_dict_get")]
 pub unsafe extern "C-unwind" fn cff_dict_get(
-    mut dict: *mut cff_dict,
-    mut key: *const ::core::ffi::c_char,
-    mut idx: ::core::ffi::c_int,
+    mut dict: *mut cff_dict, mut key: *const ::core::ffi::c_char, mut idx: ::core::ffi::c_int,
 ) -> ::core::ffi::c_double {
     let mut value: ::core::ffi::c_double = 0.0f64;
     let mut i: ::core::ffi::c_int = 0;
@@ -1007,9 +889,7 @@ pub unsafe extern "C-unwind" fn cff_dict_get(
     while i < (*dict).count {
         if streq_ptr(key, (*(*dict).entries.offset(i as isize)).key) {
             if (*(*dict).entries.offset(i as isize)).count > idx {
-                value = *(*(*dict).entries.offset(i as isize))
-                    .values
-                    .offset(idx as isize);
+                value = *(*(*dict).entries.offset(i as isize)).values.offset(idx as isize);
             } else {
                 pdf_abort!(
                     b"%s: Invalid index number.\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1032,10 +912,7 @@ pub unsafe extern "C-unwind" fn cff_dict_get(
 }
 #[unsafe(export_name = "__pdf_impl_cff_dict_set")]
 pub unsafe extern "C-unwind" fn cff_dict_set(
-    mut dict: *mut cff_dict,
-    mut key: *const ::core::ffi::c_char,
-    mut idx: ::core::ffi::c_int,
-    mut value: ::core::ffi::c_double,
+    mut dict: *mut cff_dict, mut key: *const ::core::ffi::c_char, mut idx: ::core::ffi::c_int, mut value: ::core::ffi::c_double,
 ) {
     let mut i: ::core::ffi::c_int = 0;
     if !(!dict.is_null() && !key.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -1049,9 +926,7 @@ pub unsafe extern "C-unwind" fn cff_dict_set(
     while i < (*dict).count {
         if streq_ptr(key, (*(*dict).entries.offset(i as isize)).key) {
             if (*(*dict).entries.offset(i as isize)).count > idx {
-                *(*(*dict).entries.offset(i as isize))
-                    .values
-                    .offset(idx as isize) = value;
+                *(*(*dict).entries.offset(i as isize)).values.offset(idx as isize) = value;
             } else {
                 pdf_abort!(
                     b"%s: Invalid index number.\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1083,36 +958,24 @@ pub unsafe extern "C-unwind" fn cff_dict_update(mut dict: *mut cff_dict, mut cff
             if dict_operator[id as usize].argtype == CFF_TYPE_SID {
                 str = cff_get_string(
                     cff,
-                    *(*(*dict).entries.offset(i as isize))
-                        .values
-                        .offset(0 as ::core::ffi::c_int as isize) as s_SID,
+                    *(*(*dict).entries.offset(i as isize)).values.offset(0 as ::core::ffi::c_int as isize) as s_SID,
                 );
-                *(*(*dict).entries.offset(i as isize))
-                    .values
-                    .offset(0 as ::core::ffi::c_int as isize) =
+                *(*(*dict).entries.offset(i as isize)).values.offset(0 as ::core::ffi::c_int as isize) =
                     cff_add_string(cff, str, 1 as ::core::ffi::c_int) as ::core::ffi::c_double;
                 free(str as *mut ::core::ffi::c_void);
             } else if dict_operator[id as usize].argtype == CFF_TYPE_ROS {
                 str = cff_get_string(
                     cff,
-                    *(*(*dict).entries.offset(i as isize))
-                        .values
-                        .offset(0 as ::core::ffi::c_int as isize) as s_SID,
+                    *(*(*dict).entries.offset(i as isize)).values.offset(0 as ::core::ffi::c_int as isize) as s_SID,
                 );
-                *(*(*dict).entries.offset(i as isize))
-                    .values
-                    .offset(0 as ::core::ffi::c_int as isize) =
+                *(*(*dict).entries.offset(i as isize)).values.offset(0 as ::core::ffi::c_int as isize) =
                     cff_add_string(cff, str, 1 as ::core::ffi::c_int) as ::core::ffi::c_double;
                 free(str as *mut ::core::ffi::c_void);
                 str = cff_get_string(
                     cff,
-                    *(*(*dict).entries.offset(i as isize))
-                        .values
-                        .offset(1 as ::core::ffi::c_int as isize) as s_SID,
+                    *(*(*dict).entries.offset(i as isize)).values.offset(1 as ::core::ffi::c_int as isize) as s_SID,
                 );
-                *(*(*dict).entries.offset(i as isize))
-                    .values
-                    .offset(1 as ::core::ffi::c_int as isize) =
+                *(*(*dict).entries.offset(i as isize)).values.offset(1 as ::core::ffi::c_int as isize) =
                     cff_add_string(cff, str, 1 as ::core::ffi::c_int) as ::core::ffi::c_double;
                 free(str as *mut ::core::ffi::c_void);
             }
@@ -1122,11 +985,7 @@ pub unsafe extern "C-unwind" fn cff_dict_update(mut dict: *mut cff_dict, mut cff
 }
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 unsafe extern "C" {
-    fn memset(
-        __b: *mut ::core::ffi::c_void,
-        __c: ::core::ffi::c_int,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memset(__b: *mut ::core::ffi::c_void, __c: ::core::ffi::c_int, __len: size_t) -> *mut ::core::ffi::c_void;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_cff_new_dict(_result: *mut *mut cff_dict) -> i32 {
@@ -1151,11 +1010,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_release_dict(mut dict: *mut cff_dict) -
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_dict_unpack(
-    mut data: *mut card8,
-    mut endptr: *mut card8,
-    _result: *mut *mut cff_dict,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_dict_unpack(mut data: *mut card8, mut endptr: *mut card8, _result: *mut *mut cff_dict) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_dict_unpack(data, endptr) }) {
         Ok(value) => {
             unsafe {
@@ -1168,10 +1023,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_dict_unpack(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_cff_dict_pack(
-    mut dict: *mut cff_dict,
-    mut dest: *mut card8,
-    mut destlen: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut dict: *mut cff_dict, mut dest: *mut card8, mut destlen: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_dict_pack(dict, dest, destlen) }) {
         Ok(value) => {
@@ -1185,9 +1037,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_dict_pack(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_cff_dict_add(
-    mut dict: *mut cff_dict,
-    mut key: *const ::core::ffi::c_char,
-    mut count: ::core::ffi::c_int,
+    mut dict: *mut cff_dict, mut key: *const ::core::ffi::c_char, mut count: ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_dict_add(dict, key, count) }) {
         Ok(value) => {
@@ -1198,10 +1048,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_dict_add(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_dict_remove(
-    mut dict: *mut cff_dict,
-    mut key: *const ::core::ffi::c_char,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_dict_remove(mut dict: *mut cff_dict, mut key: *const ::core::ffi::c_char) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_dict_remove(dict, key) }) {
         Ok(value) => {
             let _ = value;
@@ -1212,9 +1059,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_dict_remove(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_cff_dict_known(
-    mut dict: *mut cff_dict,
-    mut key: *const ::core::ffi::c_char,
-    _result: *mut ::core::ffi::c_int,
+    mut dict: *mut cff_dict, mut key: *const ::core::ffi::c_char, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_dict_known(dict, key) }) {
         Ok(value) => {
@@ -1228,10 +1073,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_dict_known(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_cff_dict_get(
-    mut dict: *mut cff_dict,
-    mut key: *const ::core::ffi::c_char,
-    mut idx: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_double,
+    mut dict: *mut cff_dict, mut key: *const ::core::ffi::c_char, mut idx: ::core::ffi::c_int, _result: *mut ::core::ffi::c_double,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_dict_get(dict, key, idx) }) {
         Ok(value) => {
@@ -1245,10 +1087,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_dict_get(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_cff_dict_set(
-    mut dict: *mut cff_dict,
-    mut key: *const ::core::ffi::c_char,
-    mut idx: ::core::ffi::c_int,
-    mut value: ::core::ffi::c_double,
+    mut dict: *mut cff_dict, mut key: *const ::core::ffi::c_char, mut idx: ::core::ffi::c_int, mut value: ::core::ffi::c_double,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_dict_set(dict, key, idx, value) }) {
         Ok(value) => {
@@ -1259,10 +1098,7 @@ pub unsafe extern "C" fn __pdf_entry_cff_dict_set(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_cff_dict_update(
-    mut dict: *mut cff_dict,
-    mut cff: *mut cff_font,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_cff_dict_update(mut dict: *mut cff_dict, mut cff: *mut cff_font) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { cff_dict_update(dict, cff) }) {
         Ok(value) => {
             let _ = value;
@@ -1290,10 +1126,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_cff_dict
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_cff_dict.pointer }
 }

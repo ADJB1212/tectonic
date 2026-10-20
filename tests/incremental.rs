@@ -4,9 +4,7 @@ use std::{
     path::Path,
     time::{Duration, SystemTime},
 };
-use tectonic::{
-    driver::ProcessingSessionBuilder, io::memory::MemoryFileCollection, test_util::TestBundle,
-};
+use tectonic::{driver::ProcessingSessionBuilder, io::memory::MemoryFileCollection, test_util::TestBundle};
 use tectonic_errors::Error;
 use tectonic_status_base::{MessageKind, StatusBackend};
 
@@ -20,10 +18,7 @@ impl StatusBackend for Status {
         self.0.push(String::from_utf8_lossy(output).into_owned());
     }
     fn report(&mut self, _: MessageKind, args: Arguments, error: Option<&Error>) {
-        self.0.push(format!(
-            "{args} {}",
-            error.map_or_else(String::new, ToString::to_string)
-        ));
+        self.0.push(format!("{args} {}", error.map_or_else(String::new, ToString::to_string)));
     }
 }
 
@@ -55,9 +50,7 @@ fn assert_outputs_match(actual: &MemoryFileCollection, expected: &MemoryFileColl
     if let Some(actual) = actual.get("main.synctex.gz") {
         let mut a = Vec::new();
         let mut b = Vec::new();
-        flate2::read::GzDecoder::new(actual.data.as_slice())
-            .read_to_end(&mut a)
-            .unwrap();
+        flate2::read::GzDecoder::new(actual.data.as_slice()).read_to_end(&mut a).unwrap();
         flate2::read::GzDecoder::new(expected["main.synctex.gz"].data.as_slice())
             .read_to_end(&mut b)
             .unwrap();
@@ -74,22 +67,12 @@ fn restores_a_single_file_after_editing_its_suffix() {
         "\\XeTeXprotrudechars=2\\lpcode\\tenrm`E=500\\rpcode\\tenrm`.=500\n\\newcount\\iteration\n\\loop\\advance\\iteration by1\\ifnum\\iteration<180000\\repeat\nPrefix.\\par\n{}",
         "% Padding keeps the edited suffix outside input lookahead.\n".repeat(300)
     );
-    std::fs::write(
-        root.join("main.tex"),
-        format!("{prefix}Original suffix.\\par\\bye\n"),
-    )
-    .unwrap();
+    std::fs::write(root.join("main.tex"), format!("{prefix}Original suffix.\\par\\bye\n")).unwrap();
     compile(root, true, true);
-    std::fs::write(
-        root.join("main.tex"),
-        format!("{prefix}Edited suffix.\\par\\bye\n"),
-    )
-    .unwrap();
+    std::fs::write(root.join("main.tex"), format!("{prefix}Edited suffix.\\par\\bye\n")).unwrap();
     let (actual, status) = compile(root, true, true);
     assert!(
-        status
-            .iter()
-            .any(|message| message.contains("resumed TeX execution")),
+        status.iter().any(|message| message.contains("resumed TeX execution")),
         "{}",
         status.join("\n")
     );
@@ -102,17 +85,10 @@ fn restores_tex_prefix_after_editing_a_later_input() {
     util::set_test_root();
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path();
-    std::fs::write(
-        root.join("main.tex"),
-        b"\\input prefix.tex\n\\input suffix.tex\n\\bye\n",
-    )
-    .unwrap();
+    std::fs::write(root.join("main.tex"), b"\\input prefix.tex\n\\input suffix.tex\n\\bye\n").unwrap();
     std::fs::write(
         root.join("prefix.tex"),
-        format!(
-            "\\def\\saved{{Restored}}\n{}\\par\n",
-            "A long prefix with text. ".repeat(150)
-        ),
+        format!("\\def\\saved{{Restored}}\n{}\\par\n", "A long prefix with text. ".repeat(150)),
     )
     .unwrap();
     std::fs::write(root.join("suffix.tex"), b"\\saved\nOriginal suffix.\\par\n").unwrap();
@@ -120,9 +96,7 @@ fn restores_tex_prefix_after_editing_a_later_input() {
     std::fs::write(root.join("suffix.tex"), b"\\saved\nEdited suffix.\\par\n").unwrap();
     let (resumed, status) = compile(root, true, false);
     assert!(
-        status
-            .iter()
-            .any(|message| message.contains("resumed TeX execution")),
+        status.iter().any(|message| message.contains("resumed TeX execution")),
         "{}",
         status.join("\n")
     );
@@ -136,20 +110,21 @@ fn restores_native_fonts_pending_glyphs_and_synctex() {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path();
     let font = util::test_path(&["assets", "lmroman12-regular.otf"]);
-    std::fs::write(root.join("main.tex"), format!("\\font\\native=\"[{}]\" at 12pt\n\\native\n\\input prefix.tex\n\\input suffix.tex\n\\bye\n", font.display())).unwrap();
+    std::fs::write(
+        root.join("main.tex"),
+        format!(
+            "\\font\\native=\"[{}]\" at 12pt\n\\native\n\\input prefix.tex\n\\input suffix.tex\n\\bye\n",
+            font.display()
+        ),
+    )
+    .unwrap();
     std::fs::write(root.join("prefix.tex"), "Unicode text: caf\u{e9}.\\par\n").unwrap();
     std::fs::write(root.join("suffix.tex"), b"Original suffix.\\par\n").unwrap();
     compile(root, true, true);
-    std::fs::write(
-        root.join("suffix.tex"),
-        b"Edited native-font suffix.\\par\n",
-    )
-    .unwrap();
+    std::fs::write(root.join("suffix.tex"), b"Edited native-font suffix.\\par\n").unwrap();
     let (resumed, status) = compile(root, true, true);
     assert!(
-        status
-            .iter()
-            .any(|message| message.contains("resumed TeX execution")),
+        status.iter().any(|message| message.contains("resumed TeX execution")),
         "{}",
         status.join("\n")
     );
@@ -163,7 +138,14 @@ fn resumes_across_shipped_pages_and_repeated_edits() {
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path();
     let font = util::test_path(&["assets", "lmroman12-regular.otf"]);
-    std::fs::write(root.join("main.tex"), format!("\\font\\native=\"[{}]\" at 12pt\n\\native\n\\input prefix.tex\n\\input suffix.tex\n\\bye\n", font.display())).unwrap();
+    std::fs::write(
+        root.join("main.tex"),
+        format!(
+            "\\font\\native=\"[{}]\" at 12pt\n\\native\n\\input prefix.tex\n\\input suffix.tex\n\\bye\n",
+            font.display()
+        ),
+    )
+    .unwrap();
     std::fs::write(
         root.join("prefix.tex"),
         b"First shipped page.\\par\\vfill\\eject\nPending second page.\\par\n",
@@ -171,17 +153,11 @@ fn resumes_across_shipped_pages_and_repeated_edits() {
     .unwrap();
     std::fs::write(root.join("suffix.tex"), b"Original.\\par\n").unwrap();
     compile(root, true, true);
-    for suffix in [
-        "Replacement.\\par\n",
-        "Inserted page.\\par\\vfill\\eject\nFinal page.\\par\n",
-        "",
-    ] {
+    for suffix in ["Replacement.\\par\n", "Inserted page.\\par\\vfill\\eject\nFinal page.\\par\n", ""] {
         std::fs::write(root.join("suffix.tex"), suffix).unwrap();
         let (resumed, status) = compile(root, true, true);
         assert!(
-            status
-                .iter()
-                .any(|message| message.contains("resumed TeX execution")),
+            status.iter().any(|message| message.contains("resumed TeX execution")),
             "{}",
             status.join("\n")
         );
@@ -195,24 +171,14 @@ fn invalidates_earlier_dependencies_and_recovers_from_corrupt_cache() {
     util::set_test_root();
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path();
-    std::fs::write(
-        root.join("main.tex"),
-        b"\\input prefix.tex\n\\input suffix.tex\n\\bye\n",
-    )
-    .unwrap();
+    std::fs::write(root.join("main.tex"), b"\\input prefix.tex\n\\input suffix.tex\n\\bye\n").unwrap();
     std::fs::write(root.join("prefix.tex"), b"Original prefix.\\par\n").unwrap();
     std::fs::write(root.join("suffix.tex"), b"Original suffix.\\par\n").unwrap();
     compile(root, true, false);
-    std::fs::write(
-        root.join("prefix.tex"),
-        b"Changed prefix and definitions.\\def\\saved{New}\\par\n",
-    )
-    .unwrap();
+    std::fs::write(root.join("prefix.tex"), b"Changed prefix and definitions.\\def\\saved{New}\\par\n").unwrap();
     let (actual, status) = compile(root, true, false);
     assert!(
-        status
-            .iter()
-            .any(|message| message.contains("checkpoint invalidated")),
+        status.iter().any(|message| message.contains("checkpoint invalidated")),
         "{}",
         status.join("\n")
     );
@@ -224,13 +190,7 @@ fn invalidates_earlier_dependencies_and_recovers_from_corrupt_cache() {
         }
     }
     let (actual, status) = compile(root, true, false);
-    assert!(
-        status
-            .iter()
-            .any(|message| message.contains("cache discarded")),
-        "{}",
-        status.join("\n")
-    );
+    assert!(status.iter().any(|message| message.contains("cache discarded")), "{}", status.join("\n"));
     assert_outputs_match(&actual, &compile(root, false, false).0);
 }
 
@@ -239,11 +199,7 @@ fn cli_reuses_engine_state_in_a_fresh_process() {
     util::set_test_root();
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path();
-    std::fs::write(
-        root.join("main.tex"),
-        b"\\input prefix.tex\n\\input suffix.tex\n\\bye\n",
-    )
-    .unwrap();
+    std::fs::write(root.join("main.tex"), b"\\input prefix.tex\n\\input suffix.tex\n\\bye\n").unwrap();
     std::fs::write(
         root.join("prefix.tex"),
         format!("{}\\par\n", "Substantial unchanged prefix. ".repeat(200)),
@@ -261,23 +217,11 @@ fn cli_reuses_engine_state_in_a_fresh_process() {
             command.arg("--incremental");
         }
         let output = command.arg("main.tex").output().unwrap();
-        assert!(
-            output.status.success(),
-            "{}",
-            String::from_utf8_lossy(&output.stderr)
-        );
-        format!(
-            "{}{}",
-            String::from_utf8_lossy(&output.stdout),
-            String::from_utf8_lossy(&output.stderr)
-        )
+        assert!(output.status.success(), "{}", String::from_utf8_lossy(&output.stderr));
+        format!("{}{}", String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr))
     };
     run(true);
-    std::fs::write(
-        root.join("suffix.tex"),
-        b"Edited in a separate compiler process.\\par\n",
-    )
-    .unwrap();
+    std::fs::write(root.join("suffix.tex"), b"Edited in a separate compiler process.\\par\n").unwrap();
     let status = run(true);
     let skipped = status
         .split("skipped ")
@@ -295,24 +239,13 @@ fn failed_suffix_build_preserves_the_last_successful_cache() {
     util::set_test_root();
     let temp = tempfile::tempdir().unwrap();
     let root = temp.path();
-    std::fs::write(
-        root.join("main.tex"),
-        b"\\input prefix.tex\n\\input suffix.tex\n\\bye\n",
-    )
-    .unwrap();
+    std::fs::write(root.join("main.tex"), b"\\input prefix.tex\n\\input suffix.tex\n\\bye\n").unwrap();
     std::fs::write(root.join("prefix.tex"), b"Unchanged prefix.\\par\n").unwrap();
     std::fs::write(root.join("suffix.tex"), b"Successful suffix.\\par\n").unwrap();
     let run = || {
         std::process::Command::new(env!("CARGO_BIN_EXE_tectonic"))
             .current_dir(root)
-            .args([
-                "-X",
-                "compile",
-                "--format",
-                "plain",
-                "--incremental",
-                "main.tex",
-            ])
+            .args(["-X", "compile", "--format", "plain", "--incremental", "main.tex"])
             .env(tectonic::test_util::TEST_ROOT_ENV_VAR, util::test_path(&[]))
             .env("SOURCE_DATE_EPOCH", "1600000000")
             .output()
@@ -328,18 +261,11 @@ fn failed_suffix_build_preserves_the_last_successful_cache() {
     std::fs::write(root.join("suffix.tex"), b"\\undefinedcommand\n").unwrap();
     let failed = run();
     assert!(!failed.status.success());
-    assert!(
-        !String::from_utf8_lossy(&failed.stderr)
-            .contains("engine checkpoint could not be restored")
-    );
+    assert!(!String::from_utf8_lossy(&failed.stderr).contains("engine checkpoint could not be restored"));
     assert_eq!(successful_cache, std::fs::read(&cache).unwrap());
     std::fs::write(root.join("suffix.tex"), b"Repaired suffix.\\par\n").unwrap();
     let repaired = run();
-    assert!(
-        repaired.status.success(),
-        "{}",
-        String::from_utf8_lossy(&repaired.stderr)
-    );
+    assert!(repaired.status.success(), "{}", String::from_utf8_lossy(&repaired.stderr));
     assert!(
         format!(
             "{}{}",
@@ -374,34 +300,18 @@ fn restores_document_group_and_converges_changed_auxiliary_inputs() {
     )
     .unwrap();
     std::fs::write(root.join("main.aux"), b"\\def\\previous{Initial}\n").unwrap();
-    std::fs::write(
-        root.join("prefix.tex"),
-        b"Previous result: \\previous.\\par\n",
-    )
-    .unwrap();
-    std::fs::write(
-        root.join("suffix.tex"),
-        b"\\def\\current{Original}Original suffix.\\par\n",
-    )
-    .unwrap();
+    std::fs::write(root.join("prefix.tex"), b"Previous result: \\previous.\\par\n").unwrap();
+    std::fs::write(root.join("suffix.tex"), b"\\def\\current{Original}Original suffix.\\par\n").unwrap();
     compile(root, true, false);
-    std::fs::write(
-        root.join("suffix.tex"),
-        b"\\def\\current{Updated}Edited suffix.\\par\n",
-    )
-    .unwrap();
+    std::fs::write(root.join("suffix.tex"), b"\\def\\current{Updated}Edited suffix.\\par\n").unwrap();
     let (actual, status) = compile(root, true, false);
     assert!(
-        status
-            .iter()
-            .any(|message| message.contains("resumed TeX execution")),
+        status.iter().any(|message| message.contains("resumed TeX execution")),
         "{}",
         status.join("\n")
     );
     assert!(
-        status
-            .iter()
-            .any(|message| message.contains("checkpoint invalidated")),
+        status.iter().any(|message| message.contains("checkpoint invalidated")),
         "{}",
         status.join("\n")
     );
@@ -434,11 +344,7 @@ fn real_latex_fontspec_and_cross_references_match_clean_builds() {
         b"\\section{Prefix}\\label{prefix}\nSee section \\ref{suffix}.\n\n",
     )
     .unwrap();
-    std::fs::write(
-        root.join("suffix.tex"),
-        b"\\section{Suffix}\\label{suffix}\nInitial content.\n\n",
-    )
-    .unwrap();
+    std::fs::write(root.join("suffix.tex"), b"\\section{Suffix}\\label{suffix}\nInitial content.\n\n").unwrap();
     let run = |incremental: bool| {
         let mut command = std::process::Command::new(env!("CARGO_BIN_EXE_tectonic"));
         command
@@ -450,11 +356,7 @@ fn real_latex_fontspec_and_cross_references_match_clean_builds() {
             command.arg("--incremental");
         }
         let output = command.arg("main.tex").output().unwrap();
-        let status = format!(
-            "{}{}",
-            String::from_utf8_lossy(&output.stdout),
-            String::from_utf8_lossy(&output.stderr)
-        );
+        let status = format!("{}{}", String::from_utf8_lossy(&output.stdout), String::from_utf8_lossy(&output.stderr));
         assert!(output.status.success(), "{status}");
         status
     };
@@ -491,12 +393,12 @@ fn benchmark_multi_input_document() {
         b"\\input prefix.tex\n\\input middle.tex\n\\input suffix.tex\n\\bye\n",
     )
     .unwrap();
-    std::fs::write(root.join("prefix.tex"), b"\\newcount\\work\\work=0\n\\loop\\advance\\work by1 \\ifnum\\work<5000000 \\repeat\nPrefix work: \\the\\work.\\par\n").unwrap();
     std::fs::write(
-        root.join("middle.tex"),
-        format!("{}\\par\n", "Unchanged middle chapter. ".repeat(500)),
+        root.join("prefix.tex"),
+        b"\\newcount\\work\\work=0\n\\loop\\advance\\work by1 \\ifnum\\work<5000000 \\repeat\nPrefix work: \\the\\work.\\par\n",
     )
     .unwrap();
+    std::fs::write(root.join("middle.tex"), format!("{}\\par\n", "Unchanged middle chapter. ".repeat(500))).unwrap();
     std::fs::write(root.join("suffix.tex"), b"Initial suffix.\\par\n").unwrap();
     compile(root, true, false);
     std::fs::write(root.join("suffix.tex"), b"Edited suffix.\\par\n").unwrap();
@@ -507,10 +409,6 @@ fn benchmark_multi_input_document() {
     let (clean, _) = compile(root, false, false);
     let clean_time = start.elapsed();
     assert_outputs_match(&resumed, &clean);
-    assert!(
-        status
-            .iter()
-            .any(|line| line.contains("resumed TeX execution"))
-    );
+    assert!(status.iter().any(|line| line.contains("resumed TeX execution")));
     println!("clean: {clean_time:?}; incremental: {incremental_time:?}");
 }

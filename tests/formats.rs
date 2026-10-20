@@ -59,10 +59,7 @@ struct FormatTestDriver<'a> {
 
 impl FormatTestDriver<'_> {
     fn new(io: IoStack) -> FormatTestDriver {
-        FormatTestDriver {
-            io,
-            events: HashMap::new(),
-        }
+        FormatTestDriver { io, events: HashMap::new() }
     }
 }
 
@@ -83,11 +80,7 @@ impl IoProvider for FormatTestDriver<'_> {
         self.io.output_open_stdout()
     }
 
-    fn input_open_name(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_name(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         self.io.input_open_name(name, status)
     }
 
@@ -95,20 +88,11 @@ impl IoProvider for FormatTestDriver<'_> {
         self.io.input_open_primary(status)
     }
 
-    fn input_open_format(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_format(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         self.io.input_open_format(name, status)
     }
 
-    fn write_format(
-        &mut self,
-        name: &str,
-        data: &[u8],
-        status: &mut dyn StatusBackend,
-    ) -> Result<()> {
+    fn write_format(&mut self, name: &str, data: &[u8], status: &mut dyn StatusBackend) -> Result<()> {
         self.io.write_format(name, data, status)
     }
 }
@@ -119,10 +103,7 @@ impl DriverHooks for FormatTestDriver<'_> {
     }
 
     fn event_output_closed(&mut self, name: String, digest: DigestData) {
-        let summ = self
-            .events
-            .get_mut(&name)
-            .expect("closing file that wasn't opened?");
+        let summ = self.events.get_mut(&name).expect("closing file that wasn't opened?");
         summ.write_digest = Some(digest);
     }
 }

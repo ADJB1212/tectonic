@@ -17,21 +17,11 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
-    fn sprintf(
-        _: *mut ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
+    fn sprintf(_: *mut ::core::ffi::c_char, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_new_number"]
     fn pdf_new_number(value: ::core::ffi::c_double) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_new_string"]
@@ -41,19 +31,11 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_new_dict"]
     fn pdf_new_dict() -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_new_stream"]
     fn pdf_new_stream(flags: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_stream"]
-    fn pdf_add_stream(
-        stream: *mut pdf_obj,
-        stream_data_ptr: *const ::core::ffi::c_void,
-        stream_data_len: ::core::ffi::c_int,
-    );
+    fn pdf_add_stream(stream: *mut pdf_obj, stream_data_ptr: *const ::core::ffi::c_void, stream_data_len: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_stream_dict"]
     fn pdf_stream_dict(stream: *mut pdf_obj) -> *mut pdf_obj;
     static mut CSI_IDENTITY: CIDSysInfo;
@@ -73,16 +55,10 @@ unsafe extern "C-unwind" {
     fn new(size: uint32_t) -> *mut ::core::ffi::c_void;
     #[link_name = "__pdf_impl_pdf_defineresource"]
     fn pdf_defineresource(
-        category: *const ::core::ffi::c_char,
-        resname: *const ::core::ffi::c_char,
-        object: *mut pdf_obj,
-        flags: ::core::ffi::c_int,
+        category: *const ::core::ffi::c_char, resname: *const ::core::ffi::c_char, object: *mut pdf_obj, flags: ::core::ffi::c_int,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_findresource"]
-    fn pdf_findresource(
-        category: *const ::core::ffi::c_char,
-        resname: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
+    fn pdf_findresource(category: *const ::core::ffi::c_char, resname: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_get_resource_reference"]
     fn pdf_get_resource_reference(res_id: ::core::ffi::c_int) -> *mut pdf_obj;
 }
@@ -162,24 +138,19 @@ pub struct C2RustUnnamed_1 {
 }
 pub const __DARWIN_NULL: *mut ::core::ffi::c_void = ::core::ptr::null_mut::<::core::ffi::c_void>();
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
-pub const STREAM_COMPRESS: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const STREAM_COMPRESS: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const MAP_IS_CID: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const MAP_IS_NAME: ::core::ffi::c_int = 2;
 pub const MAP_IS_CODE: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
 pub const MAP_IS_NOTDEF: ::core::ffi::c_int = 8;
 pub const MAP_IS_UNDEF: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const MAP_TYPE_MASK: ::core::ffi::c_int = 0xf as ::core::ffi::c_int;
-pub const MAP_LOOKUP_CONTINUE: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 4 as ::core::ffi::c_int;
+pub const MAP_LOOKUP_CONTINUE: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 4 as ::core::ffi::c_int;
 pub const CMAP_DEBUG_STR: [::core::ffi::c_char; 5] = crate::backend::c_char_array(*b"CMap\0");
 pub const CMAP_TYPE_IDENTITY: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const CMAP_TYPE_TO_UNICODE: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
 pub const PDF_RES_FLUSH_IMMEDIATE: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn block_count(
-    mut mtab: *mut mapDef,
-    mut c: ::core::ffi::c_int,
-) -> size_t {
+unsafe extern "C-unwind" fn block_count(mut mtab: *mut mapDef, mut c: ::core::ffi::c_int) -> size_t {
     let mut count: size_t = 0 as size_t;
     let mut n: size_t = 0;
     n = (*mtab.offset(c as isize)).len.wrapping_sub(1 as size_t);
@@ -191,27 +162,18 @@ unsafe extern "C-unwind" fn block_count(
             } else {
                 0 as ::core::ffi::c_int
             }) == 0
-            || (*mtab.offset(c as isize)).flag & MAP_TYPE_MASK != MAP_IS_CID
-                && (*mtab.offset(c as isize)).flag & MAP_TYPE_MASK != MAP_IS_CODE
-            || (*mtab.offset((c - 1 as ::core::ffi::c_int) as isize)).len
-                != (*mtab.offset(c as isize)).len
+            || (*mtab.offset(c as isize)).flag & MAP_TYPE_MASK != MAP_IS_CID && (*mtab.offset(c as isize)).flag & MAP_TYPE_MASK != MAP_IS_CODE
+            || (*mtab.offset((c - 1 as ::core::ffi::c_int) as isize)).len != (*mtab.offset(c as isize)).len
         {
             break;
         }
         if !(memcmp(
-            (*mtab.offset((c - 1 as ::core::ffi::c_int) as isize)).code
-                as *const ::core::ffi::c_void,
+            (*mtab.offset((c - 1 as ::core::ffi::c_int) as isize)).code as *const ::core::ffi::c_void,
             (*mtab.offset(c as isize)).code as *const ::core::ffi::c_void,
             n,
         ) == 0
-            && (*(*mtab.offset((c - 1 as ::core::ffi::c_int) as isize))
-                .code
-                .offset(n as isize) as ::core::ffi::c_int)
-                < 255 as ::core::ffi::c_int
-            && *(*mtab.offset((c - 1 as ::core::ffi::c_int) as isize))
-                .code
-                .offset(n as isize) as ::core::ffi::c_int
-                + 1 as ::core::ffi::c_int
+            && (*(*mtab.offset((c - 1 as ::core::ffi::c_int) as isize)).code.offset(n as isize) as ::core::ffi::c_int) < 255 as ::core::ffi::c_int
+            && *(*mtab.offset((c - 1 as ::core::ffi::c_int) as isize)).code.offset(n as isize) as ::core::ffi::c_int + 1 as ::core::ffi::c_int
                 == *(*mtab.offset(c as isize)).code.offset(n as isize) as ::core::ffi::c_int)
         {
             break;
@@ -222,14 +184,10 @@ unsafe extern "C-unwind" fn block_count(
     return count;
 }
 unsafe extern "C-unwind" fn sputx(
-    mut c: ::core::ffi::c_uchar,
-    mut s: *mut *mut ::core::ffi::c_char,
-    mut end: *mut ::core::ffi::c_char,
+    mut c: ::core::ffi::c_uchar, mut s: *mut *mut ::core::ffi::c_char, mut end: *mut ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
-    let mut hi: ::core::ffi::c_char =
-        (c as ::core::ffi::c_int >> 4 as ::core::ffi::c_int) as ::core::ffi::c_char;
-    let mut lo: ::core::ffi::c_char =
-        (c as ::core::ffi::c_int & 0xf as ::core::ffi::c_int) as ::core::ffi::c_char;
+    let mut hi: ::core::ffi::c_char = (c as ::core::ffi::c_int >> 4 as ::core::ffi::c_int) as ::core::ffi::c_char;
+    let mut lo: ::core::ffi::c_char = (c as ::core::ffi::c_int & 0xf as ::core::ffi::c_int) as ::core::ffi::c_char;
     if (*s).offset(2 as ::core::ffi::c_int as isize) > end {
         pdf_abort!(b"Buffer overflow.\0" as *const u8 as *const ::core::ffi::c_char);
     }
@@ -238,21 +196,16 @@ unsafe extern "C-unwind" fn sputx(
     } else {
         hi as ::core::ffi::c_int + '7' as i32
     }) as ::core::ffi::c_char;
-    *(*s).offset(1 as ::core::ffi::c_int as isize) =
-        (if (lo as ::core::ffi::c_int) < 10 as ::core::ffi::c_int {
-            lo as ::core::ffi::c_int + '0' as i32
-        } else {
-            lo as ::core::ffi::c_int + '7' as i32
-        }) as ::core::ffi::c_char;
+    *(*s).offset(1 as ::core::ffi::c_int as isize) = (if (lo as ::core::ffi::c_int) < 10 as ::core::ffi::c_int {
+        lo as ::core::ffi::c_int + '0' as i32
+    } else {
+        lo as ::core::ffi::c_int + '7' as i32
+    }) as ::core::ffi::c_char;
     *s = (*s).offset(2 as ::core::ffi::c_int as isize);
     return 2 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn write_map(
-    mut mtab: *mut mapDef,
-    mut count: size_t,
-    mut codestr: *mut ::core::ffi::c_uchar,
-    mut depth: size_t,
-    mut wbuf: *mut sbuf,
+    mut mtab: *mut mapDef, mut count: size_t, mut codestr: *mut ::core::ffi::c_uchar, mut depth: size_t, mut wbuf: *mut sbuf,
     mut stream: *mut pdf_obj,
 ) -> ::core::ffi::c_int {
     let mut c: size_t = 0;
@@ -266,14 +219,7 @@ unsafe extern "C-unwind" fn write_map(
         *codestr.offset(depth as isize) = (c & 0xff as size_t) as ::core::ffi::c_uchar;
         if (*mtab.offset(c as isize)).flag & MAP_LOOKUP_CONTINUE != 0 {
             mtab1 = (*mtab.offset(c as isize)).next as *mut mapDef;
-            count = write_map(
-                mtab1,
-                count,
-                codestr,
-                depth.wrapping_add(1 as size_t),
-                wbuf,
-                stream,
-            ) as size_t;
+            count = write_map(mtab1, count, codestr, depth.wrapping_add(1 as size_t), wbuf, stream) as size_t;
         } else if if (*mtab.offset(c as isize)).flag & MAP_TYPE_MASK != MAP_IS_UNDEF {
             1 as ::core::ffi::c_int
         } else {
@@ -294,11 +240,7 @@ unsafe extern "C-unwind" fn write_map(
                         *fresh6 = '<' as i32 as ::core::ffi::c_char;
                         i = 0 as size_t;
                         while i <= depth {
-                            sputx(
-                                *codestr.offset(i as isize),
-                                &raw mut (*wbuf).curptr,
-                                (*wbuf).limptr,
-                            );
+                            sputx(*codestr.offset(i as isize), &raw mut (*wbuf).curptr, (*wbuf).limptr);
                             i = i.wrapping_add(1);
                         }
                         let fresh7 = (*wbuf).curptr;
@@ -337,8 +279,7 @@ unsafe extern "C-unwind" fn write_map(
                 MAP_IS_NOTDEF => {}
                 _ => {
                     pdf_abort!(
-                        b"%s: Unknown mapping type: %d\0" as *const u8
-                            as *const ::core::ffi::c_char,
+                        b"%s: Unknown mapping type: %d\0" as *const u8 as *const ::core::ffi::c_char,
                         CMAP_DEBUG_STR.as_ptr(),
                         (*mtab.offset(c as isize)).flag & MAP_TYPE_MASK,
                     );
@@ -348,10 +289,7 @@ unsafe extern "C-unwind" fn write_map(
         if count >= 100 as size_t || (*wbuf).curptr >= (*wbuf).limptr {
             let mut fmt_buf: [::core::ffi::c_char; 32] = [0; 32];
             if count > 100 as size_t {
-                pdf_abort!(
-                    b"Unexpected error....: %zu\0" as *const u8 as *const ::core::ffi::c_char,
-                    count,
-                );
+                pdf_abort!(b"Unexpected error....: %zu\0" as *const u8 as *const ::core::ffi::c_char, count,);
             }
             sprintf(
                 &raw mut fmt_buf as *mut ::core::ffi::c_char,
@@ -366,16 +304,13 @@ unsafe extern "C-unwind" fn write_map(
             pdf_add_stream(
                 stream,
                 (*wbuf).buf as *const ::core::ffi::c_void,
-                (*wbuf).curptr.offset_from((*wbuf).buf) as ::core::ffi::c_long
-                    as ::core::ffi::c_int,
+                (*wbuf).curptr.offset_from((*wbuf).buf) as ::core::ffi::c_long as ::core::ffi::c_int,
             );
             (*wbuf).curptr = (*wbuf).buf;
             pdf_add_stream(
                 stream,
-                b"endbfchar\n\0" as *const u8 as *const ::core::ffi::c_char
-                    as *const ::core::ffi::c_void,
-                strlen(b"endbfchar\n\0" as *const u8 as *const ::core::ffi::c_char)
-                    as ::core::ffi::c_int,
+                b"endbfchar\n\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
+                strlen(b"endbfchar\n\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int,
             );
             count = 0 as size_t;
         }
@@ -397,16 +332,13 @@ unsafe extern "C-unwind" fn write_map(
             pdf_add_stream(
                 stream,
                 (*wbuf).buf as *const ::core::ffi::c_void,
-                (*wbuf).curptr.offset_from((*wbuf).buf) as ::core::ffi::c_long
-                    as ::core::ffi::c_int,
+                (*wbuf).curptr.offset_from((*wbuf).buf) as ::core::ffi::c_long as ::core::ffi::c_int,
             );
             (*wbuf).curptr = (*wbuf).buf;
             pdf_add_stream(
                 stream,
-                b"endbfchar\n\0" as *const u8 as *const ::core::ffi::c_char
-                    as *const ::core::ffi::c_void,
-                strlen(b"endbfchar\n\0" as *const u8 as *const ::core::ffi::c_char)
-                    as ::core::ffi::c_int,
+                b"endbfchar\n\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
+                strlen(b"endbfchar\n\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int,
             );
             count = 0 as size_t;
         }
@@ -429,18 +361,10 @@ unsafe extern "C-unwind" fn write_map(
             *fresh12 = '<' as i32 as ::core::ffi::c_char;
             j = 0 as size_t;
             while j < depth {
-                sputx(
-                    *codestr.offset(j as isize),
-                    &raw mut (*wbuf).curptr,
-                    (*wbuf).limptr,
-                );
+                sputx(*codestr.offset(j as isize), &raw mut (*wbuf).curptr, (*wbuf).limptr);
                 j = j.wrapping_add(1);
             }
-            sputx(
-                c as ::core::ffi::c_uchar,
-                &raw mut (*wbuf).curptr,
-                (*wbuf).limptr,
-            );
+            sputx(c as ::core::ffi::c_uchar, &raw mut (*wbuf).curptr, (*wbuf).limptr);
             let fresh13 = (*wbuf).curptr;
             (*wbuf).curptr = (*wbuf).curptr.offset(1);
             *fresh13 = '>' as i32 as ::core::ffi::c_char;
@@ -452,11 +376,7 @@ unsafe extern "C-unwind" fn write_map(
             *fresh15 = '<' as i32 as ::core::ffi::c_char;
             j = 0 as size_t;
             while j < depth {
-                sputx(
-                    *codestr.offset(j as isize),
-                    &raw mut (*wbuf).curptr,
-                    (*wbuf).limptr,
-                );
+                sputx(*codestr.offset(j as isize), &raw mut (*wbuf).curptr, (*wbuf).limptr);
                 j = j.wrapping_add(1);
             }
             sputx(
@@ -498,30 +418,22 @@ unsafe extern "C-unwind" fn write_map(
         (*wbuf).curptr = (*wbuf).buf;
         pdf_add_stream(
             stream,
-            b"endbfrange\n\0" as *const u8 as *const ::core::ffi::c_char
-                as *const ::core::ffi::c_void,
-            strlen(b"endbfrange\n\0" as *const u8 as *const ::core::ffi::c_char)
-                as ::core::ffi::c_int,
+            b"endbfrange\n\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
+            strlen(b"endbfrange\n\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int,
         );
     }
     return count as ::core::ffi::c_int;
 }
 pub const BLOCK_LEN_MIN: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
 unsafe extern "C-unwind" fn write_string(
-    mut outptr: *mut *mut ::core::ffi::c_char,
-    mut endptr: *mut ::core::ffi::c_char,
-    mut string_data: *const ::core::ffi::c_char,
+    mut outptr: *mut *mut ::core::ffi::c_char, mut endptr: *mut ::core::ffi::c_char, mut string_data: *const ::core::ffi::c_char,
 ) {
     let mut s: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut p: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut i: ::core::ffi::c_int = 0;
     let mut length: ::core::ffi::c_int = 0;
     s = string_data;
-    length = (if !string_data.is_null() {
-        strlen(string_data)
-    } else {
-        0 as size_t
-    }) as ::core::ffi::c_int;
+    length = (if !string_data.is_null() { strlen(string_data) } else { 0 as size_t }) as ::core::ffi::c_int;
     p = *outptr;
     let fresh21 = p;
     p = p.offset(1);
@@ -530,14 +442,8 @@ unsafe extern "C-unwind" fn write_string(
     while i < length {
         let mut ch: ::core::ffi::c_uchar = 0;
         ch = *s.offset(i as isize) as ::core::ffi::c_uchar;
-        if (ch as ::core::ffi::c_int) < 32 as ::core::ffi::c_int
-            || ch as ::core::ffi::c_int > 126 as ::core::ffi::c_int
-        {
-            p = p.offset(sprintf(
-                p,
-                b"\\%03o\0" as *const u8 as *const ::core::ffi::c_char,
-                ch as ::core::ffi::c_int,
-            ) as isize);
+        if (ch as ::core::ffi::c_int) < 32 as ::core::ffi::c_int || ch as ::core::ffi::c_int > 126 as ::core::ffi::c_int {
+            p = p.offset(sprintf(p, b"\\%03o\0" as *const u8 as *const ::core::ffi::c_char, ch as ::core::ffi::c_int) as isize);
         } else {
             match ch as ::core::ffi::c_int {
                 40 | 41 | 92 => {
@@ -563,20 +469,14 @@ unsafe extern "C-unwind" fn write_string(
     *outptr = p;
 }
 unsafe extern "C-unwind" fn write_name(
-    mut outptr: *mut *mut ::core::ffi::c_char,
-    mut endptr: *mut ::core::ffi::c_char,
-    mut name_data: *const ::core::ffi::c_char,
+    mut outptr: *mut *mut ::core::ffi::c_char, mut endptr: *mut ::core::ffi::c_char, mut name_data: *const ::core::ffi::c_char,
 ) {
     let mut s: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut p: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut i: ::core::ffi::c_int = 0;
     let mut length: ::core::ffi::c_int = 0;
     s = name_data;
-    length = (if !name_data.is_null() {
-        strlen(name_data)
-    } else {
-        0 as size_t
-    }) as ::core::ffi::c_int;
+    length = (if !name_data.is_null() { strlen(name_data) } else { 0 as size_t }) as ::core::ffi::c_int;
     p = *outptr;
     let fresh26 = p;
     p = p.offset(1);
@@ -600,11 +500,7 @@ unsafe extern "C-unwind" fn write_name(
             let fresh27 = p;
             p = p.offset(1);
             *fresh27 = '#' as i32 as ::core::ffi::c_char;
-            sputx(
-                *s.offset(i as isize) as ::core::ffi::c_uchar,
-                &raw mut p,
-                endptr,
-            );
+            sputx(*s.offset(i as isize) as ::core::ffi::c_uchar, &raw mut p, endptr);
         } else {
             let fresh28 = p;
             p = p.offset(1);
@@ -614,12 +510,10 @@ unsafe extern "C-unwind" fn write_name(
     }
     *outptr = p;
 }
-pub const CMAP_BEGIN: [::core::ffi::c_char; 62] = crate::backend::c_char_array(
-    *b"/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n\0",
-);
-pub const CMAP_END: [::core::ffi::c_char; 63] = crate::backend::c_char_array(
-    *b"endcmap\nCMapName currentdict /CMap defineresource pop\nend\nend\n\0",
-);
+pub const CMAP_BEGIN: [::core::ffi::c_char; 62] =
+    crate::backend::c_char_array(*b"/CIDInit /ProcSet findresource begin\n12 dict begin\nbegincmap\n\0");
+pub const CMAP_END: [::core::ffi::c_char; 63] =
+    crate::backend::c_char_array(*b"endcmap\nCMapName currentdict /CMap defineresource pop\nend\nend\n\0");
 #[unsafe(export_name = "__pdf_impl_CMap_create_stream")]
 pub unsafe extern "C-unwind" fn CMap_create_stream(mut cmap: *mut CMap) -> *mut pdf_obj {
     let mut stream: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -658,18 +552,12 @@ pub unsafe extern "C-unwind" fn CMap_create_stream(mut cmap: *mut CMap) -> *mut 
         pdf_add_dict(
             csi_dict,
             pdf_new_name(b"Registry\0" as *const u8 as *const ::core::ffi::c_char),
-            pdf_new_string(
-                (*csi).registry as *const ::core::ffi::c_void,
-                strlen((*csi).registry),
-            ),
+            pdf_new_string((*csi).registry as *const ::core::ffi::c_void, strlen((*csi).registry)),
         );
         pdf_add_dict(
             csi_dict,
             pdf_new_name(b"Ordering\0" as *const u8 as *const ::core::ffi::c_char),
-            pdf_new_string(
-                (*csi).ordering as *const ::core::ffi::c_void,
-                strlen((*csi).ordering),
-            ),
+            pdf_new_string((*csi).ordering as *const ::core::ffi::c_void, strlen((*csi).ordering)),
         );
         pdf_add_dict(
             csi_dict,
@@ -700,48 +588,32 @@ pub unsafe extern "C-unwind" fn CMap_create_stream(mut cmap: *mut CMap) -> *mut 
         }
     }
     if !(*cmap).useCMap.is_null() {
-        pdf_abort!(
-            b"UseCMap found (not supported yet)...\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"UseCMap found (not supported yet)...\0" as *const u8 as *const ::core::ffi::c_char,);
     }
-    wbuf.buf = new((40960 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
-    codestr = new(((*cmap).profile.maxBytesIn as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_uchar;
-    memset(
-        codestr as *mut ::core::ffi::c_void,
-        0 as ::core::ffi::c_int,
-        (*cmap).profile.maxBytesIn,
-    );
+    wbuf.buf =
+        new((40960 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+            as *mut ::core::ffi::c_char;
+    codestr = new(((*cmap).profile.maxBytesIn as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize) as uint32_t)
+        as *mut ::core::ffi::c_uchar;
+    memset(codestr as *mut ::core::ffi::c_void, 0 as ::core::ffi::c_int, (*cmap).profile.maxBytesIn);
     wbuf.curptr = wbuf.buf;
     wbuf.limptr = wbuf
         .buf
         .offset(WBUF_SIZE as isize)
-        .offset(
-            -((2 as size_t).wrapping_mul(
-                (*cmap)
-                    .profile
-                    .maxBytesIn
-                    .wrapping_add((*cmap).profile.maxBytesOut),
-            ) as isize),
-        )
+        .offset(-((2 as size_t).wrapping_mul((*cmap).profile.maxBytesIn.wrapping_add((*cmap).profile.maxBytesOut)) as isize))
         .offset(16 as ::core::ffi::c_int as isize);
     pdf_add_stream(
         stream,
         CMAP_BEGIN.as_ptr() as *const ::core::ffi::c_void,
         strlen(CMAP_BEGIN.as_ptr()) as ::core::ffi::c_int,
     );
-    wbuf.curptr = wbuf.curptr.offset(sprintf(
-        wbuf.curptr,
-        b"/CMapName \0" as *const u8 as *const ::core::ffi::c_char,
-    ) as isize);
+    wbuf.curptr = wbuf
+        .curptr
+        .offset(sprintf(wbuf.curptr, b"/CMapName \0" as *const u8 as *const ::core::ffi::c_char) as isize);
     write_name(&raw mut wbuf.curptr, wbuf.limptr, (*cmap).name);
-    wbuf.curptr = wbuf.curptr.offset(sprintf(
-        wbuf.curptr,
-        b" def\n\0" as *const u8 as *const ::core::ffi::c_char,
-    ) as isize);
+    wbuf.curptr = wbuf
+        .curptr
+        .offset(sprintf(wbuf.curptr, b" def\n\0" as *const u8 as *const ::core::ffi::c_char) as isize);
     wbuf.curptr = wbuf.curptr.offset(sprintf(
         wbuf.curptr,
         b"/CMapType %d def\n\0" as *const u8 as *const ::core::ffi::c_char,
@@ -754,28 +626,23 @@ pub unsafe extern "C-unwind" fn CMap_create_stream(mut cmap: *mut CMap) -> *mut 
             (*cmap).wmode,
         ) as isize);
     }
-    wbuf.curptr = wbuf.curptr.offset(sprintf(
-        wbuf.curptr,
-        b"/CIDSystemInfo <<\n\0" as *const u8 as *const ::core::ffi::c_char,
-    ) as isize);
-    wbuf.curptr = wbuf.curptr.offset(sprintf(
-        wbuf.curptr,
-        b"  /Registry \0" as *const u8 as *const ::core::ffi::c_char,
-    ) as isize);
+    wbuf.curptr = wbuf
+        .curptr
+        .offset(sprintf(wbuf.curptr, b"/CIDSystemInfo <<\n\0" as *const u8 as *const ::core::ffi::c_char) as isize);
+    wbuf.curptr = wbuf
+        .curptr
+        .offset(sprintf(wbuf.curptr, b"  /Registry \0" as *const u8 as *const ::core::ffi::c_char) as isize);
     write_string(&raw mut wbuf.curptr, wbuf.limptr, (*csi).registry);
-    wbuf.curptr = wbuf.curptr.offset(sprintf(
-        wbuf.curptr,
-        b"\n\0" as *const u8 as *const ::core::ffi::c_char,
-    ) as isize);
-    wbuf.curptr = wbuf.curptr.offset(sprintf(
-        wbuf.curptr,
-        b"  /Ordering \0" as *const u8 as *const ::core::ffi::c_char,
-    ) as isize);
+    wbuf.curptr = wbuf
+        .curptr
+        .offset(sprintf(wbuf.curptr, b"\n\0" as *const u8 as *const ::core::ffi::c_char) as isize);
+    wbuf.curptr = wbuf
+        .curptr
+        .offset(sprintf(wbuf.curptr, b"  /Ordering \0" as *const u8 as *const ::core::ffi::c_char) as isize);
     write_string(&raw mut wbuf.curptr, wbuf.limptr, (*csi).ordering);
-    wbuf.curptr = wbuf.curptr.offset(sprintf(
-        wbuf.curptr,
-        b"\n\0" as *const u8 as *const ::core::ffi::c_char,
-    ) as isize);
+    wbuf.curptr = wbuf
+        .curptr
+        .offset(sprintf(wbuf.curptr, b"\n\0" as *const u8 as *const ::core::ffi::c_char) as isize);
     wbuf.curptr = wbuf.curptr.offset(sprintf(
         wbuf.curptr,
         b"  /Supplement %d\n>> def\n\0" as *const u8 as *const ::core::ffi::c_char,
@@ -800,11 +667,7 @@ pub unsafe extern "C-unwind" fn CMap_create_stream(mut cmap: *mut CMap) -> *mut 
         *fresh0 = '<' as i32 as ::core::ffi::c_char;
         j = 0 as size_t;
         while j < (*ranges.offset(i as isize)).dim {
-            sputx(
-                *(*ranges.offset(i as isize)).codeLo.offset(j as isize),
-                &raw mut wbuf.curptr,
-                wbuf.limptr,
-            );
+            sputx(*(*ranges.offset(i as isize)).codeLo.offset(j as isize), &raw mut wbuf.curptr, wbuf.limptr);
             j = j.wrapping_add(1);
         }
         let fresh1 = wbuf.curptr;
@@ -818,11 +681,7 @@ pub unsafe extern "C-unwind" fn CMap_create_stream(mut cmap: *mut CMap) -> *mut 
         *fresh3 = '<' as i32 as ::core::ffi::c_char;
         j = 0 as size_t;
         while j < (*ranges.offset(i as isize)).dim {
-            sputx(
-                *(*ranges.offset(i as isize)).codeHi.offset(j as isize),
-                &raw mut wbuf.curptr,
-                wbuf.limptr,
-            );
+            sputx(*(*ranges.offset(i as isize)).codeHi.offset(j as isize), &raw mut wbuf.curptr, wbuf.limptr);
             j = j.wrapping_add(1);
         }
         let fresh4 = wbuf.curptr;
@@ -841,27 +700,15 @@ pub unsafe extern "C-unwind" fn CMap_create_stream(mut cmap: *mut CMap) -> *mut 
     wbuf.curptr = wbuf.buf;
     pdf_add_stream(
         stream,
-        b"endcodespacerange\n\0" as *const u8 as *const ::core::ffi::c_char
-            as *const ::core::ffi::c_void,
-        strlen(b"endcodespacerange\n\0" as *const u8 as *const ::core::ffi::c_char)
-            as ::core::ffi::c_int,
+        b"endcodespacerange\n\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
+        strlen(b"endcodespacerange\n\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int,
     );
     if !(*cmap).mapTbl.is_null() {
-        count = write_map(
-            (*cmap).mapTbl,
-            0 as size_t,
-            codestr,
-            0 as size_t,
-            &raw mut wbuf,
-            stream,
-        ) as size_t;
+        count = write_map((*cmap).mapTbl, 0 as size_t, codestr, 0 as size_t, &raw mut wbuf, stream) as size_t;
         if count > 0 as size_t {
             let mut fmt_buf: [::core::ffi::c_char; 32] = [0; 32];
             if count > 100 as size_t {
-                pdf_abort!(
-                    b"Unexpected error....: %zu\0" as *const u8 as *const ::core::ffi::c_char,
-                    count,
-                );
+                pdf_abort!(b"Unexpected error....: %zu\0" as *const u8 as *const ::core::ffi::c_char, count,);
             }
             sprintf(
                 &raw mut fmt_buf as *mut ::core::ffi::c_char,
@@ -880,10 +727,8 @@ pub unsafe extern "C-unwind" fn CMap_create_stream(mut cmap: *mut CMap) -> *mut 
             );
             pdf_add_stream(
                 stream,
-                b"endbfchar\n\0" as *const u8 as *const ::core::ffi::c_char
-                    as *const ::core::ffi::c_void,
-                strlen(b"endbfchar\n\0" as *const u8 as *const ::core::ffi::c_char)
-                    as ::core::ffi::c_int,
+                b"endbfchar\n\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
+                strlen(b"endbfchar\n\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int,
             );
             count = 0 as size_t;
             wbuf.curptr = wbuf.buf;
@@ -900,16 +745,8 @@ pub unsafe extern "C-unwind" fn CMap_create_stream(mut cmap: *mut CMap) -> *mut 
 }
 pub const WBUF_SIZE: ::core::ffi::c_int = 40960 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn memset(
-        __b: *mut ::core::ffi::c_void,
-        __c: ::core::ffi::c_int,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
+    fn memset(__b: *mut ::core::ffi::c_void, __c: ::core::ffi::c_int, __len: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -917,10 +754,7 @@ pub struct pdf_obj {
     _private: [u8; 0],
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_CMap_create_stream(
-    mut cmap: *mut CMap,
-    _result: *mut *mut pdf_obj,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_CMap_create_stream(mut cmap: *mut CMap, _result: *mut *mut pdf_obj) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { CMap_create_stream(cmap) }) {
         Ok(value) => {
             unsafe {

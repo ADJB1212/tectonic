@@ -69,20 +69,16 @@ pub static mut name_of_input_file: *mut c_char = std::ptr::null_mut();
 pub static mut abspath_of_input_file: [c_char; 1024] = [0; 1024];
 
 #[unsafe(export_name = "offsetsFromUTF8")]
-pub static offsetsFromUTF8: [u32; 6] = [
-    0x00000000, 0x00003080, 0x000E2080, 0x03C82080, 0xFA082080, 0x82082080,
-];
+pub static offsetsFromUTF8: [u32; 6] = [0x00000000, 0x00003080, 0x000E2080, 0x03C82080, 0xFA082080, 0x82082080];
 
 #[unsafe(export_name = "bytesFromUTF8")]
 pub static bytesFromUTF8: [u8; 256] = [
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5,
 ];
 
 #[unsafe(export_name = "firstByteMark")]
@@ -129,23 +125,11 @@ unsafe extern "C" {
     pub fn capture_to_diagnostic(diagnostic: *mut tectonic_bridge_core::Diagnostic);
 
     pub fn ttstub_input_open_primary() -> rust_input_handle_t;
-    pub fn ttstub_input_open(
-        path: *const c_char,
-        format: c_int,
-        is_gz: c_int,
-    ) -> rust_input_handle_t;
+    pub fn ttstub_input_open(path: *const c_char, format: c_int, is_gz: c_int) -> rust_input_handle_t;
     pub fn ttstub_input_getc(handle: rust_input_handle_t) -> c_int;
-    pub fn ttstub_input_seek(
-        handle: rust_input_handle_t,
-        offset: libc::ssize_t,
-        whence: c_int,
-    ) -> usize;
+    pub fn ttstub_input_seek(handle: rust_input_handle_t, offset: libc::ssize_t, whence: c_int) -> usize;
     pub fn ttstub_input_close(handle: rust_input_handle_t) -> c_int;
-    pub fn ttstub_input_read_partial(
-        handle: rust_input_handle_t,
-        buf: *mut c_char,
-        len: usize,
-    ) -> libc::ssize_t;
+    pub fn ttstub_input_read_partial(handle: rust_input_handle_t, buf: *mut c_char, len: usize) -> libc::ssize_t;
     pub fn ttstub_get_last_input_abspath(buf: *mut c_char, len: usize) -> c_int;
 
     pub fn gettexstring(s: str_number) -> *mut c_char;
@@ -166,21 +150,12 @@ unsafe extern "C" {
     pub fn ucnv_close(converter: *mut c_void);
     #[link_name = "tt_icu_ucnv_to_algorithmic"]
     pub fn ucnv_toAlgorithmic(
-        alg: i32,
-        cnv: *mut c_void,
-        target: *mut c_char,
-        targetCapacity: i32,
-        source: *const c_char,
-        sourceLength: i32,
-        pErrorCode: *mut i32,
+        alg: i32, cnv: *mut c_void, target: *mut c_char, targetCapacity: i32, source: *const c_char, sourceLength: i32, pErrorCode: *mut i32,
     ) -> i32;
 }
 
 #[inline]
-pub unsafe fn ttbc_buffered_input_init(
-    input: *mut ttbc_buffered_input,
-    handle: rust_input_handle_t,
-) {
+pub unsafe fn ttbc_buffered_input_init(input: *mut ttbc_buffered_input, handle: rust_input_handle_t) {
     unsafe {
         (*input).handle = handle;
         (*input).position = 0;
@@ -192,11 +167,7 @@ pub unsafe fn ttbc_buffered_input_init(
 pub unsafe fn ttbc_buffered_input_getc(input: *mut ttbc_buffered_input) -> c_int {
     unsafe {
         if (*input).position == (*input).length {
-            let count = ttstub_input_read_partial(
-                (*input).handle,
-                (*input).bytes.as_mut_ptr() as *mut c_char,
-                (*input).bytes.len(),
-            );
+            let count = ttstub_input_read_partial((*input).handle, (*input).bytes.as_mut_ptr() as *mut c_char, (*input).bytes.len());
             (*input).position = 0;
             (*input).length = 0;
             if count <= 0 {
@@ -230,9 +201,7 @@ pub unsafe extern "C" fn tt_xetex_open_input(filefmt: c_int) -> rust_input_handl
         } else if *name_of_file == b'|' as c_char {
             print_nl_cstr(c"Warning: ".as_ptr());
             diagnostic_begin_capture_warning_here();
-            print_cstr(
-                c"piped inputs from external commands are not implemented in Tectonic".as_ptr(),
-            );
+            print_cstr(c"piped inputs from external commands are not implemented in Tectonic".as_ptr());
             capture_to_diagnostic(std::ptr::null_mut());
             return INVALID_HANDLE;
         } else {
@@ -243,9 +212,7 @@ pub unsafe extern "C" fn tt_xetex_open_input(filefmt: c_int) -> rust_input_handl
             return INVALID_HANDLE;
         }
 
-        if ttstub_get_last_input_abspath((&raw mut abspath_of_input_file).cast::<c_char>(), 1024)
-            < 1
-        {
+        if ttstub_get_last_input_abspath((&raw mut abspath_of_input_file).cast::<c_char>(), 1024) < 1 {
             abspath_of_input_file[0] = 0;
         }
 
@@ -294,13 +261,7 @@ pub unsafe extern "C" fn set_input_file_encoding(f: *mut UFILE, mode: i32, encod
 }
 
 #[unsafe(export_name = "u_open_in")]
-pub unsafe extern "C" fn u_open_in(
-    f: *mut *mut UFILE,
-    filefmt: i32,
-    fopen_mode: *const c_char,
-    mut mode: i32,
-    encodingData: i32,
-) -> c_int {
+pub unsafe extern "C" fn u_open_in(f: *mut *mut UFILE, filefmt: i32, fopen_mode: *const c_char, mut mode: i32, encodingData: i32) -> c_int {
     unsafe {
         let handle = tt_xetex_open_input(filefmt);
         if handle == INVALID_HANDLE {
@@ -350,10 +311,7 @@ pub unsafe extern "C" fn u_open_in(
 
 unsafe fn buffer_overflow() {
     unsafe {
-        _tt_abort(
-            c"unable to read an entire line (buf_size=%u)".as_ptr(),
-            buf_size as libc::c_uint,
-        );
+        _tt_abort(c"unable to read an entire line (buf_size=%u)".as_ptr(), buf_size as libc::c_uint);
     }
 }
 
@@ -372,8 +330,7 @@ unsafe fn apply_normalization(buf: *mut u32, len: c_int, norm: c_int) {
     unsafe {
         let norm_idx = (norm - 1) as usize;
         if normalizers[norm_idx].is_null() {
-            let out_form =
-                (NATIVE_UTF32 as u32) | (if norm == 1 { kForm_NFC } else { kForm_NFD } as u32);
+            let out_form = (NATIVE_UTF32 as u32) | (if norm == 1 { kForm_NFC } else { kForm_NFD } as u32);
             let status = TECkit_CreateConverter(
                 std::ptr::null_mut(),
                 0,
@@ -383,10 +340,7 @@ unsafe fn apply_normalization(buf: *mut u32, len: c_int, norm: c_int) {
                 &mut normalizers[norm_idx],
             );
             if status != kStatus_NoError {
-                _tt_abort(
-                    c"failed to create normalizer: error code = %d".as_ptr(),
-                    status as c_int,
-                );
+                _tt_abort(c"failed to create normalizer: error code = %d".as_ptr(), status as c_int);
             }
         }
 
@@ -394,8 +348,7 @@ unsafe fn apply_normalization(buf: *mut u32, len: c_int, norm: c_int) {
         let mut in_used: UInt32 = 0;
         let mut out_used: UInt32 = 0;
         let in_bytes = (len as usize) * std::mem::size_of::<u32>();
-        let out_cap =
-            (std::mem::size_of::<UnicodeScalar>() * ((buf_size - first) as usize)) as UInt32;
+        let out_cap = (std::mem::size_of::<UnicodeScalar>() * ((buf_size - first) as usize)) as UInt32;
         let out_ptr = buffer.add(first as usize) as *mut Byte;
 
         let status = TECkit_ConvertBuffer(
@@ -429,10 +382,7 @@ fn copy_ascii_line(input: &[u8], output: &mut [UnicodeScalar]) -> usize {
     let mut count = 0;
     for chunk in input.chunks(64) {
         if !chunk.is_ascii() {
-            count += chunk
-                .iter()
-                .position(|&byte| !byte.is_ascii() || byte == b'\r' || byte == b'\n')
-                .unwrap();
+            count += chunk.iter().position(|&byte| !byte.is_ascii() || byte == b'\r' || byte == b'\n').unwrap();
             break;
         }
         if let Some(end) = memchr::memchr2(b'\r', b'\n', chunk) {
@@ -469,12 +419,7 @@ mod ascii_tests {
 
     #[test]
     fn ascii_line_copy_stops_at_unicode_newlines_and_capacity() {
-        for input in [
-            b"abc\rdef".as_slice(),
-            b"abc\ndef",
-            b"abc\xc3\xa9",
-            b"abc\xff",
-        ] {
+        for input in [b"abc\rdef".as_slice(), b"abc\ndef", b"abc\xc3\xa9", b"abc\xff"] {
             for capacity in 0..=input.len() + 1 {
                 let mut output = vec![-1; capacity + 1];
                 let count = copy_ascii_line(input, &mut output[..capacity]);
@@ -593,13 +538,7 @@ mod ascii_tests {
                                 output[written] = value;
                                 written += 1;
                                 if (0..128).contains(&value) {
-                                    written += unsafe {
-                                        read_buffered_ascii(
-                                            file,
-                                            output.as_mut_ptr().add(written),
-                                            output.len() - written,
-                                        )
-                                    };
+                                    written += unsafe { read_buffered_ascii(file, output.as_mut_ptr().add(written), output.len() - written) };
                                 }
                             }
                         } else {
@@ -673,8 +612,7 @@ pub unsafe extern "C" fn input_line(f: *mut UFILE) -> c_int {
             match norm {
                 1 | 2 => {
                     if utf32Buf.is_null() {
-                        utf32Buf =
-                            xcalloc(buf_size as usize, std::mem::size_of::<u32>()) as *mut u32;
+                        utf32Buf = xcalloc(buf_size as usize, std::mem::size_of::<u32>()) as *mut u32;
                     }
                     tmpLen = ucnv_toAlgorithmic(
                         UCNV_UTF32_NativeEndian,
@@ -689,11 +627,7 @@ pub unsafe extern "C" fn input_line(f: *mut UFILE) -> c_int {
                         conversion_error(errorCode);
                         return 0;
                     }
-                    apply_normalization(
-                        utf32Buf,
-                        tmpLen / (std::mem::size_of::<u32>() as i32),
-                        norm,
-                    );
+                    apply_normalization(utf32Buf, tmpLen / (std::mem::size_of::<u32>() as i32), norm);
                 }
                 _ => {
                     let mut outLen = ucnv_toAlgorithmic(
@@ -725,8 +659,7 @@ pub unsafe extern "C" fn input_line(f: *mut UFILE) -> c_int {
             match norm {
                 1 | 2 => {
                     if utf32Buf.is_null() {
-                        utf32Buf =
-                            xcalloc(buf_size as usize, std::mem::size_of::<u32>()) as *mut u32;
+                        utf32Buf = xcalloc(buf_size as usize, std::mem::size_of::<u32>()) as *mut u32;
                     }
                     tmpLen = 0;
                     if i != -1 && i != b'\n' as c_int && i != b'\r' as c_int {
@@ -736,11 +669,7 @@ pub unsafe extern "C" fn input_line(f: *mut UFILE) -> c_int {
                     if i != -1 && i != b'\n' as c_int && i != b'\r' as c_int {
                         while tmpLen < buf_size {
                             let copied = if (0..128).contains(&i) {
-                                read_buffered_ascii(
-                                    f,
-                                    utf32Buf.add(tmpLen as usize).cast(),
-                                    (buf_size - tmpLen) as usize,
-                                )
+                                read_buffered_ascii(f, utf32Buf.add(tmpLen as usize).cast(), (buf_size - tmpLen) as usize)
                             } else {
                                 0
                             };
@@ -775,11 +704,7 @@ pub unsafe extern "C" fn input_line(f: *mut UFILE) -> c_int {
                     if i != -1 && i != b'\n' as c_int && i != b'\r' as c_int {
                         while last < buf_size {
                             let copied = if (0..128).contains(&i) {
-                                read_buffered_ascii(
-                                    f,
-                                    buffer.add(last as usize),
-                                    (buf_size - last) as usize,
-                                )
+                                read_buffered_ascii(f, buffer.add(last as usize), (buf_size - last) as usize)
                             } else {
                                 0
                             };
@@ -976,10 +901,7 @@ pub unsafe extern "C" fn get_uni_c(f: *mut UFILE) -> c_int {
                 rval = ttbc_buffered_input_getc(&mut (*f).input);
             }
             _ => {
-                _tt_abort(
-                    c"internal error; file input mode=%d".as_ptr(),
-                    (*f).encodingMode as c_int,
-                );
+                _tt_abort(c"internal error; file input mode=%d".as_ptr(), (*f).encodingMode as c_int);
             }
         }
 
@@ -1124,23 +1046,10 @@ pub unsafe extern "C" fn open_or_close_in() {
             scan_file_name();
             pack_file_name(cur_name, cur_area, cur_ext);
 
-            let default_mode = (*eqtb
-                .offset((INT_BASE + INT_PAR__xetex_default_input_mode) as isize))
-            .b32
-            .s1;
-            let default_encoding = (*eqtb
-                .offset((INT_BASE + INT_PAR__xetex_default_input_encoding) as isize))
-            .b32
-            .s1;
+            let default_mode = (*eqtb.offset((INT_BASE + INT_PAR__xetex_default_input_mode) as isize)).b32.s1;
+            let default_encoding = (*eqtb.offset((INT_BASE + INT_PAR__xetex_default_input_encoding) as isize)).b32.s1;
 
-            if u_open_in(
-                &mut read_file[n],
-                TTBC_FILE_FORMAT_TEX,
-                c"rb".as_ptr(),
-                default_mode,
-                default_encoding,
-            ) != 0
-            {
+            if u_open_in(&mut read_file[n], TTBC_FILE_FORMAT_TEX, c"rb".as_ptr(), default_mode, default_encoding) != 0 {
                 make_utf16_name();
                 name_in_progress = true;
                 begin_name();

@@ -59,21 +59,15 @@ impl TectonicCommand for DumpCommand {
             SecurityStance::MaybeAllowInsecures
         };
 
-        let mut setup_options =
-            DocumentSetupOptions::new_with_security(SecuritySettings::new(stance));
+        let mut setup_options = DocumentSetupOptions::new_with_security(SecuritySettings::new(stance));
         setup_options.only_cached(self.only_cached);
 
         // If output profile is unspecified, just grab one at (pseudo-)random.
-        let output_name = self
-            .profile
-            .as_ref()
-            .unwrap_or_else(|| doc.outputs.keys().next().unwrap());
+        let output_name = self.profile.as_ref().unwrap_or_else(|| doc.outputs.keys().next().unwrap());
 
         let mut builder = doc.setup_session(output_name, &setup_options, status)?;
 
-        builder
-            .format_cache_path(config.format_cache_path()?)
-            .pass(PassSetting::Tex);
+        builder.format_cache_path(config.format_cache_path()?).pass(PassSetting::Tex);
 
         let sess = crate::compile::run_and_report(builder, status)?;
         let files = sess.into_file_data();
@@ -92,17 +86,13 @@ impl TectonicCommand for DumpCommand {
             }
 
             if !found_any {
-                tt_error!(
-                    status,
-                    "found no intermediate files with names ending in `{}`",
-                    self.filename
-                );
+                tt_error!(status, "found no intermediate files with names ending in `{}`", self.filename);
                 return Ok(1);
             }
         } else {
-            let info = files.get(&self.filename).ok_or_else(|| {
-                Error::msg(format!("no such intermediate file `{}`", self.filename))
-            })?;
+            let info = files
+                .get(&self.filename)
+                .ok_or_else(|| Error::msg(format!("no such intermediate file `{}`", self.filename)))?;
             ctry!(
                 std::io::stdout().write_all(&info.data[..]);
                 "error dumping intermediate file `{}`", self.filename

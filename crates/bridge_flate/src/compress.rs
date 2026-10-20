@@ -67,9 +67,9 @@ pub(super) fn compress(input: &[u8], output: &mut [u8], level: u32) -> Result<us
         return Err(FlateResult::OtherError);
     }
     if input.len() >= PARALLEL_THRESHOLD {
-        let required = input.chunks(CHUNK_SIZE).try_fold(4usize, |size, chunk| {
-            size.checked_add(chunk_bound(chunk.len()))
-        });
+        let required = input
+            .chunks(CHUNK_SIZE)
+            .try_fold(4usize, |size, chunk| size.checked_add(chunk_bound(chunk.len())));
         let configured = OVERRIDE_POOL.with(|current| current.borrow().clone());
         if let Some(pool) = configured {
             if required.is_some_and(|size| size <= output.len()) {
@@ -119,18 +119,10 @@ impl Chunk<'_> {
     fn compress(&mut self, level: u32) -> Result<(usize, u32), FlateResult> {
         let mut compressor = Compress::new(Compression::new(level), self.first);
         if !self.dictionary.is_empty() {
-            compressor
-                .set_dictionary(self.dictionary)
-                .map_err(|_| FlateResult::OtherError)?;
+            compressor.set_dictionary(self.dictionary).map_err(|_| FlateResult::OtherError)?;
         }
-        let flush = if self.last {
-            FlushCompress::Finish
-        } else {
-            FlushCompress::Sync
-        };
-        let status = compressor
-            .compress(self.input, self.output, flush)
-            .map_err(|_| FlateResult::OtherError)?;
+        let flush = if self.last { FlushCompress::Finish } else { FlushCompress::Sync };
+        let status = compressor.compress(self.input, self.output, flush).map_err(|_| FlateResult::OtherError)?;
         if compressor.total_in() as usize != self.input.len()
             || compressor.total_out() as usize == self.output.len()
             || (self.last && status != Status::StreamEnd)
@@ -156,21 +148,11 @@ fn adler32_combine(adler1: u32, adler2: u32, len2: usize) -> u32 {
     (low | high << 16) as u32
 }
 
-fn compress_parallel(
-    input: &[u8],
-    output: &mut [u8],
-    level: u32,
-    pool: &rayon::ThreadPool,
-) -> Result<usize, FlateResult> {
+fn compress_parallel(input: &[u8], output: &mut [u8], level: u32, pool: &rayon::ThreadPool) -> Result<usize, FlateResult> {
     pool.install(|| compress_chunks(input, output, level, true))
 }
 
-fn compress_chunks(
-    input: &[u8],
-    output: &mut [u8],
-    level: u32,
-    parallel: bool,
-) -> Result<usize, FlateResult> {
+fn compress_chunks(input: &[u8], output: &mut [u8], level: u32, parallel: bool) -> Result<usize, FlateResult> {
     if input.len() <= CHUNK_SIZE {
         return compress(input, output, level);
     }
@@ -238,16 +220,12 @@ mod tests {
 
     fn check_stream(compressed: &[u8], input: &[u8]) {
         let mut decoded = Vec::new();
-        ZlibDecoder::new(compressed)
-            .read_to_end(&mut decoded)
-            .unwrap();
+        ZlibDecoder::new(compressed).read_to_end(&mut decoded).unwrap();
         assert_eq!(decoded, input);
         let mut decompressor = Decompress::new(true);
         let mut decoded = vec![0; input.len() + 1];
         assert_eq!(
-            decompressor
-                .decompress(compressed, &mut decoded, FlushDecompress::Finish)
-                .unwrap(),
+            decompressor.decompress(compressed, &mut decoded, FlushDecompress::Finish).unwrap(),
             Status::StreamEnd
         );
         assert_eq!(decompressor.total_in() as usize, compressed.len());
@@ -255,26 +233,15 @@ mod tests {
 
     #[test]
     fn parallel_compression_emits_one_complete_zlib_stream() {
-        let pool = rayon::ThreadPoolBuilder::new()
-            .num_threads(3)
-            .build()
-            .unwrap();
+        let pool = rayon::ThreadPoolBuilder::new().num_threads(3).build().unwrap();
         let random = input_data(5 * CHUNK_SIZE + 1);
         for input in [random, vec![b'a'; 5 * CHUNK_SIZE + 1]] {
-            for length in [
-                CHUNK_SIZE - 1,
-                CHUNK_SIZE,
-                CHUNK_SIZE + 1,
-                input.len() - 1,
-                input.len(),
-            ] {
+            for length in [CHUNK_SIZE - 1, CHUNK_SIZE, CHUNK_SIZE + 1, input.len() - 1, input.len()] {
                 for level in [0, 1, 6, 9] {
                     let input = &input[..length];
                     let mut output = vec![0; input.len() + input.len() / 1000 + 14];
-                    let size =
-                        compress_parallel(input, &mut output, level, &pool).unwrap_or_else(|_| {
-                            panic!("compression failed: length={length}, level={level}")
-                        });
+                    let size = compress_parallel(input, &mut output, level, &pool)
+                        .unwrap_or_else(|_| panic!("compression failed: length={length}, level={level}"));
                     check_stream(&output[..size], input);
                 }
             }
@@ -285,27 +252,17 @@ mod tests {
     fn level_one_compression_fits_traditional_zlib_bound() {
         let input = input_data(CHUNK_SIZE - 1);
         let mut output = vec![0; input.len() + input.len() / 1000 + 14];
-        let size = compress_serial(&input, &mut output, 1)
-            .unwrap_or_else(|_| panic!("compression failed"));
+        let size = compress_serial(&input, &mut output, 1).unwrap_or_else(|_| panic!("compression failed"));
         check_stream(&output[..size], &input);
     }
 
     #[test]
     fn parallel_compression_preserves_history_across_chunk_boundaries() {
-        let pool = rayon::ThreadPoolBuilder::new()
-            .num_threads(2)
-            .build()
-            .unwrap();
+        let pool = rayon::ThreadPoolBuilder::new().num_threads(2).build().unwrap();
         let pattern = input_data(DICTIONARY_SIZE / 2);
-        let input: Vec<_> = pattern
-            .iter()
-            .copied()
-            .cycle()
-            .take(4 * CHUNK_SIZE)
-            .collect();
+        let input: Vec<_> = pattern.iter().copied().cycle().take(4 * CHUNK_SIZE).collect();
         let mut output = vec![0; input.len() + input.len() / 1000 + 14];
-        let size = compress_parallel(&input, &mut output, 9, &pool)
-            .unwrap_or_else(|_| panic!("compression failed"));
+        let size = compress_parallel(&input, &mut output, 9, &pool).unwrap_or_else(|_| panic!("compression failed"));
         check_stream(&output[..size], &input);
         assert!(size < 2 * pattern.len(), "lost compression history: {size}");
     }
@@ -314,8 +271,7 @@ mod tests {
     fn tight_buffers_fall_back_to_serial_compression() {
         let input = vec![0; PARALLEL_THRESHOLD];
         let mut output = vec![0; 2048];
-        let size =
-            compress(&input, &mut output, 9).unwrap_or_else(|_| panic!("compression failed"));
+        let size = compress(&input, &mut output, 9).unwrap_or_else(|_| panic!("compression failed"));
         check_stream(&output[..size], &input);
     }
 
@@ -325,29 +281,17 @@ mod tests {
         let mut output = vec![0; 16];
         let mut output_len = output.len() as u64;
         // SAFETY: Input and output are valid, nonoverlapping buffers.
-        let result = unsafe {
-            crate::tectonic_flate_compress(
-                output.as_mut_ptr(),
-                &mut output_len,
-                input.as_ptr(),
-                input.len() as u64,
-                9,
-            )
-        };
+        let result = unsafe { crate::tectonic_flate_compress(output.as_mut_ptr(), &mut output_len, input.as_ptr(), input.len() as u64, 9) };
         assert!(matches!(result, FlateResult::BufError));
         assert_eq!(output_len, 0);
-        assert!(matches!(
-            compress(&input, &mut output, 10),
-            Err(FlateResult::OtherError)
-        ));
+        assert!(matches!(compress(&input, &mut output, 10), Err(FlateResult::OtherError)));
     }
 
     #[test]
     fn empty_and_small_inputs_round_trip() {
         for input in [b"".as_slice(), b"page contents"] {
             let mut output = vec![0; 128];
-            let size =
-                compress(input, &mut output, 6).unwrap_or_else(|_| panic!("compression failed"));
+            let size = compress(input, &mut output, 6).unwrap_or_else(|_| panic!("compression failed"));
             check_stream(&output[..size], input);
         }
     }
@@ -357,10 +301,7 @@ mod tests {
         let input = input_data(PARALLEL_THRESHOLD + 71);
         let mut expected = Vec::new();
         for workers in [1, 2, 4] {
-            let pool = rayon::ThreadPoolBuilder::new()
-                .num_threads(workers)
-                .build()
-                .unwrap();
+            let pool = rayon::ThreadPoolBuilder::new().num_threads(workers).build().unwrap();
             let mut output = vec![0; input.len() + input.len() / 1000 + 14];
             let size = compress_parallel(&input, &mut output, 9, &pool).unwrap();
             output.truncate(size);
@@ -383,9 +324,7 @@ mod tests {
         for _ in 0..3 {
             let mut compressor = Compress::new(Compression::new(9), true);
             assert_eq!(
-                compressor
-                    .compress(&input, &mut output, FlushCompress::Finish)
-                    .unwrap(),
+                compressor.compress(&input, &mut output, FlushCompress::Finish).unwrap(),
                 Status::StreamEnd
             );
             std::hint::black_box(compressor.total_out());

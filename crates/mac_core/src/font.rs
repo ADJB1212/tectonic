@@ -88,13 +88,7 @@ impl CTFont {
     pub fn new_descriptor(descriptor: &CTFontDescriptor, size: f64) -> CTFont {
         // SAFETY: Provided descriptor is guaranteed valid. Any size will work. Null matrix is always
         //         allowed.
-        let ptr = unsafe {
-            sys::CTFontCreateWithFontDescriptor(
-                descriptor.as_type_ref(),
-                size as sys::CGFloat,
-                ptr::null_mut(),
-            )
-        };
+        let ptr = unsafe { sys::CTFontCreateWithFontDescriptor(descriptor.as_type_ref(), size as sys::CGFloat, ptr::null_mut()) };
         let ptr = NonNull::new(ptr.cast_mut()).unwrap();
         // SAFETY: If non-null, pointer from CTFontCreateWithFontDescriptor is a new, owned CTFont.
         unsafe { CTFont::new_owned(ptr) }
@@ -119,9 +113,7 @@ impl CTFont {
     /// Get the name of this font, localized to a specific language
     pub fn localized_name(&self, name: FontNameKey) -> Option<CFString> {
         // SAFETY: Internal pointer and name string guaranteed valid.
-        let ptr = unsafe {
-            sys::CTFontCopyLocalizedName(self.as_type_ref(), name.to_raw(), ptr::null_mut())
-        };
+        let ptr = unsafe { sys::CTFontCopyLocalizedName(self.as_type_ref(), name.to_raw(), ptr::null_mut()) };
         // SAFETY: In non-null, returned name guaranteed valid and owned.
         NonNull::new(ptr.cast_mut()).map(|ptr| unsafe { CFString::new_owned(ptr) })
     }

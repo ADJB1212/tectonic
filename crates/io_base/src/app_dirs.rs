@@ -16,8 +16,7 @@ use tectonic_errors::prelude::*;
 /// The instance of the `directories` crate that this crate links to.
 pub use directories;
 
-static PROJECT_DIRS: LazyLock<Option<ProjectDirs>> =
-    LazyLock::new(|| ProjectDirs::from("", "TectonicProject", "Tectonic"));
+static PROJECT_DIRS: LazyLock<Option<ProjectDirs>> = LazyLock::new(|| ProjectDirs::from("", "TectonicProject", "Tectonic"));
 
 fn dirs() -> Result<&'static ProjectDirs> {
     PROJECT_DIRS.as_ref().ok_or_else(|| {

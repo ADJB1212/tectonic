@@ -37,11 +37,7 @@ impl ZipBundle<File> {
 }
 
 impl<R: Read + Seek> IoProvider for ZipBundle<R> {
-    fn input_open_name(
-        &mut self,
-        name: &str,
-        _status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_name(&mut self, name: &str, _status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         // We need to be able to look at other items in the Zip file while
         // reading this one, so the only path forward is to read the entire
         // contents into a buffer right now. RAM is cheap these days.
@@ -67,26 +63,17 @@ impl<R: Read + Seek> IoProvider for ZipBundle<R> {
             return OpenResult::Err(e.into());
         }
 
-        OpenResult::Ok(InputHandle::new_read_only(
-            name,
-            Cursor::new(buf),
-            InputOrigin::Other,
-        ))
+        OpenResult::Ok(InputHandle::new_read_only(name, Cursor::new(buf), InputOrigin::Other))
     }
 }
 
 impl<R: Read + Seek> Bundle for ZipBundle<R> {
     fn all_files(&self) -> Vec<String> {
-        self.zip
-            .file_names()
-            .filter_map(|name| name.ok())
-            .map(|name| name.into_owned())
-            .collect()
+        self.zip.file_names().filter_map(|name| name.ok()).map(|name| name.into_owned()).collect()
     }
 
     fn get_digest(&mut self) -> Result<tectonic_io_base::digest::DigestData> {
-        let digest_text = match self.input_open_name(digest::DIGEST_NAME, &mut NoopStatusBackend {})
-        {
+        let digest_text = match self.input_open_name(digest::DIGEST_NAME, &mut NoopStatusBackend {}) {
             OpenResult::Ok(h) => {
                 let mut text = String::new();
                 h.take(64).read_to_string(&mut text)?;
@@ -117,11 +104,7 @@ mod tests {
         let mut writer = ZipWriter::new(Cursor::new(Vec::new()));
         let files = [
             ("plain.tex", "plain text", CompressionMethod::Stored),
-            (
-                "caf\u{e9}.tex",
-                "compressed text",
-                CompressionMethod::Deflated,
-            ),
+            ("caf\u{e9}.tex", "compressed text", CompressionMethod::Deflated),
             (
                 digest::DIGEST_NAME,
                 "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
@@ -131,10 +114,7 @@ mod tests {
 
         for (name, contents, compression) in files {
             writer
-                .start_file(
-                    name,
-                    SimpleFileOptions::default().compression_method(compression),
-                )
+                .start_file(name, SimpleFileOptions::default().compression_method(compression))
                 .unwrap();
             writer.write_all(contents.as_bytes()).unwrap();
         }
@@ -147,9 +127,7 @@ mod tests {
         assert_eq!(names, expected_names);
 
         for (name, contents, _) in files {
-            let mut handle = bundle
-                .input_open_name(name, &mut NoopStatusBackend {})
-                .unwrap();
+            let mut handle = bundle.input_open_name(name, &mut NoopStatusBackend {}).unwrap();
             let mut text = String::new();
             handle.read_to_string(&mut text).unwrap();
             assert_eq!(text, contents);

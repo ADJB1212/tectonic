@@ -19,28 +19,14 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn floor(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn xmalloc(size: size_t) -> *mut ::core::ffi::c_void;
     fn ttstub_input_get_size(handle: rust_input_handle_t) -> size_t;
-    fn ttstub_input_seek(
-        handle: rust_input_handle_t,
-        offset: ssize_t,
-        whence: ::core::ffi::c_int,
-    ) -> size_t;
-    fn ttstub_input_read(
-        handle: rust_input_handle_t,
-        data: *mut ::core::ffi::c_char,
-        len: size_t,
-    ) -> ssize_t;
+    fn ttstub_input_seek(handle: rust_input_handle_t, offset: ssize_t, whence: ::core::ffi::c_int) -> size_t;
+    fn ttstub_input_read(handle: rust_input_handle_t, data: *mut ::core::ffi::c_char, len: size_t) -> ssize_t;
     fn ttstub_input_getc(handle: rust_input_handle_t) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_tt_get_unsigned_byte"]
     fn tt_get_unsigned_byte(handle: rust_input_handle_t) -> ::core::ffi::c_uchar;
@@ -60,19 +46,11 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_add_array"]
     fn pdf_add_array(array: *mut pdf_obj, object: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_new_stream"]
     fn pdf_new_stream(flags: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_stream"]
-    fn pdf_add_stream(
-        stream: *mut pdf_obj,
-        stream_data_ptr: *const ::core::ffi::c_void,
-        stream_data_len: ::core::ffi::c_int,
-    );
+    fn pdf_add_stream(stream: *mut pdf_obj, stream_data_ptr: *const ::core::ffi::c_void, stream_data_len: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_stream_dict"]
     fn pdf_stream_dict(stream: *mut pdf_obj) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_stream_length"]
@@ -80,37 +58,19 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_stream_dataptr"]
     fn pdf_stream_dataptr(stream: *mut pdf_obj) -> *const ::core::ffi::c_void;
     #[link_name = "__pdf_impl_pdf_check_version"]
-    fn pdf_check_version(
-        major: ::core::ffi::c_int,
-        minor: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn pdf_check_version(major: ::core::ffi::c_int, minor: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_iccp_get_rendering_intent"]
-    fn iccp_get_rendering_intent(
-        profile: *const ::core::ffi::c_void,
-        proflen: ::core::ffi::c_int,
-    ) -> *mut pdf_obj;
+    fn iccp_get_rendering_intent(profile: *const ::core::ffi::c_void, proflen: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_iccp_check_colorspace"]
-    fn iccp_check_colorspace(
-        colortype: ::core::ffi::c_int,
-        profile: *const ::core::ffi::c_void,
-        proflen: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn iccp_check_colorspace(colortype: ::core::ffi::c_int, profile: *const ::core::ffi::c_void, proflen: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_iccp_load_profile"]
-    fn iccp_load_profile(
-        ident: *const ::core::ffi::c_char,
-        profile: *const ::core::ffi::c_void,
-        proflen: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn iccp_load_profile(ident: *const ::core::ffi::c_char, profile: *const ::core::ffi::c_void, proflen: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_get_colorspace_reference"]
     fn pdf_get_colorspace_reference(cspc_id: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_ximage_init_image_info"]
     fn pdf_ximage_init_image_info(info: *mut ximage_info);
     #[link_name = "__pdf_impl_pdf_ximage_set_image"]
-    fn pdf_ximage_set_image(
-        ximage: *mut pdf_ximage,
-        info: *mut ::core::ffi::c_void,
-        resource: *mut pdf_obj,
-    );
+    fn pdf_ximage_set_image(ximage: *mut pdf_ximage, info: *mut ::core::ffi::c_void, resource: *mut pdf_obj);
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_new"]
     fn new(size: uint32_t) -> *mut ::core::ffi::c_void;
@@ -246,23 +206,19 @@ unsafe extern "C-unwind" fn mfree(mut ptr: *mut ::core::ffi::c_void) -> *mut ::c
     free(ptr);
     return NULL;
 }
-pub const STREAM_COMPRESS: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const STREAM_COMPRESS: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const PDF_COLORSPACE_TYPE_CMYK: ::core::ffi::c_int = -4;
 pub const PDF_COLORSPACE_TYPE_RGB: ::core::ffi::c_int = -3;
 pub const PDF_COLORSPACE_TYPE_GRAY: ::core::ffi::c_int = -1;
 pub const JPEG_DEBUG_STR: [::core::ffi::c_char; 5] = crate::backend::c_char_array(*b"JPEG\0");
 pub const MAX_COUNT: ::core::ffi::c_int = 1024 as ::core::ffi::c_int;
 pub const HAVE_APPn_JFIF: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
-pub const HAVE_APPn_ADOBE: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
+pub const HAVE_APPn_ADOBE: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
 pub const HAVE_APPn_ICC: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
 pub const HAVE_APPn_Exif: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 3 as ::core::ffi::c_int;
 pub const HAVE_APPn_XMP: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 4 as ::core::ffi::c_int;
 #[unsafe(export_name = "__pdf_impl_check_for_jpeg")]
-pub unsafe extern "C-unwind" fn check_for_jpeg(
-    mut handle: rust_input_handle_t,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn check_for_jpeg(mut handle: rust_input_handle_t) -> ::core::ffi::c_int {
     let mut jpeg_sig: [::core::ffi::c_uchar; 2] = [0; 2];
     crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
     if ttstub_input_read(
@@ -272,20 +228,15 @@ pub unsafe extern "C-unwind" fn check_for_jpeg(
     ) != 2 as ssize_t
     {
         return 0 as ::core::ffi::c_int;
-    } else if jpeg_sig[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_int
-        != 0xff as ::core::ffi::c_int
-        || jpeg_sig[1 as ::core::ffi::c_int as usize] as ::core::ffi::c_int
-            != JM_SOI as ::core::ffi::c_int
+    } else if jpeg_sig[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_int != 0xff as ::core::ffi::c_int
+        || jpeg_sig[1 as ::core::ffi::c_int as usize] as ::core::ffi::c_int != JM_SOI as ::core::ffi::c_int
     {
         return 0 as ::core::ffi::c_int;
     }
     return 1 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_jpeg_include_image")]
-pub unsafe extern "C-unwind" fn jpeg_include_image(
-    mut ximage: *mut pdf_ximage,
-    mut handle: rust_input_handle_t,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn jpeg_include_image(mut ximage: *mut pdf_ximage, mut handle: rust_input_handle_t) -> ::core::ffi::c_int {
     let mut stream: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut stream_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut colorspace: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -316,8 +267,7 @@ pub unsafe extern "C-unwind" fn jpeg_include_image(
         }
         _ => {
             pdf_warning!(
-                b"%s: Unknown color space (num components: %d)\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"%s: Unknown color space (num components: %d)\0" as *const u8 as *const ::core::ffi::c_char,
                 JPEG_DEBUG_STR.as_ptr(),
                 info.num_components,
             );
@@ -331,9 +281,7 @@ pub unsafe extern "C-unwind" fn jpeg_include_image(
         pdf_new_name(b"Filter\0" as *const u8 as *const ::core::ffi::c_char),
         pdf_new_name(b"DCTDecode\0" as *const u8 as *const ::core::ffi::c_char),
     );
-    if pdf_check_version(1 as ::core::ffi::c_int, 4 as ::core::ffi::c_int)
-        >= 0 as ::core::ffi::c_int
-    {
+    if pdf_check_version(1 as ::core::ffi::c_int, 4 as ::core::ffi::c_int) >= 0 as ::core::ffi::c_int {
         if !j_info.xmp.is_empty() {
             let mut XMP_stream: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
             XMP_stream = JPEG_get_XMP(&raw mut j_info);
@@ -354,12 +302,7 @@ pub unsafe extern "C-unwind" fn jpeg_include_image(
         if icc_stream.is_null() {
             colorspace = ::core::ptr::null_mut::<pdf_obj>();
         } else {
-            if iccp_check_colorspace(
-                colortype,
-                pdf_stream_dataptr(icc_stream),
-                pdf_stream_length(icc_stream),
-            ) < 0 as ::core::ffi::c_int
-            {
+            if iccp_check_colorspace(colortype, pdf_stream_dataptr(icc_stream), pdf_stream_length(icc_stream)) < 0 as ::core::ffi::c_int {
                 colorspace = ::core::ptr::null_mut::<pdf_obj>();
             } else {
                 cspc_id = iccp_load_profile(
@@ -371,16 +314,9 @@ pub unsafe extern "C-unwind" fn jpeg_include_image(
                     colorspace = ::core::ptr::null_mut::<pdf_obj>();
                 } else {
                     colorspace = pdf_get_colorspace_reference(cspc_id);
-                    intent = iccp_get_rendering_intent(
-                        pdf_stream_dataptr(icc_stream),
-                        pdf_stream_length(icc_stream),
-                    );
+                    intent = iccp_get_rendering_intent(pdf_stream_dataptr(icc_stream), pdf_stream_length(icc_stream));
                     if !intent.is_null() {
-                        pdf_add_dict(
-                            stream_dict,
-                            pdf_new_name(b"Intent\0" as *const u8 as *const ::core::ffi::c_char),
-                            intent,
-                        );
+                        pdf_add_dict(stream_dict, pdf_new_name(b"Intent\0" as *const u8 as *const ::core::ffi::c_char), intent);
                     }
                 }
             }
@@ -390,16 +326,13 @@ pub unsafe extern "C-unwind" fn jpeg_include_image(
     if colorspace.is_null() {
         match colortype {
             PDF_COLORSPACE_TYPE_GRAY => {
-                colorspace =
-                    pdf_new_name(b"DeviceGray\0" as *const u8 as *const ::core::ffi::c_char);
+                colorspace = pdf_new_name(b"DeviceGray\0" as *const u8 as *const ::core::ffi::c_char);
             }
             PDF_COLORSPACE_TYPE_RGB => {
-                colorspace =
-                    pdf_new_name(b"DeviceRGB\0" as *const u8 as *const ::core::ffi::c_char);
+                colorspace = pdf_new_name(b"DeviceRGB\0" as *const u8 as *const ::core::ffi::c_char);
             }
             PDF_COLORSPACE_TYPE_CMYK => {
-                colorspace =
-                    pdf_new_name(b"DeviceCMYK\0" as *const u8 as *const ::core::ffi::c_char);
+                colorspace = pdf_new_name(b"DeviceCMYK\0" as *const u8 as *const ::core::ffi::c_char);
             }
             _ => {}
         }
@@ -412,10 +345,7 @@ pub unsafe extern "C-unwind" fn jpeg_include_image(
     if j_info.adobe && j_info.num_components as ::core::ffi::c_int == 4 as ::core::ffi::c_int {
         let mut decode: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
         let mut i: ::core::ffi::c_uint = 0;
-        pdf_warning!(
-            b"Adobe CMYK JPEG: Inverted color assumed.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Adobe CMYK JPEG: Inverted color assumed.\0" as *const u8 as *const ::core::ffi::c_char,);
         decode = pdf_new_array();
         i = 0 as ::core::ffi::c_uint;
         while i < j_info.num_components as ::core::ffi::c_uint {
@@ -423,11 +353,7 @@ pub unsafe extern "C-unwind" fn jpeg_include_image(
             pdf_add_array(decode, pdf_new_number(0.0f64));
             i = i.wrapping_add(1);
         }
-        pdf_add_dict(
-            stream_dict,
-            pdf_new_name(b"Decode\0" as *const u8 as *const ::core::ffi::c_char),
-            decode,
-        );
+        pdf_add_dict(stream_dict, pdf_new_name(b"Decode\0" as *const u8 as *const ::core::ffi::c_char), decode);
     }
     if JPEG_copy_stream(&raw mut j_info, stream, handle) < 0 {
         pdf_release_obj(stream);
@@ -437,11 +363,7 @@ pub unsafe extern "C-unwind" fn jpeg_include_image(
     info.height = j_info.height as ::core::ffi::c_int;
     info.bits_per_component = j_info.bits_per_component as ::core::ffi::c_int;
     info.num_components = j_info.num_components as ::core::ffi::c_int;
-    jpeg_get_density(
-        &raw mut j_info,
-        &raw mut info.xdensity,
-        &raw mut info.ydensity,
-    );
+    jpeg_get_density(&raw mut j_info, &raw mut info.xdensity, &raw mut info.ydensity);
     pdf_ximage_set_image(ximage, &raw mut info as *mut ::core::ffi::c_void, stream);
     return 0 as ::core::ffi::c_int;
 }
@@ -454,7 +376,10 @@ fn scan_file(handle: rust_input_handle_t) -> Option<crate::jpeg::Info> {
         crate::jpeg::Warning::Resolution { exif, jfif } => {
             pdf_warning!(
                 c"JPEG: Inconsistent resolution may have been specified in Exif and JFIF: %gx%g - %gx%g".as_ptr(),
-                exif.0, exif.1, jfif.0, jfif.1
+                exif.0,
+                exif.1,
+                jfif.0,
+                jfif.1
             );
         }
     }) {
@@ -466,11 +391,7 @@ fn scan_file(handle: rust_input_handle_t) -> Option<crate::jpeg::Info> {
     }
 }
 
-unsafe extern "C-unwind" fn jpeg_get_density(
-    info: *mut crate::jpeg::Info,
-    xdensity: *mut f64,
-    ydensity: *mut f64,
-) {
+unsafe extern "C-unwind" fn jpeg_get_density(info: *mut crate::jpeg::Info, xdensity: *mut f64, ydensity: *mut f64) {
     unsafe {
         *xdensity = 72.0 / (*info).xdpi;
         *ydensity = 72.0 / (*info).ydpi;
@@ -482,26 +403,15 @@ unsafe extern "C-unwind" fn JPEG_get_iccp(info: *mut crate::jpeg::Info) -> *mut 
     let mut previous = 0;
     let mut count = None;
     for chunk in unsafe { &(*info).icc } {
-        if count.is_some_and(|n| {
-            n != chunk.count || chunk.id as i32 != previous + 1 || chunk.id > chunk.count
-        }) {
-            pdf_warning!(
-                "Invalid JPEG ICC chunk: {} (p:{}, n:{})",
-                chunk.id,
-                previous,
-                chunk.count
-            );
+        if count.is_some_and(|n| n != chunk.count || chunk.id as i32 != previous + 1 || chunk.id > chunk.count) {
+            pdf_warning!("Invalid JPEG ICC chunk: {} (p:{}, n:{})", chunk.id, previous, chunk.count);
             unsafe {
                 pdf_release_obj(stream);
             }
             return core::ptr::null_mut();
         }
         unsafe {
-            pdf_add_stream(
-                stream,
-                chunk.bytes.as_ptr().cast(),
-                chunk.bytes.len() as i32,
-            );
+            pdf_add_stream(stream, chunk.bytes.as_ptr().cast(), chunk.bytes.len() as i32);
         }
         previous = chunk.id as i32;
         count = Some(chunk.count);
@@ -513,16 +423,8 @@ unsafe extern "C-unwind" fn JPEG_get_XMP(info: *mut crate::jpeg::Info) -> *mut p
     unsafe {
         let stream = pdf_new_stream(STREAM_COMPRESS);
         let dict = pdf_stream_dict(stream);
-        pdf_add_dict(
-            dict,
-            pdf_new_name(c"Type".as_ptr()),
-            pdf_new_name(c"Metadata".as_ptr()),
-        );
-        pdf_add_dict(
-            dict,
-            pdf_new_name(c"Subtype".as_ptr()),
-            pdf_new_name(c"XML".as_ptr()),
-        );
+        pdf_add_dict(dict, pdf_new_name(c"Type".as_ptr()), pdf_new_name(c"Metadata".as_ptr()));
+        pdf_add_dict(dict, pdf_new_name(c"Subtype".as_ptr()), pdf_new_name(c"XML".as_ptr()));
         for packet in &(*info).xmp {
             pdf_add_stream(stream, packet.as_ptr().cast(), packet.len() as i32);
         }
@@ -533,11 +435,7 @@ unsafe extern "C-unwind" fn JPEG_get_XMP(info: *mut crate::jpeg::Info) -> *mut p
     }
 }
 
-unsafe extern "C-unwind" fn JPEG_copy_stream(
-    info: *mut crate::jpeg::Info,
-    stream: *mut pdf_obj,
-    handle: rust_input_handle_t,
-) -> i32 {
+unsafe extern "C-unwind" fn JPEG_copy_stream(info: *mut crate::jpeg::Info, stream: *mut pdf_obj, handle: rust_input_handle_t) -> i32 {
     use std::io::{Read, Seek, SeekFrom};
     let info = unsafe { &*info };
     let mut input = crate::compat::input::ProbeInput { handle };
@@ -548,11 +446,7 @@ unsafe extern "C-unwind" fn JPEG_copy_stream(
         }
         input.seek(SeekFrom::Start(info.rest))?;
         unsafe {
-            pdf_add_stream(
-                stream,
-                info.prefix.as_ptr().cast(),
-                info.prefix.len() as i32,
-            );
+            pdf_add_stream(stream, info.prefix.as_ptr().cast(), info.prefix.len() as i32);
         }
         let mut remaining = end - info.rest;
         let mut buffer = [0; 1024];
@@ -579,11 +473,7 @@ unsafe extern "C-unwind" fn JPEG_copy_stream(
 }
 #[unsafe(export_name = "__pdf_impl_jpeg_get_bbox")]
 pub unsafe extern "C-unwind" fn jpeg_get_bbox(
-    handle: rust_input_handle_t,
-    width: *mut u32,
-    height: *mut u32,
-    xdensity: *mut f64,
-    ydensity: *mut f64,
+    handle: rust_input_handle_t, width: *mut u32, height: *mut u32, xdensity: *mut f64, ydensity: *mut f64,
 ) -> i32 {
     let Some(mut info) = scan_file(handle) else {
         return -1;
@@ -596,16 +486,8 @@ pub unsafe extern "C-unwind" fn jpeg_get_bbox(
     0
 }
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn memset(
-        __b: *mut ::core::ffi::c_void,
-        __c: ::core::ffi::c_int,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
+    fn memset(__b: *mut ::core::ffi::c_void, __c: ::core::ffi::c_int, __len: size_t) -> *mut ::core::ffi::c_void;
 }
 #[repr(C)]
 pub struct pdf_obj {
@@ -616,10 +498,7 @@ pub struct pdf_ximage_ {
     _private: [u8; 0],
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_check_for_jpeg(
-    mut handle: rust_input_handle_t,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_check_for_jpeg(mut handle: rust_input_handle_t, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { check_for_jpeg(handle) }) {
         Ok(value) => {
             unsafe {
@@ -632,9 +511,7 @@ pub unsafe extern "C" fn __pdf_entry_check_for_jpeg(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_jpeg_include_image(
-    mut ximage: *mut pdf_ximage,
-    mut handle: rust_input_handle_t,
-    _result: *mut ::core::ffi::c_int,
+    mut ximage: *mut pdf_ximage, mut handle: rust_input_handle_t, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { jpeg_include_image(ximage, handle) }) {
         Ok(value) => {
@@ -648,16 +525,10 @@ pub unsafe extern "C" fn __pdf_entry_jpeg_include_image(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_jpeg_get_bbox(
-    mut handle: rust_input_handle_t,
-    mut width: *mut ::core::ffi::c_uint,
-    mut height: *mut ::core::ffi::c_uint,
-    mut xdensity: *mut ::core::ffi::c_double,
-    mut ydensity: *mut ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
+    mut handle: rust_input_handle_t, mut width: *mut ::core::ffi::c_uint, mut height: *mut ::core::ffi::c_uint,
+    mut xdensity: *mut ::core::ffi::c_double, mut ydensity: *mut ::core::ffi::c_double, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        jpeg_get_bbox(handle, width, height, xdensity, ydensity)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { jpeg_get_bbox(handle, width, height, xdensity, ydensity) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);

@@ -315,13 +315,9 @@ impl FontFileData {
         // is what we want here as a least-bad fallback. We don't want to
         // have to deal with fallibility in this conversion.
 
-        let fword_to_tex = |f: FWord| -> FixedPoint {
-            (f as f64 * tex_size as f64 / self.units_per_em as f64) as FixedPoint
-        };
+        let fword_to_tex = |f: FWord| -> FixedPoint { (f as f64 * tex_size as f64 / self.units_per_em as f64) as FixedPoint };
 
-        let ufword_to_tex = |f: UfWord| -> FixedPoint {
-            (f as f64 * tex_size as f64 / self.units_per_em as f64) as FixedPoint
-        };
+        let ufword_to_tex = |f: UfWord| -> FixedPoint { (f as f64 * tex_size as f64 / self.units_per_em as f64) as FixedPoint };
 
         self.hmetrics.get(glyph as usize).map(|hm| GlyphMetrics {
             advance: ufword_to_tex(hm.advance),
@@ -336,9 +332,9 @@ impl FontFileData {
         if self.space_glyph == 0 {
             None
         } else {
-            self.hmetrics.get(self.space_glyph as usize).map(|hm| {
-                (hm.advance as f64 * tex_size as f64 / self.units_per_em as f64) as FixedPoint
-            })
+            self.hmetrics
+                .get(self.space_glyph as usize)
+                .map(|hm| (hm.advance as f64 * tex_size as f64 / self.units_per_em as f64) as FixedPoint)
         }
     }
 
@@ -350,11 +346,7 @@ impl FontFileData {
     ///
     /// This function may return None if a new variant would need to be
     /// allocated, but that has been prohibited.
-    pub fn request_variant(
-        &mut self,
-        glyph: GlyphId,
-        suggested: char,
-    ) -> Option<GlyphVariantMapping> {
+    pub fn request_variant(&mut self, glyph: GlyphId, suggested: char) -> Option<GlyphVariantMapping> {
         let map_entry = self.variant_map_allocations.entry(glyph);
 
         if self.no_new_variants
@@ -363,11 +355,7 @@ impl FontFileData {
             return None;
         }
 
-        let new_index = self
-            .variant_map_counts
-            .get(&suggested)
-            .copied()
-            .unwrap_or(0);
+        let new_index = self.variant_map_counts.get(&suggested).copied().unwrap_or(0);
 
         let map = map_entry.or_insert(GlyphVariantMapping {
             usv: suggested,
@@ -396,11 +384,7 @@ impl FontFileData {
     /// anything to disk.
     ///
     /// Return value is a vec of (variant-map-index, CSS-src-field).
-    pub fn emit(
-        self,
-        out_base: Option<&Path>,
-        rel_path: &str,
-    ) -> Result<Vec<(Option<usize>, String)>> {
+    pub fn emit(self, out_base: Option<&Path>, rel_path: &str) -> Result<Vec<(Option<usize>, String)>> {
         // Write the main font file ... maybe.
 
         let mut out_path = out_base.map(|p| p.to_owned());
@@ -483,10 +467,7 @@ impl FontFileData {
             // step 5: update CSS
 
             let rel_url = utf8_percent_encode(&varname, CONTROLS).to_string();
-            rv.push((
-                Some(cur_map_index),
-                format!(r#"url("{rel_url}") format("opentype")"#),
-            ));
+            rv.push((Some(cur_map_index), format!(r#"url("{rel_url}") format("opentype")"#)));
         }
 
         // All done!
@@ -563,11 +544,7 @@ fn load_direct_mappings(cmap_data: &[u8]) -> (HashMap<GlyphId, MapEntry>, GlyphI
     (gmap, space_glyph)
 }
 
-fn load_ssty_mappings(
-    map: &mut HashMap<GlyphId, MapEntry>,
-    feat: &Feature,
-    dglyphs: &[GlyphId],
-) -> Result<()> {
+fn load_ssty_mappings(map: &mut HashMap<GlyphId, MapEntry>, feat: &Feature, dglyphs: &[GlyphId]) -> Result<()> {
     for look in feat.lookups() {
         for st in look.subtables() {
             // Implement more subtable kinds as needed ...
@@ -596,11 +573,7 @@ fn load_ssty_mappings(
     Ok(())
 }
 
-fn load_math_variants(
-    map: &mut HashMap<GlyphId, MapEntry>,
-    variants: &MathVariants,
-    dglyphs: &[GlyphId],
-) -> Result<()> {
+fn load_math_variants(map: &mut HashMap<GlyphId, MapEntry>, variants: &MathVariants, dglyphs: &[GlyphId]) -> Result<()> {
     let maybe_vcov = variants.vert_glyph_coverage();
     let maybe_hcov = variants.horiz_glyph_coverage();
 
@@ -613,10 +586,7 @@ fn load_math_variants(
             .and_then(|c| c.variants())
         {
             for (idx, vinfo) in vvars.iter().enumerate() {
-                map.insert(
-                    vinfo.variant_glyph,
-                    MapEntry::MathGrowingVariant(c, true, idx as u16),
-                );
+                map.insert(vinfo.variant_glyph, MapEntry::MathGrowingVariant(c, true, idx as u16));
             }
         }
 
@@ -626,10 +596,7 @@ fn load_math_variants(
             .and_then(|c| c.variants())
         {
             for (idx, vinfo) in hvars.iter().enumerate() {
-                map.insert(
-                    vinfo.variant_glyph,
-                    MapEntry::MathGrowingVariant(c, false, idx as u16),
-                );
+                map.insert(vinfo.variant_glyph, MapEntry::MathGrowingVariant(c, false, idx as u16));
             }
         }
     }
@@ -643,10 +610,7 @@ fn valid_usvs() -> impl Iterator<Item = Usv> {
 
 fn opentype_checksum(data: &[u8]) -> u32 {
     let (chunks, rem) = data.as_chunks::<4>();
-    let cs: Wrapping<u32> = chunks
-        .iter()
-        .map(|c| Wrapping(u32::from_be_bytes(*c)))
-        .sum();
+    let cs: Wrapping<u32> = chunks.iter().map(|c| Wrapping(u32::from_be_bytes(*c))).sum();
 
     let mut padded = [0u8; 4];
     padded[..rem.len()].copy_from_slice(rem);
@@ -715,24 +679,7 @@ mod cmap_tests {
 
     fn format4(glyph: GlyphId) -> Vec<u8> {
         let mut data = Vec::new();
-        for word in [
-            4,
-            32,
-            0,
-            4,
-            4,
-            1,
-            0,
-            32,
-            0xFFFF,
-            0,
-            32,
-            0xFFFF,
-            glyph.wrapping_sub(32),
-            1,
-            0,
-            0,
-        ] {
+        for word in [4, 32, 0, 4, 4, 1, 0, 32, 0xFFFF, 0, 32, 0xFFFF, glyph.wrapping_sub(32), 1, 0, 0] {
             data.extend_from_slice(&word.to_be_bytes());
         }
         data
@@ -745,12 +692,7 @@ mod cmap_tests {
         data.extend_from_slice(&(16u32 + 12 * 4).to_be_bytes());
         data.extend_from_slice(&0u32.to_be_bytes());
         data.extend_from_slice(&4u32.to_be_bytes());
-        for group in [
-            [32u32, 32, 5],
-            [65, 67, 6],
-            [0xD800, 0xD801, 9],
-            [0x1F600, 0x1F601, 10],
-        ] {
+        for group in [[32u32, 32, 5], [65, 67, 6], [0xD800, 0xD801, 9], [0x1F600, 0x1F601, 10]] {
             for value in group {
                 data.extend_from_slice(&value.to_be_bytes());
             }

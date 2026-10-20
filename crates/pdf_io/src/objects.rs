@@ -21,8 +21,7 @@ pub(crate) struct ResourceId(pub(crate) u32);
 
 impl ResourceId {
     pub(crate) fn new(category: usize, index: usize) -> Option<Self> {
-        (category < 9 && index <= u16::MAX as usize)
-            .then_some(Self(((category as u32) << 16) | index as u32))
+        (category < 9 && index <= u16::MAX as usize).then_some(Self(((category as u32) << 16) | index as u32))
     }
 
     pub(crate) fn category(self) -> usize {

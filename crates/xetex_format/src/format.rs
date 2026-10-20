@@ -94,13 +94,7 @@ impl Format {
             let cur_cat = self.eqtb_catcode(chr)?;
             let cmd_desc = self.engine.commands.describe(entry.ty, entry.value);
 
-            writeln!(
-                stream,
-                "{} ({}) => {}",
-                fmt_usv(chr),
-                cur_cat.abbrev(),
-                cmd_desc
-            )?;
+            writeln!(stream, "{} ({}) => {}", fmt_usv(chr), cur_cat.abbrev(), cmd_desc)?;
         }
 
         Ok(())
@@ -160,9 +154,7 @@ impl Format {
             let cs_desc = fmt_csname(name);
 
             let (cmd_desc, extended) = if extended {
-                self.engine
-                    .commands
-                    .describe_extended(entry.ty, entry.value, self)
+                self.engine.commands.describe_extended(entry.ty, entry.value, self)
             } else {
                 (self.engine.commands.describe(entry.ty, entry.value), None)
             };
@@ -181,28 +173,18 @@ impl Format {
         // This is lame; we shouldn't need to make a big buffer, but I'm too
         // lazy to write real iterater implementation right now.
 
-        let null_cs = (
-            "".to_owned(),
-            self.engine.symbols.lookup("NULL_CS") as EqtbPointer,
-        );
+        let null_cs = ("".to_owned(), self.engine.symbols.lookup("NULL_CS") as EqtbPointer);
         let null_cs = std::iter::once(null_cs);
 
         let single_base = self.engine.symbols.lookup("SINGLE_BASE");
-        let single_letters = valid_usvs().map(move |usv| {
-            (
-                char::from_u32(usv as u32).unwrap().to_string(),
-                single_base as i32 + usv,
-            )
-        });
+        let single_letters = valid_usvs().map(move |usv| (char::from_u32(usv as u32).unwrap().to_string(), single_base as i32 + usv));
 
         let ml_data: Vec<(String, EqtbPointer)> = self
             .strings
             .all_sps()
             .filter_map(|sp| {
                 let name = self.strings.lookup(sp).to_owned();
-                self.cshash
-                    .lookup(&name, &self.strings)
-                    .map(|ptr| (name, ptr))
+                self.cshash.lookup(&name, &self.strings).map(|ptr| (name, ptr))
             })
             .collect();
 
@@ -222,8 +204,7 @@ impl Format {
         }
 
         const CCDESCS: &[&str] = &[
-            "ESC", "BGR", "EGR", "MTH", "TAB", "CAR", "MAC", "SUP", "SUB", "IGN", "SPC", "LET",
-            "OTH", "ACT", "COM", "INV",
+            "ESC", "BGR", "EGR", "MTH", "TAB", "CAR", "MAC", "SUP", "SUB", "IGN", "SPC", "LET", "OTH", "ACT", "COM", "INV",
         ];
 
         while p != TEX_NULL {
@@ -250,12 +231,7 @@ impl Format {
                         if let Some(c) = char::from_u32(chr as u32) {
                             writeln!(result, "{} {{{}}}", c, CCDESCS[cmd as usize]).unwrap();
                         } else {
-                            writeln!(
-                                result,
-                                "[illegal USV char code 0x{:08x}] {{{}}}",
-                                chr, CCDESCS[cmd as usize]
-                            )
-                            .unwrap();
+                            writeln!(result, "[illegal USV char code 0x{:08x}] {{{}}}", chr, CCDESCS[cmd as usize]).unwrap();
                         }
                     }
                 },
@@ -285,17 +261,12 @@ impl Format {
 
     fn eqtb_active(&self, c: i32) -> eqtb::EqtbEntry {
         assert!((0..MAX_USV).contains(&c));
-        self.eqtb
-            .decode(self.engine.symbols.lookup("ACTIVE_BASE") as EqtbPointer + c)
+        self.eqtb.decode(self.engine.symbols.lookup("ACTIVE_BASE") as EqtbPointer + c)
     }
 
     fn eqtb_catcode(&self, c: i32) -> Result<CatCode> {
         assert!((0..MAX_USV).contains(&c));
-        CatCode::from_i32(
-            self.eqtb
-                .decode(self.engine.symbols.lookup("CAT_CODE_BASE") as EqtbPointer + c)
-                .value,
-        )
+        CatCode::from_i32(self.eqtb.decode(self.engine.symbols.lookup("CAT_CODE_BASE") as EqtbPointer + c).value)
     }
 }
 
@@ -357,11 +328,7 @@ fn parse_body(engine: Engine, input: &[u8]) -> IResult<&[u8], Format> {
     let (input, _font_check) = count(be_i64, n_fonts).parse(input)?;
     let (input, _font_size) = count(be_i32, n_fonts).parse(input)?;
     let (input, _font_dsize) = count(be_i32, n_fonts).parse(input)?;
-    let (input, _font_params) = count(
-        parseutils::ranged_be_i32(MIN_HALFWORD, MAX_HALFWORD),
-        n_fonts,
-    )
-    .parse(input)?;
+    let (input, _font_params) = count(parseutils::ranged_be_i32(MIN_HALFWORD, MAX_HALFWORD), n_fonts).parse(input)?;
     let (input, _hyphen_char) = count(be_i32, n_fonts).parse(input)?;
     let (input, _skew_char) = count(be_i32, n_fonts).parse(input)?;
     let (input, _font_name) = count(be_i32, n_fonts).parse(input)?;
@@ -377,17 +344,10 @@ fn parse_body(engine: Engine, input: &[u8]) -> IResult<&[u8], Format> {
     let (input, _kern_base) = count(be_i32, n_fonts).parse(input)?;
     let (input, _exten_base) = count(be_i32, n_fonts).parse(input)?;
     let (input, _param_base) = count(be_i32, n_fonts).parse(input)?;
-    let (input, _font_glue) = count(
-        parseutils::ranged_be_i32(MIN_HALFWORD, mem.lo_mem_max),
-        n_fonts,
-    )
-    .parse(input)?;
-    let (input, _bchar_label) =
-        count(parseutils::ranged_be_i32(0, fmem_ptr - 1), n_fonts).parse(input)?;
-    let (input, _font_bchar) =
-        count(parseutils::ranged_be_i32(0, TOO_BIG_CHAR), n_fonts).parse(input)?;
-    let (input, _font_false_bchar) =
-        count(parseutils::ranged_be_i32(0, TOO_BIG_CHAR), n_fonts).parse(input)?;
+    let (input, _font_glue) = count(parseutils::ranged_be_i32(MIN_HALFWORD, mem.lo_mem_max), n_fonts).parse(input)?;
+    let (input, _bchar_label) = count(parseutils::ranged_be_i32(0, fmem_ptr - 1), n_fonts).parse(input)?;
+    let (input, _font_bchar) = count(parseutils::ranged_be_i32(0, TOO_BIG_CHAR), n_fonts).parse(input)?;
+    let (input, _font_false_bchar) = count(parseutils::ranged_be_i32(0, TOO_BIG_CHAR), n_fonts).parse(input)?;
 
     // Hyphenations!
 

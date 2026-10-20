@@ -81,13 +81,10 @@ impl TestCase {
         let mut expect = Expected::new().res(self.expected_result, res);
 
         if self.test_bbl {
-            expect =
-                expect.file(ExpectedFile::read_with_extension(&mut p, "bbl").collection(&files));
+            expect = expect.file(ExpectedFile::read_with_extension(&mut p, "bbl").collection(&files));
         }
 
-        expect
-            .file(ExpectedFile::read_with_extension(&mut p, "blg").collection(&files))
-            .finish();
+        expect.file(ExpectedFile::read_with_extension(&mut p, "blg").collection(&files)).finish();
     }
 }
 
@@ -103,37 +100,27 @@ fn test_empty_macro() {
 
 #[test]
 fn test_odd_strings() {
-    TestCase::new(&["cites", "odd_strings"])
-        .expect(Ok(TexOutcome::Warnings))
-        .go();
+    TestCase::new(&["cites", "odd_strings"]).expect(Ok(TexOutcome::Warnings)).go();
 }
 
 #[test]
 fn test_many() {
-    TestCase::new(&["cites", "many"])
-        .expect(Ok(TexOutcome::Warnings))
-        .go();
+    TestCase::new(&["cites", "many"]).expect(Ok(TexOutcome::Warnings)).go();
 }
 
 #[test]
 fn test_colon() {
-    TestCase::new(&["cites", "colon"])
-        .expect(Ok(TexOutcome::Warnings))
-        .go();
+    TestCase::new(&["cites", "colon"]).expect(Ok(TexOutcome::Warnings)).go();
 }
 
 #[test]
 fn test_control_sequences() {
-    TestCase::new(&["cites", "control_seq"])
-        .expect(Ok(TexOutcome::Warnings))
-        .go();
+    TestCase::new(&["cites", "control_seq"]).expect(Ok(TexOutcome::Warnings)).go();
 }
 
 #[test]
 fn test_control_sequences_alpha() {
-    TestCase::new(&["cites", "control_seq_alpha"])
-        .expect(Ok(TexOutcome::Warnings))
-        .go();
+    TestCase::new(&["cites", "control_seq_alpha"]).expect(Ok(TexOutcome::Warnings)).go();
 }
 
 #[test]
@@ -143,10 +130,7 @@ fn test_multi_bib() {
 
 #[test]
 fn test_empty_files() {
-    TestCase::new(&["empty"])
-        .expect(Ok(TexOutcome::Errors))
-        .test_bbl(false)
-        .go()
+    TestCase::new(&["empty"]).expect(Ok(TexOutcome::Errors)).test_bbl(false).go()
 }
 
 #[test]
@@ -183,10 +167,7 @@ fn test_mismatched_style() {
 
 #[test]
 fn test_duplicated_data() {
-    TestCase::new(&["duplicated", "data"])
-        .expect(Ok(TexOutcome::Errors))
-        .test_bbl(false)
-        .go();
+    TestCase::new(&["duplicated", "data"]).expect(Ok(TexOutcome::Errors)).test_bbl(false).go();
 }
 
 #[test]
@@ -199,30 +180,22 @@ fn test_duplicated_style() {
 
 #[test]
 fn test_bad_crossref() {
-    TestCase::new(&["crossref", "bad"])
-        .expect(Ok(TexOutcome::Errors))
-        .go();
+    TestCase::new(&["crossref", "bad"]).expect(Ok(TexOutcome::Errors)).go();
 }
 
 #[test]
 fn test_min_crossref() {
-    TestCase::new(&["crossref", "min"])
-        .expect(Ok(TexOutcome::Warnings))
-        .go();
+    TestCase::new(&["crossref", "min"]).expect(Ok(TexOutcome::Warnings)).go();
 }
 
 #[test]
 fn test_single_preamble() {
-    TestCase::new(&["preamble", "single"])
-        .expect(Ok(TexOutcome::Warnings))
-        .go();
+    TestCase::new(&["preamble", "single"]).expect(Ok(TexOutcome::Warnings)).go();
 }
 
 #[test]
 fn test_many_preamble() {
-    TestCase::new(&["preamble", "many"])
-        .expect(Ok(TexOutcome::Warnings))
-        .go();
+    TestCase::new(&["preamble", "many"]).expect(Ok(TexOutcome::Warnings)).go();
 }
 
 #[test]
@@ -283,10 +256,7 @@ fn long_output_wraps_with_continuation_indentation() {
         "x".repeat(100)
     );
     let mut mem = MemoryIo::new(true);
-    mem.create_entry(
-        "wrap.aux",
-        b"\\citation{*}\n\\bibdata{wrap}\n\\bibstyle{wrap}\n".to_vec(),
-    );
+    mem.create_entry("wrap.aux", b"\\citation{*}\n\\bibdata{wrap}\n\\bibstyle{wrap}\n".to_vec());
     mem.create_entry("wrap.bib", b"@misc{entry}\n".to_vec());
     mem.create_entry("wrap.bst", style.into_bytes());
 
@@ -294,9 +264,7 @@ fn long_output_wraps_with_continuation_indentation() {
         let mut hooks = MinimalDriver::new(IoStack::new(vec![&mut mem]));
         let mut status = NoopStatusBackend::default();
         let mut launcher = CoreBridgeLauncher::new(&mut hooks, &mut status);
-        BibtexEngine::new()
-            .process(&mut launcher, "wrap.aux", &Default::default())
-            .unwrap();
+        BibtexEngine::new().process(&mut launcher, "wrap.aux", &Default::default()).unwrap();
     }
 
     assert_eq!(mem.files.borrow()["wrap.bbl"].data, expected.as_bytes());

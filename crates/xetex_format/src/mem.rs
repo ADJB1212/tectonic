@@ -35,17 +35,12 @@ impl Memory {
         let mem_top = engine.symbols.lookup("MEM_TOP") as usize;
 
         // lower limit hardcoded (?)
-        let (input, lo_mem_max) =
-            parseutils::ranged_be_i32(1019, mem_top as i32 - HI_MEM_STAT_USAGE)(input)?;
+        let (input, lo_mem_max) = parseutils::ranged_be_i32(1019, mem_top as i32 - HI_MEM_STAT_USAGE)(input)?;
 
         // lower limit hardcoded
         let (input, rover) = parseutils::ranged_be_i32(20, lo_mem_max)(input)?;
 
-        let (input, _sa_roots) = count(
-            parseutils::ranged_be_i32(MIN_HALFWORD, lo_mem_max),
-            N_SERIALIZED_SA_ROOTS,
-        )
-        .parse(input)?;
+        let (input, _sa_roots) = count(parseutils::ranged_be_i32(MIN_HALFWORD, lo_mem_max), N_SERIALIZED_SA_ROOTS).parse(input)?;
 
         // Compressed memory loading;
 
@@ -80,16 +75,13 @@ impl Memory {
         let idx = p as usize * SIZEOF_MEMORY_WORD;
         mem[idx..idx + nb].copy_from_slice(&block[..]);
 
-        let (input, hi_mem_min) =
-            parseutils::ranged_be_i32(lo_mem_max + 1, mem_top as i32 - HI_MEM_STAT_USAGE)(input)?;
+        let (input, hi_mem_min) = parseutils::ranged_be_i32(lo_mem_max + 1, mem_top as i32 - HI_MEM_STAT_USAGE)(input)?;
 
         let (input, _avail) = parseutils::ranged_be_i32(MIN_HALFWORD, mem_top as i32)(input)?;
 
         let nb = (mem_top + 1 - hi_mem_min as usize) * SIZEOF_MEMORY_WORD;
         let (input, block) = count(be_u8, nb).parse(input)?;
-        mem[hi_mem_min as usize * SIZEOF_MEMORY_WORD
-            ..hi_mem_min as usize * SIZEOF_MEMORY_WORD + nb]
-            .copy_from_slice(&block[..]);
+        mem[hi_mem_min as usize * SIZEOF_MEMORY_WORD..hi_mem_min as usize * SIZEOF_MEMORY_WORD + nb].copy_from_slice(&block[..]);
 
         let (input, _var_used) = be_i32(input)?;
         let (input, _dyn_used) = be_i32(input)?;

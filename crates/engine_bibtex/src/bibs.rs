@@ -6,9 +6,8 @@ use crate::{
     hash,
     hash::{BstFn, HashData},
     log::{
-        bib_equals_sign_print, bib_err_print, bib_id_print, bib_one_of_two_print, bib_warn_print,
-        cite_key_disappeared_confusion, eat_bib_print, hash_cite_confusion, print_a_token,
-        print_confusion,
+        bib_equals_sign_print, bib_err_print, bib_id_print, bib_one_of_two_print, bib_warn_print, cite_key_disappeared_confusion, eat_bib_print,
+        hash_cite_confusion, print_a_token, print_confusion,
     },
     peekable::input_ln,
     pool::{StrNumber, StringPool},
@@ -69,16 +68,9 @@ impl BibData {
     }
 }
 
-pub(crate) fn eat_bib_white_space(
-    ctx: &mut Bibtex<'_, '_>,
-    buffers: &mut GlobalBuffer,
-    bibs: &mut BibData,
-) -> bool {
+pub(crate) fn eat_bib_white_space(ctx: &mut Bibtex<'_, '_>, buffers: &mut GlobalBuffer, bibs: &mut BibData) -> bool {
     let mut init = buffers.init(BufTy::Base);
-    while !Scan::new()
-        .not_class(LexClass::Whitespace)
-        .scan_till(buffers, init)
-    {
+    while !Scan::new().not_class(LexClass::Whitespace).scan_till(buffers, init) {
         if !input_ln(ctx.engine, &mut bibs.top_file_mut().file, buffers) {
             return false;
         }
@@ -91,11 +83,7 @@ pub(crate) fn eat_bib_white_space(
 }
 
 pub(crate) fn compress_bib_white(
-    ctx: &mut Bibtex<'_, '_>,
-    buffers: &mut GlobalBuffer,
-    pool: &StringPool,
-    bibs: &mut BibData,
-    bib_command: Option<BibCommand>,
+    ctx: &mut Bibtex<'_, '_>, buffers: &mut GlobalBuffer, pool: &StringPool, bibs: &mut BibData, bib_command: Option<BibCommand>,
 ) -> Result<bool, BibtexError> {
     if buffers.offset(BufTy::Ex, 1) == buffers.len() {
         ctx.write_log_file("Field filled up at ' ', reallocating.\n");
@@ -105,10 +93,7 @@ pub(crate) fn compress_bib_white(
     buffers.set_at(BufTy::Ex, buffers.offset(BufTy::Ex, 1), b' ');
     buffers.set_offset(BufTy::Ex, 1, buffers.offset(BufTy::Ex, 1) + 1);
     let mut last = buffers.init(BufTy::Base);
-    while !Scan::new()
-        .not_class(LexClass::Whitespace)
-        .scan_till(buffers, last)
-    {
+    while !Scan::new().not_class(LexClass::Whitespace).scan_till(buffers, last) {
         let res = !input_ln(ctx.engine, &mut bibs.top_file_mut().file, buffers);
 
         if res {
@@ -124,20 +109,13 @@ pub(crate) fn compress_bib_white(
 }
 
 pub(crate) fn get_bib_command_or_entry_and_process(
-    ctx: &mut Bibtex<'_, '_>,
-    globals: &mut GlobalItems<'_>,
-    cur_macro_loc: &mut HashPointer<hash::Macro>,
-    field_name_loc: &mut HashPointer<BstFn>,
+    ctx: &mut Bibtex<'_, '_>, globals: &mut GlobalItems<'_>, cur_macro_loc: &mut HashPointer<hash::Macro>, field_name_loc: &mut HashPointer<BstFn>,
 ) -> Result<(), BibtexError> {
     let mut bib_command = None;
 
     let mut init = globals.buffers.init(BufTy::Base);
     while !Scan::new().chars(b"@").scan_till(globals.buffers, init) {
-        if !input_ln(
-            ctx.engine,
-            &mut globals.bibs.top_file_mut().file,
-            globals.buffers,
-        ) {
+        if !input_ln(ctx.engine, &mut globals.bibs.top_file_mut().file, globals.buffers) {
             return Ok(());
         }
 
@@ -152,18 +130,10 @@ pub(crate) fn get_bib_command_or_entry_and_process(
         return Err(BibtexError::Fatal);
     }
 
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
     if !eat_bib_white_space(ctx, globals.buffers, globals.bibs) {
-        eat_bib_print(
-            ctx,
-            globals.buffers,
-            globals.pool,
-            globals.bibs,
-            bib_command,
-        )?;
+        eat_bib_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
         return Ok(());
     }
 
@@ -173,13 +143,7 @@ pub(crate) fn get_bib_command_or_entry_and_process(
         _ => {
             bib_id_print(ctx, globals.buffers, scan_res)?;
             ctx.write_logs("an entry type");
-            bib_err_print(
-                ctx,
-                globals.buffers,
-                globals.pool,
-                globals.bibs,
-                bib_command,
-            )?;
+            bib_err_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
             return Ok(());
         }
     }
@@ -199,13 +163,7 @@ pub(crate) fn get_bib_command_or_entry_and_process(
             BibCommand::Comment => (),
             BibCommand::Preamble => {
                 if !eat_bib_white_space(ctx, globals.buffers, globals.bibs) {
-                    eat_bib_print(
-                        ctx,
-                        globals.buffers,
-                        globals.pool,
-                        globals.bibs,
-                        bib_command,
-                    )?;
+                    eat_bib_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
                     return Ok(());
                 }
 
@@ -213,33 +171,15 @@ pub(crate) fn get_bib_command_or_entry_and_process(
                     b'{' => b'}',
                     b'(' => b')',
                     _ => {
-                        bib_one_of_two_print(
-                            ctx,
-                            globals.buffers,
-                            globals.pool,
-                            globals.bibs,
-                            b'{',
-                            b'(',
-                            bib_command,
-                        )?;
+                        bib_one_of_two_print(ctx, globals.buffers, globals.pool, globals.bibs, b'{', b'(', bib_command)?;
                         return Ok(());
                     }
                 };
 
-                globals.buffers.set_offset(
-                    BufTy::Base,
-                    2,
-                    globals.buffers.offset(BufTy::Base, 2) + 1,
-                );
+                globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
                 if !eat_bib_white_space(ctx, globals.buffers, globals.bibs) {
-                    eat_bib_print(
-                        ctx,
-                        globals.buffers,
-                        globals.pool,
-                        globals.bibs,
-                        bib_command,
-                    )?;
+                    eat_bib_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
                     return Ok(());
                 }
 
@@ -257,33 +197,15 @@ pub(crate) fn get_bib_command_or_entry_and_process(
                 }
 
                 if globals.buffers.at_offset(BufTy::Base, 2) != right_outer_delim {
-                    ctx.write_logs(&format!(
-                        "Missing \"{right_outer_delim}\" in preamble command",
-                    ));
-                    bib_err_print(
-                        ctx,
-                        globals.buffers,
-                        globals.pool,
-                        globals.bibs,
-                        bib_command,
-                    )?;
+                    ctx.write_logs(&format!("Missing \"{right_outer_delim}\" in preamble command",));
+                    bib_err_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
                     return Ok(());
                 }
-                globals.buffers.set_offset(
-                    BufTy::Base,
-                    2,
-                    globals.buffers.offset(BufTy::Base, 2) + 1,
-                );
+                globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
             }
             BibCommand::String => {
                 if !eat_bib_white_space(ctx, globals.buffers, globals.bibs) {
-                    eat_bib_print(
-                        ctx,
-                        globals.buffers,
-                        globals.pool,
-                        globals.bibs,
-                        bib_command,
-                    )?;
+                    eat_bib_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
                     return Ok(());
                 }
 
@@ -291,33 +213,15 @@ pub(crate) fn get_bib_command_or_entry_and_process(
                     b'{' => b'}',
                     b'(' => b')',
                     _ => {
-                        bib_one_of_two_print(
-                            ctx,
-                            globals.buffers,
-                            globals.pool,
-                            globals.bibs,
-                            b'{',
-                            b'(',
-                            bib_command,
-                        )?;
+                        bib_one_of_two_print(ctx, globals.buffers, globals.pool, globals.bibs, b'{', b'(', bib_command)?;
                         return Ok(());
                     }
                 };
 
-                globals.buffers.set_offset(
-                    BufTy::Base,
-                    2,
-                    globals.buffers.offset(BufTy::Base, 2) + 1,
-                );
+                globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
                 if !eat_bib_white_space(ctx, globals.buffers, globals.bibs) {
-                    eat_bib_print(
-                        ctx,
-                        globals.buffers,
-                        globals.pool,
-                        globals.bibs,
-                        bib_command,
-                    )?;
+                    eat_bib_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
                     return Ok(());
                 }
 
@@ -327,69 +231,35 @@ pub(crate) fn get_bib_command_or_entry_and_process(
                     _ => {
                         bib_id_print(ctx, globals.buffers, scan_res)?;
                         ctx.write_logs("a string name");
-                        bib_err_print(
-                            ctx,
-                            globals.buffers,
-                            globals.pool,
-                            globals.bibs,
-                            bib_command,
-                        )?;
+                        bib_err_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
                         return Ok(());
                     }
                 }
 
-                let range =
-                    globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2);
+                let range = globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2);
                 let bib_macro = &mut globals.buffers.buffer_mut(BufTy::Base)[range];
                 bib_macro.make_ascii_lowercase();
 
                 // let text = globals.hash.text(res.loc);
-                let res =
-                    globals
-                        .hash
-                        .lookup_str_insert(globals.pool, bib_macro, StrNumber::default());
+                let res = globals.hash.lookup_str_insert(globals.pool, bib_macro, StrNumber::default());
                 // TODO: Insert overwriting?
-                globals
-                    .hash
-                    .set_extra(res.loc, globals.hash.get(res.loc).text());
+                globals.hash.set_extra(res.loc, globals.hash.get(res.loc).text());
                 *cur_macro_loc = res.loc;
 
                 if !eat_bib_white_space(ctx, globals.buffers, globals.bibs) {
-                    eat_bib_print(
-                        ctx,
-                        globals.buffers,
-                        globals.pool,
-                        globals.bibs,
-                        bib_command,
-                    )?;
+                    eat_bib_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
                     return Ok(());
                 }
 
                 if globals.buffers.at_offset(BufTy::Base, 2) != b'=' {
-                    bib_equals_sign_print(
-                        ctx,
-                        globals.buffers,
-                        globals.pool,
-                        globals.bibs,
-                        bib_command,
-                    )?;
+                    bib_equals_sign_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
                     return Ok(());
                 }
 
-                globals.buffers.set_offset(
-                    BufTy::Base,
-                    2,
-                    globals.buffers.offset(BufTy::Base, 2) + 1,
-                );
+                globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
                 if !eat_bib_white_space(ctx, globals.buffers, globals.bibs) {
-                    eat_bib_print(
-                        ctx,
-                        globals.buffers,
-                        globals.pool,
-                        globals.bibs,
-                        bib_command,
-                    )?;
+                    eat_bib_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
                     return Ok(());
                 }
 
@@ -407,24 +277,12 @@ pub(crate) fn get_bib_command_or_entry_and_process(
                 }
 
                 if globals.buffers.at_offset(BufTy::Base, 2) != right_outer_delim {
-                    ctx.write_logs(&format!(
-                        "Missing \"{right_outer_delim}\" in string command"
-                    ));
-                    bib_err_print(
-                        ctx,
-                        globals.buffers,
-                        globals.pool,
-                        globals.bibs,
-                        bib_command,
-                    )?;
+                    ctx.write_logs(&format!("Missing \"{right_outer_delim}\" in string command"));
+                    bib_err_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
                     return Ok(());
                 }
 
-                globals.buffers.set_offset(
-                    BufTy::Base,
-                    2,
-                    globals.buffers.offset(BufTy::Base, 2) + 1,
-                );
+                globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
             }
         }
         return Ok(());
@@ -438,13 +296,7 @@ pub(crate) fn get_bib_command_or_entry_and_process(
         .filter(|&loc| matches!(globals.hash.get(loc).extra(), BstFn::Wizard(_),));
 
     if !eat_bib_white_space(ctx, globals.buffers, globals.bibs) {
-        eat_bib_print(
-            ctx,
-            globals.buffers,
-            globals.pool,
-            globals.bibs,
-            bib_command,
-        )?;
+        eat_bib_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
         return Ok(());
     }
 
@@ -452,69 +304,42 @@ pub(crate) fn get_bib_command_or_entry_and_process(
         b'{' => b'}',
         b'(' => b')',
         _ => {
-            bib_one_of_two_print(
-                ctx,
-                globals.buffers,
-                globals.pool,
-                globals.bibs,
-                b'{',
-                b'(',
-                bib_command,
-            )?;
+            bib_one_of_two_print(ctx, globals.buffers, globals.pool, globals.bibs, b'{', b'(', bib_command)?;
             return Ok(());
         }
     };
 
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
     if !eat_bib_white_space(ctx, globals.buffers, globals.bibs) {
-        eat_bib_print(
-            ctx,
-            globals.buffers,
-            globals.pool,
-            globals.bibs,
-            bib_command,
-        )?;
+        eat_bib_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
         return Ok(());
     }
 
     let init = globals.buffers.init(BufTy::Base);
     Scan::new()
-        .chars(if right_outer_delim == b')' {
-            b","
-        } else {
-            b",}"
-        })
+        .chars(if right_outer_delim == b')' { b"," } else { b",}" })
         .class(LexClass::Whitespace)
         .scan_till(globals.buffers, init);
 
     let start = globals.buffers.offset(BufTy::Base, 1);
     let end = globals.buffers.offset(BufTy::Base, 2);
-    globals
-        .buffers
-        .copy_within(BufTy::Base, BufTy::Ex, start, start, end - start);
+    globals.buffers.copy_within(BufTy::Base, BufTy::Ex, start, start, end - start);
 
     let range = globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2);
     let lc_cite = &mut globals.buffers.buffer_mut(BufTy::Ex)[range];
     lc_cite.make_ascii_lowercase();
 
     let lc_res = if ctx.all_entries {
-        globals
-            .hash
-            .lookup_str_insert(globals.pool, lc_cite, HashPointer::default())
+        globals.hash.lookup_str_insert(globals.pool, lc_cite, HashPointer::default())
     } else {
-        globals
-            .hash
-            .lookup_str::<hash::LcCite>(globals.pool, lc_cite)
-            .map_or_else(
-                || LookupRes {
-                    loc: HashPointer::default(),
-                    exists: false,
-                },
-                |loc| LookupRes { loc, exists: true },
-            )
+        globals.hash.lookup_str::<hash::LcCite>(globals.pool, lc_cite).map_or_else(
+            || LookupRes {
+                loc: HashPointer::default(),
+                exists: false,
+            },
+            |loc| LookupRes { loc, exists: true },
+        )
     };
 
     let mut cite_exists = lc_res.exists;
@@ -526,28 +351,19 @@ pub(crate) fn get_bib_command_or_entry_and_process(
 
             globals.cites.set_entry_ptr(cite);
             let entry_ptr = globals.cites.entry_ptr();
-            if !ctx.all_entries
-                || entry_ptr < globals.cites.all_marker()
-                || entry_ptr > globals.cites.old_num_cites()
-            {
+            if !ctx.all_entries || entry_ptr < globals.cites.all_marker() || entry_ptr > globals.cites.old_num_cites() {
                 if globals.cites.get_type(entry_ptr).is_null() {
                     if !ctx.all_entries && entry_ptr >= globals.cites.old_num_cites() {
-                        let range = globals.buffers.offset(BufTy::Base, 1)
-                            ..globals.buffers.offset(BufTy::Base, 2);
+                        let range = globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2);
                         let cite = &globals.buffers.buffer(BufTy::Base)[range];
-                        let uc_res =
-                            globals
-                                .hash
-                                .lookup_str_insert::<hash::Cite>(globals.pool, cite, 0);
+                        let uc_res = globals.hash.lookup_str_insert::<hash::Cite>(globals.pool, cite, 0);
 
                         cite_exists = uc_res.exists;
 
                         if !uc_res.exists {
                             globals.hash.set_extra(lc_res.loc, uc_res.loc);
                             globals.hash.set_extra(uc_res.loc, entry_ptr);
-                            globals
-                                .cites
-                                .set_cite(entry_ptr, globals.hash.get(uc_res.loc).text());
+                            globals.cites.set_cite(entry_ptr, globals.hash.get(uc_res.loc).text());
                             cite_exists = true;
                         }
                     }
@@ -560,16 +376,13 @@ pub(crate) fn get_bib_command_or_entry_and_process(
                 let lc_cite = &mut globals.buffers.buffer_mut(BufTy::Ex)[0..s.len()];
                 lc_cite.make_ascii_lowercase();
 
-                let lc_res2 = globals
-                    .hash
-                    .lookup_str::<hash::LcCite>(globals.pool, lc_cite)
-                    .map_or_else(
-                        || LookupRes {
-                            loc: HashPointer::default(),
-                            exists: false,
-                        },
-                        |loc| LookupRes { loc, exists: true },
-                    );
+                let lc_res2 = globals.hash.lookup_str::<hash::LcCite>(globals.pool, lc_cite).map_or_else(
+                    || LookupRes {
+                        loc: HashPointer::default(),
+                        exists: false,
+                    },
+                    |loc| LookupRes { loc, exists: true },
+                );
 
                 cite_exists = lc_res2.exists;
 
@@ -589,13 +402,7 @@ pub(crate) fn get_bib_command_or_entry_and_process(
             }
 
             ctx.write_logs("Repeated entry");
-            return bib_err_print(
-                ctx,
-                globals.buffers,
-                globals.pool,
-                globals.bibs,
-                bib_command,
-            );
+            return bib_err_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command);
         }
     }
 
@@ -605,33 +412,18 @@ pub(crate) fn get_bib_command_or_entry_and_process(
                 globals.cites.set_exists(globals.cites.entry_ptr(), true);
                 let &cite_loc = globals.hash.get(lc_res.loc).extra();
                 globals.cites.set_entry_ptr(globals.cites.ptr());
-                let num = add_database_cite(
-                    globals.cites,
-                    globals.other,
-                    globals.hash,
-                    globals.cites.ptr(),
-                    cite_loc,
-                    lc_res.loc,
-                );
+                let num = add_database_cite(globals.cites, globals.other, globals.hash, globals.cites.ptr(), cite_loc, lc_res.loc);
                 globals.cites.set_ptr(num);
             }
         } else {
-            let cite = &globals.buffers.buffer(BufTy::Base)
-                [globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2)];
+            let cite = &globals.buffers.buffer(BufTy::Base)[globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2)];
             let res = globals.hash.lookup_str_insert(globals.pool, cite, 0);
             if res.exists {
                 hash_cite_confusion(ctx);
                 return Err(BibtexError::Fatal);
             }
             globals.cites.set_entry_ptr(globals.cites.ptr());
-            let num = add_database_cite(
-                globals.cites,
-                globals.other,
-                globals.hash,
-                globals.cites.ptr(),
-                res.loc,
-                lc_res.loc,
-            );
+            let num = add_database_cite(globals.cites, globals.other, globals.hash, globals.cites.ptr(), res.loc, lc_res.loc);
             globals.cites.set_ptr(num);
         }
         true
@@ -643,9 +435,7 @@ pub(crate) fn get_bib_command_or_entry_and_process(
         if let Some(loc) = bst_res {
             globals.cites.set_type(globals.cites.entry_ptr(), loc);
         } else {
-            globals
-                .cites
-                .set_type(globals.cites.entry_ptr(), HashData::undefined());
+            globals.cites.set_type(globals.cites.entry_ptr(), HashData::undefined());
             ctx.write_logs("Warning--entry type for \"");
             print_a_token(ctx, globals.buffers);
             ctx.write_logs("\" isn't style-file defined\n");
@@ -654,42 +444,20 @@ pub(crate) fn get_bib_command_or_entry_and_process(
     }
 
     if !eat_bib_white_space(ctx, globals.buffers, globals.bibs) {
-        eat_bib_print(
-            ctx,
-            globals.buffers,
-            globals.pool,
-            globals.bibs,
-            bib_command,
-        )?;
+        eat_bib_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
         return Ok(());
     }
 
     while globals.buffers.at_offset(BufTy::Base, 2) != right_outer_delim {
         if globals.buffers.at_offset(BufTy::Base, 2) != b',' {
-            bib_one_of_two_print(
-                ctx,
-                globals.buffers,
-                globals.pool,
-                globals.bibs,
-                b',',
-                right_outer_delim,
-                bib_command,
-            )?;
+            bib_one_of_two_print(ctx, globals.buffers, globals.pool, globals.bibs, b',', right_outer_delim, bib_command)?;
             return Ok(());
         }
 
-        globals
-            .buffers
-            .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+        globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
         if !eat_bib_white_space(ctx, globals.buffers, globals.bibs) {
-            eat_bib_print(
-                ctx,
-                globals.buffers,
-                globals.pool,
-                globals.bibs,
-                bib_command,
-            )?;
+            eat_bib_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
             return Ok(());
         }
 
@@ -703,13 +471,7 @@ pub(crate) fn get_bib_command_or_entry_and_process(
             _ => {
                 bib_id_print(ctx, globals.buffers, scan_res)?;
                 ctx.write_logs("a field name");
-                bib_err_print(
-                    ctx,
-                    globals.buffers,
-                    globals.pool,
-                    globals.bibs,
-                    bib_command,
-                )?;
+                bib_err_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
                 return Ok(());
             }
         }
@@ -717,8 +479,7 @@ pub(crate) fn get_bib_command_or_entry_and_process(
         *field_name_loc = HashPointer::default();
         let mut store_field = false;
         if store_entry {
-            let range =
-                globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2);
+            let range = globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2);
             let bst_fn = &mut globals.buffers.buffer_mut(BufTy::Base)[range];
             bst_fn.make_ascii_lowercase();
 
@@ -734,39 +495,19 @@ pub(crate) fn get_bib_command_or_entry_and_process(
         }
 
         if !eat_bib_white_space(ctx, globals.buffers, globals.bibs) {
-            eat_bib_print(
-                ctx,
-                globals.buffers,
-                globals.pool,
-                globals.bibs,
-                bib_command,
-            )?;
+            eat_bib_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
             return Ok(());
         }
 
         if globals.buffers.at_offset(BufTy::Base, 2) != b'=' {
-            bib_equals_sign_print(
-                ctx,
-                globals.buffers,
-                globals.pool,
-                globals.bibs,
-                bib_command,
-            )?;
+            bib_equals_sign_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
             return Ok(());
         }
 
-        globals
-            .buffers
-            .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+        globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
         if !eat_bib_white_space(ctx, globals.buffers, globals.bibs) {
-            eat_bib_print(
-                ctx,
-                globals.buffers,
-                globals.pool,
-                globals.bibs,
-                bib_command,
-            )?;
+            eat_bib_print(ctx, globals.buffers, globals.pool, globals.bibs, bib_command)?;
             return Ok(());
         }
 
@@ -784,9 +525,7 @@ pub(crate) fn get_bib_command_or_entry_and_process(
         }
     }
 
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
     Ok(())
 }

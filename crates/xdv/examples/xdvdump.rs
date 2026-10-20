@@ -69,14 +69,7 @@ impl tectonic_xdv::XdvEvents for Stats {
     }
 
     fn handle_define_native_font(
-        &mut self,
-        name: &str,
-        font_num: i32,
-        size: i32,
-        face_index: u32,
-        color_rgba: Option<u32>,
-        extend: Option<u32>,
-        slant: Option<u32>,
+        &mut self, name: &str, font_num: i32, size: i32, face_index: u32, color_rgba: Option<u32>, extend: Option<u32>, slant: Option<u32>,
         embolden: Option<u32>,
     ) -> Result<(), Self::Error> {
         println!(
@@ -85,11 +78,7 @@ impl tectonic_xdv::XdvEvents for Stats {
         Ok(())
     }
 
-    fn handle_begin_page(
-        &mut self,
-        counters: &[i32],
-        previous_bop: i32,
-    ) -> Result<(), Self::Error> {
+    fn handle_begin_page(&mut self, counters: &[i32], previous_bop: i32) -> Result<(), Self::Error> {
         println!(
             "new page: [{} {} {} {} {} {} {} {} {} {}] {}",
             counters[0],
@@ -126,13 +115,7 @@ impl tectonic_xdv::XdvEvents for Stats {
         Ok(())
     }
 
-    fn handle_glyph_run(
-        &mut self,
-        font_num: i32,
-        glyphs: &[u16],
-        x: &[i32],
-        y: &[i32],
-    ) -> Result<(), Self::Error> {
+    fn handle_glyph_run(&mut self, font_num: i32, glyphs: &[u16], x: &[i32], y: &[i32]) -> Result<(), Self::Error> {
         println!("glyphs font={font_num}: {glyphs:?} (@ {x:?}, {y:?}");
         Ok(())
     }
@@ -147,11 +130,7 @@ fn main() {
     let matches = Command::new("xdvdump")
         .version(crate_version!())
         .about("Parse an XDV or SPX file and report some stats about its contents")
-        .arg(
-            Arg::new("seek")
-                .long("seek")
-                .help("Seek around the file, parsing the trailers first"),
-        )
+        .arg(Arg::new("seek").long("seek").help("Seek around the file, parsing the trailers first"))
         .arg(
             Arg::new("PATH")
                 .value_parser(clap::value_parser!(PathBuf))
@@ -166,28 +145,16 @@ fn main() {
     let file = match File::open(path) {
         Ok(f) => f,
         Err(e) => {
-            eprintln!(
-                "error: could not open \"{}\": {}",
-                path.to_string_lossy(),
-                e
-            );
+            eprintln!("error: could not open \"{}\": {}", path.to_string_lossy(), e);
             process::exit(1);
         }
     };
 
-    if matches
-        .value_source("seek")
-        .map(|x| x == ValueSource::CommandLine)
-        .unwrap_or(false)
-    {
+    if matches.value_source("seek").map(|x| x == ValueSource::CommandLine).unwrap_or(false) {
         match tectonic_xdv::XdvParser::process_with_seeks(file, Stats::new()) {
             Ok(x) => x,
             Err(e) => {
-                eprintln!(
-                    "error: failed to parse \"{}\": {}",
-                    path.to_string_lossy(),
-                    e
-                );
+                eprintln!("error: failed to parse \"{}\": {}", path.to_string_lossy(), e);
                 process::exit(1);
             }
         };
@@ -197,11 +164,7 @@ fn main() {
         let (_stats, n_bytes) = match tectonic_xdv::XdvParser::process(file, Stats::new()) {
             Ok(x) => x,
             Err(e) => {
-                eprintln!(
-                    "error: failed to parse \"{}\": {}",
-                    path.to_string_lossy(),
-                    e
-                );
+                eprintln!("error: failed to parse \"{}\": {}", path.to_string_lossy(), e);
                 process::exit(1);
             }
         };

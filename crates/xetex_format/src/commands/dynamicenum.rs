@@ -5,9 +5,7 @@
 
 use tectonic_errors::prelude::*;
 
-use super::{
-    ArgKind, Command, CommandArgument, CommandBehavior, CommandPrimitive, PrimitiveExtraInit,
-};
+use super::{ArgKind, Command, CommandArgument, CommandBehavior, CommandPrimitive, PrimitiveExtraInit};
 use crate::{
     FormatVersion,
     enums::{HasPrimitive, dynamic::*},
@@ -30,12 +28,7 @@ macro_rules! declare_exhaustive {
 
         impl Command for $typename {
             fn describe(&self, arg: CommandArgument) -> String {
-                match self
-                    .codes
-                    .resolve(arg as isize)
-                    .map(|v| v.primitive())
-                    .flatten()
-                {
+                match self.codes.resolve(arg as isize).map(|v| v.primitive()).flatten() {
                     Some(p) => format!("[{}]", p),
                     None => format!("[{:?}?? {}]", self, arg),
                 }

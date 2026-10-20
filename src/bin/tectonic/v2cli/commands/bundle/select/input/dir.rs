@@ -36,12 +36,7 @@ impl BundleInput for DirBundleInput {
             .map(move |x| match x {
                 Ok(entry) => {
                     let path_buf = entry.into_path();
-                    let rel_path = path_buf
-                        .strip_prefix(&self.dir)
-                        .unwrap()
-                        .to_str()
-                        .unwrap()
-                        .to_string();
+                    let rel_path = path_buf.strip_prefix(&self.dir).unwrap().to_str().unwrap().to_string();
 
                     let file = fs::File::open(&path_buf)?;
                     Ok((rel_path, Box::new(file) as Box<dyn Read>))

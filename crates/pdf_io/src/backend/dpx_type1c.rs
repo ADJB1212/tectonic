@@ -20,43 +20,17 @@
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
 /* Copyright and Trademark Notice ommited. */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
     fn floor(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
-    fn ttstub_input_seek(
-        handle: rust_input_handle_t,
-        offset: ssize_t,
-        whence: ::core::ffi::c_int,
-    ) -> size_t;
-    fn ttstub_input_read(
-        handle: rust_input_handle_t,
-        data: *mut ::core::ffi::c_char,
-        len: size_t,
-    ) -> ssize_t;
+    fn ttstub_input_seek(handle: rust_input_handle_t, offset: ssize_t, whence: ::core::ffi::c_int) -> size_t;
+    fn ttstub_input_read(handle: rust_input_handle_t, data: *mut ::core::ffi::c_char, len: size_t) -> ssize_t;
     fn ttstub_input_close(handle: rust_input_handle_t) -> ::core::ffi::c_int;
-    fn sprintf(
-        _: *mut ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
+    fn sprintf(_: *mut ::core::ffi::c_char, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_release_obj"]
     fn pdf_release_obj(object: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_ref_obj"]
@@ -78,19 +52,11 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_lookup_dict"]
     fn pdf_lookup_dict(dict: *mut pdf_obj, key: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_new_stream"]
     fn pdf_new_stream(flags: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_stream"]
-    fn pdf_add_stream(
-        stream: *mut pdf_obj,
-        stream_data_ptr: *const ::core::ffi::c_void,
-        stream_data_len: ::core::ffi::c_int,
-    );
+    fn pdf_add_stream(stream: *mut pdf_obj, stream_data_ptr: *const ::core::ffi::c_void, stream_data_len: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_stream_dict"]
     fn pdf_stream_dict(stream: *mut pdf_obj) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_stream_length"]
@@ -98,10 +64,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_stream_dataptr"]
     fn pdf_stream_dataptr(stream: *mut pdf_obj) -> *const ::core::ffi::c_void;
     #[link_name = "__pdf_impl_pdf_check_version"]
-    fn pdf_check_version(
-        major: ::core::ffi::c_int,
-        minor: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn pdf_check_version(major: ::core::ffi::c_int, minor: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_font_get_uniqueTag"]
     fn pdf_font_get_uniqueTag(font: *mut pdf_font) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_pdf_font_get_resource"]
@@ -110,27 +73,16 @@ unsafe extern "C-unwind" {
     fn pdf_font_get_descriptor(font: *mut pdf_font) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_check_tfm_widths"]
     fn pdf_check_tfm_widths(
-        ident: *const ::core::ffi::c_char,
-        widths: *mut ::core::ffi::c_double,
-        firstchar: ::core::ffi::c_int,
-        lastchar: ::core::ffi::c_int,
+        ident: *const ::core::ffi::c_char, widths: *mut ::core::ffi::c_double, firstchar: ::core::ffi::c_int, lastchar: ::core::ffi::c_int,
         usedchars: *const ::core::ffi::c_char,
     ) -> ::core::ffi::c_int;
     static mut work_buffer: [::core::ffi::c_char; 0];
     #[link_name = "__pdf_impl_cff_open"]
-    fn cff_open(
-        handle: rust_input_handle_t,
-        offset: ::core::ffi::c_int,
-        idx: ::core::ffi::c_int,
-    ) -> *mut cff_font;
+    fn cff_open(handle: rust_input_handle_t, offset: ::core::ffi::c_int, idx: ::core::ffi::c_int) -> *mut cff_font;
     #[link_name = "__pdf_impl_cff_close"]
     fn cff_close(cff: *mut cff_font);
     #[link_name = "__pdf_impl_cff_put_header"]
-    fn cff_put_header(
-        cff: *mut cff_font,
-        dest: *mut card8,
-        destlen: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn cff_put_header(cff: *mut cff_font, dest: *mut card8, destlen: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_cff_get_index_header"]
     fn cff_get_index_header(cff: *mut cff_font) -> *mut cff_index;
     #[link_name = "__pdf_impl_cff_release_index"]
@@ -140,11 +92,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_cff_index_size"]
     fn cff_index_size(idx: *mut cff_index) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_cff_pack_index"]
-    fn cff_pack_index(
-        idx: *mut cff_index,
-        dest: *mut card8,
-        destlen: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn cff_pack_index(idx: *mut cff_index, dest: *mut card8, destlen: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_cff_get_name"]
     fn cff_get_name(cff: *mut cff_font) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_cff_set_name"]
@@ -154,11 +102,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_cff_read_encoding"]
     fn cff_read_encoding(cff: *mut cff_font) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_cff_pack_encoding"]
-    fn cff_pack_encoding(
-        cff: *mut cff_font,
-        dest: *mut card8,
-        destlen: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn cff_pack_encoding(cff: *mut cff_font, dest: *mut card8, destlen: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_cff_encoding_lookup"]
     fn cff_encoding_lookup(cff: *mut cff_font, code: card8) -> card16;
     #[link_name = "__pdf_impl_cff_release_encoding"]
@@ -166,11 +110,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_cff_read_charsets"]
     fn cff_read_charsets(cff: *mut cff_font) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_cff_pack_charsets"]
-    fn cff_pack_charsets(
-        cff: *mut cff_font,
-        dest: *mut card8,
-        destlen: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn cff_pack_charsets(cff: *mut cff_font, dest: *mut card8, destlen: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_cff_charsets_lookup"]
     fn cff_charsets_lookup(cff: *mut cff_font, cid: card16) -> card16;
     #[link_name = "__pdf_impl_cff_release_charsets"]
@@ -184,55 +124,27 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_cff_get_sid"]
     fn cff_get_sid(cff: *mut cff_font, str: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_cff_add_string"]
-    fn cff_add_string(
-        cff: *mut cff_font,
-        str: *const ::core::ffi::c_char,
-        unique: ::core::ffi::c_int,
-    ) -> s_SID;
+    fn cff_add_string(cff: *mut cff_font, str: *const ::core::ffi::c_char, unique: ::core::ffi::c_int) -> s_SID;
     #[link_name = "__pdf_impl_cff_update_string"]
     fn cff_update_string(cff: *mut cff_font);
     #[link_name = "__pdf_impl_cff_dict_set"]
-    fn cff_dict_set(
-        dict: *mut cff_dict,
-        key: *const ::core::ffi::c_char,
-        idx: ::core::ffi::c_int,
-        value: ::core::ffi::c_double,
-    );
+    fn cff_dict_set(dict: *mut cff_dict, key: *const ::core::ffi::c_char, idx: ::core::ffi::c_int, value: ::core::ffi::c_double);
     #[link_name = "__pdf_impl_cff_dict_get"]
-    fn cff_dict_get(
-        dict: *mut cff_dict,
-        key: *const ::core::ffi::c_char,
-        idx: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_double;
+    fn cff_dict_get(dict: *mut cff_dict, key: *const ::core::ffi::c_char, idx: ::core::ffi::c_int) -> ::core::ffi::c_double;
     #[link_name = "__pdf_impl_cff_dict_add"]
-    fn cff_dict_add(
-        dict: *mut cff_dict,
-        key: *const ::core::ffi::c_char,
-        count: ::core::ffi::c_int,
-    );
+    fn cff_dict_add(dict: *mut cff_dict, key: *const ::core::ffi::c_char, count: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_cff_dict_remove"]
     fn cff_dict_remove(dict: *mut cff_dict, key: *const ::core::ffi::c_char);
     #[link_name = "__pdf_impl_cff_dict_known"]
     fn cff_dict_known(dict: *mut cff_dict, key: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_cff_dict_pack"]
-    fn cff_dict_pack(
-        dict: *mut cff_dict,
-        dest: *mut card8,
-        destlen: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn cff_dict_pack(dict: *mut cff_dict, dest: *mut card8, destlen: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_cff_dict_update"]
     fn cff_dict_update(dict: *mut cff_dict, cff: *mut cff_font);
     #[link_name = "__pdf_impl_cs_copy_charstring"]
     fn cs_copy_charstring(
-        dest: *mut card8,
-        destlen: ::core::ffi::c_int,
-        src: *mut card8,
-        srclen: ::core::ffi::c_int,
-        gsubr: *mut cff_index,
-        subr: *mut cff_index,
-        default_width: ::core::ffi::c_double,
-        nominal_width: ::core::ffi::c_double,
-        ginfo: *mut cs_ginfo,
+        dest: *mut card8, destlen: ::core::ffi::c_int, src: *mut card8, srclen: ::core::ffi::c_int, gsubr: *mut cff_index, subr: *mut cff_index,
+        default_width: ::core::ffi::c_double, nominal_width: ::core::ffi::c_double, ginfo: *mut cs_ginfo,
     ) -> ::core::ffi::c_int;
     static mut dpx_conf: _dpx_conf;
     #[link_name = "__pdf_impl_dpx_open_truetype_file"]
@@ -249,9 +161,7 @@ unsafe extern "C-unwind" {
     fn pdf_encoding_get_encoding(enc_id: ::core::ffi::c_int) -> *mut *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_pdf_create_ToUnicode_CMap"]
     fn pdf_create_ToUnicode_CMap(
-        enc_name: *const ::core::ffi::c_char,
-        enc_vec: *mut *mut ::core::ffi::c_char,
-        is_used: *const ::core::ffi::c_char,
+        enc_name: *const ::core::ffi::c_char, enc_vec: *mut *mut ::core::ffi::c_char, is_used: *const ::core::ffi::c_char,
     ) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_sfnt_open"]
     fn sfnt_open(handle: rust_input_handle_t) -> *mut sfnt;
@@ -265,11 +175,7 @@ unsafe extern "C-unwind" {
     fn ttc_read_offset(sfont: *mut sfnt, ttc_idx: SFNT_ULONG) -> SFNT_ULONG;
     #[link_name = "__pdf_impl_tt_get_fontdesc"]
     fn tt_get_fontdesc(
-        sfont: *mut sfnt,
-        embed: *mut ::core::ffi::c_int,
-        stemv: ::core::ffi::c_int,
-        type_0: ::core::ffi::c_int,
-        fontname: *const ::core::ffi::c_char,
+        sfont: *mut sfnt, embed: *mut ::core::ffi::c_int, stemv: ::core::ffi::c_int, type_0: ::core::ffi::c_int, fontname: *const ::core::ffi::c_char,
     ) -> *mut pdf_obj;
 }
 pub type __darwin_size_t = usize;
@@ -540,10 +446,7 @@ pub const SEEK_SET: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const SEEK_CUR: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const INVALID_HANDLE: uintptr_t = 0 as ::core::ffi::c_int as uintptr_t;
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
@@ -551,26 +454,19 @@ unsafe extern "C-unwind" fn streq_ptr(
 }
 pub const CFF_STDSTR_MAX: ::core::ffi::c_int = 391 as ::core::ffi::c_int;
 pub const CS_STR_LEN_MAX: ::core::ffi::c_int = 65536 as ::core::ffi::c_int;
-pub const STREAM_COMPRESS: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const STREAM_COMPRESS: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const PDF_FONT_FONTTYPE_TYPE1C: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
-pub const PDF_FONT_FLAG_NOEMBED: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const PDF_FONT_FLAG_NOEMBED: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const WORK_BUFFER_SIZE: ::core::ffi::c_int = 1024 as ::core::ffi::c_int;
-pub const FONTTYPE_CIDFONT: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const FONTTYPE_CIDFONT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const FONTTYPE_FONT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
 pub const CFF_NOMINALWIDTHX_DEFAULT: ::core::ffi::c_double = 0.0f64;
 pub const CFF_DEFAULTWIDTHX_DEFAULT: ::core::ffi::c_double = 0.0f64;
-pub const SFNT_TYPE_POSTSCRIPT: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
+pub const SFNT_TYPE_POSTSCRIPT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
 pub const SFNT_TYPE_TTC: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 4 as ::core::ffi::c_int;
 #[unsafe(export_name = "__pdf_impl_pdf_font_open_type1c")]
 pub unsafe extern "C-unwind" fn pdf_font_open_type1c(
-    mut font: *mut pdf_font,
-    mut ident: *const ::core::ffi::c_char,
-    mut index: ::core::ffi::c_int,
-    mut encoding_id: ::core::ffi::c_int,
+    mut font: *mut pdf_font, mut ident: *const ::core::ffi::c_char, mut index: ::core::ffi::c_int, mut encoding_id: ::core::ffi::c_int,
     mut embedding: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut fontname: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -581,17 +477,11 @@ pub unsafe extern "C-unwind" fn pdf_font_open_type1c(
     let mut tmp: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut offset: SFNT_ULONG = 0 as SFNT_ULONG;
     if font.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"font\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"font\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if ident.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"ident\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"ident\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     handle = dpx_open_opentype_file(ident);
@@ -614,8 +504,7 @@ pub unsafe extern "C-unwind" fn pdf_font_open_type1c(
     if (*sfont).type_0 != SFNT_TYPE_TTC && (*sfont).type_0 != SFNT_TYPE_POSTSCRIPT
         || sfnt_read_table_directory(sfont, offset) < 0 as ::core::ffi::c_int
         || {
-            offset =
-                sfnt_find_table_pos(sfont, b"CFF \0" as *const u8 as *const ::core::ffi::c_char);
+            offset = sfnt_find_table_pos(sfont, b"CFF \0" as *const u8 as *const ::core::ffi::c_char);
             offset == 0 as SFNT_ULONG
         }
     {
@@ -625,16 +514,9 @@ pub unsafe extern "C-unwind" fn pdf_font_open_type1c(
         }
         return -(1 as ::core::ffi::c_int);
     }
-    cffont = cff_open(
-        (*sfont).handle,
-        offset as ::core::ffi::c_int,
-        0 as ::core::ffi::c_int,
-    );
+    cffont = cff_open((*sfont).handle, offset as ::core::ffi::c_int, 0 as ::core::ffi::c_int);
     if cffont.is_null() {
-        pdf_warning!(
-            b"Could not read CFF font data: %s\0" as *const u8 as *const ::core::ffi::c_char,
-            ident,
-        );
+        pdf_warning!(b"Could not read CFF font data: %s\0" as *const u8 as *const ::core::ffi::c_char, ident,);
         sfnt_close(sfont);
         if handle != 0 {
             crate::backend::runtime::input_close(handle);
@@ -650,8 +532,7 @@ pub unsafe extern "C-unwind" fn pdf_font_open_type1c(
     fontname = cff_get_name(cffont);
     if fontname.is_null() {
         pdf_warning!(
-            b"No valid FontName found in CFF/OpenType font: %s\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"No valid FontName found in CFF/OpenType font: %s\0" as *const u8 as *const ::core::ffi::c_char,
             ident,
         );
         cff_close(cffont);
@@ -665,45 +546,23 @@ pub unsafe extern "C-unwind" fn pdf_font_open_type1c(
     cff_close(cffont);
     if embedding == 0 {
         pdf_warning!(
-            b"Ignoring no-embed option for Type1C font: %s\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Ignoring no-embed option for Type1C font: %s\0" as *const u8 as *const ::core::ffi::c_char,
             ident,
         );
         embedding = 1 as ::core::ffi::c_int;
         (*font).flags &= !PDF_FONT_FLAG_NOEMBED;
     }
     if encoding_id < 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Built-in encoding used for CFF/OpenType font.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
-        pdf_warning!(
-            b"CFF font in OpenType font sometimes have strange built-in encoding.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
-        pdf_warning!(
-            b"If you find text is not encoded properly in the generated PDF file,\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
-        pdf_warning!(
-            b"please specify appropriate \".enc\" file in your fontmap.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Built-in encoding used for CFF/OpenType font.\0" as *const u8 as *const ::core::ffi::c_char,);
+        pdf_warning!(b"CFF font in OpenType font sometimes have strange built-in encoding.\0" as *const u8 as *const ::core::ffi::c_char,);
+        pdf_warning!(b"If you find text is not encoded properly in the generated PDF file,\0" as *const u8 as *const ::core::ffi::c_char,);
+        pdf_warning!(b"please specify appropriate \".enc\" file in your fontmap.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     (*font).subtype = PDF_FONT_FONTTYPE_TYPE1C;
     descriptor = pdf_font_get_descriptor(font);
-    tmp = tt_get_fontdesc(
-        sfont,
-        &raw mut embedding,
-        -(1 as ::core::ffi::c_int),
-        1 as ::core::ffi::c_int,
-        fontname,
-    );
+    tmp = tt_get_fontdesc(sfont, &raw mut embedding, -(1 as ::core::ffi::c_int), 1 as ::core::ffi::c_int, fontname);
     if tmp.is_null() {
-        pdf_abort!(
-            b"Could not obtain neccesary font info from OpenType table.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"Could not obtain neccesary font info from OpenType table.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     pdf_merge_dict(descriptor, tmp);
     pdf_release_obj(tmp);
@@ -723,10 +582,7 @@ pub unsafe extern "C-unwind" fn pdf_font_open_type1c(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn add_SimpleMetrics(
-    mut font: *mut pdf_font,
-    mut cffont: *mut cff_font,
-    mut widths: *mut ::core::ffi::c_double,
-    mut num_glyphs: card16,
+    mut font: *mut pdf_font, mut cffont: *mut cff_font, mut widths: *mut ::core::ffi::c_double, mut num_glyphs: card16,
 ) {
     let mut fontdict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut code: ::core::ffi::c_int = 0;
@@ -737,11 +593,7 @@ unsafe extern "C-unwind" fn add_SimpleMetrics(
     let mut scaling: ::core::ffi::c_double = 1.0f64;
     fontdict = pdf_font_get_resource(font);
     usedchars = (*font).usedchars;
-    if cff_dict_known(
-        (*cffont).topdict,
-        b"FontMatrix\0" as *const u8 as *const ::core::ffi::c_char,
-    ) != 0
-    {
+    if cff_dict_known((*cffont).topdict, b"FontMatrix\0" as *const u8 as *const ::core::ffi::c_char) != 0 {
         scaling = 1000 as ::core::ffi::c_int as ::core::ffi::c_double
             * cff_dict_get(
                 (*cffont).topdict,
@@ -779,10 +631,7 @@ unsafe extern "C-unwind" fn add_SimpleMetrics(
         code = firstchar;
         while code <= lastchar {
             if *usedchars.offset(code as isize) != 0 {
-                pdf_add_array(
-                    array,
-                    pdf_new_number(floor(*widths.offset(code as isize) / 0.1f64 + 0.5f64) * 0.1f64),
-                );
+                pdf_add_array(array, pdf_new_number(floor(*widths.offset(code as isize) / 0.1f64 + 0.5f64) * 0.1f64));
             } else {
                 pdf_add_array(array, pdf_new_number(0.0f64));
             }
@@ -809,9 +658,7 @@ unsafe extern "C-unwind" fn add_SimpleMetrics(
     );
 }
 #[unsafe(export_name = "__pdf_impl_pdf_font_load_type1c")]
-pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
-    mut font: *mut pdf_font,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_font_load_type1c(mut font: *mut pdf_font) -> ::core::ffi::c_int {
     let mut fontdict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut descriptor: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut pdfcharset: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -824,8 +671,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
     let mut encoding_id: ::core::ffi::c_int = 0;
     let mut fontfile: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut stream_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    let mut enc_vec: *mut *mut ::core::ffi::c_char =
-        ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
+    let mut enc_vec: *mut *mut ::core::ffi::c_char = ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
     let mut sfont: *mut sfnt = ::core::ptr::null_mut::<sfnt>();
     let mut cffont: *mut cff_font = ::core::ptr::null_mut::<cff_font>();
     let mut charstrings: *mut cff_index = ::core::ptr::null_mut::<cff_index>();
@@ -868,20 +714,14 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
     let mut notdef_width: ::core::ffi::c_double = 0.;
     let mut widths: [::core::ffi::c_double; 256] = [0.; 256];
     if font.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"font\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"font\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if (*font).reference.is_null() {
         return 0 as ::core::ffi::c_int;
     }
     if (*font).flags & PDF_FONT_FLAG_NOEMBED != 0 {
-        pdf_abort!(
-            b"Only embedded font supported for CFF/OpenType font.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"Only embedded font supported for CFF/OpenType font.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     usedchars = (*font).usedchars;
     fontname = (*font).fontname;
@@ -895,17 +735,11 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
     } else {
     };
     if fontname.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"fontname\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"fontname\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if ident.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"ident\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"ident\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     fontdict = pdf_font_get_resource(font);
@@ -913,34 +747,23 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
     encoding_id = (*font).encoding_id;
     handle = dpx_open_opentype_file(ident);
     if handle == 0 {
-        pdf_abort!(
-            b"Could not open OpenType font: %s\0" as *const u8 as *const ::core::ffi::c_char,
-            ident,
-        );
+        pdf_abort!(b"Could not open OpenType font: %s\0" as *const u8 as *const ::core::ffi::c_char, ident,);
     }
     sfont = sfnt_open(handle);
     if sfont.is_null() {
-        pdf_abort!(
-            b"Could not open OpenType font: %s\0" as *const u8 as *const ::core::ffi::c_char,
-            ident,
-        );
+        pdf_abort!(b"Could not open OpenType font: %s\0" as *const u8 as *const ::core::ffi::c_char, ident,);
     }
     if sfnt_read_table_directory(sfont, 0 as SFNT_ULONG) < 0 as ::core::ffi::c_int {
         pdf_abort!(
-            b"Could not read OpenType table directory: %s\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Could not read OpenType table directory: %s\0" as *const u8 as *const ::core::ffi::c_char,
             ident,
         );
     }
     if (*sfont).type_0 != SFNT_TYPE_POSTSCRIPT || {
-        offset = sfnt_find_table_pos(sfont, b"CFF \0" as *const u8 as *const ::core::ffi::c_char)
-            as ::core::ffi::c_int;
+        offset = sfnt_find_table_pos(sfont, b"CFF \0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int;
         offset == 0 as ::core::ffi::c_int
     } {
-        pdf_abort!(
-            b"Not a CFF/OpenType font (or variable font?) (11)?\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"Not a CFF/OpenType font (or variable font?) (11)?\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     cffont = cff_open(handle, offset, 0 as ::core::ffi::c_int);
     if cffont.is_null() {
@@ -949,17 +772,9 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
     if (*cffont).flag & FONTTYPE_CIDFONT != 0 {
         pdf_abort!(b"This is CIDFont...\0" as *const u8 as *const ::core::ffi::c_char);
     }
-    fullname = new(
-        (strlen(fontname).wrapping_add(8 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t,
-    ) as *mut ::core::ffi::c_char;
-    sprintf(
-        fullname,
-        b"%6s+%s\0" as *const u8 as *const ::core::ffi::c_char,
-        uniqueTag,
-        fontname,
-    );
+    fullname = new((strlen(fontname).wrapping_add(8 as size_t) as uint32_t as usize)
+        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
+    sprintf(fullname, b"%6s+%s\0" as *const u8 as *const ::core::ffi::c_char, uniqueTag, fontname);
     cff_read_charsets(cffont);
     if encoding_id < 0 as ::core::ffi::c_int {
         cff_read_encoding(cffont);
@@ -967,22 +782,20 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
     cff_read_private(cffont);
     cff_read_subrs(cffont);
     (*cffont)._string = cff_new_index(0 as card16);
-    charset = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<cff_charsets>() as usize)
-        as uint32_t) as *mut cff_charsets;
+    charset = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<cff_charsets>() as usize) as uint32_t)
+        as *mut cff_charsets;
     (*charset).format = 0 as card8;
     (*charset).num_entries = 0 as card16;
-    (*charset).data.glyphs = new((256 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<s_SID>() as usize)
-        as uint32_t) as *mut s_SID;
+    (*charset).data.glyphs =
+        new((256 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<s_SID>() as usize) as uint32_t) as *mut s_SID;
     enc_vec = ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
     if encoding_id >= 0 as ::core::ffi::c_int {
         enc_vec = pdf_encoding_get_encoding(encoding_id);
     } else {
         let mut tounicode: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-        enc_vec = new((256 as ::core::ffi::c_int as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<*mut ::core::ffi::c_char>() as usize)
-            as uint32_t) as *mut *mut ::core::ffi::c_char;
+        enc_vec = new(
+            (256 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<*mut ::core::ffi::c_char>() as usize) as uint32_t,
+        ) as *mut *mut ::core::ffi::c_char;
         code = 0 as card16;
         while (code as ::core::ffi::c_int) < 256 as ::core::ffi::c_int {
             if *usedchars.offset(code as isize) != 0 {
@@ -996,12 +809,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
             }
             code = code.wrapping_add(1);
         }
-        if pdf_lookup_dict(
-            fontdict,
-            b"ToUnicode\0" as *const u8 as *const ::core::ffi::c_char,
-        )
-        .is_null()
-        {
+        if pdf_lookup_dict(fontdict, b"ToUnicode\0" as *const u8 as *const ::core::ffi::c_char).is_null() {
             tounicode = pdf_create_ToUnicode_CMap(fullname, enc_vec, usedchars);
             if !tounicode.is_null() {
                 pdf_add_dict(
@@ -1013,40 +821,31 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
             }
         }
     }
-    encoding = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<cff_encoding>() as usize)
-        as uint32_t) as *mut cff_encoding;
+    encoding = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<cff_encoding>() as usize) as uint32_t)
+        as *mut cff_encoding;
     (*encoding).format = 1 as card8;
     (*encoding).num_entries = 0 as card8;
-    (*encoding).data.range1 = new((255 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<cff_range1>() as usize)
-        as uint32_t) as *mut cff_range1;
+    (*encoding).data.range1 =
+        new((255 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<cff_range1>() as usize) as uint32_t)
+            as *mut cff_range1;
     (*encoding).num_supps = 0 as card8;
-    (*encoding).supp = new((255 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<cff_map>() as usize)
-        as uint32_t) as *mut cff_map;
+    (*encoding).supp =
+        new((255 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<cff_map>() as usize) as uint32_t) as *mut cff_map;
     offset = cff_dict_get(
         (*cffont).topdict,
         b"CharStrings\0" as *const u8 as *const ::core::ffi::c_char,
         0 as ::core::ffi::c_int,
     ) as ::core::ffi::c_int;
-    crate::backend::runtime::input_seek(
-        (*cffont).handle,
-        (*cffont).offset.wrapping_add(offset as l_offset) as ssize_t,
-        SEEK_SET,
-    );
+    crate::backend::runtime::input_seek((*cffont).handle, (*cffont).offset.wrapping_add(offset as l_offset) as ssize_t, SEEK_SET);
     cs_idx = cff_get_index_header(cffont);
-    offset = crate::backend::runtime::input_seek((*cffont).handle, 0 as ssize_t, SEEK_CUR)
-        as ::core::ffi::c_int;
+    offset = crate::backend::runtime::input_seek((*cffont).handle, 0 as ssize_t, SEEK_CUR) as ::core::ffi::c_int;
     cs_count = (*cs_idx).count;
     if (cs_count as ::core::ffi::c_int) < 2 as ::core::ffi::c_int {
         pdf_abort!(b"No valid charstring data found.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     charstrings = cff_new_index(257 as card16);
     max_len = 2 as ::core::ffi::c_int * CS_STR_LEN_MAX;
-    (*charstrings).data = new((max_len as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<card8>() as usize)
-        as uint32_t) as *mut card8;
+    (*charstrings).data = new((max_len as uint32_t as usize).wrapping_mul(::core::mem::size_of::<card8>() as usize) as uint32_t) as *mut card8;
     charstring_len = 0 as ::core::ffi::c_int;
     if !(*(*cffont).private.offset(0 as ::core::ffi::c_int as isize)).is_null()
         && cff_dict_known(
@@ -1094,14 +893,11 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
     } else {
         nominal_width = CFF_NOMINALWIDTHX_DEFAULT;
     }
-    data = new((65536 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<card8>() as usize) as uint32_t)
-        as *mut card8;
+    data = new((65536 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<card8>() as usize) as uint32_t) as *mut card8;
     if dpx_conf.verbose_level > 2 as ::core::ffi::c_int {
         pdf_message!(b"[glyphs:/.notdef\0" as *const u8 as *const ::core::ffi::c_char);
     }
-    size = (*(*cs_idx).offset.offset(1 as ::core::ffi::c_int as isize))
-        .wrapping_sub(*(*cs_idx).offset.offset(0 as ::core::ffi::c_int as isize))
+    size = (*(*cs_idx).offset.offset(1 as ::core::ffi::c_int as isize)).wrapping_sub(*(*cs_idx).offset.offset(0 as ::core::ffi::c_int as isize))
         as ::core::ffi::c_int;
     if size > CS_STR_LEN_MAX {
         pdf_abort!(
@@ -1110,10 +906,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
             size,
         );
     }
-    *(*charstrings)
-        .offset
-        .offset(0 as ::core::ffi::c_int as isize) =
-        (charstring_len + 1 as ::core::ffi::c_int) as l_offset;
+    *(*charstrings).offset.offset(0 as ::core::ffi::c_int as isize) = (charstring_len + 1 as ::core::ffi::c_int) as l_offset;
     crate::backend::runtime::input_seek(
         (*cffont).handle,
         (offset as l_offset)
@@ -1121,11 +914,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
             .wrapping_sub(1 as l_offset) as ssize_t,
         SEEK_SET,
     );
-    ttstub_input_read(
-        (*cffont).handle,
-        data as *mut ::core::ffi::c_char,
-        size as size_t,
-    );
+    ttstub_input_read((*cffont).handle, data as *mut ::core::ffi::c_char, size as size_t);
     charstring_len += cs_copy_charstring(
         (*charstrings).data.offset(charstring_len as isize),
         max_len - charstring_len,
@@ -1149,33 +938,21 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
         widths[code as usize] = notdef_width;
         if !(*usedchars.offset(code as isize) == 0
             || (*enc_vec.offset(code as isize)).is_null()
-            || streq_ptr(
-                *enc_vec.offset(code as isize),
-                b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0)
+            || streq_ptr(*enc_vec.offset(code as isize), b".notdef\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0)
         {
             sid_orig = cff_get_sid(cffont, *enc_vec.offset(code as isize)) as s_SID;
             sid = (if (sid_orig as ::core::ffi::c_int) < CFF_STDSTR_MAX {
                 sid_orig as ::core::ffi::c_int
             } else {
-                cff_add_string(
-                    cffont,
-                    *enc_vec.offset(code as isize),
-                    0 as ::core::ffi::c_int,
-                ) as ::core::ffi::c_int
+                cff_add_string(cffont, *enc_vec.offset(code as isize), 0 as ::core::ffi::c_int) as ::core::ffi::c_int
             }) as s_SID;
             j = 0 as card16;
             while (j as ::core::ffi::c_int) < (*charset).num_entries as ::core::ffi::c_int {
-                if sid as ::core::ffi::c_int
-                    == *(*charset).data.glyphs.offset(j as isize) as ::core::ffi::c_int
-                {
+                if sid as ::core::ffi::c_int == *(*charset).data.glyphs.offset(j as isize) as ::core::ffi::c_int {
                     (*(*encoding).supp.offset((*encoding).num_supps as isize)).code = code as card8;
                     (*(*encoding).supp.offset((*encoding).num_supps as isize)).glyph = sid;
                     *usedchars.offset(code as isize) = 0 as ::core::ffi::c_char;
-                    (*encoding).num_supps = ((*encoding).num_supps as ::core::ffi::c_int
-                        + 1 as ::core::ffi::c_int)
-                        as card8;
+                    (*encoding).num_supps = ((*encoding).num_supps as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as card8;
                     break;
                 } else {
                     j = j.wrapping_add(1);
@@ -1185,21 +962,16 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
                 gid_0 = cff_charsets_lookup(cffont, sid_orig as card16);
                 if gid_0 as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
                     pdf_warning!(
-                        b"Glyph \"%s\" missing in font \"%s\".\0" as *const u8
-                            as *const ::core::ffi::c_char,
+                        b"Glyph \"%s\" missing in font \"%s\".\0" as *const u8 as *const ::core::ffi::c_char,
                         *enc_vec.offset(code as isize),
                         fontname,
                     );
-                    pdf_warning!(
-                        b"Maybe incorrect encoding specified.\0" as *const u8
-                            as *const ::core::ffi::c_char,
-                    );
+                    pdf_warning!(b"Maybe incorrect encoding specified.\0" as *const u8 as *const ::core::ffi::c_char,);
                     *usedchars.offset(code as isize) = 0 as ::core::ffi::c_char;
                 } else {
                     pdf_add_stream(
                         pdfcharset,
-                        b"/\0" as *const u8 as *const ::core::ffi::c_char
-                            as *const ::core::ffi::c_void,
+                        b"/\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                         1 as ::core::ffi::c_int,
                     );
                     pdf_add_stream(
@@ -1208,20 +980,13 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
                         strlen(*enc_vec.offset(code as isize)) as ::core::ffi::c_int,
                     );
                     if dpx_conf.verbose_level > 2 as ::core::ffi::c_int {
-                        pdf_message!(
-                            b"/%s\0" as *const u8 as *const ::core::ffi::c_char,
-                            *enc_vec.offset(code as isize),
-                        );
+                        pdf_message!(b"/%s\0" as *const u8 as *const ::core::ffi::c_char, *enc_vec.offset(code as isize),);
                     }
-                    size = (*(*cs_idx)
-                        .offset
-                        .offset((gid_0 as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as isize))
-                    .wrapping_sub(*(*cs_idx).offset.offset(gid_0 as isize))
-                        as ::core::ffi::c_int;
+                    size = (*(*cs_idx).offset.offset((gid_0 as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as isize))
+                        .wrapping_sub(*(*cs_idx).offset.offset(gid_0 as isize)) as ::core::ffi::c_int;
                     if size > CS_STR_LEN_MAX {
                         pdf_abort!(
-                            b"Charstring too long: gid=%u, %d bytes\0" as *const u8
-                                as *const ::core::ffi::c_char,
+                            b"Charstring too long: gid=%u, %d bytes\0" as *const u8 as *const ::core::ffi::c_char,
                             gid_0 as ::core::ffi::c_int,
                             size,
                         );
@@ -1230,13 +995,10 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
                         max_len = charstring_len + 2 as ::core::ffi::c_int * CS_STR_LEN_MAX;
                         (*charstrings).data = renew(
                             (*charstrings).data as *mut ::core::ffi::c_void,
-                            (max_len as uint32_t as usize)
-                                .wrapping_mul(::core::mem::size_of::<card8>() as usize)
-                                as uint32_t,
+                            (max_len as uint32_t as usize).wrapping_mul(::core::mem::size_of::<card8>() as usize) as uint32_t,
                         ) as *mut card8;
                     }
-                    *(*charstrings).offset.offset(num_glyphs as isize) =
-                        (charstring_len + 1 as ::core::ffi::c_int) as l_offset;
+                    *(*charstrings).offset.offset(num_glyphs as isize) = (charstring_len + 1 as ::core::ffi::c_int) as l_offset;
                     crate::backend::runtime::input_seek(
                         (*cffont).handle,
                         (offset as l_offset)
@@ -1244,11 +1006,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
                             .wrapping_sub(1 as l_offset) as ssize_t,
                         SEEK_SET,
                     );
-                    ttstub_input_read(
-                        (*cffont).handle,
-                        data as *mut ::core::ffi::c_char,
-                        size as size_t,
-                    );
+                    ttstub_input_read((*cffont).handle, data as *mut ::core::ffi::c_char, size as size_t);
                     charstring_len += cs_copy_charstring(
                         (*charstrings).data.offset(charstring_len as isize),
                         max_len - charstring_len,
@@ -1261,13 +1019,8 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
                         &raw mut ginfo,
                     );
                     widths[code as usize] = ginfo.wx;
-                    *(*charset)
-                        .data
-                        .glyphs
-                        .offset((*charset).num_entries as isize) = sid;
-                    (*charset).num_entries = ((*charset).num_entries as ::core::ffi::c_int
-                        + 1 as ::core::ffi::c_int)
-                        as card16;
+                    *(*charset).data.glyphs.offset((*charset).num_entries as isize) = sid;
+                    (*charset).num_entries = ((*charset).num_entries as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as card16;
                     num_glyphs = num_glyphs.wrapping_add(1);
                 }
             }
@@ -1279,8 +1032,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
     }
     free(data as *mut ::core::ffi::c_void);
     if (*encoding).num_supps as ::core::ffi::c_int > 0 as ::core::ffi::c_int {
-        (*encoding).format =
-            ((*encoding).format as ::core::ffi::c_int | 0x80 as ::core::ffi::c_int) as card8;
+        (*encoding).format = ((*encoding).format as ::core::ffi::c_int | 0x80 as ::core::ffi::c_int) as card8;
     } else {
         free((*encoding).supp as *mut ::core::ffi::c_void);
     }
@@ -1288,41 +1040,21 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
     while (code as ::core::ffi::c_int) < 256 as ::core::ffi::c_int {
         if !(*usedchars.offset(code as isize) == 0
             || (*enc_vec.offset(code as isize)).is_null()
-            || streq_ptr(
-                *enc_vec.offset(code as isize),
-                b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0)
+            || streq_ptr(*enc_vec.offset(code as isize), b".notdef\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0)
         {
-            (*(*encoding)
-                .data
-                .range1
-                .offset((*encoding).num_entries as isize))
-            .first = code as s_SID;
-            (*(*encoding)
-                .data
-                .range1
-                .offset((*encoding).num_entries as isize))
-            .n_left = 0 as card8;
+            (*(*encoding).data.range1.offset((*encoding).num_entries as isize)).first = code as s_SID;
+            (*(*encoding).data.range1.offset((*encoding).num_entries as isize)).n_left = 0 as card8;
             code = code.wrapping_add(1);
             while (code as ::core::ffi::c_int) < 256 as ::core::ffi::c_int
                 && *usedchars.offset(code as isize) as ::core::ffi::c_int != 0
                 && !(*enc_vec.offset(code as isize)).is_null()
-                && strcmp(
-                    *enc_vec.offset(code as isize),
-                    b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
-                ) != 0
+                && strcmp(*enc_vec.offset(code as isize), b".notdef\0" as *const u8 as *const ::core::ffi::c_char) != 0
             {
-                let ref mut fresh2 = (*(*encoding)
-                    .data
-                    .range1
-                    .offset((*encoding).num_entries as isize))
-                .n_left;
+                let ref mut fresh2 = (*(*encoding).data.range1.offset((*encoding).num_entries as isize)).n_left;
                 *fresh2 = (*fresh2 as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as card8;
                 code = code.wrapping_add(1);
             }
-            (*encoding).num_entries =
-                ((*encoding).num_entries as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as card8;
+            (*encoding).num_entries = ((*encoding).num_entries as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as card8;
         }
         code = code.wrapping_add(1);
     }
@@ -1337,8 +1069,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
         free(enc_vec as *mut ::core::ffi::c_void);
     }
     cff_release_index(cs_idx);
-    *(*charstrings).offset.offset(num_glyphs as isize) =
-        (charstring_len + 1 as ::core::ffi::c_int) as l_offset;
+    *(*charstrings).offset.offset(num_glyphs as isize) = (charstring_len + 1 as ::core::ffi::c_int) as l_offset;
     (*charstrings).count = num_glyphs;
     charstring_len = cff_index_size(charstrings);
     (*cffont).num_glyphs = num_glyphs;
@@ -1362,26 +1093,13 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
     (*cffont).flag = FONTTYPE_FONT;
     cff_dict_update((*cffont).topdict, cffont);
     if !(*(*cffont).private.offset(0 as ::core::ffi::c_int as isize)).is_null() {
-        cff_dict_update(
-            *(*cffont).private.offset(0 as ::core::ffi::c_int as isize),
-            cffont,
-        );
+        cff_dict_update(*(*cffont).private.offset(0 as ::core::ffi::c_int as isize), cffont);
     }
     cff_update_string(cffont);
     topdict = cff_new_index(1 as card16);
-    cff_dict_remove(
-        (*cffont).topdict,
-        b"UniqueID\0" as *const u8 as *const ::core::ffi::c_char,
-    );
-    cff_dict_remove(
-        (*cffont).topdict,
-        b"XUID\0" as *const u8 as *const ::core::ffi::c_char,
-    );
-    if cff_dict_known(
-        (*cffont).topdict,
-        b"Encoding\0" as *const u8 as *const ::core::ffi::c_char,
-    ) == 0
-    {
+    cff_dict_remove((*cffont).topdict, b"UniqueID\0" as *const u8 as *const ::core::ffi::c_char);
+    cff_dict_remove((*cffont).topdict, b"XUID\0" as *const u8 as *const ::core::ffi::c_char);
+    if cff_dict_known((*cffont).topdict, b"Encoding\0" as *const u8 as *const ::core::ffi::c_char) == 0 {
         cff_dict_add(
             (*cffont).topdict,
             b"Encoding\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1392,8 +1110,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
         (*cffont).topdict,
         &raw mut work_buffer as *mut ::core::ffi::c_char as *mut card8,
         WORK_BUFFER_SIZE,
-    ) + 1 as ::core::ffi::c_int)
-        as l_offset;
+    ) + 1 as ::core::ffi::c_int) as l_offset;
     private_size = 0 as ::core::ffi::c_int;
     if !(*(*cffont).private.offset(0 as ::core::ffi::c_int as isize)).is_null() {
         cff_dict_remove(
@@ -1416,69 +1133,38 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
         + (*encoding).num_entries as ::core::ffi::c_int * 2 as ::core::ffi::c_int
         + 1 as ::core::ffi::c_int
         + (*encoding).num_supps as ::core::ffi::c_int * 3 as ::core::ffi::c_int;
-    stream_data_len += 1 as ::core::ffi::c_int
-        + (*charset).num_entries as ::core::ffi::c_int * 2 as ::core::ffi::c_int;
+    stream_data_len += 1 as ::core::ffi::c_int + (*charset).num_entries as ::core::ffi::c_int * 2 as ::core::ffi::c_int;
     stream_data_len += charstring_len;
     stream_data_len += private_size;
-    stream_data_ptr = new((stream_data_len as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<card8>() as usize)
-        as uint32_t) as *mut card8;
+    stream_data_ptr = new((stream_data_len as uint32_t as usize).wrapping_mul(::core::mem::size_of::<card8>() as usize) as uint32_t) as *mut card8;
     offset = 0 as ::core::ffi::c_int;
-    offset += cff_put_header(
-        cffont,
-        stream_data_ptr.offset(offset as isize),
-        stream_data_len - offset,
-    );
-    offset += cff_pack_index(
-        (*cffont).name,
-        stream_data_ptr.offset(offset as isize),
-        stream_data_len - offset,
-    );
+    offset += cff_put_header(cffont, stream_data_ptr.offset(offset as isize), stream_data_len - offset);
+    offset += cff_pack_index((*cffont).name, stream_data_ptr.offset(offset as isize), stream_data_len - offset);
     topdict_offset = offset;
     offset += cff_index_size(topdict);
-    offset += cff_pack_index(
-        (*cffont).string,
-        stream_data_ptr.offset(offset as isize),
-        stream_data_len - offset,
-    );
-    offset += cff_pack_index(
-        (*cffont).gsubr,
-        stream_data_ptr.offset(offset as isize),
-        stream_data_len - offset,
-    );
+    offset += cff_pack_index((*cffont).string, stream_data_ptr.offset(offset as isize), stream_data_len - offset);
+    offset += cff_pack_index((*cffont).gsubr, stream_data_ptr.offset(offset as isize), stream_data_len - offset);
     cff_dict_set(
         (*cffont).topdict,
         b"Encoding\0" as *const u8 as *const ::core::ffi::c_char,
         0 as ::core::ffi::c_int,
         offset as ::core::ffi::c_double,
     );
-    offset += cff_pack_encoding(
-        cffont,
-        stream_data_ptr.offset(offset as isize),
-        stream_data_len - offset,
-    );
+    offset += cff_pack_encoding(cffont, stream_data_ptr.offset(offset as isize), stream_data_len - offset);
     cff_dict_set(
         (*cffont).topdict,
         b"charset\0" as *const u8 as *const ::core::ffi::c_char,
         0 as ::core::ffi::c_int,
         offset as ::core::ffi::c_double,
     );
-    offset += cff_pack_charsets(
-        cffont,
-        stream_data_ptr.offset(offset as isize),
-        stream_data_len - offset,
-    );
+    offset += cff_pack_charsets(cffont, stream_data_ptr.offset(offset as isize), stream_data_len - offset);
     cff_dict_set(
         (*cffont).topdict,
         b"CharStrings\0" as *const u8 as *const ::core::ffi::c_char,
         0 as ::core::ffi::c_int,
         offset as ::core::ffi::c_double,
     );
-    offset += cff_pack_index(
-        charstrings,
-        stream_data_ptr.offset(offset as isize),
-        charstring_len,
-    );
+    offset += cff_pack_index(charstrings, stream_data_ptr.offset(offset as isize), charstring_len);
     cff_release_index(charstrings);
     cff_dict_set(
         (*cffont).topdict,
@@ -1486,9 +1172,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
         1 as ::core::ffi::c_int,
         offset as ::core::ffi::c_double,
     );
-    if !(*(*cffont).private.offset(0 as ::core::ffi::c_int as isize)).is_null()
-        && private_size > 0 as ::core::ffi::c_int
-    {
+    if !(*(*cffont).private.offset(0 as ::core::ffi::c_int as isize)).is_null() && private_size > 0 as ::core::ffi::c_int {
         private_size = cff_dict_pack(
             *(*cffont).private.offset(0 as ::core::ffi::c_int as isize),
             stream_data_ptr.offset(offset as isize),
@@ -1503,28 +1187,17 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
     );
     offset += private_size;
     (*topdict).data = new(
-        ((*(*topdict).offset.offset(1 as ::core::ffi::c_int as isize)).wrapping_sub(1 as l_offset)
-            as usize)
+        ((*(*topdict).offset.offset(1 as ::core::ffi::c_int as isize)).wrapping_sub(1 as l_offset) as usize)
             .wrapping_mul(::core::mem::size_of::<card8>() as usize) as uint32_t,
     ) as *mut card8;
     cff_dict_pack(
         (*cffont).topdict,
         (*topdict).data,
-        (*(*topdict).offset.offset(1 as ::core::ffi::c_int as isize)).wrapping_sub(1 as l_offset)
-            as ::core::ffi::c_int,
+        (*(*topdict).offset.offset(1 as ::core::ffi::c_int as isize)).wrapping_sub(1 as l_offset) as ::core::ffi::c_int,
     );
-    cff_pack_index(
-        topdict,
-        stream_data_ptr.offset(topdict_offset as isize),
-        cff_index_size(topdict),
-    );
+    cff_pack_index(topdict, stream_data_ptr.offset(topdict_offset as isize), cff_index_size(topdict));
     cff_release_index(topdict);
-    add_SimpleMetrics(
-        font,
-        cffont,
-        &raw mut widths as *mut ::core::ffi::c_double,
-        num_glyphs,
-    );
+    add_SimpleMetrics(font, cffont, &raw mut widths as *mut ::core::ffi::c_double, num_glyphs);
     cff_close(cffont);
     sfnt_close(sfont);
     crate::backend::runtime::input_close(handle);
@@ -1536,15 +1209,11 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
             offset,
         );
     }
-    if pdf_check_version(2 as ::core::ffi::c_int, 0 as ::core::ffi::c_int) < 0 as ::core::ffi::c_int
-    {
+    if pdf_check_version(2 as ::core::ffi::c_int, 0 as ::core::ffi::c_int) < 0 as ::core::ffi::c_int {
         pdf_add_dict(
             descriptor,
             pdf_new_name(b"CharSet\0" as *const u8 as *const ::core::ffi::c_char),
-            pdf_new_string(
-                pdf_stream_dataptr(pdfcharset),
-                pdf_stream_length(pdfcharset) as size_t,
-            ),
+            pdf_new_string(pdf_stream_dataptr(pdfcharset), pdf_stream_length(pdfcharset) as size_t),
         );
     }
     pdf_release_obj(pdfcharset);
@@ -1560,11 +1229,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_type1c(
         pdf_new_name(b"Subtype\0" as *const u8 as *const ::core::ffi::c_char),
         pdf_new_name(b"Type1C\0" as *const u8 as *const ::core::ffi::c_char),
     );
-    pdf_add_stream(
-        fontfile,
-        stream_data_ptr as *mut ::core::ffi::c_void,
-        offset,
-    );
+    pdf_add_stream(fontfile, stream_data_ptr as *mut ::core::ffi::c_void, offset);
     pdf_release_obj(fontfile);
     free(stream_data_ptr as *mut ::core::ffi::c_void);
     return 0 as ::core::ffi::c_int;
@@ -1579,16 +1244,10 @@ pub struct pdf_obj {
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_font_open_type1c(
-    mut font: *mut pdf_font,
-    mut ident: *const ::core::ffi::c_char,
-    mut index: ::core::ffi::c_int,
-    mut encoding_id: ::core::ffi::c_int,
-    mut embedding: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut font: *mut pdf_font, mut ident: *const ::core::ffi::c_char, mut index: ::core::ffi::c_int, mut encoding_id: ::core::ffi::c_int,
+    mut embedding: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_font_open_type1c(font, ident, index, encoding_id, embedding)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_font_open_type1c(font, ident, index, encoding_id, embedding) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -1599,10 +1258,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_font_open_type1c(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_font_load_type1c(
-    mut font: *mut pdf_font,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_font_load_type1c(mut font: *mut pdf_font, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_font_load_type1c(font) }) {
         Ok(value) => {
             unsafe {

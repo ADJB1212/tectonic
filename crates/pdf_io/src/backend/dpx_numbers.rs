@@ -19,13 +19,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 unsafe extern "C-unwind" {
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
     fn ttstub_input_getc(handle: rust_input_handle_t) -> ::core::ffi::c_int;
@@ -56,23 +50,9 @@ pub struct __sFILE {
     pub _lbfsize: ::core::ffi::c_int,
     pub _cookie: *mut ::core::ffi::c_void,
     pub _close: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void) -> ::core::ffi::c_int>,
-    pub _read: Option<
-        unsafe extern "C-unwind" fn(
-            *mut ::core::ffi::c_void,
-            *mut ::core::ffi::c_char,
-            ::core::ffi::c_int,
-        ) -> ::core::ffi::c_int,
-    >,
-    pub _seek: Option<
-        unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, fpos_t, ::core::ffi::c_int) -> fpos_t,
-    >,
-    pub _write: Option<
-        unsafe extern "C-unwind" fn(
-            *mut ::core::ffi::c_void,
-            *const ::core::ffi::c_char,
-            ::core::ffi::c_int,
-        ) -> ::core::ffi::c_int,
-    >,
+    pub _read: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, *mut ::core::ffi::c_char, ::core::ffi::c_int) -> ::core::ffi::c_int>,
+    pub _seek: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, fpos_t, ::core::ffi::c_int) -> fpos_t>,
+    pub _write: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, *const ::core::ffi::c_char, ::core::ffi::c_int) -> ::core::ffi::c_int>,
     pub _ub: __sbuf,
     pub _extra: *mut __sFILEX,
     pub _ur: ::core::ffi::c_int,
@@ -105,10 +85,7 @@ fn skip(input: &mut impl std::io::Read, n: u32) {
 }
 
 unsafe fn read_file_unsigned(file: *mut FILE, width: usize) -> u32 {
-    read_unsigned(
-        &mut unsafe { crate::compat::input::BorrowedFile::from_raw(file.cast()) },
-        width,
-    )
+    read_unsigned(&mut unsafe { crate::compat::input::BorrowedFile::from_raw(file.cast()) }, width)
 }
 
 fn read_input_unsigned(handle: rust_input_handle_t, width: usize) -> u32 {
@@ -159,9 +136,7 @@ mod tests {
         assert_eq!(input.data.position(), 16385);
         assert!(crate::backend::runtime::boundary(|| skip(&mut input, 1)).is_err());
         for width in 1..=4 {
-            assert!(
-                crate::backend::runtime::boundary(|| read_unsigned(&mut input, width)).is_err()
-            );
+            assert!(crate::backend::runtime::boundary(|| read_unsigned(&mut input, width)).is_err());
         }
     }
 }
@@ -176,10 +151,7 @@ pub unsafe extern "C-unwind" fn get_unsigned_byte(file: *mut FILE) -> u8 {
 }
 #[unsafe(export_name = "__pdf_impl_skip_bytes")]
 pub unsafe extern "C-unwind" fn skip_bytes(n: u32, file: *mut FILE) {
-    skip(
-        &mut crate::compat::input::BorrowedFile::from_raw(file.cast()),
-        n,
-    );
+    skip(&mut crate::compat::input::BorrowedFile::from_raw(file.cast()), n);
 }
 #[unsafe(export_name = "__pdf_impl_get_signed_byte")]
 pub unsafe extern "C-unwind" fn get_signed_byte(file: *mut FILE) -> i8 {
@@ -190,14 +162,10 @@ pub unsafe extern "C-unwind" fn get_unsigned_pair(file: *mut FILE) -> u16 {
     read_file_unsigned(file, 2) as u16
 }
 #[unsafe(export_name = "__pdf_impl_sget_unsigned_pair")]
-pub unsafe extern "C-unwind" fn sget_unsigned_pair(
-    mut s: *mut ::core::ffi::c_uchar,
-) -> ::core::ffi::c_ushort {
+pub unsafe extern "C-unwind" fn sget_unsigned_pair(mut s: *mut ::core::ffi::c_uchar) -> ::core::ffi::c_ushort {
     // The legacy API guarantees two readable bytes but supplies no length.
     let bytes = unsafe { core::slice::from_raw_parts(s, 2) };
-    crate::byte_cursor::ByteCursor::new(bytes)
-        .read_u16()
-        .unwrap()
+    crate::byte_cursor::ByteCursor::new(bytes).read_u16().unwrap()
 }
 #[unsafe(export_name = "__pdf_impl_get_signed_pair")]
 pub unsafe extern "C-unwind" fn get_signed_pair(file: *mut FILE) -> i16 {
@@ -228,11 +196,7 @@ pub unsafe extern "C-unwind" fn get_unsigned_num(file: *mut FILE, num: u8) -> u3
     read_file_unsigned(file, width)
 }
 #[unsafe(export_name = "__pdf_impl_get_positive_quad")]
-pub unsafe extern "C-unwind" fn get_positive_quad(
-    file: *mut FILE,
-    type_name: *const ::core::ffi::c_char,
-    name: *const ::core::ffi::c_char,
-) -> u32 {
+pub unsafe extern "C-unwind" fn get_positive_quad(file: *mut FILE, type_name: *const ::core::ffi::c_char, name: *const ::core::ffi::c_char) -> u32 {
     let value = get_signed_quad(file);
     if value < 0 {
         pdf_abort!(
@@ -294,9 +258,7 @@ pub unsafe extern "C-unwind" fn tt_get_unsigned_num(handle: rust_input_handle_t,
 }
 #[unsafe(export_name = "__pdf_impl_tt_get_positive_quad")]
 pub unsafe extern "C-unwind" fn tt_get_positive_quad(
-    handle: rust_input_handle_t,
-    type_name: *const ::core::ffi::c_char,
-    name: *const ::core::ffi::c_char,
+    handle: rust_input_handle_t, type_name: *const ::core::ffi::c_char, name: *const ::core::ffi::c_char,
 ) -> u32 {
     let value = tt_get_signed_quad(handle);
     if value < 0 {
@@ -314,10 +276,7 @@ pub struct __sFILEX {
     _private: [u8; 0],
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_get_unsigned_byte(
-    mut file: *mut FILE,
-    _result: *mut ::core::ffi::c_uchar,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_get_unsigned_byte(mut file: *mut FILE, _result: *mut ::core::ffi::c_uchar) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { get_unsigned_byte(file) }) {
         Ok(value) => {
             unsafe {
@@ -329,10 +288,7 @@ pub unsafe extern "C" fn __pdf_entry_get_unsigned_byte(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_skip_bytes(
-    mut n: ::core::ffi::c_uint,
-    mut file: *mut FILE,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_skip_bytes(mut n: ::core::ffi::c_uint, mut file: *mut FILE) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { skip_bytes(n, file) }) {
         Ok(value) => {
             let _ = value;
@@ -342,10 +298,7 @@ pub unsafe extern "C" fn __pdf_entry_skip_bytes(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_get_signed_byte(
-    mut file: *mut FILE,
-    _result: *mut ::core::ffi::c_schar,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_get_signed_byte(mut file: *mut FILE, _result: *mut ::core::ffi::c_schar) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { get_signed_byte(file) }) {
         Ok(value) => {
             unsafe {
@@ -357,10 +310,7 @@ pub unsafe extern "C" fn __pdf_entry_get_signed_byte(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_get_unsigned_pair(
-    mut file: *mut FILE,
-    _result: *mut ::core::ffi::c_ushort,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_get_unsigned_pair(mut file: *mut FILE, _result: *mut ::core::ffi::c_ushort) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { get_unsigned_pair(file) }) {
         Ok(value) => {
             unsafe {
@@ -372,10 +322,7 @@ pub unsafe extern "C" fn __pdf_entry_get_unsigned_pair(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_sget_unsigned_pair(
-    mut s: *mut ::core::ffi::c_uchar,
-    _result: *mut ::core::ffi::c_ushort,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_sget_unsigned_pair(mut s: *mut ::core::ffi::c_uchar, _result: *mut ::core::ffi::c_ushort) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { sget_unsigned_pair(s) }) {
         Ok(value) => {
             unsafe {
@@ -387,10 +334,7 @@ pub unsafe extern "C" fn __pdf_entry_sget_unsigned_pair(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_get_signed_pair(
-    mut file: *mut FILE,
-    _result: *mut ::core::ffi::c_short,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_get_signed_pair(mut file: *mut FILE, _result: *mut ::core::ffi::c_short) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { get_signed_pair(file) }) {
         Ok(value) => {
             unsafe {
@@ -402,10 +346,7 @@ pub unsafe extern "C" fn __pdf_entry_get_signed_pair(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_get_unsigned_triple(
-    mut file: *mut FILE,
-    _result: *mut ::core::ffi::c_uint,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_get_unsigned_triple(mut file: *mut FILE, _result: *mut ::core::ffi::c_uint) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { get_unsigned_triple(file) }) {
         Ok(value) => {
             unsafe {
@@ -417,10 +358,7 @@ pub unsafe extern "C" fn __pdf_entry_get_unsigned_triple(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_get_signed_triple(
-    mut file: *mut FILE,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_get_signed_triple(mut file: *mut FILE, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { get_signed_triple(file) }) {
         Ok(value) => {
             unsafe {
@@ -432,10 +370,7 @@ pub unsafe extern "C" fn __pdf_entry_get_signed_triple(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_get_signed_quad(
-    mut file: *mut FILE,
-    _result: *mut int32_t,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_get_signed_quad(mut file: *mut FILE, _result: *mut int32_t) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { get_signed_quad(file) }) {
         Ok(value) => {
             unsafe {
@@ -447,10 +382,7 @@ pub unsafe extern "C" fn __pdf_entry_get_signed_quad(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_get_unsigned_quad(
-    mut file: *mut FILE,
-    _result: *mut uint32_t,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_get_unsigned_quad(mut file: *mut FILE, _result: *mut uint32_t) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { get_unsigned_quad(file) }) {
         Ok(value) => {
             unsafe {
@@ -462,11 +394,7 @@ pub unsafe extern "C" fn __pdf_entry_get_unsigned_quad(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_get_unsigned_num(
-    mut file: *mut FILE,
-    mut num: ::core::ffi::c_uchar,
-    _result: *mut uint32_t,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_get_unsigned_num(mut file: *mut FILE, mut num: ::core::ffi::c_uchar, _result: *mut uint32_t) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { get_unsigned_num(file, num) }) {
         Ok(value) => {
             unsafe {
@@ -479,10 +407,7 @@ pub unsafe extern "C" fn __pdf_entry_get_unsigned_num(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_get_positive_quad(
-    mut file: *mut FILE,
-    mut type_0: *const ::core::ffi::c_char,
-    mut name: *const ::core::ffi::c_char,
-    _result: *mut uint32_t,
+    mut file: *mut FILE, mut type_0: *const ::core::ffi::c_char, mut name: *const ::core::ffi::c_char, _result: *mut uint32_t,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { get_positive_quad(file, type_0, name) }) {
         Ok(value) => {
@@ -495,11 +420,7 @@ pub unsafe extern "C" fn __pdf_entry_get_positive_quad(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_sqxfw(
-    mut sq: int32_t,
-    mut fw: fixword,
-    _result: *mut int32_t,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_sqxfw(mut sq: int32_t, mut fw: fixword, _result: *mut int32_t) -> i32 {
     match crate::backend::runtime::boundary(|| sqxfw(sq, fw)) {
         Ok(value) => {
             unsafe {
@@ -511,10 +432,7 @@ pub unsafe extern "C" fn __pdf_entry_sqxfw(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_skip_bytes(
-    mut n: ::core::ffi::c_uint,
-    mut handle: rust_input_handle_t,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_skip_bytes(mut n: ::core::ffi::c_uint, mut handle: rust_input_handle_t) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_skip_bytes(n, handle) }) {
         Ok(value) => {
             let _ = value;
@@ -524,10 +442,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_skip_bytes(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_get_unsigned_byte(
-    mut handle: rust_input_handle_t,
-    _result: *mut ::core::ffi::c_uchar,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_get_unsigned_byte(mut handle: rust_input_handle_t, _result: *mut ::core::ffi::c_uchar) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_get_unsigned_byte(handle) }) {
         Ok(value) => {
             unsafe {
@@ -539,10 +454,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_get_unsigned_byte(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_get_signed_byte(
-    mut handle: rust_input_handle_t,
-    _result: *mut ::core::ffi::c_schar,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_get_signed_byte(mut handle: rust_input_handle_t, _result: *mut ::core::ffi::c_schar) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_get_signed_byte(handle) }) {
         Ok(value) => {
             unsafe {
@@ -554,10 +466,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_get_signed_byte(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_get_unsigned_pair(
-    mut handle: rust_input_handle_t,
-    _result: *mut ::core::ffi::c_ushort,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_get_unsigned_pair(mut handle: rust_input_handle_t, _result: *mut ::core::ffi::c_ushort) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_get_unsigned_pair(handle) }) {
         Ok(value) => {
             unsafe {
@@ -569,10 +478,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_get_unsigned_pair(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_get_signed_pair(
-    mut handle: rust_input_handle_t,
-    _result: *mut ::core::ffi::c_short,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_get_signed_pair(mut handle: rust_input_handle_t, _result: *mut ::core::ffi::c_short) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_get_signed_pair(handle) }) {
         Ok(value) => {
             unsafe {
@@ -584,10 +490,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_get_signed_pair(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_get_unsigned_triple(
-    mut handle: rust_input_handle_t,
-    _result: *mut ::core::ffi::c_uint,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_get_unsigned_triple(mut handle: rust_input_handle_t, _result: *mut ::core::ffi::c_uint) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_get_unsigned_triple(handle) }) {
         Ok(value) => {
             unsafe {
@@ -599,10 +502,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_get_unsigned_triple(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_get_unsigned_quad(
-    mut handle: rust_input_handle_t,
-    _result: *mut uint32_t,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_get_unsigned_quad(mut handle: rust_input_handle_t, _result: *mut uint32_t) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_get_unsigned_quad(handle) }) {
         Ok(value) => {
             unsafe {
@@ -614,10 +514,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_get_unsigned_quad(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_get_signed_quad(
-    mut handle: rust_input_handle_t,
-    _result: *mut int32_t,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_get_signed_quad(mut handle: rust_input_handle_t, _result: *mut int32_t) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_get_signed_quad(handle) }) {
         Ok(value) => {
             unsafe {
@@ -630,9 +527,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_get_signed_quad(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_tt_get_unsigned_num(
-    mut handle: rust_input_handle_t,
-    mut num: ::core::ffi::c_uchar,
-    _result: *mut uint32_t,
+    mut handle: rust_input_handle_t, mut num: ::core::ffi::c_uchar, _result: *mut uint32_t,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_get_unsigned_num(handle, num) }) {
         Ok(value) => {
@@ -646,14 +541,9 @@ pub unsafe extern "C" fn __pdf_entry_tt_get_unsigned_num(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_tt_get_positive_quad(
-    mut handle: rust_input_handle_t,
-    mut type_0: *const ::core::ffi::c_char,
-    mut name: *const ::core::ffi::c_char,
-    _result: *mut uint32_t,
+    mut handle: rust_input_handle_t, mut type_0: *const ::core::ffi::c_char, mut name: *const ::core::ffi::c_char, _result: *mut uint32_t,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        tt_get_positive_quad(handle, type_0, name)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { tt_get_positive_quad(handle, type_0, name) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);

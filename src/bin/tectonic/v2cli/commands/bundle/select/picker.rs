@@ -159,12 +159,7 @@ impl FilePicker {
 
     /// Patch a file in-place.
     /// This should be done after calling `add_file`.
-    fn apply_patch(
-        &mut self,
-        path: &Path,
-        path_in_source: &Path,
-        diffs: &HashMap<PathBuf, PathBuf>,
-    ) -> Result<bool> {
+    fn apply_patch(&mut self, path: &Path, path_in_source: &Path, diffs: &HashMap<PathBuf, PathBuf>) -> Result<bool> {
         // Is this file patched?
         if !diffs.contains_key(path_in_source) {
             return Ok(false);
@@ -188,9 +183,7 @@ impl FilePicker {
             .context("while spawning `patch`")?;
 
         let mut stdin = child.stdin.take().unwrap();
-        stdin
-            .write_all(diff.as_bytes())
-            .context("while passing diff to `patch`")?;
+        stdin.write_all(diff.as_bytes()).context("while passing diff to `patch`")?;
         drop(stdin);
         child.wait().context("while waiting for `patch`")?;
 
@@ -201,8 +194,7 @@ impl FilePicker {
     fn add_to_filelist(&mut self, path: PathBuf, hash: Option<String>) {
         trace!("adding `{path:?}` to file list");
 
-        self.filelist
-            .insert(path.clone(), FileListEntry { hash, path });
+        self.filelist.insert(path.clone(), FileListEntry { hash, path });
     }
 
     fn hash_file(path: &Path) -> Result<String> {
@@ -215,24 +207,11 @@ impl FilePicker {
     }
 
     /// Add a file to this picker's content directory
-    fn add_file(
-        &mut self,
-        path_in_source: &Path,
-        source: &str,
-        file_content: &mut dyn Read,
-        diffs: &HashMap<PathBuf, PathBuf>,
-    ) -> Result<()> {
-        let target_path = self
-            .build_dir
-            .join("content")
-            .join(source)
-            .join(path_in_source);
+    fn add_file(&mut self, path_in_source: &Path, source: &str, file_content: &mut dyn Read, diffs: &HashMap<PathBuf, PathBuf>) -> Result<()> {
+        let target_path = self.build_dir.join("content").join(source).join(path_in_source);
 
         // Path to this file, relative to content dir
-        let rel = target_path
-            .strip_prefix(self.build_dir.join("content"))
-            .unwrap()
-            .to_path_buf();
+        let rel = target_path.strip_prefix(self.build_dir.join("content")).unwrap().to_path_buf();
 
         trace!("adding {path_in_source:?} from source `{source}`");
 
@@ -251,23 +230,15 @@ impl FilePicker {
 
         // Copy to content dir.
         let mut file = OutputHandle::new("", fs::File::create(&target_path)?);
-        io::copy(file_content, &mut file).with_context(|| {
-            format!("while writing file `{path_in_source:?}` from source `{source}`")
-        })?;
+        io::copy(file_content, &mut file).with_context(|| format!("while writing file `{path_in_source:?}` from source `{source}`"))?;
         let hash = file.into_name_digest().1;
 
         // Apply patch if one exists
         let patched = self
             .apply_patch(&target_path, path_in_source, diffs)
-            .with_context(|| {
-                format!("while patching `{path_in_source:?}` from source `{source}`")
-            })?;
+            .with_context(|| format!("while patching `{path_in_source:?}` from source `{source}`"))?;
 
-        let hash = if patched {
-            Self::hash_file(&target_path)?
-        } else {
-            hash.to_string()
-        };
+        let hash = if patched { Self::hash_file(&target_path)? } else { hash.to_string() };
         self.add_to_filelist(rel, Some(hash));
 
         Ok(())
@@ -334,10 +305,7 @@ impl FilePicker {
 
                     trace!(tectonic_log_source = "select", "adding diff {entry:?}");
 
-                    for t in Self::expand_search_line(target)?
-                        .into_iter()
-                        .map(PathBuf::from)
-                    {
+                    for t in Self::expand_search_line(target)?.into_iter().map(PathBuf::from) {
                         if diffs.contains_key(&t) {
                             warn!("the target of diff {entry:?} conflicts with another, ignoring");
                             continue;
@@ -370,11 +338,7 @@ impl FilePicker {
 
         let mut source_backend = match &input.source {
             BundleInputSource::Directory { path, .. } => Input::new_dir(self.bundle_dir.join(path)),
-            BundleInputSource::Tarball {
-                path,
-                root_dir,
-                hash,
-            } => {
+            BundleInputSource::Tarball { path, root_dir, hash } => {
                 let x = match Input::new_tarball(self.bundle_dir.join(path), root_dir.clone()) {
                     Ok(x) => x,
                     Err(e) => {
@@ -396,9 +360,7 @@ impl FilePicker {
                         warn!("expected: {}", hash);
                         warn!("got:      {}", x.hash().unwrap());
                     } else {
-                        error!(
-                            "hash of tarball for source `{source}` doesn't match expected value"
-                        );
+                        error!("hash of tarball for source `{source}` doesn't match expected value");
                         error!("expected: {}", hash);
                         error!("got:      {}", x.hash().unwrap());
                         bail!("hash of tarball for source `{source}` doesn't match expected value")
@@ -422,9 +384,7 @@ impl FilePicker {
 
             // Skip ignored files
             if ignore {
-                debug!(
-                    "skipping file {rel_file_path:?} from source `{source}` because of ignore patterns"
-                );
+                debug!("skipping file {rel_file_path:?} from source `{source}` because of ignore patterns");
                 self.stats.ignored += 1;
                 continue;
             }
@@ -502,16 +462,14 @@ impl FilePicker {
             let filelist_path = self.build_dir.join("content/FILELIST");
 
             // Save FILELIST.
-            let mut file =
-                BufWriter::new(File::create(&filelist_path).context("while writing FILELIST")?);
+            let mut file = BufWriter::new(File::create(&filelist_path).context("while writing FILELIST")?);
             for entry in filelist_vec {
                 writeln!(file, "{entry}")?;
             }
             file.flush()?;
 
             // Compute and save hash
-            let mut file = File::create(self.build_dir.join("content/SHA256SUM"))
-                .context("while writing SHA256SUM")?;
+            let mut file = File::create(self.build_dir.join("content/SHA256SUM")).context("while writing SHA256SUM")?;
 
             let hash = Self::hash_file(&filelist_path)?;
 
@@ -521,20 +479,13 @@ impl FilePicker {
         if save_debug_files {
             // Generate search-report
             {
-                let mut file = BufWriter::new(
-                    File::create(self.build_dir.join("search-report"))
-                        .context("while writing search-report")?,
-                );
+                let mut file = BufWriter::new(File::create(self.build_dir.join("search-report")).context("while writing search-report")?);
                 for entry in WalkDir::new(self.build_dir.join("content")) {
                     let entry = entry?;
                     if !entry.file_type().is_dir() {
                         continue;
                     }
-                    let entry = entry
-                        .into_path()
-                        .strip_prefix(self.build_dir.join("content"))
-                        .unwrap()
-                        .to_owned();
+                    let entry = entry.into_path().strip_prefix(self.build_dir.join("content")).unwrap().to_owned();
                     let entry = PathBuf::from("/").join(entry);
 
                     // Will this directory be searched?
@@ -595,12 +546,7 @@ mod tests {
         let mut picker = picker(dir.path());
         for (name, contents) in [("empty", &[][..]), ("binary", &[0, 255, 1, 2][..])] {
             picker
-                .add_file(
-                    Path::new(name),
-                    "source",
-                    &mut Cursor::new(contents),
-                    &HashMap::new(),
-                )
+                .add_file(Path::new(name), "source", &mut Cursor::new(contents), &HashMap::new())
                 .unwrap();
             let relative = PathBuf::from("source").join(name);
             assert_eq!(
@@ -608,17 +554,9 @@ mod tests {
                 Some(bytes_to_hex(&Sha256::digest(contents)).as_str())
             );
             picker
-                .add_file(
-                    Path::new(name),
-                    "source",
-                    &mut Cursor::new(b"replacement"),
-                    &HashMap::new(),
-                )
+                .add_file(Path::new(name), "source", &mut Cursor::new(b"replacement"), &HashMap::new())
                 .unwrap();
-            assert_eq!(
-                fs::read(dir.path().join("content").join(relative)).unwrap(),
-                contents
-            );
+            assert_eq!(fs::read(dir.path().join("content").join(relative)).unwrap(), contents);
         }
         assert_eq!(picker.stats.conflicts, 2);
     }
@@ -629,28 +567,14 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let mut picker = picker(dir.path());
         let patch = dir.path().join("change.diff");
-        fs::write(
-            &patch,
-            "file.txt\n--- file.txt\n+++ file.txt\n@@ -1 +1 @@\n-before\n+after\n",
-        )
-        .unwrap();
+        fs::write(&patch, "file.txt\n--- file.txt\n+++ file.txt\n@@ -1 +1 @@\n-before\n+after\n").unwrap();
         let diffs = HashMap::from([(PathBuf::from("file.txt"), patch)]);
         picker
-            .add_file(
-                Path::new("file.txt"),
-                "source",
-                &mut Cursor::new(b"before\n"),
-                &diffs,
-            )
+            .add_file(Path::new("file.txt"), "source", &mut Cursor::new(b"before\n"), &diffs)
             .unwrap();
+        assert_eq!(fs::read(dir.path().join("content/source/file.txt")).unwrap(), b"after\n");
         assert_eq!(
-            fs::read(dir.path().join("content/source/file.txt")).unwrap(),
-            b"after\n"
-        );
-        assert_eq!(
-            picker.filelist[Path::new("source/file.txt")]
-                .hash
-                .as_deref(),
+            picker.filelist[Path::new("source/file.txt")].hash.as_deref(),
             Some(bytes_to_hex(&Sha256::digest(b"after\n")).as_str())
         );
         assert_eq!(picker.stats.patch_applied, 1);

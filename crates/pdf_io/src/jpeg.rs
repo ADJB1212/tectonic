@@ -40,10 +40,7 @@ fn sof(marker: u8) -> bool {
     matches!(marker, 192..=195 | 197..=199 | 201..=203 | 205..=207)
 }
 
-pub(crate) fn scan(
-    input: &mut (impl Read + Seek),
-    mut warning: impl FnMut(Warning),
-) -> Result<Info, PdfError> {
+pub(crate) fn scan(input: &mut (impl Read + Seek), mut warning: impl FnMut(Warning)) -> Result<Info, PdfError> {
     input.seek(SeekFrom::Start(0)).map_err(io)?;
     let mut info = Info {
         width: 0,
@@ -100,11 +97,7 @@ pub(crate) fn scan(
                 info.height = u16::from_be_bytes([bytes[1], bytes[2]]);
                 info.width = u16::from_be_bytes([bytes[3], bytes[4]]);
                 info.num_components = bytes[5];
-                if bytes.len() < 6 + usize::from(info.num_components) * 3
-                    || info.width == 0
-                    || info.height == 0
-                    || info.num_components == 0
-                {
+                if bytes.len() < 6 + usize::from(info.num_components) * 3 || info.width == 0 || info.height == 0 || info.num_components == 0 {
                     return Err(error("JPEG: Invalid frame header.", count));
                 }
             }
@@ -129,9 +122,7 @@ pub(crate) fn scan(
                 if let Some(density) = exif_density(&bytes[5..], &mut warning) {
                     if info.xdpi < 0.1 && info.ydpi < 0.1 {
                         (info.xdpi, info.ydpi) = density;
-                    } else if (density.0 + 0.5).floor() != (info.xdpi + 0.5).floor()
-                        || (density.1 + 0.5).floor() != (info.ydpi + 0.5).floor()
-                    {
+                    } else if (density.0 + 0.5).floor() != (info.xdpi + 0.5).floor() || (density.1 + 0.5).floor() != (info.ydpi + 0.5).floor() {
                         warning(Warning::Resolution {
                             exif: density,
                             jfif: (info.xdpi, info.ydpi),
@@ -235,11 +226,7 @@ fn exif_density(bytes: &[u8], warning: &mut impl FnMut(Warning)) -> Option<(f64,
         let rational = if matches!(kind, 5 | 10) {
             let num = value(data as usize, 4)? as i32;
             let den = value((data as usize).checked_add(4)?, 4)? as i32;
-            if den == 0 {
-                None
-            } else {
-                num.checked_div(den).map(f64::from)
-            }
+            if den == 0 { None } else { num.checked_div(den).map(f64::from) }
         } else {
             None
         };
@@ -263,9 +250,7 @@ fn exif_density(bytes: &[u8], warning: &mut impl FnMut(Warning)) -> Option<(f64,
             }
             20752 => {
                 if kind != 1 || count != 1 {
-                    warning(Warning::Message(
-                        "JPEG: Invalid data for ResolutionUnit in Exif chunk.",
-                    ));
+                    warning(Warning::Message("JPEG: Invalid data for ResolutionUnit in Exif chunk."));
                     return None;
                 }
                 // Preserve the legacy Microsoft extension's additional value read.
@@ -307,20 +292,12 @@ mod tests {
     use std::io::Cursor;
 
     fn segment(marker: u8, data: &[u8]) -> Vec<u8> {
-        [
-            &[255, marker],
-            (data.len() as u16 + 2).to_be_bytes().as_slice(),
-            data,
-        ]
-        .concat()
+        [&[255, marker], (data.len() as u16 + 2).to_be_bytes().as_slice(), data].concat()
     }
     fn fixture() -> Vec<u8> {
         [
             &[255, 216][..],
-            &segment(
-                224,
-                &[b'J', b'F', b'I', b'F', 0, 1, 2, 1, 1, 44, 0, 150, 0, 0],
-            ),
+            &segment(224, &[b'J', b'F', b'I', b'F', 0, 1, 2, 1, 1, 44, 0, 150, 0, 0]),
             &segment(192, &[8, 0, 2, 0, 3, 1, 1, 0x11, 0]),
             &[255, 218, 0, 2, 1, 255, 217],
         ]
@@ -333,10 +310,7 @@ mod tests {
         let info = scan(&mut Cursor::new(&bytes), |_| {}).unwrap();
         assert_eq!((info.width, info.height, info.num_components), (3, 2, 1));
         assert_eq!((info.xdpi, info.ydpi), (300.0, 150.0));
-        assert_eq!(
-            [info.prefix, bytes[info.rest as usize..].to_vec()].concat(),
-            bytes
-        );
+        assert_eq!([info.prefix, bytes[info.rest as usize..].to_vec()].concat(), bytes);
     }
 
     #[test]

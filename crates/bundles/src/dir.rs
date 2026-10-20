@@ -40,19 +40,11 @@ impl DirBundle {
 }
 
 impl IoProvider for DirBundle {
-    fn input_open_name(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_name(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         self.0.input_open_name(name, status)
     }
 
-    fn input_open_name_with_abspath(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<(InputHandle, Option<PathBuf>)> {
+    fn input_open_name_with_abspath(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<(InputHandle, Option<PathBuf>)> {
         self.0.input_open_name_with_abspath(name, status)
     }
 }
@@ -75,8 +67,7 @@ impl Bundle for DirBundle {
     }
 
     fn get_digest(&mut self) -> Result<tectonic_io_base::digest::DigestData> {
-        let digest_text = match self.input_open_name(digest::DIGEST_NAME, &mut NoopStatusBackend {})
-        {
+        let digest_text = match self.input_open_name(digest::DIGEST_NAME, &mut NoopStatusBackend {}) {
             OpenResult::Ok(h) => {
                 let mut text = String::new();
                 h.take(64).read_to_string(&mut text)?;

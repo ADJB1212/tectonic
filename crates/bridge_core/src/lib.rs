@@ -46,10 +46,7 @@ use std::{
     sync::{LazyLock, Mutex},
 };
 use tectonic_errors::prelude::*;
-use tectonic_io_base::{
-    InputFeatures, InputHandle, IoProvider, OpenResult, OutputHandle, digest::DigestData,
-    normalize_tex_path,
-};
+use tectonic_io_base::{InputFeatures, InputHandle, IoProvider, OpenResult, OutputHandle, digest::DigestData, normalize_tex_path};
 use tectonic_status_base::{MessageKind, StatusBackend, tt_error, tt_warning};
 
 mod checkpoint;
@@ -146,13 +143,7 @@ pub trait DriverHooks {
     /// read, if available. This digest is not always available, if the engine
     /// used seeks while reading the file. Note that this function takes
     /// ownership of the name and digest.
-    fn event_input_closed(
-        &mut self,
-        _name: String,
-        _digest: Option<DigestData>,
-        _status: &mut dyn StatusBackend,
-    ) {
-    }
+    fn event_input_closed(&mut self, _name: String, _digest: Option<DigestData>, _status: &mut dyn StatusBackend) {}
 
     /// The engine is requesting a "shell escape" evaluation.
     ///
@@ -170,11 +161,7 @@ pub trait DriverHooks {
     /// This function can only return a limited range of error values because
     /// the C/C++ engines can't do anything useful with them. Detailed error
     /// information should be logged or stored inside the hook function.
-    fn sysrq_shell_escape(
-        &mut self,
-        _command: &str,
-        _status: &mut dyn StatusBackend,
-    ) -> StdResult<(), SystemRequestError> {
+    fn sysrq_shell_escape(&mut self, _command: &str, _status: &mut dyn StatusBackend) -> StdResult<(), SystemRequestError> {
         Err(SystemRequestError::NotImplemented)
     }
 }
@@ -230,9 +217,7 @@ impl EngineAbortedError {
         // SAFETY: This is always safe to call
         let ptr = unsafe { _ttbc_get_error_message() };
         // SAFETY: The pointer returned above will always have a null-terminated C-string in it
-        let message = unsafe { CStr::from_ptr(ptr) }
-            .to_string_lossy()
-            .into_owned();
+        let message = unsafe { CStr::from_ptr(ptr) }.to_string_lossy().into_owned();
         EngineAbortedError { message }
     }
 }
@@ -265,11 +250,7 @@ impl<'a> CoreBridgeLauncher<'a> {
     }
 
     /// Set up a new context for launching bridged FFI code.
-    pub fn new_with_security(
-        hooks: &'a mut dyn DriverHooks,
-        status: &'a mut dyn StatusBackend,
-        security: SecuritySettings,
-    ) -> Self {
+    pub fn new_with_security(hooks: &'a mut dyn DriverHooks, status: &'a mut dyn StatusBackend, security: SecuritySettings) -> Self {
         CoreBridgeLauncher {
             hooks,
             status,
@@ -311,12 +292,7 @@ impl<'a> CoreBridgeLauncher<'a> {
         F: FnOnce(&mut CoreBridgeState<'_>) -> Result<T>,
     {
         let _guard = ENGINE_LOCK.lock().unwrap();
-        let mut state = CoreBridgeState::new(
-            self.security.clone(),
-            self.hooks,
-            self.status,
-            self.filesystem_emulation_settings.clone(),
-        );
+        let mut state = CoreBridgeState::new(self.security.clone(), self.hooks, self.status, self.filesystem_emulation_settings.clone());
         let result = callback(&mut state);
 
         if let Err(ref e) = result
@@ -367,10 +343,7 @@ pub struct CoreBridgeState<'a> {
 
 impl<'a> CoreBridgeState<'a> {
     fn new(
-        security: SecuritySettings,
-        hooks: &'a mut dyn DriverHooks,
-        status: &'a mut dyn StatusBackend,
-        fs_emulation_settings: FsEmulationSettings,
+        security: SecuritySettings, hooks: &'a mut dyn DriverHooks, status: &'a mut dyn StatusBackend, fs_emulation_settings: FsEmulationSettings,
     ) -> CoreBridgeState<'a> {
         CoreBridgeState {
             journal: None,
@@ -391,16 +364,11 @@ impl<'a> CoreBridgeState<'a> {
         static GLOBAL: Mutex<()> = Mutex::new(());
         let _lock = GLOBAL.lock().unwrap();
         // SAFETY: Pointer is either null or valid, set by the engine on entrance
-        let state = unsafe { _ttbc_get_core_state().as_mut() }
-            .expect("Currently within an engine context in C");
+        let state = unsafe { _ttbc_get_core_state().as_mut() }.expect("Currently within an engine context in C");
         f(state)
     }
 
-    fn input_open_name_format(
-        &mut self,
-        name: &str,
-        format: FileFormat,
-    ) -> OpenResult<(InputHandle, Option<PathBuf>)> {
+    fn input_open_name_format(&mut self, name: &str, format: FileFormat) -> OpenResult<(InputHandle, Option<PathBuf>)> {
         let io = self.hooks.io();
 
         if let FileFormat::Format = format {
@@ -441,12 +409,7 @@ impl<'a> CoreBridgeState<'a> {
         OpenResult::NotAvailable
     }
 
-    fn input_open_name_format_gz(
-        &mut self,
-        name: &str,
-        format: FileFormat,
-        is_gz: bool,
-    ) -> OpenResult<(InputHandle, Option<PathBuf>)> {
+    fn input_open_name_format_gz(&mut self, name: &str, format: FileFormat, is_gz: bool) -> OpenResult<(InputHandle, Option<PathBuf>)> {
         let base = self.input_open_name_format(name, format);
 
         if !is_gz {
@@ -468,11 +431,7 @@ impl<'a> CoreBridgeState<'a> {
         let failed = self.compute_file_md5(name, dest);
         self.record(CheckpointOperation::Md5 {
             name: name.to_owned(),
-            digest: if failed {
-                None
-            } else {
-                Some(dest.try_into().unwrap())
-            },
+            digest: if failed { None } else { Some(dest.try_into().unwrap()) },
         });
         failed
     }
@@ -559,10 +518,7 @@ impl<'a> CoreBridgeState<'a> {
 
         if is_gz {
             let name = oh.name().to_owned();
-            oh = OutputHandle::new(
-                name,
-                GzBuilder::new().write(oh.into_inner(), Compression::default()),
-            );
+            oh = OutputHandle::new(name, GzBuilder::new().write(oh.into_inner(), Compression::default()));
         }
 
         self.output_handles.push(Some(oh));
@@ -738,10 +694,7 @@ impl<'a> CoreBridgeState<'a> {
 
         match rhandle.get_size() {
             Ok(s) => {
-                self.record(CheckpointOperation::Size {
-                    id: handle.idx(),
-                    size: s,
-                });
+                self.record(CheckpointOperation::Size { id: handle.idx(), size: s });
                 s
             }
             Err(e) => {
@@ -772,18 +725,12 @@ impl<'a> CoreBridgeState<'a> {
         };
 
         let time = maybe_time.unwrap_or(1);
-        self.record(CheckpointOperation::Mtime {
-            id: handle.idx(),
-            time,
-        });
+        self.record(CheckpointOperation::Mtime { id: handle.idx(), time });
         time
     }
 
     fn input_seek(&mut self, handle: InputId, pos: SeekFrom) -> Result<u64> {
-        let result = self.input_handles[handle.idx()]
-            .as_mut()
-            .unwrap()
-            .try_seek(pos);
+        let result = self.input_handles[handle.idx()].as_mut().unwrap().try_seek(pos);
         match &result {
             Ok(result) => {
                 let (kind, offset) = match pos {
@@ -805,11 +752,7 @@ impl<'a> CoreBridgeState<'a> {
 
     /// Read from an input
     pub fn input_read(&mut self, handle: InputId, buf: &mut [u8]) -> Result<()> {
-        let result = self.input_handles[handle.idx()]
-            .as_mut()
-            .unwrap()
-            .read_exact(buf)
-            .map_err(Error::from);
+        let result = self.input_handles[handle.idx()].as_mut().unwrap().read_exact(buf).map_err(Error::from);
         if result.is_ok() {
             if self.journal.is_some() {
                 self.record(CheckpointOperation::Read {
@@ -827,11 +770,7 @@ impl<'a> CoreBridgeState<'a> {
     }
 
     fn input_read_partial(&mut self, handle: InputId, buf: &mut [u8]) -> Result<usize> {
-        let result = self.input_handles[handle.idx()]
-            .as_mut()
-            .unwrap()
-            .read(buf)
-            .map_err(Error::from);
+        let result = self.input_handles[handle.idx()].as_mut().unwrap().read(buf).map_err(Error::from);
         match &result {
             Ok(count) => {
                 if self.journal.is_some() {
@@ -852,9 +791,7 @@ impl<'a> CoreBridgeState<'a> {
     fn input_getc(&mut self, handle: InputId) -> Result<u8> {
         let result = self.input_handles[handle.idx()].as_mut().unwrap().getc();
         if let Err(e) = &result
-            && !e
-                .downcast_ref::<io::Error>()
-                .is_some_and(|e| e.kind() == io::ErrorKind::UnexpectedEof)
+            && !e.downcast_ref::<io::Error>().is_some_and(|e| e.kind() == io::ErrorKind::UnexpectedEof)
         {
             self.invalidate_checkpoint();
         }
@@ -866,15 +803,9 @@ impl<'a> CoreBridgeState<'a> {
     }
 
     fn input_ungetc(&mut self, handle: InputId, byte: u8) -> Result<()> {
-        let result = self.input_handles[handle.idx()]
-            .as_mut()
-            .unwrap()
-            .ungetc(byte);
+        let result = self.input_handles[handle.idx()].as_mut().unwrap().ungetc(byte);
         if result.is_ok() {
-            self.record(CheckpointOperation::Ungetc {
-                id: handle.idx(),
-                byte,
-            });
+            self.record(CheckpointOperation::Ungetc { id: handle.idx(), byte });
         } else {
             self.invalidate_checkpoint();
         }
@@ -914,9 +845,7 @@ impl<'a> CoreBridgeState<'a> {
         let start = bytes.len();
         let mut buffer = [0; 8192];
         loop {
-            let count = self
-                .input_read_partial(id, &mut buffer)
-                .map_err(io::Error::other)?;
+            let count = self.input_read_partial(id, &mut buffer).map_err(io::Error::other)?;
             if count == 0 {
                 return Ok(bytes.len() - start);
             }
@@ -930,21 +859,12 @@ impl<'a> CoreBridgeState<'a> {
                 Ok(_) => false,
 
                 Err(e) => {
-                    tt_error!(
-                        self.status,
-                        "failed to execute the shell-escape command \"{}\": {}",
-                        command,
-                        e
-                    );
+                    tt_error!(self.status, "failed to execute the shell-escape command \"{}\": {}", command, e);
                     true
                 }
             }
         } else {
-            tt_error!(
-                self.status,
-                "forbidden to execute shell-escape command \"{}\"",
-                command
-            );
+            tt_error!(self.status, "forbidden to execute shell-escape command \"{}\"", command);
             true
         }
     }
@@ -1097,11 +1017,7 @@ pub unsafe extern "C" fn ttbc_issue_error(es: &mut CoreBridgeState, text: *const
 ///
 /// This function is unsafe because it dereferences raw pointers from C.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ttbc_get_file_md5(
-    es: &mut CoreBridgeState,
-    path: *const libc::c_char,
-    digest: *mut u8,
-) -> libc::c_int {
+pub unsafe extern "C" fn ttbc_get_file_md5(es: &mut CoreBridgeState, path: *const libc::c_char, digest: *mut u8) -> libc::c_int {
     unsafe {
         let rpath = CStr::from_ptr(path).to_string_lossy();
         let rdest = slice::from_raw_parts_mut(digest, 16);
@@ -1119,11 +1035,7 @@ pub unsafe extern "C" fn ttbc_get_file_md5(
 ///
 /// This function is unsafe because it dereferences raw pointers from C.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ttbc_get_data_md5(
-    data: *const u8,
-    len: libc::size_t,
-    digest: *mut u8,
-) -> libc::c_int {
+pub unsafe extern "C" fn ttbc_get_data_md5(data: *const u8, len: libc::size_t, digest: *mut u8) -> libc::c_int {
     unsafe {
         let rdata = slice::from_raw_parts(data, len);
         let rdest = slice::from_raw_parts_mut(digest, 16);
@@ -1143,11 +1055,7 @@ pub unsafe extern "C" fn ttbc_get_data_md5(
 ///
 /// This function is unsafe because it accepts a raw C string.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ttbc_output_open(
-    es: &mut CoreBridgeState,
-    name: *const libc::c_char,
-    is_gz: libc::c_int,
-) -> Option<OutputId> {
+pub unsafe extern "C" fn ttbc_output_open(es: &mut CoreBridgeState, name: *const libc::c_char, is_gz: libc::c_int) -> Option<OutputId> {
     unsafe {
         let rname = CStr::from_ptr(name).to_string_lossy();
         let ris_gz = is_gz != 0;
@@ -1164,11 +1072,7 @@ pub extern "C" fn ttbc_output_open_stdout(es: &mut CoreBridgeState) -> Option<Ou
 
 /// Write a single character to a Tectonic output file.
 #[unsafe(no_mangle)]
-pub extern "C" fn ttbc_output_putc(
-    es: &mut CoreBridgeState,
-    handle: Option<OutputId>,
-    c: libc::c_int,
-) -> libc::c_int {
+pub extern "C" fn ttbc_output_putc(es: &mut CoreBridgeState, handle: Option<OutputId>, c: libc::c_int) -> libc::c_int {
     let rc = c as u8;
 
     if es.output_write(handle.expect("valid handle"), &[rc]) {
@@ -1184,40 +1088,25 @@ pub extern "C" fn ttbc_output_putc(
 ///
 /// This function is unsafe because it dereferences raw C pointers.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ttbc_output_write(
-    es: &mut CoreBridgeState,
-    handle: Option<OutputId>,
-    data: *const u8,
-    len: libc::size_t,
-) -> libc::size_t {
+pub unsafe extern "C" fn ttbc_output_write(es: &mut CoreBridgeState, handle: Option<OutputId>, data: *const u8, len: libc::size_t) -> libc::size_t {
     unsafe {
         let rdata = slice::from_raw_parts(data, len);
 
         // NOTE: we use f.write_all() so partial writes are not gonna be a thing.
 
-        if es.output_write(handle.expect("valid handle"), rdata) {
-            0
-        } else {
-            len
-        }
+        if es.output_write(handle.expect("valid handle"), rdata) { 0 } else { len }
     }
 }
 
 /// Flush pending writes to a Tectonic output file.
 #[unsafe(no_mangle)]
-pub extern "C" fn ttbc_output_flush(
-    es: &mut CoreBridgeState,
-    handle: Option<OutputId>,
-) -> libc::c_int {
+pub extern "C" fn ttbc_output_flush(es: &mut CoreBridgeState, handle: Option<OutputId>) -> libc::c_int {
     libc::c_int::from(es.output_flush(handle.expect("valid handle")))
 }
 
 /// Close a Tectonic output file.
 #[unsafe(no_mangle)]
-pub extern "C" fn ttbc_output_close(
-    es: &mut CoreBridgeState,
-    handle: Option<OutputId>,
-) -> libc::c_int {
+pub extern "C" fn ttbc_output_close(es: &mut CoreBridgeState, handle: Option<OutputId>) -> libc::c_int {
     match handle {
         Some(handle) => libc::c_int::from(es.output_close(handle)),
         None => 0, // This is/was the behavior of close_file() in C.
@@ -1231,10 +1120,7 @@ pub extern "C" fn ttbc_output_close(
 /// This function is unsafe because it accepts a raw C string.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ttbc_input_open(
-    es: &mut CoreBridgeState,
-    name: *const libc::c_char,
-    format: FileFormat,
-    is_gz: libc::c_int,
+    es: &mut CoreBridgeState, name: *const libc::c_char, format: FileFormat, is_gz: libc::c_int,
 ) -> Option<InputId> {
     unsafe {
         let rname = CStr::from_ptr(name).to_string_lossy();
@@ -1266,11 +1152,7 @@ pub extern "C" fn ttbc_input_open_primary(es: &mut CoreBridgeState) -> Option<In
 ///
 /// This function is unsafe because it dereferences raw C pointers.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ttbc_get_last_input_abspath(
-    es: &mut CoreBridgeState,
-    buffer: *mut u8,
-    len: libc::size_t,
-) -> libc::ssize_t {
+pub unsafe extern "C" fn ttbc_get_last_input_abspath(es: &mut CoreBridgeState, buffer: *mut u8, len: libc::size_t) -> libc::ssize_t {
     unsafe {
         if !es.fs_emulation_settings.expose_absolute_paths {
             return 0;
@@ -1303,10 +1185,7 @@ pub unsafe extern "C" fn ttbc_get_last_input_abspath(
 
 /// Get the size of a Tectonic input file.
 #[unsafe(no_mangle)]
-pub extern "C" fn ttbc_input_get_size(
-    es: &mut CoreBridgeState,
-    handle: Option<InputId>,
-) -> libc::size_t {
+pub extern "C" fn ttbc_input_get_size(es: &mut CoreBridgeState, handle: Option<InputId>) -> libc::size_t {
     es.input_get_size(handle.expect("valid handle"))
 }
 
@@ -1323,11 +1202,7 @@ pub extern "C" fn ttbc_input_get_mtime(es: &mut CoreBridgeState, handle: Option<
 /// This function is unsafe because it dereferences raw pointers from C.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ttbc_input_seek(
-    es: &mut CoreBridgeState,
-    handle: Option<InputId>,
-    offset: libc::ssize_t,
-    whence: libc::c_int,
-    internal_error: *mut libc::c_int,
+    es: &mut CoreBridgeState, handle: Option<InputId>, offset: libc::ssize_t, whence: libc::c_int, internal_error: *mut libc::c_int,
 ) -> libc::size_t {
     unsafe {
         let rwhence = match whence {
@@ -1358,10 +1233,7 @@ pub unsafe extern "C" fn ttbc_input_seek(
 
 /// Get a single character from a Tectonic input file.
 #[unsafe(no_mangle)]
-pub extern "C" fn ttbc_input_getc(
-    es: &mut CoreBridgeState,
-    handle: Option<InputId>,
-) -> libc::c_int {
+pub extern "C" fn ttbc_input_getc(es: &mut CoreBridgeState, handle: Option<InputId>) -> libc::c_int {
     // If we couldn't fill the whole (1-byte) buffer, that's boring old EOF.
     // No need to complain. Fun match statement here.
 
@@ -1382,11 +1254,7 @@ pub extern "C" fn ttbc_input_getc(
 
 /// Put back a character that was obtained from a `getc` call.
 #[unsafe(no_mangle)]
-pub extern "C" fn ttbc_input_ungetc(
-    es: &mut CoreBridgeState,
-    handle: Option<InputId>,
-    ch: libc::c_int,
-) -> libc::c_int {
+pub extern "C" fn ttbc_input_ungetc(es: &mut CoreBridgeState, handle: Option<InputId>, ch: libc::c_int) -> libc::c_int {
     match es.input_ungetc(handle.expect("valid handle"), ch as u8) {
         Ok(_) => 0,
         Err(e) => {
@@ -1405,12 +1273,7 @@ pub extern "C" fn ttbc_input_ungetc(
 ///
 /// This function is unsafe because it dereferences raw C pointers.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ttbc_input_read(
-    es: &mut CoreBridgeState,
-    handle: Option<InputId>,
-    data: *mut u8,
-    len: libc::size_t,
-) -> libc::ssize_t {
+pub unsafe extern "C" fn ttbc_input_read(es: &mut CoreBridgeState, handle: Option<InputId>, data: *mut u8, len: libc::size_t) -> libc::ssize_t {
     unsafe {
         let rdata = slice::from_raw_parts_mut(data, len);
 
@@ -1434,10 +1297,7 @@ pub unsafe extern "C" fn ttbc_input_read(
 /// This function is unsafe because it dereferences raw C pointers.
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn ttbc_input_read_partial(
-    es: &mut CoreBridgeState,
-    handle: Option<InputId>,
-    data: *mut u8,
-    len: libc::size_t,
+    es: &mut CoreBridgeState, handle: Option<InputId>, data: *mut u8, len: libc::size_t,
 ) -> libc::ssize_t {
     unsafe {
         let rdata = slice::from_raw_parts_mut(data, len);
@@ -1454,10 +1314,7 @@ pub unsafe extern "C" fn ttbc_input_read_partial(
 
 /// Close a Tectonic input file.
 #[unsafe(no_mangle)]
-pub extern "C" fn ttbc_input_close(
-    es: &mut CoreBridgeState,
-    handle: Option<InputId>,
-) -> libc::c_int {
+pub extern "C" fn ttbc_input_close(es: &mut CoreBridgeState, handle: Option<InputId>) -> libc::c_int {
     match handle {
         Some(handle) => libc::c_int::from(es.input_close(handle)),
         None => 0,
@@ -1517,8 +1374,7 @@ pub unsafe extern "C" fn ttbc_diag_finish(es: &mut CoreBridgeState, diag: *mut D
     unsafe {
         // By creating the box, we will free the diagnostic when this function exits.
         let rdiag = Box::from_raw(diag);
-        es.status
-            .report(rdiag.kind, format_args!("{}", rdiag.message), None);
+        es.status.report(rdiag.kind, format_args!("{}", rdiag.message), None);
     }
 }
 
@@ -1528,11 +1384,7 @@ pub unsafe extern "C" fn ttbc_diag_finish(es: &mut CoreBridgeState, diag: *mut D
 ///
 /// This function is unsafe because it dereferences raw pointers from C and accepts a raw C string.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ttbc_shell_escape(
-    es: &mut CoreBridgeState,
-    cmd: *const u16,
-    len: libc::size_t,
-) -> libc::c_int {
+pub unsafe extern "C" fn ttbc_shell_escape(es: &mut CoreBridgeState, cmd: *const u16, len: libc::size_t) -> libc::c_int {
     unsafe {
         let rcmd = slice::from_raw_parts(cmd, len);
         let rcmd = match String::from_utf16(rcmd) {

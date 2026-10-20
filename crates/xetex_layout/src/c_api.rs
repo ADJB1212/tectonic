@@ -60,11 +60,7 @@ pub(crate) fn clear_font_caches() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn getCachedGlyphBBox(
-    font_id: u16,
-    glyph_id: u16,
-    bbox: *mut GlyphBBox,
-) -> i32 {
+pub unsafe extern "C" fn getCachedGlyphBBox(font_id: u16, glyph_id: u16, bbox: *mut GlyphBBox) -> i32 {
     unsafe {
         GLYPH_BOXES.with_borrow(|cache| match cache.get(&(font_id, glyph_id)) {
             Some(val) => {
@@ -104,16 +100,12 @@ pub fn protrusion_codes() -> Vec<ProtrusionCode> {
     let mut codes = Vec::new();
     for (side, cache) in [(LEFT_SIDE, &LEFT_PROT), (RIGHT_SIDE, &RIGHT_PROT)] {
         cache.with_borrow(|cache| {
-            codes.extend(
-                cache
-                    .iter()
-                    .map(|(&(font, character), &value)| ProtrusionCode {
-                        font,
-                        character,
-                        side,
-                        value,
-                    }),
-            );
+            codes.extend(cache.iter().map(|(&(font, character), &value)| ProtrusionCode {
+                font,
+                character,
+                side,
+                value,
+            }));
         });
     }
     codes.sort_unstable_by_key(|code| (code.font, code.character, code.side));

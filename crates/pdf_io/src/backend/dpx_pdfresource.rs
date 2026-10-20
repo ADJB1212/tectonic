@@ -37,12 +37,7 @@ impl DocumentState {
 }
 
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_pdfresource
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_pdfresource.pointer }
 }
 
 unsafe fn category_id(category: *const c_char) -> usize {
@@ -61,11 +56,7 @@ unsafe fn flush(resource: &Resource) {
 }
 
 unsafe fn replacement_warning(resname: *const c_char, category: *const c_char) {
-    pdf_warning!(
-        c"Resource %s (category: %s) already defined...".as_ptr(),
-        resname,
-        category
-    );
+    pdf_warning!(c"Resource %s (category: %s) already defined...".as_ptr(), resname, category);
 }
 
 #[unsafe(export_name = "__pdf_impl_pdf_init_resources")]
@@ -90,12 +81,7 @@ pub unsafe extern "C-unwind" fn pdf_close_resources() {
 }
 
 #[unsafe(export_name = "__pdf_impl_pdf_defineresource")]
-pub unsafe extern "C-unwind" fn pdf_defineresource(
-    category: *const c_char,
-    resname: *const c_char,
-    object: *mut pdf_obj,
-    flags: i32,
-) -> i32 {
+pub unsafe extern "C-unwind" fn pdf_defineresource(category: *const c_char, resname: *const c_char, object: *mut pdf_obj, flags: i32) -> i32 {
     unsafe {
         assert!(!category.is_null() && !object.is_null());
         let category_index = category_id(category);
@@ -105,11 +91,9 @@ pub unsafe extern "C-unwind" fn pdf_defineresource(
             Some(CStr::from_ptr(resname).to_bytes())
         };
         let entries = &(*document_state()).resources[category_index];
-        let found =
-            name.and_then(|name| (*document_state()).names[category_index].get(name).copied());
+        let found = name.and_then(|name| (*document_state()).names[category_index].get(name).copied());
         let index = found.unwrap_or(entries.len());
-        let id = ResourceId::new(category_index, index)
-            .unwrap_or_else(|| pdf_abort!("Too many PDF resources"));
+        let id = ResourceId::new(category_index, index).unwrap_or_else(|| pdf_abort!("Too many PDF resources"));
         if let Some(index) = found {
             replacement_warning(resname, category);
             let old = std::mem::replace(
@@ -144,10 +128,7 @@ pub unsafe extern "C-unwind" fn pdf_defineresource(
 }
 
 #[unsafe(export_name = "__pdf_impl_pdf_findresource")]
-pub unsafe extern "C-unwind" fn pdf_findresource(
-    category: *const c_char,
-    resname: *const c_char,
-) -> i32 {
+pub unsafe extern "C-unwind" fn pdf_findresource(category: *const c_char, resname: *const c_char) -> i32 {
     unsafe {
         assert!(!category.is_null() && !resname.is_null());
         let category = category_id(category);
@@ -200,15 +181,10 @@ pub unsafe extern "C" fn __pdf_entry_pdf_close_resources() -> i32 {
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_defineresource(
-    mut category: *const ::core::ffi::c_char,
-    mut resname: *const ::core::ffi::c_char,
-    mut object: *mut pdf_obj,
-    mut flags: ::core::ffi::c_int,
+    mut category: *const ::core::ffi::c_char, mut resname: *const ::core::ffi::c_char, mut object: *mut pdf_obj, mut flags: ::core::ffi::c_int,
     _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_defineresource(category, resname, object, flags)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_defineresource(category, resname, object, flags) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -220,9 +196,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_defineresource(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_findresource(
-    mut category: *const ::core::ffi::c_char,
-    mut resname: *const ::core::ffi::c_char,
-    _result: *mut ::core::ffi::c_int,
+    mut category: *const ::core::ffi::c_char, mut resname: *const ::core::ffi::c_char, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_findresource(category, resname) }) {
         Ok(value) => {
@@ -235,10 +209,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_findresource(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_get_resource_reference(
-    mut rc_id: ::core::ffi::c_int,
-    _result: *mut *mut pdf_obj,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_get_resource_reference(mut rc_id: ::core::ffi::c_int, _result: *mut *mut pdf_obj) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_get_resource_reference(rc_id) }) {
         Ok(value) => {
             unsafe {

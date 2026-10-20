@@ -19,33 +19,15 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
     fn fabs(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn floor(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn qsort(
-        __base: *mut ::core::ffi::c_void,
-        __nel: size_t,
-        __width: size_t,
-        __compar: Option<
-            unsafe extern "C-unwind" fn(
-                *const ::core::ffi::c_void,
-                *const ::core::ffi::c_void,
-            ) -> ::core::ffi::c_int,
-        >,
+        __base: *mut ::core::ffi::c_void, __nel: size_t, __width: size_t,
+        __compar: Option<unsafe extern "C-unwind" fn(*const ::core::ffi::c_void, *const ::core::ffi::c_void) -> ::core::ffi::c_int>,
     );
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
@@ -174,17 +156,13 @@ pub const T1_CS_PHASE_PATH: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
 pub const T1_CS_PHASE_FLEX: ::core::ffi::c_int = 3 as ::core::ffi::c_int;
 
 pub const CS_STEM_GROUP_MAX: ::core::ffi::c_int = CS_STEM_ZONE_MAX;
-pub const PS_ARG_STACK_MAX: ::core::ffi::c_int =
-    CS_STEM_ZONE_MAX * 2 as ::core::ffi::c_int + 2 as ::core::ffi::c_int;
+pub const PS_ARG_STACK_MAX: ::core::ffi::c_int = CS_STEM_ZONE_MAX * 2 as ::core::ffi::c_int + 2 as ::core::ffi::c_int;
 pub const HSTEM: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const VSTEM: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const T1_CS_FLAG_NONE: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-pub const T1_CS_FLAG_USE_HINTMASK: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
-pub const T1_CS_FLAG_USE_CNTRMASK: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
-pub const T1_CS_FLAG_USE_SEAC: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
+pub const T1_CS_FLAG_USE_HINTMASK: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const T1_CS_FLAG_USE_CNTRMASK: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
+pub const T1_CS_FLAG_USE_SEAC: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
 
 pub const CS_HINT_DECL: ::core::ffi::c_int = -1;
 pub const CS_FLEX_CTRL: ::core::ffi::c_int = -(2 as ::core::ffi::c_int);
@@ -225,10 +203,7 @@ pub const cs_hflex: ::core::ffi::c_int = 34 as ::core::ffi::c_int;
 pub const cs_flex: ::core::ffi::c_int = 35;
 pub const cs_hflex1: ::core::ffi::c_int = 36 as ::core::ffi::c_int;
 #[inline]
-unsafe extern "C-unwind" fn stem_compare(
-    mut v1: *const ::core::ffi::c_void,
-    mut v2: *const ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn stem_compare(mut v1: *const ::core::ffi::c_void, mut v2: *const ::core::ffi::c_void) -> ::core::ffi::c_int {
     let mut cmp: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut s1: *const t1_stem = ::core::ptr::null::<t1_stem>();
     let mut s2: *const t1_stem = ::core::ptr::null::<t1_stem>();
@@ -261,10 +236,7 @@ unsafe extern "C-unwind" fn stem_compare(
     }
     return cmp;
 }
-unsafe extern "C-unwind" fn get_stem(
-    mut cd: *mut t1_chardesc,
-    mut stem_id: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn get_stem(mut cd: *mut t1_chardesc, mut stem_id: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut i: ::core::ffi::c_int = 0;
     i = 0 as ::core::ffi::c_int;
     while i < (*cd).num_stems {
@@ -273,37 +245,20 @@ unsafe extern "C-unwind" fn get_stem(
         }
         i += 1;
     }
-    return if i < (*cd).num_stems {
-        i
-    } else {
-        -(1 as ::core::ffi::c_int)
-    };
+    return if i < (*cd).num_stems { i } else { -(1 as ::core::ffi::c_int) };
 }
 unsafe extern "C-unwind" fn add_stem(
-    mut cd: *mut t1_chardesc,
-    mut pos: ::core::ffi::c_double,
-    mut del: ::core::ffi::c_double,
-    mut dir: ::core::ffi::c_int,
+    mut cd: *mut t1_chardesc, mut pos: ::core::ffi::c_double, mut del: ::core::ffi::c_double, mut dir: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut i: ::core::ffi::c_int = 0;
     if cd.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"cd\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"cd\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
-    pos += if dir == HSTEM {
-        (*cd).sbw.sby
-    } else {
-        (*cd).sbw.sbx
-    };
+    pos += if dir == HSTEM { (*cd).sbw.sby } else { (*cd).sbw.sbx };
     i = 0 as ::core::ffi::c_int;
     while i < (*cd).num_stems {
-        if (*cd).stems[i as usize].dir == dir
-            && (*cd).stems[i as usize].pos == pos
-            && (*cd).stems[i as usize].del == del
-        {
+        if (*cd).stems[i as usize].dir == dir && (*cd).stems[i as usize].pos == pos && (*cd).stems[i as usize].del == del {
             break;
         }
         i += 1;
@@ -320,11 +275,7 @@ unsafe extern "C-unwind" fn add_stem(
     }
     return (*cd).stems[i as usize].id;
 }
-unsafe extern "C-unwind" fn copy_args(
-    mut args1: *mut ::core::ffi::c_double,
-    mut args2: *mut ::core::ffi::c_double,
-    mut count: ::core::ffi::c_int,
-) {
+unsafe extern "C-unwind" fn copy_args(mut args1: *mut ::core::ffi::c_double, mut args2: *mut ::core::ffi::c_double, mut count: ::core::ffi::c_int) {
     loop {
         let fresh0 = count;
         count = count - 1;
@@ -337,18 +288,12 @@ unsafe extern "C-unwind" fn copy_args(
     }
 }
 unsafe extern "C-unwind" fn add_charpath(
-    mut cd: *mut t1_chardesc,
-    mut type_0: ::core::ffi::c_int,
-    mut argv: *mut ::core::ffi::c_double,
-    mut argn: ::core::ffi::c_int,
+    mut cd: *mut t1_chardesc, mut type_0: ::core::ffi::c_int, mut argv: *mut ::core::ffi::c_double, mut argn: ::core::ffi::c_int,
 ) {
     let __pdf_state = unsafe { document_state() };
     let mut p: *mut t1_cpath = ::core::ptr::null_mut::<t1_cpath>();
     if cd.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"cd\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"cd\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if !(argn <= 48 as ::core::ffi::c_int) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -358,9 +303,7 @@ unsafe extern "C-unwind" fn add_charpath(
         );
     } else {
     };
-    p = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<t1_cpath>() as usize) as uint32_t)
-        as *mut t1_cpath;
+    p = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<t1_cpath>() as usize) as uint32_t) as *mut t1_cpath;
     (*p).type_0 = type_0;
     (*p).num_args = argn;
     (*p).next = ::core::ptr::null_mut::<t1_cpath>();
@@ -382,11 +325,7 @@ unsafe extern "C-unwind" fn add_charpath(
     if type_0 >= 0 as ::core::ffi::c_int
         && (*__pdf_state).phase != T1_CS_PHASE_FLEX
         && (type_0 >= cs_vmoveto && type_0 <= cs_closepath
-            || type_0 >= cs_rmoveto
-                && type_0 <= cs_hvcurveto
-                && type_0 != cs_vstemhm
-                && type_0 != cs_callgsubr
-                && type_0 != 28 as ::core::ffi::c_int)
+            || type_0 >= cs_rmoveto && type_0 <= cs_hvcurveto && type_0 != cs_vstemhm && type_0 != cs_callgsubr && type_0 != 28 as ::core::ffi::c_int)
     {
         (*__pdf_state).phase = T1_CS_PHASE_PATH;
     }
@@ -409,10 +348,7 @@ unsafe extern "C-unwind" fn release_charpath(mut cd: *mut t1_chardesc) {
     let mut curr: *mut t1_cpath = ::core::ptr::null_mut::<t1_cpath>();
     let mut next: *mut t1_cpath = ::core::ptr::null_mut::<t1_cpath>();
     if cd.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"cd\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"cd\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     curr = (*cd).charpath;
@@ -453,15 +389,9 @@ unsafe extern "C-unwind" fn do_operator1(mut cd: *mut t1_chardesc, mut data: *mu
             let mut stem_id: ::core::ffi::c_int = 0;
             stem_id = add_stem(
                 cd,
-                (*__pdf_state).cs_arg_stack
-                    [((*__pdf_state).cs_stack_top - 2 as ::core::ffi::c_int) as usize],
-                (*__pdf_state).cs_arg_stack
-                    [((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize],
-                if op as ::core::ffi::c_int == cs_hstem {
-                    HSTEM
-                } else {
-                    VSTEM
-                },
+                (*__pdf_state).cs_arg_stack[((*__pdf_state).cs_stack_top - 2 as ::core::ffi::c_int) as usize],
+                (*__pdf_state).cs_arg_stack[((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize],
+                if op as ::core::ffi::c_int == cs_hstem { HSTEM } else { VSTEM },
             );
             if stem_id < 0 as ::core::ffi::c_int {
                 pdf_warning!(b"Too many hints...\0" as *const u8 as *const ::core::ffi::c_char,);
@@ -475,8 +405,7 @@ unsafe extern "C-unwind" fn do_operator1(mut cd: *mut t1_chardesc, mut data: *mu
                 cd,
                 -(1 as ::core::ffi::c_int),
                 (&raw mut (*__pdf_state).cs_arg_stack as *mut ::core::ffi::c_double)
-                    .offset(((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as isize)
-                    as *mut ::core::ffi::c_double,
+                    .offset(((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as isize) as *mut ::core::ffi::c_double,
                 1 as ::core::ffi::c_int,
             );
             (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
@@ -487,19 +416,14 @@ unsafe extern "C-unwind" fn do_operator1(mut cd: *mut t1_chardesc, mut data: *mu
                 return;
             }
             if (*__pdf_state).phase < T1_CS_PHASE_PATH {
-                (*__pdf_state).cs_arg_stack
-                    [((*__pdf_state).cs_stack_top - 2 as ::core::ffi::c_int) as usize] +=
-                    (*cd).sbw.sbx;
-                (*__pdf_state).cs_arg_stack
-                    [((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize] +=
-                    (*cd).sbw.sby;
+                (*__pdf_state).cs_arg_stack[((*__pdf_state).cs_stack_top - 2 as ::core::ffi::c_int) as usize] += (*cd).sbw.sbx;
+                (*__pdf_state).cs_arg_stack[((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize] += (*cd).sbw.sby;
             }
             add_charpath(
                 cd,
                 op as ::core::ffi::c_int,
                 (&raw mut (*__pdf_state).cs_arg_stack as *mut ::core::ffi::c_double)
-                    .offset(((*__pdf_state).cs_stack_top - 2 as ::core::ffi::c_int) as isize)
-                    as *mut ::core::ffi::c_double,
+                    .offset(((*__pdf_state).cs_stack_top - 2 as ::core::ffi::c_int) as isize) as *mut ::core::ffi::c_double,
                 2 as ::core::ffi::c_int,
             );
             (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
@@ -512,9 +436,7 @@ unsafe extern "C-unwind" fn do_operator1(mut cd: *mut t1_chardesc, mut data: *mu
             let mut argn: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
             if (*__pdf_state).phase < T1_CS_PHASE_PATH {
                 if op as ::core::ffi::c_int == cs_hmoveto {
-                    (*__pdf_state).cs_arg_stack
-                        [((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize] +=
-                        (*cd).sbw.sbx;
+                    (*__pdf_state).cs_arg_stack[((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize] += (*cd).sbw.sbx;
                     if (*cd).sbw.sby != 0.0f64 {
                         let fresh3 = (*__pdf_state).cs_stack_top;
                         (*__pdf_state).cs_stack_top = (*__pdf_state).cs_stack_top + 1;
@@ -523,16 +445,11 @@ unsafe extern "C-unwind" fn do_operator1(mut cd: *mut t1_chardesc, mut data: *mu
                         op = cs_rmoveto as card8;
                     }
                 } else {
-                    (*__pdf_state).cs_arg_stack
-                        [((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize] +=
-                        (*cd).sbw.sby;
+                    (*__pdf_state).cs_arg_stack[((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize] += (*cd).sbw.sby;
                     if (*cd).sbw.sbx != 0.0f64 {
                         (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize] =
-                            (*__pdf_state).cs_arg_stack
-                                [((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize];
-                        (*__pdf_state).cs_arg_stack
-                            [((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize] =
-                            (*cd).sbw.sbx;
+                            (*__pdf_state).cs_arg_stack[((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize];
+                        (*__pdf_state).cs_arg_stack[((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize] = (*cd).sbw.sbx;
                         (*__pdf_state).cs_stack_top += 1;
                         argn = 2 as ::core::ffi::c_int;
                         op = cs_rmoveto as card8;
@@ -542,8 +459,7 @@ unsafe extern "C-unwind" fn do_operator1(mut cd: *mut t1_chardesc, mut data: *mu
             add_charpath(
                 cd,
                 op as ::core::ffi::c_int,
-                (&raw mut (*__pdf_state).cs_arg_stack as *mut ::core::ffi::c_double)
-                    .offset(((*__pdf_state).cs_stack_top - argn) as isize)
+                (&raw mut (*__pdf_state).cs_arg_stack as *mut ::core::ffi::c_double).offset(((*__pdf_state).cs_stack_top - argn) as isize)
                     as *mut ::core::ffi::c_double,
                 argn,
             );
@@ -562,8 +478,7 @@ unsafe extern "C-unwind" fn do_operator1(mut cd: *mut t1_chardesc, mut data: *mu
                 cd,
                 op as ::core::ffi::c_int,
                 (&raw mut (*__pdf_state).cs_arg_stack as *mut ::core::ffi::c_double)
-                    .offset(((*__pdf_state).cs_stack_top - 2 as ::core::ffi::c_int) as isize)
-                    as *mut ::core::ffi::c_double,
+                    .offset(((*__pdf_state).cs_stack_top - 2 as ::core::ffi::c_int) as isize) as *mut ::core::ffi::c_double,
                 2 as ::core::ffi::c_int,
             );
             (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
@@ -577,8 +492,7 @@ unsafe extern "C-unwind" fn do_operator1(mut cd: *mut t1_chardesc, mut data: *mu
                 cd,
                 op as ::core::ffi::c_int,
                 (&raw mut (*__pdf_state).cs_arg_stack as *mut ::core::ffi::c_double)
-                    .offset(((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as isize)
-                    as *mut ::core::ffi::c_double,
+                    .offset(((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as isize) as *mut ::core::ffi::c_double,
                 1 as ::core::ffi::c_int,
             );
             (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
@@ -592,8 +506,7 @@ unsafe extern "C-unwind" fn do_operator1(mut cd: *mut t1_chardesc, mut data: *mu
                 cd,
                 op as ::core::ffi::c_int,
                 (&raw mut (*__pdf_state).cs_arg_stack as *mut ::core::ffi::c_double)
-                    .offset(((*__pdf_state).cs_stack_top - 6 as ::core::ffi::c_int) as isize)
-                    as *mut ::core::ffi::c_double,
+                    .offset(((*__pdf_state).cs_stack_top - 6 as ::core::ffi::c_int) as isize) as *mut ::core::ffi::c_double,
                 6 as ::core::ffi::c_int,
             );
             (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
@@ -607,8 +520,7 @@ unsafe extern "C-unwind" fn do_operator1(mut cd: *mut t1_chardesc, mut data: *mu
                 cd,
                 op as ::core::ffi::c_int,
                 (&raw mut (*__pdf_state).cs_arg_stack as *mut ::core::ffi::c_double)
-                    .offset(((*__pdf_state).cs_stack_top - 4 as ::core::ffi::c_int) as isize)
-                    as *mut ::core::ffi::c_double,
+                    .offset(((*__pdf_state).cs_stack_top - 4 as ::core::ffi::c_int) as isize) as *mut ::core::ffi::c_double,
                 4 as ::core::ffi::c_int,
             );
             (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
@@ -644,25 +556,18 @@ unsafe extern "C-unwind" fn do_othersubr0(mut cd: *mut t1_chardesc) {
     cur = (*cur).next as *mut t1_cpath;
     i = 1 as ::core::ffi::c_uint;
     while i < 7 as ::core::ffi::c_uint {
-        if cur.is_null()
-            || (*cur).type_0 != CS_FLEX_CTRL
-            || (*cur).num_args != 2 as ::core::ffi::c_int
-        {
+        if cur.is_null() || (*cur).type_0 != CS_FLEX_CTRL || (*cur).num_args != 2 as ::core::ffi::c_int {
             (*__pdf_state).status = CS_PARSE_ERROR;
             return;
         }
         if i == 1 as ::core::ffi::c_uint {
-            (*flex).args[0 as ::core::ffi::c_int as usize] +=
-                (*cur).args[0 as ::core::ffi::c_int as usize];
-            (*flex).args[1 as ::core::ffi::c_int as usize] +=
-                (*cur).args[1 as ::core::ffi::c_int as usize];
+            (*flex).args[0 as ::core::ffi::c_int as usize] += (*cur).args[0 as ::core::ffi::c_int as usize];
+            (*flex).args[1 as ::core::ffi::c_int as usize] += (*cur).args[1 as ::core::ffi::c_int as usize];
         } else {
             copy_args(
-                (&raw mut (*flex).args as *mut ::core::ffi::c_double).offset(
-                    (2 as ::core::ffi::c_uint)
-                        .wrapping_mul(i)
-                        .wrapping_sub(2 as ::core::ffi::c_uint) as isize,
-                ) as *mut ::core::ffi::c_double,
+                (&raw mut (*flex).args as *mut ::core::ffi::c_double)
+                    .offset((2 as ::core::ffi::c_uint).wrapping_mul(i).wrapping_sub(2 as ::core::ffi::c_uint) as isize)
+                    as *mut ::core::ffi::c_double,
                 &raw mut (*cur).args as *mut ::core::ffi::c_double,
                 2 as ::core::ffi::c_int,
             );
@@ -678,8 +583,7 @@ unsafe extern "C-unwind" fn do_othersubr0(mut cd: *mut t1_chardesc) {
     }
     (*flex).type_0 = cs_flex;
     (*__pdf_state).ps_stack_top -= 1;
-    (*flex).args[12 as ::core::ffi::c_int as usize] =
-        (*__pdf_state).ps_arg_stack[(*__pdf_state).ps_stack_top as usize];
+    (*flex).args[12 as ::core::ffi::c_int as usize] = (*__pdf_state).ps_arg_stack[(*__pdf_state).ps_stack_top as usize];
     (*flex).num_args = 13 as ::core::ffi::c_int;
     (*flex).next = ::core::ptr::null_mut::<t1_cpath>();
     (*cd).lastpath = flex;
@@ -703,8 +607,7 @@ unsafe extern "C-unwind" fn do_othersubr2(mut cd: *mut t1_chardesc) {
         }
         cs_vmoveto => {
             (*(*cd).lastpath).num_args = 2 as ::core::ffi::c_int;
-            (*(*cd).lastpath).args[1 as ::core::ffi::c_int as usize] =
-                (*(*cd).lastpath).args[0 as ::core::ffi::c_int as usize];
+            (*(*cd).lastpath).args[1 as ::core::ffi::c_int as usize] = (*(*cd).lastpath).args[0 as ::core::ffi::c_int as usize];
             (*(*cd).lastpath).args[0 as ::core::ffi::c_int as usize] = 0.0f64;
         }
         _ => {
@@ -746,8 +649,7 @@ unsafe extern "C-unwind" fn do_othersubr13(mut cd: *mut t1_chardesc) {
         n += 1;
     }
     (*__pdf_state).ps_stack_top -= 1;
-    num_hgroups =
-        (*__pdf_state).ps_arg_stack[(*__pdf_state).ps_stack_top as usize] as ::core::ffi::c_int;
+    num_hgroups = (*__pdf_state).ps_arg_stack[(*__pdf_state).ps_stack_top as usize] as ::core::ffi::c_int;
     if num_hgroups < 0 as ::core::ffi::c_int || num_hgroups > CS_STEM_GROUP_MAX {
         (*__pdf_state).status = CS_PARSE_ERROR;
         return;
@@ -765,8 +667,7 @@ unsafe extern "C-unwind" fn do_othersubr13(mut cd: *mut t1_chardesc) {
             if del < 0.0f64 { -del } else { del },
             HSTEM,
         );
-        stemgroups[n as usize].stems[stemgroups[n as usize].num_stems as usize] =
-            stem_id as ::core::ffi::c_double;
+        stemgroups[n as usize].stems[stemgroups[n as usize].num_stems as usize] = stem_id as ::core::ffi::c_double;
         stemgroups[n as usize].num_stems += 1 as ::core::ffi::c_int;
         pos += del;
         if del < 0.0f64 {
@@ -779,8 +680,7 @@ unsafe extern "C-unwind" fn do_othersubr13(mut cd: *mut t1_chardesc) {
         return;
     }
     (*__pdf_state).ps_stack_top -= 1;
-    num_vgroups =
-        (*__pdf_state).ps_arg_stack[(*__pdf_state).ps_stack_top as usize] as ::core::ffi::c_int;
+    num_vgroups = (*__pdf_state).ps_arg_stack[(*__pdf_state).ps_stack_top as usize] as ::core::ffi::c_int;
     if num_vgroups < 0 as ::core::ffi::c_int || num_vgroups > CS_STEM_GROUP_MAX {
         (*__pdf_state).status = CS_PARSE_ERROR;
         return;
@@ -798,8 +698,7 @@ unsafe extern "C-unwind" fn do_othersubr13(mut cd: *mut t1_chardesc) {
             if del < 0.0f64 { -del } else { del },
             VSTEM,
         );
-        stemgroups[n as usize].stems[stemgroups[n as usize].num_stems as usize] =
-            stem_id as ::core::ffi::c_double;
+        stemgroups[n as usize].stems[stemgroups[n as usize].num_stems as usize] = stem_id as ::core::ffi::c_double;
         stemgroups[n as usize].num_stems += 1 as ::core::ffi::c_int;
         pos += del;
         if del < 0.0f64 {
@@ -812,18 +711,11 @@ unsafe extern "C-unwind" fn do_othersubr13(mut cd: *mut t1_chardesc) {
         return;
     }
     n = 0 as ::core::ffi::c_int;
-    while n
-        < (if num_hgroups > num_vgroups {
-            num_hgroups
-        } else {
-            num_vgroups
-        })
-    {
+    while n < (if num_hgroups > num_vgroups { num_hgroups } else { num_vgroups }) {
         add_charpath(
             cd,
             cs_cntrmask,
-            &raw mut (*(&raw mut stemgroups as *mut t1_stemgroup).offset(n as isize)).stems
-                as *mut ::core::ffi::c_double,
+            &raw mut (*(&raw mut stemgroups as *mut t1_stemgroup).offset(n as isize)).stems as *mut ::core::ffi::c_double,
             stemgroups[n as usize].num_stems,
         );
         n += 1;
@@ -839,8 +731,7 @@ unsafe extern "C-unwind" fn do_callothersubr(mut cd: *mut t1_chardesc) {
         return;
     }
     (*__pdf_state).cs_stack_top -= 1;
-    subrno =
-        (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize] as ::core::ffi::c_int;
+    subrno = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize] as ::core::ffi::c_int;
     (*__pdf_state).cs_stack_top -= 1;
     argn = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize] as ::core::ffi::c_int;
     if (*__pdf_state).cs_stack_top < argn {
@@ -860,8 +751,7 @@ unsafe extern "C-unwind" fn do_callothersubr(mut cd: *mut t1_chardesc) {
         (*__pdf_state).cs_stack_top -= 1;
         let fresh8 = (*__pdf_state).ps_stack_top;
         (*__pdf_state).ps_stack_top = (*__pdf_state).ps_stack_top + 1;
-        (*__pdf_state).ps_arg_stack[fresh8 as usize] =
-            (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize];
+        (*__pdf_state).ps_arg_stack[fresh8 as usize] = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize];
     }
     match subrno {
         0 => {
@@ -883,18 +773,11 @@ unsafe extern "C-unwind" fn do_callothersubr(mut cd: *mut t1_chardesc) {
             do_othersubr13(cd);
         }
         _ => {
-            pdf_abort!(
-                b"Unknown othersubr #%d.\0" as *const u8 as *const ::core::ffi::c_char,
-                subrno,
-            );
+            pdf_abort!(b"Unknown othersubr #%d.\0" as *const u8 as *const ::core::ffi::c_char, subrno,);
         }
     };
 }
-unsafe extern "C-unwind" fn do_operator2(
-    mut cd: *mut t1_chardesc,
-    mut data: *mut *mut card8,
-    mut endptr: *mut card8,
-) {
+unsafe extern "C-unwind" fn do_operator2(mut cd: *mut t1_chardesc, mut data: *mut *mut card8, mut endptr: *mut card8) {
     let __pdf_state = unsafe { document_state() };
     let mut op: card8 = 0;
     *data = (*data).offset(1 as ::core::ffi::c_int as isize);
@@ -931,19 +814,9 @@ unsafe extern "C-unwind" fn do_operator2(
                 let mut stem_id: ::core::ffi::c_int = 0;
                 stem_id = add_stem(
                     cd,
-                    (*__pdf_state).cs_arg_stack[((*__pdf_state).cs_stack_top
-                        - 2 as ::core::ffi::c_int * i
-                        - 2 as ::core::ffi::c_int)
-                        as usize],
-                    (*__pdf_state).cs_arg_stack[((*__pdf_state).cs_stack_top
-                        - 2 as ::core::ffi::c_int * i
-                        - 1 as ::core::ffi::c_int)
-                        as usize],
-                    if op as ::core::ffi::c_int == cs_hstem3 {
-                        HSTEM
-                    } else {
-                        VSTEM
-                    },
+                    (*__pdf_state).cs_arg_stack[((*__pdf_state).cs_stack_top - 2 as ::core::ffi::c_int * i - 2 as ::core::ffi::c_int) as usize],
+                    (*__pdf_state).cs_arg_stack[((*__pdf_state).cs_stack_top - 2 as ::core::ffi::c_int * i - 1 as ::core::ffi::c_int) as usize],
+                    if op as ::core::ffi::c_int == cs_hstem3 { HSTEM } else { VSTEM },
                 );
                 if stem_id < 0 as ::core::ffi::c_int {
                     pdf_warning!(b"Too many hints...\0" as *const u8 as *const ::core::ffi::c_char,);
@@ -957,8 +830,7 @@ unsafe extern "C-unwind" fn do_operator2(
                     cd,
                     -(1 as ::core::ffi::c_int),
                     (&raw mut (*__pdf_state).cs_arg_stack as *mut ::core::ffi::c_double)
-                        .offset(((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as isize)
-                        as *mut ::core::ffi::c_double,
+                        .offset(((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as isize) as *mut ::core::ffi::c_double,
                     1 as ::core::ffi::c_int,
                 );
                 (*__pdf_state).cs_stack_top -= 1;
@@ -985,8 +857,7 @@ unsafe extern "C-unwind" fn do_operator2(
             (*__pdf_state).ps_stack_top -= 1;
             let fresh6 = (*__pdf_state).cs_stack_top;
             (*__pdf_state).cs_stack_top = (*__pdf_state).cs_stack_top + 1;
-            (*__pdf_state).cs_arg_stack[fresh6 as usize] =
-                (*__pdf_state).ps_arg_stack[(*__pdf_state).ps_stack_top as usize];
+            (*__pdf_state).cs_arg_stack[fresh6 as usize] = (*__pdf_state).ps_arg_stack[(*__pdf_state).ps_stack_top as usize];
         }
         cs_dotsection => {}
         cs_div => {
@@ -994,10 +865,8 @@ unsafe extern "C-unwind" fn do_operator2(
                 (*__pdf_state).status = CS_STACK_ERROR;
                 return;
             }
-            (*__pdf_state).cs_arg_stack
-                [((*__pdf_state).cs_stack_top - 2 as ::core::ffi::c_int) as usize] /=
-                (*__pdf_state).cs_arg_stack
-                    [((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize];
+            (*__pdf_state).cs_arg_stack[((*__pdf_state).cs_stack_top - 2 as ::core::ffi::c_int) as usize] /=
+                (*__pdf_state).cs_arg_stack[((*__pdf_state).cs_stack_top - 1 as ::core::ffi::c_int) as usize];
             (*__pdf_state).cs_stack_top -= 1;
         }
         cs_callothersubr => {
@@ -1010,25 +879,21 @@ unsafe extern "C-unwind" fn do_operator2(
             }
             (*cd).flags |= T1_CS_FLAG_USE_SEAC;
             (*__pdf_state).cs_stack_top -= 1;
-            (*cd).seac.achar =
-                (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize] as card8;
+            (*cd).seac.achar = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize] as card8;
             (*__pdf_state).cs_stack_top -= 1;
-            (*cd).seac.bchar =
-                (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize] as card8;
+            (*cd).seac.bchar = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize] as card8;
             (*__pdf_state).cs_stack_top -= 1;
             (*cd).seac.ady = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize];
             (*__pdf_state).cs_stack_top -= 1;
             (*cd).seac.adx = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize];
             (*cd).seac.ady += (*cd).sbw.sby;
             (*__pdf_state).cs_stack_top -= 1;
-            (*cd).seac.adx +=
-                (*cd).sbw.sbx - (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize];
+            (*cd).seac.adx += (*cd).sbw.sbx - (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize];
             (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
         }
         _ => {
             pdf_warning!(
-                b"Unknown charstring operator: 0x0c%02x\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Unknown charstring operator: 0x0c%02x\0" as *const u8 as *const ::core::ffi::c_char,
                 op as ::core::ffi::c_int,
             );
             (*__pdf_state).status = CS_PARSE_ERROR;
@@ -1036,10 +901,7 @@ unsafe extern "C-unwind" fn do_operator2(
     };
 }
 unsafe extern "C-unwind" fn put_numbers(
-    mut argv: *mut ::core::ffi::c_double,
-    mut argn: ::core::ffi::c_int,
-    mut dest: *mut *mut card8,
-    mut limit: *mut card8,
+    mut argv: *mut ::core::ffi::c_double, mut argn: ::core::ffi::c_int, mut dest: *mut *mut card8, mut limit: *mut card8,
 ) {
     let __pdf_state = unsafe { document_state() };
     let mut i: ::core::ffi::c_int = 0;
@@ -1050,14 +912,9 @@ unsafe extern "C-unwind" fn put_numbers(
         value = *argv.offset(i as isize);
         ivalue = floor(value + 0.5f64) as ::core::ffi::c_int;
         if value >= 0x8000 as ::core::ffi::c_long as ::core::ffi::c_double
-            || value
-                <= (-(0x8000 as ::core::ffi::c_long) - 1 as ::core::ffi::c_long)
-                    as ::core::ffi::c_double
+            || value <= (-(0x8000 as ::core::ffi::c_long) - 1 as ::core::ffi::c_long) as ::core::ffi::c_double
         {
-            pdf_abort!(
-                b"Argument value too large. (This is bug)\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_abort!(b"Argument value too large. (This is bug)\0" as *const u8 as *const ::core::ffi::c_char,);
         } else if fabs(value - ivalue as ::core::ffi::c_double) > 3.0e-5f64 {
             if limit < (*dest).offset(5 as ::core::ffi::c_int as isize) {
                 (*__pdf_state).status = CS_BUFFER_ERROR;
@@ -1073,9 +930,7 @@ unsafe extern "C-unwind" fn put_numbers(
             let fresh23 = *dest;
             *dest = (*dest).offset(1);
             *fresh23 = (ivalue & 0xff as ::core::ffi::c_int) as card8;
-            ivalue = ((value - ivalue as ::core::ffi::c_double)
-                * 0x10000 as ::core::ffi::c_long as ::core::ffi::c_double)
-                as ::core::ffi::c_int;
+            ivalue = ((value - ivalue as ::core::ffi::c_double) * 0x10000 as ::core::ffi::c_long as ::core::ffi::c_double) as ::core::ffi::c_int;
             let fresh24 = *dest;
             *dest = (*dest).offset(1);
             *fresh24 = (ivalue >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
@@ -1097,32 +952,28 @@ unsafe extern "C-unwind" fn put_numbers(
             }
             ivalue = (0xf700 as ::core::ffi::c_uint)
                 .wrapping_add(ivalue as ::core::ffi::c_uint)
-                .wrapping_sub(108 as ::core::ffi::c_uint)
-                as ::core::ffi::c_int;
+                .wrapping_sub(108 as ::core::ffi::c_uint) as ::core::ffi::c_int;
             let fresh27 = *dest;
             *dest = (*dest).offset(1);
             *fresh27 = (ivalue >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
             let fresh28 = *dest;
             *dest = (*dest).offset(1);
             *fresh28 = (ivalue & 0xff as ::core::ffi::c_int) as card8;
-        } else if ivalue >= -(1131 as ::core::ffi::c_int) && ivalue <= -(108 as ::core::ffi::c_int)
-        {
+        } else if ivalue >= -(1131 as ::core::ffi::c_int) && ivalue <= -(108 as ::core::ffi::c_int) {
             if limit < (*dest).offset(2 as ::core::ffi::c_int as isize) {
                 (*__pdf_state).status = CS_BUFFER_ERROR;
                 return;
             }
             ivalue = (0xfb00 as ::core::ffi::c_uint)
                 .wrapping_sub(ivalue as ::core::ffi::c_uint)
-                .wrapping_sub(108 as ::core::ffi::c_uint)
-                as ::core::ffi::c_int;
+                .wrapping_sub(108 as ::core::ffi::c_uint) as ::core::ffi::c_int;
             let fresh29 = *dest;
             *dest = (*dest).offset(1);
             *fresh29 = (ivalue >> 8 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as card8;
             let fresh30 = *dest;
             *dest = (*dest).offset(1);
             *fresh30 = (ivalue & 0xff as ::core::ffi::c_int) as card8;
-        } else if ivalue >= -(32768 as ::core::ffi::c_int) && ivalue <= 32767 as ::core::ffi::c_int
-        {
+        } else if ivalue >= -(32768 as ::core::ffi::c_int) && ivalue <= 32767 as ::core::ffi::c_int {
             if limit < (*dest).offset(3 as ::core::ffi::c_int as isize) {
                 (*__pdf_state).status = CS_BUFFER_ERROR;
                 return;
@@ -1184,10 +1035,7 @@ unsafe extern "C-unwind" fn get_longint(data: *mut *mut card8, end: *mut card8) 
     }
 }
 unsafe extern "C-unwind" fn t1char_build_charpath(
-    mut cd: *mut t1_chardesc,
-    mut data: *mut *mut card8,
-    mut endptr: *mut card8,
-    mut subrs: *mut cff_index,
+    mut cd: *mut t1_chardesc, mut data: *mut *mut card8, mut endptr: *mut card8, mut subrs: *mut cff_index,
 ) {
     let __pdf_state = unsafe { document_state() };
     let mut b0: card8 = 0 as card8;
@@ -1209,8 +1057,7 @@ unsafe extern "C-unwind" fn t1char_build_charpath(
             } else {
                 let mut idx: ::core::ffi::c_int = 0;
                 (*__pdf_state).cs_stack_top -= 1;
-                idx = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize]
-                    as ::core::ffi::c_int;
+                idx = (*__pdf_state).cs_arg_stack[(*__pdf_state).cs_stack_top as usize] as ::core::ffi::c_int;
                 if subrs.is_null() || idx < 0 || idx >= (*subrs).count as ::core::ffi::c_int {
                     pdf_abort!(b"Invalid Subr#.\0" as *const u8 as *const ::core::ffi::c_char,);
                 }
@@ -1218,22 +1065,16 @@ unsafe extern "C-unwind" fn t1char_build_charpath(
                     .data
                     .offset(*(*subrs).offset.offset(idx as isize) as isize)
                     .offset(-(1 as ::core::ffi::c_int as isize));
-                len = (*(*subrs)
-                    .offset
-                    .offset((idx + 1 as ::core::ffi::c_int) as isize))
-                .wrapping_sub(*(*subrs).offset.offset(idx as isize))
+                len = (*(*subrs).offset.offset((idx + 1 as ::core::ffi::c_int) as isize)).wrapping_sub(*(*subrs).offset.offset(idx as isize))
                     as ::core::ffi::c_int;
                 t1char_build_charpath(cd, &raw mut subr, subr.offset(len as isize), subrs);
                 *data = (*data).offset(1 as ::core::ffi::c_int as isize);
             }
         } else if b0 as ::core::ffi::c_int == cs_escape {
             do_operator2(cd, data, endptr);
-        } else if (b0 as ::core::ffi::c_int) < 32 as ::core::ffi::c_int
-            && b0 as ::core::ffi::c_int != 28 as ::core::ffi::c_int
-        {
+        } else if (b0 as ::core::ffi::c_int) < 32 as ::core::ffi::c_int && b0 as ::core::ffi::c_int != 28 as ::core::ffi::c_int {
             do_operator1(cd, data);
-        } else if b0 as ::core::ffi::c_int >= 22 as ::core::ffi::c_int
-            && b0 as ::core::ffi::c_int <= 27 as ::core::ffi::c_int
+        } else if b0 as ::core::ffi::c_int >= 22 as ::core::ffi::c_int && b0 as ::core::ffi::c_int <= 27 as ::core::ffi::c_int
             || b0 as ::core::ffi::c_int == 31 as ::core::ffi::c_int
         {
             (*__pdf_state).status = CS_PARSE_ERROR;
@@ -1244,9 +1085,7 @@ unsafe extern "C-unwind" fn t1char_build_charpath(
     if (*__pdf_state).status == CS_SUBR_RETURN {
         (*__pdf_state).status = CS_PARSE_OK;
     } else if (*__pdf_state).status == CS_CHAR_END && *data < endptr {
-        if !(*data == endptr.offset(-(1 as ::core::ffi::c_int as isize))
-            && **data as ::core::ffi::c_int == cs_return)
-        {
+        if !(*data == endptr.offset(-(1 as ::core::ffi::c_int as isize)) && **data as ::core::ffi::c_int == cs_return) {
             pdf_warning!(
                 b"Garbage after endchar. (%d bytes)\0" as *const u8 as *const ::core::ffi::c_char,
                 endptr.offset_from(*data) as ::core::ffi::c_long as ::core::ffi::c_int,
@@ -1254,8 +1093,7 @@ unsafe extern "C-unwind" fn t1char_build_charpath(
         }
     } else if (*__pdf_state).status < CS_PARSE_OK {
         pdf_abort!(
-            b"Parsing charstring failed: (status=%d, stack=%d)\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Parsing charstring failed: (status=%d, stack=%d)\0" as *const u8 as *const ::core::ffi::c_char,
             (*__pdf_state).status,
             (*__pdf_state).cs_stack_top,
         );
@@ -1314,14 +1152,10 @@ unsafe extern "C-unwind" fn do_postproc(mut cd: *mut t1_chardesc) {
                 if (*cd).bbox.ury < y {
                     (*cd).bbox.ury = y;
                 }
-                if !prev.is_null()
-                    && !cur.is_null()
-                    && (*prev).num_args + (*cur).num_args < CS_ARG_STACK_MAX
-                {
+                if !prev.is_null() && !cur.is_null() && (*prev).num_args + (*cur).num_args < CS_ARG_STACK_MAX {
                     if (*prev).type_0 == cs_rlineto {
                         copy_args(
-                            (&raw mut (*prev).args as *mut ::core::ffi::c_double)
-                                .offset((*prev).num_args as isize),
+                            (&raw mut (*prev).args as *mut ::core::ffi::c_double).offset((*prev).num_args as isize),
                             &raw mut (*cur).args as *mut ::core::ffi::c_double,
                             (*cur).num_args,
                         );
@@ -1330,8 +1164,7 @@ unsafe extern "C-unwind" fn do_postproc(mut cd: *mut t1_chardesc) {
                         cur = mfree(cur as *mut ::core::ffi::c_void) as *mut t1_cpath;
                     } else if (*prev).type_0 == cs_rrcurveto {
                         copy_args(
-                            (&raw mut (*prev).args as *mut ::core::ffi::c_double)
-                                .offset((*prev).num_args as isize),
+                            (&raw mut (*prev).args as *mut ::core::ffi::c_double).offset((*prev).num_args as isize),
                             &raw mut (*cur).args as *mut ::core::ffi::c_double,
                             (*cur).num_args,
                         );
@@ -1371,18 +1204,12 @@ unsafe extern "C-unwind" fn do_postproc(mut cd: *mut t1_chardesc) {
                 if (*cd).bbox.ury < y {
                     (*cd).bbox.ury = y;
                 }
-                if !prev.is_null()
-                    && !cur.is_null()
-                    && (*prev).num_args + (*cur).num_args < CS_ARG_STACK_MAX
-                {
-                    if (*prev).type_0 == cs_vlineto
-                        && (*prev).num_args % 2 as ::core::ffi::c_int == 1 as ::core::ffi::c_int
-                        || (*prev).type_0 == cs_hlineto
-                            && (*prev).num_args % 2 as ::core::ffi::c_int == 0 as ::core::ffi::c_int
+                if !prev.is_null() && !cur.is_null() && (*prev).num_args + (*cur).num_args < CS_ARG_STACK_MAX {
+                    if (*prev).type_0 == cs_vlineto && (*prev).num_args % 2 as ::core::ffi::c_int == 1 as ::core::ffi::c_int
+                        || (*prev).type_0 == cs_hlineto && (*prev).num_args % 2 as ::core::ffi::c_int == 0 as ::core::ffi::c_int
                     {
                         copy_args(
-                            (&raw mut (*prev).args as *mut ::core::ffi::c_double)
-                                .offset((*prev).num_args as isize),
+                            (&raw mut (*prev).args as *mut ::core::ffi::c_double).offset((*prev).num_args as isize),
                             &raw mut (*cur).args as *mut ::core::ffi::c_double,
                             (*cur).num_args,
                         );
@@ -1421,18 +1248,12 @@ unsafe extern "C-unwind" fn do_postproc(mut cd: *mut t1_chardesc) {
                 if (*cd).bbox.ury < y {
                     (*cd).bbox.ury = y;
                 }
-                if !prev.is_null()
-                    && !cur.is_null()
-                    && (*prev).num_args + (*cur).num_args < CS_ARG_STACK_MAX
-                {
-                    if (*prev).type_0 == cs_hlineto
-                        && (*prev).num_args % 2 as ::core::ffi::c_int == 1 as ::core::ffi::c_int
-                        || (*prev).type_0 == cs_vlineto
-                            && (*prev).num_args % 2 as ::core::ffi::c_int == 0 as ::core::ffi::c_int
+                if !prev.is_null() && !cur.is_null() && (*prev).num_args + (*cur).num_args < CS_ARG_STACK_MAX {
+                    if (*prev).type_0 == cs_hlineto && (*prev).num_args % 2 as ::core::ffi::c_int == 1 as ::core::ffi::c_int
+                        || (*prev).type_0 == cs_vlineto && (*prev).num_args % 2 as ::core::ffi::c_int == 0 as ::core::ffi::c_int
                     {
                         copy_args(
-                            (&raw mut (*prev).args as *mut ::core::ffi::c_double)
-                                .offset((*prev).num_args as isize),
+                            (&raw mut (*prev).args as *mut ::core::ffi::c_double).offset((*prev).num_args as isize),
                             &raw mut (*cur).args as *mut ::core::ffi::c_double,
                             (*cur).num_args,
                         );
@@ -1446,10 +1267,7 @@ unsafe extern "C-unwind" fn do_postproc(mut cd: *mut t1_chardesc) {
                 i = 0 as ::core::ffi::c_uint;
                 while i < 3 as ::core::ffi::c_uint {
                     x += (*cur).args[(2 as ::core::ffi::c_uint).wrapping_mul(i) as usize];
-                    y += (*cur).args[(2 as ::core::ffi::c_uint)
-                        .wrapping_mul(i)
-                        .wrapping_add(1 as ::core::ffi::c_uint)
-                        as usize];
+                    y += (*cur).args[(2 as ::core::ffi::c_uint).wrapping_mul(i).wrapping_add(1 as ::core::ffi::c_uint) as usize];
                     if (*cd).bbox.llx > x {
                         (*cd).bbox.llx = x;
                     }
@@ -1464,14 +1282,10 @@ unsafe extern "C-unwind" fn do_postproc(mut cd: *mut t1_chardesc) {
                     }
                     i = i.wrapping_add(1);
                 }
-                if !prev.is_null()
-                    && !cur.is_null()
-                    && (*prev).num_args + (*cur).num_args < CS_ARG_STACK_MAX
-                {
+                if !prev.is_null() && !cur.is_null() && (*prev).num_args + (*cur).num_args < CS_ARG_STACK_MAX {
                     if (*prev).type_0 == cs_rrcurveto {
                         copy_args(
-                            (&raw mut (*prev).args as *mut ::core::ffi::c_double)
-                                .offset((*prev).num_args as isize),
+                            (&raw mut (*prev).args as *mut ::core::ffi::c_double).offset((*prev).num_args as isize),
                             &raw mut (*cur).args as *mut ::core::ffi::c_double,
                             (*cur).num_args,
                         );
@@ -1480,8 +1294,7 @@ unsafe extern "C-unwind" fn do_postproc(mut cd: *mut t1_chardesc) {
                         cur = mfree(cur as *mut ::core::ffi::c_void) as *mut t1_cpath;
                     } else if (*prev).type_0 == cs_rlineto {
                         copy_args(
-                            (&raw mut (*prev).args as *mut ::core::ffi::c_double)
-                                .offset((*prev).num_args as isize),
+                            (&raw mut (*prev).args as *mut ::core::ffi::c_double).offset((*prev).num_args as isize),
                             &raw mut (*cur).args as *mut ::core::ffi::c_double,
                             (*cur).num_args,
                         );
@@ -1533,20 +1346,14 @@ unsafe extern "C-unwind" fn do_postproc(mut cd: *mut t1_chardesc) {
                 if (*cd).bbox.ury < y {
                     (*cd).bbox.ury = y;
                 }
-                if !prev.is_null()
-                    && !cur.is_null()
-                    && (*prev).num_args + (*cur).num_args < CS_ARG_STACK_MAX
-                {
+                if !prev.is_null() && !cur.is_null() && (*prev).num_args + (*cur).num_args < CS_ARG_STACK_MAX {
                     if (*prev).type_0 == cs_hvcurveto
-                        && (*prev).num_args / 4 as ::core::ffi::c_int % 2 as ::core::ffi::c_int
-                            == 1 as ::core::ffi::c_int
+                        && (*prev).num_args / 4 as ::core::ffi::c_int % 2 as ::core::ffi::c_int == 1 as ::core::ffi::c_int
                         || (*prev).type_0 == cs_vhcurveto
-                            && (*prev).num_args / 4 as ::core::ffi::c_int % 2 as ::core::ffi::c_int
-                                == 0 as ::core::ffi::c_int
+                            && (*prev).num_args / 4 as ::core::ffi::c_int % 2 as ::core::ffi::c_int == 0 as ::core::ffi::c_int
                     {
                         copy_args(
-                            (&raw mut (*prev).args as *mut ::core::ffi::c_double)
-                                .offset((*prev).num_args as isize),
+                            (&raw mut (*prev).args as *mut ::core::ffi::c_double).offset((*prev).num_args as isize),
                             &raw mut (*cur).args as *mut ::core::ffi::c_double,
                             (*cur).num_args,
                         );
@@ -1597,20 +1404,14 @@ unsafe extern "C-unwind" fn do_postproc(mut cd: *mut t1_chardesc) {
                 if (*cd).bbox.ury < y {
                     (*cd).bbox.ury = y;
                 }
-                if !prev.is_null()
-                    && !cur.is_null()
-                    && (*prev).num_args + (*cur).num_args < CS_ARG_STACK_MAX
-                {
+                if !prev.is_null() && !cur.is_null() && (*prev).num_args + (*cur).num_args < CS_ARG_STACK_MAX {
                     if (*prev).type_0 == cs_vhcurveto
-                        && (*prev).num_args / 4 as ::core::ffi::c_int % 2 as ::core::ffi::c_int
-                            == 1 as ::core::ffi::c_int
+                        && (*prev).num_args / 4 as ::core::ffi::c_int % 2 as ::core::ffi::c_int == 1 as ::core::ffi::c_int
                         || (*prev).type_0 == cs_hvcurveto
-                            && (*prev).num_args / 4 as ::core::ffi::c_int % 2 as ::core::ffi::c_int
-                                == 0 as ::core::ffi::c_int
+                            && (*prev).num_args / 4 as ::core::ffi::c_int % 2 as ::core::ffi::c_int == 0 as ::core::ffi::c_int
                     {
                         copy_args(
-                            (&raw mut (*prev).args as *mut ::core::ffi::c_double)
-                                .offset((*prev).num_args as isize),
+                            (&raw mut (*prev).args as *mut ::core::ffi::c_double).offset((*prev).num_args as isize),
                             &raw mut (*cur).args as *mut ::core::ffi::c_double,
                             (*cur).num_args,
                         );
@@ -1624,8 +1425,7 @@ unsafe extern "C-unwind" fn do_postproc(mut cd: *mut t1_chardesc) {
                 i = 0 as ::core::ffi::c_uint;
                 while i < 6 as ::core::ffi::c_uint {
                     x += (*cur).args[(2 as ::core::ffi::c_uint).wrapping_mul(i) as usize];
-                    y += (*cur).args[(2 as ::core::ffi::c_int * 1 as ::core::ffi::c_int
-                        + 1 as ::core::ffi::c_int) as usize];
+                    y += (*cur).args[(2 as ::core::ffi::c_int * 1 as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as usize];
                     if (*cd).bbox.llx > x {
                         (*cd).bbox.llx = x;
                     }
@@ -1645,22 +1445,14 @@ unsafe extern "C-unwind" fn do_postproc(mut cd: *mut t1_chardesc) {
                         && (*cur).args[11 as ::core::ffi::c_int as usize] == 0.0f64
                         && (*cur).args[5 as ::core::ffi::c_int as usize] == 0.0f64
                         && (*cur).args[7 as ::core::ffi::c_int as usize] == 0.0f64
-                        && (*cur).args[3 as ::core::ffi::c_int as usize]
-                            + (*cur).args[9 as ::core::ffi::c_int as usize]
-                            == 0.0f64
+                        && (*cur).args[3 as ::core::ffi::c_int as usize] + (*cur).args[9 as ::core::ffi::c_int as usize] == 0.0f64
                     {
-                        (*cur).args[1 as ::core::ffi::c_int as usize] =
-                            (*cur).args[2 as ::core::ffi::c_int as usize];
-                        (*cur).args[2 as ::core::ffi::c_int as usize] =
-                            (*cur).args[3 as ::core::ffi::c_int as usize];
-                        (*cur).args[3 as ::core::ffi::c_int as usize] =
-                            (*cur).args[4 as ::core::ffi::c_int as usize];
-                        (*cur).args[4 as ::core::ffi::c_int as usize] =
-                            (*cur).args[6 as ::core::ffi::c_int as usize];
-                        (*cur).args[5 as ::core::ffi::c_int as usize] =
-                            (*cur).args[8 as ::core::ffi::c_int as usize];
-                        (*cur).args[6 as ::core::ffi::c_int as usize] =
-                            (*cur).args[10 as ::core::ffi::c_int as usize];
+                        (*cur).args[1 as ::core::ffi::c_int as usize] = (*cur).args[2 as ::core::ffi::c_int as usize];
+                        (*cur).args[2 as ::core::ffi::c_int as usize] = (*cur).args[3 as ::core::ffi::c_int as usize];
+                        (*cur).args[3 as ::core::ffi::c_int as usize] = (*cur).args[4 as ::core::ffi::c_int as usize];
+                        (*cur).args[4 as ::core::ffi::c_int as usize] = (*cur).args[6 as ::core::ffi::c_int as usize];
+                        (*cur).args[5 as ::core::ffi::c_int as usize] = (*cur).args[8 as ::core::ffi::c_int as usize];
+                        (*cur).args[6 as ::core::ffi::c_int as usize] = (*cur).args[10 as ::core::ffi::c_int as usize];
                         (*cur).num_args = 7 as ::core::ffi::c_int;
                         (*cur).type_0 = cs_hflex;
                     } else if (*cur).args[5 as ::core::ffi::c_int as usize] == 0.0f64
@@ -1671,14 +1463,10 @@ unsafe extern "C-unwind" fn do_postproc(mut cd: *mut t1_chardesc) {
                             + (*cur).args[11 as ::core::ffi::c_int as usize]
                             == 0 as ::core::ffi::c_int as ::core::ffi::c_double
                     {
-                        (*cur).args[5 as ::core::ffi::c_int as usize] =
-                            (*cur).args[6 as ::core::ffi::c_int as usize];
-                        (*cur).args[6 as ::core::ffi::c_int as usize] =
-                            (*cur).args[8 as ::core::ffi::c_int as usize];
-                        (*cur).args[7 as ::core::ffi::c_int as usize] =
-                            (*cur).args[9 as ::core::ffi::c_int as usize];
-                        (*cur).args[8 as ::core::ffi::c_int as usize] =
-                            (*cur).args[10 as ::core::ffi::c_int as usize];
+                        (*cur).args[5 as ::core::ffi::c_int as usize] = (*cur).args[6 as ::core::ffi::c_int as usize];
+                        (*cur).args[6 as ::core::ffi::c_int as usize] = (*cur).args[8 as ::core::ffi::c_int as usize];
+                        (*cur).args[7 as ::core::ffi::c_int as usize] = (*cur).args[9 as ::core::ffi::c_int as usize];
+                        (*cur).args[8 as ::core::ffi::c_int as usize] = (*cur).args[10 as ::core::ffi::c_int as usize];
                         (*cur).num_args = 9 as ::core::ffi::c_int;
                         (*cur).type_0 = cs_hflex1;
                     }
@@ -1687,8 +1475,7 @@ unsafe extern "C-unwind" fn do_postproc(mut cd: *mut t1_chardesc) {
             CS_HINT_DECL | cs_cntrmask => {}
             _ => {
                 pdf_abort!(
-                    b"Unexpected Type 2 charstring command %d.\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Unexpected Type 2 charstring command %d.\0" as *const u8 as *const ::core::ffi::c_char,
                     (*cur).type_0,
                 );
             }
@@ -1709,10 +1496,7 @@ unsafe extern "C-unwind" fn do_postproc(mut cd: *mut t1_chardesc) {
 }
 #[unsafe(export_name = "__pdf_impl_t1char_get_metrics")]
 pub unsafe extern "C-unwind" fn t1char_get_metrics(
-    mut src: *mut card8,
-    mut srclen: ::core::ffi::c_int,
-    mut subrs: *mut cff_index,
-    mut ginfo: *mut t1_ginfo,
+    mut src: *mut card8, mut srclen: ::core::ffi::c_int, mut subrs: *mut cff_index, mut ginfo: *mut t1_ginfo,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut t1char: t1_chardesc = t1_chardesc {
@@ -1755,9 +1539,7 @@ pub unsafe extern "C-unwind" fn t1char_get_metrics(
     (*__pdf_state).ps_stack_top = 0 as ::core::ffi::c_int;
     (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
     t1char_build_charpath(cd, &raw mut src, src.offset(srclen as isize), subrs);
-    if (*__pdf_state).cs_stack_top != 0 as ::core::ffi::c_int
-        || (*__pdf_state).ps_stack_top != 0 as ::core::ffi::c_int
-    {
+    if (*__pdf_state).cs_stack_top != 0 as ::core::ffi::c_int || (*__pdf_state).ps_stack_top != 0 as ::core::ffi::c_int {
         pdf_warning!(
             b"Stack not empty. (%d, %d)\0" as *const u8 as *const ::core::ffi::c_char,
             (*__pdf_state).cs_stack_top,
@@ -1786,20 +1568,14 @@ pub unsafe extern "C-unwind" fn t1char_get_metrics(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn t1char_encode_charpath(
-    mut cd: *mut t1_chardesc,
-    mut default_width: ::core::ffi::c_double,
-    mut nominal_width: ::core::ffi::c_double,
-    mut dst: *mut card8,
+    mut cd: *mut t1_chardesc, mut default_width: ::core::ffi::c_double, mut nominal_width: ::core::ffi::c_double, mut dst: *mut card8,
     mut endptr: *mut card8,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut save: *mut card8 = ::core::ptr::null_mut::<card8>();
     let mut curr: *mut t1_cpath = ::core::ptr::null_mut::<t1_cpath>();
     if cd.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"cd\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"cd\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     save = dst;
@@ -1831,16 +1607,10 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
             (*cd).stems[i as usize].pos
         } else {
             (*cd).stems[i as usize].pos
-                - ((*cd).stems[(i - 1 as ::core::ffi::c_int) as usize].pos
-                    + (*cd).stems[(i - 1 as ::core::ffi::c_int) as usize].del)
+                - ((*cd).stems[(i - 1 as ::core::ffi::c_int) as usize].pos + (*cd).stems[(i - 1 as ::core::ffi::c_int) as usize].del)
         };
         stem[1 as ::core::ffi::c_int as usize] = (*cd).stems[i as usize].del;
-        put_numbers(
-            &raw mut stem as *mut ::core::ffi::c_double,
-            2 as ::core::ffi::c_int,
-            &raw mut dst,
-            endptr,
-        );
+        put_numbers(&raw mut stem as *mut ::core::ffi::c_double, 2 as ::core::ffi::c_int, &raw mut dst, endptr);
         if (*__pdf_state).status != CS_PARSE_OK {
             pdf_abort!(
                 b"Charstring encoder error: %d\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1884,16 +1654,10 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
                 (*cd).stems[i as usize].pos
             } else {
                 (*cd).stems[i as usize].pos
-                    - ((*cd).stems[(i - 1 as ::core::ffi::c_int) as usize].pos
-                        + (*cd).stems[(i - 1 as ::core::ffi::c_int) as usize].del)
+                    - ((*cd).stems[(i - 1 as ::core::ffi::c_int) as usize].pos + (*cd).stems[(i - 1 as ::core::ffi::c_int) as usize].del)
             };
             stem[1 as ::core::ffi::c_int as usize] = (*cd).stems[i as usize].del;
-            put_numbers(
-                &raw mut stem as *mut ::core::ffi::c_double,
-                2 as ::core::ffi::c_int,
-                &raw mut dst,
-                endptr,
-            );
+            put_numbers(&raw mut stem as *mut ::core::ffi::c_double, 2 as ::core::ffi::c_int, &raw mut dst, endptr);
             if (*__pdf_state).status != CS_PARSE_OK {
                 pdf_abort!(
                     b"Charstring encoder error: %d\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1920,9 +1684,7 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
             if dst.offset(1 as ::core::ffi::c_int as isize) >= endptr {
                 pdf_abort!(b"Buffer overflow.\0" as *const u8 as *const ::core::ffi::c_char,);
             }
-            if (*cd).flags & T1_CS_FLAG_USE_HINTMASK != 0
-                || (*cd).flags & T1_CS_FLAG_USE_CNTRMASK != 0
-            {
+            if (*cd).flags & T1_CS_FLAG_USE_HINTMASK != 0 || (*cd).flags & T1_CS_FLAG_USE_CNTRMASK != 0 {
                 if (*curr).type_0 != CS_HINT_DECL && (*curr).type_0 != cs_cntrmask {
                     let fresh13 = dst;
                     dst = dst.offset(1);
@@ -1942,42 +1704,29 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
                 memset(
                     &raw mut hintmask as *mut card8 as *mut ::core::ffi::c_void,
                     0 as ::core::ffi::c_int,
-                    (((*cd).num_stems + 7 as ::core::ffi::c_int) / 8 as ::core::ffi::c_int)
-                        as size_t,
+                    (((*cd).num_stems + 7 as ::core::ffi::c_int) / 8 as ::core::ffi::c_int) as size_t,
                 );
                 while !curr.is_null() && (*curr).type_0 == CS_HINT_DECL {
                     let mut stem_idx: ::core::ffi::c_int = 0;
-                    stem_idx = get_stem(
-                        cd,
-                        (*curr).args[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_int,
-                    );
-                    if !(stem_idx < (*cd).num_stems) as ::core::ffi::c_int as ::core::ffi::c_long
-                        != 0
-                    {
+                    stem_idx = get_stem(cd, (*curr).args[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_int);
+                    if !(stem_idx < (*cd).num_stems) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
                         pdf_abort!(
                             c"assertion failed: %s".as_ptr(),
-                            b"stem_idx < cd->num_stems\0" as *const u8
-                                as *const ::core::ffi::c_char
+                            b"stem_idx < cd->num_stems\0" as *const u8 as *const ::core::ffi::c_char
                         );
                     } else {
                     };
-                    hintmask[(stem_idx / 8 as ::core::ffi::c_int) as usize] = (hintmask
-                        [(stem_idx / 8 as ::core::ffi::c_int) as usize]
+                    hintmask[(stem_idx / 8 as ::core::ffi::c_int) as usize] = (hintmask[(stem_idx / 8 as ::core::ffi::c_int) as usize]
                         as ::core::ffi::c_int
-                        | (1 as ::core::ffi::c_int)
-                            << 7 as ::core::ffi::c_int - stem_idx % 8 as ::core::ffi::c_int)
+                        | (1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int - stem_idx % 8 as ::core::ffi::c_int)
                         as card8;
                     curr = (*curr).next as *mut t1_cpath;
                 }
                 if (*cd).flags & T1_CS_FLAG_USE_HINTMASK != 0 {
-                    if dst.offset(
-                        (((*cd).num_stems + 7 as ::core::ffi::c_int) / 8 as ::core::ffi::c_int
-                            + 1 as ::core::ffi::c_int) as isize,
-                    ) >= endptr
+                    if dst.offset((((*cd).num_stems + 7 as ::core::ffi::c_int) / 8 as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as isize)
+                        >= endptr
                     {
-                        pdf_abort!(
-                            b"Buffer overflow.\0" as *const u8 as *const ::core::ffi::c_char,
-                        );
+                        pdf_abort!(b"Buffer overflow.\0" as *const u8 as *const ::core::ffi::c_char,);
                     }
                     let fresh15 = dst;
                     dst = dst.offset(1);
@@ -1985,13 +1734,9 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
                     memcpy(
                         dst as *mut ::core::ffi::c_void,
                         &raw mut hintmask as *mut card8 as *const ::core::ffi::c_void,
-                        (((*cd).num_stems + 7 as ::core::ffi::c_int) / 8 as ::core::ffi::c_int)
-                            as size_t,
+                        (((*cd).num_stems + 7 as ::core::ffi::c_int) / 8 as ::core::ffi::c_int) as size_t,
                     );
-                    dst = dst.offset(
-                        (((*cd).num_stems + 7 as ::core::ffi::c_int) / 8 as ::core::ffi::c_int)
-                            as isize,
-                    );
+                    dst = dst.offset((((*cd).num_stems + 7 as ::core::ffi::c_int) / 8 as ::core::ffi::c_int) as isize);
                 }
             }
             cs_cntrmask => {
@@ -2001,35 +1746,25 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
                 memset(
                     &raw mut cntrmask as *mut card8 as *mut ::core::ffi::c_void,
                     0 as ::core::ffi::c_int,
-                    (((*cd).num_stems + 7 as ::core::ffi::c_int) / 8 as ::core::ffi::c_int)
-                        as size_t,
+                    (((*cd).num_stems + 7 as ::core::ffi::c_int) / 8 as ::core::ffi::c_int) as size_t,
                 );
                 i_0 = 0 as ::core::ffi::c_int;
                 while i_0 < (*curr).num_args {
                     stem_idx_0 = get_stem(cd, (*curr).args[i_0 as usize] as ::core::ffi::c_int);
-                    if !(stem_idx_0 < (*cd).num_stems) as ::core::ffi::c_int as ::core::ffi::c_long
-                        != 0
-                    {
+                    if !(stem_idx_0 < (*cd).num_stems) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
                         pdf_abort!(
                             c"assertion failed: %s".as_ptr(),
-                            b"stem_idx < cd->num_stems\0" as *const u8
-                                as *const ::core::ffi::c_char
+                            b"stem_idx < cd->num_stems\0" as *const u8 as *const ::core::ffi::c_char
                         );
                     } else {
                     };
-                    cntrmask[(stem_idx_0 / 8 as ::core::ffi::c_int) as usize] = (cntrmask
-                        [(stem_idx_0 / 8 as ::core::ffi::c_int) as usize]
+                    cntrmask[(stem_idx_0 / 8 as ::core::ffi::c_int) as usize] = (cntrmask[(stem_idx_0 / 8 as ::core::ffi::c_int) as usize]
                         as ::core::ffi::c_int
-                        | (1 as ::core::ffi::c_int)
-                            << 7 as ::core::ffi::c_int - stem_idx_0 % 8 as ::core::ffi::c_int)
+                        | (1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int - stem_idx_0 % 8 as ::core::ffi::c_int)
                         as card8;
                     i_0 += 1;
                 }
-                if dst.offset(
-                    (((*cd).num_stems + 7 as ::core::ffi::c_int) / 8 as ::core::ffi::c_int
-                        + 1 as ::core::ffi::c_int) as isize,
-                ) >= endptr
-                {
+                if dst.offset((((*cd).num_stems + 7 as ::core::ffi::c_int) / 8 as ::core::ffi::c_int + 1 as ::core::ffi::c_int) as isize) >= endptr {
                     pdf_abort!(b"Buffer overflow.\0" as *const u8 as *const ::core::ffi::c_char,);
                 }
                 let fresh16 = dst;
@@ -2038,17 +1773,13 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
                 memcpy(
                     dst as *mut ::core::ffi::c_void,
                     &raw mut cntrmask as *mut card8 as *const ::core::ffi::c_void,
-                    (((*cd).num_stems + 7 as ::core::ffi::c_int) / 8 as ::core::ffi::c_int)
-                        as size_t,
+                    (((*cd).num_stems + 7 as ::core::ffi::c_int) / 8 as ::core::ffi::c_int) as size_t,
                 );
-                dst = dst.offset(
-                    (((*cd).num_stems + 7 as ::core::ffi::c_int) / 8 as ::core::ffi::c_int)
-                        as isize,
-                );
+                dst = dst.offset((((*cd).num_stems + 7 as ::core::ffi::c_int) / 8 as ::core::ffi::c_int) as isize);
                 curr = (*curr).next as *mut t1_cpath;
             }
-            cs_rmoveto | cs_hmoveto | cs_vmoveto | cs_rlineto | cs_hlineto | cs_vlineto
-            | cs_rrcurveto | cs_hvcurveto | cs_vhcurveto | cs_rlinecurve | cs_rcurveline => {
+            cs_rmoveto | cs_hmoveto | cs_vmoveto | cs_rlineto | cs_hlineto | cs_vlineto | cs_rrcurveto | cs_hvcurveto | cs_vhcurveto
+            | cs_rlinecurve | cs_rcurveline => {
                 put_numbers(
                     &raw mut (*curr).args as *mut ::core::ffi::c_double,
                     (*curr).num_args,
@@ -2057,8 +1788,7 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
                 );
                 if (*__pdf_state).status != CS_PARSE_OK {
                     pdf_abort!(
-                        b"Charstring encoder error: %d\0" as *const u8
-                            as *const ::core::ffi::c_char,
+                        b"Charstring encoder error: %d\0" as *const u8 as *const ::core::ffi::c_char,
                         (*__pdf_state).status,
                     );
                 }
@@ -2079,8 +1809,7 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
                 );
                 if (*__pdf_state).status != CS_PARSE_OK {
                     pdf_abort!(
-                        b"Charstring encoder error: %d\0" as *const u8
-                            as *const ::core::ffi::c_char,
+                        b"Charstring encoder error: %d\0" as *const u8 as *const ::core::ffi::c_char,
                         (*__pdf_state).status,
                     );
                 }
@@ -2097,8 +1826,7 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
             }
             _ => {
                 pdf_abort!(
-                    b"Unknown Type 2 charstring command: %d\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Unknown Type 2 charstring command: %d\0" as *const u8 as *const ::core::ffi::c_char,
                     (*curr).type_0,
                 );
             }
@@ -2110,12 +1838,7 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
         seac[1 as ::core::ffi::c_int as usize] = (*cd).seac.ady;
         seac[2 as ::core::ffi::c_int as usize] = (*cd).seac.bchar as ::core::ffi::c_double;
         seac[3 as ::core::ffi::c_int as usize] = (*cd).seac.achar as ::core::ffi::c_double;
-        put_numbers(
-            &raw mut seac as *mut ::core::ffi::c_double,
-            4 as ::core::ffi::c_int,
-            &raw mut dst,
-            endptr,
-        );
+        put_numbers(&raw mut seac as *mut ::core::ffi::c_double, 4 as ::core::ffi::c_int, &raw mut dst, endptr);
         if (*__pdf_state).status != CS_PARSE_OK {
             pdf_abort!(
                 b"Charstring encoder error: %d\0" as *const u8 as *const ::core::ffi::c_char,
@@ -2126,8 +1849,7 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
             pdf_abort!(b"Buffer overflow.\0" as *const u8 as *const ::core::ffi::c_char);
         }
         pdf_warning!(
-            b"Obsolete four arguments of \"endchar\" will be used for Type 1 \"seac\" operator.\0"
-                as *const u8 as *const ::core::ffi::c_char,
+            b"Obsolete four arguments of \"endchar\" will be used for Type 1 \"seac\" operator.\0" as *const u8 as *const ::core::ffi::c_char,
         );
     }
     if dst.offset(1 as ::core::ffi::c_int as isize) >= endptr {
@@ -2140,14 +1862,8 @@ unsafe extern "C-unwind" fn t1char_encode_charpath(
 }
 #[unsafe(export_name = "__pdf_impl_t1char_convert_charstring")]
 pub unsafe extern "C-unwind" fn t1char_convert_charstring(
-    mut dst: *mut card8,
-    mut dstlen: ::core::ffi::c_int,
-    mut src: *mut card8,
-    mut srclen: ::core::ffi::c_int,
-    mut subrs: *mut cff_index,
-    mut default_width: ::core::ffi::c_double,
-    mut nominal_width: ::core::ffi::c_double,
-    mut ginfo: *mut t1_ginfo,
+    mut dst: *mut card8, mut dstlen: ::core::ffi::c_int, mut src: *mut card8, mut srclen: ::core::ffi::c_int, mut subrs: *mut cff_index,
+    mut default_width: ::core::ffi::c_double, mut nominal_width: ::core::ffi::c_double, mut ginfo: *mut t1_ginfo,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut length: ::core::ffi::c_int = 0;
@@ -2191,9 +1907,7 @@ pub unsafe extern "C-unwind" fn t1char_convert_charstring(
     (*__pdf_state).ps_stack_top = 0 as ::core::ffi::c_int;
     (*__pdf_state).cs_stack_top = 0 as ::core::ffi::c_int;
     t1char_build_charpath(cd, &raw mut src, src.offset(srclen as isize), subrs);
-    if (*__pdf_state).cs_stack_top != 0 as ::core::ffi::c_int
-        || (*__pdf_state).ps_stack_top != 0 as ::core::ffi::c_int
-    {
+    if (*__pdf_state).cs_stack_top != 0 as ::core::ffi::c_int || (*__pdf_state).ps_stack_top != 0 as ::core::ffi::c_int {
         pdf_warning!(
             b"Stack not empty. (%d, %d)\0" as *const u8 as *const ::core::ffi::c_char,
             (*__pdf_state).cs_stack_top,
@@ -2205,21 +1919,9 @@ pub unsafe extern "C-unwind" fn t1char_convert_charstring(
         &raw mut (*cd).stems as *mut t1_stem as *mut ::core::ffi::c_void,
         (*cd).num_stems as size_t,
         ::core::mem::size_of::<t1_stem>() as size_t,
-        Some(
-            stem_compare
-                as unsafe extern "C-unwind" fn(
-                    *const ::core::ffi::c_void,
-                    *const ::core::ffi::c_void,
-                ) -> ::core::ffi::c_int,
-        ),
+        Some(stem_compare as unsafe extern "C-unwind" fn(*const ::core::ffi::c_void, *const ::core::ffi::c_void) -> ::core::ffi::c_int),
     );
-    length = t1char_encode_charpath(
-        cd,
-        default_width,
-        nominal_width,
-        dst,
-        dst.offset(dstlen as isize),
-    );
+    length = t1char_encode_charpath(cd, default_width, nominal_width, dst, dst.offset(dstlen as isize));
     if !ginfo.is_null() {
         (*ginfo).wx = (*cd).sbw.wx;
         (*ginfo).wy = (*cd).sbw.wy;
@@ -2241,28 +1943,14 @@ pub unsafe extern "C-unwind" fn t1char_convert_charstring(
     return length;
 }
 unsafe extern "C" {
-    fn memcpy(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_void;
-    fn memset(
-        __b: *mut ::core::ffi::c_void,
-        __c: ::core::ffi::c_int,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memcpy(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __n: size_t) -> *mut ::core::ffi::c_void;
+    fn memset(__b: *mut ::core::ffi::c_void, __c: ::core::ffi::c_int, __len: size_t) -> *mut ::core::ffi::c_void;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_t1char_get_metrics(
-    mut src: *mut card8,
-    mut srclen: ::core::ffi::c_int,
-    mut subrs: *mut cff_index,
-    mut ginfo: *mut t1_ginfo,
-    _result: *mut ::core::ffi::c_int,
+    mut src: *mut card8, mut srclen: ::core::ffi::c_int, mut subrs: *mut cff_index, mut ginfo: *mut t1_ginfo, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        t1char_get_metrics(src, srclen, subrs, ginfo)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { t1char_get_metrics(src, srclen, subrs, ginfo) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -2274,27 +1962,11 @@ pub unsafe extern "C" fn __pdf_entry_t1char_get_metrics(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_t1char_convert_charstring(
-    mut dst: *mut card8,
-    mut dstlen: ::core::ffi::c_int,
-    mut src: *mut card8,
-    mut srclen: ::core::ffi::c_int,
-    mut subrs: *mut cff_index,
-    mut default_width: ::core::ffi::c_double,
-    mut nominal_width: ::core::ffi::c_double,
-    mut ginfo: *mut t1_ginfo,
-    _result: *mut ::core::ffi::c_int,
+    mut dst: *mut card8, mut dstlen: ::core::ffi::c_int, mut src: *mut card8, mut srclen: ::core::ffi::c_int, mut subrs: *mut cff_index,
+    mut default_width: ::core::ffi::c_double, mut nominal_width: ::core::ffi::c_double, mut ginfo: *mut t1_ginfo, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe {
-        t1char_convert_charstring(
-            dst,
-            dstlen,
-            src,
-            srclen,
-            subrs,
-            default_width,
-            nominal_width,
-            ginfo,
-        )
+        t1char_convert_charstring(dst, dstlen, src, srclen, subrs, default_width, nominal_width, ginfo)
     }) {
         Ok(value) => {
             unsafe {
@@ -2334,10 +2006,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_t1_char
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_t1_char.pointer }
 }

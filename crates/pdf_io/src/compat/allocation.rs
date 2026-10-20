@@ -26,12 +26,7 @@ impl Hasher for AddressHasher {
 
 pub(crate) type AllocationSet = HashSet<usize, BuildHasherDefault<AddressHasher>>;
 
-pub(crate) fn grow_capacity(
-    current: usize,
-    required: usize,
-    item_size: usize,
-    minimum: usize,
-) -> usize {
+pub(crate) fn grow_capacity(current: usize, required: usize, item_size: usize, minimum: usize) -> usize {
     let limit = u32::MAX as usize / item_size;
     if required > limit {
         crate::backend::runtime::raise_error(crate::error::PdfError::new(

@@ -19,73 +19,30 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::backend::dpx_pdfdev::pdf_dev_get_param;
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
     fn floor(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-    fn strcpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
-    fn strncmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn strncpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_char;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    fn strcpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+    fn strncmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char, __n: size_t) -> ::core::ffi::c_int;
+    fn strncpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char, __n: size_t) -> *mut ::core::ffi::c_char;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
-    fn ttstub_input_open(
-        path: *const ::core::ffi::c_char,
-        format: ttbc_file_format,
-        is_gz: ::core::ffi::c_int,
-    ) -> rust_input_handle_t;
+    fn ttstub_input_open(path: *const ::core::ffi::c_char, format: ttbc_file_format, is_gz: ::core::ffi::c_int) -> rust_input_handle_t;
     fn ttstub_input_close(handle: rust_input_handle_t) -> ::core::ffi::c_int;
-    fn sprintf(
-        _: *mut ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
+    fn sprintf(_: *mut ::core::ffi::c_char, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_out_init"]
     fn pdf_out_init(
-        filename: *const ::core::ffi::c_char,
-        id1: *const ::core::ffi::c_uchar,
-        id2: *const ::core::ffi::c_uchar,
-        ver_major: ::core::ffi::c_int,
-        ver_minor: ::core::ffi::c_int,
-        compression_level: ::core::ffi::c_int,
-        enable_encrypt: ::core::ffi::c_int,
-        enable_objstm: ::core::ffi::c_int,
+        filename: *const ::core::ffi::c_char, id1: *const ::core::ffi::c_uchar, id2: *const ::core::ffi::c_uchar, ver_major: ::core::ffi::c_int,
+        ver_minor: ::core::ffi::c_int, compression_level: ::core::ffi::c_int, enable_encrypt: ::core::ffi::c_int, enable_objstm: ::core::ffi::c_int,
         enable_predictor: ::core::ffi::c_int,
     ) -> *mut pdf_out;
     #[link_name = "__pdf_impl_pdf_out_set_encrypt"]
     fn pdf_out_set_encrypt(
-        keybits: ::core::ffi::c_int,
-        permission: int32_t,
-        opasswd: *const ::core::ffi::c_char,
-        upasswd: *const ::core::ffi::c_char,
-        use_aes: ::core::ffi::c_int,
-        encrypt_metadata: ::core::ffi::c_int,
+        keybits: ::core::ffi::c_int, permission: int32_t, opasswd: *const ::core::ffi::c_char, upasswd: *const ::core::ffi::c_char,
+        use_aes: ::core::ffi::c_int, encrypt_metadata: ::core::ffi::c_int,
     );
     #[link_name = "__pdf_impl_pdf_out_flush"]
     fn pdf_out_flush();
@@ -128,19 +85,11 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_lookup_dict"]
     fn pdf_lookup_dict(dict: *mut pdf_obj, key: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_new_stream"]
     fn pdf_new_stream(flags: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_stream"]
-    fn pdf_add_stream(
-        stream: *mut pdf_obj,
-        stream_data_ptr: *const ::core::ffi::c_void,
-        stream_data_len: ::core::ffi::c_int,
-    );
+    fn pdf_add_stream(stream: *mut pdf_obj, stream_data_ptr: *const ::core::ffi::c_void, stream_data_len: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_stream_dict"]
     fn pdf_stream_dict(stream: *mut pdf_obj) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_stream_length"]
@@ -176,11 +125,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_dev_end_page_plan"]
     fn pdf_dev_end_page_plan();
     #[link_name = "__pdf_impl_pdf_init_device"]
-    fn pdf_init_device(
-        unit_conv: ::core::ffi::c_double,
-        precision: ::core::ffi::c_int,
-        is_bw: ::core::ffi::c_int,
-    );
+    fn pdf_init_device(unit_conv: ::core::ffi::c_double, precision: ::core::ffi::c_int, is_bw: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_close_device"]
     fn pdf_close_device();
     #[link_name = "__pdf_impl_pdf_dev_reset_fonts"]
@@ -193,10 +138,7 @@ unsafe extern "C-unwind" {
     fn pdf_dev_eop();
     static mut dpx_conf: _dpx_conf;
     #[link_name = "__pdf_impl_dpx_util_format_asn_date"]
-    fn dpx_util_format_asn_date(
-        date_string: *mut ::core::ffi::c_char,
-        need_timezone: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn dpx_util_format_asn_date(date_string: *mut ::core::ffi::c_char, need_timezone: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_ht_init_table"]
     fn ht_init_table(ht: *mut ht_table, hval_free_fn: hval_free_func);
     #[link_name = "__pdf_impl_ht_clear_table"]
@@ -204,27 +146,15 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_ht_table_size"]
     fn ht_table_size(ht: *mut ht_table) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_ht_lookup_table"]
-    fn ht_lookup_table(
-        ht: *mut ht_table,
-        key: *const ::core::ffi::c_void,
-        keylen: ::core::ffi::c_int,
-    ) -> *mut ::core::ffi::c_void;
+    fn ht_lookup_table(ht: *mut ht_table, key: *const ::core::ffi::c_void, keylen: ::core::ffi::c_int) -> *mut ::core::ffi::c_void;
     #[link_name = "__pdf_impl_ht_append_table"]
-    fn ht_append_table(
-        ht: *mut ht_table,
-        key: *const ::core::ffi::c_void,
-        keylen: ::core::ffi::c_int,
-        value: *mut ::core::ffi::c_void,
-    );
+    fn ht_append_table(ht: *mut ht_table, key: *const ::core::ffi::c_void, keylen: ::core::ffi::c_int, value: *mut ::core::ffi::c_void);
     #[link_name = "__pdf_impl_ht_set_iter"]
     fn ht_set_iter(ht: *mut ht_table, iter: *mut ht_iter) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_ht_clear_iter"]
     fn ht_clear_iter(iter: *mut ht_iter);
     #[link_name = "__pdf_impl_ht_iter_getkey"]
-    fn ht_iter_getkey(
-        iter: *mut ht_iter,
-        keylen: *mut ::core::ffi::c_int,
-    ) -> *mut ::core::ffi::c_char;
+    fn ht_iter_getkey(iter: *mut ht_iter, keylen: *mut ::core::ffi::c_int) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_ht_iter_next"]
     fn ht_iter_next(iter: *mut ht_iter) -> ::core::ffi::c_int;
     static mut ttpi_source_date_epoch: time_t;
@@ -237,17 +167,10 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_ximage_get_reference"]
     fn pdf_ximage_get_reference(xobj_id: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_ximage_load_image"]
-    fn pdf_ximage_load_image(
-        ident: *const ::core::ffi::c_char,
-        filename: *const ::core::ffi::c_char,
-        options: load_options,
-    ) -> ::core::ffi::c_int;
+    fn pdf_ximage_load_image(ident: *const ::core::ffi::c_char, filename: *const ::core::ffi::c_char, options: load_options) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_ximage_defineresource"]
     fn pdf_ximage_defineresource(
-        ident: *const ::core::ffi::c_char,
-        subtype: ::core::ffi::c_int,
-        cdata: *mut ::core::ffi::c_void,
-        resource: *mut pdf_obj,
+        ident: *const ::core::ffi::c_char, subtype: ::core::ffi::c_int, cdata: *mut ::core::ffi::c_void, resource: *mut pdf_obj,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_ximage_init_form_info"]
     fn pdf_ximage_init_form_info(info: *mut xform_info);
@@ -258,12 +181,8 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_renew"]
     fn renew(p: *mut ::core::ffi::c_void, size: uint32_t) -> *mut ::core::ffi::c_void;
     #[link_name = "__pdf_impl_pdf_dev_rectfill"]
-    fn pdf_dev_rectfill(
-        x: ::core::ffi::c_double,
-        y: ::core::ffi::c_double,
-        w: ::core::ffi::c_double,
-        h: ::core::ffi::c_double,
-    ) -> ::core::ffi::c_int;
+    fn pdf_dev_rectfill(x: ::core::ffi::c_double, y: ::core::ffi::c_double, w: ::core::ffi::c_double, h: ::core::ffi::c_double)
+    -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_gsave"]
     fn pdf_dev_gsave() -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_grestore"]
@@ -277,11 +196,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_dev_grestore_to"]
     fn pdf_dev_grestore_to(depth: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_dev_set_color"]
-    fn pdf_dev_set_color(
-        color: *const pdf_color,
-        mask: ::core::ffi::c_char,
-        force: ::core::ffi::c_int,
-    );
+    fn pdf_dev_set_color(color: *const pdf_color, mask: ::core::ffi::c_char, force: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_dev_reset_xgstate"]
     fn pdf_dev_reset_xgstate(force: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_init_fonts"]
@@ -294,17 +209,10 @@ unsafe extern "C-unwind" {
     fn pdf_delete_name_tree(names: *mut *mut ht_table);
     #[link_name = "__pdf_impl_pdf_names_add_object"]
     fn pdf_names_add_object(
-        names: *mut ht_table,
-        key: *const ::core::ffi::c_void,
-        keylen: ::core::ffi::c_int,
-        object: *mut pdf_obj,
+        names: *mut ht_table, key: *const ::core::ffi::c_void, keylen: ::core::ffi::c_int, object: *mut pdf_obj,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_names_create_tree"]
-    fn pdf_names_create_tree(
-        names: *mut ht_table,
-        count: *mut ::core::ffi::c_int,
-        filter: *mut ht_table,
-    ) -> *mut pdf_obj;
+    fn pdf_names_create_tree(names: *mut ht_table, count: *mut ::core::ffi::c_int, filter: *mut ht_table) -> *mut pdf_obj;
     fn tt_pdf_page_recording() -> ::core::ffi::c_int;
     fn tt_pdf_page_bytes(data: *const ::core::ffi::c_char, length: size_t) -> ::core::ffi::c_int;
     fn tt_pdf_page_size() -> size_t;
@@ -618,10 +526,7 @@ unsafe extern "C-unwind" fn mfree(mut ptr: *mut ::core::ffi::c_void) -> *mut ::c
     return NULL;
 }
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
@@ -634,10 +539,8 @@ pub const PDF_ARRAY: ::core::ffi::c_int = 5 as ::core::ffi::c_int;
 pub const PDF_DICT: ::core::ffi::c_int = 6 as ::core::ffi::c_int;
 pub const PDF_INDIRECT: ::core::ffi::c_int = 9 as ::core::ffi::c_int;
 pub const PDF_UNDEFINED: ::core::ffi::c_int = 10 as ::core::ffi::c_int;
-pub const STREAM_COMPRESS: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
-pub const STREAM_PAGE_CONTENT: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
+pub const STREAM_COMPRESS: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const STREAM_PAGE_CONTENT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
 pub const PDF_OBJ_MAX_DEPTH: ::core::ffi::c_int = 30 as ::core::ffi::c_int;
 pub const PDF_COLORSPACE_TYPE_GRAY: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
 pub const PDF_DEV_PARAM_COLORMODE: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
@@ -645,9 +548,7 @@ pub const PDF_XOBJECT_TYPE_FORM: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const PDFDOC_PAGES_ALLOC_SIZE: ::core::ffi::c_uint = 128 as ::core::ffi::c_uint;
 pub const PDFDOC_ARTICLE_ALLOC_SIZE: ::core::ffi::c_int = 16 as ::core::ffi::c_int;
 pub const PDFDOC_BEAD_ALLOC_SIZE: ::core::ffi::c_int = 16 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn read_thumbnail(
-    mut thumb_filename: *const ::core::ffi::c_char,
-) -> *mut pdf_obj {
+unsafe extern "C-unwind" fn read_thumbnail(mut thumb_filename: *const ::core::ffi::c_char) -> *mut pdf_obj {
     let mut image_ref: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut xobj_id: ::core::ffi::c_int = 0;
     let mut handle: rust_input_handle_t = INVALID_HANDLE;
@@ -656,11 +557,7 @@ unsafe extern "C-unwind" fn read_thumbnail(
         bbox_type: pdf_page_boundary__auto,
         dict: ::core::ptr::null_mut::<pdf_obj>(),
     };
-    handle = ttstub_input_open(
-        thumb_filename,
-        TTBC_FILE_FORMAT_PICT,
-        0 as ::core::ffi::c_int,
-    );
+    handle = ttstub_input_open(thumb_filename, TTBC_FILE_FORMAT_PICT, 0 as ::core::ffi::c_int);
     if handle == INVALID_HANDLE {
         pdf_warning!(
             b"Could not open thumbnail file \"%s\"\0" as *const u8 as *const ::core::ffi::c_char,
@@ -691,8 +588,7 @@ unsafe extern "C-unwind" fn read_thumbnail(
 }
 #[unsafe(no_mangle)]
 pub static mut global_names: *mut ht_table = ::core::ptr::null::<ht_table>() as *mut ht_table;
-pub const USE_MY_MEDIABOX: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const USE_MY_MEDIABOX: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 
 unsafe extern "C-unwind" fn pdf_doc_init_catalog(mut p: *mut pdf_doc) {
     (*p).root.viewerpref = ::core::ptr::null_mut::<pdf_obj>();
@@ -706,10 +602,7 @@ unsafe extern "C-unwind" fn pdf_doc_init_catalog(mut p: *mut pdf_doc) {
 unsafe extern "C-unwind" fn pdf_doc_close_catalog(mut p: *mut pdf_doc) {
     let mut tmp: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     if !(*p).root.viewerpref.is_null() {
-        tmp = pdf_lookup_dict(
-            (*p).root.dict,
-            b"ViewerPreferences\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        tmp = pdf_lookup_dict((*p).root.dict, b"ViewerPreferences\0" as *const u8 as *const ::core::ffi::c_char);
         if tmp.is_null() {
             pdf_add_dict(
                 (*p).root.dict,
@@ -724,18 +617,13 @@ unsafe extern "C-unwind" fn pdf_doc_close_catalog(mut p: *mut pdf_doc) {
                 pdf_ref_obj((*p).root.viewerpref),
             );
         } else {
-            pdf_warning!(
-                b"Could not modify ViewerPreferences.\0" as *const u8 as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"Could not modify ViewerPreferences.\0" as *const u8 as *const ::core::ffi::c_char,);
         }
         pdf_release_obj((*p).root.viewerpref);
         (*p).root.viewerpref = ::core::ptr::null_mut::<pdf_obj>();
     }
     if !(*p).root.pagelabels.is_null() {
-        tmp = pdf_lookup_dict(
-            (*p).root.dict,
-            b"PageLabels\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        tmp = pdf_lookup_dict((*p).root.dict, b"PageLabels\0" as *const u8 as *const ::core::ffi::c_char);
         if tmp.is_null() {
             tmp = pdf_new_dict();
             pdf_add_dict(
@@ -750,9 +638,7 @@ unsafe extern "C-unwind" fn pdf_doc_close_catalog(mut p: *mut pdf_doc) {
             );
             pdf_release_obj(tmp);
         } else {
-            pdf_warning!(
-                b"Could not modify PageLabels.\0" as *const u8 as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"Could not modify PageLabels.\0" as *const u8 as *const ::core::ffi::c_char,);
         }
         pdf_release_obj((*p).root.pagelabels);
         (*p).root.pagelabels = ::core::ptr::null_mut::<pdf_obj>();
@@ -765,16 +651,12 @@ unsafe extern "C-unwind" fn pdf_doc_close_catalog(mut p: *mut pdf_doc) {
     pdf_release_obj((*p).root.dict);
     (*p).root.dict = ::core::ptr::null_mut::<pdf_obj>();
 }
-unsafe extern "C-unwind" fn doc_resize_page_entries(
-    mut p: *mut pdf_doc,
-    mut size: ::core::ffi::c_uint,
-) {
+unsafe extern "C-unwind" fn doc_resize_page_entries(mut p: *mut pdf_doc, mut size: ::core::ffi::c_uint) {
     if size > (*p).pages.max_entries {
         let mut i: ::core::ffi::c_uint = 0;
         (*p).pages.entries = renew(
             (*p).pages.entries as *mut ::core::ffi::c_void,
-            (size as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_page>() as usize)
-                as uint32_t,
+            (size as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_page>() as usize) as uint32_t,
         ) as *mut pdf_page as *mut pdf_page;
         i = (*p).pages.max_entries;
         while i < size {
@@ -789,17 +671,13 @@ unsafe extern "C-unwind" fn doc_resize_page_entries(
             *fresh7 = ::core::ptr::null_mut::<pdf_obj>();
             let ref mut fresh8 = (*(*p).pages.entries.offset(i as isize)).contents;
             *fresh8 = ::core::ptr::null_mut::<pdf_obj>();
-            let ref mut fresh9 = (*(*p).pages.entries.offset(i as isize)).content_refs
-                [0 as ::core::ffi::c_int as usize];
+            let ref mut fresh9 = (*(*p).pages.entries.offset(i as isize)).content_refs[0 as ::core::ffi::c_int as usize];
             *fresh9 = ::core::ptr::null_mut::<pdf_obj>();
-            let ref mut fresh10 = (*(*p).pages.entries.offset(i as isize)).content_refs
-                [1 as ::core::ffi::c_int as usize];
+            let ref mut fresh10 = (*(*p).pages.entries.offset(i as isize)).content_refs[1 as ::core::ffi::c_int as usize];
             *fresh10 = ::core::ptr::null_mut::<pdf_obj>();
-            let ref mut fresh11 = (*(*p).pages.entries.offset(i as isize)).content_refs
-                [2 as ::core::ffi::c_int as usize];
+            let ref mut fresh11 = (*(*p).pages.entries.offset(i as isize)).content_refs[2 as ::core::ffi::c_int as usize];
             *fresh11 = ::core::ptr::null_mut::<pdf_obj>();
-            let ref mut fresh12 = (*(*p).pages.entries.offset(i as isize)).content_refs
-                [3 as ::core::ffi::c_int as usize];
+            let ref mut fresh12 = (*(*p).pages.entries.offset(i as isize)).content_refs[3 as ::core::ffi::c_int as usize];
             *fresh12 = ::core::ptr::null_mut::<pdf_obj>();
             let ref mut fresh13 = (*(*p).pages.entries.offset(i as isize)).annots;
             *fresh13 = ::core::ptr::null_mut::<pdf_obj>();
@@ -810,44 +688,25 @@ unsafe extern "C-unwind" fn doc_resize_page_entries(
         (*p).pages.max_entries = size;
     }
 }
-unsafe extern "C-unwind" fn doc_get_page_entry(
-    mut p: *mut pdf_doc,
-    mut page_no: ::core::ffi::c_uint,
-) -> *mut pdf_page {
+unsafe extern "C-unwind" fn doc_get_page_entry(mut p: *mut pdf_doc, mut page_no: ::core::ffi::c_uint) -> *mut pdf_page {
     let mut page: *mut pdf_page = ::core::ptr::null_mut::<pdf_page>();
     if page_no as ::core::ffi::c_ulong > 65535 as ::core::ffi::c_ulong {
-        pdf_abort!(
-            b"Page number %ul too large!\0" as *const u8 as *const ::core::ffi::c_char,
-            page_no,
-        );
+        pdf_abort!(b"Page number %ul too large!\0" as *const u8 as *const ::core::ffi::c_char, page_no,);
     } else if page_no == 0 as ::core::ffi::c_uint {
-        pdf_abort!(
-            b"Invalid Page number %ul.\0" as *const u8 as *const ::core::ffi::c_char,
-            page_no,
-        );
+        pdf_abort!(b"Invalid Page number %ul.\0" as *const u8 as *const ::core::ffi::c_char, page_no,);
     }
     if page_no > (*p).pages.max_entries {
         doc_resize_page_entries(p, page_no.wrapping_add(PDFDOC_PAGES_ALLOC_SIZE));
     }
-    page = (*p)
-        .pages
-        .entries
-        .offset(page_no.wrapping_sub(1 as ::core::ffi::c_uint) as isize)
-        as *mut pdf_page;
+    page = (*p).pages.entries.offset(page_no.wrapping_sub(1 as ::core::ffi::c_uint) as isize) as *mut pdf_page;
     return page;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_set_bop_content")]
-pub unsafe extern "C-unwind" fn pdf_doc_set_bop_content(
-    mut content: *const ::core::ffi::c_char,
-    mut length: ::core::ffi::c_uint,
-) {
+pub unsafe extern "C-unwind" fn pdf_doc_set_bop_content(mut content: *const ::core::ffi::c_char, mut length: ::core::ffi::c_uint) {
     let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if !(*p).pages.bop.is_null() {
@@ -856,20 +715,13 @@ pub unsafe extern "C-unwind" fn pdf_doc_set_bop_content(
     }
     if length > 0 as ::core::ffi::c_uint {
         (*p).pages.bop = pdf_new_stream(STREAM_COMPRESS);
-        pdf_add_stream(
-            (*p).pages.bop,
-            content as *const ::core::ffi::c_void,
-            length as ::core::ffi::c_int,
-        );
+        pdf_add_stream((*p).pages.bop, content as *const ::core::ffi::c_void, length as ::core::ffi::c_int);
     } else {
         (*p).pages.bop = ::core::ptr::null_mut::<pdf_obj>();
     };
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_set_eop_content")]
-pub unsafe extern "C-unwind" fn pdf_doc_set_eop_content(
-    mut content: *const ::core::ffi::c_char,
-    mut length: ::core::ffi::c_uint,
-) {
+pub unsafe extern "C-unwind" fn pdf_doc_set_eop_content(mut content: *const ::core::ffi::c_char, mut length: ::core::ffi::c_uint) {
     let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     if !(*p).pages.eop.is_null() {
@@ -878,11 +730,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_set_eop_content(
     }
     if length > 0 as ::core::ffi::c_uint {
         (*p).pages.eop = pdf_new_stream(STREAM_COMPRESS);
-        pdf_add_stream(
-            (*p).pages.eop,
-            content as *const ::core::ffi::c_void,
-            length as ::core::ffi::c_int,
-        );
+        pdf_add_stream((*p).pages.eop, content as *const ::core::ffi::c_void, length as ::core::ffi::c_int);
     } else {
         (*p).pages.eop = ::core::ptr::null_mut::<pdf_obj>();
     };
@@ -912,8 +760,7 @@ unsafe extern "C-unwind" fn pdf_doc_close_docinfo(mut p: *mut pdf_doc) {
         if !value.is_null() {
             if !(!value.is_null() && pdf_obj_typeof(value) == PDF_STRING) {
                 pdf_warning!(
-                    b"\"%s\" in DocInfo dictionary not string type.\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"\"%s\" in DocInfo dictionary not string type.\0" as *const u8 as *const ::core::ffi::c_char,
                     keys[i as usize],
                 );
                 pdf_remove_dict(docinfo, keys[i as usize]);
@@ -927,14 +774,8 @@ unsafe extern "C-unwind" fn pdf_doc_close_docinfo(mut p: *mut pdf_doc) {
         }
         i = i.wrapping_add(1);
     }
-    if pdf_lookup_dict(
-        docinfo,
-        b"Producer\0" as *const u8 as *const ::core::ffi::c_char,
-    )
-    .is_null()
-    {
-        let mut banner: [::core::ffi::c_char; 16] =
-            crate::backend::c_char_array(*b"xdvipdfmx (0.1)\0");
+    if pdf_lookup_dict(docinfo, b"Producer\0" as *const u8 as *const ::core::ffi::c_char).is_null() {
+        let mut banner: [::core::ffi::c_char; 16] = crate::backend::c_char_array(*b"xdvipdfmx (0.1)\0");
         pdf_add_dict(
             docinfo,
             pdf_new_name(b"Producer\0" as *const u8 as *const ::core::ffi::c_char),
@@ -944,18 +785,9 @@ unsafe extern "C-unwind" fn pdf_doc_close_docinfo(mut p: *mut pdf_doc) {
             ),
         );
     }
-    if pdf_lookup_dict(
-        docinfo,
-        b"CreationDate\0" as *const u8 as *const ::core::ffi::c_char,
-    )
-    .is_null()
-        && ttpi_source_date_epoch != 0
-    {
+    if pdf_lookup_dict(docinfo, b"CreationDate\0" as *const u8 as *const ::core::ffi::c_char).is_null() && ttpi_source_date_epoch != 0 {
         let mut now: [::core::ffi::c_char; 80] = [0; 80];
-        dpx_util_format_asn_date(
-            &raw mut now as *mut ::core::ffi::c_char,
-            1 as ::core::ffi::c_int,
-        );
+        dpx_util_format_asn_date(&raw mut now as *mut ::core::ffi::c_char, 1 as ::core::ffi::c_int);
         pdf_add_dict(
             docinfo,
             pdf_new_name(b"CreationDate\0" as *const u8 as *const ::core::ffi::c_char),
@@ -968,10 +800,7 @@ unsafe extern "C-unwind" fn pdf_doc_close_docinfo(mut p: *mut pdf_doc) {
     pdf_release_obj(docinfo);
     (*p).info = ::core::ptr::null_mut::<pdf_obj>();
 }
-unsafe extern "C-unwind" fn pdf_doc_get_page_resources(
-    mut p: *mut pdf_doc,
-    mut category: *const ::core::ffi::c_char,
-) -> *mut pdf_obj {
+unsafe extern "C-unwind" fn pdf_doc_get_page_resources(mut p: *mut pdf_doc, mut category: *const ::core::ffi::c_char) -> *mut pdf_obj {
     let mut resources: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut currentpage: *mut pdf_page = ::core::ptr::null_mut::<pdf_page>();
     let mut res_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -1000,10 +829,7 @@ unsafe extern "C-unwind" fn pdf_doc_get_page_resources(
         pdf_add_dict(res_dict, pdf_new_name(category), resources);
     } else if pdf_obj_typeof(resources) == PDF_INDIRECT {
         if resources.is_null() {
-            pdf_warning!(
-                b"Resource %s already released?\0" as *const u8 as *const ::core::ffi::c_char,
-                category,
-            );
+            pdf_warning!(b"Resource %s already released?\0" as *const u8 as *const ::core::ffi::c_char, category,);
         } else {
             pdf_release_obj(resources);
         }
@@ -1012,9 +838,7 @@ unsafe extern "C-unwind" fn pdf_doc_get_page_resources(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_add_page_resource")]
 pub unsafe extern "C-unwind" fn pdf_doc_add_page_resource(
-    mut category: *const ::core::ffi::c_char,
-    mut resource_name: *const ::core::ffi::c_char,
-    mut resource_ref: *mut pdf_obj,
+    mut category: *const ::core::ffi::c_char, mut resource_name: *const ::core::ffi::c_char, mut resource_ref: *mut pdf_obj,
 ) {
     let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
@@ -1022,18 +846,14 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_page_resource(
     let mut duplicate: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     resources = pdf_doc_get_page_resources(p, category);
     if resources.is_null() {
-        pdf_warning!(
-            b"Can't add object to resource %s\0" as *const u8 as *const ::core::ffi::c_char,
-            category,
-        );
+        pdf_warning!(b"Can't add object to resource %s\0" as *const u8 as *const ::core::ffi::c_char, category,);
         return;
     }
     duplicate = pdf_lookup_dict(resources, resource_name);
     if !duplicate.is_null() {
         if pdf_compare_reference(duplicate, resource_ref) != 0 {
             pdf_warning!(
-                b"Conflicting page resource found (page: %d, category: %s, name: %s).\0"
-                    as *const u8 as *const ::core::ffi::c_char,
+                b"Conflicting page resource found (page: %d, category: %s, name: %s).\0" as *const u8 as *const ::core::ffi::c_char,
                 pdf_doc_current_page_number(),
                 category,
                 resource_name,
@@ -1045,11 +865,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_page_resource(
         pdf_add_dict(resources, pdf_new_name(resource_name), resource_ref);
     };
 }
-unsafe extern "C-unwind" fn doc_flush_page(
-    mut p: *mut pdf_doc,
-    mut page: *mut pdf_page,
-    mut parent_ref: *mut pdf_obj,
-) {
+unsafe extern "C-unwind" fn doc_flush_page(mut p: *mut pdf_doc, mut page: *mut pdf_page, mut parent_ref: *mut pdf_obj) {
     let mut contents_array: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut count: ::core::ffi::c_uint = 0;
     pdf_add_dict(
@@ -1065,22 +881,10 @@ unsafe extern "C-unwind" fn doc_flush_page(
     if (*page).flags & USE_MY_MEDIABOX != 0 {
         let mut mediabox: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
         mediabox = pdf_new_array();
-        pdf_add_array(
-            mediabox,
-            pdf_new_number(floor((*page).cropbox.llx / 0.01f64 + 0.5f64) * 0.01f64),
-        );
-        pdf_add_array(
-            mediabox,
-            pdf_new_number(floor((*page).cropbox.lly / 0.01f64 + 0.5f64) * 0.01f64),
-        );
-        pdf_add_array(
-            mediabox,
-            pdf_new_number(floor((*page).cropbox.urx / 0.01f64 + 0.5f64) * 0.01f64),
-        );
-        pdf_add_array(
-            mediabox,
-            pdf_new_number(floor((*page).cropbox.ury / 0.01f64 + 0.5f64) * 0.01f64),
-        );
+        pdf_add_array(mediabox, pdf_new_number(floor((*page).cropbox.llx / 0.01f64 + 0.5f64) * 0.01f64));
+        pdf_add_array(mediabox, pdf_new_number(floor((*page).cropbox.lly / 0.01f64 + 0.5f64) * 0.01f64));
+        pdf_add_array(mediabox, pdf_new_number(floor((*page).cropbox.urx / 0.01f64 + 0.5f64) * 0.01f64));
+        pdf_add_array(mediabox, pdf_new_number(floor((*page).cropbox.ury / 0.01f64 + 0.5f64) * 0.01f64));
         pdf_add_dict(
             (*page).page_obj,
             pdf_new_name(b"MediaBox\0" as *const u8 as *const ::core::ffi::c_char),
@@ -1090,47 +894,29 @@ unsafe extern "C-unwind" fn doc_flush_page(
     count = 0 as ::core::ffi::c_uint;
     contents_array = pdf_new_array();
     if !(*page).content_refs[0 as ::core::ffi::c_int as usize].is_null() {
-        pdf_add_array(
-            contents_array,
-            (*page).content_refs[0 as ::core::ffi::c_int as usize],
-        );
+        pdf_add_array(contents_array, (*page).content_refs[0 as ::core::ffi::c_int as usize]);
         count = count.wrapping_add(1);
-    } else if !(*p).pages.bop.is_null()
-        && pdf_stream_length((*p).pages.bop) > 0 as ::core::ffi::c_int
-    {
+    } else if !(*p).pages.bop.is_null() && pdf_stream_length((*p).pages.bop) > 0 as ::core::ffi::c_int {
         pdf_add_array(contents_array, pdf_ref_obj((*p).pages.bop));
         count = count.wrapping_add(1);
     }
     if !(*page).content_refs[1 as ::core::ffi::c_int as usize].is_null() {
-        pdf_add_array(
-            contents_array,
-            (*page).content_refs[1 as ::core::ffi::c_int as usize],
-        );
+        pdf_add_array(contents_array, (*page).content_refs[1 as ::core::ffi::c_int as usize]);
         count = count.wrapping_add(1);
     }
     if !(*page).content_refs[2 as ::core::ffi::c_int as usize].is_null() {
-        pdf_add_array(
-            contents_array,
-            (*page).content_refs[2 as ::core::ffi::c_int as usize],
-        );
+        pdf_add_array(contents_array, (*page).content_refs[2 as ::core::ffi::c_int as usize]);
         count = count.wrapping_add(1);
     }
     if !(*page).content_refs[3 as ::core::ffi::c_int as usize].is_null() {
-        pdf_add_array(
-            contents_array,
-            (*page).content_refs[3 as ::core::ffi::c_int as usize],
-        );
+        pdf_add_array(contents_array, (*page).content_refs[3 as ::core::ffi::c_int as usize]);
         count = count.wrapping_add(1);
-    } else if !(*p).pages.eop.is_null()
-        && pdf_stream_length((*p).pages.eop) > 0 as ::core::ffi::c_int
-    {
+    } else if !(*p).pages.eop.is_null() && pdf_stream_length((*p).pages.eop) > 0 as ::core::ffi::c_int {
         pdf_add_array(contents_array, pdf_ref_obj((*p).pages.eop));
         count = count.wrapping_add(1);
     }
     if count == 0 as ::core::ffi::c_uint {
-        pdf_warning!(
-            b"Page with empty content found!!!\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Page with empty content found!!!\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     (*page).content_refs[0 as ::core::ffi::c_int as usize] = ::core::ptr::null_mut::<pdf_obj>();
     (*page).content_refs[1 as ::core::ffi::c_int as usize] = ::core::ptr::null_mut::<pdf_obj>();
@@ -1166,10 +952,7 @@ unsafe extern "C-unwind" fn doc_flush_page(
 }
 pub const PAGE_CLUSTER: ::core::ffi::c_int = 4 as ::core::ffi::c_int;
 unsafe extern "C-unwind" fn build_page_tree(
-    mut p: *mut pdf_doc,
-    mut firstpage: *mut pdf_page,
-    mut num_pages: ::core::ffi::c_int,
-    mut parent_ref: *mut pdf_obj,
+    mut p: *mut pdf_doc, mut firstpage: *mut pdf_page, mut num_pages: ::core::ffi::c_int, mut parent_ref: *mut pdf_obj,
 ) -> *mut pdf_obj {
     let mut self_0: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut self_ref: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -1192,11 +975,7 @@ unsafe extern "C-unwind" fn build_page_tree(
         pdf_new_number(num_pages as ::core::ffi::c_double),
     );
     if !parent_ref.is_null() {
-        pdf_add_dict(
-            self_0,
-            pdf_new_name(b"Parent\0" as *const u8 as *const ::core::ffi::c_char),
-            parent_ref,
-        );
+        pdf_add_dict(self_0, pdf_new_name(b"Parent\0" as *const u8 as *const ::core::ffi::c_char), parent_ref);
     }
     kids = pdf_new_array();
     if num_pages > 0 as ::core::ffi::c_int && num_pages <= PAGE_CLUSTER {
@@ -1220,12 +999,7 @@ unsafe extern "C-unwind" fn build_page_tree(
             end = (i + 1 as ::core::ffi::c_int) * num_pages / PAGE_CLUSTER;
             if end - start > 1 as ::core::ffi::c_int {
                 let mut subtree: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-                subtree = build_page_tree(
-                    p,
-                    firstpage.offset(start as isize),
-                    end - start,
-                    pdf_link_obj(self_ref),
-                );
+                subtree = build_page_tree(p, firstpage.offset(start as isize), end - start, pdf_link_obj(self_ref));
                 pdf_add_array(kids, pdf_ref_obj(subtree));
                 pdf_release_obj(subtree);
             } else {
@@ -1240,18 +1014,12 @@ unsafe extern "C-unwind" fn build_page_tree(
             i += 1;
         }
     }
-    pdf_add_dict(
-        self_0,
-        pdf_new_name(b"Kids\0" as *const u8 as *const ::core::ffi::c_char),
-        kids,
-    );
+    pdf_add_dict(self_0, pdf_new_name(b"Kids\0" as *const u8 as *const ::core::ffi::c_char), kids);
     pdf_release_obj(self_ref);
     return self_0;
 }
 unsafe extern "C-unwind" fn pdf_doc_init_page_tree(
-    mut p: *mut pdf_doc,
-    mut media_width: ::core::ffi::c_double,
-    mut media_height: ::core::ffi::c_double,
+    mut p: *mut pdf_doc, mut media_width: ::core::ffi::c_double, mut media_height: ::core::ffi::c_double,
 ) {
     (*p).root.pages = pdf_new_dict();
     (*p).pages.num_entries = 0 as ::core::ffi::c_uint;
@@ -1268,25 +1036,18 @@ unsafe extern "C-unwind" fn pdf_doc_close_page_tree(mut p: *mut pdf_doc) {
     let mut page_tree_root: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut mediabox: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut page_no: ::core::ffi::c_uint = 0;
-    page_no = (*p)
-        .pages
-        .num_entries
-        .wrapping_add(1 as ::core::ffi::c_uint);
+    page_no = (*p).pages.num_entries.wrapping_add(1 as ::core::ffi::c_uint);
     while page_no <= (*p).pages.max_entries {
         let mut page: *mut pdf_page = ::core::ptr::null_mut::<pdf_page>();
         page = doc_get_page_entry(p, page_no);
         if !(*page).page_obj.is_null() {
-            pdf_warning!(
-                b"Nonexistent page #%u refered.\0" as *const u8 as *const ::core::ffi::c_char,
-                page_no,
-            );
+            pdf_warning!(b"Nonexistent page #%u refered.\0" as *const u8 as *const ::core::ffi::c_char, page_no,);
             pdf_release_obj((*page).page_ref);
             (*page).page_ref = ::core::ptr::null_mut::<pdf_obj>();
         }
         if !(*page).page_obj.is_null() {
             pdf_warning!(
-                b"Entry for a nonexistent page #%u created.\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Entry for a nonexistent page #%u created.\0" as *const u8 as *const ::core::ffi::c_char,
                 page_no,
             );
             pdf_release_obj((*page).page_obj);
@@ -1294,8 +1055,7 @@ unsafe extern "C-unwind" fn pdf_doc_close_page_tree(mut p: *mut pdf_doc) {
         }
         if !(*page).annots.is_null() {
             pdf_warning!(
-                b"Annotation attached to a nonexistent page #%u.\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Annotation attached to a nonexistent page #%u.\0" as *const u8 as *const ::core::ffi::c_char,
                 page_no,
             );
             pdf_release_obj((*page).annots);
@@ -1303,8 +1063,7 @@ unsafe extern "C-unwind" fn pdf_doc_close_page_tree(mut p: *mut pdf_doc) {
         }
         if !(*page).beads.is_null() {
             pdf_warning!(
-                b"Article beads attached to a nonexistent page #%u.\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Article beads attached to a nonexistent page #%u.\0" as *const u8 as *const ::core::ffi::c_char,
                 page_no,
             );
             pdf_release_obj((*page).beads);
@@ -1343,22 +1102,10 @@ unsafe extern "C-unwind" fn pdf_doc_close_page_tree(mut p: *mut pdf_doc) {
         (*p).pages.eop = ::core::ptr::null_mut::<pdf_obj>();
     }
     mediabox = pdf_new_array();
-    pdf_add_array(
-        mediabox,
-        pdf_new_number(floor((*p).pages.mediabox.llx / 0.01f64 + 0.5f64) * 0.01f64),
-    );
-    pdf_add_array(
-        mediabox,
-        pdf_new_number(floor((*p).pages.mediabox.lly / 0.01f64 + 0.5f64) * 0.01f64),
-    );
-    pdf_add_array(
-        mediabox,
-        pdf_new_number(floor((*p).pages.mediabox.urx / 0.01f64 + 0.5f64) * 0.01f64),
-    );
-    pdf_add_array(
-        mediabox,
-        pdf_new_number(floor((*p).pages.mediabox.ury / 0.01f64 + 0.5f64) * 0.01f64),
-    );
+    pdf_add_array(mediabox, pdf_new_number(floor((*p).pages.mediabox.llx / 0.01f64 + 0.5f64) * 0.01f64));
+    pdf_add_array(mediabox, pdf_new_number(floor((*p).pages.mediabox.lly / 0.01f64 + 0.5f64) * 0.01f64));
+    pdf_add_array(mediabox, pdf_new_number(floor((*p).pages.mediabox.urx / 0.01f64 + 0.5f64) * 0.01f64));
+    pdf_add_array(mediabox, pdf_new_number(floor((*p).pages.mediabox.ury / 0.01f64 + 0.5f64) * 0.01f64));
     pdf_add_dict(
         (*p).root.pages,
         pdf_new_name(b"MediaBox\0" as *const u8 as *const ::core::ffi::c_char),
@@ -1376,24 +1123,16 @@ unsafe extern "C-unwind" fn pdf_doc_close_page_tree(mut p: *mut pdf_doc) {
     (*p).pages.max_entries = 0 as ::core::ffi::c_uint;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_get_page_count")]
-pub unsafe extern "C-unwind" fn pdf_doc_get_page_count(
-    mut pf: *mut pdf_file,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_doc_get_page_count(mut pf: *mut pdf_file) -> ::core::ffi::c_int {
     let mut count: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut page_tree: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut catalog: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     catalog = pdf_file_get_catalog(pf);
-    page_tree = pdf_deref_obj(pdf_lookup_dict(
-        catalog,
-        b"Pages\0" as *const u8 as *const ::core::ffi::c_char,
-    ));
+    page_tree = pdf_deref_obj(pdf_lookup_dict(catalog, b"Pages\0" as *const u8 as *const ::core::ffi::c_char));
     if !(!page_tree.is_null() && pdf_obj_typeof(page_tree) == PDF_DICT) {
         return 0 as ::core::ffi::c_int;
     }
-    let mut tmp: *mut pdf_obj = pdf_deref_obj(pdf_lookup_dict(
-        page_tree,
-        b"Count\0" as *const u8 as *const ::core::ffi::c_char,
-    ));
+    let mut tmp: *mut pdf_obj = pdf_deref_obj(pdf_lookup_dict(page_tree, b"Count\0" as *const u8 as *const ::core::ffi::c_char));
     if !(!tmp.is_null() && pdf_obj_typeof(tmp) == PDF_NUMBER) {
         pdf_release_obj(tmp);
         return 0 as ::core::ffi::c_int;
@@ -1403,59 +1142,40 @@ pub unsafe extern "C-unwind" fn pdf_doc_get_page_count(
     return count;
 }
 unsafe extern "C-unwind" fn set_bounding_box(
-    mut bbox: *mut pdf_rect,
-    mut opt_bbox: pdf_page_boundary,
-    mut media_box: *mut pdf_obj,
-    mut crop_box: *mut pdf_obj,
-    mut art_box: *mut pdf_obj,
-    mut trim_box: *mut pdf_obj,
-    mut bleed_box: *mut pdf_obj,
+    mut bbox: *mut pdf_rect, mut opt_bbox: pdf_page_boundary, mut media_box: *mut pdf_obj, mut crop_box: *mut pdf_obj, mut art_box: *mut pdf_obj,
+    mut trim_box: *mut pdf_obj, mut bleed_box: *mut pdf_obj,
 ) -> ::core::ffi::c_int {
     let mut box_0: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     if media_box.is_null() {
-        pdf_warning!(
-            b"MediaBox not found in included PDF...\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"MediaBox not found in included PDF...\0" as *const u8 as *const ::core::ffi::c_char,);
         return -(1 as ::core::ffi::c_int);
     }
     if !media_box.is_null() {
-        if !(!media_box.is_null() && pdf_obj_typeof(media_box) == PDF_ARRAY)
-            || pdf_array_length(media_box) != 4 as ::core::ffi::c_uint
-        {
+        if !(!media_box.is_null() && pdf_obj_typeof(media_box) == PDF_ARRAY) || pdf_array_length(media_box) != 4 as ::core::ffi::c_uint {
             return -(1 as ::core::ffi::c_int);
         }
     }
     if !crop_box.is_null() {
-        if !(!crop_box.is_null() && pdf_obj_typeof(crop_box) == PDF_ARRAY)
-            || pdf_array_length(crop_box) != 4 as ::core::ffi::c_uint
-        {
+        if !(!crop_box.is_null() && pdf_obj_typeof(crop_box) == PDF_ARRAY) || pdf_array_length(crop_box) != 4 as ::core::ffi::c_uint {
             return -(1 as ::core::ffi::c_int);
         }
     }
     if !art_box.is_null() {
-        if !(!art_box.is_null() && pdf_obj_typeof(art_box) == PDF_ARRAY)
-            || pdf_array_length(art_box) != 4 as ::core::ffi::c_uint
-        {
+        if !(!art_box.is_null() && pdf_obj_typeof(art_box) == PDF_ARRAY) || pdf_array_length(art_box) != 4 as ::core::ffi::c_uint {
             return -(1 as ::core::ffi::c_int);
         }
     }
     if !trim_box.is_null() {
-        if !(!trim_box.is_null() && pdf_obj_typeof(trim_box) == PDF_ARRAY)
-            || pdf_array_length(trim_box) != 4 as ::core::ffi::c_uint
-        {
+        if !(!trim_box.is_null() && pdf_obj_typeof(trim_box) == PDF_ARRAY) || pdf_array_length(trim_box) != 4 as ::core::ffi::c_uint {
             return -(1 as ::core::ffi::c_int);
         }
     }
     if !bleed_box.is_null() {
-        if !(!bleed_box.is_null() && pdf_obj_typeof(bleed_box) == PDF_ARRAY)
-            || pdf_array_length(bleed_box) != 4 as ::core::ffi::c_uint
-        {
+        if !(!bleed_box.is_null() && pdf_obj_typeof(bleed_box) == PDF_ARRAY) || pdf_array_length(bleed_box) != 4 as ::core::ffi::c_uint {
             return -(1 as ::core::ffi::c_int);
         }
     }
-    if opt_bbox as ::core::ffi::c_uint
-        == pdf_page_boundary__auto as ::core::ffi::c_int as ::core::ffi::c_uint
-    {
+    if opt_bbox as ::core::ffi::c_uint == pdf_page_boundary__auto as ::core::ffi::c_int as ::core::ffi::c_uint {
         if !crop_box.is_null() {
             box_0 = pdf_link_obj(crop_box);
         } else if !art_box.is_null() {
@@ -1502,10 +1222,7 @@ unsafe extern "C-unwind" fn set_bounding_box(
         }
     }
     if box_0.is_null() {
-        pdf_warning!(
-            b"No appropriate page boudary box found???\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"No appropriate page boudary box found???\0" as *const u8 as *const ::core::ffi::c_char,);
         return -(1 as ::core::ffi::c_int);
     } else {
         let mut i: ::core::ffi::c_int = 0;
@@ -1541,10 +1258,8 @@ unsafe extern "C-unwind" fn set_bounding_box(
             }
             pdf_release_obj(tmp);
         }
-        if dpx_conf.compat_mode as ::core::ffi::c_uint
-            == dpx_mode_xdv_mode as ::core::ffi::c_int as ::core::ffi::c_uint
-            || opt_bbox as ::core::ffi::c_uint
-                != pdf_page_boundary__auto as ::core::ffi::c_int as ::core::ffi::c_uint
+        if dpx_conf.compat_mode as ::core::ffi::c_uint == dpx_mode_xdv_mode as ::core::ffi::c_int as ::core::ffi::c_uint
+            || opt_bbox as ::core::ffi::c_uint != pdf_page_boundary__auto as ::core::ffi::c_int as ::core::ffi::c_uint
         {
             i = 4 as ::core::ffi::c_int;
             loop {
@@ -1592,9 +1307,7 @@ unsafe extern "C-unwind" fn set_bounding_box(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn set_transform_matrix(
-    mut matrix: *mut pdf_tmatrix,
-    mut bbox: *mut pdf_rect,
-    mut rotate: *mut pdf_obj,
+    mut matrix: *mut pdf_tmatrix, mut bbox: *mut pdf_rect, mut rotate: *mut pdf_obj,
 ) -> ::core::ffi::c_int {
     let mut deg: ::core::ffi::c_double = 0.;
     let mut rot: ::core::ffi::c_int = 0;
@@ -1611,8 +1324,7 @@ unsafe extern "C-unwind" fn set_transform_matrix(
             deg = pdf_number_value(rotate);
             if deg - deg as ::core::ffi::c_int as ::core::ffi::c_double != 0.0f64 {
                 pdf_warning!(
-                    b"Invalid value specified for /Rotate: %f\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Invalid value specified for /Rotate: %f\0" as *const u8 as *const ::core::ffi::c_char,
                     deg,
                 );
                 return -(1 as ::core::ffi::c_int);
@@ -1620,8 +1332,7 @@ unsafe extern "C-unwind" fn set_transform_matrix(
                 rot = deg as ::core::ffi::c_int;
                 if (rot % 90 as ::core::ffi::c_int) as ::core::ffi::c_double != 0.0f64 {
                     pdf_warning!(
-                        b"Invalid value specified for /Rotate: %f\0" as *const u8
-                            as *const ::core::ffi::c_char,
+                        b"Invalid value specified for /Rotate: %f\0" as *const u8 as *const ::core::ffi::c_char,
                         deg,
                     );
                 } else {
@@ -1656,8 +1367,7 @@ unsafe extern "C-unwind" fn set_transform_matrix(
                         }
                         _ => {
                             pdf_warning!(
-                                b"Invalid value specified for /Rotate: %f\0" as *const u8
-                                    as *const ::core::ffi::c_char,
+                                b"Invalid value specified for /Rotate: %f\0" as *const u8 as *const ::core::ffi::c_char,
                                 deg,
                             );
                         }
@@ -1670,11 +1380,7 @@ unsafe extern "C-unwind" fn set_transform_matrix(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_get_page")]
 pub unsafe extern "C-unwind" fn pdf_doc_get_page(
-    mut pf: *mut pdf_file,
-    mut page_no: ::core::ffi::c_int,
-    mut opt_bbox: pdf_page_boundary,
-    mut bbox: *mut pdf_rect,
-    mut matrix: *mut pdf_tmatrix,
+    mut pf: *mut pdf_file, mut page_no: ::core::ffi::c_int, mut opt_bbox: pdf_page_boundary, mut bbox: *mut pdf_rect, mut matrix: *mut pdf_tmatrix,
     mut resources_p: *mut *mut pdf_obj,
 ) -> *mut pdf_obj {
     let mut current_block: u64;
@@ -1689,18 +1395,12 @@ pub unsafe extern "C-unwind" fn pdf_doc_get_page(
     let mut crop_box: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     catalog = pdf_file_get_catalog(pf);
-    page_tree = pdf_deref_obj(pdf_lookup_dict(
-        catalog,
-        b"Pages\0" as *const u8 as *const ::core::ffi::c_char,
-    ));
+    page_tree = pdf_deref_obj(pdf_lookup_dict(catalog, b"Pages\0" as *const u8 as *const ::core::ffi::c_char));
     if !(!page_tree.is_null() && pdf_obj_typeof(page_tree) == PDF_DICT) {
         current_block = 17476884660199964226;
     } else {
         let mut count: ::core::ffi::c_int = 0;
-        let mut tmp: *mut pdf_obj = pdf_deref_obj(pdf_lookup_dict(
-            page_tree,
-            b"Count\0" as *const u8 as *const ::core::ffi::c_char,
-        ));
+        let mut tmp: *mut pdf_obj = pdf_deref_obj(pdf_lookup_dict(page_tree, b"Count\0" as *const u8 as *const ::core::ffi::c_char));
         if !(!tmp.is_null() && pdf_obj_typeof(tmp) == PDF_NUMBER) {
             pdf_release_obj(tmp);
             current_block = 17476884660199964226;
@@ -1708,10 +1408,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_get_page(
             count = pdf_number_value(tmp) as ::core::ffi::c_int;
             pdf_release_obj(tmp);
             if page_no <= 0 as ::core::ffi::c_int || page_no > count {
-                pdf_warning!(
-                    b"Page %d does not exist.\0" as *const u8 as *const ::core::ffi::c_char,
-                    page_no,
-                );
+                pdf_warning!(b"Page %d does not exist.\0" as *const u8 as *const ::core::ffi::c_char, page_no,);
                 current_block = 11270100909120839572;
             } else {
                 let mut kids: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -1726,66 +1423,42 @@ pub unsafe extern "C-unwind" fn pdf_doc_get_page(
                         current_block = 13321564401369230990;
                         break;
                     }
-                    tmp_0 = pdf_deref_obj(pdf_lookup_dict(
-                        page_tree,
-                        b"MediaBox\0" as *const u8 as *const ::core::ffi::c_char,
-                    ));
+                    tmp_0 = pdf_deref_obj(pdf_lookup_dict(page_tree, b"MediaBox\0" as *const u8 as *const ::core::ffi::c_char));
                     if !tmp_0.is_null() {
                         pdf_release_obj(media_box);
                         media_box = tmp_0;
                     }
-                    tmp_0 = pdf_deref_obj(pdf_lookup_dict(
-                        page_tree,
-                        b"CropBox\0" as *const u8 as *const ::core::ffi::c_char,
-                    ));
+                    tmp_0 = pdf_deref_obj(pdf_lookup_dict(page_tree, b"CropBox\0" as *const u8 as *const ::core::ffi::c_char));
                     if !tmp_0.is_null() {
                         pdf_release_obj(crop_box);
                         crop_box = tmp_0;
                     }
-                    tmp_0 = pdf_deref_obj(pdf_lookup_dict(
-                        page_tree,
-                        b"ArtBox\0" as *const u8 as *const ::core::ffi::c_char,
-                    ));
+                    tmp_0 = pdf_deref_obj(pdf_lookup_dict(page_tree, b"ArtBox\0" as *const u8 as *const ::core::ffi::c_char));
                     if !tmp_0.is_null() {
                         pdf_release_obj(art_box);
                         art_box = tmp_0;
                     }
-                    tmp_0 = pdf_deref_obj(pdf_lookup_dict(
-                        page_tree,
-                        b"TrimBox\0" as *const u8 as *const ::core::ffi::c_char,
-                    ));
+                    tmp_0 = pdf_deref_obj(pdf_lookup_dict(page_tree, b"TrimBox\0" as *const u8 as *const ::core::ffi::c_char));
                     if !tmp_0.is_null() {
                         pdf_release_obj(trim_box);
                         trim_box = tmp_0;
                     }
-                    tmp_0 = pdf_deref_obj(pdf_lookup_dict(
-                        page_tree,
-                        b"BleedBox\0" as *const u8 as *const ::core::ffi::c_char,
-                    ));
+                    tmp_0 = pdf_deref_obj(pdf_lookup_dict(page_tree, b"BleedBox\0" as *const u8 as *const ::core::ffi::c_char));
                     if !tmp_0.is_null() {
                         pdf_release_obj(bleed_box);
                         bleed_box = tmp_0;
                     }
-                    tmp_0 = pdf_deref_obj(pdf_lookup_dict(
-                        page_tree,
-                        b"Rotate\0" as *const u8 as *const ::core::ffi::c_char,
-                    ));
+                    tmp_0 = pdf_deref_obj(pdf_lookup_dict(page_tree, b"Rotate\0" as *const u8 as *const ::core::ffi::c_char));
                     if !tmp_0.is_null() {
                         pdf_release_obj(rotate);
                         rotate = tmp_0;
                     }
-                    tmp_0 = pdf_deref_obj(pdf_lookup_dict(
-                        page_tree,
-                        b"Resources\0" as *const u8 as *const ::core::ffi::c_char,
-                    ));
+                    tmp_0 = pdf_deref_obj(pdf_lookup_dict(page_tree, b"Resources\0" as *const u8 as *const ::core::ffi::c_char));
                     if !tmp_0.is_null() {
                         pdf_release_obj(resources);
                         resources = tmp_0;
                     }
-                    kids = pdf_deref_obj(pdf_lookup_dict(
-                        page_tree,
-                        b"Kids\0" as *const u8 as *const ::core::ffi::c_char,
-                    ));
+                    kids = pdf_deref_obj(pdf_lookup_dict(page_tree, b"Kids\0" as *const u8 as *const ::core::ffi::c_char));
                     if kids.is_null() {
                         current_block = 13321564401369230990;
                         break;
@@ -1805,10 +1478,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_get_page(
                                 current_block = 17476884660199964226;
                                 break 's_62;
                             }
-                            tmp_0 = pdf_deref_obj(pdf_lookup_dict(
-                                page_tree,
-                                b"Count\0" as *const u8 as *const ::core::ffi::c_char,
-                            ));
+                            tmp_0 = pdf_deref_obj(pdf_lookup_dict(page_tree, b"Count\0" as *const u8 as *const ::core::ffi::c_char));
                             if !tmp_0.is_null() && pdf_obj_typeof(tmp_0) == PDF_NUMBER {
                                 count_0 = pdf_number_value(tmp_0) as ::core::ffi::c_int;
                                 pdf_release_obj(tmp_0);
@@ -1839,9 +1509,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_get_page(
                             if !resources_p.is_null() {
                                 *resources_p = pdf_link_obj(resources);
                             }
-                            error = set_bounding_box(
-                                bbox, opt_bbox, media_box, crop_box, art_box, trim_box, bleed_box,
-                            );
+                            error = set_bounding_box(bbox, opt_bbox, media_box, crop_box, art_box, trim_box, bleed_box);
                             if error != 0 {
                                 current_block = 17476884660199964226;
                             } else {
@@ -1860,9 +1528,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_get_page(
     }
     match current_block {
         17476884660199964226 => {
-            pdf_warning!(
-                b"Error found in including PDF image.\0" as *const u8 as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"Error found in including PDF image.\0" as *const u8 as *const ::core::ffi::c_char,);
             current_block = 11270100909120839572;
         }
         _ => {}
@@ -1883,10 +1549,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_get_page(
     pdf_release_obj(resources);
     return page_tree;
 }
-unsafe extern "C-unwind" fn pdf_doc_init_bookmarks(
-    mut p: *mut pdf_doc,
-    mut bm_open_depth: ::core::ffi::c_int,
-) {
+unsafe extern "C-unwind" fn pdf_doc_init_bookmarks(mut p: *mut pdf_doc, mut bm_open_depth: ::core::ffi::c_int) {
     let mut item: *mut pdf_olitem = ::core::ptr::null_mut::<pdf_olitem>();
     (*p).options.outline_open_depth = (if bm_open_depth >= 0 as ::core::ffi::c_int {
         bm_open_depth as ::core::ffi::c_uint
@@ -1894,8 +1557,7 @@ unsafe extern "C-unwind" fn pdf_doc_init_bookmarks(
         MAX_OUTLINE_DEPTH.wrapping_sub(bm_open_depth as ::core::ffi::c_uint)
     }) as ::core::ffi::c_int;
     (*p).outlines.current_depth = 1 as ::core::ffi::c_int;
-    item = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_olitem>() as usize) as uint32_t)
+    item = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_olitem>() as usize) as uint32_t)
         as *mut pdf_olitem;
     (*item).dict = ::core::ptr::null_mut::<pdf_obj>();
     (*item).next = ::core::ptr::null_mut::<pdf_olitem>();
@@ -1920,9 +1582,7 @@ unsafe extern "C-unwind" fn clean_bookmarks(mut item: *mut pdf_olitem) -> ::core
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn flush_bookmarks(
-    mut node: *mut pdf_olitem,
-    mut parent_ref: *mut pdf_obj,
-    mut parent_dict: *mut pdf_obj,
+    mut node: *mut pdf_olitem, mut parent_ref: *mut pdf_obj, mut parent_dict: *mut pdf_obj,
 ) -> ::core::ffi::c_int {
     let mut retval: ::core::ffi::c_int = 0;
     let mut count: ::core::ffi::c_int = 0;
@@ -1970,11 +1630,7 @@ unsafe extern "C-unwind" fn flush_bookmarks(
             pdf_link_obj(parent_ref),
         );
         if !prev_ref.is_null() {
-            pdf_add_dict(
-                (*item).dict,
-                pdf_new_name(b"Prev\0" as *const u8 as *const ::core::ffi::c_char),
-                prev_ref,
-            );
+            pdf_add_dict((*item).dict, pdf_new_name(b"Prev\0" as *const u8 as *const ::core::ffi::c_char), prev_ref);
         }
         if !(*item).next.is_null() && !(*(*item).next).dict.is_null() {
             next_ref = pdf_ref_obj((*(*item).next).dict);
@@ -2011,18 +1667,14 @@ pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_up() -> ::core::ffi::c_int {
     let mut item: *mut pdf_olitem = ::core::ptr::null_mut::<pdf_olitem>();
     item = (*p).outlines.current;
     if item.is_null() || (*item).parent.is_null() {
-        pdf_warning!(
-            b"Can't go up above the bookmark root node!\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Can't go up above the bookmark root node!\0" as *const u8 as *const ::core::ffi::c_char,);
         return -(1 as ::core::ffi::c_int);
     }
     parent = (*item).parent as *mut pdf_olitem;
     item = (*parent).next as *mut pdf_olitem;
     if (*parent).next.is_null() {
-        item = new((1 as ::core::ffi::c_int as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<pdf_olitem>() as usize)
-            as uint32_t) as *mut pdf_olitem;
+        item = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_olitem>() as usize) as uint32_t)
+            as *mut pdf_olitem;
         (*parent).next = item as *mut pdf_olitem;
         (*item).dict = ::core::ptr::null_mut::<pdf_obj>();
         (*item).first = ::core::ptr::null_mut::<pdf_olitem>();
@@ -2045,18 +1697,12 @@ pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_down() -> ::core::ffi::c_int {
         let mut tcolor: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
         let mut action: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
         pdf_warning!(b"Empty bookmark node!\0" as *const u8 as *const ::core::ffi::c_char,);
-        pdf_warning!(
-            b"You have tried to jump more than 1 level.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"You have tried to jump more than 1 level.\0" as *const u8 as *const ::core::ffi::c_char,);
         (*item).dict = pdf_new_dict();
         pdf_add_dict(
             (*item).dict,
             pdf_new_name(b"Title\0" as *const u8 as *const ::core::ffi::c_char),
-            pdf_new_string(
-                TITLE_STRING.as_ptr() as *const ::core::ffi::c_void,
-                strlen(TITLE_STRING.as_ptr()),
-            ),
+            pdf_new_string(TITLE_STRING.as_ptr() as *const ::core::ffi::c_void, strlen(TITLE_STRING.as_ptr())),
         );
         tcolor = pdf_new_array();
         pdf_add_array(tcolor, pdf_new_number(1.0f64));
@@ -2082,10 +1728,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_down() -> ::core::ffi::c_int {
         pdf_add_dict(
             action,
             pdf_new_name(b"JS\0" as *const u8 as *const ::core::ffi::c_char),
-            pdf_new_string(
-                JS_CODE.as_ptr() as *const ::core::ffi::c_void,
-                strlen(JS_CODE.as_ptr()),
-            ),
+            pdf_new_string(JS_CODE.as_ptr() as *const ::core::ffi::c_void, strlen(JS_CODE.as_ptr())),
         );
         pdf_add_dict(
             (*item).dict,
@@ -2094,8 +1737,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_down() -> ::core::ffi::c_int {
         );
         pdf_release_obj(action);
     }
-    first = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_olitem>() as usize) as uint32_t)
+    first = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_olitem>() as usize) as uint32_t)
         as *mut pdf_olitem;
     (*item).first = first as *mut pdf_olitem;
     (*first).dict = ::core::ptr::null_mut::<pdf_obj>();
@@ -2108,9 +1750,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_down() -> ::core::ffi::c_int {
     return 0 as ::core::ffi::c_int;
 }
 pub const TITLE_STRING: [::core::ffi::c_char; 11] = crate::backend::c_char_array(*b"<No Title>\0");
-pub const JS_CODE: [::core::ffi::c_char; 78] = crate::backend::c_char_array(
-    *b"app.alert(\"The author of this document made this bookmark item empty!\", 3, 0)\0",
-);
+pub const JS_CODE: [::core::ffi::c_char; 78] =
+    crate::backend::c_char_array(*b"app.alert(\"The author of this document made this bookmark item empty!\", 3, 0)\0");
 #[unsafe(export_name = "__pdf_impl_pdf_doc_bookmarks_depth")]
 pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_depth() -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
@@ -2118,10 +1759,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_depth() -> ::core::ffi::c_int 
     return (*p).outlines.current_depth;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_bookmarks_add")]
-pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_add(
-    mut dict: *mut pdf_obj,
-    mut is_open: ::core::ffi::c_int,
-) {
+pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_add(mut dict: *mut pdf_obj, mut is_open: ::core::ffi::c_int) {
     let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut item: *mut pdf_olitem = ::core::ptr::null_mut::<pdf_olitem>();
@@ -2135,9 +1773,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_add(
     };
     item = (*p).outlines.current;
     if item.is_null() {
-        item = new((1 as ::core::ffi::c_int as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<pdf_olitem>() as usize)
-            as uint32_t) as *mut pdf_olitem;
+        item = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_olitem>() as usize) as uint32_t)
+            as *mut pdf_olitem;
         (*item).parent = ::core::ptr::null_mut::<pdf_olitem>();
         (*p).outlines.first = item;
     } else if !(*item).dict.is_null() {
@@ -2154,8 +1791,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_bookmarks_add(
     } else {
         is_open
     };
-    next = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_olitem>() as usize) as uint32_t)
+    next = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_olitem>() as usize) as uint32_t)
         as *mut pdf_olitem;
     (*item).next = next as *mut pdf_olitem;
     (*next).dict = ::core::ptr::null_mut::<pdf_obj>();
@@ -2206,31 +1842,21 @@ const name_dict_categories: [*const ::core::ffi::c_char; 10] = [
     b"AlternatePresentations\0" as *const u8 as *const ::core::ffi::c_char,
     b"Renditions\0" as *const u8 as *const ::core::ffi::c_char,
 ];
-pub const NUM_NAME_CATEGORY: usize = (::core::mem::size_of::<[*const ::core::ffi::c_char; 10]>()
-    as usize)
-    .wrapping_div(::core::mem::size_of::<*const ::core::ffi::c_char>() as usize);
-unsafe extern "C-unwind" fn pdf_doc_init_names(
-    mut p: *mut pdf_doc,
-    mut check_gotos: ::core::ffi::c_int,
-) {
+pub const NUM_NAME_CATEGORY: usize =
+    (::core::mem::size_of::<[*const ::core::ffi::c_char; 10]>() as usize).wrapping_div(::core::mem::size_of::<*const ::core::ffi::c_char>() as usize);
+unsafe extern "C-unwind" fn pdf_doc_init_names(mut p: *mut pdf_doc, mut check_gotos: ::core::ffi::c_int) {
     let mut i: ::core::ffi::c_uint = 0;
     (*p).root.names = ::core::ptr::null_mut::<pdf_obj>();
-    (*p).names = new(
-        ((::core::mem::size_of::<[*const ::core::ffi::c_char; 10]>() as usize)
-            .wrapping_div(::core::mem::size_of::<*const ::core::ffi::c_char>() as usize)
-            .wrapping_add(1 as usize) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<name_dict>() as usize) as uint32_t,
-    ) as *mut name_dict;
+    (*p).names = new(((::core::mem::size_of::<[*const ::core::ffi::c_char; 10]>() as usize)
+        .wrapping_div(::core::mem::size_of::<*const ::core::ffi::c_char>() as usize)
+        .wrapping_add(1 as usize) as uint32_t as usize)
+        .wrapping_mul(::core::mem::size_of::<name_dict>() as usize) as uint32_t) as *mut name_dict;
     i = 0 as ::core::ffi::c_uint;
     while (i as usize) < NUM_NAME_CATEGORY {
         let ref mut fresh0 = (*(*p).names.offset(i as isize)).category;
         *fresh0 = name_dict_categories[i as usize];
         let ref mut fresh1 = (*(*p).names.offset(i as isize)).data;
-        *fresh1 = if strcmp(
-            name_dict_categories[i as usize],
-            b"Dests\0" as *const u8 as *const ::core::ffi::c_char,
-        ) != 0
-        {
+        *fresh1 = if strcmp(name_dict_categories[i as usize], b"Dests\0" as *const u8 as *const ::core::ffi::c_char) != 0 {
             ::core::ptr::null_mut::<ht_table>()
         } else {
             pdf_new_name_tree()
@@ -2246,10 +1872,7 @@ unsafe extern "C-unwind" fn pdf_doc_init_names(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_add_names")]
 pub unsafe extern "C-unwind" fn pdf_doc_add_names(
-    mut category: *const ::core::ffi::c_char,
-    mut key: *const ::core::ffi::c_void,
-    mut keylen: ::core::ffi::c_int,
-    mut value: *mut pdf_obj,
+    mut category: *const ::core::ffi::c_char, mut key: *const ::core::ffi::c_void, mut keylen: ::core::ffi::c_int, mut value: *mut pdf_obj,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
@@ -2263,8 +1886,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_names(
     }
     if (*(*p).names.offset(i as isize)).category.is_null() {
         pdf_warning!(
-            b"Unknown name dictionary category \"%s\".\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Unknown name dictionary category \"%s\".\0" as *const u8 as *const ::core::ffi::c_char,
             category,
         );
         return -(1 as ::core::ffi::c_int);
@@ -2290,20 +1912,13 @@ unsafe extern "C-unwind" fn pdf_doc_add_goto(mut annot_dict: *mut pdf_obj) {
     if (*__pdf_state).pdoc.check_gotos == 0 {
         return;
     }
-    subtype = pdf_deref_obj(pdf_lookup_dict(
-        annot_dict,
-        b"Subtype\0" as *const u8 as *const ::core::ffi::c_char,
-    ));
+    subtype = pdf_deref_obj(pdf_lookup_dict(annot_dict, b"Subtype\0" as *const u8 as *const ::core::ffi::c_char));
     if !subtype.is_null() {
         if !subtype.is_null() && pdf_obj_typeof(subtype) == PDF_UNDEFINED {
             current_block = 8964283831476451391;
         } else if !(!subtype.is_null() && pdf_obj_typeof(subtype) == PDF_NAME) {
             current_block = 8430929072491527990;
-        } else if strcmp(
-            pdf_name_value(subtype),
-            b"Link\0" as *const u8 as *const ::core::ffi::c_char,
-        ) != 0
-        {
+        } else if strcmp(pdf_name_value(subtype), b"Link\0" as *const u8 as *const ::core::ffi::c_char) != 0 {
             current_block = 693908575666729868;
         } else {
             current_block = 6937071982253665452;
@@ -2319,29 +1934,19 @@ unsafe extern "C-unwind" fn pdf_doc_add_goto(mut annot_dict: *mut pdf_obj) {
             if !D.is_null() && pdf_obj_typeof(D) == PDF_UNDEFINED {
                 current_block = 8964283831476451391;
             } else {
-                A = pdf_deref_obj(pdf_lookup_dict(
-                    annot_dict,
-                    b"A\0" as *const u8 as *const ::core::ffi::c_char,
-                ));
+                A = pdf_deref_obj(pdf_lookup_dict(annot_dict, b"A\0" as *const u8 as *const ::core::ffi::c_char));
                 if !A.is_null() {
                     if !A.is_null() && pdf_obj_typeof(A) == PDF_UNDEFINED {
                         current_block = 8964283831476451391;
                     } else if !D.is_null() || !(!A.is_null() && pdf_obj_typeof(A) == PDF_DICT) {
                         current_block = 8430929072491527990;
                     } else {
-                        S = pdf_deref_obj(pdf_lookup_dict(
-                            A,
-                            b"S\0" as *const u8 as *const ::core::ffi::c_char,
-                        ));
+                        S = pdf_deref_obj(pdf_lookup_dict(A, b"S\0" as *const u8 as *const ::core::ffi::c_char));
                         if !S.is_null() && pdf_obj_typeof(S) == PDF_UNDEFINED {
                             current_block = 8964283831476451391;
                         } else if !(!S.is_null() && pdf_obj_typeof(S) == PDF_NAME) {
                             current_block = 8430929072491527990;
-                        } else if strcmp(
-                            pdf_name_value(S),
-                            b"GoTo\0" as *const u8 as *const ::core::ffi::c_char,
-                        ) != 0
-                        {
+                        } else if strcmp(pdf_name_value(S), b"GoTo\0" as *const u8 as *const ::core::ffi::c_char) != 0 {
                             current_block = 693908575666729868;
                         } else {
                             dict = A;
@@ -2361,11 +1966,7 @@ unsafe extern "C-unwind" fn pdf_doc_add_goto(mut annot_dict: *mut pdf_obj) {
                         if !D.is_null() && pdf_obj_typeof(D) == PDF_STRING {
                             dest = pdf_string_value(D) as *mut ::core::ffi::c_char;
                             destlen = pdf_string_length(D) as ::core::ffi::c_int;
-                            D_new = ht_lookup_table(
-                                &raw mut (*__pdf_state).pdoc.gotos,
-                                dest as *const ::core::ffi::c_void,
-                                destlen,
-                            ) as *mut pdf_obj;
+                            D_new = ht_lookup_table(&raw mut (*__pdf_state).pdoc.gotos, dest as *const ::core::ffi::c_void, destlen) as *mut pdf_obj;
                             if D_new.is_null() {
                                 let mut buf: [::core::ffi::c_char; 10] = [0; 10];
                                 sprintf(
@@ -2374,8 +1975,7 @@ unsafe extern "C-unwind" fn pdf_doc_add_goto(mut annot_dict: *mut pdf_obj) {
                                     ht_table_size(&raw mut (*__pdf_state).pdoc.gotos),
                                 );
                                 D_new = pdf_new_string(
-                                    &raw mut buf as *mut ::core::ffi::c_char
-                                        as *const ::core::ffi::c_void,
+                                    &raw mut buf as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
                                     strlen(&raw mut buf as *mut ::core::ffi::c_char),
                                 );
                                 ht_append_table(
@@ -2406,15 +2006,12 @@ unsafe extern "C-unwind" fn pdf_doc_add_goto(mut annot_dict: *mut pdf_obj) {
     match current_block {
         8964283831476451391 => {
             pdf_warning!(
-                b"Cannot optimize PDF annotations. Output file may be broken. Please restart with option \"-C 0x10\"\n\0"
-                as * const u8 as * const ::core::ffi::c_char,
+                b"Cannot optimize PDF annotations. Output file may be broken. Please restart with option \"-C 0x10\"\n\0" as *const u8
+                    as *const ::core::ffi::c_char,
             );
         }
         8430929072491527990 => {
-            pdf_warning!(
-                b"Unknown PDF annotation format. Output file may be broken.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"Unknown PDF annotation format. Output file may be broken.\0" as *const u8 as *const ::core::ffi::c_char,);
         }
         _ => {}
     }
@@ -2436,20 +2033,12 @@ unsafe extern "C-unwind" fn warn_undef_dests(mut dests: *mut ht_table, mut gotos
         let mut keylen: ::core::ffi::c_int = 0;
         let mut key: *mut ::core::ffi::c_char = ht_iter_getkey(&raw mut iter, &raw mut keylen);
         if ht_lookup_table(dests, key as *const ::core::ffi::c_void, keylen).is_null() {
-            let mut dest: *mut ::core::ffi::c_char =
-                new(((keylen + 1 as ::core::ffi::c_int) as uint32_t as usize)
-                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                    as uint32_t) as *mut ::core::ffi::c_char;
-            memcpy(
-                dest as *mut ::core::ffi::c_void,
-                key as *const ::core::ffi::c_void,
-                keylen as size_t,
-            );
+            let mut dest: *mut ::core::ffi::c_char = new(((keylen + 1 as ::core::ffi::c_int) as uint32_t as usize)
+                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
+                as uint32_t) as *mut ::core::ffi::c_char;
+            memcpy(dest as *mut ::core::ffi::c_void, key as *const ::core::ffi::c_void, keylen as size_t);
             *dest.offset(keylen as isize) = 0 as ::core::ffi::c_char;
-            pdf_warning!(
-                b"PDF destination \"%s\" not defined.\0" as *const u8 as *const ::core::ffi::c_char,
-                dest,
-            );
+            pdf_warning!(b"PDF destination \"%s\" not defined.\0" as *const u8 as *const ::core::ffi::c_char, dest,);
             free(dest as *mut ::core::ffi::c_void);
         }
         if !(ht_iter_next(&raw mut iter) >= 0 as ::core::ffi::c_int) {
@@ -2474,18 +2063,12 @@ unsafe extern "C-unwind" fn pdf_doc_close_names(mut p: *mut pdf_doc) {
                     b"Dests\0" as *const u8 as *const ::core::ffi::c_char,
                 ) != 0
             {
-                name_tree = pdf_names_create_tree(
-                    data,
-                    &raw mut count,
-                    ::core::ptr::null_mut::<ht_table>(),
-                );
+                name_tree = pdf_names_create_tree(data, &raw mut count, ::core::ptr::null_mut::<ht_table>());
             } else {
-                name_tree =
-                    pdf_names_create_tree(data, &raw mut count, &raw mut (*__pdf_state).pdoc.gotos);
+                name_tree = pdf_names_create_tree(data, &raw mut count, &raw mut (*__pdf_state).pdoc.gotos);
                 if dpx_conf.verbose_level > 0 as ::core::ffi::c_int && count < (*data).count {
                     pdf_message!(
-                        b"\nRemoved %d unused PDF destinations\n\0" as *const u8
-                            as *const ::core::ffi::c_char,
+                        b"\nRemoved %d unused PDF destinations\n\0" as *const u8 as *const ::core::ffi::c_char,
                         (*data).count - count,
                     );
                 }
@@ -2509,10 +2092,7 @@ unsafe extern "C-unwind" fn pdf_doc_close_names(mut p: *mut pdf_doc) {
         i = i.wrapping_add(1);
     }
     if !(*p).root.names.is_null() {
-        tmp = pdf_lookup_dict(
-            (*p).root.dict,
-            b"Names\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        tmp = pdf_lookup_dict((*p).root.dict, b"Names\0" as *const u8 as *const ::core::ffi::c_char);
         if tmp.is_null() {
             pdf_add_dict(
                 (*p).root.dict,
@@ -2527,9 +2107,7 @@ unsafe extern "C-unwind" fn pdf_doc_close_names(mut p: *mut pdf_doc) {
                 pdf_ref_obj((*p).root.names),
             );
         } else {
-            pdf_warning!(
-                b"Could not modify Names dictionary.\0" as *const u8 as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"Could not modify Names dictionary.\0" as *const u8 as *const ::core::ffi::c_char,);
         }
         pdf_release_obj((*p).root.names);
         (*p).root.names = ::core::ptr::null_mut::<pdf_obj>();
@@ -2539,10 +2117,7 @@ unsafe extern "C-unwind" fn pdf_doc_close_names(mut p: *mut pdf_doc) {
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_add_annot")]
 pub unsafe extern "C-unwind" fn pdf_doc_add_annot(
-    mut page_no: ::core::ffi::c_uint,
-    mut rect: *const pdf_rect,
-    mut annot_dict: *mut pdf_obj,
-    mut new_annot: ::core::ffi::c_int,
+    mut page_no: ::core::ffi::c_uint, mut rect: *const pdf_rect, mut annot_dict: *mut pdf_obj, mut new_annot: ::core::ffi::c_int,
 ) {
     let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
@@ -2559,14 +2134,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_annot(
         ury: 0.,
     };
     pdf_doc_get_mediabox(page_no, &raw mut mediabox);
-    if (*rect).llx < mediabox.llx
-        || (*rect).urx > mediabox.urx
-        || (*rect).lly < mediabox.lly
-        || (*rect).ury > mediabox.ury
-    {
-        pdf_warning!(
-            b"Annotation out of page boundary.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+    if (*rect).llx < mediabox.llx || (*rect).urx > mediabox.urx || (*rect).lly < mediabox.lly || (*rect).ury > mediabox.ury {
+        pdf_warning!(b"Annotation out of page boundary.\0" as *const u8 as *const ::core::ffi::c_char,);
         pdf_warning!(
             b"Current page's MediaBox: [%g %g %g %g]\0" as *const u8 as *const ::core::ffi::c_char,
             mediabox.llx,
@@ -2581,14 +2150,11 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_annot(
             (*rect).urx,
             (*rect).ury,
         );
-        pdf_warning!(
-            b"Maybe incorrect paper size specified.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Maybe incorrect paper size specified.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     if (*rect).llx > (*rect).urx || (*rect).lly > (*rect).ury {
         pdf_warning!(
-            b"Rectangle with negative width/height: [%g %g %g %g]\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Rectangle with negative width/height: [%g %g %g %g]\0" as *const u8 as *const ::core::ffi::c_char,
             (*rect).llx,
             (*rect).lly,
             (*rect).urx,
@@ -2596,27 +2162,11 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_annot(
         );
     }
     rect_array = pdf_new_array();
-    pdf_add_array(
-        rect_array,
-        pdf_new_number(floor((*rect).llx / 0.001f64 + 0.5f64) * 0.001f64),
-    );
-    pdf_add_array(
-        rect_array,
-        pdf_new_number(floor((*rect).lly / 0.001f64 + 0.5f64) * 0.001f64),
-    );
-    pdf_add_array(
-        rect_array,
-        pdf_new_number(floor((*rect).urx / 0.001f64 + 0.5f64) * 0.001f64),
-    );
-    pdf_add_array(
-        rect_array,
-        pdf_new_number(floor((*rect).ury / 0.001f64 + 0.5f64) * 0.001f64),
-    );
-    pdf_add_dict(
-        annot_dict,
-        pdf_new_name(b"Rect\0" as *const u8 as *const ::core::ffi::c_char),
-        rect_array,
-    );
+    pdf_add_array(rect_array, pdf_new_number(floor((*rect).llx / 0.001f64 + 0.5f64) * 0.001f64));
+    pdf_add_array(rect_array, pdf_new_number(floor((*rect).lly / 0.001f64 + 0.5f64) * 0.001f64));
+    pdf_add_array(rect_array, pdf_new_number(floor((*rect).urx / 0.001f64 + 0.5f64) * 0.001f64));
+    pdf_add_array(rect_array, pdf_new_number(floor((*rect).ury / 0.001f64 + 0.5f64) * 0.001f64));
+    pdf_add_dict(annot_dict, pdf_new_name(b"Rect\0" as *const u8 as *const ::core::ffi::c_char), rect_array);
     pdf_add_array((*page).annots, pdf_ref_obj(annot_dict));
     if new_annot != 0 {
         pdf_doc_add_goto(annot_dict);
@@ -2629,40 +2179,23 @@ unsafe extern "C-unwind" fn pdf_doc_init_articles(mut p: *mut pdf_doc) {
     (*p).articles.entries = ::core::ptr::null_mut::<pdf_article>();
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_begin_article")]
-pub unsafe extern "C-unwind" fn pdf_doc_begin_article(
-    mut article_id: *const ::core::ffi::c_char,
-    mut article_info: *mut pdf_obj,
-) {
+pub unsafe extern "C-unwind" fn pdf_doc_begin_article(mut article_id: *const ::core::ffi::c_char, mut article_info: *mut pdf_obj) {
     let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut article: *mut pdf_article = ::core::ptr::null_mut::<pdf_article>();
     if article_id.is_null() || strlen(article_id) == 0 as size_t {
-        pdf_abort!(
-            b"Article thread without internal identifier.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"Article thread without internal identifier.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     if (*p).articles.num_entries >= (*p).articles.max_entries {
-        (*p).articles.max_entries = (*p)
-            .articles
-            .max_entries
-            .wrapping_add(PDFDOC_ARTICLE_ALLOC_SIZE as ::core::ffi::c_uint);
+        (*p).articles.max_entries = (*p).articles.max_entries.wrapping_add(PDFDOC_ARTICLE_ALLOC_SIZE as ::core::ffi::c_uint);
         (*p).articles.entries = renew(
             (*p).articles.entries as *mut ::core::ffi::c_void,
-            ((*p).articles.max_entries as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<pdf_article>() as usize)
-                as uint32_t,
+            ((*p).articles.max_entries as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_article>() as usize) as uint32_t,
         ) as *mut pdf_article as *mut pdf_article;
     }
-    article = (*p)
-        .articles
-        .entries
-        .offset((*p).articles.num_entries as isize) as *mut pdf_article;
-    (*article).id = new(
-        (strlen(article_id).wrapping_add(1 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t,
-    ) as *mut ::core::ffi::c_char;
+    article = (*p).articles.entries.offset((*p).articles.num_entries as isize) as *mut pdf_article;
+    (*article).id = new((strlen(article_id).wrapping_add(1 as size_t) as uint32_t as usize)
+        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
     strcpy((*article).id, article_id);
     (*article).info = article_info;
     (*article).num_beads = 0 as ::core::ffi::c_uint;
@@ -2670,10 +2203,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_begin_article(
     (*article).beads = ::core::ptr::null_mut::<pdf_bead>();
     (*p).articles.num_entries = (*p).articles.num_entries.wrapping_add(1);
 }
-unsafe extern "C-unwind" fn find_bead(
-    mut article: *mut pdf_article,
-    mut bead_id: *const ::core::ffi::c_char,
-) -> *mut pdf_bead {
+unsafe extern "C-unwind" fn find_bead(mut article: *mut pdf_article, mut bead_id: *const ::core::ffi::c_char) -> *mut pdf_bead {
     let mut bead: *mut pdf_bead = ::core::ptr::null_mut::<pdf_bead>();
     let mut i: ::core::ffi::c_uint = 0;
     bead = ::core::ptr::null_mut::<pdf_bead>();
@@ -2690,10 +2220,7 @@ unsafe extern "C-unwind" fn find_bead(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_add_bead")]
 pub unsafe extern "C-unwind" fn pdf_doc_add_bead(
-    mut article_id: *const ::core::ffi::c_char,
-    mut bead_id: *const ::core::ffi::c_char,
-    mut page_no: ::core::ffi::c_int,
-    mut rect: *const pdf_rect,
+    mut article_id: *const ::core::ffi::c_char, mut bead_id: *const ::core::ffi::c_char, mut page_no: ::core::ffi::c_int, mut rect: *const pdf_rect,
 ) {
     let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
@@ -2701,9 +2228,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_bead(
     let mut bead: *mut pdf_bead = ::core::ptr::null_mut::<pdf_bead>();
     let mut i: ::core::ffi::c_uint = 0;
     if article_id.is_null() {
-        pdf_abort!(
-            b"No article identifier specified.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"No article identifier specified.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     article = ::core::ptr::null_mut::<pdf_article>();
     i = 0 as ::core::ffi::c_uint;
@@ -2716,10 +2241,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_bead(
         }
     }
     if article.is_null() {
-        pdf_abort!(
-            b"Specified article thread that doesn't exist.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"Specified article thread that doesn't exist.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     bead = if !bead_id.is_null() {
         find_bead(article, bead_id)
@@ -2728,14 +2250,10 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_bead(
     };
     if bead.is_null() {
         if (*article).num_beads >= (*article).max_beads {
-            (*article).max_beads = (*article)
-                .max_beads
-                .wrapping_add(PDFDOC_BEAD_ALLOC_SIZE as ::core::ffi::c_uint);
+            (*article).max_beads = (*article).max_beads.wrapping_add(PDFDOC_BEAD_ALLOC_SIZE as ::core::ffi::c_uint);
             (*article).beads = renew(
                 (*article).beads as *mut ::core::ffi::c_void,
-                ((*article).max_beads as uint32_t as usize)
-                    .wrapping_mul(::core::mem::size_of::<pdf_bead>() as usize)
-                    as uint32_t,
+                ((*article).max_beads as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_bead>() as usize) as uint32_t,
             ) as *mut pdf_bead as *mut pdf_bead;
             i = (*article).num_beads;
             while i < (*article).max_beads {
@@ -2747,11 +2265,9 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_bead(
         }
         bead = (*article).beads.offset((*article).num_beads as isize) as *mut pdf_bead;
         if !bead_id.is_null() {
-            (*bead).id = new(
-                (strlen(bead_id).wrapping_add(1 as size_t) as uint32_t as usize)
-                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                    as uint32_t,
-            ) as *mut ::core::ffi::c_char;
+            (*bead).id = new((strlen(bead_id).wrapping_add(1 as size_t) as uint32_t as usize)
+                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+                as *mut ::core::ffi::c_char;
             strcpy((*bead).id, bead_id);
         } else {
             (*bead).id = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -2765,10 +2281,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_bead(
     (*bead).page_no = page_no;
 }
 unsafe extern "C-unwind" fn make_article(
-    mut p: *mut pdf_doc,
-    mut article: *mut pdf_article,
-    mut bead_ids: *mut *const ::core::ffi::c_char,
-    mut num_beads: ::core::ffi::c_uint,
+    mut p: *mut pdf_doc, mut article: *mut pdf_article, mut bead_ids: *mut *const ::core::ffi::c_char, mut num_beads: ::core::ffi::c_uint,
     mut article_info: *mut pdf_obj,
 ) -> *mut pdf_obj {
     let mut art_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -2784,11 +2297,7 @@ unsafe extern "C-unwind" fn make_article(
     last = ::core::ptr::null_mut::<pdf_obj>();
     prev = last;
     first = prev;
-    n = (if !bead_ids.is_null() {
-        num_beads
-    } else {
-        (*article).num_beads
-    }) as ::core::ffi::c_int;
+    n = (if !bead_ids.is_null() { num_beads } else { (*article).num_beads }) as ::core::ffi::c_int;
     i = 0 as ::core::ffi::c_int;
     while i < n {
         let mut bead: *mut pdf_bead = ::core::ptr::null_mut::<pdf_bead>();
@@ -2807,16 +2316,8 @@ unsafe extern "C-unwind" fn make_article(
                     pdf_ref_obj(art_dict),
                 );
             } else {
-                pdf_add_dict(
-                    prev,
-                    pdf_new_name(b"N\0" as *const u8 as *const ::core::ffi::c_char),
-                    pdf_ref_obj(last),
-                );
-                pdf_add_dict(
-                    last,
-                    pdf_new_name(b"V\0" as *const u8 as *const ::core::ffi::c_char),
-                    pdf_ref_obj(prev),
-                );
+                pdf_add_dict(prev, pdf_new_name(b"N\0" as *const u8 as *const ::core::ffi::c_char), pdf_ref_obj(last));
+                pdf_add_dict(last, pdf_new_name(b"V\0" as *const u8 as *const ::core::ffi::c_char), pdf_ref_obj(prev));
                 if prev != first {
                     pdf_release_obj(prev);
                 }
@@ -2833,43 +2334,19 @@ unsafe extern "C-unwind" fn make_article(
                 pdf_link_obj((*page).page_ref),
             );
             rect = pdf_new_array();
-            pdf_add_array(
-                rect,
-                pdf_new_number(floor((*bead).rect.llx / 0.01f64 + 0.5f64) * 0.01f64),
-            );
-            pdf_add_array(
-                rect,
-                pdf_new_number(floor((*bead).rect.lly / 0.01f64 + 0.5f64) * 0.01f64),
-            );
-            pdf_add_array(
-                rect,
-                pdf_new_number(floor((*bead).rect.urx / 0.01f64 + 0.5f64) * 0.01f64),
-            );
-            pdf_add_array(
-                rect,
-                pdf_new_number(floor((*bead).rect.ury / 0.01f64 + 0.5f64) * 0.01f64),
-            );
-            pdf_add_dict(
-                last,
-                pdf_new_name(b"R\0" as *const u8 as *const ::core::ffi::c_char),
-                rect,
-            );
+            pdf_add_array(rect, pdf_new_number(floor((*bead).rect.llx / 0.01f64 + 0.5f64) * 0.01f64));
+            pdf_add_array(rect, pdf_new_number(floor((*bead).rect.lly / 0.01f64 + 0.5f64) * 0.01f64));
+            pdf_add_array(rect, pdf_new_number(floor((*bead).rect.urx / 0.01f64 + 0.5f64) * 0.01f64));
+            pdf_add_array(rect, pdf_new_number(floor((*bead).rect.ury / 0.01f64 + 0.5f64) * 0.01f64));
+            pdf_add_dict(last, pdf_new_name(b"R\0" as *const u8 as *const ::core::ffi::c_char), rect);
             pdf_add_array((*page).beads, pdf_ref_obj(last));
             prev = last;
         }
         i += 1;
     }
     if !first.is_null() && !last.is_null() {
-        pdf_add_dict(
-            last,
-            pdf_new_name(b"N\0" as *const u8 as *const ::core::ffi::c_char),
-            pdf_ref_obj(first),
-        );
-        pdf_add_dict(
-            first,
-            pdf_new_name(b"V\0" as *const u8 as *const ::core::ffi::c_char),
-            pdf_ref_obj(last),
-        );
+        pdf_add_dict(last, pdf_new_name(b"N\0" as *const u8 as *const ::core::ffi::c_char), pdf_ref_obj(first));
+        pdf_add_dict(first, pdf_new_name(b"V\0" as *const u8 as *const ::core::ffi::c_char), pdf_ref_obj(last));
         if first != last {
             pdf_release_obj(last);
         }
@@ -2879,11 +2356,7 @@ unsafe extern "C-unwind" fn make_article(
             pdf_ref_obj(first),
         );
         if !article_info.is_null() {
-            pdf_add_dict(
-                art_dict,
-                pdf_new_name(b"I\0" as *const u8 as *const ::core::ffi::c_char),
-                article_info,
-            );
+            pdf_add_dict(art_dict, pdf_new_name(b"I\0" as *const u8 as *const ::core::ffi::c_char), article_info);
         } else if !(*article).info.is_null() {
             pdf_add_dict(
                 art_dict,
@@ -2941,8 +2414,7 @@ unsafe extern "C-unwind" fn pdf_doc_close_articles(mut p: *mut pdf_doc) {
         clean_article(article);
         i = i.wrapping_add(1);
     }
-    (*p).articles.entries =
-        mfree((*p).articles.entries as *mut ::core::ffi::c_void) as *mut pdf_article;
+    (*p).articles.entries = mfree((*p).articles.entries as *mut ::core::ffi::c_void) as *mut pdf_article;
     (*p).articles.num_entries = 0 as ::core::ffi::c_uint;
     (*p).articles.max_entries = 0 as ::core::ffi::c_uint;
     if !(*p).root.threads.is_null() {
@@ -2956,10 +2428,7 @@ unsafe extern "C-unwind" fn pdf_doc_close_articles(mut p: *mut pdf_doc) {
     }
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_set_mediabox")]
-pub unsafe extern "C-unwind" fn pdf_doc_set_mediabox(
-    mut page_no: ::core::ffi::c_uint,
-    mut mediabox: *const pdf_rect,
-) {
+pub unsafe extern "C-unwind" fn pdf_doc_set_mediabox(mut page_no: ::core::ffi::c_uint, mut mediabox: *const pdf_rect) {
     let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut page: *mut pdf_page = ::core::ptr::null_mut::<pdf_page>();
@@ -2977,10 +2446,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_set_mediabox(
         (*page).flags |= USE_MY_MEDIABOX;
     };
 }
-unsafe extern "C-unwind" fn pdf_doc_get_mediabox(
-    mut page_no: ::core::ffi::c_uint,
-    mut mediabox: *mut pdf_rect,
-) {
+unsafe extern "C-unwind" fn pdf_doc_get_mediabox(mut page_no: ::core::ffi::c_uint, mut mediabox: *mut pdf_rect) {
     let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut page: *mut pdf_page = ::core::ptr::null_mut::<pdf_page>();
@@ -3029,55 +2495,35 @@ pub unsafe extern "C-unwind" fn pdf_doc_current_page_resources() -> *mut pdf_obj
     return resources;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_get_dictionary")]
-pub unsafe extern "C-unwind" fn pdf_doc_get_dictionary(
-    mut category: *const ::core::ffi::c_char,
-) -> *mut pdf_obj {
+pub unsafe extern "C-unwind" fn pdf_doc_get_dictionary(mut category: *const ::core::ffi::c_char) -> *mut pdf_obj {
     let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     if category.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"category\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"category\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
-    if streq_ptr(
-        category,
-        b"Names\0" as *const u8 as *const ::core::ffi::c_char,
-    ) {
+    if streq_ptr(category, b"Names\0" as *const u8 as *const ::core::ffi::c_char) {
         if (*p).root.names.is_null() {
             (*p).root.names = pdf_new_dict();
         }
         dict = (*p).root.names;
-    } else if streq_ptr(
-        category,
-        b"Pages\0" as *const u8 as *const ::core::ffi::c_char,
-    ) {
+    } else if streq_ptr(category, b"Pages\0" as *const u8 as *const ::core::ffi::c_char) {
         if (*p).root.pages.is_null() {
             (*p).root.pages = pdf_new_dict();
         }
         dict = (*p).root.pages;
-    } else if streq_ptr(
-        category,
-        b"Catalog\0" as *const u8 as *const ::core::ffi::c_char,
-    ) {
+    } else if streq_ptr(category, b"Catalog\0" as *const u8 as *const ::core::ffi::c_char) {
         if (*p).root.dict.is_null() {
             (*p).root.dict = pdf_new_dict();
         }
         dict = (*p).root.dict;
-    } else if streq_ptr(
-        category,
-        b"Info\0" as *const u8 as *const ::core::ffi::c_char,
-    ) {
+    } else if streq_ptr(category, b"Info\0" as *const u8 as *const ::core::ffi::c_char) {
         if (*p).info.is_null() {
             (*p).info = pdf_new_dict();
         }
         dict = (*p).info;
-    } else if streq_ptr(
-        category,
-        b"@THISPAGE\0" as *const u8 as *const ::core::ffi::c_char,
-    ) {
+    } else if streq_ptr(category, b"@THISPAGE\0" as *const u8 as *const ::core::ffi::c_char) {
         let mut currentpage: *mut pdf_page = ::core::ptr::null_mut::<pdf_page>();
         currentpage = (*p).pages.entries.offset((*p).pages.num_entries as isize) as *mut pdf_page;
         dict = (*currentpage).page_obj;
@@ -3094,10 +2540,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_get_dictionary(
 pub unsafe extern "C-unwind" fn pdf_doc_current_page_number() -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
-    return (*p)
-        .pages
-        .num_entries
-        .wrapping_add(1 as ::core::ffi::c_uint) as ::core::ffi::c_int;
+    return (*p).pages.num_entries.wrapping_add(1 as ::core::ffi::c_uint) as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_ref_page")]
 pub unsafe extern "C-unwind" fn pdf_doc_ref_page(mut page_no: ::core::ffi::c_uint) -> *mut pdf_obj {
@@ -3112,56 +2555,33 @@ pub unsafe extern "C-unwind" fn pdf_doc_ref_page(mut page_no: ::core::ffi::c_uin
     return pdf_link_obj((*page).page_ref);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_get_reference")]
-pub unsafe extern "C-unwind" fn pdf_doc_get_reference(
-    mut category: *const ::core::ffi::c_char,
-) -> *mut pdf_obj {
+pub unsafe extern "C-unwind" fn pdf_doc_get_reference(mut category: *const ::core::ffi::c_char) -> *mut pdf_obj {
     let mut ref_0: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut page_no: ::core::ffi::c_int = 0;
     if category.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"category\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"category\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     page_no = pdf_doc_current_page_number();
-    if streq_ptr(
-        category,
-        b"@THISPAGE\0" as *const u8 as *const ::core::ffi::c_char,
-    ) {
+    if streq_ptr(category, b"@THISPAGE\0" as *const u8 as *const ::core::ffi::c_char) {
         ref_0 = pdf_doc_ref_page(page_no as ::core::ffi::c_uint);
-    } else if streq_ptr(
-        category,
-        b"@PREVPAGE\0" as *const u8 as *const ::core::ffi::c_char,
-    ) {
+    } else if streq_ptr(category, b"@PREVPAGE\0" as *const u8 as *const ::core::ffi::c_char) {
         if page_no <= 1 as ::core::ffi::c_int {
-            pdf_abort!(
-                b"Reference to previous page, but no pages have been completed yet.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_abort!(b"Reference to previous page, but no pages have been completed yet.\0" as *const u8 as *const ::core::ffi::c_char,);
         }
         ref_0 = pdf_doc_ref_page((page_no - 1 as ::core::ffi::c_int) as ::core::ffi::c_uint);
-    } else if streq_ptr(
-        category,
-        b"@NEXTPAGE\0" as *const u8 as *const ::core::ffi::c_char,
-    ) {
+    } else if streq_ptr(category, b"@NEXTPAGE\0" as *const u8 as *const ::core::ffi::c_char) {
         ref_0 = pdf_doc_ref_page((page_no + 1 as ::core::ffi::c_int) as ::core::ffi::c_uint);
     }
     if ref_0.is_null() {
-        pdf_abort!(
-            b"Reference to \"%s\" not exist. \0" as *const u8 as *const ::core::ffi::c_char,
-            category,
-        );
+        pdf_abort!(b"Reference to \"%s\" not exist. \0" as *const u8 as *const ::core::ffi::c_char, category,);
     }
     return ref_0;
 }
 unsafe extern "C-unwind" fn pdf_doc_new_page(mut p: *mut pdf_doc) {
     let mut currentpage: *mut pdf_page = ::core::ptr::null_mut::<pdf_page>();
     if (*p).pages.num_entries >= (*p).pages.max_entries {
-        doc_resize_page_entries(
-            p,
-            (*p).pages.max_entries.wrapping_add(PDFDOC_PAGES_ALLOC_SIZE),
-        );
+        doc_resize_page_entries(p, (*p).pages.max_entries.wrapping_add(PDFDOC_PAGES_ALLOC_SIZE));
     }
     currentpage = (*p).pages.entries.offset((*p).pages.num_entries as isize) as *mut pdf_page;
     if (*currentpage).page_ref.is_null() {
@@ -3178,10 +2598,7 @@ unsafe extern "C-unwind" fn pdf_doc_new_page(mut p: *mut pdf_doc) {
 unsafe extern "C-unwind" fn pdf_doc_finish_page(mut p: *mut pdf_doc) {
     let mut currentpage: *mut pdf_page = ::core::ptr::null_mut::<pdf_page>();
     if !(*p).pending_forms.is_null() {
-        pdf_abort!(
-            b"A pending form XObject at the end of page.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"A pending form XObject at the end of page.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     currentpage = (*p).pages.entries.offset((*p).pages.num_entries as isize) as *mut pdf_page;
     if (*currentpage).page_obj.is_null() {
@@ -3190,13 +2607,11 @@ unsafe extern "C-unwind" fn pdf_doc_finish_page(mut p: *mut pdf_doc) {
     if !(*p).pages.bop.is_null() && pdf_stream_length((*p).pages.bop) > 0 as ::core::ffi::c_int {
         (*currentpage).content_refs[0 as ::core::ffi::c_int as usize] = pdf_ref_obj((*p).pages.bop);
     } else {
-        (*currentpage).content_refs[0 as ::core::ffi::c_int as usize] =
-            ::core::ptr::null_mut::<pdf_obj>();
+        (*currentpage).content_refs[0 as ::core::ffi::c_int as usize] = ::core::ptr::null_mut::<pdf_obj>();
     }
     if !(*currentpage).background.is_null() {
         if pdf_stream_length((*currentpage).background) > 0 as ::core::ffi::c_int {
-            (*currentpage).content_refs[1 as ::core::ffi::c_int as usize] =
-                pdf_ref_obj((*currentpage).background);
+            (*currentpage).content_refs[1 as ::core::ffi::c_int as usize] = pdf_ref_obj((*currentpage).background);
             pdf_add_stream(
                 (*currentpage).background,
                 b"\n\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
@@ -3206,11 +2621,9 @@ unsafe extern "C-unwind" fn pdf_doc_finish_page(mut p: *mut pdf_doc) {
         pdf_release_obj((*currentpage).background);
         (*currentpage).background = ::core::ptr::null_mut::<pdf_obj>();
     } else {
-        (*currentpage).content_refs[1 as ::core::ffi::c_int as usize] =
-            ::core::ptr::null_mut::<pdf_obj>();
+        (*currentpage).content_refs[1 as ::core::ffi::c_int as usize] = ::core::ptr::null_mut::<pdf_obj>();
     }
-    (*currentpage).content_refs[2 as ::core::ffi::c_int as usize] =
-        pdf_ref_obj((*currentpage).contents);
+    (*currentpage).content_refs[2 as ::core::ffi::c_int as usize] = pdf_ref_obj((*currentpage).contents);
     if (*currentpage).render_pending == 0 {
         pdf_add_stream(
             (*currentpage).contents,
@@ -3223,32 +2636,16 @@ unsafe extern "C-unwind" fn pdf_doc_finish_page(mut p: *mut pdf_doc) {
     if !(*p).pages.eop.is_null() && pdf_stream_length((*p).pages.eop) > 0 as ::core::ffi::c_int {
         (*currentpage).content_refs[3 as ::core::ffi::c_int as usize] = pdf_ref_obj((*p).pages.eop);
     } else {
-        (*currentpage).content_refs[3 as ::core::ffi::c_int as usize] =
-            ::core::ptr::null_mut::<pdf_obj>();
+        (*currentpage).content_refs[3 as ::core::ffi::c_int as usize] = ::core::ptr::null_mut::<pdf_obj>();
     }
     if !(*currentpage).resources.is_null() {
         let mut procset: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
         procset = pdf_new_array();
-        pdf_add_array(
-            procset,
-            pdf_new_name(b"PDF\0" as *const u8 as *const ::core::ffi::c_char),
-        );
-        pdf_add_array(
-            procset,
-            pdf_new_name(b"Text\0" as *const u8 as *const ::core::ffi::c_char),
-        );
-        pdf_add_array(
-            procset,
-            pdf_new_name(b"ImageC\0" as *const u8 as *const ::core::ffi::c_char),
-        );
-        pdf_add_array(
-            procset,
-            pdf_new_name(b"ImageB\0" as *const u8 as *const ::core::ffi::c_char),
-        );
-        pdf_add_array(
-            procset,
-            pdf_new_name(b"ImageI\0" as *const u8 as *const ::core::ffi::c_char),
-        );
+        pdf_add_array(procset, pdf_new_name(b"PDF\0" as *const u8 as *const ::core::ffi::c_char));
+        pdf_add_array(procset, pdf_new_name(b"Text\0" as *const u8 as *const ::core::ffi::c_char));
+        pdf_add_array(procset, pdf_new_name(b"ImageC\0" as *const u8 as *const ::core::ffi::c_char));
+        pdf_add_array(procset, pdf_new_name(b"ImageB\0" as *const u8 as *const ::core::ffi::c_char));
+        pdf_add_array(procset, pdf_new_name(b"ImageI\0" as *const u8 as *const ::core::ffi::c_char));
         pdf_add_dict(
             (*currentpage).resources,
             pdf_new_name(b"ProcSet\0" as *const u8 as *const ::core::ffi::c_char),
@@ -3263,23 +2660,15 @@ unsafe extern "C-unwind" fn pdf_doc_finish_page(mut p: *mut pdf_doc) {
         (*currentpage).resources = ::core::ptr::null_mut::<pdf_obj>();
     }
     if (*p).options.enable_manual_thumb != 0 {
-        let mut thumb_filename: *mut ::core::ffi::c_char =
-            ::core::ptr::null_mut::<::core::ffi::c_char>();
+        let mut thumb_filename: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
         let mut thumb_ref: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-        thumb_filename = new(
-            (strlen((*p).thumb_basename).wrapping_add(7 as size_t) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t,
-        ) as *mut ::core::ffi::c_char;
+        thumb_filename = new((strlen((*p).thumb_basename).wrapping_add(7 as size_t) as uint32_t as usize)
+            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
         sprintf(
             thumb_filename,
             b"%s.%ld\0" as *const u8 as *const ::core::ffi::c_char,
             (*p).thumb_basename,
-            (*p).pages
-                .num_entries
-                .wrapping_rem(99999 as ::core::ffi::c_int as ::core::ffi::c_uint)
-                as ::core::ffi::c_long
-                + 1 as ::core::ffi::c_long,
+            (*p).pages.num_entries.wrapping_rem(99999 as ::core::ffi::c_int as ::core::ffi::c_uint) as ::core::ffi::c_long + 1 as ::core::ffi::c_long,
         );
         thumb_ref = read_thumbnail(thumb_filename);
         free(thumb_filename as *mut ::core::ffi::c_void);
@@ -3318,10 +2707,7 @@ unsafe extern "C-unwind" fn doc_fill_page_background(mut p: *mut pdf_doc) {
     if cm == 0 || pdf_color_is_white(&raw mut (*__pdf_state).bgcolor) as ::core::ffi::c_int != 0 {
         return;
     }
-    pdf_doc_get_mediabox(
-        pdf_doc_current_page_number() as ::core::ffi::c_uint,
-        &raw mut r,
-    );
+    pdf_doc_get_mediabox(pdf_doc_current_page_number() as ::core::ffi::c_uint, &raw mut r);
     currentpage = (*p).pages.entries.offset((*p).pages.num_entries as isize) as *mut pdf_page;
     if currentpage.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
@@ -3336,20 +2722,14 @@ unsafe extern "C-unwind" fn doc_fill_page_background(mut p: *mut pdf_doc) {
     saved_content = (*currentpage).contents;
     (*currentpage).contents = (*currentpage).background;
     pdf_dev_gsave();
-    pdf_dev_set_color(
-        &raw mut (*__pdf_state).bgcolor,
-        0x20 as ::core::ffi::c_char,
-        0 as ::core::ffi::c_int,
-    );
+    pdf_dev_set_color(&raw mut (*__pdf_state).bgcolor, 0x20 as ::core::ffi::c_char, 0 as ::core::ffi::c_int);
     pdf_dev_rectfill(r.llx, r.lly, r.urx - r.llx, r.ury - r.lly);
     pdf_dev_grestore();
     (*currentpage).contents = saved_content;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_begin_page")]
 pub unsafe extern "C-unwind" fn pdf_doc_begin_page(
-    mut scale: ::core::ffi::c_double,
-    mut x_origin: ::core::ffi::c_double,
-    mut y_origin: ::core::ffi::c_double,
+    mut scale: ::core::ffi::c_double, mut x_origin: ::core::ffi::c_double, mut y_origin: ::core::ffi::c_double,
 ) {
     let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
@@ -3377,8 +2757,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_end_page() {
     let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     pdf_dev_eop();
     if tt_pdf_page_recording() != 0 {
-        let mut page: *mut pdf_page =
-            (*p).pages.entries.offset((*p).pages.num_entries as isize) as *mut pdf_page;
+        let mut page: *mut pdf_page = (*p).pages.entries.offset((*p).pages.num_entries as isize) as *mut pdf_page;
         while tt_pdf_pipeline_has_capacity(tt_pdf_page_size()) == 0 {
             pdf_pipeline_drain(0 as ::core::ffi::c_int);
         }
@@ -3392,10 +2771,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_end_page() {
     pdf_doc_finish_page(p);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_add_page_content")]
-pub unsafe extern "C-unwind" fn pdf_doc_add_page_content(
-    mut buffer: *const ::core::ffi::c_char,
-    mut length: ::core::ffi::c_uint,
-) {
+pub unsafe extern "C-unwind" fn pdf_doc_add_page_content(mut buffer: *const ::core::ffi::c_char, mut length: ::core::ffi::c_uint) {
     let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut currentpage: *mut pdf_page = ::core::ptr::null_mut::<pdf_page>();
@@ -3419,11 +2795,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_add_page_content(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_open_document")]
 pub unsafe extern "C-unwind" fn pdf_open_document(
-    mut filename: *const ::core::ffi::c_char,
-    mut creator: *const ::core::ffi::c_char,
-    mut id1: *const ::core::ffi::c_uchar,
-    mut id2: *const ::core::ffi::c_uchar,
-    mut settings: pdf_setting,
+    mut filename: *const ::core::ffi::c_char, mut creator: *const ::core::ffi::c_char, mut id1: *const ::core::ffi::c_uchar,
+    mut id2: *const ::core::ffi::c_uchar, mut settings: pdf_setting,
 ) {
     let __pdf_state = unsafe { document_state() };
     let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
@@ -3476,37 +2849,24 @@ pub unsafe extern "C-unwind" fn pdf_open_document(
         if fn_len > 4 as size_t
             && strncmp(
                 b".pdf\0" as *const u8 as *const ::core::ffi::c_char,
-                filename
-                    .offset(fn_len as isize)
-                    .offset(-(4 as ::core::ffi::c_int as isize)),
+                filename.offset(fn_len as isize).offset(-(4 as ::core::ffi::c_int as isize)),
                 4 as size_t,
             ) == 0
         {
-            (*p).thumb_basename = new((fn_len.wrapping_sub(4 as size_t).wrapping_add(1 as size_t)
-                as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t) as *mut ::core::ffi::c_char;
-            strncpy(
-                (*p).thumb_basename,
-                filename,
-                fn_len.wrapping_sub(4 as size_t),
-            );
-            *(*p)
-                .thumb_basename
-                .offset(fn_len.wrapping_sub(4 as size_t) as isize) = 0 as ::core::ffi::c_char;
+            (*p).thumb_basename = new((fn_len.wrapping_sub(4 as size_t).wrapping_add(1 as size_t) as uint32_t as usize)
+                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+                as *mut ::core::ffi::c_char;
+            strncpy((*p).thumb_basename, filename, fn_len.wrapping_sub(4 as size_t));
+            *(*p).thumb_basename.offset(fn_len.wrapping_sub(4 as size_t) as isize) = 0 as ::core::ffi::c_char;
         } else {
             (*p).thumb_basename = new((fn_len.wrapping_add(1 as size_t) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t) as *mut ::core::ffi::c_char;
+                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+                as *mut ::core::ffi::c_char;
             strcpy((*p).thumb_basename, filename);
         }
     }
     (*p).pending_forms = ::core::ptr::null_mut::<form_list_node>();
-    pdf_init_device(
-        settings.device.dvi2pts,
-        settings.device.precision,
-        settings.device.ignore_colors,
-    );
+    pdf_init_device(settings.device.dvi2pts, settings.device.precision, settings.device.ignore_colors);
     global_names = pdf_new_name_tree();
 }
 #[unsafe(export_name = "__pdf_impl_pdf_close_document")]
@@ -3531,11 +2891,7 @@ pub unsafe extern "C-unwind" fn pdf_close_document() {
     free((*p).thumb_basename as *mut ::core::ffi::c_void);
 }
 unsafe extern "C-unwind" fn pdf_doc_make_xform(
-    mut xform: *mut pdf_obj,
-    mut bbox: *mut pdf_rect,
-    mut matrix: *mut pdf_tmatrix,
-    mut resources: *mut pdf_obj,
-    mut attrib: *mut pdf_obj,
+    mut xform: *mut pdf_obj, mut bbox: *mut pdf_rect, mut matrix: *mut pdf_tmatrix, mut resources: *mut pdf_obj, mut attrib: *mut pdf_obj,
 ) {
     let mut xform_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut tmp: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -3559,58 +2915,20 @@ unsafe extern "C-unwind" fn pdf_doc_make_xform(
         pdf_abort!(b"No BoundingBox supplied.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     tmp = pdf_new_array();
-    pdf_add_array(
-        tmp,
-        pdf_new_number(floor((*bbox).llx / 0.001f64 + 0.5f64) * 0.001f64),
-    );
-    pdf_add_array(
-        tmp,
-        pdf_new_number(floor((*bbox).lly / 0.001f64 + 0.5f64) * 0.001f64),
-    );
-    pdf_add_array(
-        tmp,
-        pdf_new_number(floor((*bbox).urx / 0.001f64 + 0.5f64) * 0.001f64),
-    );
-    pdf_add_array(
-        tmp,
-        pdf_new_number(floor((*bbox).ury / 0.001f64 + 0.5f64) * 0.001f64),
-    );
-    pdf_add_dict(
-        xform_dict,
-        pdf_new_name(b"BBox\0" as *const u8 as *const ::core::ffi::c_char),
-        tmp,
-    );
+    pdf_add_array(tmp, pdf_new_number(floor((*bbox).llx / 0.001f64 + 0.5f64) * 0.001f64));
+    pdf_add_array(tmp, pdf_new_number(floor((*bbox).lly / 0.001f64 + 0.5f64) * 0.001f64));
+    pdf_add_array(tmp, pdf_new_number(floor((*bbox).urx / 0.001f64 + 0.5f64) * 0.001f64));
+    pdf_add_array(tmp, pdf_new_number(floor((*bbox).ury / 0.001f64 + 0.5f64) * 0.001f64));
+    pdf_add_dict(xform_dict, pdf_new_name(b"BBox\0" as *const u8 as *const ::core::ffi::c_char), tmp);
     if !matrix.is_null() {
         tmp = pdf_new_array();
-        pdf_add_array(
-            tmp,
-            pdf_new_number(floor((*matrix).a / 0.00001f64 + 0.5f64) * 0.00001f64),
-        );
-        pdf_add_array(
-            tmp,
-            pdf_new_number(floor((*matrix).b / 0.00001f64 + 0.5f64) * 0.00001f64),
-        );
-        pdf_add_array(
-            tmp,
-            pdf_new_number(floor((*matrix).c / 0.00001f64 + 0.5f64) * 0.00001f64),
-        );
-        pdf_add_array(
-            tmp,
-            pdf_new_number(floor((*matrix).d / 0.00001f64 + 0.5f64) * 0.00001f64),
-        );
-        pdf_add_array(
-            tmp,
-            pdf_new_number(floor((*matrix).e / 0.001f64 + 0.5f64) * 0.001f64),
-        );
-        pdf_add_array(
-            tmp,
-            pdf_new_number(floor((*matrix).f / 0.001f64 + 0.5f64) * 0.001f64),
-        );
-        pdf_add_dict(
-            xform_dict,
-            pdf_new_name(b"Matrix\0" as *const u8 as *const ::core::ffi::c_char),
-            tmp,
-        );
+        pdf_add_array(tmp, pdf_new_number(floor((*matrix).a / 0.00001f64 + 0.5f64) * 0.00001f64));
+        pdf_add_array(tmp, pdf_new_number(floor((*matrix).b / 0.00001f64 + 0.5f64) * 0.00001f64));
+        pdf_add_array(tmp, pdf_new_number(floor((*matrix).c / 0.00001f64 + 0.5f64) * 0.00001f64));
+        pdf_add_array(tmp, pdf_new_number(floor((*matrix).d / 0.00001f64 + 0.5f64) * 0.00001f64));
+        pdf_add_array(tmp, pdf_new_number(floor((*matrix).e / 0.001f64 + 0.5f64) * 0.001f64));
+        pdf_add_array(tmp, pdf_new_number(floor((*matrix).f / 0.001f64 + 0.5f64) * 0.001f64));
+        pdf_add_dict(xform_dict, pdf_new_name(b"Matrix\0" as *const u8 as *const ::core::ffi::c_char), tmp);
     }
     if !attrib.is_null() {
         pdf_merge_dict(xform_dict, attrib);
@@ -3623,10 +2941,7 @@ unsafe extern "C-unwind" fn pdf_doc_make_xform(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_doc_begin_grabbing")]
 pub unsafe extern "C-unwind" fn pdf_doc_begin_grabbing(
-    mut ident: *const ::core::ffi::c_char,
-    mut ref_x: ::core::ffi::c_double,
-    mut ref_y: ::core::ffi::c_double,
-    mut cropbox: *const pdf_rect,
+    mut ident: *const ::core::ffi::c_char, mut ref_x: ::core::ffi::c_double, mut ref_y: ::core::ffi::c_double, mut cropbox: *const pdf_rect,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut xobj_id: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
@@ -3651,9 +2966,8 @@ pub unsafe extern "C-unwind" fn pdf_doc_begin_grabbing(
         },
     };
     pdf_dev_push_gstate();
-    fnode = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<form_list_node>() as usize)
-        as uint32_t) as *mut form_list_node;
+    fnode = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<form_list_node>() as usize) as uint32_t)
+        as *mut form_list_node;
     (*fnode).prev = (*p).pending_forms;
     (*fnode).q_depth = pdf_dev_current_depth();
     form = &raw mut (*fnode).form;
@@ -3700,36 +3014,18 @@ pub unsafe extern "C-unwind" fn pdf_doc_end_grabbing(mut attrib: *mut pdf_obj) {
     let mut p: *mut pdf_doc = &raw mut (*__pdf_state).pdoc;
     let mut fnode: *mut form_list_node = ::core::ptr::null_mut::<form_list_node>();
     if (*p).pending_forms.is_null() {
-        pdf_warning!(
-            b"Tried to close a nonexistent form XOject.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Tried to close a nonexistent form XOject.\0" as *const u8 as *const ::core::ffi::c_char,);
         return;
     }
     fnode = (*p).pending_forms;
     form = &raw mut (*fnode).form;
     pdf_dev_grestore_to((*fnode).q_depth);
     procset = pdf_new_array();
-    pdf_add_array(
-        procset,
-        pdf_new_name(b"PDF\0" as *const u8 as *const ::core::ffi::c_char),
-    );
-    pdf_add_array(
-        procset,
-        pdf_new_name(b"Text\0" as *const u8 as *const ::core::ffi::c_char),
-    );
-    pdf_add_array(
-        procset,
-        pdf_new_name(b"ImageC\0" as *const u8 as *const ::core::ffi::c_char),
-    );
-    pdf_add_array(
-        procset,
-        pdf_new_name(b"ImageB\0" as *const u8 as *const ::core::ffi::c_char),
-    );
-    pdf_add_array(
-        procset,
-        pdf_new_name(b"ImageI\0" as *const u8 as *const ::core::ffi::c_char),
-    );
+    pdf_add_array(procset, pdf_new_name(b"PDF\0" as *const u8 as *const ::core::ffi::c_char));
+    pdf_add_array(procset, pdf_new_name(b"Text\0" as *const u8 as *const ::core::ffi::c_char));
+    pdf_add_array(procset, pdf_new_name(b"ImageC\0" as *const u8 as *const ::core::ffi::c_char));
+    pdf_add_array(procset, pdf_new_name(b"ImageB\0" as *const u8 as *const ::core::ffi::c_char));
+    pdf_add_array(procset, pdf_new_name(b"ImageI\0" as *const u8 as *const ::core::ffi::c_char));
     pdf_add_dict(
         (*form).resources,
         pdf_new_name(b"ProcSet\0" as *const u8 as *const ::core::ffi::c_char),
@@ -3815,26 +3111,22 @@ pub unsafe extern "C-unwind" fn pdf_doc_break_annot() {
 #[unsafe(export_name = "__pdf_impl_pdf_doc_expand_box")]
 pub unsafe extern "C-unwind" fn pdf_doc_expand_box(mut rect: *const pdf_rect) {
     let __pdf_state = unsafe { document_state() };
-    (*__pdf_state).breaking_state.rect.llx = if (*__pdf_state).breaking_state.rect.llx < (*rect).llx
-    {
+    (*__pdf_state).breaking_state.rect.llx = if (*__pdf_state).breaking_state.rect.llx < (*rect).llx {
         (*__pdf_state).breaking_state.rect.llx
     } else {
         (*rect).llx
     };
-    (*__pdf_state).breaking_state.rect.lly = if (*__pdf_state).breaking_state.rect.lly < (*rect).lly
-    {
+    (*__pdf_state).breaking_state.rect.lly = if (*__pdf_state).breaking_state.rect.lly < (*rect).lly {
         (*__pdf_state).breaking_state.rect.lly
     } else {
         (*rect).lly
     };
-    (*__pdf_state).breaking_state.rect.urx = if (*__pdf_state).breaking_state.rect.urx > (*rect).urx
-    {
+    (*__pdf_state).breaking_state.rect.urx = if (*__pdf_state).breaking_state.rect.urx > (*rect).urx {
         (*__pdf_state).breaking_state.rect.urx
     } else {
         (*rect).urx
     };
-    (*__pdf_state).breaking_state.rect.ury = if (*__pdf_state).breaking_state.rect.ury > (*rect).ury
-    {
+    (*__pdf_state).breaking_state.rect.ury = if (*__pdf_state).breaking_state.rect.ury > (*rect).ury {
         (*__pdf_state).breaking_state.rect.ury
     } else {
         (*rect).ury
@@ -3843,11 +3135,7 @@ pub unsafe extern "C-unwind" fn pdf_doc_expand_box(mut rect: *const pdf_rect) {
 }
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memcpy(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memcpy(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __n: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -3863,12 +3151,8 @@ pub struct pdf_file {
     _private: [u8; 0],
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_doc_set_bop_content(
-    mut content: *const ::core::ffi::c_char,
-    mut length: ::core::ffi::c_uint,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { pdf_doc_set_bop_content(content, length) })
-    {
+pub unsafe extern "C" fn __pdf_entry_pdf_doc_set_bop_content(mut content: *const ::core::ffi::c_char, mut length: ::core::ffi::c_uint) -> i32 {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_doc_set_bop_content(content, length) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -3877,12 +3161,8 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_set_bop_content(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_doc_set_eop_content(
-    mut content: *const ::core::ffi::c_char,
-    mut length: ::core::ffi::c_uint,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { pdf_doc_set_eop_content(content, length) })
-    {
+pub unsafe extern "C" fn __pdf_entry_pdf_doc_set_eop_content(mut content: *const ::core::ffi::c_char, mut length: ::core::ffi::c_uint) -> i32 {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_doc_set_eop_content(content, length) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -3892,13 +3172,9 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_set_eop_content(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_doc_add_page_resource(
-    mut category: *const ::core::ffi::c_char,
-    mut resource_name: *const ::core::ffi::c_char,
-    mut resource_ref: *mut pdf_obj,
+    mut category: *const ::core::ffi::c_char, mut resource_name: *const ::core::ffi::c_char, mut resource_ref: *mut pdf_obj,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_doc_add_page_resource(category, resource_name, resource_ref)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_doc_add_page_resource(category, resource_name, resource_ref) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -3907,10 +3183,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_add_page_resource(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_doc_get_page_count(
-    mut pf: *mut pdf_file,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_doc_get_page_count(mut pf: *mut pdf_file, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_doc_get_page_count(pf) }) {
         Ok(value) => {
             unsafe {
@@ -3923,17 +3196,10 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_get_page_count(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_doc_get_page(
-    mut pf: *mut pdf_file,
-    mut page_no: ::core::ffi::c_int,
-    mut opt_bbox: pdf_page_boundary,
-    mut bbox: *mut pdf_rect,
-    mut matrix: *mut pdf_tmatrix,
-    mut resources_p: *mut *mut pdf_obj,
-    _result: *mut *mut pdf_obj,
+    mut pf: *mut pdf_file, mut page_no: ::core::ffi::c_int, mut opt_bbox: pdf_page_boundary, mut bbox: *mut pdf_rect, mut matrix: *mut pdf_tmatrix,
+    mut resources_p: *mut *mut pdf_obj, _result: *mut *mut pdf_obj,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_doc_get_page(pf, page_no, opt_bbox, bbox, matrix, resources_p)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_doc_get_page(pf, page_no, opt_bbox, bbox, matrix, resources_p) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -3956,9 +3222,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_bookmarks_up(_result: *mut ::core::
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_doc_bookmarks_down(
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_doc_bookmarks_down(_result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_doc_bookmarks_down() }) {
         Ok(value) => {
             unsafe {
@@ -3970,9 +3234,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_bookmarks_down(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_doc_bookmarks_depth(
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_doc_bookmarks_depth(_result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_doc_bookmarks_depth() }) {
         Ok(value) => {
             unsafe {
@@ -3984,10 +3246,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_bookmarks_depth(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_doc_bookmarks_add(
-    mut dict: *mut pdf_obj,
-    mut is_open: ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_doc_bookmarks_add(mut dict: *mut pdf_obj, mut is_open: ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_doc_bookmarks_add(dict, is_open) }) {
         Ok(value) => {
             let _ = value;
@@ -3998,15 +3257,10 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_bookmarks_add(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_doc_add_names(
-    mut category: *const ::core::ffi::c_char,
-    mut key: *const ::core::ffi::c_void,
-    mut keylen: ::core::ffi::c_int,
-    mut value: *mut pdf_obj,
+    mut category: *const ::core::ffi::c_char, mut key: *const ::core::ffi::c_void, mut keylen: ::core::ffi::c_int, mut value: *mut pdf_obj,
     _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_doc_add_names(category, key, keylen, value)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_doc_add_names(category, key, keylen, value) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -4018,14 +3272,9 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_add_names(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_doc_add_annot(
-    mut page_no: ::core::ffi::c_uint,
-    mut rect: *const pdf_rect,
-    mut annot_dict: *mut pdf_obj,
-    mut new_annot: ::core::ffi::c_int,
+    mut page_no: ::core::ffi::c_uint, mut rect: *const pdf_rect, mut annot_dict: *mut pdf_obj, mut new_annot: ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_doc_add_annot(page_no, rect, annot_dict, new_annot)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_doc_add_annot(page_no, rect, annot_dict, new_annot) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -4034,13 +3283,8 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_add_annot(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_doc_begin_article(
-    mut article_id: *const ::core::ffi::c_char,
-    mut article_info: *mut pdf_obj,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_doc_begin_article(article_id, article_info)
-    }) {
+pub unsafe extern "C" fn __pdf_entry_pdf_doc_begin_article(mut article_id: *const ::core::ffi::c_char, mut article_info: *mut pdf_obj) -> i32 {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_doc_begin_article(article_id, article_info) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -4050,14 +3294,9 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_begin_article(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_doc_add_bead(
-    mut article_id: *const ::core::ffi::c_char,
-    mut bead_id: *const ::core::ffi::c_char,
-    mut page_no: ::core::ffi::c_int,
-    mut rect: *const pdf_rect,
+    mut article_id: *const ::core::ffi::c_char, mut bead_id: *const ::core::ffi::c_char, mut page_no: ::core::ffi::c_int, mut rect: *const pdf_rect,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_doc_add_bead(article_id, bead_id, page_no, rect)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_doc_add_bead(article_id, bead_id, page_no, rect) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -4066,10 +3305,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_add_bead(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_doc_set_mediabox(
-    mut page_no: ::core::ffi::c_uint,
-    mut mediabox: *const pdf_rect,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_doc_set_mediabox(mut page_no: ::core::ffi::c_uint, mut mediabox: *const pdf_rect) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_doc_set_mediabox(page_no, mediabox) }) {
         Ok(value) => {
             let _ = value;
@@ -4079,9 +3315,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_set_mediabox(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_doc_current_page_resources(
-    _result: *mut *mut pdf_obj,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_doc_current_page_resources(_result: *mut *mut pdf_obj) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_doc_current_page_resources() }) {
         Ok(value) => {
             unsafe {
@@ -4093,10 +3327,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_current_page_resources(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_doc_get_dictionary(
-    mut category: *const ::core::ffi::c_char,
-    _result: *mut *mut pdf_obj,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_doc_get_dictionary(mut category: *const ::core::ffi::c_char, _result: *mut *mut pdf_obj) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_doc_get_dictionary(category) }) {
         Ok(value) => {
             unsafe {
@@ -4108,9 +3339,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_get_dictionary(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_doc_current_page_number(
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_doc_current_page_number(_result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_doc_current_page_number() }) {
         Ok(value) => {
             unsafe {
@@ -4122,10 +3351,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_current_page_number(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_doc_ref_page(
-    mut page_no: ::core::ffi::c_uint,
-    _result: *mut *mut pdf_obj,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_doc_ref_page(mut page_no: ::core::ffi::c_uint, _result: *mut *mut pdf_obj) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_doc_ref_page(page_no) }) {
         Ok(value) => {
             unsafe {
@@ -4137,10 +3363,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_ref_page(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_doc_get_reference(
-    mut category: *const ::core::ffi::c_char,
-    _result: *mut *mut pdf_obj,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_doc_get_reference(mut category: *const ::core::ffi::c_char, _result: *mut *mut pdf_obj) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_doc_get_reference(category) }) {
         Ok(value) => {
             unsafe {
@@ -4163,13 +3386,9 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_set_bgcolor(mut color: *const pdf_c
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_doc_begin_page(
-    mut scale: ::core::ffi::c_double,
-    mut x_origin: ::core::ffi::c_double,
-    mut y_origin: ::core::ffi::c_double,
+    mut scale: ::core::ffi::c_double, mut x_origin: ::core::ffi::c_double, mut y_origin: ::core::ffi::c_double,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_doc_begin_page(scale, x_origin, y_origin)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_doc_begin_page(scale, x_origin, y_origin) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -4188,12 +3407,8 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_end_page() -> i32 {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_doc_add_page_content(
-    mut buffer: *const ::core::ffi::c_char,
-    mut length: ::core::ffi::c_uint,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { pdf_doc_add_page_content(buffer, length) })
-    {
+pub unsafe extern "C" fn __pdf_entry_pdf_doc_add_page_content(mut buffer: *const ::core::ffi::c_char, mut length: ::core::ffi::c_uint) -> i32 {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_doc_add_page_content(buffer, length) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -4203,15 +3418,10 @@ pub unsafe extern "C" fn __pdf_entry_pdf_doc_add_page_content(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_open_document(
-    mut filename: *const ::core::ffi::c_char,
-    mut creator: *const ::core::ffi::c_char,
-    mut id1: *const ::core::ffi::c_uchar,
-    mut id2: *const ::core::ffi::c_uchar,
-    mut settings: pdf_setting,
+    mut filename: *const ::core::ffi::c_char, mut creator: *const ::core::ffi::c_char, mut id1: *const ::core::ffi::c_uchar,
+    mut id2: *const ::core::ffi::c_uchar, mut settings: pdf_setting,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_open_document(filename, creator, id1, id2, settings)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_open_document(filename, creator, id1, id2, settings) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -4231,15 +3441,10 @@ pub unsafe extern "C" fn __pdf_entry_pdf_close_document() -> i32 {
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_doc_begin_grabbing(
-    mut ident: *const ::core::ffi::c_char,
-    mut ref_x: ::core::ffi::c_double,
-    mut ref_y: ::core::ffi::c_double,
-    mut cropbox: *const pdf_rect,
+    mut ident: *const ::core::ffi::c_char, mut ref_x: ::core::ffi::c_double, mut ref_y: ::core::ffi::c_double, mut cropbox: *const pdf_rect,
     _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_doc_begin_grabbing(ident, ref_x, ref_y, cropbox)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_doc_begin_grabbing(ident, ref_x, ref_y, cropbox) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -4356,18 +3561,16 @@ impl DocumentState {
                         enable_manual_thumb: 0,
                     },
                     pending_forms: ::core::ptr::null::<form_list_node>() as *mut form_list_node,
-                    thumb_basename: ::core::ptr::null::<::core::ffi::c_char>()
-                        as *mut ::core::ffi::c_char,
+                    thumb_basename: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
                 },
                 bgcolor: pdf_color {
                     res_id: -(1 as ::core::ffi::c_int),
                     type_0: PDF_COLORSPACE_TYPE_GRAY,
                     num_components: 1 as ::core::ffi::c_int,
-                    spot_color_name: ::core::ptr::null::<::core::ffi::c_char>()
-                        as *mut ::core::ffi::c_char,
+                    spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
                     values: [
-                        1.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                        0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                        1.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                        0., 0.,
                     ],
                     pattern_id: -(1 as ::core::ffi::c_int),
                 },
@@ -4389,10 +3592,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_pdfdoc
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_pdfdoc.pointer }
 }

@@ -151,8 +151,7 @@ impl LanguageId {
     pub const MAC_ENGLISH: LanguageId = LanguageId(sys::TT_MAC_LANGID_ENGLISH as u16);
 
     /// Windows-specific US english language
-    pub const WIN_ENGLISH_US: LanguageId =
-        LanguageId(sys::TT_MS_LANGID_ENGLISH_UNITED_STATES as u16);
+    pub const WIN_ENGLISH_US: LanguageId = LanguageId(sys::TT_MS_LANGID_ENGLISH_UNITED_STATES as u16);
 }
 
 /// An error code returned by freetype.
@@ -244,10 +243,7 @@ impl Drop for Glyph {
 }
 
 /// A glyph loaded into a faces glyph slot.
-pub struct GlyphSlot<'a>(
-    NonNull<sys::FT_GlyphSlotRec>,
-    PhantomData<&'a sys::FT_GlyphSlotRec>,
-);
+pub struct GlyphSlot<'a>(NonNull<sys::FT_GlyphSlotRec>, PhantomData<&'a sys::FT_GlyphSlotRec>);
 
 impl GlyphSlot<'_> {
     fn as_ref(&self) -> &sys::FT_GlyphSlotRec {
@@ -326,14 +322,7 @@ impl Face {
         let mut raw_face = ptr::null_mut();
         // SAFETY: We hold the FACE_MUTEX lock, so calls to FT_New_Face are guaranteed safe
         //         with our global library instance.
-        let err = unsafe {
-            sys::FT_New_Face(
-                ft_lib(),
-                path.as_ptr(),
-                index as libc::c_long,
-                &mut raw_face,
-            )
-        };
+        let err = unsafe { sys::FT_New_Face(ft_lib(), path.as_ptr(), index as libc::c_long, &mut raw_face) };
         drop(_l);
         Error::or_else(err, || Face(NonNull::new(raw_face).unwrap(), Vec::new()))
     }
@@ -413,14 +402,7 @@ impl Face {
     pub fn get_advance(&self, index: u32, flags: LoadFlags) -> Result<i64, Error> {
         let mut advance = 0;
         // SAFETY: Out internal pointer is guaranteed valid
-        let err = unsafe {
-            sys::FT_Get_Advance(
-                self.0.as_ptr(),
-                index as libc::c_uint,
-                flags.as_i32(),
-                &mut advance,
-            )
-        };
+        let err = unsafe { sys::FT_Get_Advance(self.0.as_ptr(), index as libc::c_uint, flags.as_i32(), &mut advance) };
         Error::or_else(err, || advance as i64)
     }
 
@@ -437,8 +419,7 @@ impl Face {
     pub fn get_next_char(&self, char: u32) -> (u32, u32) {
         let mut index = 0;
         // SAFETY: Our internal pointer is guaranteed valid
-        let code =
-            unsafe { sys::FT_Get_Next_Char(self.0.as_ptr(), char as libc::c_ulong, &mut index) };
+        let code = unsafe { sys::FT_Get_Next_Char(self.0.as_ptr(), char as libc::c_ulong, &mut index) };
         (code as u32, index as u32)
     }
 
@@ -452,13 +433,7 @@ impl Face {
     /// present.
     pub fn get_char_variant_index(&self, char: u32, variant: u32) -> Option<NonZeroU32> {
         // SAFETY: Our internal pointer is guaranteed valid
-        NonZeroU32::new(unsafe {
-            sys::FT_Face_GetCharVariantIndex(
-                self.0.as_ptr(),
-                char as libc::c_ulong,
-                variant as libc::c_ulong,
-            )
-        })
+        NonZeroU32::new(unsafe { sys::FT_Face_GetCharVariantIndex(self.0.as_ptr(), char as libc::c_ulong, variant as libc::c_ulong) })
     }
 
     /// For a given glyph index, get the kerning vector between them. This only works for 'simple'
@@ -476,14 +451,7 @@ impl Face {
     /// This is the inverse of [`Self::get_name_index`].
     pub fn get_glyph_name<'a>(&self, index: u32, buf: &'a mut [u8]) -> Result<&'a CStr, Error> {
         // SAFETY: Our internal pointer is guaranteed valid
-        let err = unsafe {
-            sys::FT_Get_Glyph_Name(
-                self.0.as_ptr(),
-                index as libc::c_uint,
-                buf.as_mut_ptr().cast(),
-                buf.len() as libc::c_uint,
-            )
-        };
+        let err = unsafe { sys::FT_Get_Glyph_Name(self.0.as_ptr(), index as libc::c_uint, buf.as_mut_ptr().cast(), buf.len() as libc::c_uint) };
         Error::or_else(err, move || CStr::from_bytes_until_nul(buf).unwrap())
     }
 
@@ -528,8 +496,7 @@ impl Face {
     /// different flags affect the loaded glyph.
     pub fn load_glyph(&mut self, index: u32, flags: LoadFlags) -> Result<GlyphSlot<'_>, Error> {
         // SAFETY: Our internal pointer is guaranteed valid
-        let err =
-            unsafe { sys::FT_Load_Glyph(self.0.as_ptr(), index as libc::c_uint, flags.as_i32()) };
+        let err = unsafe { sys::FT_Load_Glyph(self.0.as_ptr(), index as libc::c_uint, flags.as_i32()) };
         match Error::or_else(err, || ()) {
             Ok(_) => Ok(self.glyph()),
             Err(e) => Err(e),
@@ -559,15 +526,7 @@ impl Face {
     pub fn load_sfnt_table(&self, tag: TableTag) -> Result<Vec<u8>, Error> {
         let mut len = 0;
         // SAFETY: Our internal pointer is guaranteed valid
-        let err = unsafe {
-            sys::FT_Load_Sfnt_Table(
-                self.0.as_ptr(),
-                tag.as_u32() as libc::c_ulong,
-                0,
-                ptr::null_mut(),
-                &mut len,
-            )
-        };
+        let err = unsafe { sys::FT_Load_Sfnt_Table(self.0.as_ptr(), tag.as_u32() as libc::c_ulong, 0, ptr::null_mut(), &mut len) };
         Error::or_else(err, || ())?;
 
         let mut buf = vec![0u8; len as usize];
@@ -575,15 +534,7 @@ impl Face {
         // SAFETY: Our internal pointer is guaranteed valid. We know from previously calling the
         //         method with the same tag that buffer is of sufficient length to hold the returned
         //         table.
-        let err = unsafe {
-            sys::FT_Load_Sfnt_Table(
-                self.0.as_ptr(),
-                tag.as_u32() as libc::c_ulong,
-                0,
-                buf.as_mut_ptr().cast(),
-                &mut len,
-            )
-        };
+        let err = unsafe { sys::FT_Load_Sfnt_Table(self.0.as_ptr(), tag.as_u32() as libc::c_ulong, 0, buf.as_mut_ptr().cast(), &mut len) };
 
         Error::or_else(err, || buf)
     }
@@ -630,10 +581,7 @@ mod tests {
     use std::path::{Path, PathBuf};
 
     fn assets_dir() -> PathBuf {
-        Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../tests/assets")
-            .canonicalize()
-            .unwrap()
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/assets").canonicalize().unwrap()
     }
 
     fn get_face_data() -> Vec<u8> {
@@ -685,10 +633,7 @@ mod tests {
 
             let mac_name = face.get_sfnt_name(1).unwrap();
 
-            let name_16 = "Latin Modern Roman"
-                .encode_utf16()
-                .flat_map(|val| val.to_be_bytes())
-                .collect::<Vec<u8>>();
+            let name_16 = "Latin Modern Roman".encode_utf16().flat_map(|val| val.to_be_bytes()).collect::<Vec<u8>>();
 
             assert_eq!(mac_name.platform_id, PlatformId::MACINTOSH);
             assert_eq!(mac_name.encoding_id, EncodingId::MAC_ROMAN);
@@ -734,10 +679,7 @@ mod tests {
     fn test_load_tables() {
         let data = get_face_data();
         for face in test_faces() {
-            assert_eq!(
-                data,
-                face.load_sfnt_table(TableTag::Sfnt(SfntTag::Head)).unwrap()
-            );
+            assert_eq!(data, face.load_sfnt_table(TableTag::Sfnt(SfntTag::Head)).unwrap());
             face.load_sfnt_table(TableTag::Other(u32::MAX)).unwrap_err();
         }
     }
@@ -753,8 +695,7 @@ mod tests {
     #[test]
     fn test_attach_stream() {
         for mut face in test_faces() {
-            face.attach_stream_mem(b"Hello World!".to_vec())
-                .unwrap_err();
+            face.attach_stream_mem(b"Hello World!".to_vec()).unwrap_err();
         }
     }
 
@@ -797,9 +738,7 @@ mod tests {
             let exc_idx = face.get_char_index('!' as u32).unwrap().get();
             let at_idx = face.get_char_index('@' as u32).unwrap().get();
 
-            let kern = face
-                .get_kerning(exc_idx, at_idx, KerningMode::Default)
-                .unwrap();
+            let kern = face.get_kerning(exc_idx, at_idx, KerningMode::Default).unwrap();
             // TODO: Find pair of characters with non-zero kerning
             assert_eq!(kern, Vector { x: 0, y: 0 });
         }

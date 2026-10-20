@@ -136,9 +136,8 @@ impl<'a> Cursor<'a> {
 }
 
 fn has_metric_suffix(name: &str) -> bool {
-    name.rsplit_once('.').is_some_and(|(_, suffix)| {
-        suffix.eq_ignore_ascii_case("tfm") || suffix.eq_ignore_ascii_case("ofm")
-    })
+    name.rsplit_once('.')
+        .is_some_and(|(_, suffix)| suffix.eq_ignore_ascii_case("tfm") || suffix.eq_ignore_ascii_case("ofm"))
 }
 
 fn open_steps(name: &str) -> &'static [OpenStep] {
@@ -176,22 +175,14 @@ fn metric_at(table: &[i32], index: usize, message: &str) -> Result<i32, String> 
 
 fn allocate(slots: usize) -> Result<Vec<i32>, String> {
     let mut values = Vec::new();
-    values.try_reserve_exact(slots).map_err(|_| {
-        format!(
-            "Out of memory - asked for {} bytes\n",
-            slots.saturating_mul(4)
-        )
-    })?;
+    values
+        .try_reserve_exact(slots)
+        .map_err(|_| format!("Out of memory - asked for {} bytes\n", slots.saturating_mul(4)))?;
     values.resize(slots, 0);
     Ok(values)
 }
 
-fn check_tfm_size(
-    file_size: i64,
-    claimed: u32,
-    expected: u32,
-    warnings: &mut Vec<String>,
-) -> Result<(), String> {
+fn check_tfm_size(file_size: i64, claimed: u32, expected: u32, warnings: &mut Vec<String>) -> Result<(), String> {
     if file_size < i64::from(claimed) * 4 {
         return Err(CANNOT_PROCEED.to_string());
     }
@@ -229,9 +220,7 @@ fn parse_tfm(bytes: &[u8], file_size: i64, warnings: &mut Vec<String>) -> Result
     let kerns = cursor.u16()?;
     let extens = cursor.u16()?;
     let params = cursor.u16()?;
-    let expected = wrapping_sum(&[
-        6, count, header_len, widths, heights, depths, italic, ligatures, kerns, extens, params,
-    ]);
+    let expected = wrapping_sum(&[6, count, header_len, widths, heights, depths, italic, ligatures, kerns, extens, params]);
     check_tfm_size(file_size, claimed, expected, warnings)?;
     if last > 255 {
         return Err(INVALID_HEADER.to_string());
@@ -255,15 +244,9 @@ fn parse_tfm(bytes: &[u8], file_size: i64, warnings: &mut Vec<String>) -> Result
         let width = metric_at(&width_table, width_index, INVALID_HEADER)?;
         let height = metric_at(&height_table, height_index, INVALID_HEADER)?;
         let depth = metric_at(&depth_table, depth_index, INVALID_HEADER)?;
-        *width_out
-            .get_mut(code)
-            .ok_or_else(|| INVALID_HEADER.to_string())? = width;
-        *height_out
-            .get_mut(code)
-            .ok_or_else(|| INVALID_HEADER.to_string())? = height;
-        *depth_out
-            .get_mut(code)
-            .ok_or_else(|| INVALID_HEADER.to_string())? = depth;
+        *width_out.get_mut(code).ok_or_else(|| INVALID_HEADER.to_string())? = width;
+        *height_out.get_mut(code).ok_or_else(|| INVALID_HEADER.to_string())? = height;
+        *depth_out.get_mut(code).ok_or_else(|| INVALID_HEADER.to_string())? = depth;
     }
 
     Ok(Metrics {
@@ -334,21 +317,13 @@ fn parse_ofm(bytes: &[u8], file_size: i64, warnings: &mut Vec<String>) -> Result
     let width_table = cursor.read_i32s(nwidths)?;
     let height_table = cursor.read_i32s(nheights)?;
     let depth_table = cursor.read_i32s(ndepths)?;
-    assemble_ofm(
-        first,
-        last,
-        &map,
-        &[&width_table, &height_table, &depth_table],
-        design_size(&header)?,
-    )
+    assemble_ofm(first, last, &map, &[&width_table, &height_table, &depth_table], design_size(&header)?)
 }
 
 fn zero_indexes(count: u32) -> Result<Vec<usize>, String> {
     let count = usize::try_from(count).map_err(|_| premature())?;
     let mut values = Vec::new();
-    values
-        .try_reserve_exact(count)
-        .map_err(|_| OFM_PROBLEM.to_string())?;
+    values.try_reserve_exact(count).map_err(|_| OFM_PROBLEM.to_string())?;
     values.resize(count, 0);
     Ok(values)
 }
@@ -364,18 +339,11 @@ fn read_level_zero_chars(cursor: &mut Cursor<'_>, count: u32) -> Result<CharMap,
         height: Vec::new(),
         depth: Vec::new(),
     };
-    map.width
-        .try_reserve_exact(slots)
-        .map_err(|_| OFM_PROBLEM.to_string())?;
-    map.height
-        .try_reserve_exact(slots)
-        .map_err(|_| OFM_PROBLEM.to_string())?;
-    map.depth
-        .try_reserve_exact(slots)
-        .map_err(|_| OFM_PROBLEM.to_string())?;
+    map.width.try_reserve_exact(slots).map_err(|_| OFM_PROBLEM.to_string())?;
+    map.height.try_reserve_exact(slots).map_err(|_| OFM_PROBLEM.to_string())?;
+    map.depth.try_reserve_exact(slots).map_err(|_| OFM_PROBLEM.to_string())?;
     for _ in 0..count {
-        map.width
-            .push(usize::try_from(cursor.u16()?).map_err(|_| premature())?);
+        map.width.push(usize::try_from(cursor.u16()?).map_err(|_| premature())?);
         map.height.push(usize::from(cursor.u8()?));
         map.depth.push(usize::from(cursor.u8()?));
         cursor.skip(4)?;
@@ -383,12 +351,7 @@ fn read_level_zero_chars(cursor: &mut Cursor<'_>, count: u32) -> Result<CharMap,
     Ok(map)
 }
 
-fn read_level_one_chars(
-    cursor: &mut Cursor<'_>,
-    count: u32,
-    packed: u32,
-    parameters: u32,
-) -> Result<CharMap, String> {
+fn read_level_one_chars(cursor: &mut Cursor<'_>, count: u32, packed: u32, parameters: u32) -> Result<CharMap, String> {
     let mut map = CharMap {
         width: zero_indexes(count)?,
         height: zero_indexes(count)?,
@@ -403,8 +366,7 @@ fn read_level_one_chars(
         let depth = usize::from(cursor.u8()?);
         cursor.skip(4)?;
         let repeats = cursor.u16()?;
-        let pending =
-            u64::from(parameters) * 2 + u64::from(u32::from(parameters.is_multiple_of(2))) * 2;
+        let pending = u64::from(parameters) * 2 + u64::from(u32::from(parameters.is_multiple_of(2))) * 2;
         if pending > u64::try_from(cursor.bytes.len().saturating_sub(cursor.pos)).unwrap_or(0) {
             return Err(premature());
         }
@@ -435,13 +397,7 @@ fn read_level_one_chars(
     Ok(map)
 }
 
-fn assemble_ofm(
-    first: u32,
-    last: u32,
-    map: &CharMap,
-    tables: &[&[i32]; 3],
-    design: i32,
-) -> Result<Metrics, String> {
+fn assemble_ofm(first: u32, last: u32, map: &CharMap, tables: &[&[i32]; 3], design: i32) -> Result<Metrics, String> {
     let slots = usize::try_from(last)
         .ok()
         .and_then(|last| last.checked_add(1))
@@ -452,21 +408,13 @@ fn assemble_ofm(
     let [widths, heights, depths] = tables;
     let base = usize::try_from(first).map_err(|_| OFM_PROBLEM.to_string())?;
     for index in 0..map.width.len() {
-        let code = base
-            .checked_add(index)
-            .ok_or_else(|| OFM_PROBLEM.to_string())?;
+        let code = base.checked_add(index).ok_or_else(|| OFM_PROBLEM.to_string())?;
         let width = metric_at(widths, map.width[index], OFM_PROBLEM)?;
         let height = metric_at(heights, map.height[index], OFM_PROBLEM)?;
         let depth = metric_at(depths, map.depth[index], OFM_PROBLEM)?;
-        *width_out
-            .get_mut(code)
-            .ok_or_else(|| OFM_PROBLEM.to_string())? = width;
-        *height_out
-            .get_mut(code)
-            .ok_or_else(|| OFM_PROBLEM.to_string())? = height;
-        *depth_out
-            .get_mut(code)
-            .ok_or_else(|| OFM_PROBLEM.to_string())? = depth;
+        *width_out.get_mut(code).ok_or_else(|| OFM_PROBLEM.to_string())? = width;
+        *height_out.get_mut(code).ok_or_else(|| OFM_PROBLEM.to_string())? = height;
+        *depth_out.get_mut(code).ok_or_else(|| OFM_PROBLEM.to_string())? = depth;
     }
     Ok(Metrics {
         design_size: design,
@@ -478,12 +426,7 @@ fn assemble_ofm(
     })
 }
 
-fn parse(
-    source: Source,
-    bytes: &[u8],
-    file_size: i64,
-    warnings: &mut Vec<String>,
-) -> Result<Metrics, String> {
+fn parse(source: Source, bytes: &[u8], file_size: i64, warnings: &mut Vec<String>) -> Result<Metrics, String> {
     match source {
         Source::Tfm => parse_tfm(bytes, file_size, warnings),
         Source::Ofm => parse_ofm(bytes, file_size, warnings),
@@ -573,10 +516,7 @@ fn metric_value(metrics: &Metrics, ch: i32, values: &[i32]) -> Result<i32, Strin
         .ok_or_else(|| format!("Invalid char: {ch}\n"))
 }
 
-fn with_metrics<T>(
-    id: i32,
-    select: impl FnOnce(&Metrics) -> Result<T, String>,
-) -> Result<T, String> {
+fn with_metrics<T>(id: i32, select: impl FnOnce(&Metrics) -> Result<T, String>) -> Result<T, String> {
     with_fonts(|fonts| {
         let fonts = fonts.borrow();
         let font = usize::try_from(id)
@@ -606,9 +546,7 @@ fn read_file(name: &str, format: FileFormat) -> Result<Option<(Vec<u8>, u64)>, S
     CoreBridgeState::with_global_state(|state| {
         let size = u64::try_from(state.input_get_size(id)).unwrap_or(u64::MAX);
         let mut bytes = Vec::new();
-        state
-            .input_read_to_end(id, &mut bytes)
-            .map_err(|_| premature())?;
+        state.input_read_to_end(id, &mut bytes).map_err(|_| premature())?;
         Ok(Some((bytes, size)))
     })
 }
@@ -626,11 +564,7 @@ fn file_available(name: &str, format: FileFormat) -> bool {
 fn locate(requested: &str, verbose: bool) -> Result<Option<(Source, Vec<u8>, i64)>, String> {
     for step in open_steps(requested) {
         let (path, source, format) = match step {
-            OpenStep::AliasOfm => (
-                Cow::Owned(format!("{requested}.ofm")),
-                Source::Ofm,
-                FileFormat::Ofm,
-            ),
+            OpenStep::AliasOfm => (Cow::Owned(format!("{requested}.ofm")), Source::Ofm, FileFormat::Ofm),
             OpenStep::Tfm => (Cow::Borrowed(requested), Source::Tfm, FileFormat::Tfm),
             OpenStep::Ofm => (Cow::Borrowed(requested), Source::Ofm, FileFormat::Ofm),
         };
@@ -648,11 +582,7 @@ fn locate(requested: &str, verbose: bool) -> Result<Option<(Source, Vec<u8>, i64
             if size < 24 {
                 return Err("TFM/OFM file too small to be a valid file.".to_string());
             }
-            return Ok(Some((
-                source,
-                bytes,
-                i64::try_from(size).unwrap_or(i64::MAX),
-            )));
+            return Ok(Some((source, bytes, i64::try_from(size).unwrap_or(i64::MAX))));
         }
     }
     Ok(None)
@@ -698,12 +628,7 @@ unsafe extern "C" fn tt_tfm_next_diagnostic(kind: *mut i32) -> *const c_char {
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn tt_tfm_open(
-    name: *const c_char,
-    must_exist: i32,
-    verbose: i32,
-    error: *mut *const c_char,
-) -> i32 {
+unsafe extern "C" fn tt_tfm_open(name: *const c_char, must_exist: i32, verbose: i32, error: *mut *const c_char) -> i32 {
     clear_diagnostics();
     if name.is_null() {
         let result = if must_exist != 0 {
@@ -729,32 +654,17 @@ extern "C" fn tt_tfm_reset() {
 
 #[unsafe(no_mangle)]
 unsafe extern "C" fn tt_tfm_get_fw_width(font_id: i32, ch: i32, error: *mut *const c_char) -> i32 {
-    finish(
-        with_metrics(font_id, |metrics| {
-            metric_value(metrics, ch, &metrics.widths)
-        }),
-        error,
-    )
+    finish(with_metrics(font_id, |metrics| metric_value(metrics, ch, &metrics.widths)), error)
 }
 
 #[unsafe(no_mangle)]
 unsafe extern "C" fn tt_tfm_get_fw_height(font_id: i32, ch: i32, error: *mut *const c_char) -> i32 {
-    finish(
-        with_metrics(font_id, |metrics| {
-            metric_value(metrics, ch, &metrics.heights)
-        }),
-        error,
-    )
+    finish(with_metrics(font_id, |metrics| metric_value(metrics, ch, &metrics.heights)), error)
 }
 
 #[unsafe(no_mangle)]
 unsafe extern "C" fn tt_tfm_get_fw_depth(font_id: i32, ch: i32, error: *mut *const c_char) -> i32 {
-    finish(
-        with_metrics(font_id, |metrics| {
-            metric_value(metrics, ch, &metrics.depths)
-        }),
-        error,
-    )
+    finish(with_metrics(font_id, |metrics| metric_value(metrics, ch, &metrics.depths)), error)
 }
 
 #[unsafe(no_mangle)]
@@ -768,12 +678,7 @@ unsafe extern "C" fn tt_tfm_get_width(font_id: i32, ch: i32, error: *mut *const 
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn tt_tfm_string_width(
-    font_id: i32,
-    text: *const u8,
-    length: u32,
-    error: *mut *const c_char,
-) -> i32 {
+unsafe extern "C" fn tt_tfm_string_width(font_id: i32, text: *const u8, length: u32, error: *mut *const c_char) -> i32 {
     let bytes = if text.is_null() || length == 0 {
         &[]
     } else {
@@ -783,8 +688,7 @@ unsafe extern "C" fn tt_tfm_string_width(
         with_metrics(font_id, |metrics| {
             let mut total = 0i32;
             for &byte in bytes {
-                total =
-                    total.wrapping_add(metric_value(metrics, i32::from(byte), &metrics.widths)?);
+                total = total.wrapping_add(metric_value(metrics, i32::from(byte), &metrics.widths)?);
             }
             Ok(total)
         }),
@@ -795,9 +699,7 @@ unsafe extern "C" fn tt_tfm_string_width(
 #[unsafe(no_mangle)]
 unsafe extern "C" fn tt_tfm_get_design_size(font_id: i32, error: *mut *const c_char) -> f64 {
     finish(
-        with_metrics(font_id, |metrics| {
-            Ok(f64::from(metrics.design_size) / FIXWORD_SCALE * (72.0 / 72.27))
-        }),
+        with_metrics(font_id, |metrics| Ok(f64::from(metrics.design_size) / FIXWORD_SCALE * (72.0 / 72.27))),
         error,
     )
 }
@@ -865,11 +767,7 @@ mod tests {
         bytes
     }
 
-    fn parse_case(
-        source: Source,
-        bytes: &[u8],
-        file_size: i64,
-    ) -> (Result<Metrics, String>, Vec<String>) {
+    fn parse_case(source: Source, bytes: &[u8], file_size: i64) -> (Result<Metrics, String>, Vec<String>) {
         let mut warnings = Vec::new();
         let result = parse(source, bytes, file_size, &mut warnings);
         (result, warnings)
@@ -896,11 +794,7 @@ mod tests {
         if error.is_null() {
             None
         } else {
-            Some(
-                unsafe { CStr::from_ptr(error) }
-                    .to_string_lossy()
-                    .into_owned(),
-            )
+            Some(unsafe { CStr::from_ptr(error) }.to_string_lossy().into_owned())
         }
     }
 
@@ -923,10 +817,7 @@ mod tests {
             let name = format!("font{index}");
             assert_eq!(find_font(name.as_bytes()), Some(index));
             assert_eq!(intern(name.as_bytes(), make_metrics(-1)), index);
-            assert_eq!(
-                with_metrics(index, |metrics| Ok(metrics.widths[0])).unwrap(),
-                index
-            );
+            assert_eq!(with_metrics(index, |metrics| Ok(metrics.widths[0])).unwrap(), index);
         }
         clear_fonts();
         assert_eq!(find_font(b"font0"), None);
@@ -936,16 +827,10 @@ mod tests {
     #[test]
     fn names_without_a_metric_suffix_try_an_ofm_alias_first() {
         let _document = crate::compat::document::DocumentScope::new().unwrap();
-        assert_eq!(
-            open_steps("cmr10"),
-            &[OpenStep::AliasOfm, OpenStep::Tfm, OpenStep::Ofm]
-        );
+        assert_eq!(open_steps("cmr10"), &[OpenStep::AliasOfm, OpenStep::Tfm, OpenStep::Ofm]);
         assert_eq!(open_steps("cmr10.tfm"), &[OpenStep::Tfm, OpenStep::Ofm]);
         assert_eq!(open_steps("cmr10.OFM"), &[OpenStep::Tfm, OpenStep::Ofm]);
-        assert_eq!(
-            open_steps("cmr10.tfm.bak"),
-            &[OpenStep::AliasOfm, OpenStep::Tfm, OpenStep::Ofm]
-        );
+        assert_eq!(open_steps("cmr10.tfm.bak"), &[OpenStep::AliasOfm, OpenStep::Tfm, OpenStep::Ofm]);
         assert!(!has_metric_suffix("cmr10."));
     }
 
@@ -965,19 +850,10 @@ mod tests {
             assert!(error.is_null());
             assert_eq!(tt_tfm_get_fw_height(id, 0, &mut error), 65_536);
             assert_eq!(tt_tfm_get_fw_depth(id, 0, &mut error), 32_768);
-            assert_eq!(
-                tt_tfm_get_width(id, 0, &mut error),
-                524_288.0 / FIXWORD_SCALE
-            );
-            assert_eq!(
-                tt_tfm_get_design_size(id, &mut error),
-                f64::from(design) / FIXWORD_SCALE * (72.0 / 72.27)
-            );
+            assert_eq!(tt_tfm_get_width(id, 0, &mut error), 524_288.0 / FIXWORD_SCALE);
+            assert_eq!(tt_tfm_get_design_size(id, &mut error), f64::from(design) / FIXWORD_SCALE * (72.0 / 72.27));
             let text = [0u8, 0];
-            assert_eq!(
-                tt_tfm_string_width(id, text.as_ptr(), 2, &mut error),
-                1_048_576
-            );
+            assert_eq!(tt_tfm_string_width(id, text.as_ptr(), 2, &mut error), 1_048_576);
             assert_eq!(tt_tfm_get_fw_width(id, 1, &mut error), 0);
             assert_eq!(reported(error).as_deref(), Some("Invalid char: 1\n"));
             assert_eq!(tt_tfm_get_fw_width(4, 0, &mut error), 0);
@@ -1111,10 +987,7 @@ mod tests {
         assert_eq!(bytes.len(), 96);
         let (metrics, warnings) = parse_case(Source::Ofm, &bytes, 96);
         let metrics = metrics.expect("level 0 ofm");
-        assert_eq!(
-            warnings,
-            ["I may be interpreting a font direction incorrectly."]
-        );
+        assert_eq!(warnings, ["I may be interpreting a font direction incorrectly."]);
         assert_eq!(metrics.widths[0], 4096);
         assert_eq!(metrics.heights[0], 2048);
         assert_eq!(metrics.depths[0], 1024);
@@ -1125,10 +998,7 @@ mod tests {
     fn ofm_level_one_repeats_copy_metrics_and_reject_overruns() {
         let _document = crate::compat::document::DocumentScope::new().unwrap();
         let mut bytes = Vec::new();
-        push_ofm_directory(
-            &mut bytes,
-            &[1, 0, 2, 0, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 19, 3, 0],
-        );
+        push_ofm_directory(&mut bytes, &[1, 0, 2, 0, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 19, 3, 0]);
         push_i32(&mut bytes, 0);
         push_i32(&mut bytes, 5 << 20);
         bytes.extend_from_slice(&[0, 1, 1, 1, 0, 0, 0, 0, 0, 2, 0, 0]);
@@ -1150,10 +1020,7 @@ mod tests {
         bytes[19 * 4 + 8] = 0;
         bytes[19 * 4 + 9] = 3;
         let (result, _) = parse_case(Source::Ofm, &bytes, bytes.len() as i64);
-        assert_eq!(
-            result.unwrap_err(),
-            "OFM \"repeats\" causes number of characters to be exceeded."
-        );
+        assert_eq!(result.unwrap_err(), "OFM \"repeats\" causes number of characters to be exceeded.");
     }
 
     #[test]
@@ -1179,10 +1046,7 @@ mod tests {
         level[13 * 4..14 * 4].copy_from_slice(&1i32.to_be_bytes());
         let (result, warnings) = parse_case(Source::Ofm, &level, 56);
         assert_eq!(result.unwrap_err(), "can't handle OFM files with level > 1");
-        assert_eq!(
-            warnings,
-            ["I may be interpreting a font direction incorrectly."]
-        );
+        assert_eq!(warnings, ["I may be interpreting a font direction incorrectly."]);
     }
 
     #[test]
@@ -1197,10 +1061,7 @@ mod tests {
         assert_eq!(unsafe { CStr::from_ptr(first) }.to_bytes(), b"(TFM:cmr10");
         let second = unsafe { tt_tfm_next_diagnostic(&mut kind) };
         assert_eq!(kind, WARNING);
-        assert_eq!(
-            unsafe { CStr::from_ptr(second) }.to_bytes(),
-            b"Proceeding nervously..."
-        );
+        assert_eq!(unsafe { CStr::from_ptr(second) }.to_bytes(), b"Proceeding nervously...");
         assert!(unsafe { tt_tfm_next_diagnostic(&mut kind) }.is_null());
     }
 }

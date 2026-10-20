@@ -19,35 +19,17 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
     fn isascii(_: ::core::ffi::c_int) -> ::core::ffi::c_int;
     fn fabs(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn floor(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn round(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn atof(_: *const ::core::ffi::c_char) -> ::core::ffi::c_double;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-    fn sprintf(
-        _: *mut ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    fn sprintf(_: *mut ::core::ffi::c_char, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_release_obj"]
     fn pdf_release_obj(object: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_obj_typeof"]
@@ -71,52 +53,25 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_lookup_dict"]
     fn pdf_lookup_dict(dict: *mut pdf_obj, key: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_foreach_dict"]
     fn pdf_foreach_dict(
-        dict: *mut pdf_obj,
-        proc_0: Option<
-            unsafe extern "C-unwind" fn(
-                *mut pdf_obj,
-                *mut pdf_obj,
-                *mut ::core::ffi::c_void,
-            ) -> ::core::ffi::c_int,
-        >,
+        dict: *mut pdf_obj, proc_0: Option<unsafe extern "C-unwind" fn(*mut pdf_obj, *mut pdf_obj, *mut ::core::ffi::c_void) -> ::core::ffi::c_int>,
         pdata: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_check_version"]
-    fn pdf_check_version(
-        major: ::core::ffi::c_int,
-        minor: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn pdf_check_version(major: ::core::ffi::c_int, minor: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_color_brighten_color"]
-    fn pdf_color_brighten_color(
-        dst: *mut pdf_color,
-        src: *const pdf_color,
-        f: ::core::ffi::c_double,
-    );
+    fn pdf_color_brighten_color(dst: *mut pdf_color, src: *const pdf_color, f: ::core::ffi::c_double);
     #[link_name = "__pdf_impl_pdf_color_get_current"]
     fn pdf_color_get_current(sc: *mut *mut pdf_color, fc: *mut *mut pdf_color);
     fn spc_warn(spe: *mut spc_env, fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_parse_float_decimal"]
-    fn parse_float_decimal(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_float_decimal(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_parse_c_string"]
-    fn parse_c_string(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_c_string(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_parse_c_ident"]
-    fn parse_c_ident(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_c_ident(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_renew"]
     fn renew(p: *mut ::core::ffi::c_void, size: uint32_t) -> *mut ::core::ffi::c_void;
@@ -125,11 +80,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_doc_add_page_content"]
     fn pdf_doc_add_page_content(buffer: *const ::core::ffi::c_char, length: ::core::ffi::c_uint);
     #[link_name = "__pdf_impl_pdf_doc_add_page_resource"]
-    fn pdf_doc_add_page_resource(
-        category: *const ::core::ffi::c_char,
-        resource_name: *const ::core::ffi::c_char,
-        resources: *mut pdf_obj,
-    );
+    fn pdf_doc_add_page_resource(category: *const ::core::ffi::c_char, resource_name: *const ::core::ffi::c_char, resources: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_dev_setlinewidth"]
     fn pdf_dev_setlinewidth(width: ::core::ffi::c_double) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_setmiterlimit"]
@@ -139,11 +90,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_dev_setlinejoin"]
     fn pdf_dev_setlinejoin(style: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_setdash"]
-    fn pdf_dev_setdash(
-        count: ::core::ffi::c_int,
-        pattern: *mut ::core::ffi::c_double,
-        offset: ::core::ffi::c_double,
-    ) -> ::core::ffi::c_int;
+    fn pdf_dev_setdash(count: ::core::ffi::c_int, pattern: *mut ::core::ffi::c_double, offset: ::core::ffi::c_double) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_moveto"]
     fn pdf_dev_moveto(x: ::core::ffi::c_double, y: ::core::ffi::c_double) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_lineto"]
@@ -151,10 +98,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_dev_newpath"]
     fn pdf_dev_newpath() -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_flushpath"]
-    fn pdf_dev_flushpath(
-        p_op: ::core::ffi::c_char,
-        fill_rule: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn pdf_dev_flushpath(p_op: ::core::ffi::c_char, fill_rule: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_concat"]
     fn pdf_dev_concat(M: *const pdf_tmatrix) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_gsave"]
@@ -163,35 +107,18 @@ unsafe extern "C-unwind" {
     fn pdf_dev_grestore() -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_arcx"]
     fn pdf_dev_arcx(
-        c_x: ::core::ffi::c_double,
-        c_y: ::core::ffi::c_double,
-        r_x: ::core::ffi::c_double,
-        r_y: ::core::ffi::c_double,
-        a_0: ::core::ffi::c_double,
-        a_1: ::core::ffi::c_double,
-        a_d: ::core::ffi::c_int,
-        xar: ::core::ffi::c_double,
+        c_x: ::core::ffi::c_double, c_y: ::core::ffi::c_double, r_x: ::core::ffi::c_double, r_y: ::core::ffi::c_double, a_0: ::core::ffi::c_double,
+        a_1: ::core::ffi::c_double, a_d: ::core::ffi::c_int, xar: ::core::ffi::c_double,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_bspline"]
     fn pdf_dev_bspline(
-        x0: ::core::ffi::c_double,
-        y0: ::core::ffi::c_double,
-        x1: ::core::ffi::c_double,
-        y1: ::core::ffi::c_double,
-        x2: ::core::ffi::c_double,
+        x0: ::core::ffi::c_double, y0: ::core::ffi::c_double, x1: ::core::ffi::c_double, y1: ::core::ffi::c_double, x2: ::core::ffi::c_double,
         y2: ::core::ffi::c_double,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_set_color"]
-    fn pdf_dev_set_color(
-        color: *const pdf_color,
-        mask: ::core::ffi::c_char,
-        force: ::core::ffi::c_int,
-    );
+    fn pdf_dev_set_color(color: *const pdf_color, mask: ::core::ffi::c_char, force: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_parse_val_ident"]
-    fn parse_val_ident(
-        start: *mut *const ::core::ffi::c_char,
-        end: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_val_ident(start: *mut *const ::core::ffi::c_char, end: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
 }
 pub type __darwin_size_t = usize;
 pub type size_t = __darwin_size_t;
@@ -232,8 +159,7 @@ pub struct spc_arg {
     pub base: *const ::core::ffi::c_char,
     pub command: *const ::core::ffi::c_char,
 }
-pub type spc_handler_fn_ptr =
-    Option<unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int>;
+pub type spc_handler_fn_ptr = Option<unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int>;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct spc_handler {
@@ -265,10 +191,7 @@ unsafe extern "C-unwind" fn mfree(mut ptr: *mut ::core::ffi::c_void) -> *mut ::c
     return NULL;
 }
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
@@ -281,15 +204,11 @@ pub const MI2DEV: ::core::ffi::c_double = 0.072f64 / 1.0f64;
 pub const TPIC_MODE__FILL_SOLID: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const TPIC_MODE__FILL_OPACITY: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const TPIC_MODE__FILL_SHAPE: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn skip_blank(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
-) {
+unsafe extern "C-unwind" fn skip_blank(mut pp: *mut *const ::core::ffi::c_char, mut endptr: *const ::core::ffi::c_char) {
     let mut p: *const ::core::ffi::c_char = *pp;
     while p < endptr
         && (crate::backend::runtime::is_ascii(*p as ::core::ffi::c_int) != 0
-            && (*p as ::core::ffi::c_uchar as ::core::ffi::c_int == ' ' as i32
-                || *p as ::core::ffi::c_uchar as ::core::ffi::c_int == '\t' as i32))
+            && (*p as ::core::ffi::c_uchar as ::core::ffi::c_int == ' ' as i32 || *p as ::core::ffi::c_uchar as ::core::ffi::c_int == '\t' as i32))
     {
         p = p.offset(1);
     }
@@ -303,10 +222,7 @@ unsafe extern "C-unwind" fn tpic__clear(mut tp: *mut spc_tpic_) {
     (*tp).fill_shape = 0 as ::core::ffi::c_int != 0;
     (*tp).fill_color = 0.0f64;
 }
-unsafe extern "C-unwind" fn create_xgstate(
-    mut a: ::core::ffi::c_double,
-    mut f_ais: ::core::ffi::c_int,
-) -> *mut pdf_obj {
+unsafe extern "C-unwind" fn create_xgstate(mut a: ::core::ffi::c_double, mut f_ais: ::core::ffi::c_int) -> *mut pdf_obj {
     let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     dict = pdf_new_dict();
     pdf_add_dict(
@@ -321,16 +237,11 @@ unsafe extern "C-unwind" fn create_xgstate(
             pdf_new_boolean(1 as ::core::ffi::c_char),
         );
     }
-    pdf_add_dict(
-        dict,
-        pdf_new_name(b"ca\0" as *const u8 as *const ::core::ffi::c_char),
-        pdf_new_number(a),
-    );
+    pdf_add_dict(dict, pdf_new_name(b"ca\0" as *const u8 as *const ::core::ffi::c_char), pdf_new_number(a));
     return dict;
 }
 unsafe extern "C-unwind" fn check_resourcestatus(
-    mut category: *const ::core::ffi::c_char,
-    mut resname: *const ::core::ffi::c_char,
+    mut category: *const ::core::ffi::c_char, mut resname: *const ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
     let mut dict1: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut dict2: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -346,10 +257,7 @@ unsafe extern "C-unwind" fn check_resourcestatus(
     }
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn set_linestyle(
-    mut pn: ::core::ffi::c_double,
-    mut da: ::core::ffi::c_double,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn set_linestyle(mut pn: ::core::ffi::c_double, mut da: ::core::ffi::c_double) -> ::core::ffi::c_int {
     let mut dp: [::core::ffi::c_double; 2] = [0.; 2];
     pdf_dev_setlinejoin(1 as ::core::ffi::c_int);
     pdf_dev_setmiterlimit(1.4f64);
@@ -377,9 +285,7 @@ unsafe extern "C-unwind" fn set_linestyle(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn set_fillstyle(
-    mut g: ::core::ffi::c_double,
-    mut a: ::core::ffi::c_double,
-    mut f_ais: ::core::ffi::c_int,
+    mut g: ::core::ffi::c_double, mut a: ::core::ffi::c_double, mut f_ais: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut resname: [::core::ffi::c_char; 32] = [0; 32];
@@ -398,10 +304,7 @@ unsafe extern "C-unwind" fn set_fillstyle(
             &raw mut resname as *mut ::core::ffi::c_char,
         ) == 0
         {
-            dict = create_xgstate(
-                floor(0.01f64 * alp as ::core::ffi::c_double / 0.01f64 + 0.5f64) * 0.01f64,
-                f_ais,
-            );
+            dict = create_xgstate(floor(0.01f64 * alp as ::core::ffi::c_double / 0.01f64 + 0.5f64) * 0.01f64, f_ais);
             pdf_doc_add_page_resource(
                 b"ExtGState\0" as *const u8 as *const ::core::ffi::c_char,
                 &raw mut resname as *mut ::core::ffi::c_char,
@@ -414,10 +317,7 @@ unsafe extern "C-unwind" fn set_fillstyle(
             b" /%s gs\0" as *const u8 as *const ::core::ffi::c_char,
             &raw mut resname as *mut ::core::ffi::c_char,
         );
-        pdf_doc_add_page_content(
-            &raw mut buf as *mut ::core::ffi::c_char,
-            len as ::core::ffi::c_uint,
-        );
+        pdf_doc_add_page_content(&raw mut buf as *mut ::core::ffi::c_char, len as ::core::ffi::c_uint);
     }
     let mut sc: *mut pdf_color = ::core::ptr::null_mut::<pdf_color>();
     let mut fc: *mut pdf_color = ::core::ptr::null_mut::<pdf_color>();
@@ -431,20 +331,11 @@ unsafe extern "C-unwind" fn set_fillstyle(
     };
     pdf_color_get_current(&raw mut sc, &raw mut fc);
     pdf_color_brighten_color(&raw mut new_fc, fc, g);
-    pdf_dev_set_color(
-        &raw mut new_fc,
-        0x20 as ::core::ffi::c_char,
-        0 as ::core::ffi::c_int,
-    );
+    pdf_dev_set_color(&raw mut new_fc, 0x20 as ::core::ffi::c_char, 0 as ::core::ffi::c_int);
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn set_styles(
-    mut tp: *mut spc_tpic_,
-    mut c: *const pdf_coord,
-    mut f_fs: bool,
-    mut f_vp: bool,
-    mut pn: ::core::ffi::c_double,
-    mut da: ::core::ffi::c_double,
+    mut tp: *mut spc_tpic_, mut c: *const pdf_coord, mut f_fs: bool, mut f_vp: bool, mut pn: ::core::ffi::c_double, mut da: ::core::ffi::c_double,
 ) {
     let mut M: pdf_tmatrix = pdf_tmatrix {
         a: 0.,
@@ -497,35 +388,22 @@ unsafe extern "C-unwind" fn showpath(mut f_vp: bool, mut f_fs: bool) {
     };
 }
 unsafe extern "C-unwind" fn tpic__polyline(
-    mut tp: *mut spc_tpic_,
-    mut c: *const pdf_coord,
-    mut f_vp: bool,
-    mut da: ::core::ffi::c_double,
+    mut tp: *mut spc_tpic_, mut c: *const pdf_coord, mut f_vp: bool, mut da: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let mut pn: ::core::ffi::c_double = (*tp).pen_size;
     let mut f_fs: bool = (*tp).fill_shape;
     let mut i: ::core::ffi::c_int = 0;
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     f_fs = if (*(*tp).points.offset(0 as ::core::ffi::c_int as isize)).x
-        == (*(*tp)
-            .points
-            .offset(((*tp).num_points - 1 as ::core::ffi::c_int) as isize))
-        .x
+        == (*(*tp).points.offset(((*tp).num_points - 1 as ::core::ffi::c_int) as isize)).x
         && (*(*tp).points.offset(0 as ::core::ffi::c_int as isize)).y
-            == (*(*tp)
-                .points
-                .offset(((*tp).num_points - 1 as ::core::ffi::c_int) as isize))
-            .y
+            == (*(*tp).points.offset(((*tp).num_points - 1 as ::core::ffi::c_int) as isize)).y
     {
         f_fs as ::core::ffi::c_int
     } else {
         false_0
     } != 0;
-    f_vp = if pn > 0.0f64 {
-        f_vp as ::core::ffi::c_int
-    } else {
-        false_0
-    } != 0;
+    f_vp = if pn > 0.0f64 { f_vp as ::core::ffi::c_int } else { false_0 } != 0;
     if f_vp as ::core::ffi::c_int != 0 || f_fs as ::core::ffi::c_int != 0 {
         pdf_dev_gsave();
         set_styles(tp, c, f_fs, f_vp, pn, da);
@@ -535,10 +413,7 @@ unsafe extern "C-unwind" fn tpic__polyline(
         );
         i = 0 as ::core::ffi::c_int;
         while i < (*tp).num_points {
-            pdf_dev_lineto(
-                (*(*tp).points.offset(i as isize)).x,
-                (*(*tp).points.offset(i as isize)).y,
-            );
+            pdf_dev_lineto((*(*tp).points.offset(i as isize)).x, (*(*tp).points.offset(i as isize)).y);
             i += 1;
         }
         showpath(f_vp, f_fs);
@@ -548,10 +423,7 @@ unsafe extern "C-unwind" fn tpic__polyline(
     return error;
 }
 unsafe extern "C-unwind" fn tpic__spline(
-    mut tp: *mut spc_tpic_,
-    mut c: *const pdf_coord,
-    mut f_vp: bool,
-    mut da: ::core::ffi::c_double,
+    mut tp: *mut spc_tpic_, mut c: *const pdf_coord, mut f_vp: bool, mut da: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let mut v: [::core::ffi::c_double; 6] = [0.; 6];
     let mut pn: ::core::ffi::c_double = (*tp).pen_size;
@@ -559,25 +431,15 @@ unsafe extern "C-unwind" fn tpic__spline(
     let mut i: ::core::ffi::c_int = 0;
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     f_fs = if (*(*tp).points.offset(0 as ::core::ffi::c_int as isize)).x
-        == (*(*tp)
-            .points
-            .offset(((*tp).num_points - 1 as ::core::ffi::c_int) as isize))
-        .x
+        == (*(*tp).points.offset(((*tp).num_points - 1 as ::core::ffi::c_int) as isize)).x
         && (*(*tp).points.offset(0 as ::core::ffi::c_int as isize)).y
-            == (*(*tp)
-                .points
-                .offset(((*tp).num_points - 1 as ::core::ffi::c_int) as isize))
-            .y
+            == (*(*tp).points.offset(((*tp).num_points - 1 as ::core::ffi::c_int) as isize)).y
     {
         f_fs as ::core::ffi::c_int
     } else {
         false_0
     } != 0;
-    f_vp = if pn > 0.0f64 {
-        f_vp as ::core::ffi::c_int
-    } else {
-        false_0
-    } != 0;
+    f_vp = if pn > 0.0f64 { f_vp as ::core::ffi::c_int } else { false_0 } != 0;
     if f_vp as ::core::ffi::c_int != 0 || f_fs as ::core::ffi::c_int != 0 {
         pdf_dev_gsave();
         set_styles(tp, c, f_fs, f_vp, pn, da);
@@ -585,32 +447,23 @@ unsafe extern "C-unwind" fn tpic__spline(
             (*(*tp).points.offset(0 as ::core::ffi::c_int as isize)).x,
             (*(*tp).points.offset(0 as ::core::ffi::c_int as isize)).y,
         );
-        v[0 as ::core::ffi::c_int as usize] = 0.5f64
-            * ((*(*tp).points.offset(0 as ::core::ffi::c_int as isize)).x
-                + (*(*tp).points.offset(1 as ::core::ffi::c_int as isize)).x);
-        v[1 as ::core::ffi::c_int as usize] = 0.5f64
-            * ((*(*tp).points.offset(0 as ::core::ffi::c_int as isize)).y
-                + (*(*tp).points.offset(1 as ::core::ffi::c_int as isize)).y);
-        pdf_dev_lineto(
-            v[0 as ::core::ffi::c_int as usize],
-            v[1 as ::core::ffi::c_int as usize],
-        );
+        v[0 as ::core::ffi::c_int as usize] =
+            0.5f64 * ((*(*tp).points.offset(0 as ::core::ffi::c_int as isize)).x + (*(*tp).points.offset(1 as ::core::ffi::c_int as isize)).x);
+        v[1 as ::core::ffi::c_int as usize] =
+            0.5f64 * ((*(*tp).points.offset(0 as ::core::ffi::c_int as isize)).y + (*(*tp).points.offset(1 as ::core::ffi::c_int as isize)).y);
+        pdf_dev_lineto(v[0 as ::core::ffi::c_int as usize], v[1 as ::core::ffi::c_int as usize]);
         i = 1 as ::core::ffi::c_int;
         while i < (*tp).num_points - 1 as ::core::ffi::c_int {
-            v[0 as ::core::ffi::c_int as usize] = 0.5f64
-                * ((*(*tp).points.offset((i - 1 as ::core::ffi::c_int) as isize)).x
-                    + (*(*tp).points.offset(i as isize)).x);
-            v[1 as ::core::ffi::c_int as usize] = 0.5f64
-                * ((*(*tp).points.offset((i - 1 as ::core::ffi::c_int) as isize)).y
-                    + (*(*tp).points.offset(i as isize)).y);
+            v[0 as ::core::ffi::c_int as usize] =
+                0.5f64 * ((*(*tp).points.offset((i - 1 as ::core::ffi::c_int) as isize)).x + (*(*tp).points.offset(i as isize)).x);
+            v[1 as ::core::ffi::c_int as usize] =
+                0.5f64 * ((*(*tp).points.offset((i - 1 as ::core::ffi::c_int) as isize)).y + (*(*tp).points.offset(i as isize)).y);
             v[2 as ::core::ffi::c_int as usize] = (*(*tp).points.offset(i as isize)).x;
             v[3 as ::core::ffi::c_int as usize] = (*(*tp).points.offset(i as isize)).y;
-            v[4 as ::core::ffi::c_int as usize] = 0.5f64
-                * ((*(*tp).points.offset(i as isize)).x
-                    + (*(*tp).points.offset((i + 1 as ::core::ffi::c_int) as isize)).x);
-            v[5 as ::core::ffi::c_int as usize] = 0.5f64
-                * ((*(*tp).points.offset(i as isize)).y
-                    + (*(*tp).points.offset((i + 1 as ::core::ffi::c_int) as isize)).y);
+            v[4 as ::core::ffi::c_int as usize] =
+                0.5f64 * ((*(*tp).points.offset(i as isize)).x + (*(*tp).points.offset((i + 1 as ::core::ffi::c_int) as isize)).x);
+            v[5 as ::core::ffi::c_int as usize] =
+                0.5f64 * ((*(*tp).points.offset(i as isize)).y + (*(*tp).points.offset((i + 1 as ::core::ffi::c_int) as isize)).y);
             pdf_dev_bspline(
                 v[0 as ::core::ffi::c_int as usize],
                 v[1 as ::core::ffi::c_int as usize],
@@ -621,10 +474,7 @@ unsafe extern "C-unwind" fn tpic__spline(
             );
             i += 1;
         }
-        pdf_dev_lineto(
-            (*(*tp).points.offset(i as isize)).x,
-            (*(*tp).points.offset(i as isize)).y,
-        );
+        pdf_dev_lineto((*(*tp).points.offset(i as isize)).x, (*(*tp).points.offset(i as isize)).y);
         showpath(f_vp, f_fs);
         pdf_dev_grestore();
     }
@@ -632,30 +482,18 @@ unsafe extern "C-unwind" fn tpic__spline(
     return error;
 }
 unsafe extern "C-unwind" fn tpic__arc(
-    mut tp: *mut spc_tpic_,
-    mut c: *const pdf_coord,
-    mut f_vp: bool,
-    mut da: ::core::ffi::c_double,
-    mut v: *mut ::core::ffi::c_double,
+    mut tp: *mut spc_tpic_, mut c: *const pdf_coord, mut f_vp: bool, mut da: ::core::ffi::c_double, mut v: *mut ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let mut pn: ::core::ffi::c_double = (*tp).pen_size;
     let mut f_fs: bool = (*tp).fill_shape;
-    f_fs = if round(
-        fabs(
-            *v.offset(4 as ::core::ffi::c_int as isize)
-                - *v.offset(5 as ::core::ffi::c_int as isize),
-        ) + 0.5f64,
-    ) >= 360 as ::core::ffi::c_int as ::core::ffi::c_double
+    f_fs = if round(fabs(*v.offset(4 as ::core::ffi::c_int as isize) - *v.offset(5 as ::core::ffi::c_int as isize)) + 0.5f64)
+        >= 360 as ::core::ffi::c_int as ::core::ffi::c_double
     {
         f_fs as ::core::ffi::c_int
     } else {
         false_0
     } != 0;
-    f_vp = if pn > 0.0f64 {
-        f_vp as ::core::ffi::c_int
-    } else {
-        false_0
-    } != 0;
+    f_vp = if pn > 0.0f64 { f_vp as ::core::ffi::c_int } else { false_0 } != 0;
     if f_vp as ::core::ffi::c_int != 0 || f_fs as ::core::ffi::c_int != 0 {
         pdf_dev_gsave();
         set_styles(tp, c, f_fs, f_vp, pn, da);
@@ -676,27 +514,17 @@ unsafe extern "C-unwind" fn tpic__arc(
     tpic__clear(tp);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_currentpoint(
-    mut spe: *mut spc_env,
-    mut pg: *mut ::core::ffi::c_int,
-    mut cp: *mut pdf_coord,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_currentpoint(mut spe: *mut spc_env, mut pg: *mut ::core::ffi::c_int, mut cp: *mut pdf_coord) -> ::core::ffi::c_int {
     *pg = 0 as ::core::ffi::c_int;
     (*cp).x = (*spe).x_user;
     (*cp).y = (*spe).y_user;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_tpic_pn(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic_pn(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"spe && ap && tp\0" as *const u8 as *const ::core::ffi::c_char
@@ -713,19 +541,13 @@ unsafe extern "C-unwind" fn spc_handler_tpic_pn(
     free(q as *mut ::core::ffi::c_void);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_tpic_pa(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic_pa(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut i: ::core::ffi::c_int = 0;
     let mut v: [::core::ffi::c_double; 2] = [0.; 2];
-    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"spe && ap && tp\0" as *const u8 as *const ::core::ffi::c_char
@@ -737,10 +559,7 @@ unsafe extern "C-unwind" fn spc_handler_tpic_pa(
     while i < 2 as ::core::ffi::c_int && (*ap).curptr < (*ap).endptr {
         q = parse_float_decimal(&raw mut (*ap).curptr, (*ap).endptr);
         if q.is_null() {
-            pdf_warning!(
-                b"Missing numbers for TPIC \"pa\" command.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Missing numbers for TPIC \"pa\" command.\0" as *const u8 as *const ::core::ffi::c_char);
             return -(1 as ::core::ffi::c_int);
         }
         v[i as usize] = atof(q);
@@ -749,38 +568,27 @@ unsafe extern "C-unwind" fn spc_handler_tpic_pa(
         i += 1;
     }
     if i != 2 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Invalid arg for TPIC \"pa\" command.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Invalid arg for TPIC \"pa\" command.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     if (*tp).num_points >= (*tp).max_points {
         (*tp).max_points += 256 as ::core::ffi::c_int;
         (*tp).points = renew(
             (*tp).points as *mut ::core::ffi::c_void,
-            ((*tp).max_points as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<pdf_coord>() as usize) as uint32_t,
+            ((*tp).max_points as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_coord>() as usize) as uint32_t,
         ) as *mut pdf_coord;
     }
-    (*(*tp).points.offset((*tp).num_points as isize)).x =
-        v[0 as ::core::ffi::c_int as usize] * MI2DEV;
-    (*(*tp).points.offset((*tp).num_points as isize)).y =
-        v[1 as ::core::ffi::c_int as usize] * MI2DEV;
+    (*(*tp).points.offset((*tp).num_points as isize)).x = v[0 as ::core::ffi::c_int as usize] * MI2DEV;
+    (*(*tp).points.offset((*tp).num_points as isize)).y = v[1 as ::core::ffi::c_int as usize] * MI2DEV;
     (*tp).num_points += 1 as ::core::ffi::c_int;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_tpic_fp(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic_fp(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut cp: pdf_coord = pdf_coord { x: 0., y: 0. };
     let mut pg: ::core::ffi::c_int = 0;
-    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"spe && ap && tp\0" as *const u8 as *const ::core::ffi::c_char
@@ -788,26 +596,18 @@ unsafe extern "C-unwind" fn spc_handler_tpic_fp(
     } else {
     };
     if (*tp).num_points <= 1 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Too few points (< 2) for polyline path.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Too few points (< 2) for polyline path.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     spc_currentpoint(spe, &raw mut pg, &raw mut cp);
     return tpic__polyline(tp, &raw mut cp, 1 as ::core::ffi::c_int != 0, 0.0f64);
 }
-unsafe extern "C-unwind" fn spc_handler_tpic_ip(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic_ip(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut cp: pdf_coord = pdf_coord { x: 0., y: 0. };
     let mut pg: ::core::ffi::c_int = 0;
-    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"spe && ap && tp\0" as *const u8 as *const ::core::ffi::c_char
@@ -815,28 +615,20 @@ unsafe extern "C-unwind" fn spc_handler_tpic_ip(
     } else {
     };
     if (*tp).num_points <= 1 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Too few points (< 2) for polyline path.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Too few points (< 2) for polyline path.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     spc_currentpoint(spe, &raw mut pg, &raw mut cp);
     return tpic__polyline(tp, &raw mut cp, 0 as ::core::ffi::c_int != 0, 0.0f64);
 }
-unsafe extern "C-unwind" fn spc_handler_tpic_da(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic_da(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut da: ::core::ffi::c_double = 0.0f64;
     let mut cp: pdf_coord = pdf_coord { x: 0., y: 0. };
     let mut pg: ::core::ffi::c_int = 0;
-    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"spe && ap && tp\0" as *const u8 as *const ::core::ffi::c_char
@@ -850,28 +642,20 @@ unsafe extern "C-unwind" fn spc_handler_tpic_da(
         free(q as *mut ::core::ffi::c_void);
     }
     if (*tp).num_points <= 1 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Too few points (< 2) for polyline path.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Too few points (< 2) for polyline path.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     spc_currentpoint(spe, &raw mut pg, &raw mut cp);
     return tpic__polyline(tp, &raw mut cp, 1 as ::core::ffi::c_int != 0, da);
 }
-unsafe extern "C-unwind" fn spc_handler_tpic_dt(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic_dt(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut da: ::core::ffi::c_double = 0.0f64;
     let mut cp: pdf_coord = pdf_coord { x: 0., y: 0. };
     let mut pg: ::core::ffi::c_int = 0;
-    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"spe && ap && tp\0" as *const u8 as *const ::core::ffi::c_char
@@ -885,28 +669,20 @@ unsafe extern "C-unwind" fn spc_handler_tpic_dt(
         free(q as *mut ::core::ffi::c_void);
     }
     if (*tp).num_points <= 1 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Too few points (< 2) for polyline path.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Too few points (< 2) for polyline path.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     spc_currentpoint(spe, &raw mut pg, &raw mut cp);
     return tpic__polyline(tp, &raw mut cp, 1 as ::core::ffi::c_int != 0, da);
 }
-unsafe extern "C-unwind" fn spc_handler_tpic_sp(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic_sp(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut da: ::core::ffi::c_double = 0.0f64;
     let mut cp: pdf_coord = pdf_coord { x: 0., y: 0. };
     let mut pg: ::core::ffi::c_int = 0;
-    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"spe && ap && tp\0" as *const u8 as *const ::core::ffi::c_char
@@ -920,18 +696,13 @@ unsafe extern "C-unwind" fn spc_handler_tpic_sp(
         free(q as *mut ::core::ffi::c_void);
     }
     if (*tp).num_points <= 2 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Too few points (< 3) for spline path.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Too few points (< 3) for spline path.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     spc_currentpoint(spe, &raw mut pg, &raw mut cp);
     return tpic__spline(tp, &raw mut cp, 1 as ::core::ffi::c_int != 0, da);
 }
-unsafe extern "C-unwind" fn spc_handler_tpic_ar(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic_ar(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut v: [::core::ffi::c_double; 6] = [0.; 6];
@@ -939,10 +710,7 @@ unsafe extern "C-unwind" fn spc_handler_tpic_ar(
     let mut pg: ::core::ffi::c_int = 0;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut i: ::core::ffi::c_int = 0;
-    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"spe && ap && tp\0" as *const u8 as *const ::core::ffi::c_char
@@ -954,10 +722,7 @@ unsafe extern "C-unwind" fn spc_handler_tpic_ar(
     while i < 6 as ::core::ffi::c_int && (*ap).curptr < (*ap).endptr {
         q = parse_float_decimal(&raw mut (*ap).curptr, (*ap).endptr);
         if q.is_null() {
-            pdf_warning!(
-                b"Invalid args. in TPIC \"ar\" command.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Invalid args. in TPIC \"ar\" command.\0" as *const u8 as *const ::core::ffi::c_char);
             return -(1 as ::core::ffi::c_int);
         }
         v[i as usize] = atof(q);
@@ -966,9 +731,7 @@ unsafe extern "C-unwind" fn spc_handler_tpic_ar(
         i += 1;
     }
     if i != 6 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Invalid arg for TPIC \"ar\" command.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Invalid arg for TPIC \"ar\" command.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     v[0 as ::core::ffi::c_int as usize] *= MI2DEV;
@@ -986,10 +749,7 @@ unsafe extern "C-unwind" fn spc_handler_tpic_ar(
         &raw mut v as *mut ::core::ffi::c_double,
     );
 }
-unsafe extern "C-unwind" fn spc_handler_tpic_ia(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic_ia(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut v: [::core::ffi::c_double; 6] = [0.; 6];
@@ -997,10 +757,7 @@ unsafe extern "C-unwind" fn spc_handler_tpic_ia(
     let mut pg: ::core::ffi::c_int = 0;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut i: ::core::ffi::c_int = 0;
-    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"spe && ap && tp\0" as *const u8 as *const ::core::ffi::c_char
@@ -1012,10 +769,7 @@ unsafe extern "C-unwind" fn spc_handler_tpic_ia(
     while i < 6 as ::core::ffi::c_int && (*ap).curptr < (*ap).endptr {
         q = parse_float_decimal(&raw mut (*ap).curptr, (*ap).endptr);
         if q.is_null() {
-            pdf_warning!(
-                b"Invalid args. in TPIC \"ia\" command.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Invalid args. in TPIC \"ia\" command.\0" as *const u8 as *const ::core::ffi::c_char);
             return -(1 as ::core::ffi::c_int);
         }
         v[i as usize] = atof(q);
@@ -1024,9 +778,7 @@ unsafe extern "C-unwind" fn spc_handler_tpic_ia(
         i += 1;
     }
     if i != 6 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Invalid arg for TPIC \"ia\" command.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Invalid arg for TPIC \"ia\" command.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     v[0 as ::core::ffi::c_int as usize] *= MI2DEV;
@@ -1044,17 +796,11 @@ unsafe extern "C-unwind" fn spc_handler_tpic_ia(
         &raw mut v as *mut ::core::ffi::c_double,
     );
 }
-unsafe extern "C-unwind" fn spc_handler_tpic_sh(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic_sh(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"spe && ap && tp\0" as *const u8 as *const ::core::ffi::c_char
@@ -1071,25 +817,16 @@ unsafe extern "C-unwind" fn spc_handler_tpic_sh(
         if g >= 0.0f64 && g <= 1.0f64 {
             (*tp).fill_color = g;
         } else {
-            pdf_warning!(
-                b"Invalid fill color specified: %g\n\0" as *const u8 as *const ::core::ffi::c_char,
-                g,
-            );
+            pdf_warning!(b"Invalid fill color specified: %g\n\0" as *const u8 as *const ::core::ffi::c_char, g,);
             return -(1 as ::core::ffi::c_int);
         }
     }
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_tpic_wh(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic_wh(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
-    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"spe && ap && tp\0" as *const u8 as *const ::core::ffi::c_char
@@ -1100,16 +837,10 @@ unsafe extern "C-unwind" fn spc_handler_tpic_wh(
     (*tp).fill_color = 0.0f64;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_tpic_bk(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic_bk(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
-    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"spe && ap && tp\0" as *const u8 as *const ::core::ffi::c_char
@@ -1120,31 +851,20 @@ unsafe extern "C-unwind" fn spc_handler_tpic_bk(
     (*tp).fill_color = 1.0f64;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_tpic_tx(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic_tx(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
-    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!spe.is_null() && !ap.is_null() && !tp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"spe && ap && tp\0" as *const u8 as *const ::core::ffi::c_char
         );
     } else {
     };
-    pdf_warning!(
-        b"TPIC command \"tx\" not supported.\0" as *const u8 as *const ::core::ffi::c_char
-    );
+    pdf_warning!(b"TPIC command \"tx\" not supported.\0" as *const u8 as *const ::core::ffi::c_char);
     return -(1 as ::core::ffi::c_int);
 }
-unsafe extern "C-unwind" fn spc_handler_tpic__init(
-    mut spe: *mut spc_env,
-    mut dp: *mut ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic__init(mut spe: *mut spc_env, mut dp: *mut ::core::ffi::c_void) -> ::core::ffi::c_int {
     let mut tp: *mut spc_tpic_ = dp as *mut spc_tpic_;
     (*tp).pen_size = 1.0f64;
     (*tp).fill_shape = 0 as ::core::ffi::c_int != 0;
@@ -1152,69 +872,41 @@ unsafe extern "C-unwind" fn spc_handler_tpic__init(
     (*tp).points = ::core::ptr::null_mut::<pdf_coord>();
     (*tp).num_points = 0 as ::core::ffi::c_int;
     (*tp).max_points = 0 as ::core::ffi::c_int;
-    if (*tp).mode.fill != TPIC_MODE__FILL_SOLID
-        && pdf_check_version(1 as ::core::ffi::c_int, 4 as ::core::ffi::c_int)
-            < 0 as ::core::ffi::c_int
-    {
-        pdf_warning!(
-            b"Tpic shading support requires PDF version 1.4.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+    if (*tp).mode.fill != TPIC_MODE__FILL_SOLID && pdf_check_version(1 as ::core::ffi::c_int, 4 as ::core::ffi::c_int) < 0 as ::core::ffi::c_int {
+        pdf_warning!(b"Tpic shading support requires PDF version 1.4.\0" as *const u8 as *const ::core::ffi::c_char);
         (*tp).mode.fill = TPIC_MODE__FILL_SOLID;
     }
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_tpic__bophook(
-    mut dp: *mut ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic__bophook(mut dp: *mut ::core::ffi::c_void) -> ::core::ffi::c_int {
     let mut tp: *mut spc_tpic_ = dp as *mut spc_tpic_;
     if tp.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"tp\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"tp\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     tpic__clear(tp);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_tpic__eophook(
-    mut spe: *mut spc_env,
-    mut dp: *mut ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic__eophook(mut spe: *mut spc_env, mut dp: *mut ::core::ffi::c_void) -> ::core::ffi::c_int {
     let mut tp: *mut spc_tpic_ = dp as *mut spc_tpic_;
     if tp.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"tp\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"tp\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if (*tp).num_points > 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Unflushed tpic path at end of the page.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Unflushed tpic path at end of the page.\0" as *const u8 as *const ::core::ffi::c_char);
     }
     tpic__clear(tp);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_tpic__clean(
-    mut spe: *mut spc_env,
-    mut dp: *mut ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic__clean(mut spe: *mut spc_env, mut dp: *mut ::core::ffi::c_void) -> ::core::ffi::c_int {
     let mut tp: *mut spc_tpic_ = dp as *mut spc_tpic_;
     if tp.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"tp\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"tp\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if (*tp).num_points > 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Unflushed tpic path at end of the document.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Unflushed tpic path at end of the document.\0" as *const u8 as *const ::core::ffi::c_char);
     }
     tpic__clear(tp);
     return 0 as ::core::ffi::c_int;
@@ -1235,28 +927,19 @@ pub unsafe extern "C-unwind" fn spc_tpic_at_begin_page() -> ::core::ffi::c_int {
 pub unsafe extern "C-unwind" fn spc_tpic_at_end_page() -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
-    return spc_handler_tpic__eophook(
-        ::core::ptr::null_mut::<spc_env>(),
-        tp as *mut ::core::ffi::c_void,
-    );
+    return spc_handler_tpic__eophook(::core::ptr::null_mut::<spc_env>(), tp as *mut ::core::ffi::c_void);
 }
 #[unsafe(export_name = "__pdf_impl_spc_tpic_at_begin_document")]
 pub unsafe extern "C-unwind" fn spc_tpic_at_begin_document() -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
-    return spc_handler_tpic__init(
-        ::core::ptr::null_mut::<spc_env>(),
-        tp as *mut ::core::ffi::c_void,
-    );
+    return spc_handler_tpic__init(::core::ptr::null_mut::<spc_env>(), tp as *mut ::core::ffi::c_void);
 }
 #[unsafe(export_name = "__pdf_impl_spc_tpic_at_end_document")]
 pub unsafe extern "C-unwind" fn spc_tpic_at_end_document() -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
-    return spc_handler_tpic__clean(
-        ::core::ptr::null_mut::<spc_env>(),
-        tp as *mut ::core::ffi::c_void,
-    );
+    return spc_handler_tpic__clean(::core::ptr::null_mut::<spc_env>(), tp as *mut ::core::ffi::c_void);
 }
 unsafe extern "C-unwind" fn spc_parse_kvpairs(mut ap: *mut spc_arg) -> *mut pdf_obj {
     let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -1271,10 +954,7 @@ unsafe extern "C-unwind" fn spc_parse_kvpairs(mut ap: *mut spc_arg) -> *mut pdf_
             break;
         }
         skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
-        if (*ap).curptr < (*ap).endptr
-            && *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                == '=' as i32
-        {
+        if (*ap).curptr < (*ap).endptr && *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '=' as i32 {
             (*ap).curptr = (*ap).curptr.offset(1);
             skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
             if (*ap).curptr == (*ap).endptr {
@@ -1289,20 +969,13 @@ unsafe extern "C-unwind" fn spc_parse_kvpairs(mut ap: *mut spc_arg) -> *mut pdf_
                     pdf_add_dict(
                         dict,
                         pdf_new_name(kp),
-                        pdf_new_string(
-                            vp as *const ::core::ffi::c_void,
-                            strlen(vp).wrapping_add(1 as size_t),
-                        ),
+                        pdf_new_string(vp as *const ::core::ffi::c_void, strlen(vp).wrapping_add(1 as size_t)),
                     );
                     free(vp as *mut ::core::ffi::c_void);
                 }
             }
         } else {
-            pdf_add_dict(
-                dict,
-                pdf_new_name(kp),
-                pdf_new_boolean(1 as ::core::ffi::c_char),
-            );
+            pdf_add_dict(dict, pdf_new_name(kp), pdf_new_boolean(1 as ::core::ffi::c_char));
         }
         free(kp as *mut ::core::ffi::c_void);
         if error == 0 {
@@ -1315,19 +988,12 @@ unsafe extern "C-unwind" fn spc_parse_kvpairs(mut ap: *mut spc_arg) -> *mut pdf_
     }
     return dict;
 }
-unsafe extern "C-unwind" fn tpic_filter_getopts(
-    mut kp: *mut pdf_obj,
-    mut vp: *mut pdf_obj,
-    mut dp: *mut ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn tpic_filter_getopts(mut kp: *mut pdf_obj, mut vp: *mut pdf_obj, mut dp: *mut ::core::ffi::c_void) -> ::core::ffi::c_int {
     let mut tp: *mut spc_tpic_ = dp as *mut spc_tpic_;
     let mut k: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut v: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    if !(!kp.is_null() && !vp.is_null() && !tp.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!kp.is_null() && !vp.is_null() && !tp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"kp && vp && tp\0" as *const u8 as *const ::core::ffi::c_char
@@ -1337,10 +1003,7 @@ unsafe extern "C-unwind" fn tpic_filter_getopts(
     k = pdf_name_value(kp);
     if streq_ptr(k, b"fill-mode\0" as *const u8 as *const ::core::ffi::c_char) {
         if pdf_obj_typeof(vp) != PDF_STRING {
-            pdf_warning!(
-                b"Invalid value for TPIC option fill-mode...\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"Invalid value for TPIC option fill-mode...\0" as *const u8 as *const ::core::ffi::c_char,);
             error = -(1 as ::core::ffi::c_int);
         } else {
             v = pdf_string_value(vp) as *mut ::core::ffi::c_char;
@@ -1352,8 +1015,7 @@ unsafe extern "C-unwind" fn tpic_filter_getopts(
                 (*tp).mode.fill = TPIC_MODE__FILL_SOLID;
             } else {
                 pdf_warning!(
-                    b"Invalid value for TPIC option fill-mode: %s\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Invalid value for TPIC option fill-mode: %s\0" as *const u8 as *const ::core::ffi::c_char,
                     v,
                 );
                 error = -(1 as ::core::ffi::c_int);
@@ -1361,18 +1023,14 @@ unsafe extern "C-unwind" fn tpic_filter_getopts(
         }
     } else {
         pdf_warning!(
-            b"Unrecognized option for TPIC special handler: %s\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Unrecognized option for TPIC special handler: %s\0" as *const u8 as *const ::core::ffi::c_char,
             k,
         );
         error = -(1 as ::core::ffi::c_int);
     }
     return error;
 }
-unsafe extern "C-unwind" fn spc_handler_tpic__setopts(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_tpic__setopts(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut tp: *mut spc_tpic_ = &raw mut (*__pdf_state)._tpic_state;
     let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -1383,25 +1041,12 @@ unsafe extern "C-unwind" fn spc_handler_tpic__setopts(
     }
     error = pdf_foreach_dict(
         dict,
-        Some(
-            tpic_filter_getopts
-                as unsafe extern "C-unwind" fn(
-                    *mut pdf_obj,
-                    *mut pdf_obj,
-                    *mut ::core::ffi::c_void,
-                ) -> ::core::ffi::c_int,
-        ),
+        Some(tpic_filter_getopts as unsafe extern "C-unwind" fn(*mut pdf_obj, *mut pdf_obj, *mut ::core::ffi::c_void) -> ::core::ffi::c_int),
         tp as *mut ::core::ffi::c_void,
     );
     if error == 0 {
-        if (*tp).mode.fill != TPIC_MODE__FILL_SOLID
-            && pdf_check_version(1 as ::core::ffi::c_int, 4 as ::core::ffi::c_int)
-                < 0 as ::core::ffi::c_int
-        {
-            pdf_warning!(
-                b"Transparent fill mode requires PDF version 1.4.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+        if (*tp).mode.fill != TPIC_MODE__FILL_SOLID && pdf_check_version(1 as ::core::ffi::c_int, 4 as ::core::ffi::c_int) < 0 as ::core::ffi::c_int {
+            pdf_warning!(b"Transparent fill mode requires PDF version 1.4.\0" as *const u8 as *const ::core::ffi::c_char);
             (*tp).mode.fill = TPIC_MODE__FILL_SOLID;
         }
     }
@@ -1410,101 +1055,59 @@ unsafe extern "C-unwind" fn spc_handler_tpic__setopts(
 const TPIC_HANDLERS: [spc_handler; 13] = [
     spc_handler {
         key: b"pn\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_tpic_pn
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_tpic_pn as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"pa\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_tpic_pa
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_tpic_pa as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"fp\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_tpic_fp
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_tpic_fp as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"ip\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_tpic_ip
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_tpic_ip as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"da\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_tpic_da
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_tpic_da as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"dt\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_tpic_dt
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_tpic_dt as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"sp\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_tpic_sp
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_tpic_sp as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"ar\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_tpic_ar
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_tpic_ar as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"ia\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_tpic_ia
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_tpic_ia as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"sh\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_tpic_sh
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_tpic_sh as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"wh\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_tpic_wh
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_tpic_wh as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bk\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_tpic_bk
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_tpic_bk as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"tx\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_tpic_tx
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_tpic_tx as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
 ];
 #[unsafe(export_name = "__pdf_impl_spc_tpic_check_special")]
-pub unsafe extern "C-unwind" fn spc_tpic_check_special(
-    mut buf: *const ::core::ffi::c_char,
-    mut len: ::core::ffi::c_int,
-) -> bool {
+pub unsafe extern "C-unwind" fn spc_tpic_check_special(mut buf: *const ::core::ffi::c_char, mut len: ::core::ffi::c_int) -> bool {
     let mut istpic: bool = false_0 != 0;
     let mut hasnsp: bool = false_0 != 0;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -1529,20 +1132,13 @@ pub unsafe extern "C-unwind" fn spc_tpic_check_special(
         istpic = false_0 != 0;
     } else if !q.is_null()
         && hasnsp as ::core::ffi::c_int != 0
-        && streq_ptr(
-            q,
-            b"__setopt__\0" as *const u8 as *const ::core::ffi::c_char,
-        ) as ::core::ffi::c_int
-            != 0
+        && streq_ptr(q, b"__setopt__\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
     {
         istpic = true_0 != 0;
         free(q as *mut ::core::ffi::c_void);
     } else {
         i = 0 as size_t;
-        while i
-            < (::core::mem::size_of::<[spc_handler; 13]>() as usize)
-                .wrapping_div(::core::mem::size_of::<spc_handler>() as usize)
-        {
+        while i < (::core::mem::size_of::<[spc_handler; 13]>() as usize).wrapping_div(::core::mem::size_of::<spc_handler>() as usize) {
             if streq_ptr(q, TPIC_HANDLERS[i as usize].key) {
                 istpic = true_0 != 0;
                 break;
@@ -1555,19 +1151,12 @@ pub unsafe extern "C-unwind" fn spc_tpic_check_special(
     return istpic;
 }
 #[unsafe(export_name = "__pdf_impl_spc_tpic_setup_handler")]
-pub unsafe extern "C-unwind" fn spc_tpic_setup_handler(
-    mut sph: *mut spc_handler,
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn spc_tpic_setup_handler(mut sph: *mut spc_handler, mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut i: ::core::ffi::c_uint = 0;
     let mut hasnsp: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut error: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
-    if !(!sph.is_null() && !spe.is_null() && !ap.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!sph.is_null() && !spe.is_null() && !ap.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"sph && spe && ap\0" as *const u8 as *const ::core::ffi::c_char
@@ -1593,29 +1182,17 @@ pub unsafe extern "C-unwind" fn spc_tpic_setup_handler(
     q = parse_c_ident(&raw mut (*ap).curptr, (*ap).endptr);
     if q.is_null() {
         error = -(1 as ::core::ffi::c_int);
-    } else if !q.is_null()
-        && hasnsp != 0
-        && streq_ptr(
-            q,
-            b"__setopt__\0" as *const u8 as *const ::core::ffi::c_char,
-        ) as ::core::ffi::c_int
-            != 0
-    {
+    } else if !q.is_null() && hasnsp != 0 && streq_ptr(q, b"__setopt__\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0 {
         (*ap).command = b"__setopt__\0" as *const u8 as *const ::core::ffi::c_char;
         (*sph).key = b"tpic:\0" as *const u8 as *const ::core::ffi::c_char;
-        (*sph).exec = Some(
-            spc_handler_tpic__setopts
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ) as spc_handler_fn_ptr;
+        (*sph).exec =
+            Some(spc_handler_tpic__setopts as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int) as spc_handler_fn_ptr;
         skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
         error = 0 as ::core::ffi::c_int;
         free(q as *mut ::core::ffi::c_void);
     } else {
         i = 0 as ::core::ffi::c_uint;
-        while (i as usize)
-            < (::core::mem::size_of::<[spc_handler; 13]>() as usize)
-                .wrapping_div(::core::mem::size_of::<spc_handler>() as usize)
-        {
+        while (i as usize) < (::core::mem::size_of::<[spc_handler; 13]>() as usize).wrapping_div(::core::mem::size_of::<spc_handler>() as usize) {
             if streq_ptr(q, TPIC_HANDLERS[i as usize].key) {
                 (*ap).command = TPIC_HANDLERS[i as usize].key;
                 (*sph).key = b"tpic:\0" as *const u8 as *const ::core::ffi::c_char;
@@ -1634,11 +1211,7 @@ pub unsafe extern "C-unwind" fn spc_tpic_setup_handler(
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -1656,9 +1229,7 @@ pub unsafe extern "C" fn __pdf_entry_tpic_set_fill_mode(mut mode: ::core::ffi::c
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_spc_tpic_at_begin_page(
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_spc_tpic_at_begin_page(_result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_tpic_at_begin_page() }) {
         Ok(value) => {
             unsafe {
@@ -1682,9 +1253,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_tpic_at_end_page(_result: *mut ::core::
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_spc_tpic_at_begin_document(
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_spc_tpic_at_begin_document(_result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_tpic_at_begin_document() }) {
         Ok(value) => {
             unsafe {
@@ -1696,9 +1265,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_tpic_at_begin_document(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_spc_tpic_at_end_document(
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_spc_tpic_at_end_document(_result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_tpic_at_end_document() }) {
         Ok(value) => {
             unsafe {
@@ -1711,9 +1278,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_tpic_at_end_document(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_tpic_check_special(
-    mut buf: *const ::core::ffi::c_char,
-    mut len: ::core::ffi::c_int,
-    _result: *mut bool,
+    mut buf: *const ::core::ffi::c_char, mut len: ::core::ffi::c_int, _result: *mut bool,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_tpic_check_special(buf, len) }) {
         Ok(value) => {
@@ -1727,10 +1292,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_tpic_check_special(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_tpic_setup_handler(
-    mut sph: *mut spc_handler,
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-    _result: *mut ::core::ffi::c_int,
+    mut sph: *mut spc_handler, mut spe: *mut spc_env, mut ap: *mut spc_arg, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_tpic_setup_handler(sph, spe, ap) }) {
         Ok(value) => {
@@ -1765,10 +1327,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_spc_tpic
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_spc_tpic.pointer }
 }

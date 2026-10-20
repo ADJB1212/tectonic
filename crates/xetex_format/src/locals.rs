@@ -125,21 +125,14 @@ const LOCAL_PARS: &[LocalPar] = &[
 
 /// Get information about the local parameters used in a specific
 /// engine format version.
-pub fn get_local_pars_for_version(
-    version: FormatVersion,
-    symbols: &mut SymbolTable,
-) -> Result<Vec<LocalPar>> {
+pub fn get_local_pars_for_version(version: FormatVersion, symbols: &mut SymbolTable) -> Result<Vec<LocalPar>> {
     let mut r = Vec::new();
     let mut n = 0;
 
     for p in LOCAL_PARS {
         if version >= p.since {
             r.push(*p);
-            symbols.add(
-                SymbolCategory::LocalPars,
-                format!("LOCAL__{}", p.name.to_lowercase()),
-                n,
-            )?;
+            symbols.add(SymbolCategory::LocalPars, format!("LOCAL__{}", p.name.to_lowercase()), n)?;
             n += 1;
         }
     }

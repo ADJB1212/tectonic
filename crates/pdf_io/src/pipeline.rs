@@ -1,9 +1,7 @@
 use crate::PdfBuildOptions;
 use crate::compress::StreamOptions;
 use crate::error::{PdfError, PdfErrorKind};
-use crate::renderer::{
-    Direction, PageRenderer, RenderCommand, RenderFont, RenderSettings, TextRun,
-};
+use crate::renderer::{Direction, PageRenderer, RenderCommand, RenderFont, RenderSettings, TextRun};
 use std::{
     cell::Cell,
     collections::{HashMap, VecDeque},
@@ -46,10 +44,7 @@ pub(crate) struct WorkerTimings {
 }
 
 pub(crate) fn record_elapsed(counter: &AtomicU64, start: Instant) {
-    counter.fetch_add(
-        start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64,
-        Ordering::Relaxed,
-    );
+    counter.fetch_add(start.elapsed().as_nanos().min(u128::from(u64::MAX)) as u64, Ordering::Relaxed);
 }
 
 thread_local! {
@@ -90,9 +85,7 @@ struct PagePlan {
 
 impl PagePlan {
     fn bytes(&self) -> usize {
-        self.data.len()
-            + self.commands.len() * std::mem::size_of::<Command>()
-            + self.fonts.len() * std::mem::size_of::<RenderFont>()
+        self.data.len() + self.commands.len() * std::mem::size_of::<Command>() + self.fonts.len() * std::mem::size_of::<RenderFont>()
     }
 
     fn render(self) -> Result<Vec<u8>, PdfError> {
@@ -113,31 +106,19 @@ impl PagePlan {
             renderer.command(match command.kind {
                 CommandKind::Bytes => RenderCommand::Bytes(data),
                 CommandKind::Text => RenderCommand::Text(TextRun {
-                    font: usize::try_from(command.font).map_err(|_| {
-                        PdfError::new(
-                            PdfErrorKind::MalformedInput,
-                            c"Invalid renderer font".to_owned(),
-                        )
-                    })?,
+                    font: usize::try_from(command.font)
+                        .map_err(|_| PdfError::new(PdfErrorKind::MalformedInput, c"Invalid renderer font".to_owned()))?,
                     x,
                     y,
                     width,
                     data,
                 }),
-                CommandKind::Rule => RenderCommand::Rule {
-                    x,
-                    y,
-                    width,
-                    height,
-                },
+                CommandKind::Rule => RenderCommand::Rule { x, y, width, height },
                 CommandKind::Graphics => RenderCommand::Graphics,
                 CommandKind::Direction => RenderCommand::Direction(Direction::try_from(x)?),
                 CommandKind::ResetFonts => RenderCommand::ResetFonts { new_page: x != 0 },
                 CommandKind::Unsupported => {
-                    return Err(PdfError::new(
-                        PdfErrorKind::Unsupported,
-                        c"Unsupported renderer command".to_owned(),
-                    ));
+                    return Err(PdfError::new(PdfErrorKind::Unsupported, c"Unsupported renderer command".to_owned()));
                 }
             })?;
         }
@@ -168,31 +149,16 @@ struct Runtime {
 
 impl Runtime {
     fn has_capacity(&self, bytes: usize) -> bool {
-        self.pending.is_empty()
-            || (self.pending.len() < self.max_jobs
-                && bytes <= self.max_bytes.saturating_sub(self.queued_bytes))
+        self.pending.is_empty() || (self.pending.len() < self.max_jobs && bytes <= self.max_bytes.saturating_sub(self.queued_bytes))
     }
 
-    fn submit(
-        &mut self,
-        target: *mut c_void,
-        kind: i32,
-        bytes: usize,
-        task: impl FnOnce() -> Result<Vec<u8>, PdfError> + Send + 'static,
-    ) {
+    fn submit(&mut self, target: *mut c_void, kind: i32, bytes: usize, task: impl FnOnce() -> Result<Vec<u8>, PdfError> + Send + 'static) {
         let (sender, receiver) = mpsc::channel();
         let pool = self.pool.clone();
         let run = move || {
             let _compression = tectonic_bridge_flate::use_compression_pool(pool);
-            let result = catch_unwind(AssertUnwindSafe(|| {
-                crate::backend::runtime::catch_backend(task)
-            }))
-            .unwrap_or_else(|_| {
-                Err(PdfError::new(
-                    PdfErrorKind::Backend,
-                    c"Rust PDF backend failed".to_owned(),
-                ))
-            });
+            let result = catch_unwind(AssertUnwindSafe(|| crate::backend::runtime::catch_backend(task)))
+                .unwrap_or_else(|_| Err(PdfError::new(PdfErrorKind::Backend, c"Rust PDF backend failed".to_owned())));
             let _ = sender.send(result);
         };
         if let Some(pool) = &self.pool {
@@ -207,8 +173,7 @@ impl Runtime {
             bytes,
             receiver,
         });
-        self.statistics.peak_queued_bytes =
-            self.statistics.peak_queued_bytes.max(self.queued_bytes);
+        self.statistics.peak_queued_bytes = self.statistics.peak_queued_bytes.max(self.queued_bytes);
         self.statistics.peak_queued_jobs = self.statistics.peak_queued_jobs.max(self.pending.len());
     }
 }
@@ -251,10 +216,7 @@ impl PdfRuntime {
     ///
     /// Panics if an executor is already installed on this thread.
     pub fn new(options: &PdfBuildOptions) -> Self {
-        assert!(
-            !configured(),
-            "PDF engine invocations cannot be nested on one thread"
-        );
+        assert!(!configured(), "PDF engine invocations cannot be nested on one thread");
         let workers = options
             .workers
             .map(usize::from)
@@ -283,12 +245,9 @@ impl PdfRuntime {
     /// Read timings after the native engine has drained its work.
     pub fn statistics(&self) -> PdfBuildStatistics {
         let mut statistics = self.runtime.statistics.clone();
-        statistics.page_rendering =
-            Duration::from_nanos(self.runtime.timings.rendering.load(Ordering::Relaxed));
-        statistics.predictors =
-            Duration::from_nanos(self.runtime.timings.predictors.load(Ordering::Relaxed));
-        statistics.compression =
-            Duration::from_nanos(self.runtime.timings.compression.load(Ordering::Relaxed));
+        statistics.page_rendering = Duration::from_nanos(self.runtime.timings.rendering.load(Ordering::Relaxed));
+        statistics.predictors = Duration::from_nanos(self.runtime.timings.predictors.load(Ordering::Relaxed));
+        statistics.compression = Duration::from_nanos(self.runtime.timings.compression.load(Ordering::Relaxed));
         statistics
     }
 }
@@ -359,9 +318,7 @@ pub(crate) fn special_supported(bytes: &[u8]) -> bool {
     let text = text.trim();
     if !text.split('@').skip(1).all(|suffix| {
         matches!(
-            suffix
-                .split(|c: char| !c.is_ascii_alphanumeric() && c != '_')
-                .next(),
+            suffix.split(|c: char| !c.is_ascii_alphanumeric() && c != '_').next(),
             Some("thispage" | "prevpage" | "nextpage")
         )
     }) {
@@ -374,10 +331,7 @@ pub(crate) fn special_supported(bytes: &[u8]) -> bool {
     if matches!(words.next(), Some("color" | "background")) {
         return true;
     }
-    let Some(command) = text
-        .strip_prefix("pdf:")
-        .and_then(|s| s.split_ascii_whitespace().next())
-    else {
+    let Some(command) = text.strip_prefix("pdf:").and_then(|s| s.split_ascii_whitespace().next()) else {
         return false;
     };
     matches!(
@@ -533,8 +487,7 @@ unsafe extern "C" fn tt_pdf_page_bytes(data: *const c_char, length: usize) -> i3
                 return 0;
             };
             let start = page.data.len();
-            page.data
-                .extend_from_slice(slice::from_raw_parts(data.cast(), length));
+            page.data.extend_from_slice(slice::from_raw_parts(data.cast(), length));
             if let Some(last) = page.commands.last_mut()
                 && last.kind == CommandKind::Bytes
                 && last.start + last.length == start
@@ -556,9 +509,7 @@ unsafe extern "C" fn tt_pdf_page_bytes(data: *const c_char, length: usize) -> i3
 
 #[unsafe(no_mangle)]
 extern "C" fn tt_pdf_page_size() -> usize {
-    with_runtime(0, |runtime| {
-        runtime.page.as_ref().map_or(0, PagePlan::bytes)
-    })
+    with_runtime(0, |runtime| runtime.page.as_ref().map_or(0, PagePlan::bytes))
 }
 
 #[unsafe(no_mangle)]
@@ -576,52 +527,35 @@ extern "C" fn tt_pdf_page_submit(target: *mut c_void, compression_level: u32) ->
         let timings = Arc::clone(&runtime.timings);
         runtime.statistics.rendered_pages += 1;
         runtime.statistics.compressed_streams += usize::from(compression_level > 0);
-        runtime.submit(
-            target,
-            i32::from(compression_level > 0),
-            page.bytes(),
-            move || {
-                let start = Instant::now();
-                let rendered = page.render()?;
-                record_elapsed(&timings.rendering, start);
-                if compression_level > 0 {
-                    crate::compress::compress_owned(
-                        rendered,
-                        StreamOptions {
-                            level: compression_level,
-                            predictor: 0,
-                            columns: 0,
-                            bpc: 0,
-                            colors: 0,
-                        },
-                        pool.as_deref(),
-                        &timings,
-                    )
-                    .map_err(|()| {
-                        PdfError::new(
-                            PdfErrorKind::Backend,
-                            c"PDF stream compression failed".to_owned(),
-                        )
-                    })
-                } else {
-                    Ok(rendered)
-                }
-            },
-        );
+        runtime.submit(target, i32::from(compression_level > 0), page.bytes(), move || {
+            let start = Instant::now();
+            let rendered = page.render()?;
+            record_elapsed(&timings.rendering, start);
+            if compression_level > 0 {
+                crate::compress::compress_owned(
+                    rendered,
+                    StreamOptions {
+                        level: compression_level,
+                        predictor: 0,
+                        columns: 0,
+                        bpc: 0,
+                        colors: 0,
+                    },
+                    pool.as_deref(),
+                    &timings,
+                )
+                .map_err(|()| PdfError::new(PdfErrorKind::Backend, c"PDF stream compression failed".to_owned()))
+            } else {
+                Ok(rendered)
+            }
+        });
         1
     })
 }
 
 #[unsafe(no_mangle)]
 unsafe extern "C" fn tt_pdf_stream_submit(
-    target: *mut c_void,
-    data: *const u8,
-    length: usize,
-    level: u32,
-    predictor: i32,
-    columns: i32,
-    bpc: i32,
-    colors: i32,
+    target: *mut c_void, data: *const u8, length: usize, level: u32, predictor: i32, columns: i32, bpc: i32, colors: i32,
 ) -> i32 {
     unsafe {
         with_runtime(0, |runtime| {
@@ -642,12 +576,7 @@ unsafe extern "C" fn tt_pdf_stream_submit(
                     pool.as_deref(),
                     &timings,
                 )
-                .map_err(|()| {
-                    PdfError::new(
-                        PdfErrorKind::Backend,
-                        c"PDF stream compression failed".to_owned(),
-                    )
-                })
+                .map_err(|()| PdfError::new(PdfErrorKind::Backend, c"PDF stream compression failed".to_owned()))
             });
             1
         })
@@ -677,12 +606,10 @@ unsafe extern "C" fn tt_pdf_pipeline_take(result: *mut NativeResult) -> i32 {
             };
             let start = Instant::now();
             let completed = Box::new(TaskResult {
-                data: pending.receiver.recv().unwrap_or_else(|_| {
-                    Err(PdfError::new(
-                        PdfErrorKind::InvalidState,
-                        c"PDF worker stopped".to_owned(),
-                    ))
-                }),
+                data: pending
+                    .receiver
+                    .recv()
+                    .unwrap_or_else(|_| Err(PdfError::new(PdfErrorKind::InvalidState, c"PDF worker stopped".to_owned()))),
             });
             runtime.statistics.queue_wait += start.elapsed();
             runtime.queued_bytes -= pending.bytes;
@@ -750,33 +677,11 @@ mod tests {
                 Ok(vec![2])
             });
         });
-        observed
-            .recv_timeout(std::time::Duration::from_secs(10))
-            .unwrap();
+        observed.recv_timeout(std::time::Duration::from_secs(10)).unwrap();
         release.send(()).unwrap();
         with_runtime((), |runtime| {
-            assert_eq!(
-                runtime
-                    .pending
-                    .pop_front()
-                    .unwrap()
-                    .receiver
-                    .recv()
-                    .unwrap()
-                    .unwrap(),
-                vec![1]
-            );
-            assert_eq!(
-                runtime
-                    .pending
-                    .pop_front()
-                    .unwrap()
-                    .receiver
-                    .recv()
-                    .unwrap()
-                    .unwrap(),
-                vec![2]
-            );
+            assert_eq!(runtime.pending.pop_front().unwrap().receiver.recv().unwrap().unwrap(), vec![1]);
+            assert_eq!(runtime.pending.pop_front().unwrap().receiver.recv().unwrap().unwrap(), vec![2]);
         });
     }
 
@@ -801,11 +706,9 @@ mod tests {
             let _runtime = PdfRuntime::new(&options(workers, 100));
             with_runtime((), |runtime| {
                 runtime.submit(ptr::null_mut(), 0, 10, || {
-                    Err(
-                        PdfError::new(PdfErrorKind::MalformedInput, c"bad page".to_owned())
-                            .at(23)
-                            .in_file(b"page\xff.xdv"),
-                    )
+                    Err(PdfError::new(PdfErrorKind::MalformedInput, c"bad page".to_owned())
+                        .at(23)
+                        .in_file(b"page\xff.xdv"))
                 });
             });
             let mut result = std::mem::MaybeUninit::<NativeResult>::uninit();
@@ -815,33 +718,17 @@ mod tests {
                 let result = result.assume_init();
                 assert_eq!(result.status, -1);
                 assert!(result.data.is_null());
-                let error = (&*result.handle.cast::<TaskResult>())
-                    .data
-                    .as_ref()
-                    .unwrap_err();
+                let error = (&*result.handle.cast::<TaskResult>()).data.as_ref().unwrap_err();
                 assert_eq!(error.kind, PdfErrorKind::MalformedInput);
                 assert_eq!(error.offset, Some(23));
                 assert_eq!(error.file.as_deref(), Some(&b"page\xff.xdv"[..]));
-                assert_eq!(
-                    std::ffi::CStr::from_ptr(crate::backend::runtime::tt_pdf_last_error()),
-                    c"bad page"
-                );
+                assert_eq!(std::ffi::CStr::from_ptr(crate::backend::runtime::tt_pdf_last_error()), c"bad page");
                 tt_pdf_pipeline_release(result.handle);
             }
             with_runtime((), |runtime| {
                 assert_eq!(runtime.queued_bytes, 0);
                 runtime.submit(ptr::null_mut(), 0, 1, || Ok(vec![1]));
-                assert_eq!(
-                    runtime
-                        .pending
-                        .pop_front()
-                        .unwrap()
-                        .receiver
-                        .recv()
-                        .unwrap()
-                        .unwrap(),
-                    vec![1]
-                );
+                assert_eq!(runtime.pending.pop_front().unwrap().receiver.recv().unwrap().unwrap(), vec![1]);
             });
         }
     }
@@ -856,14 +743,7 @@ mod tests {
                 completed.send(()).unwrap();
                 Ok(vec![])
             });
-            let error = runtime
-                .pending
-                .pop_front()
-                .unwrap()
-                .receiver
-                .recv()
-                .unwrap()
-                .unwrap_err();
+            let error = runtime.pending.pop_front().unwrap().receiver.recv().unwrap().unwrap_err();
             assert_eq!(error.kind, PdfErrorKind::Backend);
         });
         drop(guard);
@@ -885,11 +765,7 @@ mod tests {
             ("ps: arbitrary PostScript", false),
         ] {
             // SAFETY: The classifier borrows a valid string for this call.
-            assert_eq!(
-                unsafe { tt_pdf_special_supported(text.as_ptr(), text.len()) } != 0,
-                supported,
-                "{text}"
-            );
+            assert_eq!(unsafe { tt_pdf_special_supported(text.as_ptr(), text.len()) } != 0, supported, "{text}");
         }
     }
 }

@@ -93,10 +93,7 @@ impl CatCode {
             14 => Ok(CatCode::Comment),
             15 => Ok(CatCode::Invalid),
             _ => {
-                bail!(
-                    "category codes must be between 0 and 15 (inclusive); got {}",
-                    n
-                );
+                bail!("category codes must be between 0 and 15 (inclusive); got {}", n);
             }
         }
     }

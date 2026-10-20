@@ -79,9 +79,7 @@ pub union memory_word {
 
 impl Default for memory_word {
     fn default() -> Self {
-        memory_word {
-            b32: b32x2 { s0: 0, s1: 0 },
-        }
+        memory_word { b32: b32x2 { s0: 0, s1: 0 } }
     }
 }
 
@@ -94,108 +92,84 @@ impl std::fmt::Debug for memory_word {
 #[macro_export]
 macro_rules! LLIST_link {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! LLIST_info {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize))
-            .b32
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize)).b32.s0
     };
 }
 
 #[macro_export]
 macro_rules! NODE_type {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize))
-            .b16
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize)).b16.s1
     };
 }
 
 #[macro_export]
 macro_rules! NODE_subtype {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize))
-            .b16
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize)).b16.s0
     };
 }
 
 #[macro_export]
 macro_rules! BOX_lr_mode {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize))
-            .b16
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize)).b16.s0
     };
 }
 
 #[macro_export]
 macro_rules! BOX_width {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! BOX_depth {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! BOX_height {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 3) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 3) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! BOX_shift_amount {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! BOX_list_ptr {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 5) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 5) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! BOX_glue_sign {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 5) as isize))
-            .b16
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 5) as isize)).b16.s1
     };
 }
 
 #[macro_export]
 macro_rules! BOX_glue_order {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 5) as isize))
-            .b16
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 5) as isize)).b16.s0
     };
 }
 
@@ -209,279 +183,217 @@ macro_rules! BOX_glue_set {
 #[macro_export]
 macro_rules! ACTIVE_NODE_fitness {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize))
-            .b16
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize)).b16.s0
     };
 }
 
 #[macro_export]
 macro_rules! ACTIVE_NODE_break_node {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! ACTIVE_NODE_line_number {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s0
     };
 }
 
 #[macro_export]
 macro_rules! ACTIVE_NODE_total_demerits {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! ACTIVE_NODE_shortfall {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 3) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 3) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! ACTIVE_NODE_glue {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! CHAR_NODE_font {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize))
-            .b16
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize)).b16.s1
     };
 }
 
 #[macro_export]
 macro_rules! CHAR_NODE_character {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize))
-            .b16
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize)).b16.s0
     };
 }
 
 #[macro_export]
 macro_rules! DELTA_NODE_dwidth {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! DELTA_NODE_dstretch0 {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! DELTA_NODE_dstretch1 {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 3) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 3) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! DELTA_NODE_dstretch2 {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! DELTA_NODE_dstretch3 {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 5) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 5) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! DELTA_NODE_dshrink {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 6) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 6) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! DISCRETIONARY_NODE_replace_count {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize))
-            .b16
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize)).b16.s0
     };
 }
 
 #[macro_export]
 macro_rules! DISCRETIONARY_NODE_pre_break {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s0
     };
 }
 
 #[macro_export]
 macro_rules! DISCRETIONARY_NODE_post_break {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! EDGE_NODE_edge_dist {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! GLUE_NODE_glue_ptr {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s0
     };
 }
 
 #[macro_export]
 macro_rules! GLUE_NODE_leader_ptr {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! INSERTION_NODE_float_cost {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! INSERTION_NODE_split_top_ptr {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! INSERTION_NODE_ins_ptr {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize))
-            .b32
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize)).b32.s0
     };
 }
 
 #[macro_export]
 macro_rules! LANGUAGE_NODE_what_lang {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! LANGUAGE_NODE_what_lhm {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b16
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b16.s1
     };
 }
 
 #[macro_export]
 macro_rules! LANGUAGE_NODE_what_rhm {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b16
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b16.s0
     };
 }
 
 #[macro_export]
 macro_rules! LIGATURE_NODE_lig_font {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b16
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b16.s1
     };
 }
 
 #[macro_export]
 macro_rules! LIGATURE_NODE_lig_char {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b16
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b16.s0
     };
 }
 
 #[macro_export]
 macro_rules! LIGATURE_NODE_lig_ptr {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! MARK_NODE_ptr {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! MARK_NODE_class {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s0
     };
 }
 
@@ -495,8 +407,7 @@ macro_rules! MATH_NODE_lr_dir {
 #[macro_export]
 macro_rules! MATH_NODE_end_lr_type {
     ($p:expr) => {
-        ($crate::xetex::xetex_constants::L_CODE
-            * ($crate::NODE_subtype!($p) as i32 / $crate::xetex::xetex_constants::L_CODE)
+        ($crate::xetex::xetex_constants::L_CODE * ($crate::NODE_subtype!($p) as i32 / $crate::xetex::xetex_constants::L_CODE)
             + $crate::xetex::xetex_constants::END_M_CODE)
     };
 }
@@ -504,45 +415,35 @@ macro_rules! MATH_NODE_end_lr_type {
 #[macro_export]
 macro_rules! NATIVE_NODE_size {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize))
-            .b16
-            .s3
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize)).b16.s3
     };
 }
 
 #[macro_export]
 macro_rules! NATIVE_NODE_font {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize))
-            .b16
-            .s2
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize)).b16.s2
     };
 }
 
 #[macro_export]
 macro_rules! NATIVE_NODE_length {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize))
-            .b16
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize)).b16.s1
     };
 }
 
 #[macro_export]
 macro_rules! NATIVE_NODE_glyph {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize))
-            .b16
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize)).b16.s1
     };
 }
 
 #[macro_export]
 macro_rules! NATIVE_NODE_glyph_count {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize))
-            .b16
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize)).b16.s0
     };
 }
 
@@ -556,54 +457,42 @@ macro_rules! NATIVE_NODE_glyph_info_ptr {
 #[macro_export]
 macro_rules! NATIVE_NODE_text {
     ($p:expr) => {
-        $crate::xetex::xetex_xetexd::mem
-            .offset((($p) + $crate::xetex::xetex_constants::NATIVE_NODE_SIZE) as isize)
-            as *mut u16
+        $crate::xetex::xetex_xetexd::mem.offset((($p) + $crate::xetex::xetex_constants::NATIVE_NODE_SIZE) as isize) as *mut u16
     };
 }
 
 #[macro_export]
 macro_rules! PAGE_INS_NODE_broken_ptr {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! PAGE_INS_NODE_broken_ins {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s0
     };
 }
 
 #[macro_export]
 macro_rules! PAGE_INS_NODE_last_ins_ptr {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! PAGE_INS_NODE_best_ins_ptr {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize))
-            .b32
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize)).b32.s0
     };
 }
 
 #[macro_export]
 macro_rules! PASSIVE_NODE_prev_break {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s0
     };
 }
 
@@ -617,44 +506,35 @@ macro_rules! PASSIVE_NODE_next_break {
 #[macro_export]
 macro_rules! PASSIVE_NODE_cur_break {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! PASSIVE_NODE_serial {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize))
-            .b32
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize)).b32.s0
     };
 }
 
 #[macro_export]
 macro_rules! PENALTY_NODE_penalty {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! PIC_NODE_path_len {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize))
-            .b16
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 4) as isize)).b16.s1
     };
 }
 
 #[macro_export]
 macro_rules! PIC_NODE_path {
     ($p:expr) => {
-        $crate::xetex::xetex_xetexd::mem
-            .offset((($p) + $crate::xetex::xetex_constants::PIC_NODE_SIZE) as isize) as *mut u8
+        $crate::xetex::xetex_xetexd::mem.offset((($p) + $crate::xetex::xetex_constants::PIC_NODE_SIZE) as isize) as *mut u8
     };
 }
 
@@ -662,9 +542,7 @@ macro_rules! PIC_NODE_path {
 macro_rules! PIC_NODE_total_size {
     ($p:expr) => {
         ($crate::xetex::xetex_constants::PIC_NODE_SIZE
-            + ($crate::PIC_NODE_path_len!($p) as i32
-                + std::mem::size_of::<$crate::xetex::xetex_xetexd::memory_word>() as i32
-                - 1)
+            + ($crate::PIC_NODE_path_len!($p) as i32 + std::mem::size_of::<$crate::xetex::xetex_xetexd::memory_word>() as i32 - 1)
                 / std::mem::size_of::<$crate::xetex::xetex_xetexd::memory_word>() as i32)
     };
 }
@@ -672,96 +550,75 @@ macro_rules! PIC_NODE_total_size {
 #[macro_export]
 macro_rules! WRITE_NODE_tokens {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! SYNCTEX_tag {
     ($p:expr, $nodesize:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset(
-            (($p) + ($nodesize) - $crate::xetex::xetex_constants::SYNCTEX_FIELD_SIZE) as isize,
-        ))
-        .b32
-        .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + ($nodesize) - $crate::xetex::xetex_constants::SYNCTEX_FIELD_SIZE) as isize))
+            .b32
+            .s0
     };
 }
 
 #[macro_export]
 macro_rules! SYNCTEX_line {
     ($p:expr, $nodesize:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset(
-            (($p) + ($nodesize) - $crate::xetex::xetex_constants::SYNCTEX_FIELD_SIZE) as isize,
-        ))
-        .b32
-        .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + ($nodesize) - $crate::xetex::xetex_constants::SYNCTEX_FIELD_SIZE) as isize))
+            .b32
+            .s1
     };
 }
 
 #[macro_export]
 macro_rules! GLUE_SPEC_ref_count {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! GLUE_SPEC_stretch_order {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize))
-            .b16
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize)).b16.s1
     };
 }
 
 #[macro_export]
 macro_rules! GLUE_SPEC_shrink_order {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize))
-            .b16
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize)).b16.s0
     };
 }
 
 #[macro_export]
 macro_rules! GLUE_SPEC_stretch {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! GLUE_SPEC_shrink {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 3) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 3) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! FONT_CHARACTER_INFO {
     ($f:expr, $c:expr) => {
-        (*$crate::xetex::xetex_xetexd::font_info.offset(
-            (*$crate::xetex::xetex_xetexd::char_base.offset(($f) as isize) + ($c as i32)) as isize,
-        ))
-        .b16
+        (*$crate::xetex::xetex_xetexd::font_info.offset((*$crate::xetex::xetex_xetexd::char_base.offset(($f) as isize) + ($c as i32)) as isize)).b16
     };
 }
 
 #[macro_export]
 macro_rules! FONT_CHARINFO_WIDTH {
     ($f:expr, $info:expr) => {
-        (*$crate::xetex::xetex_xetexd::font_info.offset(
-            (*$crate::xetex::xetex_xetexd::width_base.offset(($f) as isize) + (($info).s3 as i32))
-                as isize,
-        ))
+        (*$crate::xetex::xetex_xetexd::font_info
+            .offset((*$crate::xetex::xetex_xetexd::width_base.offset(($f) as isize) + (($info).s3 as i32)) as isize))
         .b32
         .s1
     };
@@ -770,10 +627,8 @@ macro_rules! FONT_CHARINFO_WIDTH {
 #[macro_export]
 macro_rules! FONT_CHARINFO_HEIGHT {
     ($f:expr, $info:expr) => {
-        (*$crate::xetex::xetex_xetexd::font_info.offset(
-            (*$crate::xetex::xetex_xetexd::height_base.offset(($f) as isize)
-                + (($info).s2 as i32 / 16)) as isize,
-        ))
+        (*$crate::xetex::xetex_xetexd::font_info
+            .offset((*$crate::xetex::xetex_xetexd::height_base.offset(($f) as isize) + (($info).s2 as i32 / 16)) as isize))
         .b32
         .s1
     };
@@ -782,10 +637,8 @@ macro_rules! FONT_CHARINFO_HEIGHT {
 #[macro_export]
 macro_rules! FONT_CHARINFO_DEPTH {
     ($f:expr, $info:expr) => {
-        (*$crate::xetex::xetex_xetexd::font_info.offset(
-            (*$crate::xetex::xetex_xetexd::depth_base.offset(($f) as isize)
-                + (($info).s2 as i32 % 16)) as isize,
-        ))
+        (*$crate::xetex::xetex_xetexd::font_info
+            .offset((*$crate::xetex::xetex_xetexd::depth_base.offset(($f) as isize) + (($info).s2 as i32 % 16)) as isize))
         .b32
         .s1
     };
@@ -794,10 +647,8 @@ macro_rules! FONT_CHARINFO_DEPTH {
 #[macro_export]
 macro_rules! FONT_CHARINFO_ITALCORR {
     ($f:expr, $info:expr) => {
-        (*$crate::xetex::xetex_xetexd::font_info.offset(
-            (*$crate::xetex::xetex_xetexd::italic_base.offset(($f) as isize)
-                + (($info).s1 as i32 / 4)) as isize,
-        ))
+        (*$crate::xetex::xetex_xetexd::font_info
+            .offset((*$crate::xetex::xetex_xetexd::italic_base.offset(($f) as isize) + (($info).s1 as i32 / 4)) as isize))
         .b32
         .s1
     };
@@ -813,27 +664,21 @@ macro_rules! FONT_CHARACTER_WIDTH {
 #[macro_export]
 macro_rules! TOKEN_LIST_ref_count {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize))
-            .b32
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset(($p) as isize)).b32.s0
     };
 }
 
 #[macro_export]
 macro_rules! ETEX_SA_ref {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s0
     };
 }
 
 #[macro_export]
 macro_rules! ETEX_SA_ptr {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s1
     };
 }
 
@@ -847,45 +692,35 @@ macro_rules! ETEX_SA_num {
 #[macro_export]
 macro_rules! ETEX_MARK_sa_top_mark {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s0
     };
 }
 
 #[macro_export]
 macro_rules! ETEX_MARK_sa_first_mark {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 1) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! ETEX_MARK_sa_bot_mark {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize))
-            .b32
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize)).b32.s0
     };
 }
 
 #[macro_export]
 macro_rules! ETEX_MARK_sa_split_first_mark {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize))
-            .b32
-            .s1
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 2) as isize)).b32.s1
     };
 }
 
 #[macro_export]
 macro_rules! ETEX_MARK_sa_split_bot_mark {
     ($p:expr) => {
-        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 3) as isize))
-            .b32
-            .s0
+        (*$crate::xetex::xetex_xetexd::mem.offset((($p) + 3) as isize)).b32.s0
     };
 }
 
@@ -1300,21 +1135,14 @@ unsafe extern "C" {
 #[macro_export]
 macro_rules! XEQ_LEVEL {
     ($i:expr) => {
-        $crate::xetex::xetex_xetexd::_xeq_level_array
-            [(($i) as i32 - $crate::xetex::xetex_format::INT_BASE) as usize]
+        $crate::xetex::xetex_xetexd::_xeq_level_array[(($i) as i32 - $crate::xetex::xetex_format::INT_BASE) as usize]
     };
 }
 
 unsafe extern "C" {
     pub fn getmd5sum(s: i32, file: bool);
     pub fn init_start_time(source_date_epoch: libc::time_t);
-    pub fn get_date_and_time(
-        source_date_epoch: libc::time_t,
-        minutes: *mut i32,
-        day: *mut i32,
-        month: *mut i32,
-        year: *mut i32,
-    );
+    pub fn get_date_and_time(source_date_epoch: libc::time_t, minutes: *mut i32, day: *mut i32, month: *mut i32, year: *mut i32);
     pub fn get_seconds_and_micros(seconds: *mut i32, micros: *mut i32);
     pub fn getcreationdate();
     pub fn getfilemoddate(s: i32);
@@ -1494,34 +1322,15 @@ unsafe extern "C" {
     pub fn char_warning(f: internal_font_number, c: i32);
     pub fn new_native_word_node(f: internal_font_number, n: i32) -> i32;
     pub fn new_native_character(f: internal_font_number, c: UnicodeScalar) -> i32;
-    pub fn font_feature_warning(
-        featureNameP: *const libc::c_void,
-        featLen: i32,
-        settingNameP: *const libc::c_void,
-        setLen: i32,
-    );
-    pub fn font_mapping_warning(
-        mappingNameP: *const libc::c_void,
-        mappingNameLen: i32,
-        warningType: i32,
-    );
+    pub fn font_feature_warning(featureNameP: *const libc::c_void, featLen: i32, settingNameP: *const libc::c_void, setLen: i32);
+    pub fn font_mapping_warning(mappingNameP: *const libc::c_void, mappingNameLen: i32, warningType: i32);
     pub fn graphite_warning();
-    pub fn load_native_font(
-        u: i32,
-        nom: str_number,
-        aire: str_number,
-        s: scaled_t,
-    ) -> internal_font_number;
+    pub fn load_native_font(u: i32, nom: str_number, aire: str_number, s: scaled_t) -> internal_font_number;
     pub fn do_locale_linebreaks(s: i32, len: i32);
     pub fn bad_utf8_warning();
     pub fn get_input_normalization_state() -> i32;
     pub fn get_tracing_fonts_state() -> i32;
-    pub fn read_font_info(
-        u: i32,
-        nom: str_number,
-        aire: str_number,
-        s: scaled_t,
-    ) -> internal_font_number;
+    pub fn read_font_info(u: i32, nom: str_number, aire: str_number, s: scaled_t) -> internal_font_number;
     pub fn new_character(f: internal_font_number, c: UTF16_code) -> i32;
     pub fn out_what(p: i32);
     pub fn new_edge(s: small_number, w: scaled_t) -> i32;
@@ -1704,11 +1513,7 @@ unsafe extern "C" {
     pub fn finalize_dvi_file();
 
     pub fn tt_cleanup();
-    pub fn tt_run_engine(
-        dump_name: *const libc::c_char,
-        input_file_name: *const libc::c_char,
-        build_date: libc::time_t,
-    ) -> tt_history_t;
+    pub fn tt_run_engine(dump_name: *const libc::c_char, input_file_name: *const libc::c_char, build_date: libc::time_t) -> tt_history_t;
     pub fn tt_insert_special(ascii_text: *const libc::c_char);
 
     pub fn measure_native_node(node: *mut std::ffi::c_void, use_glyph_metrics: libc::c_int);
@@ -1778,9 +1583,7 @@ macro_rules! set_native_glyph_metrics {
 #[macro_export]
 macro_rules! set_justified_native_glyphs {
     ($p:expr) => {
-        $crate::xetex::xetex_xetexd::store_justified_native_glyphs(
-            $crate::xetex::xetex_xetexd::mem.offset(($p) as isize) as *mut std::ffi::c_void,
-        )
+        $crate::xetex::xetex_xetexd::store_justified_native_glyphs($crate::xetex::xetex_xetexd::mem.offset(($p) as isize) as *mut std::ffi::c_void)
     };
 }
 
@@ -1797,7 +1600,7 @@ macro_rules! get_native_italic_correction {
 macro_rules! get_native_glyph_italic_correction {
     ($p:expr) => {
         $crate::xetex::xetex_xetexd::real_get_native_glyph_italic_correction(
-            $crate::xetex::xetex_xetexd::mem.offset(($p) as isize) as *mut std::ffi::c_void,
+            $crate::xetex::xetex_xetexd::mem.offset(($p) as isize) as *mut std::ffi::c_void
         )
     };
 }
@@ -1815,9 +1618,7 @@ macro_rules! get_native_glyph {
 #[macro_export]
 macro_rules! make_xdv_glyph_array_data {
     ($p:expr) => {
-        $crate::xetex::xetex_xetexd::makeXDVGlyphArrayData(
-            $crate::xetex::xetex_xetexd::mem.offset(($p) as isize) as *mut std::ffi::c_void,
-        )
+        $crate::xetex::xetex_xetexd::makeXDVGlyphArrayData($crate::xetex::xetex_xetexd::mem.offset(($p) as isize) as *mut std::ffi::c_void)
     };
 }
 

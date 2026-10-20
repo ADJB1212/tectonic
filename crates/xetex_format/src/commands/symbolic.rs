@@ -7,9 +7,7 @@
 use std::collections::HashMap;
 use tectonic_errors::prelude::*;
 
-use super::{
-    ArgKind, Command, CommandArgument, CommandBehavior, CommandPrimitive, PrimitiveExtraInit,
-};
+use super::{ArgKind, Command, CommandArgument, CommandBehavior, CommandPrimitive, PrimitiveExtraInit};
 use crate::{FormatVersion, symbols::SymbolTable};
 
 /// An extra offset that can be applied to the base symbol.

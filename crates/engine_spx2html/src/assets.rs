@@ -78,15 +78,11 @@ impl Assets {
     }
 
     fn copy_file(&mut self, src_path: &str, dest_path: &str) {
-        self.paths.insert(
-            dest_path.to_string(),
-            AssetOrigin::Copy(src_path.to_string()),
-        );
+        self.paths.insert(dest_path.to_string(), AssetOrigin::Copy(src_path.to_string()));
     }
 
     fn emit_font_css(&mut self, dest_path: &str) {
-        self.paths
-            .insert(dest_path.to_string(), AssetOrigin::FontCss);
+        self.paths.insert(dest_path.to_string(), AssetOrigin::FontCss);
     }
 
     /// This functional must only be called if `common.out_path` is not None.
@@ -135,9 +131,7 @@ fn emit_copied_file(src_tex_path: &str, dest_path: &str, common: &mut Common) ->
     }
 
     let (name, digest_opt) = ih.into_name_digest();
-    common
-        .hooks
-        .event_input_closed(name, digest_opt, common.status);
+    common.hooks.event_input_closed(name, digest_opt, common.status);
     Ok(())
 }
 
@@ -170,10 +164,7 @@ fn create_asset_file(dest_path: &str, common: &mut Common) -> Result<(File, Path
 /// We have a separate argument `do_create`, rather than just looking at
 /// `common.do_not_emit`, since this function is used for assets as well as
 /// templated HTML outputs.
-pub(crate) fn create_output_path(
-    dest_path: &str,
-    common: &mut Common,
-) -> Result<(Option<PathBuf>, usize)> {
+pub(crate) fn create_output_path(dest_path: &str, common: &mut Common) -> Result<(Option<PathBuf>, usize)> {
     let mut out_path = common.out_base.map(|p| p.to_owned());
     let mut n_levels = 0;
 
@@ -183,10 +174,7 @@ pub(crate) fn create_output_path(
                 Ok(_) => {}
                 Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
                 Err(e) => {
-                    return Err(e).context(format!(
-                        "cannot create output parent directory `{}`",
-                        out_path.display()
-                    ));
+                    return Err(e).context(format!("cannot create output parent directory `{}`", out_path.display()));
                 }
             }
         }
@@ -196,19 +184,13 @@ pub(crate) fn create_output_path(
         }
 
         if piece == ".." {
-            bail!(
-                "illegal provideFile dest path `{}`: it contains a `..` component",
-                dest_path
-            );
+            bail!("illegal provideFile dest path `{}`: it contains a `..` component", dest_path);
         }
 
         let as_path = Path::new(piece);
 
         if as_path.is_absolute() || as_path.has_root() {
-            bail!(
-                "illegal provideFile path `{}`: it contains an absolute/rooted component",
-                dest_path,
-            );
+            bail!("illegal provideFile path `{}`: it contains an absolute/rooted component", dest_path,);
         }
 
         if let Some(out_path) = out_path.as_mut() {
@@ -252,12 +234,7 @@ impl AssetSpecification {
                 match (new_origin, cur_origin) {
                     (AO::Copy(new_src), AO::Copy(cur_src)) => {
                         if cur_src != new_src {
-                            bail!(
-                                "disagreeing sources `{}` and `{}` for copied output asset `{}`",
-                                cur_src,
-                                new_src,
-                                path
-                            );
+                            bail!("disagreeing sources `{}` and `{}` for copied output asset `{}`", cur_src, new_src, path);
                         }
                     }
 
@@ -292,12 +269,7 @@ impl AssetSpecification {
                     }
 
                     (new2, cur2) => {
-                        bail!(
-                            "disagreeing origin types {} and {} for output asset `{}`",
-                            cur2,
-                            new2,
-                            path
-                        );
+                        bail!("disagreeing origin types {} and {} for output asset `{}`", cur2, new2, path);
                     }
                 }
             } else {
@@ -336,11 +308,7 @@ impl AssetSpecification {
     /// This function is used in the "precomputed assets" mode, to make sure
     /// that the SPX file doesn't set up any font configuration that we didn't
     /// expect.
-    pub(crate) fn check_runtime_fonts(
-        &self,
-        fonts: &mut FontEnsemble,
-        common: &mut Common,
-    ) -> Result<()> {
+    pub(crate) fn check_runtime_fonts(&self, fonts: &mut FontEnsemble, common: &mut Common) -> Result<()> {
         fonts.match_to_precomputed(&self.0, common)
     }
 
@@ -371,17 +339,11 @@ impl AssetSpecification {
                     (AssetOrigin::FontCss, syntax::AssetOrigin::FontCss(_)) => {}
 
                     _ => {
-                        bail!(
-                            "this session and the precomputed assets disagree on `{}`",
-                            path
-                        );
+                        bail!("this session and the precomputed assets disagree on `{}`", path);
                     }
                 }
             } else {
-                bail!(
-                    "this session defines an asset at `{}` that is not in the precomputed bundle",
-                    path
-                );
+                bail!("this session defines an asset at `{}` that is not in the precomputed bundle", path);
             }
         }
 
@@ -459,10 +421,7 @@ pub(crate) mod syntax {
     #[derive(Clone, Debug, Default, Serialize, Deserialize)]
     pub struct Assets(#[serde(serialize_with = "ordered_map")] pub HashMap<String, AssetOrigin>);
 
-    fn ordered_map<K: Ord + Serialize, V: Serialize, S>(
-        value: &HashMap<K, V>,
-        serializer: S,
-    ) -> Result<S::Ok, S::Error>
+    fn ordered_map<K: Ord + Serialize, V: Serialize, S>(value: &HashMap<K, V>, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {
@@ -535,10 +494,7 @@ pub(crate) mod syntax {
     }
 
     /// Merge one table of variant glyph USV mappings into another.
-    pub(crate) fn merge_vglyphs(
-        cur: &mut HashMap<String, GlyphVariantMapping>,
-        new: &HashMap<String, GlyphVariantMapping>,
-    ) {
+    pub(crate) fn merge_vglyphs(cur: &mut HashMap<String, GlyphVariantMapping>, new: &HashMap<String, GlyphVariantMapping>) {
         // First, get the maximum seen index for each USV.
 
         let mut next_index = HashMap::new();
@@ -557,10 +513,7 @@ pub(crate) mod syntax {
                 let next_idx = next_index.entry(mapping.usv).or_default();
                 let index = *next_idx;
                 *next_idx = index + 1;
-                GlyphVariantMapping {
-                    usv: mapping.usv,
-                    index,
-                }
+                GlyphVariantMapping { usv: mapping.usv, index }
             });
         }
     }
@@ -585,16 +538,11 @@ pub(crate) mod syntax {
 
     /// Map from symbolic family name to info about the fonts defining it.
     #[derive(Clone, Debug, Default, Deserialize, Serialize)]
-    pub struct FontEnsembleAssetData(
-        #[serde(serialize_with = "ordered_map")] pub HashMap<String, FontFamilyAssetData>,
-    );
+    pub struct FontEnsembleAssetData(#[serde(serialize_with = "ordered_map")] pub HashMap<String, FontFamilyAssetData>);
 
     /// Merge one font ensemble (table of font-family definitions) into another.
     /// This can fail if the tables are not self-consistent.
-    pub fn merge_font_ensembles(
-        cur: &mut HashMap<String, FontFamilyAssetData>,
-        new: &HashMap<String, FontFamilyAssetData>,
-    ) -> Result<()> {
+    pub fn merge_font_ensembles(cur: &mut HashMap<String, FontFamilyAssetData>, new: &HashMap<String, FontFamilyAssetData>) -> Result<()> {
         for (name, new_ff) in new {
             if let Some(cur_ff) = cur.get_mut(name) {
                 for (facetype, new_facepath) in &new_ff.faces {

@@ -39,14 +39,10 @@ impl CiteInfo {
     }
 
     pub fn grow(&mut self) {
-        self.cite_list
-            .resize(self.cite_list.len() + MAX_CITES, StrNumber::invalid());
-        self.cite_info
-            .resize(self.cite_info.len() + MAX_CITES, StrNumber::invalid());
-        self.type_list
-            .resize(self.type_list.len() + MAX_CITES, HashPointer::default());
-        self.entry_exists
-            .resize(self.entry_exists.len() + MAX_CITES, false);
+        self.cite_list.resize(self.cite_list.len() + MAX_CITES, StrNumber::invalid());
+        self.cite_info.resize(self.cite_info.len() + MAX_CITES, StrNumber::invalid());
+        self.type_list.resize(self.type_list.len() + MAX_CITES, HashPointer::default());
+        self.entry_exists.resize(self.entry_exists.len() + MAX_CITES, false);
     }
 
     pub fn get_cite(&self, offset: usize) -> StrNumber {
@@ -129,8 +125,7 @@ impl CiteInfo {
     where
         Vec<StrNumber>: IndexMut<I, Output = [StrNumber]>,
     {
-        self.cite_info[r]
-            .sort_by(|a, b| less_than(entries, a.to_raw_dangerous(), b.to_raw_dangerous()))
+        self.cite_info[r].sort_by(|a, b| less_than(entries, a.to_raw_dangerous(), b.to_raw_dangerous()))
     }
 }
 
@@ -145,11 +140,7 @@ fn less_than(entries: &EntryData, arg1: CiteNumber, arg2: CiteNumber) -> Orderin
 }
 
 pub(crate) fn add_database_cite(
-    cites: &mut CiteInfo,
-    other: &mut OtherData,
-    hash: &mut HashData,
-    new_cite: CiteNumber,
-    cite_loc: HashPointer<Cite>,
+    cites: &mut CiteInfo, other: &mut OtherData, hash: &mut HashData, new_cite: CiteNumber, cite_loc: HashPointer<Cite>,
     lc_cite_loc: HashPointer<LcCite>,
 ) -> CiteNumber {
     if new_cite == cites.cite_list.len() {
@@ -163,11 +154,7 @@ pub(crate) fn add_database_cite(
     new_cite + 1
 }
 
-pub(crate) fn find_cite_locs_for_this_cite_key(
-    pool: &StringPool,
-    hash: &HashData,
-    cite_str: StrNumber,
-) -> FindCiteLocs {
+pub(crate) fn find_cite_locs_for_this_cite_key(pool: &StringPool, hash: &HashData, cite_str: StrNumber) -> FindCiteLocs {
     let val = pool.get_str(cite_str);
 
     let cite = hash.lookup_str::<hash::Cite>(pool, val);

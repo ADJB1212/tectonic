@@ -6,9 +6,7 @@
 
 pub(crate) use crate::compat::renderer::tt_pdf_render_font as RenderFont;
 use crate::error::{PdfError, PdfErrorKind};
-use crate::numbers::{
-    DECIMAL_BUFFER_SIZE, INVERSE_POWERS_OF_TEN, POWERS_OF_TEN, format_decimal, format_integer,
-};
+use crate::numbers::{DECIMAL_BUFFER_SIZE, INVERSE_POWERS_OF_TEN, POWERS_OF_TEN, format_decimal, format_integer};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) enum Direction {
@@ -43,17 +41,10 @@ pub(crate) struct TextRun<'a> {
 pub(crate) enum RenderCommand<'a> {
     Bytes(&'a [u8]),
     Text(TextRun<'a>),
-    Rule {
-        x: i32,
-        y: i32,
-        width: i32,
-        height: i32,
-    },
+    Rule { x: i32, y: i32, width: i32, height: i32 },
     Graphics,
     Direction(Direction),
-    ResetFonts {
-        new_page: bool,
-    },
+    ResetFonts { new_page: bool },
 }
 
 #[derive(Clone, Copy)]
@@ -121,20 +112,11 @@ pub(crate) struct PageRenderer<'a> {
 }
 
 impl<'a> PageRenderer<'a> {
-    pub(crate) fn new(
-        fonts: &'a [RenderFont],
-        settings: RenderSettings,
-        output: &'a mut Vec<u8>,
-    ) -> Result<Self, PdfError> {
+    pub(crate) fn new(fonts: &'a [RenderFont], settings: RenderSettings, output: &'a mut Vec<u8>) -> Result<Self, PdfError> {
         let precision = usize::try_from(settings.precision)
             .ok()
             .filter(|&precision| precision < POWERS_OF_TEN.len())
-            .ok_or_else(|| {
-                PdfError::new(
-                    PdfErrorKind::InvalidState,
-                    c"Invalid renderer precision".to_owned(),
-                )
-            })?;
+            .ok_or_else(|| PdfError::new(PdfErrorKind::InvalidState, c"Invalid renderer precision".to_owned()))?;
         if fonts.iter().any(|font| !font.name.contains(&0)) {
             return Err(invalid(c"Invalid renderer font snapshot"));
         }
@@ -153,15 +135,13 @@ impl<'a> PageRenderer<'a> {
             direction: settings.direction,
             force_reset: false,
             multibyte: false,
-            minimum: (1.0 / (f64::from(POWERS_OF_TEN[precision]) * settings.unit) + 0.5).floor()
-                as i32,
+            minimum: (1.0 / (f64::from(POWERS_OF_TEN[precision]) * settings.unit) + 0.5).floor() as i32,
         })
     }
 
     fn number(&mut self, value: f64, precision: i32) -> Result<(), PdfError> {
         let mut bytes = [0; DECIMAL_BUFFER_SIZE];
-        let length = format_decimal(value, precision, &mut bytes)
-            .map_err(|_| invalid(c"Invalid PDF numeric precision"))?;
+        let length = format_decimal(value, precision, &mut bytes).map_err(|_| invalid(c"Invalid PDF numeric precision"))?;
         self.output.extend_from_slice(&bytes[..length]);
         Ok(())
     }
@@ -194,15 +174,9 @@ impl<'a> PageRenderer<'a> {
             self.number(value, (self.settings.precision + 2).min(8))?;
         }
         self.output.push(b' ');
-        self.number(
-            f64::from(x) * self.settings.unit,
-            self.settings.precision.max(2),
-        )?;
+        self.number(f64::from(x) * self.settings.unit, self.settings.precision.max(2))?;
         self.output.push(b' ');
-        self.number(
-            f64::from(y) * self.settings.unit,
-            self.settings.precision.max(2),
-        )?;
+        self.number(f64::from(y) * self.settings.unit, self.settings.precision.max(2))?;
         self.output.extend_from_slice(b" Tm");
         self.reference = [x, y];
         Ok(())
@@ -210,11 +184,7 @@ impl<'a> PageRenderer<'a> {
 
     fn reset_text(&mut self) -> Result<(), PdfError> {
         self.output.extend_from_slice(b" BT");
-        if self.force_reset
-            || self.slant != 0.0
-            || self.extend != 1.0
-            || !matches!(self.rotation, Rotation::Hh | Rotation::Vv)
-        {
+        if self.force_reset || self.slant != 0.0 || self.extend != 1.0 || !matches!(self.rotation, Rotation::Hh | Rotation::Vv) {
             self.matrix(0, 0)?;
         }
         self.reference = [0; 2];
@@ -224,8 +194,7 @@ impl<'a> PageRenderer<'a> {
     }
 
     fn close_string(&mut self) {
-        self.output
-            .extend_from_slice(if self.multibyte { b">]TJ" } else { b")]TJ" });
+        self.output.extend_from_slice(if self.multibyte { b">]TJ" } else { b")]TJ" });
     }
 
     fn text_mode(&mut self) -> Result<(), PdfError> {
@@ -272,10 +241,7 @@ impl<'a> PageRenderer<'a> {
         self.text_mode()?;
         self.multibyte = font.format == 3;
         let rotation = self.rotation_for(font.wmode != 0, self.direction);
-        if font.slant != self.slant
-            || font.extend != self.extend
-            || !rotation.equivalent(self.rotation)
-        {
+        if font.slant != self.slant || font.extend != self.extend || !rotation.equivalent(self.rotation) {
             self.force_reset = true;
         }
         self.slant = font.slant;
@@ -286,10 +252,7 @@ impl<'a> PageRenderer<'a> {
             self.output.push(byte as u8);
         }
         self.output.push(b' ');
-        self.number(
-            f64::from(font.size) * self.settings.unit,
-            (self.settings.precision + 1).min(8),
-        )?;
+        self.number(f64::from(font.size) * self.settings.unit, (self.settings.precision + 1).min(8))?;
         self.output.extend_from_slice(b" Tf");
         if font.bold > 0.0 || font.bold != self.bold {
             if font.bold <= 0.0 {
@@ -298,12 +261,7 @@ impl<'a> PageRenderer<'a> {
                 use std::io::Write;
                 self.output.extend_from_slice(b" 2 Tr ");
                 if font.bold.is_nan() {
-                    self.output
-                        .extend_from_slice(if font.bold.is_sign_negative() {
-                            b"-nan"
-                        } else {
-                            b"nan"
-                        });
+                    self.output.extend_from_slice(if font.bold.is_sign_negative() { b"-nan" } else { b"nan" });
                 } else {
                     write!(self.output, "{:.6}", font.bold).expect("Vec writes cannot fail");
                 }
@@ -319,31 +277,17 @@ impl<'a> PageRenderer<'a> {
         let dx = x.wrapping_sub(self.reference[0]);
         let dy = y.wrapping_sub(self.reference[1]);
         let (tx, ty) = match self.rotation {
-            Rotation::Vh => (
-                dy,
-                (-(f64::from(dx) - f64::from(dy) * self.slant) / self.extend) as i32,
-            ),
-            Rotation::Hv => (
-                (-(f64::from(dy) + f64::from(dx) * self.slant) / self.extend) as i32,
-                dx,
-            ),
-            Rotation::Hh => (
-                ((f64::from(dx) - f64::from(dy) * self.slant) / self.extend) as i32,
-                dy,
-            ),
-            Rotation::Vv => (
-                dx,
-                ((f64::from(dy) + f64::from(dx) * self.slant) / self.extend) as i32,
-            ),
+            Rotation::Vh => (dy, (-(f64::from(dx) - f64::from(dy) * self.slant) / self.extend) as i32),
+            Rotation::Hv => ((-(f64::from(dy) + f64::from(dx) * self.slant) / self.extend) as i32, dx),
+            Rotation::Hh => (((f64::from(dx) - f64::from(dy) * self.slant) / self.extend) as i32, dy),
+            Rotation::Vv => (dx, ((f64::from(dy) + f64::from(dx) * self.slant) / self.extend) as i32),
             Rotation::Hd => (
-                ((-(f64::from(dy) + f64::from(dx) * self.slant) / self.extend) as i32)
-                    .wrapping_neg(),
+                ((-(f64::from(dy) + f64::from(dx) * self.slant) / self.extend) as i32).wrapping_neg(),
                 dx.wrapping_neg(),
             ),
             Rotation::Vd => (
                 dx.wrapping_neg(),
-                (((f64::from(dy) + f64::from(dx) * self.slant) / self.extend) as i32)
-                    .wrapping_neg(),
+                (((f64::from(dy) + f64::from(dx) * self.slant) / self.extend) as i32).wrapping_neg(),
             ),
         };
         self.output.push(b' ');
@@ -357,8 +301,7 @@ impl<'a> PageRenderer<'a> {
             Rotation::Vd => (ex.wrapping_neg(), ey.wrapping_neg()),
             _ => (ex, ey),
         };
-        self.output
-            .extend_from_slice(if self.multibyte { b" Td[<" } else { b" Td[(" });
+        self.output.extend_from_slice(if self.multibyte { b" Td[<" } else { b" Td[(" });
         self.reference = [x.wrapping_sub(ex), y.wrapping_sub(ey)];
         self.offset = 0;
         Ok(())
@@ -371,8 +314,7 @@ impl<'a> PageRenderer<'a> {
         if self.mode != Mode::String {
             if self.force_reset {
                 self.matrix(x, y)?;
-                self.output
-                    .extend_from_slice(if self.multibyte { b"[<" } else { b"[(" });
+                self.output.extend_from_slice(if self.multibyte { b"[<" } else { b"[(" });
                 self.force_reset = false;
             } else {
                 self.start_string(x, y)?;
@@ -383,10 +325,7 @@ impl<'a> PageRenderer<'a> {
     }
 
     fn text(&mut self, run: TextRun<'_>) -> Result<(), PdfError> {
-        let font = *self
-            .fonts
-            .get(run.font)
-            .ok_or_else(|| invalid(c"Invalid renderer font"))?;
+        let font = *self.fonts.get(run.font).ok_or_else(|| invalid(c"Invalid renderer font"))?;
         if font.format == 3 {
             if run.data.len() > 2048 || !run.data.len().is_multiple_of(2) {
                 return Err(invalid(c"Invalid composite renderer text"));
@@ -411,21 +350,15 @@ impl<'a> PageRenderer<'a> {
         }
         let (dx, dy) = match self.direction {
             Direction::Horizontal => (
-                self.reference[0]
-                    .wrapping_add(self.offset)
-                    .wrapping_sub(run.x),
+                self.reference[0].wrapping_add(self.offset).wrapping_sub(run.x),
                 run.y.wrapping_sub(self.reference[1]),
             ),
             Direction::Vertical => (
-                run.y
-                    .wrapping_sub(self.reference[1])
-                    .wrapping_add(self.offset),
+                run.y.wrapping_sub(self.reference[1]).wrapping_add(self.offset),
                 run.x.wrapping_sub(self.reference[0]),
             ),
             Direction::ReverseVertical => (
-                run.y
-                    .wrapping_add(self.reference[1])
-                    .wrapping_add(self.offset),
+                run.y.wrapping_add(self.reference[1]).wrapping_add(self.offset),
                 run.x.wrapping_add(self.reference[0]),
             ),
         };
@@ -441,15 +374,11 @@ impl<'a> PageRenderer<'a> {
         if self.mode != Mode::String {
             self.string_mode(run.x, run.y)?;
         } else if kern != 0 {
-            self.offset = self.offset.wrapping_sub(
-                (f64::from(kern) * font.extend * (f64::from(font.size) / 1000.0)) as i32,
-            );
+            self.offset = self
+                .offset
+                .wrapping_sub((f64::from(kern) * font.extend * (f64::from(font.size) / 1000.0)) as i32);
             self.output.push(if self.multibyte { b'>' } else { b')' });
-            self.integer(if font.wmode != 0 {
-                kern.wrapping_neg()
-            } else {
-                kern
-            });
+            self.integer(if font.wmode != 0 { kern.wrapping_neg() } else { kern });
             self.output.push(if self.multibyte { b'<' } else { b'(' });
         }
         if self.multibyte {
@@ -465,12 +394,9 @@ impl<'a> PageRenderer<'a> {
                         }
                         self.output.push(byte);
                     }
-                    _ => self.output.extend_from_slice(&[
-                        b'\\',
-                        b'0' + (byte >> 6),
-                        b'0' + ((byte >> 3) & 7),
-                        b'0' + (byte & 7),
-                    ]),
+                    _ => self
+                        .output
+                        .extend_from_slice(&[b'\\', b'0' + (byte >> 6), b'0' + ((byte >> 3) & 7), b'0' + (byte & 7)]),
                 }
             }
         }
@@ -487,10 +413,7 @@ impl<'a> PageRenderer<'a> {
                 if index != 0 {
                     self.output.push(b' ');
                 }
-                self.number(
-                    f64::from(value) * self.settings.unit,
-                    self.settings.precision,
-                )?;
+                self.number(f64::from(value) * self.settings.unit, self.settings.precision)?;
             }
             self.output.extend_from_slice(b" re f");
         } else {
@@ -501,10 +424,7 @@ impl<'a> PageRenderer<'a> {
                 let x = x.wrapping_add(width / 2);
                 (width, [x, y, x, y.wrapping_add(height)])
             };
-            self.number(
-                f64::from(stroke) * self.settings.unit,
-                (self.settings.precision + 1).min(8),
-            )?;
+            self.number(f64::from(stroke) * self.settings.unit, (self.settings.precision + 1).min(8))?;
             self.output.extend_from_slice(b" w ");
             self.position(points[0])?;
             self.output.push(b' ');
@@ -523,12 +443,7 @@ impl<'a> PageRenderer<'a> {
         match command {
             RenderCommand::Bytes(bytes) => self.output.extend_from_slice(bytes),
             RenderCommand::Text(run) => self.text(run)?,
-            RenderCommand::Rule {
-                x,
-                y,
-                width,
-                height,
-            } => self.rule(x, y, width, height)?,
+            RenderCommand::Rule { x, y, width, height } => self.rule(x, y, width, height)?,
             RenderCommand::Graphics => self.graphics(),
             RenderCommand::Direction(direction) => {
                 let vertical = self.font.is_some_and(|font| self.fonts[font].wmode != 0);
@@ -556,9 +471,7 @@ impl<'a> PageRenderer<'a> {
 
 #[cfg(test)]
 pub(crate) fn render<'a>(
-    commands: impl IntoIterator<Item = RenderCommand<'a>>,
-    fonts: &[RenderFont],
-    settings: RenderSettings,
+    commands: impl IntoIterator<Item = RenderCommand<'a>>, fonts: &[RenderFont], settings: RenderSettings,
 ) -> Result<Vec<u8>, PdfError> {
     let mut output = Vec::new();
     let mut renderer = PageRenderer::new(fonts, settings, &mut output)?;
@@ -622,9 +535,7 @@ mod tests {
                         native.push(command(5, 0, font % 2, 0, 0, 0));
                         native.push(command(4, 0, direction, 0, 0, 0));
                     }
-                    for (width, height) in
-                        [(500000, 10), (10, 500000), (500000, 700000), (-1234, 512)]
-                    {
+                    for (width, height) in [(500000, 10), (10, 500000), (500000, 700000), (-1234, 512)] {
                         native.push(command(2, 0, -1134, 1723, width, height));
                     }
                     let commands = native.iter().map(|command| match command.kind {
@@ -644,9 +555,7 @@ mod tests {
                         },
                         3 => RenderCommand::Graphics,
                         4 => RenderCommand::Direction(Direction::try_from(command.x).unwrap()),
-                        5 => RenderCommand::ResetFonts {
-                            new_page: command.x != 0,
-                        },
+                        5 => RenderCommand::ResetFonts { new_page: command.x != 0 },
                         _ => unreachable!(),
                     });
                     let rendered = render(
@@ -660,9 +569,11 @@ mod tests {
                         },
                     )
                     .unwrap();
-                    snapshots.push(rendered.iter().fold(0xcbf29ce484222325u64, |hash, byte| {
-                        (hash ^ u64::from(*byte)).wrapping_mul(0x100000001b3)
-                    }));
+                    snapshots.push(
+                        rendered
+                            .iter()
+                            .fold(0xcbf29ce484222325u64, |hash, byte| (hash ^ u64::from(*byte)).wrapping_mul(0x100000001b3)),
+                    );
                 }
             }
         }
@@ -725,17 +636,7 @@ mod failure_tests {
         renderer.command(RenderCommand::Bytes(b"valid")).unwrap();
         assert_eq!(output, b"valid");
         for precision in [-1, 10, i32::MAX] {
-            assert!(
-                PageRenderer::new(
-                    &[],
-                    RenderSettings {
-                        precision,
-                        ..settings
-                    },
-                    &mut output
-                )
-                .is_err()
-            );
+            assert!(PageRenderer::new(&[], RenderSettings { precision, ..settings }, &mut output).is_err());
         }
     }
 }

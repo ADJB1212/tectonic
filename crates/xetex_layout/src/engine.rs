@@ -86,15 +86,8 @@ impl LayoutEngine {
     /// Create a new layout engine from the needed information
     #[allow(clippy::too_many_arguments)]
     pub fn new(
-        font: MaybeBorrow<'static, Font>,
-        script: hb::Tag,
-        language: Option<Cow<'static, CStr>>,
-        features: Box<[hb::Feature]>,
-        shaper_list: Vec<*const libc::c_char>,
-        rgb_value: u32,
-        extend: f32,
-        slant: f32,
-        embolden: f32,
+        font: MaybeBorrow<'static, Font>, script: hb::Tag, language: Option<Cow<'static, CStr>>, features: Box<[hb::Feature]>,
+        shaper_list: Vec<*const libc::c_char>, rgb_value: u32, extend: f32, slant: f32, embolden: f32,
     ) -> LayoutEngine {
         let req_engine = FontManager::with_font_manager(|mgr| mgr.get_req_engine());
         LayoutEngine {
@@ -104,13 +97,9 @@ impl LayoutEngine {
             // treat it as a OT language tag for backward compatibility with pre-0.9999
             // XeTeX.
             language: if req_engine == Engine::Graphite {
-                language
-                    .map(|lang| hb::Language::from_cstr(&lang))
-                    .unwrap_or_default()
+                language.map(|lang| hb::Language::from_cstr(&lang)).unwrap_or_default()
             } else {
-                language
-                    .map(|lang| hb::Tag::from_cstr(&lang).to_language())
-                    .unwrap_or_default()
+                language.map(|lang| hb::Tag::from_cstr(&lang).to_language()).unwrap_or_default()
             },
             features,
             shaper_list,
@@ -262,15 +251,8 @@ impl LayoutEngine {
             self.shaper_list = vec![c"ot".as_ptr(), ptr::null()];
         }
 
-        let mut shape_plan = hb::ShapePlan::new_cached(
-            hb_face,
-            &segment_props,
-            &self.features,
-            Some(&self.shaper_list),
-        );
-        let res = shape_plan
-            .as_mut()
-            .execute(hb_font, self.hb_buffer.as_mut(), &self.features);
+        let mut shape_plan = hb::ShapePlan::new_cached(hb_face, &segment_props, &self.features, Some(&self.shaper_list));
+        let res = shape_plan.as_mut().execute(hb_font, self.hb_buffer.as_mut(), &self.features);
 
         if res {
             self.shaper = Shaper::from_name(shape_plan.as_ref().get_shaper());
@@ -278,9 +260,7 @@ impl LayoutEngine {
             // all selected shapers failed, retrying with default
             // we don't use _cached here as the cached plan will always fail.
             shape_plan = hb::ShapePlan::new(hb_face, &segment_props, &self.features, None);
-            let res = shape_plan
-                .as_mut()
-                .execute(hb_font, self.hb_buffer.as_mut(), &self.features);
+            let res = shape_plan.as_mut().execute(hb_font, self.hb_buffer.as_mut(), &self.features);
 
             if res {
                 self.shaper = Shaper::from_name(shape_plan.as_ref().get_shaper());
@@ -294,35 +274,16 @@ impl LayoutEngine {
 }
 
 pub(crate) fn get_graphite_feature_code(engine: &LayoutEngine, index: u32) -> Option<u32> {
-    let id = engine
-        .font()
-        .hb_font()
-        .face()
-        .gr_face()?
-        .feature_ref(index as usize)?
-        .id();
+    let id = engine.font().hb_font().face().gr_face()?.feature_ref(index as usize)?.id();
     Some(id)
 }
 
-pub(crate) fn count_graphite_feature_settings(
-    engine: &LayoutEngine,
-    feature_id: u32,
-) -> Option<u32> {
-    let out = engine
-        .font()
-        .hb_font()
-        .face()
-        .gr_face()?
-        .find_feature_ref(feature_id)?
-        .num_values() as u32;
+pub(crate) fn count_graphite_feature_settings(engine: &LayoutEngine, feature_id: u32) -> Option<u32> {
+    let out = engine.font().hb_font().face().gr_face()?.find_feature_ref(feature_id)?.num_values() as u32;
     Some(out)
 }
 
-pub(crate) fn get_graphite_feature_setting_code(
-    engine: &LayoutEngine,
-    feature_id: u32,
-    index: u32,
-) -> Option<u32> {
+pub(crate) fn get_graphite_feature_setting_code(engine: &LayoutEngine, feature_id: u32, index: u32) -> Option<u32> {
     let out = engine
         .font()
         .hb_font()
@@ -333,27 +294,16 @@ pub(crate) fn get_graphite_feature_setting_code(
     Some(out)
 }
 
-pub(crate) fn get_graphite_feature_default_setting(
-    engine: &LayoutEngine,
-    feature_id: u32,
-) -> Option<u32> {
+pub(crate) fn get_graphite_feature_default_setting(engine: &LayoutEngine, feature_id: u32) -> Option<u32> {
     let face = engine.font().hb_font().face().gr_face()?;
     let feat = face.find_feature_ref(feature_id)?;
-    let lang = engine
-        .language
-        .to_string()
-        .map(hb::Tag::from_cstr)
-        .map(hb::Tag::to_raw)
-        .unwrap_or(0);
+    let lang = engine.language.to_string().map(hb::Tag::from_cstr).map(hb::Tag::to_raw).unwrap_or(0);
     let feature_values = face.feature_val_for_lang(lang);
     let out = feat.feat_value(feature_values.as_ref()) as u32;
     Some(out)
 }
 
-pub(crate) fn get_graphite_feature_label(
-    engine: &LayoutEngine,
-    feature_id: u32,
-) -> Option<gr::Label> {
+pub(crate) fn get_graphite_feature_label(engine: &LayoutEngine, feature_id: u32) -> Option<gr::Label> {
     let face = engine.font().hb_font().face().gr_face()?;
     let feature = face.find_feature_ref(feature_id)?;
     let lang_id = 0x409;
@@ -361,11 +311,7 @@ pub(crate) fn get_graphite_feature_label(
     Some(label)
 }
 
-pub(crate) fn get_graphite_feature_setting_label(
-    engine: &LayoutEngine,
-    feature_id: u32,
-    setting_id: u32,
-) -> Option<gr::Label> {
+pub(crate) fn get_graphite_feature_setting_label(engine: &LayoutEngine, feature_id: u32, setting_id: u32) -> Option<gr::Label> {
     let face = engine.font().hb_font().face().gr_face()?;
 
     let feature = face.find_feature_ref(feature_id)?;
@@ -379,12 +325,7 @@ pub(crate) fn get_graphite_feature_setting_label(
     None
 }
 
-pub(crate) fn find_graphite_feature(
-    engine: &LayoutEngine,
-    str: &[u8],
-    tag: &mut hb::Tag,
-    v: &mut libc::c_int,
-) -> bool {
+pub(crate) fn find_graphite_feature(engine: &LayoutEngine, str: &[u8], tag: &mut hb::Tag, v: &mut libc::c_int) -> bool {
     *tag = hb::Tag::new(0);
     *v = 0;
 
@@ -435,11 +376,7 @@ pub(crate) fn find_graphite_feature_named(engine: &LayoutEngine, name: &[u8]) ->
     None
 }
 
-pub(crate) fn find_graphite_feature_setting_named(
-    engine: &LayoutEngine,
-    id: u32,
-    name: &[u8],
-) -> Option<i16> {
+pub(crate) fn find_graphite_feature_setting_named(engine: &LayoutEngine, id: u32, name: &[u8]) -> Option<i16> {
     let face = engine.font().hb_font().face().gr_face()?;
 
     let tag = hb::Tag::from_str(std::str::from_utf8(name).unwrap()).to_raw();

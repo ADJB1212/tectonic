@@ -1,15 +1,8 @@
 use super::*;
 use std::mem::ManuallyDrop;
 
-unsafe extern "C" fn nominal_glyph_func<
-    T,
-    F: Fn(FontRef<'_>, &T, Codepoint) -> Option<Codepoint>,
->(
-    font: *mut sys::hb_font_t,
-    font_data: *mut (),
-    ch: Codepoint,
-    gid: *mut Codepoint,
-    user_data: *mut (),
+unsafe extern "C" fn nominal_glyph_func<T, F: Fn(FontRef<'_>, &T, Codepoint) -> Option<Codepoint>>(
+    font: *mut sys::hb_font_t, font_data: *mut (), ch: Codepoint, gid: *mut Codepoint, user_data: *mut (),
 ) -> sys::hb_bool_t {
     unsafe {
         let font = FontRef::from_raw(NonNull::new(font).unwrap());
@@ -29,16 +22,8 @@ unsafe extern "C" fn nominal_glyph_func<
     }
 }
 
-unsafe extern "C" fn variation_glyph_func<
-    T,
-    F: Fn(FontRef<'_>, &T, Codepoint, Codepoint) -> Option<Codepoint>,
->(
-    font: *mut sys::hb_font_t,
-    font_data: *mut (),
-    ch: Codepoint,
-    vs: Codepoint,
-    gid: *mut Codepoint,
-    user_data: *mut (),
+unsafe extern "C" fn variation_glyph_func<T, F: Fn(FontRef<'_>, &T, Codepoint, Codepoint) -> Option<Codepoint>>(
+    font: *mut sys::hb_font_t, font_data: *mut (), ch: Codepoint, vs: Codepoint, gid: *mut Codepoint, user_data: *mut (),
 ) -> sys::hb_bool_t {
     unsafe {
         let font = FontRef::from_raw(NonNull::new(font).unwrap());
@@ -59,10 +44,7 @@ unsafe extern "C" fn variation_glyph_func<
 }
 
 unsafe extern "C" fn glyph_advance<T, F: Fn(FontRef<'_>, &T, Codepoint) -> Position>(
-    font: *mut sys::hb_font_t,
-    font_data: *mut (),
-    gid: Codepoint,
-    user_data: *mut (),
+    font: *mut sys::hb_font_t, font_data: *mut (), gid: Codepoint, user_data: *mut (),
 ) -> Position {
     unsafe {
         let font = FontRef::from_raw(NonNull::new(font).unwrap());
@@ -72,16 +54,8 @@ unsafe extern "C" fn glyph_advance<T, F: Fn(FontRef<'_>, &T, Codepoint) -> Posit
     }
 }
 
-unsafe extern "C" fn glyph_origin<
-    T,
-    F: Fn(FontRef<'_>, &T, Codepoint) -> Option<(Position, Position)>,
->(
-    font: *mut sys::hb_font_t,
-    font_data: *mut (),
-    gid: Codepoint,
-    x: *mut Position,
-    y: *mut Position,
-    user_data: *mut (),
+unsafe extern "C" fn glyph_origin<T, F: Fn(FontRef<'_>, &T, Codepoint) -> Option<(Position, Position)>>(
+    font: *mut sys::hb_font_t, font_data: *mut (), gid: Codepoint, x: *mut Position, y: *mut Position, user_data: *mut (),
 ) -> sys::hb_bool_t {
     unsafe {
         let font = FontRef::from_raw(NonNull::new(font).unwrap());
@@ -104,11 +78,7 @@ unsafe extern "C" fn glyph_origin<
 }
 
 unsafe extern "C" fn glyph_kerning<T, F: Fn(FontRef<'_>, &T, Codepoint, Codepoint) -> Position>(
-    font: *mut sys::hb_font_t,
-    font_data: *mut (),
-    gid1: Codepoint,
-    gid2: Codepoint,
-    user_data: *mut (),
+    font: *mut sys::hb_font_t, font_data: *mut (), gid1: Codepoint, gid2: Codepoint, user_data: *mut (),
 ) -> Position {
     unsafe {
         let font = FontRef::from_raw(NonNull::new(font).unwrap());
@@ -119,11 +89,7 @@ unsafe extern "C" fn glyph_kerning<T, F: Fn(FontRef<'_>, &T, Codepoint, Codepoin
 }
 
 unsafe extern "C" fn glyph_extents<T, F: Fn(FontRef<'_>, &T, Codepoint) -> Option<GlyphExtents>>(
-    font: *mut sys::hb_font_t,
-    font_data: *mut (),
-    gid: Codepoint,
-    extents: *mut GlyphExtents,
-    user_data: *mut (),
+    font: *mut sys::hb_font_t, font_data: *mut (), gid: Codepoint, extents: *mut GlyphExtents, user_data: *mut (),
 ) -> sys::hb_bool_t {
     unsafe {
         let font = FontRef::from_raw(NonNull::new(font).unwrap());
@@ -142,17 +108,8 @@ unsafe extern "C" fn glyph_extents<T, F: Fn(FontRef<'_>, &T, Codepoint) -> Optio
     }
 }
 
-unsafe extern "C" fn glyph_contour_point<
-    T,
-    F: Fn(FontRef<'_>, &T, Codepoint, u32) -> Option<(Position, Position)>,
->(
-    font: *mut sys::hb_font_t,
-    font_data: *mut (),
-    gid: Codepoint,
-    index: libc::c_uint,
-    x: *mut Position,
-    y: *mut Position,
-    user_data: *mut (),
+unsafe extern "C" fn glyph_contour_point<T, F: Fn(FontRef<'_>, &T, Codepoint, u32) -> Option<(Position, Position)>>(
+    font: *mut sys::hb_font_t, font_data: *mut (), gid: Codepoint, index: libc::c_uint, x: *mut Position, y: *mut Position, user_data: *mut (),
 ) -> sys::hb_bool_t {
     unsafe {
         let font = FontRef::from_raw(NonNull::new(font).unwrap());
@@ -175,12 +132,7 @@ unsafe extern "C" fn glyph_contour_point<
 }
 
 unsafe extern "C" fn glyph_name<T, F: Fn(FontRef<'_>, &T, Codepoint, &mut [u8]) -> usize>(
-    font: *mut sys::hb_font_t,
-    font_data: *mut (),
-    gid: Codepoint,
-    name: *mut libc::c_char,
-    size: libc::c_uint,
-    user_data: *mut (),
+    font: *mut sys::hb_font_t, font_data: *mut (), gid: Codepoint, name: *mut libc::c_char, size: libc::c_uint, user_data: *mut (),
 ) -> sys::hb_bool_t {
     unsafe {
         let font = FontRef::from_raw(NonNull::new(font).unwrap());
@@ -202,10 +154,7 @@ unsafe extern "C" fn glyph_name<T, F: Fn(FontRef<'_>, &T, Codepoint, &mut [u8]) 
 }
 
 /// A borrowed reference to a [`FontFuncs`]
-pub struct FontFuncsRef<'a, T>(
-    NonNull<sys::hb_font_funcs_t>,
-    PhantomData<(&'a sys::hb_font_funcs_t, T)>,
-);
+pub struct FontFuncsRef<'a, T>(NonNull<sys::hb_font_funcs_t>, PhantomData<(&'a sys::hb_font_funcs_t, T)>);
 
 impl<T> Copy for FontFuncsRef<'_, T> {}
 
@@ -222,10 +171,7 @@ impl<T> FontFuncsRef<'_, T> {
 }
 
 /// A borrowed mutable reference to a [`FontFuncs`]
-pub struct FontFuncsMut<'a, T>(
-    FontFuncsRef<'a, T>,
-    PhantomData<&'a mut sys::hb_font_funcs_t>,
-);
+pub struct FontFuncsMut<'a, T>(FontFuncsRef<'a, T>, PhantomData<&'a mut sys::hb_font_funcs_t>);
 
 impl<T> FontFuncsMut<'_, T> {
     fn as_mut_ptr(&self) -> *mut sys::hb_font_funcs_t {

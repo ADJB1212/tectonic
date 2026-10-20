@@ -10,10 +10,7 @@
 
 use super::xetex_xetexd::{cur_input, mem};
 
-use super::bridge::{
-    INVALID_HANDLE, rust_output_handle_t, ttstub_output_close, ttstub_output_open,
-    ttstub_output_write,
-};
+use super::bridge::{INVALID_HANDLE, rust_output_handle_t, ttstub_output_close, ttstub_output_open, ttstub_output_write};
 use libc::{c_char, c_int, c_uint, c_void};
 use std::ptr;
 
@@ -156,11 +153,7 @@ pub unsafe extern "C" fn tt_checkpoint_synctex(cp: *mut tt_checkpoint) {
             &raw mut synctex_ctxt.file as *mut rust_output_handle_t as *mut c_void,
             std::mem::size_of::<rust_output_handle_t>(),
         );
-        tt_checkpoint_string(
-            cp,
-            b"synctex_ctxt.root_name\0".as_ptr() as *const c_char,
-            &raw mut synctex_ctxt.root_name,
-        );
+        tt_checkpoint_string(cp, b"synctex_ctxt.root_name\0".as_ptr() as *const c_char, &raw mut synctex_ctxt.root_name);
         tt_checkpoint_field(
             cp,
             b"synctex_ctxt.count\0".as_ptr() as *const c_char,
@@ -246,10 +239,7 @@ pub unsafe extern "C" fn tt_checkpoint_synctex(cp: *mut tt_checkpoint) {
             std::mem::size_of::<c_uint>(),
         );
 
-        if (*cp).restoring
-            && synctex_ctxt.file != INVALID_HANDLE
-            && !tt_xetex_checkpoint_handle_valid(synctex_ctxt.file as usize, true)
-        {
+        if (*cp).restoring && synctex_ctxt.file != INVALID_HANDLE && !tt_xetex_checkpoint_handle_valid(synctex_ctxt.file as usize, true) {
             (*cp).valid = false;
         }
 
@@ -325,16 +315,8 @@ pub unsafe fn synctex_abort(_log_opened: bool) {
 unsafe fn synctex_write_str(s: &str) -> c_int {
     unsafe {
         let bytes = s.as_bytes();
-        let written = ttstub_output_write(
-            synctex_ctxt.file,
-            bytes.as_ptr() as *const c_char,
-            bytes.len(),
-        );
-        if written == bytes.len() {
-            bytes.len() as c_int
-        } else {
-            -1
-        }
+        let written = ttstub_output_write(synctex_ctxt.file, bytes.as_ptr() as *const c_char, bytes.len());
+        if written == bytes.len() { bytes.len() as c_int } else { -1 }
     }
 }
 
@@ -689,10 +671,7 @@ unsafe fn synctex_record_node_math(p: i32) {
 
 unsafe fn synctex_record_pdfxform(_form: i32) -> c_int {
     unsafe {
-        if synctex_ctxt.flags.off
-            || (*eqtb.add((INT_BASE + INT_PAR__synctex) as usize)).b32.s1 == 0
-            || synctex_ctxt.file == INVALID_HANDLE
-        {
+        if synctex_ctxt.flags.off || (*eqtb.add((INT_BASE + INT_PAR__synctex) as usize)).b32.s1 == 0 || synctex_ctxt.file == INVALID_HANDLE {
             0
         } else {
             synctex_ctxt.form_depth += 1;
@@ -730,10 +709,7 @@ unsafe fn synctex_record_node_pdfrefxform(objnum: c_int) -> c_int {
         synctex_ctxt.curh = synctex_curh();
         synctex_ctxt.curv = synctex_curv();
 
-        if synctex_ctxt.flags.off
-            || (*eqtb.add((INT_BASE + INT_PAR__synctex) as usize)).b32.s1 == 0
-            || synctex_ctxt.file == INVALID_HANDLE
-        {
+        if synctex_ctxt.flags.off || (*eqtb.add((INT_BASE + INT_PAR__synctex) as usize)).b32.s1 == 0 || synctex_ctxt.file == INVALID_HANDLE {
             0
         } else {
             let s = format!(
@@ -757,8 +733,7 @@ unsafe fn synctex_record_node_pdfrefxform(objnum: c_int) -> c_int {
 
 unsafe fn synctex_dot_open() -> rust_output_handle_t {
     unsafe {
-        if synctex_ctxt.flags.off || (*eqtb.add((INT_BASE + INT_PAR__synctex) as usize)).b32.s1 == 0
-        {
+        if synctex_ctxt.flags.off || (*eqtb.add((INT_BASE + INT_PAR__synctex) as usize)).b32.s1 == 0 {
             return INVALID_HANDLE;
         }
         if synctex_ctxt.file != INVALID_HANDLE {
@@ -810,10 +785,7 @@ unsafe fn synctex_prepare_content() -> rust_output_handle_t {
             return synctex_ctxt.file;
         }
 
-        if INVALID_HANDLE != synctex_dot_open()
-            && synctex_record_settings() == 0
-            && synctex_record_content() == 0
-        {
+        if INVALID_HANDLE != synctex_dot_open() && synctex_record_settings() == 0 && synctex_record_content() == 0 {
             synctex_ctxt.flags.content_ready = true;
             return synctex_ctxt.file;
         }
@@ -871,12 +843,9 @@ pub unsafe extern "C" fn synctex_terminate(_log_opened: bool) {
 pub unsafe extern "C" fn synctex_sheet(mag: i32) {
     unsafe {
         if synctex_ctxt.flags.off {
-            if (*eqtb.add((INT_BASE + INT_PAR__synctex) as usize)).b32.s1 != 0
-                && !synctex_ctxt.flags.warn
-            {
+            if (*eqtb.add((INT_BASE + INT_PAR__synctex) as usize)).b32.s1 != 0 && !synctex_ctxt.flags.warn {
                 synctex_ctxt.flags.warn = true;
-                let msg =
-                    b"SyncTeX was disabled -- changing the value of \\synctex has no effect\0";
+                let msg = b"SyncTeX was disabled -- changing the value of \\synctex has no effect\0";
                 super::bridge::ttstub_issue_warning(msg.as_ptr() as *const c_char);
             }
             return;
@@ -904,11 +873,7 @@ pub unsafe extern "C" fn synctex_teehs() {
 
 #[inline]
 unsafe fn synctex_ignore_general() -> bool {
-    unsafe {
-        synctex_ctxt.flags.off
-            || (*eqtb.add((INT_BASE + INT_PAR__synctex) as usize)).b32.s1 == 0
-            || synctex_ctxt.file == INVALID_HANDLE
-    }
+    unsafe { synctex_ctxt.flags.off || (*eqtb.add((INT_BASE + INT_PAR__synctex) as usize)).b32.s1 == 0 || synctex_ctxt.file == INVALID_HANDLE }
 }
 
 #[unsafe(export_name = "synctex_vlist")]
@@ -1012,11 +977,7 @@ pub unsafe extern "C" fn synctex_void_hlist(p: i32, _this_box: i32) {
 
 #[inline]
 unsafe fn synctex_context_did_change_medium(node: i32) -> bool {
-    unsafe {
-        synctex_ctxt.node == 0
-            || synctex_tag_medium(node) != synctex_ctxt.tag
-            || synctex_line_medium(node) != synctex_ctxt.line
-    }
+    unsafe { synctex_ctxt.node == 0 || synctex_tag_medium(node) != synctex_ctxt.tag || synctex_line_medium(node) != synctex_ctxt.line }
 }
 
 #[unsafe(export_name = "synctex_math")]
@@ -1173,9 +1134,7 @@ pub unsafe extern "C" fn synctex_current() {
 pub unsafe extern "C" fn synctex_pdfxform(p: i32) {
     unsafe {
         if synctex_ctxt.flags.off {
-            if (*eqtb.add((INT_BASE + INT_PAR__synctex) as usize)).b32.s1 != 0
-                && !synctex_ctxt.flags.warn
-            {
+            if (*eqtb.add((INT_BASE + INT_PAR__synctex) as usize)).b32.s1 != 0 && !synctex_ctxt.flags.warn {
                 synctex_ctxt.flags.warn = true;
                 let msg = b"SyncTeX was disabled - changing the value of \\synctex has no effect\0";
                 super::bridge::ttstub_issue_warning(msg.as_ptr() as *const c_char);

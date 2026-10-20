@@ -58,17 +58,9 @@ pub mod testing {
             OpenResult::NotAvailable
         }
 
-        fn input_open_name(
-            &mut self,
-            name: &str,
-            _status: &mut dyn StatusBackend,
-        ) -> OpenResult<InputHandle> {
+        fn input_open_name(&mut self, name: &str, _status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
             if name == self.name {
-                OpenResult::Ok(InputHandle::new(
-                    name,
-                    File::open(&self.full_path).unwrap(),
-                    InputOrigin::Filesystem,
-                ))
+                OpenResult::Ok(InputHandle::new(name, File::open(&self.full_path).unwrap(), InputOrigin::Filesystem))
             } else {
                 OpenResult::NotAvailable
             }

@@ -63,9 +63,7 @@ pub union memory_word {
 
 impl Default for memory_word {
     fn default() -> Self {
-        memory_word {
-            b32: b32x2::default(),
-        }
+        memory_word { b32: b32x2::default() }
     }
 }
 
@@ -122,25 +120,19 @@ pub const INT_PAR__hang_after: usize = super::xetex_format::INT_PAR__hang_after 
 pub const INT_PAR__cur_fam: usize = super::xetex_format::INT_PAR__cur_fam as usize;
 pub const INT_PAR__language: usize = super::xetex_format::INT_PAR__language as usize;
 pub const INT_PAR__left_hyphen_min: usize = super::xetex_format::INT_PAR__left_hyphen_min as usize;
-pub const INT_PAR__right_hyphen_min: usize =
-    super::xetex_format::INT_PAR__right_hyphen_min as usize;
+pub const INT_PAR__right_hyphen_min: usize = super::xetex_format::INT_PAR__right_hyphen_min as usize;
 pub const INT_PAR__texxet: usize = super::xetex_format::INT_PAR__texxet as usize;
-pub const INT_PAR__pre_display_direction: usize =
-    super::xetex_format::INT_PAR__pre_display_direction as usize;
+pub const INT_PAR__pre_display_direction: usize = super::xetex_format::INT_PAR__pre_display_direction as usize;
 
-pub const DIMEN_PAR__null_delimiter_space: usize =
-    super::xetex_format::DIMEN_PAR__null_delimiter_space as usize;
+pub const DIMEN_PAR__null_delimiter_space: usize = super::xetex_format::DIMEN_PAR__null_delimiter_space as usize;
 pub const DIMEN_PAR__math_surround: usize = super::xetex_format::DIMEN_PAR__math_surround as usize;
-pub const DIMEN_PAR__pre_display_size: usize =
-    super::xetex_format::DIMEN_PAR__pre_display_size as usize;
+pub const DIMEN_PAR__pre_display_size: usize = super::xetex_format::DIMEN_PAR__pre_display_size as usize;
 pub const DIMEN_PAR__display_width: usize = super::xetex_format::DIMEN_PAR__display_width as usize;
-pub const DIMEN_PAR__display_indent: usize =
-    super::xetex_format::DIMEN_PAR__display_indent as usize;
+pub const DIMEN_PAR__display_indent: usize = super::xetex_format::DIMEN_PAR__display_indent as usize;
 pub const DIMEN_PAR__script_space: usize = super::xetex_format::DIMEN_PAR__script_space as usize;
 pub const DIMEN_PAR__hang_indent: usize = super::xetex_format::DIMEN_PAR__hang_indent as usize;
 pub const DIMEN_PAR__hsize: usize = super::xetex_format::DIMEN_PAR__hsize as usize;
-pub const DIMEN_PAR__delimiter_shortfall: usize =
-    super::xetex_format::DIMEN_PAR__delimiter_shortfall as usize;
+pub const DIMEN_PAR__delimiter_shortfall: usize = super::xetex_format::DIMEN_PAR__delimiter_shortfall as usize;
 
 pub const LOCAL__par_shape: usize = 0;
 pub const LOCAL__every_math: usize = super::xetex_format::LOCAL__every_math as usize;
@@ -537,38 +529,22 @@ pub unsafe fn FONT_CHARACTER_INFO(f: internal_font_number, c: i32) -> b16x4 {
 
 #[inline(always)]
 pub unsafe fn FONT_CHARINFO_WIDTH(f: internal_font_number, info: b16x4) -> scaled_t {
-    unsafe {
-        (*font_info.add((*width_base.add(f as usize) + info.s3 as i32) as usize))
-            .b32
-            .s1
-    }
+    unsafe { (*font_info.add((*width_base.add(f as usize) + info.s3 as i32) as usize)).b32.s1 }
 }
 
 #[inline(always)]
 pub unsafe fn FONT_CHARINFO_HEIGHT(f: internal_font_number, info: b16x4) -> scaled_t {
-    unsafe {
-        (*font_info.add((*height_base.add(f as usize) + (info.s2 / 16) as i32) as usize))
-            .b32
-            .s1
-    }
+    unsafe { (*font_info.add((*height_base.add(f as usize) + (info.s2 / 16) as i32) as usize)).b32.s1 }
 }
 
 #[inline(always)]
 pub unsafe fn FONT_CHARINFO_DEPTH(f: internal_font_number, info: b16x4) -> scaled_t {
-    unsafe {
-        (*font_info.add((*depth_base.add(f as usize) + (info.s2 % 16) as i32) as usize))
-            .b32
-            .s1
-    }
+    unsafe { (*font_info.add((*depth_base.add(f as usize) + (info.s2 % 16) as i32) as usize)).b32.s1 }
 }
 
 #[inline(always)]
 pub unsafe fn FONT_CHARINFO_ITALCORR(f: internal_font_number, info: b16x4) -> scaled_t {
-    unsafe {
-        (*font_info.add((*italic_base.add(f as usize) + (info.s1 / 4) as i32) as usize))
-            .b32
-            .s1
-    }
+    unsafe { (*font_info.add((*italic_base.add(f as usize) + (info.s1 / 4) as i32) as usize)).b32.s1 }
 }
 
 #[inline(always)]
@@ -623,12 +599,7 @@ pub fn odd(x: i32) -> bool {
     (x & 1) != 0
 }
 
-static mut null_delimiter: b16x4 = b16x4 {
-    s0: 0,
-    s1: 0,
-    s2: 0,
-    s3: 0,
-};
+static mut null_delimiter: b16x4 = b16x4 { s0: 0, s1: 0, s2: 0, s3: 0 };
 static mut cur_mlist: i32 = 0;
 static mut cur_style: small_number = 0;
 static mut cur_size: i32 = 0;
@@ -713,20 +684,13 @@ pub unsafe extern "C" fn init_math() {
                     v = -v - (*mem.add((just_box + 1) as usize)).b32.s1;
                     p = new_math(0, BEGIN_L_CODE);
                     (*mem.add(TEMP_HEAD as usize)).b32.s1 = p;
-                    just_copy(
-                        (*mem.add((just_box + 5) as usize)).b32.s1,
-                        p,
-                        new_math(0, END_L_CODE),
-                    );
+                    just_copy((*mem.add((just_box + 5) as usize)).b32.s1, p, new_math(0, END_L_CODE));
                     cur_dir = RIGHT_TO_LEFT;
                 }
                 v = v + 2
-                    * (*font_info.add(
-                        QUAD_CODE
-                            + *param_base.add((*eqtb.add(CUR_FONT_LOC)).b32.s1 as usize) as usize,
-                    ))
-                    .b32
-                    .s1;
+                    * (*font_info.add(QUAD_CODE + *param_base.add((*eqtb.add(CUR_FONT_LOC)).b32.s1 as usize) as usize))
+                        .b32
+                        .s1;
                 if INTPAR(INT_PAR__texxet) > 0 {
                     temp_ptr = get_avail();
                     (*mem.add(temp_ptr as usize)).b32.s0 = BEFORE as i32;
@@ -739,10 +703,7 @@ pub unsafe extern "C" fn init_math() {
                     loop {
                         if is_char_node(p) {
                             f = CHAR_NODE_font(p);
-                            d = FONT_CHARACTER_WIDTH(
-                                f,
-                                effective_char(true, f, CHAR_NODE_character(p) as u16),
-                            );
+                            d = FONT_CHARACTER_WIDTH(f, effective_char(true, f, CHAR_NODE_character(p) as u16));
                             found = true;
                             break;
                         }
@@ -767,11 +728,7 @@ pub unsafe extern "C" fn init_math() {
                                 if INTPAR(INT_PAR__texxet) > 0 {
                                     if odd((*mem.add(p as usize)).b16.s0 as i32) {
                                         if (*mem.add(LR_ptr as usize)).b32.s0
-                                            == (L_CODE
-                                                * ((*mem.add(p as usize)).b16.s0 / L_CODE as u16)
-                                                    as i16
-                                                + 3)
-                                                as i32
+                                            == (L_CODE * ((*mem.add(p as usize)).b16.s0 / L_CODE as u16) as i16 + 3) as i32
                                         {
                                             temp_ptr = LR_ptr;
                                             LR_ptr = (*mem.add(temp_ptr as usize)).b32.s1;
@@ -783,16 +740,11 @@ pub unsafe extern "C" fn init_math() {
                                         }
                                     } else {
                                         temp_ptr = get_avail();
-                                        (*mem.add(temp_ptr as usize)).b32.s0 = (L_CODE
-                                            * ((*mem.add(p as usize)).b16.s0 / L_CODE as u16)
-                                                as i16
-                                            + 3)
-                                            as i32;
+                                        (*mem.add(temp_ptr as usize)).b32.s0 =
+                                            (L_CODE * ((*mem.add(p as usize)).b16.s0 / L_CODE as u16) as i16 + 3) as i32;
                                         (*mem.add(temp_ptr as usize)).b32.s1 = LR_ptr;
                                         LR_ptr = temp_ptr;
-                                        if (((*mem.add(p as usize)).b16.s0 as i32) / R_CODE)
-                                            != cur_dir as i32
-                                        {
+                                        if (((*mem.add(p as usize)).b16.s0 as i32) / R_CODE) != cur_dir as i32 {
                                             just_reverse(p);
                                             p = TEMP_HEAD;
                                         }
@@ -810,15 +762,13 @@ pub unsafe extern "C" fn init_math() {
                                 q = (*mem.add((p + 1) as usize)).b32.s0;
                                 d = (*mem.add((q + 1) as usize)).b32.s1;
                                 if (*mem.add((just_box + 5) as usize)).b16.s1 == STRETCHING {
-                                    if (*mem.add((just_box + 5) as usize)).b16.s0
-                                        == (*mem.add(q as usize)).b16.s1
+                                    if (*mem.add((just_box + 5) as usize)).b16.s0 == (*mem.add(q as usize)).b16.s1
                                         && (*mem.add((q + 2) as usize)).b32.s1 != 0
                                     {
                                         v = MAX_HALFWORD;
                                     }
                                 } else if (*mem.add((just_box + 5) as usize)).b16.s1 == SHRINKING {
-                                    if (*mem.add((just_box + 5) as usize)).b16.s0
-                                        == (*mem.add(q as usize)).b16.s0
+                                    if (*mem.add((just_box + 5) as usize)).b16.s0 == (*mem.add(q as usize)).b16.s0
                                         && (*mem.add((q + 3) as usize)).b32.s1 != 0
                                     {
                                         v = MAX_HALFWORD;
@@ -831,12 +781,7 @@ pub unsafe extern "C" fn init_math() {
                             }
                             8 => {
                                 let sub = (*mem.add(p as usize)).b16.s0;
-                                if sub == NATIVE_WORD_NODE
-                                    || sub == NATIVE_WORD_NODE_AT
-                                    || sub == GLYPH_NODE
-                                    || sub == PIC_NODE
-                                    || sub == PDF_NODE
-                                {
+                                if sub == NATIVE_WORD_NODE || sub == NATIVE_WORD_NODE_AT || sub == GLYPH_NODE || sub == PIC_NODE || sub == PDF_NODE {
                                     d = (*mem.add((p + 1) as usize)).b32.s1;
                                     found = true;
                                     break;
@@ -885,8 +830,7 @@ pub unsafe extern "C" fn init_math() {
 
             if LOCAL(LOCAL__par_shape) == TEX_NULL {
                 if DIMENPAR(DIMEN_PAR__hang_indent) != 0
-                    && ((INTPAR(INT_PAR__hang_after) >= 0
-                        && cur_list.prev_graf + 2 > INTPAR(INT_PAR__hang_after))
+                    && ((INTPAR(INT_PAR__hang_after) >= 0 && cur_list.prev_graf + 2 > INTPAR(INT_PAR__hang_after))
                         || (cur_list.prev_graf + 1 < -INTPAR(INT_PAR__hang_after)))
                 {
                     l = DIMENPAR(DIMEN_PAR__hsize) - (DIMENPAR(DIMEN_PAR__hang_indent)).abs();
@@ -974,13 +918,10 @@ pub unsafe extern "C" fn math_limit_switch() {
                 return;
             }
         }
-        error_here_with_diagnostic(
-            b"Limit controls must follow a math operator\0".as_ptr() as *const c_char
-        );
+        error_here_with_diagnostic(b"Limit controls must follow a math operator\0".as_ptr() as *const c_char);
         capture_to_diagnostic(core::ptr::null_mut());
         help_ptr = 1;
-        help_line[0] = b"I'm ignoring this misplaced \\limits or \\nolimits command.\0".as_ptr()
-            as *const c_char;
+        help_line[0] = b"I'm ignoring this misplaced \\limits or \\nolimits command.\0".as_ptr() as *const c_char;
         error();
     }
 }
@@ -1035,25 +976,18 @@ unsafe fn scan_delimiter(p: i32, r: bool) {
             }
             print_cstr(b"Missing delimiter (. inserted)\0".as_ptr() as *const c_char);
             help_ptr = 6;
-            help_line[5] = b"I was expecting to see something like `(' or `\\{' or\0".as_ptr()
-                as *const c_char;
-            help_line[4] = b"`\\}' here. If you typed, e.g., `{' instead of `\\{', you\0".as_ptr()
-                as *const c_char;
-            help_line[3] = b"should probably delete the `{' by typing `1' now, so that\0".as_ptr()
-                as *const c_char;
-            help_line[2] =
-                b"braces don't get unbalanced. Otherwise just proceed.\0".as_ptr() as *const c_char;
-            help_line[1] = b"Acceptable delimiters are characters whose \\delcode is\0".as_ptr()
-                as *const c_char;
-            help_line[0] = b"nonnegative, or you can use `\\delimiter <delimiter code>'.\0".as_ptr()
-                as *const c_char;
+            help_line[5] = b"I was expecting to see something like `(' or `\\{' or\0".as_ptr() as *const c_char;
+            help_line[4] = b"`\\}' here. If you typed, e.g., `{' instead of `\\{', you\0".as_ptr() as *const c_char;
+            help_line[3] = b"should probably delete the `{' by typing `1' now, so that\0".as_ptr() as *const c_char;
+            help_line[2] = b"braces don't get unbalanced. Otherwise just proceed.\0".as_ptr() as *const c_char;
+            help_line[1] = b"Acceptable delimiters are characters whose \\delcode is\0".as_ptr() as *const c_char;
+            help_line[0] = b"nonnegative, or you can use `\\delimiter <delimiter code>'.\0".as_ptr() as *const c_char;
             back_error();
             cur_val = 0;
         }
 
         if cur_val >= 0x40000000 {
-            (*mem.add(p as usize)).b16.s3 =
-                (((cur_val % 0x200000) / 0x10000) * 0x100 + (cur_val / 0x200000) % 0x100) as u16;
+            (*mem.add(p as usize)).b16.s3 = (((cur_val % 0x200000) / 0x10000) * 0x100 + (cur_val / 0x200000) % 0x100) as u16;
             (*mem.add(p as usize)).b16.s2 = (cur_val % 0x10000) as u16;
             (*mem.add(p as usize)).b16.s1 = 0;
             (*mem.add(p as usize)).b16.s0 = 0;
@@ -1093,10 +1027,8 @@ pub unsafe extern "C" fn math_ac() {
             print_cstr(b" for accents in math mode\0".as_ptr() as *const c_char);
             capture_to_diagnostic(core::ptr::null_mut());
             help_ptr = 2;
-            help_line[1] = b"I'm changing \\accent to \\mathaccent here; wish me luck.\0".as_ptr()
-                as *const c_char;
-            help_line[0] = b"(Accents are not the same in formulas as they are in text.)\0".as_ptr()
-                as *const c_char;
+            help_line[1] = b"I'm changing \\accent to \\mathaccent here; wish me luck.\0".as_ptr() as *const c_char;
+            help_line[0] = b"(Accents are not the same in formulas as they are in text.)\0".as_ptr() as *const c_char;
             error();
         }
 
@@ -1128,21 +1060,16 @@ pub unsafe extern "C" fn math_ac() {
             cur_val += c;
         } else {
             scan_fifteen_bit_int();
-            cur_val =
-                set_class(cur_val / 4096) + set_family((cur_val % 4096) / 256) + (cur_val % 256);
+            cur_val = set_class(cur_val / 4096) + set_family((cur_val % 4096) / 256) + (cur_val % 256);
         }
 
         (*mem.add((cur_list.tail + 4) as usize)).b16.s0 = (cur_val % 65536) as u16;
-        if math_class(cur_val) == 7
-            && INTPAR(INT_PAR__cur_fam) >= 0
-            && INTPAR(INT_PAR__cur_fam) < NUMBER_MATH_FAMILIES
-        {
+        if math_class(cur_val) == 7 && INTPAR(INT_PAR__cur_fam) >= 0 && INTPAR(INT_PAR__cur_fam) < NUMBER_MATH_FAMILIES {
             (*mem.add((cur_list.tail + 4) as usize)).b16.s1 = INTPAR(INT_PAR__cur_fam) as u16;
         } else {
             (*mem.add((cur_list.tail + 4) as usize)).b16.s1 = math_fam(cur_val) as u16;
         }
-        (*mem.add((cur_list.tail + 4) as usize)).b16.s1 +=
-            ((math_char(cur_val) / 65536) * 256) as u16;
+        (*mem.add((cur_list.tail + 4) as usize)).b16.s1 += ((math_char(cur_val) / 65536) * 256) as u16;
         scan_math(cur_list.tail + 1);
     }
 }
@@ -1166,19 +1093,15 @@ pub unsafe extern "C" fn fin_mlist(p: i32) -> i32 {
         let q: i32;
         if cur_list.aux.b32.s1 != TEX_NULL {
             (*mem.add((cur_list.aux.b32.s1 + 3) as usize)).b32.s1 = SUB_MLIST;
-            (*mem.add((cur_list.aux.b32.s1 + 3) as usize)).b32.s0 =
-                (*mem.add(cur_list.head as usize)).b32.s1;
+            (*mem.add((cur_list.aux.b32.s1 + 3) as usize)).b32.s0 = (*mem.add(cur_list.head as usize)).b32.s1;
             if p == TEX_NULL {
                 q = cur_list.aux.b32.s1;
             } else {
                 q = (*mem.add((cur_list.aux.b32.s1 + 2) as usize)).b32.s0;
-                if (*mem.add(q as usize)).b16.s1 != LEFT_NOAD as u16
-                    || cur_list.eTeX_aux == TEX_NULL
-                {
+                if (*mem.add(q as usize)).b16.s1 != LEFT_NOAD as u16 || cur_list.eTeX_aux == TEX_NULL {
                     confusion(b"right\0".as_ptr() as *const c_char);
                 }
-                (*mem.add((cur_list.aux.b32.s1 + 2) as usize)).b32.s0 =
-                    (*mem.add(cur_list.eTeX_aux as usize)).b32.s1;
+                (*mem.add((cur_list.aux.b32.s1 + 2) as usize)).b32.s0 = (*mem.add(cur_list.eTeX_aux as usize)).b32.s1;
                 (*mem.add(cur_list.eTeX_aux as usize)).b32.s1 = cur_list.aux.b32.s1;
                 (*mem.add(cur_list.aux.b32.s1 as usize)).b32.s1 = p;
             }
@@ -1244,14 +1167,12 @@ pub unsafe extern "C" fn sub_sup() {
                     error_here_with_diagnostic(b"Double superscript\0".as_ptr() as *const c_char);
                     capture_to_diagnostic(core::ptr::null_mut());
                     help_ptr = 1;
-                    help_line[0] =
-                        b"I treat `x^1^2' essentially like `x^1{}^2'.\0".as_ptr() as *const c_char;
+                    help_line[0] = b"I treat `x^1^2' essentially like `x^1{}^2'.\0".as_ptr() as *const c_char;
                 } else {
                     error_here_with_diagnostic(b"Double subscript\0".as_ptr() as *const c_char);
                     capture_to_diagnostic(core::ptr::null_mut());
                     help_ptr = 1;
-                    help_line[0] =
-                        b"I treat `x_1_2' essentially like `x_1{}_2'.\0".as_ptr() as *const c_char;
+                    help_line[0] = b"I treat `x_1_2' essentially like `x_1{}_2'.\0".as_ptr() as *const c_char;
                 }
                 error();
             }
@@ -1282,20 +1203,16 @@ pub unsafe extern "C" fn math_fraction() {
             }
             print_cstr(b"Ambiguous; you need another { and }\0".as_ptr() as *const c_char);
             help_ptr = 3;
-            help_line[2] = b"I'm ignoring this fraction specification, since I don't\0".as_ptr()
-                as *const c_char;
-            help_line[1] = b"know whether a construction like `x \\over y \\over z'\0".as_ptr()
-                as *const c_char;
-            help_line[0] = b"means `{x \\over y} \\over z' or `x \\over {y \\over z}'.\0".as_ptr()
-                as *const c_char;
+            help_line[2] = b"I'm ignoring this fraction specification, since I don't\0".as_ptr() as *const c_char;
+            help_line[1] = b"know whether a construction like `x \\over y \\over z'\0".as_ptr() as *const c_char;
+            help_line[0] = b"means `{x \\over y} \\over z' or `x \\over {y \\over z}'.\0".as_ptr() as *const c_char;
             error();
         } else {
             cur_list.aux.b32.s1 = get_node(FRACTION_NOAD_SIZE);
             (*mem.add(cur_list.aux.b32.s1 as usize)).b16.s1 = FRACTION_NOAD as u16;
             (*mem.add(cur_list.aux.b32.s1 as usize)).b16.s0 = NORMAL as u16;
             (*mem.add((cur_list.aux.b32.s1 + 2) as usize)).b32.s1 = SUB_MLIST;
-            (*mem.add((cur_list.aux.b32.s1 + 2) as usize)).b32.s0 =
-                (*mem.add(cur_list.head as usize)).b32.s1;
+            (*mem.add((cur_list.aux.b32.s1 + 2) as usize)).b32.s0 = (*mem.add(cur_list.head as usize)).b32.s1;
             (*mem.add((cur_list.aux.b32.s1 + 3) as usize)).b32 = empty;
             (*mem.add((cur_list.aux.b32.s1 + 4) as usize)).b16 = null_delimiter;
             (*mem.add((cur_list.aux.b32.s1 + 5) as usize)).b16 = null_delimiter;
@@ -1339,13 +1256,11 @@ pub unsafe extern "C" fn math_left_right() {
                 if t == 1 {
                     print_esc_cstr(b"middle\0".as_ptr() as *const c_char);
                     help_ptr = 1;
-                    help_line[0] = b"I'm ignoring a \\middle that had no matching \\left.\0"
-                        .as_ptr() as *const c_char;
+                    help_line[0] = b"I'm ignoring a \\middle that had no matching \\left.\0".as_ptr() as *const c_char;
                 } else {
                     print_esc_cstr(b"right\0".as_ptr() as *const c_char);
                     help_ptr = 1;
-                    help_line[0] = b"I'm ignoring a \\right that had no matching \\left.\0".as_ptr()
-                        as *const c_char;
+                    help_line[0] = b"I'm ignoring a \\right that had no matching \\left.\0".as_ptr() as *const c_char;
                 }
                 capture_to_diagnostic(core::ptr::null_mut());
                 error();
@@ -1463,12 +1378,9 @@ unsafe fn app_display(j: i32, mut b: i32, mut d: scaled_t) {
                 j_glue = (*mem.add((t + 1) as usize)).b32.s0;
                 (*mem.add(temp_ptr as usize)).b16.s1 = (*mem.add(j_glue as usize)).b16.s1;
                 (*mem.add(temp_ptr as usize)).b16.s0 = (*mem.add(j_glue as usize)).b16.s0;
-                (*mem.add((temp_ptr + 1) as usize)).b32.s1 =
-                    e - (*mem.add((j_glue + 1) as usize)).b32.s1;
-                (*mem.add((temp_ptr + 2) as usize)).b32.s1 =
-                    -(*mem.add((j_glue + 2) as usize)).b32.s1;
-                (*mem.add((temp_ptr + 3) as usize)).b32.s1 =
-                    -(*mem.add((j_glue + 3) as usize)).b32.s1;
+                (*mem.add((temp_ptr + 1) as usize)).b32.s1 = e - (*mem.add((j_glue + 1) as usize)).b32.s1;
+                (*mem.add((temp_ptr + 2) as usize)).b32.s1 = -(*mem.add((j_glue + 2) as usize)).b32.s1;
+                (*mem.add((temp_ptr + 3) as usize)).b32.s1 = -(*mem.add((j_glue + 3) as usize)).b32.s1;
                 (*mem.add(u as usize)).b32.s1 = t;
             } else {
                 (*mem.add((t + 1) as usize)).b32.s1 = e;
@@ -1483,12 +1395,9 @@ unsafe fn app_display(j: i32, mut b: i32, mut d: scaled_t) {
                 j_glue = (*mem.add((r + 1) as usize)).b32.s0;
                 (*mem.add(temp_ptr as usize)).b16.s1 = (*mem.add(j_glue as usize)).b16.s1;
                 (*mem.add(temp_ptr as usize)).b16.s0 = (*mem.add(j_glue as usize)).b16.s0;
-                (*mem.add((temp_ptr + 1) as usize)).b32.s1 =
-                    d - (*mem.add((j_glue + 1) as usize)).b32.s1;
-                (*mem.add((temp_ptr + 2) as usize)).b32.s1 =
-                    -(*mem.add((j_glue + 2) as usize)).b32.s1;
-                (*mem.add((temp_ptr + 3) as usize)).b32.s1 =
-                    -(*mem.add((j_glue + 3) as usize)).b32.s1;
+                (*mem.add((temp_ptr + 1) as usize)).b32.s1 = d - (*mem.add((j_glue + 1) as usize)).b32.s1;
+                (*mem.add((temp_ptr + 2) as usize)).b32.s1 = -(*mem.add((j_glue + 2) as usize)).b32.s1;
+                (*mem.add((temp_ptr + 3) as usize)).b32.s1 = -(*mem.add((j_glue + 3) as usize)).b32.s1;
                 (*mem.add(r as usize)).b32.s1 = u;
             } else {
                 (*mem.add((r + 1) as usize)).b32.s1 = d;
@@ -1539,26 +1448,18 @@ pub unsafe extern "C" fn after_math() {
         let f2_sscript = MATH_FONT(2 + SCRIPT_SCRIPT_SIZE as usize);
 
         if ((*font_params.add(f2 as usize) < TOTAL_MATHSY_PARAMS)
-            && !(*font_area.add(f2 as usize) == OTGR_FONT_FLAG
-                && isOpenTypeMathFont(*font_layout_engine.add(f2 as usize))))
+            && !(*font_area.add(f2 as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f2 as usize))))
             || ((*font_params.add(f2_script as usize) < TOTAL_MATHSY_PARAMS)
-                && !(*font_area.add(f2_script as usize) == OTGR_FONT_FLAG
-                    && isOpenTypeMathFont(*font_layout_engine.add(f2_script as usize))))
+                && !(*font_area.add(f2_script as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f2_script as usize))))
             || ((*font_params.add(f2_sscript as usize) < TOTAL_MATHSY_PARAMS)
-                && !(*font_area.add(f2_sscript as usize) == OTGR_FONT_FLAG
-                    && isOpenTypeMathFont(*font_layout_engine.add(f2_sscript as usize))))
+                && !(*font_area.add(f2_sscript as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f2_sscript as usize))))
         {
-            error_here_with_diagnostic(
-                b"Math formula deleted: Insufficient symbol fonts\0".as_ptr() as *const c_char,
-            );
+            error_here_with_diagnostic(b"Math formula deleted: Insufficient symbol fonts\0".as_ptr() as *const c_char);
             capture_to_diagnostic(core::ptr::null_mut());
             help_ptr = 3;
-            help_line[2] =
-                b"Sorry, but I can't typeset math unless \\textfont 2\0".as_ptr() as *const c_char;
-            help_line[1] =
-                b"and \\scriptfont 2 and \\scriptscriptfont 2 have all\0".as_ptr() as *const c_char;
-            help_line[0] =
-                b"the \\fontdimen values needed in math symbol fonts.\0".as_ptr() as *const c_char;
+            help_line[2] = b"Sorry, but I can't typeset math unless \\textfont 2\0".as_ptr() as *const c_char;
+            help_line[1] = b"and \\scriptfont 2 and \\scriptscriptfont 2 have all\0".as_ptr() as *const c_char;
+            help_line[0] = b"the \\fontdimen values needed in math symbol fonts.\0".as_ptr() as *const c_char;
             error();
             flush_math();
             danger = true;
@@ -1568,27 +1469,18 @@ pub unsafe extern "C" fn after_math() {
             let f3_sscript = MATH_FONT(3 + SCRIPT_SCRIPT_SIZE as usize);
 
             if ((*font_params.add(f3_text as usize) < TOTAL_MATHEX_PARAMS)
-                && !(*font_area.add(f3_text as usize) == OTGR_FONT_FLAG
-                    && isOpenTypeMathFont(*font_layout_engine.add(f3_text as usize))))
+                && !(*font_area.add(f3_text as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f3_text as usize))))
                 || ((*font_params.add(f3_script as usize) < TOTAL_MATHEX_PARAMS)
-                    && !(*font_area.add(f3_script as usize) == OTGR_FONT_FLAG
-                        && isOpenTypeMathFont(*font_layout_engine.add(f3_script as usize))))
+                    && !(*font_area.add(f3_script as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f3_script as usize))))
                 || ((*font_params.add(f3_sscript as usize) < TOTAL_MATHEX_PARAMS)
-                    && !(*font_area.add(f3_sscript as usize) == OTGR_FONT_FLAG
-                        && isOpenTypeMathFont(*font_layout_engine.add(f3_sscript as usize))))
+                    && !(*font_area.add(f3_sscript as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f3_sscript as usize))))
             {
-                error_here_with_diagnostic(
-                    b"Math formula deleted: Insufficient extension fonts\0".as_ptr()
-                        as *const c_char,
-                );
+                error_here_with_diagnostic(b"Math formula deleted: Insufficient extension fonts\0".as_ptr() as *const c_char);
                 capture_to_diagnostic(core::ptr::null_mut());
                 help_ptr = 3;
-                help_line[2] = b"Sorry, but I can't typeset math unless \\textfont 3\0".as_ptr()
-                    as *const c_char;
-                help_line[1] = b"and \\scriptfont 3 and \\scriptscriptfont 3 have all\0".as_ptr()
-                    as *const c_char;
-                help_line[0] = b"the \\fontdimen values needed in math extension fonts.\0".as_ptr()
-                    as *const c_char;
+                help_line[2] = b"Sorry, but I can't typeset math unless \\textfont 3\0".as_ptr() as *const c_char;
+                help_line[1] = b"and \\scriptfont 3 and \\scriptscriptfont 3 have all\0".as_ptr() as *const c_char;
+                help_line[0] = b"the \\fontdimen values needed in math extension fonts.\0".as_ptr() as *const c_char;
                 error();
                 flush_math();
                 danger = true;
@@ -1602,15 +1494,11 @@ pub unsafe extern "C" fn after_math() {
         if cur_list.mode as i32 == -m {
             get_x_token();
             if cur_cmd != MATH_SHIFT {
-                error_here_with_diagnostic(
-                    b"Display math should end with $$\0".as_ptr() as *const c_char
-                );
+                error_here_with_diagnostic(b"Display math should end with $$\0".as_ptr() as *const c_char);
                 capture_to_diagnostic(core::ptr::null_mut());
                 help_ptr = 2;
-                help_line[1] = b"The `$' that I just saw supposedly matches a previous `$$'.\0"
-                    .as_ptr() as *const c_char;
-                help_line[0] = b"So I shall assume that you typed `$$' both times.\0".as_ptr()
-                    as *const c_char;
+                help_line[1] = b"The `$' that I just saw supposedly matches a previous `$$'.\0".as_ptr() as *const c_char;
+                help_line[0] = b"So I shall assume that you typed `$$' both times.\0".as_ptr() as *const c_char;
                 back_error();
             }
             cur_mlist = p;
@@ -1634,26 +1522,18 @@ pub unsafe extern "C" fn after_math() {
             let f2_sscript = MATH_FONT(2 + SCRIPT_SCRIPT_SIZE as usize);
 
             if ((*font_params.add(f2 as usize) < TOTAL_MATHSY_PARAMS)
-                && !(*font_area.add(f2 as usize) == OTGR_FONT_FLAG
-                    && isOpenTypeMathFont(*font_layout_engine.add(f2 as usize))))
+                && !(*font_area.add(f2 as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f2 as usize))))
                 || ((*font_params.add(f2_script as usize) < TOTAL_MATHSY_PARAMS)
-                    && !(*font_area.add(f2_script as usize) == OTGR_FONT_FLAG
-                        && isOpenTypeMathFont(*font_layout_engine.add(f2_script as usize))))
+                    && !(*font_area.add(f2_script as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f2_script as usize))))
                 || ((*font_params.add(f2_sscript as usize) < TOTAL_MATHSY_PARAMS)
-                    && !(*font_area.add(f2_sscript as usize) == OTGR_FONT_FLAG
-                        && isOpenTypeMathFont(*font_layout_engine.add(f2_sscript as usize))))
+                    && !(*font_area.add(f2_sscript as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f2_sscript as usize))))
             {
-                error_here_with_diagnostic(
-                    b"Math formula deleted: Insufficient symbol fonts\0".as_ptr() as *const c_char,
-                );
+                error_here_with_diagnostic(b"Math formula deleted: Insufficient symbol fonts\0".as_ptr() as *const c_char);
                 capture_to_diagnostic(core::ptr::null_mut());
                 help_ptr = 3;
-                help_line[2] = b"Sorry, but I can't typeset math unless \\textfont 2\0".as_ptr()
-                    as *const c_char;
-                help_line[1] = b"and \\scriptfont 2 and \\scriptscriptfont 2 have all\0".as_ptr()
-                    as *const c_char;
-                help_line[0] = b"the \\fontdimen values needed in math symbol fonts.\0".as_ptr()
-                    as *const c_char;
+                help_line[2] = b"Sorry, but I can't typeset math unless \\textfont 2\0".as_ptr() as *const c_char;
+                help_line[1] = b"and \\scriptfont 2 and \\scriptscriptfont 2 have all\0".as_ptr() as *const c_char;
+                help_line[0] = b"the \\fontdimen values needed in math symbol fonts.\0".as_ptr() as *const c_char;
                 error();
                 flush_math();
                 danger = true;
@@ -1663,27 +1543,19 @@ pub unsafe extern "C" fn after_math() {
                 let f3_sscript = MATH_FONT(3 + SCRIPT_SCRIPT_SIZE as usize);
 
                 if ((*font_params.add(f3_text as usize) < TOTAL_MATHEX_PARAMS)
-                    && !(*font_area.add(f3_text as usize) == OTGR_FONT_FLAG
-                        && isOpenTypeMathFont(*font_layout_engine.add(f3_text as usize))))
+                    && !(*font_area.add(f3_text as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f3_text as usize))))
                     || ((*font_params.add(f3_script as usize) < TOTAL_MATHEX_PARAMS)
-                        && !(*font_area.add(f3_script as usize) == OTGR_FONT_FLAG
-                            && isOpenTypeMathFont(*font_layout_engine.add(f3_script as usize))))
+                        && !(*font_area.add(f3_script as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f3_script as usize))))
                     || ((*font_params.add(f3_sscript as usize) < TOTAL_MATHEX_PARAMS)
                         && !(*font_area.add(f3_sscript as usize) == OTGR_FONT_FLAG
                             && isOpenTypeMathFont(*font_layout_engine.add(f3_sscript as usize))))
                 {
-                    error_here_with_diagnostic(
-                        b"Math formula deleted: Insufficient extension fonts\0".as_ptr()
-                            as *const c_char,
-                    );
+                    error_here_with_diagnostic(b"Math formula deleted: Insufficient extension fonts\0".as_ptr() as *const c_char);
                     capture_to_diagnostic(core::ptr::null_mut());
                     help_ptr = 3;
-                    help_line[2] = b"Sorry, but I can't typeset math unless \\textfont 3\0".as_ptr()
-                        as *const c_char;
-                    help_line[1] = b"and \\scriptfont 3 and \\scriptscriptfont 3 have all\0"
-                        .as_ptr() as *const c_char;
-                    help_line[0] = b"the \\fontdimen values needed in math extension fonts.\0"
-                        .as_ptr() as *const c_char;
+                    help_line[2] = b"Sorry, but I can't typeset math unless \\textfont 3\0".as_ptr() as *const c_char;
+                    help_line[1] = b"and \\scriptfont 3 and \\scriptscriptfont 3 have all\0".as_ptr() as *const c_char;
+                    help_line[0] = b"the \\fontdimen values needed in math extension fonts.\0".as_ptr() as *const c_char;
                     error();
                     flush_math();
                     danger = true;
@@ -1696,8 +1568,7 @@ pub unsafe extern "C" fn after_math() {
         }
 
         if m < 0 {
-            (*mem.add(cur_list.tail as usize)).b32.s1 =
-                new_math(DIMENPAR(DIMEN_PAR__math_surround), BEFORE);
+            (*mem.add(cur_list.tail as usize)).b32.s1 = new_math(DIMENPAR(DIMEN_PAR__math_surround), BEFORE);
             cur_list.tail = LLIST_link(cur_list.tail);
 
             cur_mlist = p;
@@ -1709,8 +1580,7 @@ pub unsafe extern "C" fn after_math() {
                 cur_list.tail = LLIST_link(cur_list.tail);
             }
 
-            (*mem.add(cur_list.tail as usize)).b32.s1 =
-                new_math(DIMENPAR(DIMEN_PAR__math_surround), AFTER);
+            (*mem.add(cur_list.tail as usize)).b32.s1 = new_math(DIMENPAR(DIMEN_PAR__math_surround), AFTER);
             cur_list.tail = LLIST_link(cur_list.tail);
 
             cur_list.aux.b32.s0 = 1000;
@@ -1724,15 +1594,11 @@ pub unsafe extern "C" fn after_math() {
             if a == TEX_NULL {
                 get_x_token();
                 if cur_cmd != MATH_SHIFT {
-                    error_here_with_diagnostic(
-                        b"Display math should end with $$\0".as_ptr() as *const c_char
-                    );
+                    error_here_with_diagnostic(b"Display math should end with $$\0".as_ptr() as *const c_char);
                     capture_to_diagnostic(core::ptr::null_mut());
                     help_ptr = 2;
-                    help_line[1] = b"The `$' that I just saw supposedly matches a previous `$$'.\0"
-                        .as_ptr() as *const c_char;
-                    help_line[0] = b"So I shall assume that you typed `$$' both times.\0".as_ptr()
-                        as *const c_char;
+                    help_line[1] = b"The `$' that I just saw supposedly matches a previous `$$'.\0".as_ptr() as *const c_char;
+                    help_line[0] = b"So I shall assume that you typed `$$' both times.\0".as_ptr() as *const c_char;
                     back_error();
                 }
             }
@@ -1764,10 +1630,7 @@ pub unsafe extern "C" fn after_math() {
             }
             if w + q > z {
                 if e != 0
-                    && ((w - total_shrink[NORMAL as usize] + q <= z)
-                        || total_shrink[FIL] != 0
-                        || total_shrink[FILL] != 0
-                        || total_shrink[FILLL] != 0)
+                    && ((w - total_shrink[NORMAL as usize] + q <= z) || total_shrink[FIL] != 0 || total_shrink[FILL] != 0 || total_shrink[FILLL] != 0)
                 {
                     free_node(b, BOX_NODE_SIZE);
                     b = hpack(p, z - q, EXACTLY);
@@ -1793,8 +1656,7 @@ pub unsafe extern "C" fn after_math() {
                 }
             }
 
-            (*mem.add(cur_list.tail as usize)).b32.s1 =
-                new_penalty(INTPAR(INT_PAR__pre_display_penalty));
+            (*mem.add(cur_list.tail as usize)).b32.s1 = new_penalty(INTPAR(INT_PAR__pre_display_penalty));
             cur_list.tail = LLIST_link(cur_list.tail);
 
             if d + s <= DIMENPAR(DIMEN_PAR__pre_display_size) || l {
@@ -1841,13 +1703,11 @@ pub unsafe extern "C" fn after_math() {
                 cur_list.tail = t;
             }
             if pre_t != PRE_ADJUST_HEAD {
-                (*mem.add(cur_list.tail as usize)).b32.s1 =
-                    (*mem.add(PRE_ADJUST_HEAD as usize)).b32.s1;
+                (*mem.add(cur_list.tail as usize)).b32.s1 = (*mem.add(PRE_ADJUST_HEAD as usize)).b32.s1;
                 cur_list.tail = pre_t;
             }
 
-            (*mem.add(cur_list.tail as usize)).b32.s1 =
-                new_penalty(INTPAR(INT_PAR__post_display_penalty));
+            (*mem.add(cur_list.tail as usize)).b32.s1 = new_penalty(INTPAR(INT_PAR__post_display_penalty));
             cur_list.tail = LLIST_link(cur_list.tail);
 
             if g2 > 0 {
@@ -1885,8 +1745,7 @@ pub unsafe extern "C" fn resume_after_display() {
             cur_lang = INTPAR(INT_PAR__language) as u8;
         }
         cur_list.aux.b32.s1 = cur_lang as i32;
-        cur_list.prev_graf = (i32::from(norm_min(INTPAR(INT_PAR__left_hyphen_min))) * 64
-            + i32::from(norm_min(INTPAR(INT_PAR__right_hyphen_min))))
+        cur_list.prev_graf = (i32::from(norm_min(INTPAR(INT_PAR__left_hyphen_min))) * 64 + i32::from(norm_min(INTPAR(INT_PAR__right_hyphen_min))))
             * 65536
             + cur_lang as i32;
 
@@ -1904,14 +1763,10 @@ pub unsafe extern "C" fn resume_after_display() {
 unsafe fn math_x_height(size_code: i32) -> scaled_t {
     unsafe {
         let f = MATH_FONT((2 + size_code) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathsy_param(f, 5)
         } else {
-            (*font_info.add((5 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((5 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -1919,14 +1774,10 @@ unsafe fn math_x_height(size_code: i32) -> scaled_t {
 unsafe fn math_quad(size_code: i32) -> scaled_t {
     unsafe {
         let f = MATH_FONT((2 + size_code) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathsy_param(f, 6)
         } else {
-            (*font_info.add((6 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((6 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -1934,14 +1785,10 @@ unsafe fn math_quad(size_code: i32) -> scaled_t {
 unsafe fn num1(size_code: i32) -> scaled_t {
     unsafe {
         let f = MATH_FONT((2 + size_code) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathsy_param(f, 8)
         } else {
-            (*font_info.add((8 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((8 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -1949,14 +1796,10 @@ unsafe fn num1(size_code: i32) -> scaled_t {
 unsafe fn num2(size_code: i32) -> scaled_t {
     unsafe {
         let f = MATH_FONT((2 + size_code) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathsy_param(f, 9)
         } else {
-            (*font_info.add((9 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((9 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -1964,14 +1807,10 @@ unsafe fn num2(size_code: i32) -> scaled_t {
 unsafe fn num3(size_code: i32) -> scaled_t {
     unsafe {
         let f = MATH_FONT((2 + size_code) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathsy_param(f, 10)
         } else {
-            (*font_info.add((10 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((10 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -1979,14 +1818,10 @@ unsafe fn num3(size_code: i32) -> scaled_t {
 unsafe fn denom1(size_code: i32) -> scaled_t {
     unsafe {
         let f = MATH_FONT((2 + size_code) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathsy_param(f, 11)
         } else {
-            (*font_info.add((11 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((11 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -1994,14 +1829,10 @@ unsafe fn denom1(size_code: i32) -> scaled_t {
 unsafe fn denom2(size_code: i32) -> scaled_t {
     unsafe {
         let f = MATH_FONT((2 + size_code) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathsy_param(f, 12)
         } else {
-            (*font_info.add((12 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((12 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -2009,14 +1840,10 @@ unsafe fn denom2(size_code: i32) -> scaled_t {
 unsafe fn sup1(size_code: i32) -> scaled_t {
     unsafe {
         let f = MATH_FONT((2 + size_code) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathsy_param(f, 13)
         } else {
-            (*font_info.add((13 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((13 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -2024,14 +1851,10 @@ unsafe fn sup1(size_code: i32) -> scaled_t {
 unsafe fn sup2(size_code: i32) -> scaled_t {
     unsafe {
         let f = MATH_FONT((2 + size_code) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathsy_param(f, 14)
         } else {
-            (*font_info.add((14 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((14 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -2039,14 +1862,10 @@ unsafe fn sup2(size_code: i32) -> scaled_t {
 unsafe fn sup3(size_code: i32) -> scaled_t {
     unsafe {
         let f = MATH_FONT((2 + size_code) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathsy_param(f, 15)
         } else {
-            (*font_info.add((15 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((15 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -2054,14 +1873,10 @@ unsafe fn sup3(size_code: i32) -> scaled_t {
 unsafe fn sub1(size_code: i32) -> scaled_t {
     unsafe {
         let f = MATH_FONT((2 + size_code) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathsy_param(f, 16)
         } else {
-            (*font_info.add((16 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((16 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -2069,14 +1884,10 @@ unsafe fn sub1(size_code: i32) -> scaled_t {
 unsafe fn sub2(size_code: i32) -> scaled_t {
     unsafe {
         let f = MATH_FONT((2 + size_code) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathsy_param(f, 17)
         } else {
-            (*font_info.add((17 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((17 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -2084,14 +1895,10 @@ unsafe fn sub2(size_code: i32) -> scaled_t {
 unsafe fn sup_drop(size_code: i32) -> scaled_t {
     unsafe {
         let f = MATH_FONT((2 + size_code) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathsy_param(f, 18)
         } else {
-            (*font_info.add((18 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((18 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -2099,14 +1906,10 @@ unsafe fn sup_drop(size_code: i32) -> scaled_t {
 unsafe fn sub_drop(size_code: i32) -> scaled_t {
     unsafe {
         let f = MATH_FONT((2 + size_code) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathsy_param(f, 19)
         } else {
-            (*font_info.add((19 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((19 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -2114,14 +1917,10 @@ unsafe fn sub_drop(size_code: i32) -> scaled_t {
 unsafe fn delim1(size_code: i32) -> scaled_t {
     unsafe {
         let f = MATH_FONT((2 + size_code) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathsy_param(f, 20)
         } else {
-            (*font_info.add((20 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((20 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -2129,14 +1928,10 @@ unsafe fn delim1(size_code: i32) -> scaled_t {
 unsafe fn delim2(size_code: i32) -> scaled_t {
     unsafe {
         let f = MATH_FONT((2 + size_code) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathsy_param(f, 21)
         } else {
-            (*font_info.add((21 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((21 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -2144,14 +1939,10 @@ unsafe fn delim2(size_code: i32) -> scaled_t {
 unsafe fn axis_height(size_code: i32) -> scaled_t {
     unsafe {
         let f = MATH_FONT((2 + size_code) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathsy_param(f, 22)
         } else {
-            (*font_info.add((22 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((22 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -2159,14 +1950,10 @@ unsafe fn axis_height(size_code: i32) -> scaled_t {
 unsafe fn default_rule_thickness() -> scaled_t {
     unsafe {
         let f = MATH_FONT((3 + cur_size) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathex_param(f, 8)
         } else {
-            (*font_info.add((8 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((8 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -2174,14 +1961,10 @@ unsafe fn default_rule_thickness() -> scaled_t {
 unsafe fn big_op_spacing1() -> scaled_t {
     unsafe {
         let f = MATH_FONT((3 + cur_size) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathex_param(f, 9)
         } else {
-            (*font_info.add((9 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((9 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -2189,14 +1972,10 @@ unsafe fn big_op_spacing1() -> scaled_t {
 unsafe fn big_op_spacing2() -> scaled_t {
     unsafe {
         let f = MATH_FONT((3 + cur_size) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathex_param(f, 10)
         } else {
-            (*font_info.add((10 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((10 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -2204,14 +1983,10 @@ unsafe fn big_op_spacing2() -> scaled_t {
 unsafe fn big_op_spacing3() -> scaled_t {
     unsafe {
         let f = MATH_FONT((3 + cur_size) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathex_param(f, 11)
         } else {
-            (*font_info.add((11 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((11 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -2219,14 +1994,10 @@ unsafe fn big_op_spacing3() -> scaled_t {
 unsafe fn big_op_spacing4() -> scaled_t {
     unsafe {
         let f = MATH_FONT((3 + cur_size) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathex_param(f, 12)
         } else {
-            (*font_info.add((12 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((12 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -2234,14 +2005,10 @@ unsafe fn big_op_spacing4() -> scaled_t {
 unsafe fn big_op_spacing5() -> scaled_t {
     unsafe {
         let f = MATH_FONT((3 + cur_size) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             get_native_mathex_param(f, 13)
         } else {
-            (*font_info.add((13 + *param_base.add(f as usize)) as usize))
-                .b32
-                .s1
+            (*font_info.add((13 + *param_base.add(f as usize)) as usize)).b32.s1
         }
     }
 }
@@ -2388,10 +2155,7 @@ unsafe fn clean_box(p: i32, s: small_number) -> i32 {
 
         if is_char_node(q) || q == TEX_NULL {
             x = hpack(q, 0, ADDITIONAL);
-        } else if (*mem.add(q as usize)).b32.s1 == TEX_NULL
-            && NODE_type(q) <= VLIST_NODE
-            && (*mem.add((q + 4) as usize)).b32.s1 == 0
-        {
+        } else if (*mem.add(q as usize)).b32.s1 == TEX_NULL && NODE_type(q) <= VLIST_NODE && (*mem.add((q + 4) as usize)).b32.s1 == 0 {
             x = q;
         } else {
             x = hpack(q, 0, ADDITIONAL);
@@ -2431,25 +2195,17 @@ unsafe fn fetch(a: i32) {
             print_char(')' as i32);
             capture_to_diagnostic(core::ptr::null_mut());
             help_ptr = 4;
-            help_line[3] = b"Somewhere in the math formula just ended, you used the\0".as_ptr()
-                as *const c_char;
-            help_line[2] = b"stated character from an undefined font family. For example,\0"
-                .as_ptr() as *const c_char;
-            help_line[1] = b"plain TeX doesn't allow \\it or \\sl in subscripts. Proceed,\0"
-                .as_ptr() as *const c_char;
-            help_line[0] =
-                b"and I'll try to forget that I needed that character.\0".as_ptr() as *const c_char;
+            help_line[3] = b"Somewhere in the math formula just ended, you used the\0".as_ptr() as *const c_char;
+            help_line[2] = b"stated character from an undefined font family. For example,\0".as_ptr() as *const c_char;
+            help_line[1] = b"plain TeX doesn't allow \\it or \\sl in subscripts. Proceed,\0".as_ptr() as *const c_char;
+            help_line[0] = b"and I'll try to forget that I needed that character.\0".as_ptr() as *const c_char;
             error();
             cur_i = null_character;
             (*mem.add(a as usize)).b32.s1 = EMPTY;
-        } else if *font_area.add(cur_f as usize) == AAT_FONT_FLAG
-            || *font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-        {
+        } else if *font_area.add(cur_f as usize) == AAT_FONT_FLAG || *font_area.add(cur_f as usize) == OTGR_FONT_FLAG {
             cur_i = null_character;
         } else {
-            if cur_c >= i32::from(*font_bc.add(cur_f as usize))
-                && cur_c <= i32::from(*font_ec.add(cur_f as usize))
-            {
+            if cur_c >= i32::from(*font_bc.add(cur_f as usize)) && cur_c <= i32::from(*font_ec.add(cur_f as usize)) {
                 cur_i = FONT_CHARACTER_INFO(cur_f, cur_c);
             } else {
                 cur_i = null_character;
@@ -2481,9 +2237,7 @@ unsafe fn make_under(q: i32) {
         (*mem.add(x as usize)).b32.s1 = p;
         (*mem.add(p as usize)).b32.s1 = fraction_rule(default_rule_thickness());
         let y = vpackage(x, 0, ADDITIONAL, MAX_HALFWORD);
-        let delta = (*mem.add((y + 3) as usize)).b32.s1
-            + (*mem.add((y + 2) as usize)).b32.s1
-            + default_rule_thickness();
+        let delta = (*mem.add((y + 3) as usize)).b32.s1 + (*mem.add((y + 2) as usize)).b32.s1 + default_rule_thickness();
         (*mem.add((y + 3) as usize)).b32.s1 = (*mem.add((x + 3) as usize)).b32.s1;
         (*mem.add((y + 2) as usize)).b32.s1 = delta - (*mem.add((y + 3) as usize)).b32.s1;
         (*mem.add((q + 1) as usize)).b32.s0 = y;
@@ -2513,9 +2267,7 @@ unsafe fn make_radical(q: i32) {
         let mut clr: scaled_t;
 
         f = MATH_FONT((((*mem.add((q + 4) as usize)).b16.s3 % 256) as i32 + cur_size) as usize);
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             rule_thickness = get_ot_math_constant(f, RADICALRULETHICKNESS);
         } else {
             rule_thickness = default_rule_thickness();
@@ -2523,9 +2275,7 @@ unsafe fn make_radical(q: i32) {
 
         x = clean_box(q + 1, 2 * (cur_style / 2) + 1);
 
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
             if cur_style < TEXT_STYLE {
                 clr = get_ot_math_constant(f, RADICALDISPLAYSTYLEVERTICALGAP);
             } else {
@@ -2541,23 +2291,15 @@ unsafe fn make_radical(q: i32) {
         y = var_delimiter(
             q + 4,
             cur_size,
-            (*mem.add((x + 3) as usize)).b32.s1
-                + (*mem.add((x + 2) as usize)).b32.s1
-                + clr
-                + rule_thickness,
+            (*mem.add((x + 3) as usize)).b32.s1 + (*mem.add((x + 2) as usize)).b32.s1 + clr + rule_thickness,
         );
 
-        if *font_area.add(f as usize) == OTGR_FONT_FLAG
-            && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-        {
-            (*mem.add((y + 2) as usize)).b32.s1 = (*mem.add((y + 3) as usize)).b32.s1
-                + (*mem.add((y + 2) as usize)).b32.s1
-                - rule_thickness;
+        if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
+            (*mem.add((y + 2) as usize)).b32.s1 = (*mem.add((y + 3) as usize)).b32.s1 + (*mem.add((y + 2) as usize)).b32.s1 - rule_thickness;
             (*mem.add((y + 3) as usize)).b32.s1 = rule_thickness;
         }
 
-        delta = (*mem.add((y + 2) as usize)).b32.s1
-            - ((*mem.add((x + 3) as usize)).b32.s1 + (*mem.add((x + 2) as usize)).b32.s1 + clr);
+        delta = (*mem.add((y + 2) as usize)).b32.s1 - ((*mem.add((x + 3) as usize)).b32.s1 + (*mem.add((x + 2) as usize)).b32.s1 + clr);
         if delta > 0 {
             clr += half(delta);
         }
@@ -2611,14 +2353,10 @@ unsafe fn make_math_accent(q: i32) {
         fetch(q + 4);
         x = TEX_NULL;
 
-        if *font_area.add(cur_f as usize) == AAT_FONT_FLAG
-            || *font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-        {
+        if *font_area.add(cur_f as usize) == AAT_FONT_FLAG || *font_area.add(cur_f as usize) == OTGR_FONT_FLAG {
             c = cur_c;
             f = cur_f;
-            if !((*mem.add(q as usize)).b16.s0 == BOTTOM_ACC
-                || (*mem.add(q as usize)).b16.s0 == (BOTTOM_ACC + 1))
-            {
+            if !((*mem.add(q as usize)).b16.s0 == BOTTOM_ACC || (*mem.add(q as usize)).b16.s0 == (BOTTOM_ACC + 1)) {
                 s = compute_ot_math_accent_pos(q);
             } else {
                 s = 0;
@@ -2637,25 +2375,16 @@ unsafe fn make_math_accent(q: i32) {
                     a = *lig_kern_base.add(cur_f as usize) + cur_i.s0 as i32;
                     cur_i = (*font_info.add(a as usize)).b16;
                     if cur_i.s3 > 128 {
-                        a = *lig_kern_base.add(cur_f as usize)
-                            + 256 * cur_i.s1 as i32
-                            + cur_i.s0 as i32
-                            + 32768
-                            - 256 * 128;
+                        a = *lig_kern_base.add(cur_f as usize) + 256 * cur_i.s1 as i32 + cur_i.s0 as i32 + 32768 - 256 * 128;
                         cur_i = (*font_info.add(a as usize)).b16;
                     }
                     'lig_loop: loop {
                         if cur_i.s2 as i32 == *skew_char.add(cur_f as usize) {
                             if cur_i.s1 >= 128 {
                                 if cur_i.s3 <= 128 {
-                                    s = (*font_info.add(
-                                        (*kern_base.add(cur_f as usize)
-                                            + 256 * cur_i.s1 as i32
-                                            + cur_i.s0 as i32)
-                                            as usize,
-                                    ))
-                                    .b32
-                                    .s1;
+                                    s = (*font_info.add((*kern_base.add(cur_f as usize) + 256 * cur_i.s1 as i32 + cur_i.s0 as i32) as usize))
+                                        .b32
+                                        .s1;
                                 }
                             }
                             break 'lig_loop;
@@ -2696,34 +2425,21 @@ unsafe fn make_math_accent(q: i32) {
         }
 
         if x != TEX_NULL {
-            if *font_area.add(f as usize) == OTGR_FONT_FLAG
-                && isOpenTypeMathFont(*font_layout_engine.add(f as usize))
-            {
-                if (*mem.add(q as usize)).b16.s0 == BOTTOM_ACC
-                    || (*mem.add(q as usize)).b16.s0 == (BOTTOM_ACC + 1)
-                {
+            if *font_area.add(f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(f as usize)) {
+                if (*mem.add(q as usize)).b16.s0 == BOTTOM_ACC || (*mem.add(q as usize)).b16.s0 == (BOTTOM_ACC + 1) {
                     delta = 0;
                 } else if h < get_ot_math_constant(f, ACCENTBASEHEIGHT) {
                     delta = h;
                 } else {
                     delta = get_ot_math_constant(f, ACCENTBASEHEIGHT);
                 }
-            } else if h
-                < (*font_info.add((X_HEIGHT_CODE + *param_base.add(f as usize) as usize) as usize))
-                    .b32
-                    .s1
-            {
+            } else if h < (*font_info.add((X_HEIGHT_CODE + *param_base.add(f as usize) as usize) as usize)).b32.s1 {
                 delta = h;
             } else {
-                delta = (*font_info
-                    .add((X_HEIGHT_CODE + *param_base.add(f as usize) as usize) as usize))
-                .b32
-                .s1;
+                delta = (*font_info.add((X_HEIGHT_CODE + *param_base.add(f as usize) as usize) as usize)).b32.s1;
             }
 
-            if (*mem.add((q + 2) as usize)).b32.s1 != EMPTY
-                || (*mem.add((q + 3) as usize)).b32.s1 != EMPTY
-            {
+            if (*mem.add((q + 2) as usize)).b32.s1 != EMPTY || (*mem.add((q + 3) as usize)).b32.s1 != EMPTY {
                 if (*mem.add((q + 1) as usize)).b32.s1 == MATH_CHAR {
                     flush_node_list(x);
                     x = new_noad();
@@ -2742,21 +2458,16 @@ unsafe fn make_math_accent(q: i32) {
 
             y = char_box(f, c);
 
-            if *font_area.add(f as usize) == AAT_FONT_FLAG
-                || *font_area.add(f as usize) == OTGR_FONT_FLAG
-            {
+            if *font_area.add(f as usize) == AAT_FONT_FLAG || *font_area.add(f as usize) == OTGR_FONT_FLAG {
                 p = get_node(GLYPH_NODE_SIZE);
                 set_NODE_type(p, WHATSIT_NODE);
                 (*mem.add(p as usize)).b16.s0 = GLYPH_NODE;
                 (*mem.add((p + 4) as usize)).b16.s2 = f as u16;
-                (*mem.add((p + 4) as usize)).b16.s1 =
-                    get_native_glyph((*mem.add((y + 5) as usize)).b32.s1, 0) as u16;
+                (*mem.add((p + 4) as usize)).b16.s1 = get_native_glyph((*mem.add((y + 5) as usize)).b32.s1, 0) as u16;
                 set_native_glyph_metrics(p, 1);
                 free_node(
                     (*mem.add((y + 5) as usize)).b32.s1,
-                    (*mem.add(((*mem.add((y + 5) as usize)).b32.s1 + 4) as usize))
-                        .b16
-                        .s3 as i32,
+                    (*mem.add(((*mem.add((y + 5) as usize)).b32.s1 + 4) as usize)).b16.s3 as i32,
                 );
                 (*mem.add((y + 5) as usize)).b32.s1 = p;
 
@@ -2794,9 +2505,7 @@ unsafe fn make_math_accent(q: i32) {
                 (*mem.add((y + 3) as usize)).b32.s1 = (*mem.add((p + 3) as usize)).b32.s1;
                 (*mem.add((y + 2) as usize)).b32.s1 = (*mem.add((p + 2) as usize)).b32.s1;
 
-                if (*mem.add(q as usize)).b16.s0 == BOTTOM_ACC
-                    || (*mem.add(q as usize)).b16.s0 == (BOTTOM_ACC + 1)
-                {
+                if (*mem.add(q as usize)).b16.s0 == BOTTOM_ACC || (*mem.add(q as usize)).b16.s0 == (BOTTOM_ACC + 1) {
                     if (*mem.add((y + 3) as usize)).b32.s1 < 0 {
                         (*mem.add((y + 3) as usize)).b32.s1 = 0;
                     }
@@ -2804,11 +2513,7 @@ unsafe fn make_math_accent(q: i32) {
                     (*mem.add((y + 2) as usize)).b32.s1 = 0;
                 }
 
-                if p != TEX_NULL
-                    && !is_char_node(p)
-                    && NODE_type(p) == WHATSIT_NODE
-                    && (*mem.add(p as usize)).b16.s0 == GLYPH_NODE
-                {
+                if p != TEX_NULL && !is_char_node(p) && NODE_type(p) == WHATSIT_NODE && (*mem.add(p as usize)).b16.s0 == GLYPH_NODE {
                     sa = get_ot_math_accent_pos(f, (*mem.add((p + 4) as usize)).b16.s1 as i32);
                     if sa == TEX_INFINITY {
                         sa = half((*mem.add((y + 1) as usize)).b32.s1);
@@ -2817,23 +2522,17 @@ unsafe fn make_math_accent(q: i32) {
                     sa = half((*mem.add((y + 1) as usize)).b32.s1);
                 }
 
-                if (*mem.add(q as usize)).b16.s0 == BOTTOM_ACC
-                    || (*mem.add(q as usize)).b16.s0 == (BOTTOM_ACC + 1)
-                    || s == TEX_INFINITY
-                {
+                if (*mem.add(q as usize)).b16.s0 == BOTTOM_ACC || (*mem.add(q as usize)).b16.s0 == (BOTTOM_ACC + 1) || s == TEX_INFINITY {
                     s = half(w);
                 }
                 (*mem.add((y + 4) as usize)).b32.s1 = s - sa;
             } else {
-                (*mem.add((y + 4) as usize)).b32.s1 =
-                    s + half(w - (*mem.add((y + 1) as usize)).b32.s1);
+                (*mem.add((y + 4) as usize)).b32.s1 = s + half(w - (*mem.add((y + 1) as usize)).b32.s1);
             }
 
             (*mem.add((y + 1) as usize)).b32.s1 = 0;
 
-            if (*mem.add(q as usize)).b16.s0 == BOTTOM_ACC
-                || (*mem.add(q as usize)).b16.s0 == (BOTTOM_ACC + 1)
-            {
+            if (*mem.add(q as usize)).b16.s0 == BOTTOM_ACC || (*mem.add(q as usize)).b16.s0 == (BOTTOM_ACC + 1) {
                 (*mem.add(x as usize)).b32.s1 = y;
                 y = vpackage(x, 0, ADDITIONAL, MAX_HALFWORD);
                 (*mem.add((y + 4) as usize)).b32.s1 = -(h - (*mem.add((y + 3) as usize)).b32.s1);
@@ -2899,9 +2598,7 @@ unsafe fn make_fraction(q: i32) {
         }
 
         if (*mem.add((q + 1) as usize)).b32.s1 == 0 {
-            if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-                && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize))
-            {
+            if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize)) {
                 if cur_style < TEXT_STYLE {
                     clr = get_ot_math_constant(cur_f, STACKDISPLAYSTYLEGAPMIN);
                 } else {
@@ -2913,19 +2610,14 @@ unsafe fn make_fraction(q: i32) {
                 clr = 3 * default_rule_thickness();
             }
 
-            delta = half(
-                clr - ((shift_up - (*mem.add((x + 2) as usize)).b32.s1)
-                    - ((*mem.add((z + 3) as usize)).b32.s1 - shift_down)),
-            );
+            delta = half(clr - ((shift_up - (*mem.add((x + 2) as usize)).b32.s1) - ((*mem.add((z + 3) as usize)).b32.s1 - shift_down)));
 
             if delta > 0 {
                 shift_up += delta;
                 shift_down += delta;
             }
         } else {
-            if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-                && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize))
-            {
+            if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize)) {
                 delta = half((*mem.add((q + 1) as usize)).b32.s1);
 
                 if cur_style < TEXT_STYLE {
@@ -2934,9 +2626,7 @@ unsafe fn make_fraction(q: i32) {
                     clr = get_ot_math_constant(cur_f, FRACTIONNUMERATORGAPMIN);
                 }
 
-                delta1 = clr
-                    - ((shift_up - (*mem.add((x + 2) as usize)).b32.s1)
-                        - (axis_height(cur_size) + delta));
+                delta1 = clr - ((shift_up - (*mem.add((x + 2) as usize)).b32.s1) - (axis_height(cur_size) + delta));
 
                 if cur_style < TEXT_STYLE {
                     clr = get_ot_math_constant(cur_f, FRACTIONDENOMDISPLAYSTYLEGAPMIN);
@@ -2944,9 +2634,7 @@ unsafe fn make_fraction(q: i32) {
                     clr = get_ot_math_constant(cur_f, FRACTIONDENOMINATORGAPMIN);
                 }
 
-                delta2 = clr
-                    - ((axis_height(cur_size) - delta)
-                        - ((*mem.add((z + 3) as usize)).b32.s1 - shift_down));
+                delta2 = clr - ((axis_height(cur_size) - delta) - ((*mem.add((z + 3) as usize)).b32.s1 - shift_down));
             } else {
                 if cur_style < TEXT_STYLE {
                     clr = 3 * (*mem.add((q + 1) as usize)).b32.s1;
@@ -2954,12 +2642,8 @@ unsafe fn make_fraction(q: i32) {
                     clr = (*mem.add((q + 1) as usize)).b32.s1;
                 }
                 delta = half((*mem.add((q + 1) as usize)).b32.s1);
-                delta1 = clr
-                    - ((shift_up - (*mem.add((x + 2) as usize)).b32.s1)
-                        - (axis_height(cur_size) + delta));
-                delta2 = clr
-                    - ((axis_height(cur_size) - delta)
-                        - ((*mem.add((z + 3) as usize)).b32.s1 - shift_down));
+                delta1 = clr - ((shift_up - (*mem.add((x + 2) as usize)).b32.s1) - (axis_height(cur_size) + delta));
+                delta2 = clr - ((axis_height(cur_size) - delta) - ((*mem.add((z + 3) as usize)).b32.s1 - shift_down));
             }
 
             if delta1 > 0 {
@@ -2978,22 +2662,14 @@ unsafe fn make_fraction(q: i32) {
 
         let p_v: i32;
         if (*mem.add((q + 1) as usize)).b32.s1 == 0 {
-            p_v = new_kern(
-                (shift_up - (*mem.add((x + 2) as usize)).b32.s1)
-                    - ((*mem.add((z + 3) as usize)).b32.s1 - shift_down),
-            );
+            p_v = new_kern((shift_up - (*mem.add((x + 2) as usize)).b32.s1) - ((*mem.add((z + 3) as usize)).b32.s1 - shift_down));
             (*mem.add(p_v as usize)).b32.s1 = z;
         } else {
             y = fraction_rule((*mem.add((q + 1) as usize)).b32.s1);
-            let p1 = new_kern(
-                (axis_height(cur_size) - delta)
-                    - ((*mem.add((z + 3) as usize)).b32.s1 - shift_down),
-            );
+            let p1 = new_kern((axis_height(cur_size) - delta) - ((*mem.add((z + 3) as usize)).b32.s1 - shift_down));
             (*mem.add(y as usize)).b32.s1 = p1;
             (*mem.add(p1 as usize)).b32.s1 = z;
-            p_v = new_kern(
-                (shift_up - (*mem.add((x + 2) as usize)).b32.s1) - (axis_height(cur_size) + delta),
-            );
+            p_v = new_kern((shift_up - (*mem.add((x + 2) as usize)).b32.s1) - (axis_height(cur_size) + delta));
             (*mem.add(p_v as usize)).b32.s1 = y;
         }
 
@@ -3040,9 +2716,7 @@ unsafe fn make_op(q: i32) -> scaled_t {
 
         if (*mem.add((q + 1) as usize)).b32.s1 == MATH_CHAR {
             fetch(q + 1);
-            if !(*font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-                && usingOpenType(*font_layout_engine.add(cur_f as usize)))
-            {
+            if !(*font_area.add(cur_f as usize) == OTGR_FONT_FLAG && usingOpenType(*font_layout_engine.add(cur_f as usize))) {
                 if cur_style < TEXT_STYLE && (cur_i.s1 % 4) == LIST_TAG {
                     c = cur_i.s0;
                     i = FONT_CHARACTER_INFO(cur_f, c as i32);
@@ -3055,23 +2729,13 @@ unsafe fn make_op(q: i32) -> scaled_t {
                 delta = FONT_CHARINFO_ITALCORR(cur_f, cur_i);
             }
             x = clean_box(q + 1, cur_style);
-            if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-                && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize))
-            {
+            if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize)) {
                 p = (*mem.add((x + 5) as usize)).b32.s1;
-                if p != TEX_NULL
-                    && !is_char_node(p)
-                    && NODE_type(p) == WHATSIT_NODE
-                    && (*mem.add(p as usize)).b16.s0 == GLYPH_NODE
-                {
+                if p != TEX_NULL && !is_char_node(p) && NODE_type(p) == WHATSIT_NODE && (*mem.add(p as usize)).b16.s0 == GLYPH_NODE {
                     let mut assembly_built = false;
                     if cur_style < TEXT_STYLE {
                         h1 = get_ot_math_constant(cur_f, DISPLAYOPERATORMINHEIGHT);
-                        let five_fourths = (((*mem.add((p + 3) as usize)).b32.s1
-                            + (*mem.add((p + 2) as usize)).b32.s1)
-                            as f64)
-                            * 5.0
-                            / 4.0;
+                        let five_fourths = (((*mem.add((p + 3) as usize)).b32.s1 + (*mem.add((p + 2) as usize)).b32.s1) as f64) * 5.0 / 4.0;
                         if (h1 as f64) < five_fourths {
                             h1 = five_fourths as scaled_t;
                         }
@@ -3102,24 +2766,18 @@ unsafe fn make_op(q: i32) -> scaled_t {
                         }
                     }
                     if !assembly_built {
-                        delta = get_ot_math_ital_corr(
-                            cur_f,
-                            (*mem.add((p + 4) as usize)).b16.s1 as i32,
-                        );
+                        delta = get_ot_math_ital_corr(cur_f, (*mem.add((p + 4) as usize)).b16.s1 as i32);
                     }
                     (*mem.add((x + 1) as usize)).b32.s1 = (*mem.add((p + 1) as usize)).b32.s1;
                     (*mem.add((x + 3) as usize)).b32.s1 = (*mem.add((p + 3) as usize)).b32.s1;
                     (*mem.add((x + 2) as usize)).b32.s1 = (*mem.add((p + 2) as usize)).b32.s1;
                 }
             }
-            if (*mem.add((q + 3) as usize)).b32.s1 != EMPTY
-                && (*mem.add(q as usize)).b16.s0 != LIMITS
-            {
+            if (*mem.add((q + 3) as usize)).b32.s1 != EMPTY && (*mem.add(q as usize)).b16.s0 != LIMITS {
                 (*mem.add((x + 1) as usize)).b32.s1 -= delta;
             }
             (*mem.add((x + 4) as usize)).b32.s1 =
-                half((*mem.add((x + 3) as usize)).b32.s1 - (*mem.add((x + 2) as usize)).b32.s1)
-                    - axis_height(cur_size);
+                half((*mem.add((x + 3) as usize)).b32.s1 - (*mem.add((x + 2) as usize)).b32.s1) - axis_height(cur_size);
             (*mem.add((q + 1) as usize)).b32.s1 = SUB_BOX;
             (*mem.add((q + 1) as usize)).b32.s0 = x;
         }
@@ -3204,26 +2862,17 @@ unsafe fn make_ord(q: i32) {
                     if (*mem.add((q + 1) as usize)).b32.s1 == MATH_CHAR {
                         p = (*mem.add(q as usize)).b32.s1;
                         if p != TEX_NULL {
-                            if (*mem.add(p as usize)).b16.s1 >= ORD_NOAD as u16
-                                && (*mem.add(p as usize)).b16.s1 <= PUNCT_NOAD as u16
-                            {
+                            if (*mem.add(p as usize)).b16.s1 >= ORD_NOAD as u16 && (*mem.add(p as usize)).b16.s1 <= PUNCT_NOAD as u16 {
                                 if (*mem.add((p + 1) as usize)).b32.s1 == MATH_CHAR {
-                                    if ((*mem.add((p + 1) as usize)).b16.s1 % 256)
-                                        == ((*mem.add((q + 1) as usize)).b16.s1 % 256)
-                                    {
+                                    if ((*mem.add((p + 1) as usize)).b16.s1 % 256) == ((*mem.add((q + 1) as usize)).b16.s1 % 256) {
                                         (*mem.add((q + 1) as usize)).b32.s1 = MATH_TEXT_CHAR;
                                         fetch(q + 1);
                                         if (cur_i.s1 % 4) == LIG_TAG {
-                                            a = *lig_kern_base.add(cur_f as usize)
-                                                + cur_i.s0 as i32;
+                                            a = *lig_kern_base.add(cur_f as usize) + cur_i.s0 as i32;
                                             cur_c = (*mem.add((p + 1) as usize)).b16.s0 as i32;
                                             cur_i = (*font_info.add(a as usize)).b16;
                                             if cur_i.s3 > 128 {
-                                                a = *lig_kern_base.add(cur_f as usize)
-                                                    + 256 * cur_i.s1 as i32
-                                                    + cur_i.s0 as i32
-                                                    + 32768
-                                                    - 256 * 128;
+                                                a = *lig_kern_base.add(cur_f as usize) + 256 * cur_i.s1 as i32 + cur_i.s0 as i32 + 32768 - 256 * 128;
                                                 cur_i = (*font_info.add(a as usize)).b16;
                                             }
                                             loop {
@@ -3232,79 +2881,47 @@ unsafe fn make_ord(q: i32) {
                                                         if cur_i.s1 >= 128 {
                                                             p = new_kern(
                                                                 (*font_info.add(
-                                                                    (*kern_base.add(cur_f as usize)
-                                                                        + 256 * cur_i.s1 as i32
-                                                                        + cur_i.s0 as i32)
+                                                                    (*kern_base.add(cur_f as usize) + 256 * cur_i.s1 as i32 + cur_i.s0 as i32)
                                                                         as usize,
                                                                 ))
                                                                 .b32
                                                                 .s1,
                                                             );
-                                                            (*mem.add(p as usize)).b32.s1 =
-                                                                (*mem.add(q as usize)).b32.s1;
+                                                            (*mem.add(p as usize)).b32.s1 = (*mem.add(q as usize)).b32.s1;
                                                             (*mem.add(q as usize)).b32.s1 = p;
                                                             return;
                                                         } else {
                                                             match cur_i.s1 {
                                                                 1 | 5 => {
-                                                                    (*mem.add((q + 1) as usize))
-                                                                        .b16
-                                                                        .s0 = cur_i.s0;
+                                                                    (*mem.add((q + 1) as usize)).b16.s0 = cur_i.s0;
                                                                 }
                                                                 2 | 6 => {
-                                                                    (*mem.add((p + 1) as usize))
-                                                                        .b16
-                                                                        .s0 = cur_i.s0;
+                                                                    (*mem.add((p + 1) as usize)).b16.s0 = cur_i.s0;
                                                                 }
                                                                 3 | 7 | 11 => {
                                                                     r = new_noad();
-                                                                    (*mem.add((r + 1) as usize))
-                                                                        .b16
-                                                                        .s0 = cur_i.s0;
-                                                                    (*mem.add((r + 1) as usize))
-                                                                        .b16
-                                                                        .s1 = (*mem
-                                                                        .add((q + 1) as usize))
-                                                                    .b16
-                                                                    .s1 % 256;
-                                                                    (*mem.add(q as usize)).b32.s1 =
-                                                                        r;
-                                                                    (*mem.add(r as usize)).b32.s1 =
-                                                                        p;
+                                                                    (*mem.add((r + 1) as usize)).b16.s0 = cur_i.s0;
+                                                                    (*mem.add((r + 1) as usize)).b16.s1 = (*mem.add((q + 1) as usize)).b16.s1 % 256;
+                                                                    (*mem.add(q as usize)).b32.s1 = r;
+                                                                    (*mem.add(r as usize)).b32.s1 = p;
                                                                     if cur_i.s1 < 11 {
-                                                                        (*mem.add(
-                                                                            (r + 1) as usize,
-                                                                        ))
-                                                                        .b32
-                                                                        .s1 = MATH_CHAR;
+                                                                        (*mem.add((r + 1) as usize)).b32.s1 = MATH_CHAR;
                                                                     } else {
-                                                                        (*mem.add(
-                                                                            (r + 1) as usize,
-                                                                        ))
-                                                                        .b32
-                                                                        .s1 = MATH_TEXT_CHAR;
+                                                                        (*mem.add((r + 1) as usize)).b32.s1 = MATH_TEXT_CHAR;
                                                                     }
                                                                 }
                                                                 _ => {
-                                                                    (*mem.add(q as usize)).b32.s1 =
-                                                                        (*mem.add(p as usize))
-                                                                            .b32
-                                                                            .s1;
-                                                                    (*mem.add((q + 1) as usize))
-                                                                        .b16
-                                                                        .s0 = cur_i.s0;
-                                                                    *mem.add((q + 3) as usize) =
-                                                                        *mem.add((p + 3) as usize);
-                                                                    *mem.add((q + 2) as usize) =
-                                                                        *mem.add((p + 2) as usize);
+                                                                    (*mem.add(q as usize)).b32.s1 = (*mem.add(p as usize)).b32.s1;
+                                                                    (*mem.add((q + 1) as usize)).b16.s0 = cur_i.s0;
+                                                                    *mem.add((q + 3) as usize) = *mem.add((p + 3) as usize);
+                                                                    *mem.add((q + 2) as usize) = *mem.add((p + 2) as usize);
                                                                     free_node(p, NOAD_SIZE);
                                                                 }
                                                             }
                                                             if cur_i.s1 > 3 {
                                                                 return;
                                                             }
-                                                            (*mem.add((q + 1) as usize)).b32.s1 =
-                                                                MATH_CHAR;
+                                                            (*mem.add((q + 1) as usize)).b32.s1 = MATH_CHAR;
                                                             break; // restart outer loop
                                                         }
                                                     }
@@ -3378,12 +2995,7 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
         sup_kern = 0;
         sub_kern = 0;
 
-        if is_char_node(p)
-            || (p != TEX_NULL
-                && !is_char_node(p)
-                && NODE_type(p) == WHATSIT_NODE
-                && (*mem.add(p as usize)).b16.s0 == GLYPH_NODE)
-        {
+        if is_char_node(p) || (p != TEX_NULL && !is_char_node(p) && NODE_type(p) == WHATSIT_NODE && (*mem.add(p as usize)).b16.s0 == GLYPH_NODE) {
             shift_up = 0;
             shift_down = 0;
         } else {
@@ -3415,8 +3027,7 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
                         STYLE_NODE => {
                             this_math_style = NODE_subtype(script_ptr);
                         }
-                        ORD_NOAD | OP_NOAD | BIN_NOAD | REL_NOAD | OPEN_NOAD | CLOSE_NOAD
-                        | PUNCT_NOAD => {
+                        ORD_NOAD | OP_NOAD | BIN_NOAD | REL_NOAD | OPEN_NOAD | CLOSE_NOAD | PUNCT_NOAD => {
                             script_head = script_ptr + 1;
                             script_ptr = TEX_NULL;
                         }
@@ -3449,10 +3060,7 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
                 }
             }
 
-            if script_head >= 0
-                && script_head <= mem_end
-                && (*mem.add(script_head as usize)).b32.s1 == MATH_CHAR
-            {
+            if script_head >= 0 && script_head <= mem_end && (*mem.add(script_head as usize)).b32.s1 == MATH_CHAR {
                 save_f = cur_f;
                 saved_math_style = cur_style;
                 cur_style = this_math_style;
@@ -3466,9 +3074,7 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
                 cur_mu = x_over_n(math_quad(cur_size), 18);
                 fetch(script_head);
 
-                if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-                    && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize))
-                {
+                if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize)) {
                     script_c = new_native_character(cur_f, cur_c);
                     script_g = get_native_glyph(script_c, 0) as u16;
                     script_f = cur_f;
@@ -3498,14 +3104,10 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
                 shift_down = sub1(cur_size);
             }
 
-            if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-                && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize))
-            {
-                clr = (*mem.add((x + 3) as usize)).b32.s1
-                    - get_ot_math_constant(cur_f, SUBSCRIPTTOPMAX);
+            if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize)) {
+                clr = (*mem.add((x + 3) as usize)).b32.s1 - get_ot_math_constant(cur_f, SUBSCRIPTTOPMAX);
             } else {
-                clr =
-                    (*mem.add((x + 3) as usize)).b32.s1 - ((math_x_height(cur_size) * 4).abs() / 5);
+                clr = (*mem.add((x + 3) as usize)).b32.s1 - ((math_x_height(cur_size) * 4).abs() / 5);
             }
 
             if shift_down < clr {
@@ -3514,14 +3116,8 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
 
             (*mem.add((x + 4) as usize)).b32.s1 = shift_down;
 
-            if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-                && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize))
-            {
-                if p != TEX_NULL
-                    && !is_char_node(p)
-                    && NODE_type(p) == WHATSIT_NODE
-                    && (*mem.add(p as usize)).b16.s0 == GLYPH_NODE
-                {
+            if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize)) {
+                if p != TEX_NULL && !is_char_node(p) && NODE_type(p) == WHATSIT_NODE && (*mem.add(p as usize)).b16.s0 == GLYPH_NODE {
                     sub_kern = get_ot_math_kern(
                         (*mem.add((p + 4) as usize)).b16.s2 as i32,
                         (*mem.add((p + 4) as usize)).b16.s1 as i32,
@@ -3553,8 +3149,7 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
                         STYLE_NODE => {
                             this_math_style = NODE_subtype(script_ptr);
                         }
-                        ORD_NOAD | OP_NOAD | BIN_NOAD | REL_NOAD | OPEN_NOAD | CLOSE_NOAD
-                        | PUNCT_NOAD => {
+                        ORD_NOAD | OP_NOAD | BIN_NOAD | REL_NOAD | OPEN_NOAD | CLOSE_NOAD | PUNCT_NOAD => {
                             script_head = script_ptr + 1;
                             script_ptr = TEX_NULL;
                         }
@@ -3587,10 +3182,7 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
                 }
             }
 
-            if script_head >= 0
-                && script_head <= mem_end
-                && (*mem.add(script_head as usize)).b32.s1 == MATH_CHAR
-            {
+            if script_head >= 0 && script_head <= mem_end && (*mem.add(script_head as usize)).b32.s1 == MATH_CHAR {
                 save_f = cur_f;
                 saved_math_style = cur_style;
                 cur_style = this_math_style;
@@ -3604,9 +3196,7 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
                 cur_mu = x_over_n(math_quad(cur_size), 18);
                 fetch(script_head);
 
-                if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-                    && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize))
-                {
+                if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize)) {
                     script_c = new_native_character(cur_f, cur_c);
                     script_g = get_native_glyph(script_c, 0) as u16;
                     script_f = cur_f;
@@ -3644,11 +3234,8 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
                 shift_up = clr;
             }
 
-            if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-                && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize))
-            {
-                clr = (*mem.add((x + 2) as usize)).b32.s1
-                    + get_ot_math_constant(cur_f, SUPERSCRIPTBOTTOMMIN);
+            if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize)) {
+                clr = (*mem.add((x + 2) as usize)).b32.s1 + get_ot_math_constant(cur_f, SUPERSCRIPTBOTTOMMIN);
             } else {
                 clr = (*mem.add((x + 2) as usize)).b32.s1 + (math_x_height(cur_size).abs() / 4);
             }
@@ -3657,15 +3244,9 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
                 shift_up = clr;
             }
 
-            if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-                && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize))
-            {
+            if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize)) {
                 if (*mem.add((q + 3) as usize)).b32.s1 == EMPTY {
-                    if p != TEX_NULL
-                        && !is_char_node(p)
-                        && NODE_type(p) == WHATSIT_NODE
-                        && (*mem.add(p as usize)).b16.s0 == GLYPH_NODE
-                    {
+                    if p != TEX_NULL && !is_char_node(p) && NODE_type(p) == WHATSIT_NODE && (*mem.add(p as usize)).b16.s0 == GLYPH_NODE {
                         sup_kern = get_ot_math_kern(
                             (*mem.add((p + 4) as usize)).b16.s2 as i32,
                             (*mem.add((p + 4) as usize)).b16.s1 as i32,
@@ -3702,8 +3283,7 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
                             STYLE_NODE => {
                                 this_math_style = NODE_subtype(script_ptr);
                             }
-                            ORD_NOAD | OP_NOAD | BIN_NOAD | REL_NOAD | OPEN_NOAD | CLOSE_NOAD
-                            | PUNCT_NOAD => {
+                            ORD_NOAD | OP_NOAD | BIN_NOAD | REL_NOAD | OPEN_NOAD | CLOSE_NOAD | PUNCT_NOAD => {
                                 script_head = script_ptr + 1;
                                 script_ptr = TEX_NULL;
                             }
@@ -3736,10 +3316,7 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
                     }
                 }
 
-                if script_head >= 0
-                    && script_head <= mem_end
-                    && (*mem.add(script_head as usize)).b32.s1 == MATH_CHAR
-                {
+                if script_head >= 0 && script_head <= mem_end && (*mem.add(script_head as usize)).b32.s1 == MATH_CHAR {
                     save_f = cur_f;
                     saved_math_style = cur_style;
                     cur_style = this_math_style;
@@ -3753,9 +3330,7 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
                     cur_mu = x_over_n(math_quad(cur_size), 18);
                     fetch(script_head);
 
-                    if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-                        && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize))
-                    {
+                    if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize)) {
                         script_c = new_native_character(cur_f, cur_c);
                         script_g = get_native_glyph(script_c, 0) as u16;
                         script_f = cur_f;
@@ -3784,28 +3359,20 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
                     shift_down = sub2(cur_size);
                 }
 
-                if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-                    && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize))
-                {
+                if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize)) {
                     clr = get_ot_math_constant(cur_f, SUBSUPERSCRIPTGAPMIN)
-                        - ((shift_up - (*mem.add((x + 2) as usize)).b32.s1)
-                            - ((*mem.add((y + 3) as usize)).b32.s1 - shift_down));
+                        - ((shift_up - (*mem.add((x + 2) as usize)).b32.s1) - ((*mem.add((y + 3) as usize)).b32.s1 - shift_down));
                 } else {
                     clr = 4 * default_rule_thickness()
-                        - ((shift_up - (*mem.add((x + 2) as usize)).b32.s1)
-                            - ((*mem.add((y + 3) as usize)).b32.s1 - shift_down));
+                        - ((shift_up - (*mem.add((x + 2) as usize)).b32.s1) - ((*mem.add((y + 3) as usize)).b32.s1 - shift_down));
                 }
 
                 if clr > 0 {
                     shift_down += clr;
-                    if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-                        && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize))
-                    {
-                        clr = get_ot_math_constant(cur_f, SUPERSCRIPTBOTTOMMAXWITHSUBSCRIPT)
-                            - (shift_up - (*mem.add((x + 2) as usize)).b32.s1);
+                    if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize)) {
+                        clr = get_ot_math_constant(cur_f, SUPERSCRIPTBOTTOMMAXWITHSUBSCRIPT) - (shift_up - (*mem.add((x + 2) as usize)).b32.s1);
                     } else {
-                        clr = ((math_x_height(cur_size) * 4).abs() / 5)
-                            - (shift_up - (*mem.add((x + 2) as usize)).b32.s1);
+                        clr = ((math_x_height(cur_size) * 4).abs() / 5) - (shift_up - (*mem.add((x + 2) as usize)).b32.s1);
                     }
                     if clr > 0 {
                         shift_up += clr;
@@ -3813,14 +3380,8 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
                     }
                 }
 
-                if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-                    && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize))
-                {
-                    if p != TEX_NULL
-                        && !is_char_node(p)
-                        && NODE_type(p) == WHATSIT_NODE
-                        && (*mem.add(p as usize)).b16.s0 == GLYPH_NODE
-                    {
+                if *font_area.add(cur_f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize)) {
+                    if p != TEX_NULL && !is_char_node(p) && NODE_type(p) == WHATSIT_NODE && (*mem.add(p as usize)).b16.s0 == GLYPH_NODE {
                         sub_kern = get_ot_math_kern(
                             (*mem.add((p + 4) as usize)).b16.s2 as i32,
                             (*mem.add((p + 4) as usize)).b16.s1 as i32,
@@ -3836,11 +3397,7 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
                     }
 
                     if (*mem.add((q + 3) as usize)).b32.s1 == EMPTY {
-                        if p != TEX_NULL
-                            && !is_char_node(p)
-                            && NODE_type(p) == WHATSIT_NODE
-                            && (*mem.add(p as usize)).b16.s0 == GLYPH_NODE
-                        {
+                        if p != TEX_NULL && !is_char_node(p) && NODE_type(p) == WHATSIT_NODE && (*mem.add(p as usize)).b16.s0 == GLYPH_NODE {
                             sup_kern = get_ot_math_kern(
                                 (*mem.add((p + 4) as usize)).b16.s2 as i32,
                                 (*mem.add((p + 4) as usize)).b16.s1 as i32,
@@ -3861,10 +3418,7 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
                 }
 
                 (*mem.add((x + 4) as usize)).b32.s1 = sup_kern + delta - sub_kern;
-                p = new_kern(
-                    (shift_up - (*mem.add((x + 2) as usize)).b32.s1)
-                        - ((*mem.add((y + 3) as usize)).b32.s1 - shift_down),
-                );
+                p = new_kern((shift_up - (*mem.add((x + 2) as usize)).b32.s1) - ((*mem.add((y + 3) as usize)).b32.s1 - shift_down));
                 (*mem.add(x as usize)).b32.s1 = p;
                 (*mem.add(p as usize)).b32.s1 = y;
                 x = vpackage(x, 0, ADDITIONAL, MAX_HALFWORD);
@@ -3884,12 +3438,7 @@ unsafe fn make_scripts(q: i32, delta: scaled_t) {
     }
 }
 
-unsafe fn make_left_right(
-    q: i32,
-    style: small_number,
-    max_d: scaled_t,
-    max_h: scaled_t,
-) -> small_number {
+unsafe fn make_left_right(q: i32, style: small_number, max_d: scaled_t, max_h: scaled_t) -> small_number {
     unsafe {
         let delta: scaled_t;
         let mut delta1: scaled_t;
@@ -4129,8 +3678,7 @@ unsafe fn mlist_to_hlist() {
                         q = LLIST_link(q);
                         continue 'nodes;
                     }
-                    INS_NODE | MARK_NODE | ADJUST_NODE | WHATSIT_NODE | PENALTY_NODE
-                    | DISC_NODE => {
+                    INS_NODE | MARK_NODE | ADJUST_NODE | WHATSIT_NODE | PENALTY_NODE | DISC_NODE => {
                         // goto lab81;
                         q = LLIST_link(q);
                         continue 'nodes;
@@ -4153,9 +3701,7 @@ unsafe fn mlist_to_hlist() {
                             delete_glue_ref(x);
                             (*mem.add((q + 1) as usize)).b32.s0 = y;
                             (*mem.add(q as usize)).b16.s0 = NORMAL as u16;
-                        } else if cur_size != TEXT_SIZE
-                            && (*mem.add(q as usize)).b16.s0 == COND_MATH_GLUE
-                        {
+                        } else if cur_size != TEXT_SIZE && (*mem.add(q as usize)).b16.s0 == COND_MATH_GLUE {
                             p = (*mem.add(q as usize)).b32.s1;
                             if p != TEX_NULL {
                                 if NODE_type(p) == GLUE_NODE || NODE_type(p) == KERN_NODE {
@@ -4185,9 +3731,7 @@ unsafe fn mlist_to_hlist() {
             match (*mem.add((q + 1) as usize)).b32.s1 {
                 1 | 4 => {
                     fetch(q + 1);
-                    if *font_area.add(cur_f as usize) == AAT_FONT_FLAG
-                        || *font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-                    {
+                    if *font_area.add(cur_f as usize) == AAT_FONT_FLAG || *font_area.add(cur_f as usize) == OTGR_FONT_FLAG {
                         z = new_native_character(cur_f, cur_c);
                         p = get_node(GLYPH_NODE_SIZE);
                         set_NODE_type(p, WHATSIT_NODE);
@@ -4196,13 +3740,9 @@ unsafe fn mlist_to_hlist() {
                         (*mem.add((p + 4) as usize)).b16.s1 = get_native_glyph(z, 0) as u16;
                         set_native_glyph_metrics(p, 1);
                         free_node(z, (*mem.add((z + 4) as usize)).b16.s3 as i32);
-                        delta = get_ot_math_ital_corr(
-                            cur_f,
-                            (*mem.add((p + 4) as usize)).b16.s1 as i32,
-                        );
+                        delta = get_ot_math_ital_corr(cur_f, (*mem.add((p + 4) as usize)).b16.s1 as i32);
                         if (*mem.add((q + 1) as usize)).b32.s1 == MATH_TEXT_CHAR
-                            && !(*font_area.add(cur_f as usize) == OTGR_FONT_FLAG
-                                && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize)))
+                            && !(*font_area.add(cur_f as usize) == OTGR_FONT_FLAG && isOpenTypeMathFont(*font_layout_engine.add(cur_f as usize)))
                         {
                             delta = 0;
                         }
@@ -4214,11 +3754,7 @@ unsafe fn mlist_to_hlist() {
                         delta = FONT_CHARINFO_ITALCORR(cur_f, cur_i);
                         p = new_character(cur_f, cur_c as u16);
                         if (*mem.add((q + 1) as usize)).b32.s1 == MATH_TEXT_CHAR
-                            && (*font_info.add(
-                                (SPACE_CODE + *param_base.add(cur_f as usize) as usize) as usize,
-                            ))
-                            .b32
-                            .s1 != 0
+                            && (*font_info.add((SPACE_CODE + *param_base.add(cur_f as usize) as usize) as usize)).b32.s1 != 0
                         {
                             delta = 0;
                         }
@@ -4256,9 +3792,7 @@ unsafe fn mlist_to_hlist() {
             }
 
             (*mem.add((q + 1) as usize)).b32.s1 = p;
-            if !((*mem.add((q + 3) as usize)).b32.s1 == EMPTY
-                && (*mem.add((q + 2) as usize)).b32.s1 == EMPTY)
-            {
+            if !((*mem.add((q + 3) as usize)).b32.s1 == EMPTY && (*mem.add((q + 2) as usize)).b32.s1 == EMPTY) {
                 make_scripts(q, delta);
             }
 
@@ -4350,8 +3884,7 @@ unsafe fn mlist_to_hlist() {
                     free_node(r, s);
                     continue;
                 }
-                WHATSIT_NODE | PENALTY_NODE | RULE_NODE | DISC_NODE | ADJUST_NODE | INS_NODE
-                | MARK_NODE | GLUE_NODE | KERN_NODE => {
+                WHATSIT_NODE | PENALTY_NODE | RULE_NODE | DISC_NODE | ADJUST_NODE | INS_NODE | MARK_NODE | GLUE_NODE | KERN_NODE => {
                     (*mem.add(p as usize)).b32.s1 = q;
                     p = q;
                     q = LLIST_link(q);
@@ -4433,8 +3966,7 @@ unsafe fn mlist_to_hlist() {
             if penalties {
                 if (*mem.add(q as usize)).b32.s1 != TEX_NULL {
                     if pen < INF_PENALTY {
-                        r_type = (*mem.add((*mem.add(q as usize)).b32.s1 as usize)).b16.s1
-                            as small_number;
+                        r_type = (*mem.add((*mem.add(q as usize)).b32.s1 as usize)).b16.s1 as small_number;
                         if r_type != PENALTY_NODE && r_type != REL_NOAD {
                             z = new_penalty(pen);
                             (*mem.add(p as usize)).b32.s1 = z;
@@ -4462,9 +3994,7 @@ unsafe fn rebox(mut b: i32, w: scaled_t) -> i32 {
         let mut p: i32;
         let f: internal_font_number;
         let v: scaled_t;
-        if (*mem.add((b + 1) as usize)).b32.s1 != w
-            && (*mem.add((b + 5) as usize)).b32.s1 != TEX_NULL
-        {
+        if (*mem.add((b + 1) as usize)).b32.s1 != w && (*mem.add((b + 5) as usize)).b32.s1 != TEX_NULL {
             if NODE_type(b) == VLIST_NODE {
                 b = hpack(b, 0, ADDITIONAL);
             }
@@ -4473,8 +4003,7 @@ unsafe fn rebox(mut b: i32, w: scaled_t) -> i32 {
                 f = CHAR_NODE_font(p);
                 v = FONT_CHARACTER_WIDTH(f, effective_char(true, f, CHAR_NODE_character(p) as u16));
                 if v != (*mem.add((b + 1) as usize)).b32.s1 {
-                    (*mem.add(p as usize)).b32.s1 =
-                        new_kern((*mem.add((b + 1) as usize)).b32.s1 - v);
+                    (*mem.add(p as usize)).b32.s1 = new_kern((*mem.add((b + 1) as usize)).b32.s1 - v);
                 }
             }
             free_node(b, BOX_NODE_SIZE);
@@ -4505,12 +4034,7 @@ unsafe fn var_delimiter(d: i32, s: i32, v: scaled_t) -> i32 {
         let mut n: i32;
         let mut u: scaled_t;
         let mut w: scaled_t;
-        let mut q: b16x4 = b16x4 {
-            s0: 0,
-            s1: 0,
-            s2: 0,
-            s3: 0,
-        };
+        let mut q: b16x4 = b16x4 { s0: 0, s1: 0, s2: 0, s3: 0 };
         let r: b16x4;
         let mut z: i32;
         let mut large_attempt: bool;
@@ -4519,8 +4043,7 @@ unsafe fn var_delimiter(d: i32, s: i32, v: scaled_t) -> i32 {
         w = 0;
         large_attempt = false;
         z = ((*mem.add(d as usize)).b16.s3 % 256) as i32;
-        x = (*mem.add(d as usize)).b16.s2 as i32
-            + (((*mem.add(d as usize)).b16.s3 / 256) as i32) * 65536;
+        x = (*mem.add(d as usize)).b16.s2 as i32 + (((*mem.add(d as usize)).b16.s3 / 256) as i32) * 65536;
         ot_assembly_ptr = core::ptr::null_mut();
 
         'search: loop {
@@ -4530,9 +4053,7 @@ unsafe fn var_delimiter(d: i32, s: i32, v: scaled_t) -> i32 {
                     z -= 256;
                     g = MATH_FONT(z as usize);
                     if g != FONT_BASE {
-                        if *font_area.add(g as usize) == OTGR_FONT_FLAG
-                            && usingOpenType(*font_layout_engine.add(g as usize))
-                        {
+                        if *font_area.add(g as usize) == OTGR_FONT_FLAG && usingOpenType(*font_layout_engine.add(g as usize)) {
                             x = map_char_to_glyph(g, x);
                             f = g;
                             c = x;
@@ -4559,9 +4080,7 @@ unsafe fn var_delimiter(d: i32, s: i32, v: scaled_t) -> i32 {
                             }
                         } else {
                             y = x;
-                            if y >= i32::from(*font_bc.add(g as usize))
-                                && y <= i32::from(*font_ec.add(g as usize))
-                            {
+                            if y >= i32::from(*font_bc.add(g as usize)) && y <= i32::from(*font_ec.add(g as usize)) {
                                 loop {
                                     q = FONT_CHARACTER_INFO(g, y);
                                     if q.s3 > 0 {
@@ -4599,25 +4118,20 @@ unsafe fn var_delimiter(d: i32, s: i32, v: scaled_t) -> i32 {
             }
             large_attempt = true;
             z = ((*mem.add(d as usize)).b16.s1 % 256) as i32;
-            x = (*mem.add(d as usize)).b16.s0 as i32
-                + (((*mem.add(d as usize)).b16.s1 / 256) as i32) * 65536;
+            x = (*mem.add(d as usize)).b16.s0 as i32 + (((*mem.add(d as usize)).b16.s1 / 256) as i32) * 65536;
         }
 
         if f != FONT_BASE {
-            if !(*font_area.add(f as usize) == OTGR_FONT_FLAG
-                && usingOpenType(*font_layout_engine.add(f as usize)))
-            {
+            if !(*font_area.add(f as usize) == OTGR_FONT_FLAG && usingOpenType(*font_layout_engine.add(f as usize))) {
                 if (q.s1 % 4) == EXT_TAG {
                     b = new_null_box();
                     set_NODE_type(b, VLIST_NODE);
-                    let r_char =
-                        (*font_info.add((*exten_base.add(f as usize) + q.s0 as i32) as usize)).b16;
+                    let r_char = (*font_info.add((*exten_base.add(f as usize) + q.s0 as i32) as usize)).b16;
                     c = r_char.s0 as i32;
                     u = height_plus_depth(f, c as u16);
                     w = 0;
                     q = FONT_CHARACTER_INFO(f, effective_char(true, f, c as u16));
-                    (*mem.add((b + 1) as usize)).b32.s1 =
-                        FONT_CHARINFO_WIDTH(f, q) + FONT_CHARINFO_ITALCORR(f, q);
+                    (*mem.add((b + 1) as usize)).b32.s1 = FONT_CHARINFO_WIDTH(f, q) + FONT_CHARINFO_ITALCORR(f, q);
                     c = r_char.s1 as i32;
                     if c != 0 {
                         w += height_plus_depth(f, c as u16);
@@ -4685,9 +4199,7 @@ unsafe fn var_delimiter(d: i32, s: i32, v: scaled_t) -> i32 {
             (*mem.add((b + 1) as usize)).b32.s1 = DIMENPAR(DIMEN_PAR__null_delimiter_space);
         }
 
-        (*mem.add((b + 4) as usize)).b32.s1 =
-            half((*mem.add((b + 3) as usize)).b32.s1 - (*mem.add((b + 2) as usize)).b32.s1)
-                - axis_height(s);
+        (*mem.add((b + 4) as usize)).b32.s1 = half((*mem.add((b + 3) as usize)).b32.s1 - (*mem.add((b + 2) as usize)).b32.s1) - axis_height(s);
         free_ot_assembly(ot_assembly_ptr);
         b
     }
@@ -4699,9 +4211,7 @@ unsafe fn char_box(f: internal_font_number, c: i32) -> i32 {
         let b: i32;
         let p: i32;
 
-        if *font_area.add(f as usize) == AAT_FONT_FLAG
-            || *font_area.add(f as usize) == OTGR_FONT_FLAG
-        {
+        if *font_area.add(f as usize) == AAT_FONT_FLAG || *font_area.add(f as usize) == OTGR_FONT_FLAG {
             b = new_null_box();
             p = new_native_character(f, c);
             (*mem.add((b + 5) as usize)).b32.s1 = p;
@@ -4715,8 +4225,7 @@ unsafe fn char_box(f: internal_font_number, c: i32) -> i32 {
         } else {
             q = FONT_CHARACTER_INFO(f, effective_char(true, f, c as u16));
             b = new_null_box();
-            (*mem.add((b + 1) as usize)).b32.s1 =
-                FONT_CHARINFO_WIDTH(f, q) + FONT_CHARINFO_ITALCORR(f, q);
+            (*mem.add((b + 1) as usize)).b32.s1 = FONT_CHARINFO_WIDTH(f, q) + FONT_CHARINFO_ITALCORR(f, q);
             (*mem.add((b + 3) as usize)).b32.s1 = FONT_CHARINFO_HEIGHT(f, q);
             (*mem.add((b + 2) as usize)).b32.s1 = FONT_CHARINFO_DEPTH(f, q);
             p = get_avail();
@@ -4810,12 +4319,7 @@ unsafe fn stack_glue_into_box(b: i32, min: scaled_t, max: scaled_t) {
     }
 }
 
-unsafe fn build_opentype_assembly(
-    f: internal_font_number,
-    a: *mut core::ffi::c_void,
-    s: scaled_t,
-    horiz: bool,
-) -> i32 {
+unsafe fn build_opentype_assembly(f: internal_font_number, a: *mut core::ffi::c_void, s: scaled_t, horiz: bool) -> i32 {
     unsafe {
         let b: i32;
         let mut n: i32;
@@ -4923,8 +4427,7 @@ unsafe fn build_opentype_assembly(
                 if horiz {
                     nat += (*mem.add((p + 1) as usize)).b32.s1;
                 } else {
-                    nat +=
-                        (*mem.add((p + 3) as usize)).b32.s1 + (*mem.add((p + 2) as usize)).b32.s1;
+                    nat += (*mem.add((p + 3) as usize)).b32.s1 + (*mem.add((p + 2) as usize)).b32.s1;
                 }
             } else if NODE_type(p) == GLUE_NODE {
                 let gspec = (*mem.add((p + 1) as usize)).b32.s0;
@@ -4944,11 +4447,9 @@ unsafe fn build_opentype_assembly(
             (*mem.add((b + 5) as usize)).b16.s1 = STRETCHING;
             (*mem.add((b + 6) as usize)).gr = o as f64 / str as f64;
             if horiz {
-                (*mem.add((b + 1) as usize)).b32.s1 =
-                    nat + tex_round(str as f64 * (*mem.add((b + 6) as usize)).gr);
+                (*mem.add((b + 1) as usize)).b32.s1 = nat + tex_round(str as f64 * (*mem.add((b + 6) as usize)).gr);
             } else {
-                (*mem.add((b + 3) as usize)).b32.s1 =
-                    nat + tex_round(str as f64 * (*mem.add((b + 6) as usize)).gr);
+                (*mem.add((b + 3) as usize)).b32.s1 = nat + tex_round(str as f64 * (*mem.add((b + 6) as usize)).gr);
             }
         } else if horiz {
             (*mem.add((b + 1) as usize)).b32.s1 = nat;

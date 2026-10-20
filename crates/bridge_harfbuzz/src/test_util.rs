@@ -1,6 +1,4 @@
-use crate::{
-    Blob, Face, FaceRef, FontFuncs, FontFuncsRef, GlyphExtents, ImmutFontFuncs, Position, Tag,
-};
+use crate::{Blob, Face, FaceRef, FontFuncs, FontFuncsRef, GlyphExtents, ImmutFontFuncs, Position, Tag};
 use std::ffi::CString;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -8,10 +6,7 @@ use std::sync::{Arc, Mutex, OnceLock};
 use tectonic_bridge_freetype2 as ft;
 
 fn assets_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../tests/assets")
-        .canonicalize()
-        .unwrap()
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/assets").canonicalize().unwrap()
 }
 
 fn get_face_data() -> Vec<u8> {
@@ -35,11 +30,7 @@ fn get_face_mem() -> ft::Face {
 pub fn test_faces() -> Vec<(Arc<Mutex<ft::Face>>, Face)> {
     fn tables(ft_face: Arc<Mutex<ft::Face>>) -> impl Fn(FaceRef<'_>, Tag) -> Option<Blob> {
         move |_, tag| {
-            if let Ok(table) = ft_face
-                .lock()
-                .unwrap()
-                .load_sfnt_table(ft::TableTag::Other(tag.to_raw()))
-            {
+            if let Ok(table) = ft_face.lock().unwrap().load_sfnt_table(ft::TableTag::Other(tag.to_raw())) {
                 Some(Blob::new(table))
             } else {
                 None
@@ -83,33 +74,18 @@ pub fn get_font_funcs() -> FontFuncsRef<'static, Arc<Mutex<ft::Face>>> {
             let mut funcs = FontFuncs::<Arc<Mutex<ft::Face>>>::new();
 
             let mut f = funcs.as_mut();
-            f.nominal_glyph_func(|_, face, ch| {
-                face.lock().unwrap().get_char_index(ch).map(|cc| cc.get())
-            });
-            f.variation_glyph_func(|_, face, ch, vs| {
-                face.lock()
-                    .unwrap()
-                    .get_char_variant_index(ch, vs)
-                    .map(|cc| cc.get())
-            });
-            f.glyph_h_advance(|_, face, gid| {
-                get_glyph_advance(&face.lock().unwrap(), gid, false) as Position
-            });
-            f.glyph_v_advance(|_, face, gid| {
-                get_glyph_advance(&face.lock().unwrap(), gid, true) as Position
-            });
+            f.nominal_glyph_func(|_, face, ch| face.lock().unwrap().get_char_index(ch).map(|cc| cc.get()));
+            f.variation_glyph_func(|_, face, ch, vs| face.lock().unwrap().get_char_variant_index(ch, vs).map(|cc| cc.get()));
+            f.glyph_h_advance(|_, face, gid| get_glyph_advance(&face.lock().unwrap(), gid, false) as Position);
+            f.glyph_v_advance(|_, face, gid| get_glyph_advance(&face.lock().unwrap(), gid, true) as Position);
             f.glyph_h_origin(|_, _, _| Some((0, 0)));
             f.glyph_v_origin(|_, _, _| Some((0, 0)));
-            f.glyph_h_kerning(|_, face, gid1, gid2| {
-                match face
-                    .lock()
-                    .unwrap()
-                    .get_kerning(gid1, gid2, ft::KerningMode::Unscaled)
-                {
+            f.glyph_h_kerning(
+                |_, face, gid1, gid2| match face.lock().unwrap().get_kerning(gid1, gid2, ft::KerningMode::Unscaled) {
                     Ok(vec) => vec.x as Position,
                     Err(_) => 0,
-                }
-            });
+                },
+            );
             f.glyph_v_kerning(|_, _, _, _| 0);
             f.glyph_extents(|_, face, gid| {
                 let mut face = face.lock().unwrap();
@@ -137,13 +113,11 @@ pub fn get_font_funcs() -> FontFuncsRef<'static, Arc<Mutex<ft::Face>>> {
                 }
                 None
             });
-            f.glyph_name(
-                |_, face, gid, buf| match face.lock().unwrap().get_glyph_name(gid, buf) {
-                    Ok(str) if !str.to_bytes().is_empty() && str.to_bytes()[0] == 0 => 0,
-                    Err(_) => 0,
-                    Ok(str) => str.to_bytes().len(),
-                },
-            );
+            f.glyph_name(|_, face, gid, buf| match face.lock().unwrap().get_glyph_name(gid, buf) {
+                Ok(str) if !str.to_bytes().is_empty() && str.to_bytes()[0] == 0 => 0,
+                Err(_) => 0,
+                Ok(str) => str.to_bytes().len(),
+            });
 
             funcs.make_immutable()
         })

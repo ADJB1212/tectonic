@@ -19,38 +19,16 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
-use crate::backend::dpx_pdfdev::{
-    pdf_dev_get_param, pdf_sprint_coord, pdf_sprint_length, pdf_sprint_matrix, pdf_sprint_rect,
-};
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
+use crate::backend::dpx_pdfdev::{pdf_dev_get_param, pdf_sprint_coord, pdf_sprint_length, pdf_sprint_matrix, pdf_sprint_rect};
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
     fn cos(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn sin(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn fabs(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
-    fn sprintf(
-        _: *mut ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-    fn snprintf(
-        __str: *mut ::core::ffi::c_char,
-        __size: size_t,
-        __format: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
+    fn sprintf(_: *mut ::core::ffi::c_char, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
+    fn snprintf(__str: *mut ::core::ffi::c_char, __size: size_t, __format: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_release_obj"]
     fn pdf_release_obj(object: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_link_obj"]
@@ -70,11 +48,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_dict_keys"]
     fn pdf_dict_keys(dict: *mut pdf_obj) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_compare_object"]
     fn pdf_compare_object(obj1: *mut pdf_obj, obj2: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_color_graycolor"]
@@ -85,10 +59,7 @@ unsafe extern "C-unwind" {
     fn pdf_color_compare(color1: *const pdf_color, color2: *const pdf_color) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_color_set_color"]
     fn pdf_color_set_color(
-        color: *const pdf_color,
-        buffer: *mut ::core::ffi::c_char,
-        buff_len: size_t,
-        mask: ::core::ffi::c_char,
+        color: *const pdf_color, buffer: *mut ::core::ffi::c_char, buff_len: size_t, mask: ::core::ffi::c_char,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_reset_fonts"]
     fn pdf_dev_reset_fonts(newpage: ::core::ffi::c_int);
@@ -112,17 +83,9 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_doc_add_page_content"]
     fn pdf_doc_add_page_content(buffer: *const ::core::ffi::c_char, length: ::core::ffi::c_uint);
     #[link_name = "__pdf_impl_pdf_doc_add_page_resource"]
-    fn pdf_doc_add_page_resource(
-        category: *const ::core::ffi::c_char,
-        resource_name: *const ::core::ffi::c_char,
-        resources: *mut pdf_obj,
-    );
+    fn pdf_doc_add_page_resource(category: *const ::core::ffi::c_char, resource_name: *const ::core::ffi::c_char, resources: *mut pdf_obj);
     #[link_name = "__pdf_impl_parse_pdf_dict"]
-    fn parse_pdf_dict(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-        pf: *mut pdf_file,
-    ) -> *mut pdf_obj;
+    fn parse_pdf_dict(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char, pf: *mut pdf_file) -> *mut pdf_obj;
 }
 pub type __darwin_size_t = usize;
 pub type size_t = __darwin_size_t;
@@ -344,16 +307,12 @@ pub const PE_TYPE__CURVETO_V: ::core::ffi::c_int = 3;
 pub const PE_TYPE__CURVETO_Y: ::core::ffi::c_int = 4;
 pub const PE_TYPE__CLOSEPATH: ::core::ffi::c_int = 5 as ::core::ffi::c_int;
 pub const PE_TYPE__TERMINATE: ::core::ffi::c_int = 6 as ::core::ffi::c_int;
-pub const GS_FLAG_CURRENTPOINT_SET: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const GS_FLAG_CURRENTPOINT_SET: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const FORMAT_BUFF_LEN: ::core::ffi::c_int = 1024 as ::core::ffi::c_int;
 
 unsafe extern "C-unwind" fn init_a_path(mut p: *mut pdf_path) {
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     (*p).num_paths = 0 as ::core::ffi::c_uint;
@@ -362,50 +321,32 @@ unsafe extern "C-unwind" fn init_a_path(mut p: *mut pdf_path) {
 }
 unsafe extern "C-unwind" fn pdf_path__clearpath(mut p: *mut pdf_path) {
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     (*p).num_paths = 0 as ::core::ffi::c_uint;
 }
-unsafe extern "C-unwind" fn pdf_path__growpath(
-    mut p: *mut pdf_path,
-    mut max_pe: ::core::ffi::c_uint,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn pdf_path__growpath(mut p: *mut pdf_path, mut max_pe: ::core::ffi::c_uint) -> ::core::ffi::c_int {
     if max_pe <= (*p).max_paths {
         return 0 as ::core::ffi::c_int;
     }
-    (*p).max_paths = crate::compat::allocation::grow_capacity(
-        (*p).max_paths as usize,
-        max_pe as usize,
-        core::mem::size_of::<pa_elem>(),
-        8,
-    ) as u32;
+    (*p).max_paths = crate::compat::allocation::grow_capacity((*p).max_paths as usize, max_pe as usize, core::mem::size_of::<pa_elem>(), 8) as u32;
     (*p).path = renew(
         (*p).path as *mut ::core::ffi::c_void,
-        ((*p).max_paths as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<pa_elem>() as usize) as uint32_t,
+        ((*p).max_paths as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pa_elem>() as usize) as uint32_t,
     ) as *mut pa_elem;
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn clear_a_path(mut p: *mut pdf_path) {
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     (*p).path = mfree((*p).path as *mut ::core::ffi::c_void) as *mut pa_elem;
     (*p).num_paths = 0 as ::core::ffi::c_uint;
     (*p).max_paths = 0 as ::core::ffi::c_uint;
 }
-unsafe extern "C-unwind" fn pdf_path__copypath(
-    mut p1: *mut pdf_path,
-    mut p0: *const pdf_path,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn pdf_path__copypath(mut p1: *mut pdf_path, mut p0: *const pdf_path) -> ::core::ffi::c_int {
     let mut pe0: *mut pa_elem = ::core::ptr::null_mut::<pa_elem>();
     let mut pe1: *mut pa_elem = ::core::ptr::null_mut::<pa_elem>();
     let mut i: ::core::ffi::c_uint = 0;
@@ -426,18 +367,11 @@ unsafe extern "C-unwind" fn pdf_path__copypath(
     (*p1).num_paths = (*p0).num_paths;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn pdf_path__moveto(
-    mut pa: *mut pdf_path,
-    mut cp: *mut pdf_coord,
-    mut p0: *const pdf_coord,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn pdf_path__moveto(mut pa: *mut pdf_path, mut cp: *mut pdf_coord, mut p0: *const pdf_coord) -> ::core::ffi::c_int {
     let mut pe: *mut pa_elem = ::core::ptr::null_mut::<pa_elem>();
     pdf_path__growpath(pa, (*pa).num_paths.wrapping_add(1 as ::core::ffi::c_uint));
     if (*pa).num_paths > 0 as ::core::ffi::c_uint {
-        pe = (*pa)
-            .path
-            .offset((*pa).num_paths.wrapping_sub(1 as ::core::ffi::c_uint) as isize)
-            as *mut pa_elem;
+        pe = (*pa).path.offset((*pa).num_paths.wrapping_sub(1 as ::core::ffi::c_uint) as isize) as *mut pa_elem;
         if (*pe).type_0 == PE_TYPE__MOVETO {
             (*cp).x = (*p0).x;
             (*pe).p[0 as ::core::ffi::c_int as usize].x = (*cp).x;
@@ -456,15 +390,10 @@ unsafe extern "C-unwind" fn pdf_path__moveto(
     (*pe).p[0 as ::core::ffi::c_int as usize].y = (*cp).y;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn pdf_path__next_pe(
-    pa: *mut pdf_path,
-    cp: *const pdf_coord,
-) -> *mut pa_elem {
-    let needed = unsafe { (*pa).num_paths }
-        .checked_add(2)
-        .unwrap_or_else(|| {
-            pdf_abort!("Too many path elements");
-        });
+unsafe extern "C-unwind" fn pdf_path__next_pe(pa: *mut pdf_path, cp: *const pdf_coord) -> *mut pa_elem {
+    let needed = unsafe { (*pa).num_paths }.checked_add(2).unwrap_or_else(|| {
+        pdf_abort!("Too many path elements");
+    });
     unsafe { pdf_path__growpath(pa, needed) };
     let cp = unsafe { *cp };
     let path = unsafe { &mut *pa };
@@ -479,9 +408,7 @@ unsafe extern "C-unwind" fn pdf_path__next_pe(
             }
             PE_TYPE__LINETO => pdf_coord__equal(unsafe { (*previous).p[0] }, cp) == 0,
             PE_TYPE__CURVETO => pdf_coord__equal(unsafe { (*previous).p[2] }, cp) == 0,
-            PE_TYPE__CURVETO_Y | PE_TYPE__CURVETO_V => {
-                pdf_coord__equal(unsafe { (*previous).p[1] }, cp) == 0
-            }
+            PE_TYPE__CURVETO_Y | PE_TYPE__CURVETO_V => pdf_coord__equal(unsafe { (*previous).p[1] }, cp) == 0,
             PE_TYPE__CLOSEPATH => true,
             _ => false,
         }
@@ -499,10 +426,7 @@ unsafe extern "C-unwind" fn pdf_path__next_pe(
     path.num_paths += 1;
     next
 }
-unsafe extern "C-unwind" fn pdf_path__transform(
-    pa: *mut pdf_path,
-    matrix: *const pdf_tmatrix,
-) -> i32 {
+unsafe extern "C-unwind" fn pdf_path__transform(pa: *mut pdf_path, matrix: *const pdf_tmatrix) -> i32 {
     if pa.is_null() || matrix.is_null() {
         pdf_abort!("assertion failed: pa && M");
     }
@@ -511,23 +435,15 @@ unsafe extern "C-unwind" fn pdf_path__transform(
     for index in 0..path.num_paths as usize {
         let element = unsafe { path.path.add(index) };
         let kind = unsafe { (*element).type_0 };
-        let count = PETYPES
-            .get(kind as usize)
-            .map_or(0, |kind| kind.n_pts as usize);
-        let points = unsafe {
-            core::slice::from_raw_parts_mut((&raw mut (*element).p).cast::<pdf_coord>(), count)
-        };
+        let count = PETYPES.get(kind as usize).map_or(0, |kind| kind.n_pts as usize);
+        let points = unsafe { core::slice::from_raw_parts_mut((&raw mut (*element).p).cast::<pdf_coord>(), count) };
         for point in points.iter_mut().rev() {
             pdf_coord__transform(point, matrix);
         }
     }
     0
 }
-unsafe extern "C-unwind" fn pdf_path__lineto(
-    mut pa: *mut pdf_path,
-    mut cp: *mut pdf_coord,
-    mut p0: *const pdf_coord,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn pdf_path__lineto(mut pa: *mut pdf_path, mut cp: *mut pdf_coord, mut p0: *const pdf_coord) -> ::core::ffi::c_int {
     let mut pe: *mut pa_elem = ::core::ptr::null_mut::<pa_elem>();
     pe = pdf_path__next_pe(pa, cp);
     (*pe).type_0 = PE_TYPE__LINETO;
@@ -538,11 +454,7 @@ unsafe extern "C-unwind" fn pdf_path__lineto(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn pdf_path__curveto(
-    mut pa: *mut pdf_path,
-    mut cp: *mut pdf_coord,
-    mut p0: *const pdf_coord,
-    mut p1: *const pdf_coord,
-    mut p2: *const pdf_coord,
+    mut pa: *mut pdf_path, mut cp: *mut pdf_coord, mut p0: *const pdf_coord, mut p1: *const pdf_coord, mut p2: *const pdf_coord,
 ) -> ::core::ffi::c_int {
     let mut pe: *mut pa_elem = ::core::ptr::null_mut::<pa_elem>();
     pe = pdf_path__next_pe(pa, cp);
@@ -576,15 +488,8 @@ unsafe extern "C-unwind" fn pdf_path__curveto(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn pdf_path__elliptarc(
-    mut pa: *mut pdf_path,
-    mut cp: *mut pdf_coord,
-    mut ca: *const pdf_coord,
-    mut r_x: ::core::ffi::c_double,
-    mut r_y: ::core::ffi::c_double,
-    mut xar: ::core::ffi::c_double,
-    mut a_0: ::core::ffi::c_double,
-    mut a_1: ::core::ffi::c_double,
-    mut a_d: ::core::ffi::c_int,
+    mut pa: *mut pdf_path, mut cp: *mut pdf_coord, mut ca: *const pdf_coord, mut r_x: ::core::ffi::c_double, mut r_y: ::core::ffi::c_double,
+    mut xar: ::core::ffi::c_double, mut a_0: ::core::ffi::c_double, mut a_1: ::core::ffi::c_double, mut a_d: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut b: ::core::ffi::c_double = 0.;
     let mut b_x: ::core::ffi::c_double = 0.;
@@ -686,10 +591,7 @@ unsafe extern "C-unwind" fn pdf_path__elliptarc(
     }
     return error;
 }
-unsafe extern "C-unwind" fn pdf_path__closepath(
-    mut pa: *mut pdf_path,
-    mut cp: *mut pdf_coord,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn pdf_path__closepath(mut pa: *mut pdf_path, mut cp: *mut pdf_coord) -> ::core::ffi::c_int {
     let mut pe: *mut pa_elem = ::core::ptr::null_mut::<pa_elem>();
     let mut i: ::core::ffi::c_int = 0;
     i = (*pa).num_paths.wrapping_sub(1 as ::core::ffi::c_uint) as ::core::ffi::c_int;
@@ -712,10 +614,7 @@ unsafe extern "C-unwind" fn pdf_path__closepath(
     (*pe).type_0 = PE_TYPE__CLOSEPATH;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn pdf_path__isarect(
-    mut pa: *mut pdf_path,
-    mut f_ir: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn pdf_path__isarect(mut pa: *mut pdf_path, mut f_ir: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut pe0: *mut pa_elem = ::core::ptr::null_mut::<pa_elem>();
     let mut pe1: *mut pa_elem = ::core::ptr::null_mut::<pa_elem>();
     let mut pe2: *mut pa_elem = ::core::ptr::null_mut::<pa_elem>();
@@ -733,38 +632,28 @@ unsafe extern "C-unwind" fn pdf_path__isarect(
             && (*pe3).type_0 == PE_TYPE__LINETO
             && (*pe4).type_0 == PE_TYPE__CLOSEPATH
         {
-            if (*pe1).p[0 as ::core::ffi::c_int as usize].y
-                - (*pe0).p[0 as ::core::ffi::c_int as usize].y
+            if (*pe1).p[0 as ::core::ffi::c_int as usize].y - (*pe0).p[0 as ::core::ffi::c_int as usize].y
                 == 0 as ::core::ffi::c_int as ::core::ffi::c_double
-                && (*pe2).p[0 as ::core::ffi::c_int as usize].x
-                    - (*pe1).p[0 as ::core::ffi::c_int as usize].x
+                && (*pe2).p[0 as ::core::ffi::c_int as usize].x - (*pe1).p[0 as ::core::ffi::c_int as usize].x
                     == 0 as ::core::ffi::c_int as ::core::ffi::c_double
-                && (*pe3).p[0 as ::core::ffi::c_int as usize].y
-                    - (*pe2).p[0 as ::core::ffi::c_int as usize].y
+                && (*pe3).p[0 as ::core::ffi::c_int as usize].y - (*pe2).p[0 as ::core::ffi::c_int as usize].y
                     == 0 as ::core::ffi::c_int as ::core::ffi::c_double
             {
-                if (*pe1).p[0 as ::core::ffi::c_int as usize].x
-                    - (*pe0).p[0 as ::core::ffi::c_int as usize].x
-                    == (*pe2).p[0 as ::core::ffi::c_int as usize].x
-                        - (*pe3).p[0 as ::core::ffi::c_int as usize].x
+                if (*pe1).p[0 as ::core::ffi::c_int as usize].x - (*pe0).p[0 as ::core::ffi::c_int as usize].x
+                    == (*pe2).p[0 as ::core::ffi::c_int as usize].x - (*pe3).p[0 as ::core::ffi::c_int as usize].x
                 {
                     return 1 as ::core::ffi::c_int;
                 }
             } else if f_ir != 0
-                && (*pe1).p[0 as ::core::ffi::c_int as usize].x
-                    - (*pe0).p[0 as ::core::ffi::c_int as usize].x
+                && (*pe1).p[0 as ::core::ffi::c_int as usize].x - (*pe0).p[0 as ::core::ffi::c_int as usize].x
                     == 0 as ::core::ffi::c_int as ::core::ffi::c_double
-                && (*pe2).p[0 as ::core::ffi::c_int as usize].y
-                    - (*pe1).p[0 as ::core::ffi::c_int as usize].y
+                && (*pe2).p[0 as ::core::ffi::c_int as usize].y - (*pe1).p[0 as ::core::ffi::c_int as usize].y
                     == 0 as ::core::ffi::c_int as ::core::ffi::c_double
-                && (*pe3).p[0 as ::core::ffi::c_int as usize].x
-                    - (*pe2).p[0 as ::core::ffi::c_int as usize].x
+                && (*pe3).p[0 as ::core::ffi::c_int as usize].x - (*pe2).p[0 as ::core::ffi::c_int as usize].x
                     == 0 as ::core::ffi::c_int as ::core::ffi::c_double
             {
-                if (*pe1).p[0 as ::core::ffi::c_int as usize].y
-                    - (*pe0).p[0 as ::core::ffi::c_int as usize].y
-                    == (*pe2).p[0 as ::core::ffi::c_int as usize].y
-                        - (*pe3).p[0 as ::core::ffi::c_int as usize].y
+                if (*pe1).p[0 as ::core::ffi::c_int as usize].y - (*pe0).p[0 as ::core::ffi::c_int as usize].y
+                    == (*pe2).p[0 as ::core::ffi::c_int as usize].y - (*pe3).p[0 as ::core::ffi::c_int as usize].y
                 {
                     return 1 as ::core::ffi::c_int;
                 }
@@ -776,28 +665,17 @@ unsafe extern "C-unwind" fn pdf_path__isarect(
 fn INVERTIBLE_MATRIX(matrix: pdf_tmatrix) -> i32 {
     if (matrix.a * matrix.d - matrix.b * matrix.c).abs() < OUR_EPSILON {
         pdf_warning!("Transformation matrix not invertible.");
-        pdf_warning!(
-            "--- M = [{} {} {} {} {} {}]",
-            matrix.a,
-            matrix.b,
-            matrix.c,
-            matrix.d,
-            matrix.e,
-            matrix.f,
-        );
+        pdf_warning!("--- M = [{} {} {} {} {} {}]", matrix.a, matrix.b, matrix.c, matrix.d, matrix.e, matrix.f,);
         -1
     } else {
         0
     }
 }
 unsafe extern "C-unwind" fn pdf_dev__rectshape(
-    mut r: *const pdf_rect,
-    mut M: *const pdf_tmatrix,
-    mut opchr: ::core::ffi::c_char,
+    mut r: *const pdf_rect, mut M: *const pdf_tmatrix, mut opchr: ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
-    let mut buf: *mut ::core::ffi::c_char =
-        &raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char;
+    let mut buf: *mut ::core::ffi::c_char = &raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char;
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut isclip: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut p: pdf_coord = pdf_coord { x: 0., y: 0. };
@@ -810,8 +688,7 @@ unsafe extern "C-unwind" fn pdf_dev__rectshape(
             || opchr as ::core::ffi::c_int == 'S' as i32
             || opchr as ::core::ffi::c_int == 'b' as i32
             || opchr as ::core::ffi::c_int == 'B' as i32
-            || opchr as ::core::ffi::c_int == 'W' as i32)) as ::core::ffi::c_int
-        as ::core::ffi::c_long
+            || opchr as ::core::ffi::c_int == 'W' as i32)) as ::core::ffi::c_int as ::core::ffi::c_long
         != 0
     {
         pdf_abort!(
@@ -876,16 +753,12 @@ unsafe extern "C-unwind" fn pdf_dev__rectshape(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn pdf_dev__flushpath(
-    mut pa: *mut pdf_path,
-    mut opchr: ::core::ffi::c_char,
-    mut rule: ::core::ffi::c_int,
-    mut ignore_rule: ::core::ffi::c_int,
+    mut pa: *mut pdf_path, mut opchr: ::core::ffi::c_char, mut rule: ::core::ffi::c_int, mut ignore_rule: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut pe: *mut pa_elem = ::core::ptr::null_mut::<pa_elem>();
     let mut pe1: *mut pa_elem = ::core::ptr::null_mut::<pa_elem>();
-    let mut b: *mut ::core::ffi::c_char =
-        &raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char;
+    let mut b: *mut ::core::ffi::c_char = &raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char;
     let mut b_len: ::core::ffi::c_int = FORMAT_BUFF_LEN;
     let mut r: pdf_rect = pdf_rect {
         llx: 0.,
@@ -907,8 +780,7 @@ unsafe extern "C-unwind" fn pdf_dev__flushpath(
             || opchr as ::core::ffi::c_int == 'S' as i32
             || opchr as ::core::ffi::c_int == 'b' as i32
             || opchr as ::core::ffi::c_int == 'B' as i32
-            || opchr as ::core::ffi::c_int == 'W' as i32)) as ::core::ffi::c_int
-        as ::core::ffi::c_long
+            || opchr as ::core::ffi::c_int == 'W' as i32)) as ::core::ffi::c_int as ::core::ffi::c_long
         != 0
     {
         pdf_abort!(
@@ -927,10 +799,8 @@ unsafe extern "C-unwind" fn pdf_dev__flushpath(
         pe1 = (*pa).path.offset(2 as ::core::ffi::c_int as isize) as *mut pa_elem;
         r.llx = (*pe).p[0 as ::core::ffi::c_int as usize].x;
         r.lly = (*pe).p[0 as ::core::ffi::c_int as usize].y;
-        r.urx = (*pe1).p[0 as ::core::ffi::c_int as usize].x
-            - (*pe).p[0 as ::core::ffi::c_int as usize].x;
-        r.ury = (*pe1).p[0 as ::core::ffi::c_int as usize].y
-            - (*pe).p[0 as ::core::ffi::c_int as usize].y;
+        r.urx = (*pe1).p[0 as ::core::ffi::c_int as usize].x - (*pe).p[0 as ::core::ffi::c_int as usize].x;
+        r.ury = (*pe1).p[0 as ::core::ffi::c_int as usize].y - (*pe).p[0 as ::core::ffi::c_int as usize].y;
         let fresh15 = len;
         len = len + 1;
         *b.offset(fresh15 as isize) = ' ' as i32 as ::core::ffi::c_char;
@@ -952,17 +822,13 @@ unsafe extern "C-unwind" fn pdf_dev__flushpath(
         len = 0 as ::core::ffi::c_int;
         pe = (*pa).path.offset(0 as ::core::ffi::c_int as isize) as *mut pa_elem;
         while i < n_seg {
-            n_pts = if !pe.is_null()
-                && (*pe).type_0 > PE_TYPE__INVALID
-                && (*pe).type_0 < PE_TYPE__TERMINATE
-            {
+            n_pts = if !pe.is_null() && (*pe).type_0 > PE_TYPE__INVALID && (*pe).type_0 < PE_TYPE__TERMINATE {
                 PETYPES[(*pe).type_0 as usize].n_pts
             } else {
                 0 as ::core::ffi::c_int
             };
             j = 0 as ::core::ffi::c_int;
-            pt = (&raw mut (*pe).p as *mut pdf_coord).offset(0 as ::core::ffi::c_int as isize)
-                as *mut pdf_coord;
+            pt = (&raw mut (*pe).p as *mut pdf_coord).offset(0 as ::core::ffi::c_int as isize) as *mut pdf_coord;
             while j < n_pts {
                 let fresh19 = len;
                 len = len + 1;
@@ -976,10 +842,7 @@ unsafe extern "C-unwind" fn pdf_dev__flushpath(
             *b.offset(fresh20 as isize) = ' ' as i32 as ::core::ffi::c_char;
             let fresh21 = len;
             len = len + 1;
-            *b.offset(fresh21 as isize) = (if !pe.is_null()
-                && (*pe).type_0 > PE_TYPE__INVALID
-                && (*pe).type_0 < PE_TYPE__TERMINATE
-            {
+            *b.offset(fresh21 as isize) = (if !pe.is_null() && (*pe).type_0 > PE_TYPE__INVALID && (*pe).type_0 < PE_TYPE__TERMINATE {
                 PETYPES[(*pe).type_0 as usize].opchr as ::core::ffi::c_int
             } else {
                 ' ' as i32
@@ -1102,10 +965,7 @@ unsafe extern "C-unwind" fn copy_a_gstate(mut gs1: *mut pdf_gstate, mut gs2: *mu
         ::core::ptr::null_mut::<pdf_obj>()
     };
 }
-unsafe extern "C-unwind" fn pdf_dev_set_xgstate(
-    mut diff: *mut pdf_obj,
-    mut accumlated: *mut pdf_obj,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn pdf_dev_set_xgstate(mut diff: *mut pdf_obj, mut accumlated: *mut pdf_obj) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
@@ -1127,10 +987,7 @@ unsafe extern "C-unwind" fn pdf_dev_set_xgstate(
         b" /%s gs\0" as *const u8 as *const ::core::ffi::c_char,
         &raw mut res_name as *mut ::core::ffi::c_char,
     );
-    pdf_doc_add_page_content(
-        &raw mut buf as *mut ::core::ffi::c_char,
-        len as ::core::ffi::c_uint,
-    );
+    pdf_doc_add_page_content(&raw mut buf as *mut ::core::ffi::c_char, len as ::core::ffi::c_uint);
     pdf_doc_add_page_resource(
         b"ExtGState\0" as *const u8 as *const ::core::ffi::c_char,
         &raw mut res_name as *mut ::core::ffi::c_char,
@@ -1144,9 +1001,7 @@ unsafe extern "C-unwind" fn pdf_dev_set_xgstate(
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_reset_xgstate")]
-pub unsafe extern "C-unwind" fn pdf_dev_reset_xgstate(
-    mut force: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_dev_reset_xgstate(mut force: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = ::core::ptr::null_mut::<pdf_gstate>();
@@ -1178,11 +1033,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_reset_xgstate(
         let mut endptr_0: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
         ptr_0 = DEFAULT_XGS.as_ptr() as *const ::core::ffi::c_char;
         endptr_0 = ptr_0.offset(strlen(ptr_0) as isize);
-        current = parse_pdf_dict(
-            &raw mut ptr_0,
-            endptr_0,
-            ::core::ptr::null_mut::<pdf_file>(),
-        );
+        current = parse_pdf_dict(&raw mut ptr_0, endptr_0, ::core::ptr::null_mut::<pdf_file>());
     }
     diff = pdf_new_dict();
     keys = pdf_dict_keys(target);
@@ -1217,9 +1068,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_xgstate_push(mut object: *mut pdf_obj) {
     let mut target: *mut xgs_res = ::core::ptr::null_mut::<xgs_res>();
     let mut current: *mut xgs_res = ::core::ptr::null_mut::<xgs_res>();
     let mut accumlated: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    target = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<xgs_res>() as usize) as uint32_t)
-        as *mut xgs_res;
+    target = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<xgs_res>() as usize) as uint32_t) as *mut xgs_res;
     (*target).object = object;
     current = dpx_stack_top(&raw mut (*__pdf_state).xgs_stack) as *mut xgs_res;
     if current.is_null() {
@@ -1234,10 +1083,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_xgstate_push(mut object: *mut pdf_obj) {
     }
     pdf_merge_dict(accumlated, object);
     (*target).accumlated = accumlated;
-    dpx_stack_push(
-        &raw mut (*__pdf_state).xgs_stack,
-        target as *mut ::core::ffi::c_void,
-    );
+    dpx_stack_push(&raw mut (*__pdf_state).xgs_stack, target as *mut ::core::ffi::c_void);
     pdf_dev_set_xgstate((*target).object, (*target).accumlated);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_xgstate_pop")]
@@ -1252,9 +1098,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_xgstate_pop() {
     current = dpx_stack_pop(&raw mut (*__pdf_state).xgs_stack) as *mut xgs_res;
     target = dpx_stack_top(&raw mut (*__pdf_state).xgs_stack) as *mut xgs_res;
     if current.is_null() {
-        pdf_warning!(
-            b"Too many pop operation for ExtGState!\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Too many pop operation for ExtGState!\0" as *const u8 as *const ::core::ffi::c_char,);
         return;
     }
     if target.is_null() {
@@ -1276,8 +1120,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_xgstate_pop() {
         value = pdf_lookup_dict(accumlated, pdf_name_value(key));
         if value.is_null() {
             pdf_warning!(
-                b"No previous ExtGState entry known for \"%s\", ignoring...\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"No previous ExtGState entry known for \"%s\", ignoring...\0" as *const u8 as *const ::core::ffi::c_char,
                 pdf_name_value(key),
             );
         } else {
@@ -1306,14 +1149,10 @@ pub unsafe extern "C-unwind" fn pdf_dev_init_gstates() {
         free(gs as *mut ::core::ffi::c_void);
     }
     dpx_stack_init(&raw mut (*__pdf_state).gs_stack);
-    gs = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_gstate>() as usize) as uint32_t)
+    gs = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_gstate>() as usize) as uint32_t)
         as *mut pdf_gstate;
     init_a_gstate(gs);
-    dpx_stack_push(
-        &raw mut (*__pdf_state).gs_stack,
-        gs as *mut ::core::ffi::c_void,
-    );
+    dpx_stack_push(&raw mut (*__pdf_state).gs_stack, gs as *mut ::core::ffi::c_void);
     init_xgstate();
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_clear_gstates")]
@@ -1321,10 +1160,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_clear_gstates() {
     let __pdf_state = unsafe { document_state() };
     let mut gs: *mut pdf_gstate = ::core::ptr::null_mut::<pdf_gstate>();
     if dpx_stack_depth(&raw mut (*__pdf_state).gs_stack) > 1 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"GS stack depth is not zero at the end of the document.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"GS stack depth is not zero at the end of the document.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     loop {
         gs = dpx_stack_pop(&raw mut (*__pdf_state).gs_stack) as *mut pdf_gstate;
@@ -1342,19 +1178,12 @@ pub unsafe extern "C-unwind" fn pdf_dev_gsave() -> ::core::ffi::c_int {
     let mut gs0: *mut pdf_gstate = ::core::ptr::null_mut::<pdf_gstate>();
     let mut gs1: *mut pdf_gstate = ::core::ptr::null_mut::<pdf_gstate>();
     gs0 = dpx_stack_top(&raw mut (*__pdf_state).gs_stack) as *mut pdf_gstate;
-    gs1 = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_gstate>() as usize) as uint32_t)
+    gs1 = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_gstate>() as usize) as uint32_t)
         as *mut pdf_gstate;
     init_a_gstate(gs1);
     copy_a_gstate(gs1, gs0);
-    dpx_stack_push(
-        &raw mut (*__pdf_state).gs_stack,
-        gs1 as *mut ::core::ffi::c_void,
-    );
-    pdf_doc_add_page_content(
-        b" q\0" as *const u8 as *const ::core::ffi::c_char,
-        2 as ::core::ffi::c_uint,
-    );
+    dpx_stack_push(&raw mut (*__pdf_state).gs_stack, gs1 as *mut ::core::ffi::c_void);
+    pdf_doc_add_page_content(b" q\0" as *const u8 as *const ::core::ffi::c_char, 2 as ::core::ffi::c_uint);
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_grestore")]
@@ -1368,10 +1197,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_grestore() -> ::core::ffi::c_int {
     gs = dpx_stack_pop(&raw mut (*__pdf_state).gs_stack) as *mut pdf_gstate;
     clear_a_gstate(gs);
     free(gs as *mut ::core::ffi::c_void);
-    pdf_doc_add_page_content(
-        b" Q\0" as *const u8 as *const ::core::ffi::c_char,
-        2 as ::core::ffi::c_uint,
-    );
+    pdf_doc_add_page_content(b" Q\0" as *const u8 as *const ::core::ffi::c_char, 2 as ::core::ffi::c_uint);
     pdf_dev_reset_fonts(0 as ::core::ffi::c_int);
     return 0 as ::core::ffi::c_int;
 }
@@ -1380,8 +1206,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_push_gstate() -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs0: *mut pdf_gstate = ::core::ptr::null_mut::<pdf_gstate>();
-    gs0 = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_gstate>() as usize) as uint32_t)
+    gs0 = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_gstate>() as usize) as uint32_t)
         as *mut pdf_gstate;
     init_a_gstate(gs0);
     dpx_stack_push(gss, gs0 as *mut ::core::ffi::c_void);
@@ -1419,16 +1244,10 @@ pub unsafe extern "C-unwind" fn pdf_dev_grestore_to(mut depth: ::core::ffi::c_in
     } else {
     };
     if dpx_stack_depth(gss) > depth + 1 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Closing pending transformations at end of page/XObject.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Closing pending transformations at end of page/XObject.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     while dpx_stack_depth(gss) > depth + 1 as ::core::ffi::c_int {
-        pdf_doc_add_page_content(
-            b" Q\0" as *const u8 as *const ::core::ffi::c_char,
-            2 as ::core::ffi::c_uint,
-        );
+        pdf_doc_add_page_content(b" Q\0" as *const u8 as *const ::core::ffi::c_char, 2 as ::core::ffi::c_uint);
         gs = dpx_stack_pop(gss) as *mut pdf_gstate;
         clear_a_gstate(gs);
         free(gs as *mut ::core::ffi::c_void);
@@ -1442,10 +1261,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_currentpoint(mut p: *mut pdf_coord) -> :
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
     let mut cpt: *mut pdf_coord = &raw mut (*gs).cp;
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     (*p).x = (*cpt).x;
@@ -1453,18 +1269,13 @@ pub unsafe extern "C-unwind" fn pdf_dev_currentpoint(mut p: *mut pdf_coord) -> :
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_currentmatrix")]
-pub unsafe extern "C-unwind" fn pdf_dev_currentmatrix(
-    mut M: *mut pdf_tmatrix,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_dev_currentmatrix(mut M: *mut pdf_tmatrix) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
     let mut CTM: *mut pdf_tmatrix = &raw mut (*gs).matrix;
     if M.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"M\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"M\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     (*M).a = (*CTM).a;
@@ -1476,23 +1287,16 @@ pub unsafe extern "C-unwind" fn pdf_dev_currentmatrix(
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_set_color")]
-pub unsafe extern "C-unwind" fn pdf_dev_set_color(
-    mut color: *const pdf_color,
-    mut mask: ::core::ffi::c_char,
-    mut force: ::core::ffi::c_int,
-) {
+pub unsafe extern "C-unwind" fn pdf_dev_set_color(mut color: *const pdf_color, mut mask: ::core::ffi::c_char, mut force: ::core::ffi::c_int) {
     let __pdf_state = unsafe { document_state() };
     let mut len: ::core::ffi::c_int = 0;
-    let mut gs: *mut pdf_gstate =
-        dpx_stack_top(&raw mut (*__pdf_state).gs_stack) as *mut pdf_gstate;
+    let mut gs: *mut pdf_gstate = dpx_stack_top(&raw mut (*__pdf_state).gs_stack) as *mut pdf_gstate;
     let mut current: *mut pdf_color = if mask as ::core::ffi::c_int != 0 {
         &raw mut (*gs).fillcolor
     } else {
         &raw mut (*gs).strokecolor
     };
-    if !(pdf_dev_get_param(PDF_DEV_PARAM_COLORMODE) != 0
-        && (force != 0 || pdf_color_compare(color, current) != 0))
-    {
+    if !(pdf_dev_get_param(PDF_DEV_PARAM_COLORMODE) != 0 && (force != 0 || pdf_color_compare(color, current) != 0)) {
         return;
     }
     graphics_mode();
@@ -1502,10 +1306,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_set_color(
         FORMAT_BUFF_LEN as size_t,
         mask,
     );
-    pdf_doc_add_page_content(
-        &raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char,
-        len as ::core::ffi::c_uint,
-    );
+    pdf_doc_add_page_content(&raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char, len as ::core::ffi::c_uint);
     pdf_color_copycolor(current, color);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_concat")]
@@ -1524,20 +1325,14 @@ pub unsafe extern "C-unwind" fn pdf_dev_concat(mut M: *const pdf_tmatrix) -> ::c
         e: 0 as ::core::ffi::c_int as ::core::ffi::c_double,
         f: 0 as ::core::ffi::c_int as ::core::ffi::c_double,
     };
-    let mut buf: *mut ::core::ffi::c_char =
-        &raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char;
+    let mut buf: *mut ::core::ffi::c_char = &raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char;
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     if M.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"M\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"M\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if fabs((*M).a * (*M).d - (*M).b * (*M).c) < OUR_EPSILON {
-        pdf_warning!(
-            b"Transformation matrix not invertible.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Transformation matrix not invertible.\0" as *const u8 as *const ::core::ffi::c_char,);
         pdf_warning!(
             b"--- M = [%g %g %g %g %g %g]\0" as *const u8 as *const ::core::ffi::c_char,
             (*M).a,
@@ -1591,15 +1386,12 @@ pub unsafe extern "C-unwind" fn pdf_dev_concat(mut M: *const pdf_tmatrix) -> ::c
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_setmiterlimit")]
-pub unsafe extern "C-unwind" fn pdf_dev_setmiterlimit(
-    mut mlimit: ::core::ffi::c_double,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_dev_setmiterlimit(mut mlimit: ::core::ffi::c_double) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut buf: *mut ::core::ffi::c_char =
-        &raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char;
+    let mut buf: *mut ::core::ffi::c_char = &raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char;
     if (*gs).miterlimit != mlimit {
         let fresh3 = len;
         len = len + 1;
@@ -1617,57 +1409,40 @@ pub unsafe extern "C-unwind" fn pdf_dev_setmiterlimit(
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_setlinecap")]
-pub unsafe extern "C-unwind" fn pdf_dev_setlinecap(
-    mut capstyle: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_dev_setlinecap(mut capstyle: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut buf: *mut ::core::ffi::c_char =
-        &raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char;
+    let mut buf: *mut ::core::ffi::c_char = &raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char;
     if (*gs).linecap != capstyle {
-        len = sprintf(
-            buf,
-            b" %d J\0" as *const u8 as *const ::core::ffi::c_char,
-            capstyle,
-        );
+        len = sprintf(buf, b" %d J\0" as *const u8 as *const ::core::ffi::c_char, capstyle);
         pdf_doc_add_page_content(buf, len as ::core::ffi::c_uint);
         (*gs).linecap = capstyle;
     }
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_setlinejoin")]
-pub unsafe extern "C-unwind" fn pdf_dev_setlinejoin(
-    mut joinstyle: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_dev_setlinejoin(mut joinstyle: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut buf: *mut ::core::ffi::c_char =
-        &raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char;
+    let mut buf: *mut ::core::ffi::c_char = &raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char;
     if (*gs).linejoin != joinstyle {
-        len = sprintf(
-            buf,
-            b" %d j\0" as *const u8 as *const ::core::ffi::c_char,
-            joinstyle,
-        );
+        len = sprintf(buf, b" %d j\0" as *const u8 as *const ::core::ffi::c_char, joinstyle);
         pdf_doc_add_page_content(buf, len as ::core::ffi::c_uint);
         (*gs).linejoin = joinstyle;
     }
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_setlinewidth")]
-pub unsafe extern "C-unwind" fn pdf_dev_setlinewidth(
-    mut width: ::core::ffi::c_double,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_dev_setlinewidth(mut width: ::core::ffi::c_double) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut buf: *mut ::core::ffi::c_char =
-        &raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char;
+    let mut buf: *mut ::core::ffi::c_char = &raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char;
     if (*gs).linewidth != width {
         let fresh0 = len;
         len = len + 1;
@@ -1686,44 +1461,29 @@ pub unsafe extern "C-unwind" fn pdf_dev_setlinewidth(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_setdash")]
 pub unsafe extern "C-unwind" fn pdf_dev_setdash(
-    mut count: ::core::ffi::c_int,
-    mut pattern: *mut ::core::ffi::c_double,
-    mut offset: ::core::ffi::c_double,
+    mut count: ::core::ffi::c_int, mut pattern: *mut ::core::ffi::c_double, mut offset: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    let mut buf: *mut ::core::ffi::c_char =
-        &raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char;
+    let mut buf: *mut ::core::ffi::c_char = &raw mut (*__pdf_state).fmt_buf as *mut ::core::ffi::c_char;
     let mut i: ::core::ffi::c_int = 0;
     (*gs).linedash.num_dash = count;
     (*gs).linedash.offset = offset;
-    pdf_doc_add_page_content(
-        b" [\0" as *const u8 as *const ::core::ffi::c_char,
-        2 as ::core::ffi::c_uint,
-    );
+    pdf_doc_add_page_content(b" [\0" as *const u8 as *const ::core::ffi::c_char, 2 as ::core::ffi::c_uint);
     i = 0 as ::core::ffi::c_int;
     while i < count {
         *buf.offset(0 as ::core::ffi::c_int as isize) = ' ' as i32 as ::core::ffi::c_char;
-        len = pdf_sprint_length(
-            buf.offset(1 as ::core::ffi::c_int as isize),
-            *pattern.offset(i as isize),
-        );
+        len = pdf_sprint_length(buf.offset(1 as ::core::ffi::c_int as isize), *pattern.offset(i as isize));
         pdf_doc_add_page_content(buf, (len + 1 as ::core::ffi::c_int) as ::core::ffi::c_uint);
         (*gs).linedash.pattern[i as usize] = *pattern.offset(i as isize);
         i += 1;
     }
-    pdf_doc_add_page_content(
-        b"] \0" as *const u8 as *const ::core::ffi::c_char,
-        2 as ::core::ffi::c_uint,
-    );
+    pdf_doc_add_page_content(b"] \0" as *const u8 as *const ::core::ffi::c_char, 2 as ::core::ffi::c_uint);
     len = pdf_sprint_length(buf, offset);
     pdf_doc_add_page_content(buf, len as ::core::ffi::c_uint);
-    pdf_doc_add_page_content(
-        b" d\0" as *const u8 as *const ::core::ffi::c_char,
-        2 as ::core::ffi::c_uint,
-    );
+    pdf_doc_add_page_content(b" d\0" as *const u8 as *const ::core::ffi::c_char, 2 as ::core::ffi::c_uint);
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_clip")]
@@ -1732,12 +1492,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_clip() -> ::core::ffi::c_int {
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
     let mut cpa: *mut pdf_path = &raw mut (*gs).path;
-    return pdf_dev__flushpath(
-        cpa,
-        'W' as i32 as ::core::ffi::c_char,
-        PDF_FILL_RULE_NONZERO,
-        0 as ::core::ffi::c_int,
-    );
+    return pdf_dev__flushpath(cpa, 'W' as i32 as ::core::ffi::c_char, PDF_FILL_RULE_NONZERO, 0 as ::core::ffi::c_int);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_eoclip")]
 pub unsafe extern "C-unwind" fn pdf_dev_eoclip() -> ::core::ffi::c_int {
@@ -1745,18 +1500,10 @@ pub unsafe extern "C-unwind" fn pdf_dev_eoclip() -> ::core::ffi::c_int {
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
     let mut cpa: *mut pdf_path = &raw mut (*gs).path;
-    return pdf_dev__flushpath(
-        cpa,
-        'W' as i32 as ::core::ffi::c_char,
-        PDF_FILL_RULE_EVENODD,
-        0 as ::core::ffi::c_int,
-    );
+    return pdf_dev__flushpath(cpa, 'W' as i32 as ::core::ffi::c_char, PDF_FILL_RULE_EVENODD, 0 as ::core::ffi::c_int);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_flushpath")]
-pub unsafe extern "C-unwind" fn pdf_dev_flushpath(
-    mut p_op: ::core::ffi::c_char,
-    mut fill_rule: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_dev_flushpath(mut p_op: ::core::ffi::c_char, mut fill_rule: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
@@ -1776,17 +1523,11 @@ pub unsafe extern "C-unwind" fn pdf_dev_newpath() -> ::core::ffi::c_int {
     if (*p).num_paths > 0 as ::core::ffi::c_uint {
         pdf_path__clearpath(p);
     }
-    pdf_doc_add_page_content(
-        b" n\0" as *const u8 as *const ::core::ffi::c_char,
-        2 as ::core::ffi::c_uint,
-    );
+    pdf_doc_add_page_content(b" n\0" as *const u8 as *const ::core::ffi::c_char, 2 as ::core::ffi::c_uint);
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_moveto")]
-pub unsafe extern "C-unwind" fn pdf_dev_moveto(
-    mut x: ::core::ffi::c_double,
-    mut y: ::core::ffi::c_double,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_dev_moveto(mut x: ::core::ffi::c_double, mut y: ::core::ffi::c_double) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
@@ -1798,10 +1539,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_moveto(
     return pdf_path__moveto(cpa, cpt, &raw mut p);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_rmoveto")]
-pub unsafe extern "C-unwind" fn pdf_dev_rmoveto(
-    mut x: ::core::ffi::c_double,
-    mut y: ::core::ffi::c_double,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_dev_rmoveto(mut x: ::core::ffi::c_double, mut y: ::core::ffi::c_double) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
@@ -1813,10 +1551,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_rmoveto(
     return pdf_path__moveto(cpa, cpt, &raw mut p);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_lineto")]
-pub unsafe extern "C-unwind" fn pdf_dev_lineto(
-    mut x: ::core::ffi::c_double,
-    mut y: ::core::ffi::c_double,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_dev_lineto(mut x: ::core::ffi::c_double, mut y: ::core::ffi::c_double) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
@@ -1828,10 +1563,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_lineto(
     return pdf_path__lineto(cpa, cpt, &raw mut p0);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_rlineto")]
-pub unsafe extern "C-unwind" fn pdf_dev_rlineto(
-    mut x: ::core::ffi::c_double,
-    mut y: ::core::ffi::c_double,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_dev_rlineto(mut x: ::core::ffi::c_double, mut y: ::core::ffi::c_double) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
@@ -1844,12 +1576,8 @@ pub unsafe extern "C-unwind" fn pdf_dev_rlineto(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_curveto")]
 pub unsafe extern "C-unwind" fn pdf_dev_curveto(
-    mut x0: ::core::ffi::c_double,
-    mut y0: ::core::ffi::c_double,
-    mut x1: ::core::ffi::c_double,
-    mut y1: ::core::ffi::c_double,
-    mut x2: ::core::ffi::c_double,
-    mut y2: ::core::ffi::c_double,
+    mut x0: ::core::ffi::c_double, mut y0: ::core::ffi::c_double, mut x1: ::core::ffi::c_double, mut y1: ::core::ffi::c_double,
+    mut x2: ::core::ffi::c_double, mut y2: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
@@ -1869,12 +1597,8 @@ pub unsafe extern "C-unwind" fn pdf_dev_curveto(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_rcurveto")]
 pub unsafe extern "C-unwind" fn pdf_dev_rcurveto(
-    mut x0: ::core::ffi::c_double,
-    mut y0: ::core::ffi::c_double,
-    mut x1: ::core::ffi::c_double,
-    mut y1: ::core::ffi::c_double,
-    mut x2: ::core::ffi::c_double,
-    mut y2: ::core::ffi::c_double,
+    mut x0: ::core::ffi::c_double, mut y0: ::core::ffi::c_double, mut x1: ::core::ffi::c_double, mut y1: ::core::ffi::c_double,
+    mut x2: ::core::ffi::c_double, mut y2: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
@@ -1902,52 +1626,28 @@ pub unsafe extern "C-unwind" fn pdf_dev_closepath() -> ::core::ffi::c_int {
     return pdf_path__closepath(cpa, cpt);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_dtransform")]
-pub unsafe extern "C-unwind" fn pdf_dev_dtransform(
-    mut p: *mut pdf_coord,
-    mut M: *const pdf_tmatrix,
-) {
+pub unsafe extern "C-unwind" fn pdf_dev_dtransform(mut p: *mut pdf_coord, mut M: *const pdf_tmatrix) {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
     let mut CTM: *mut pdf_tmatrix = &raw mut (*gs).matrix;
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
-    pdf_coord__dtransform(unsafe { &mut *p }, unsafe {
-        *(if !M.is_null() {
-            M
-        } else {
-            CTM as *const pdf_tmatrix
-        })
-    });
+    pdf_coord__dtransform(unsafe { &mut *p }, unsafe { *(if !M.is_null() { M } else { CTM as *const pdf_tmatrix }) });
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_idtransform")]
-pub unsafe extern "C-unwind" fn pdf_dev_idtransform(
-    mut p: *mut pdf_coord,
-    mut M: *const pdf_tmatrix,
-) {
+pub unsafe extern "C-unwind" fn pdf_dev_idtransform(mut p: *mut pdf_coord, mut M: *const pdf_tmatrix) {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
     let mut CTM: *mut pdf_tmatrix = &raw mut (*gs).matrix;
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
-    pdf_coord__idtransform(unsafe { &mut *p }, unsafe {
-        *(if !M.is_null() {
-            M
-        } else {
-            CTM as *const pdf_tmatrix
-        })
-    });
+    pdf_coord__idtransform(unsafe { &mut *p }, unsafe { *(if !M.is_null() { M } else { CTM as *const pdf_tmatrix }) });
 }
 pub(crate) unsafe fn pdf_dev_transform(mut p: *mut pdf_coord, mut M: *const pdf_tmatrix) {
     let __pdf_state = unsafe { document_state() };
@@ -1955,50 +1655,26 @@ pub(crate) unsafe fn pdf_dev_transform(mut p: *mut pdf_coord, mut M: *const pdf_
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
     let mut CTM: *mut pdf_tmatrix = &raw mut (*gs).matrix;
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
-    pdf_coord__transform(unsafe { &mut *p }, unsafe {
-        *(if !M.is_null() {
-            M
-        } else {
-            CTM as *const pdf_tmatrix
-        })
-    });
+    pdf_coord__transform(unsafe { &mut *p }, unsafe { *(if !M.is_null() { M } else { CTM as *const pdf_tmatrix }) });
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_itransform")]
-pub unsafe extern "C-unwind" fn pdf_dev_itransform(
-    mut p: *mut pdf_coord,
-    mut M: *const pdf_tmatrix,
-) {
+pub unsafe extern "C-unwind" fn pdf_dev_itransform(mut p: *mut pdf_coord, mut M: *const pdf_tmatrix) {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
     let mut gs: *mut pdf_gstate = dpx_stack_top(gss) as *mut pdf_gstate;
     let mut CTM: *mut pdf_tmatrix = &raw mut (*gs).matrix;
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
-    pdf_coord__itransform(unsafe { &mut *p }, unsafe {
-        *(if !M.is_null() {
-            M
-        } else {
-            CTM as *const pdf_tmatrix
-        })
-    });
+    pdf_coord__itransform(unsafe { &mut *p }, unsafe { *(if !M.is_null() { M } else { CTM as *const pdf_tmatrix }) });
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_arc")]
 pub unsafe extern "C-unwind" fn pdf_dev_arc(
-    mut c_x: ::core::ffi::c_double,
-    mut c_y: ::core::ffi::c_double,
-    mut r: ::core::ffi::c_double,
-    mut a_0: ::core::ffi::c_double,
+    mut c_x: ::core::ffi::c_double, mut c_y: ::core::ffi::c_double, mut r: ::core::ffi::c_double, mut a_0: ::core::ffi::c_double,
     mut a_1: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
@@ -2009,24 +1685,11 @@ pub unsafe extern "C-unwind" fn pdf_dev_arc(
     let mut c: pdf_coord = pdf_coord { x: 0., y: 0. };
     c.x = c_x;
     c.y = c_y;
-    return pdf_path__elliptarc(
-        cpa,
-        cpt,
-        &raw mut c,
-        r,
-        r,
-        0.0f64,
-        a_0,
-        a_1,
-        1 as ::core::ffi::c_int,
-    );
+    return pdf_path__elliptarc(cpa, cpt, &raw mut c, r, r, 0.0f64, a_0, a_1, 1 as ::core::ffi::c_int);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_arcn")]
 pub unsafe extern "C-unwind" fn pdf_dev_arcn(
-    mut c_x: ::core::ffi::c_double,
-    mut c_y: ::core::ffi::c_double,
-    mut r: ::core::ffi::c_double,
-    mut a_0: ::core::ffi::c_double,
+    mut c_x: ::core::ffi::c_double, mut c_y: ::core::ffi::c_double, mut r: ::core::ffi::c_double, mut a_0: ::core::ffi::c_double,
     mut a_1: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
@@ -2037,28 +1700,12 @@ pub unsafe extern "C-unwind" fn pdf_dev_arcn(
     let mut c: pdf_coord = pdf_coord { x: 0., y: 0. };
     c.x = c_x;
     c.y = c_y;
-    return pdf_path__elliptarc(
-        cpa,
-        cpt,
-        &raw mut c,
-        r,
-        r,
-        0.0f64,
-        a_0,
-        a_1,
-        -(1 as ::core::ffi::c_int),
-    );
+    return pdf_path__elliptarc(cpa, cpt, &raw mut c, r, r, 0.0f64, a_0, a_1, -(1 as ::core::ffi::c_int));
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_arcx")]
 pub unsafe extern "C-unwind" fn pdf_dev_arcx(
-    mut c_x: ::core::ffi::c_double,
-    mut c_y: ::core::ffi::c_double,
-    mut r_x: ::core::ffi::c_double,
-    mut r_y: ::core::ffi::c_double,
-    mut a_0: ::core::ffi::c_double,
-    mut a_1: ::core::ffi::c_double,
-    mut a_d: ::core::ffi::c_int,
-    mut xar: ::core::ffi::c_double,
+    mut c_x: ::core::ffi::c_double, mut c_y: ::core::ffi::c_double, mut r_x: ::core::ffi::c_double, mut r_y: ::core::ffi::c_double,
+    mut a_0: ::core::ffi::c_double, mut a_1: ::core::ffi::c_double, mut a_d: ::core::ffi::c_int, mut xar: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
@@ -2072,12 +1719,8 @@ pub unsafe extern "C-unwind" fn pdf_dev_arcx(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_bspline")]
 pub unsafe extern "C-unwind" fn pdf_dev_bspline(
-    mut x0: ::core::ffi::c_double,
-    mut y0: ::core::ffi::c_double,
-    mut x1: ::core::ffi::c_double,
-    mut y1: ::core::ffi::c_double,
-    mut x2: ::core::ffi::c_double,
-    mut y2: ::core::ffi::c_double,
+    mut x0: ::core::ffi::c_double, mut y0: ::core::ffi::c_double, mut x1: ::core::ffi::c_double, mut y1: ::core::ffi::c_double,
+    mut x2: ::core::ffi::c_double, mut y2: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut gss: *mut dpx_stack = &raw mut (*__pdf_state).gs_stack;
@@ -2097,11 +1740,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_bspline(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_rectstroke")]
 pub unsafe extern "C-unwind" fn pdf_dev_rectstroke(
-    mut x: ::core::ffi::c_double,
-    mut y: ::core::ffi::c_double,
-    mut w: ::core::ffi::c_double,
-    mut h: ::core::ffi::c_double,
-    mut M: *const pdf_tmatrix,
+    mut x: ::core::ffi::c_double, mut y: ::core::ffi::c_double, mut w: ::core::ffi::c_double, mut h: ::core::ffi::c_double, mut M: *const pdf_tmatrix,
 ) -> ::core::ffi::c_int {
     let mut r: pdf_rect = pdf_rect {
         llx: 0.,
@@ -2117,10 +1756,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_rectstroke(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_rectfill")]
 pub unsafe extern "C-unwind" fn pdf_dev_rectfill(
-    mut x: ::core::ffi::c_double,
-    mut y: ::core::ffi::c_double,
-    mut w: ::core::ffi::c_double,
-    mut h: ::core::ffi::c_double,
+    mut x: ::core::ffi::c_double, mut y: ::core::ffi::c_double, mut w: ::core::ffi::c_double, mut h: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let mut r: pdf_rect = pdf_rect {
         llx: 0.,
@@ -2132,18 +1768,11 @@ pub unsafe extern "C-unwind" fn pdf_dev_rectfill(
     r.lly = y;
     r.urx = x + w;
     r.ury = y + h;
-    return pdf_dev__rectshape(
-        &raw mut r,
-        ::core::ptr::null::<pdf_tmatrix>(),
-        'f' as i32 as ::core::ffi::c_char,
-    );
+    return pdf_dev__rectshape(&raw mut r, ::core::ptr::null::<pdf_tmatrix>(), 'f' as i32 as ::core::ffi::c_char);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_rectclip")]
 pub unsafe extern "C-unwind" fn pdf_dev_rectclip(
-    mut x: ::core::ffi::c_double,
-    mut y: ::core::ffi::c_double,
-    mut w: ::core::ffi::c_double,
-    mut h: ::core::ffi::c_double,
+    mut x: ::core::ffi::c_double, mut y: ::core::ffi::c_double, mut w: ::core::ffi::c_double, mut h: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let mut r: pdf_rect = pdf_rect {
         llx: 0.,
@@ -2155,18 +1784,10 @@ pub unsafe extern "C-unwind" fn pdf_dev_rectclip(
     r.lly = y;
     r.urx = x + w;
     r.ury = y + h;
-    return pdf_dev__rectshape(
-        &raw mut r,
-        ::core::ptr::null::<pdf_tmatrix>(),
-        'W' as i32 as ::core::ffi::c_char,
-    );
+    return pdf_dev__rectshape(&raw mut r, ::core::ptr::null::<pdf_tmatrix>(), 'W' as i32 as ::core::ffi::c_char);
 }
 unsafe extern "C" {
-    fn memset(
-        __b: *mut ::core::ffi::c_void,
-        __c: ::core::ffi::c_int,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memset(__b: *mut ::core::ffi::c_void, __c: ::core::ffi::c_int, __len: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -2188,10 +1809,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_invertmatrix(mut M: *mut pdf_tmatrix) -
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_reset_xgstate(
-    mut force: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_reset_xgstate(mut force: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_reset_xgstate(force) }) {
         Ok(value) => {
             unsafe {
@@ -2291,9 +1909,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_pop_gstate(_result: *mut ::core::ff
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_current_depth(
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_current_depth(_result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_current_depth() }) {
         Ok(value) => {
             unsafe {
@@ -2315,10 +1931,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_grestore_to(mut depth: ::core::ffi:
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_currentpoint(
-    mut p: *mut pdf_coord,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_currentpoint(mut p: *mut pdf_coord, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_currentpoint(p) }) {
         Ok(value) => {
             unsafe {
@@ -2330,10 +1943,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_currentpoint(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_currentmatrix(
-    mut M: *mut pdf_tmatrix,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_currentmatrix(mut M: *mut pdf_tmatrix, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_currentmatrix(M) }) {
         Ok(value) => {
             unsafe {
@@ -2346,9 +1956,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_currentmatrix(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_set_color(
-    mut color: *const pdf_color,
-    mut mask: ::core::ffi::c_char,
-    mut force: ::core::ffi::c_int,
+    mut color: *const pdf_color, mut mask: ::core::ffi::c_char, mut force: ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_set_color(color, mask, force) }) {
         Ok(value) => {
@@ -2359,10 +1967,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_set_color(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_concat(
-    mut M: *const pdf_tmatrix,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_concat(mut M: *const pdf_tmatrix, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_concat(M) }) {
         Ok(value) => {
             unsafe {
@@ -2374,10 +1979,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_concat(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_setmiterlimit(
-    mut mlimit: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_setmiterlimit(mut mlimit: ::core::ffi::c_double, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_setmiterlimit(mlimit) }) {
         Ok(value) => {
             unsafe {
@@ -2389,10 +1991,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_setmiterlimit(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_setlinecap(
-    mut capstyle: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_setlinecap(mut capstyle: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_setlinecap(capstyle) }) {
         Ok(value) => {
             unsafe {
@@ -2404,10 +2003,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_setlinecap(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_setlinejoin(
-    mut joinstyle: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_setlinejoin(mut joinstyle: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_setlinejoin(joinstyle) }) {
         Ok(value) => {
             unsafe {
@@ -2419,10 +2015,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_setlinejoin(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_setlinewidth(
-    mut width: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_setlinewidth(mut width: ::core::ffi::c_double, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_setlinewidth(width) }) {
         Ok(value) => {
             unsafe {
@@ -2435,10 +2028,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_setlinewidth(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_setdash(
-    mut count: ::core::ffi::c_int,
-    mut pattern: *mut ::core::ffi::c_double,
-    mut offset: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
+    mut count: ::core::ffi::c_int, mut pattern: *mut ::core::ffi::c_double, mut offset: ::core::ffi::c_double, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_setdash(count, pattern, offset) }) {
         Ok(value) => {
@@ -2476,9 +2066,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_eoclip(_result: *mut ::core::ffi::c
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_flushpath(
-    mut p_op: ::core::ffi::c_char,
-    mut fill_rule: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut p_op: ::core::ffi::c_char, mut fill_rule: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_flushpath(p_op, fill_rule) }) {
         Ok(value) => {
@@ -2504,9 +2092,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_newpath(_result: *mut ::core::ffi::
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_moveto(
-    mut x: ::core::ffi::c_double,
-    mut y: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
+    mut x: ::core::ffi::c_double, mut y: ::core::ffi::c_double, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_moveto(x, y) }) {
         Ok(value) => {
@@ -2520,9 +2106,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_moveto(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_rmoveto(
-    mut x: ::core::ffi::c_double,
-    mut y: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
+    mut x: ::core::ffi::c_double, mut y: ::core::ffi::c_double, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_rmoveto(x, y) }) {
         Ok(value) => {
@@ -2536,9 +2120,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_rmoveto(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_lineto(
-    mut x: ::core::ffi::c_double,
-    mut y: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
+    mut x: ::core::ffi::c_double, mut y: ::core::ffi::c_double, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_lineto(x, y) }) {
         Ok(value) => {
@@ -2552,9 +2134,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_lineto(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_rlineto(
-    mut x: ::core::ffi::c_double,
-    mut y: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
+    mut x: ::core::ffi::c_double, mut y: ::core::ffi::c_double, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_rlineto(x, y) }) {
         Ok(value) => {
@@ -2568,13 +2148,8 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_rlineto(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_curveto(
-    mut x0: ::core::ffi::c_double,
-    mut y0: ::core::ffi::c_double,
-    mut x1: ::core::ffi::c_double,
-    mut y1: ::core::ffi::c_double,
-    mut x2: ::core::ffi::c_double,
-    mut y2: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
+    mut x0: ::core::ffi::c_double, mut y0: ::core::ffi::c_double, mut x1: ::core::ffi::c_double, mut y1: ::core::ffi::c_double,
+    mut x2: ::core::ffi::c_double, mut y2: ::core::ffi::c_double, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_curveto(x0, y0, x1, y1, x2, y2) }) {
         Ok(value) => {
@@ -2588,16 +2163,10 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_curveto(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_rcurveto(
-    mut x0: ::core::ffi::c_double,
-    mut y0: ::core::ffi::c_double,
-    mut x1: ::core::ffi::c_double,
-    mut y1: ::core::ffi::c_double,
-    mut x2: ::core::ffi::c_double,
-    mut y2: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
+    mut x0: ::core::ffi::c_double, mut y0: ::core::ffi::c_double, mut x1: ::core::ffi::c_double, mut y1: ::core::ffi::c_double,
+    mut x2: ::core::ffi::c_double, mut y2: ::core::ffi::c_double, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { pdf_dev_rcurveto(x0, y0, x1, y1, x2, y2) })
-    {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_dev_rcurveto(x0, y0, x1, y1, x2, y2) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -2620,10 +2189,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_closepath(_result: *mut ::core::ffi
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_dtransform(
-    mut p: *mut pdf_coord,
-    mut M: *const pdf_tmatrix,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_dtransform(mut p: *mut pdf_coord, mut M: *const pdf_tmatrix) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_dtransform(p, M) }) {
         Ok(value) => {
             let _ = value;
@@ -2633,10 +2199,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_dtransform(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_idtransform(
-    mut p: *mut pdf_coord,
-    mut M: *const pdf_tmatrix,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_idtransform(mut p: *mut pdf_coord, mut M: *const pdf_tmatrix) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_idtransform(p, M) }) {
         Ok(value) => {
             let _ = value;
@@ -2647,10 +2210,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_idtransform(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_itransform(
-    mut p: *mut pdf_coord,
-    mut M: *const pdf_tmatrix,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_itransform(mut p: *mut pdf_coord, mut M: *const pdf_tmatrix) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_itransform(p, M) }) {
         Ok(value) => {
             let _ = value;
@@ -2661,12 +2221,8 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_itransform(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_arc(
-    mut c_x: ::core::ffi::c_double,
-    mut c_y: ::core::ffi::c_double,
-    mut r: ::core::ffi::c_double,
-    mut a_0: ::core::ffi::c_double,
-    mut a_1: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
+    mut c_x: ::core::ffi::c_double, mut c_y: ::core::ffi::c_double, mut r: ::core::ffi::c_double, mut a_0: ::core::ffi::c_double,
+    mut a_1: ::core::ffi::c_double, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_arc(c_x, c_y, r, a_0, a_1) }) {
         Ok(value) => {
@@ -2680,12 +2236,8 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_arc(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_arcn(
-    mut c_x: ::core::ffi::c_double,
-    mut c_y: ::core::ffi::c_double,
-    mut r: ::core::ffi::c_double,
-    mut a_0: ::core::ffi::c_double,
-    mut a_1: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
+    mut c_x: ::core::ffi::c_double, mut c_y: ::core::ffi::c_double, mut r: ::core::ffi::c_double, mut a_0: ::core::ffi::c_double,
+    mut a_1: ::core::ffi::c_double, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_arcn(c_x, c_y, r, a_0, a_1) }) {
         Ok(value) => {
@@ -2699,19 +2251,11 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_arcn(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_arcx(
-    mut c_x: ::core::ffi::c_double,
-    mut c_y: ::core::ffi::c_double,
-    mut r_x: ::core::ffi::c_double,
-    mut r_y: ::core::ffi::c_double,
-    mut a_0: ::core::ffi::c_double,
-    mut a_1: ::core::ffi::c_double,
-    mut a_d: ::core::ffi::c_int,
-    mut xar: ::core::ffi::c_double,
+    mut c_x: ::core::ffi::c_double, mut c_y: ::core::ffi::c_double, mut r_x: ::core::ffi::c_double, mut r_y: ::core::ffi::c_double,
+    mut a_0: ::core::ffi::c_double, mut a_1: ::core::ffi::c_double, mut a_d: ::core::ffi::c_int, mut xar: ::core::ffi::c_double,
     _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_dev_arcx(c_x, c_y, r_x, r_y, a_0, a_1, a_d, xar)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_dev_arcx(c_x, c_y, r_x, r_y, a_0, a_1, a_d, xar) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -2723,13 +2267,8 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_arcx(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_bspline(
-    mut x0: ::core::ffi::c_double,
-    mut y0: ::core::ffi::c_double,
-    mut x1: ::core::ffi::c_double,
-    mut y1: ::core::ffi::c_double,
-    mut x2: ::core::ffi::c_double,
-    mut y2: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
+    mut x0: ::core::ffi::c_double, mut y0: ::core::ffi::c_double, mut x1: ::core::ffi::c_double, mut y1: ::core::ffi::c_double,
+    mut x2: ::core::ffi::c_double, mut y2: ::core::ffi::c_double, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_bspline(x0, y0, x1, y1, x2, y2) }) {
         Ok(value) => {
@@ -2743,12 +2282,8 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_bspline(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_rectstroke(
-    mut x: ::core::ffi::c_double,
-    mut y: ::core::ffi::c_double,
-    mut w: ::core::ffi::c_double,
-    mut h: ::core::ffi::c_double,
-    mut M: *const pdf_tmatrix,
-    _result: *mut ::core::ffi::c_int,
+    mut x: ::core::ffi::c_double, mut y: ::core::ffi::c_double, mut w: ::core::ffi::c_double, mut h: ::core::ffi::c_double,
+    mut M: *const pdf_tmatrix, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_rectstroke(x, y, w, h, M) }) {
         Ok(value) => {
@@ -2762,10 +2297,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_rectstroke(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_rectfill(
-    mut x: ::core::ffi::c_double,
-    mut y: ::core::ffi::c_double,
-    mut w: ::core::ffi::c_double,
-    mut h: ::core::ffi::c_double,
+    mut x: ::core::ffi::c_double, mut y: ::core::ffi::c_double, mut w: ::core::ffi::c_double, mut h: ::core::ffi::c_double,
     _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_rectfill(x, y, w, h) }) {
@@ -2780,10 +2312,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_rectfill(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_rectclip(
-    mut x: ::core::ffi::c_double,
-    mut y: ::core::ffi::c_double,
-    mut w: ::core::ffi::c_double,
-    mut h: ::core::ffi::c_double,
+    mut x: ::core::ffi::c_double, mut y: ::core::ffi::c_double, mut w: ::core::ffi::c_double, mut h: ::core::ffi::c_double,
     _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_rectclip(x, y, w, h) }) {
@@ -2825,10 +2354,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_pdfdraw
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_pdfdraw.pointer }
 }

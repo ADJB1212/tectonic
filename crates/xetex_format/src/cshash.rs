@@ -48,11 +48,7 @@ pub struct ControlSeqHash {
 }
 
 impl ControlSeqHash {
-    pub(crate) fn parse<'a>(
-        input: &'a [u8],
-        engine: &Engine,
-        hash_high: i32,
-    ) -> IResult<&'a [u8], Self> {
+    pub(crate) fn parse<'a>(input: &'a [u8], engine: &Engine, hash_high: i32) -> IResult<&'a [u8], Self> {
         let hash_base = engine.symbols.lookup("HASH_BASE") as EqtbPointer;
         let hash_prime = engine.symbols.lookup("HASH_PRIME") as u32;
         let hash_offset = engine.symbols.lookup("HASH_OFFSET") as i32;
@@ -69,10 +65,7 @@ impl ControlSeqHash {
         let high_hash_size = eqtb_top + 1 - hash_offset;
         let mut need_offset_hash = vec![0u8; high_hash_size as usize * SIZEOF_MEMORY_WORD];
 
-        let (input, hash_used) = parseutils::ranged_be_i32(
-            hash_base,
-            engine.symbols.lookup("FROZEN_CONTROL_SEQUENCE") as i32,
-        )(input)?;
+        let (input, hash_used) = parseutils::ranged_be_i32(hash_base, engine.symbols.lookup("FROZEN_CONTROL_SEQUENCE") as i32)(input)?;
 
         let mut p = hash_base - 1;
         let mut input = input;
@@ -94,9 +87,7 @@ impl ControlSeqHash {
         }
 
         // TODO: load directly into `hash`?
-        let nb = ((engine.symbols.lookup("UNDEFINED_CONTROL_SEQUENCE") as i32 - 1) - hash_used)
-            as usize
-            * SIZEOF_MEMORY_WORD;
+        let nb = ((engine.symbols.lookup("UNDEFINED_CONTROL_SEQUENCE") as i32 - 1) - hash_used) as usize * SIZEOF_MEMORY_WORD;
         let (input, block) = count(be_u8, nb).parse(input)?;
         let ofs = index(hash_used + 1);
         need_offset_hash[ofs..ofs + nb].copy_from_slice(&block[..]);
@@ -190,10 +181,7 @@ impl ControlSeqHash {
                 }
             } else {
                 // The 1 here is formally ACTIVE_BASE
-                return Some(format!(
-                    "[active character {}]",
-                    crate::format::fmt_usv(p - 1)
-                ));
+                return Some(format!("[active character {}]", crate::format::fmt_usv(p - 1)));
             }
         }
 

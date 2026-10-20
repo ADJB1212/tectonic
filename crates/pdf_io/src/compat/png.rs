@@ -20,13 +20,7 @@ unsafe extern "C" {
     fn tt_pdf_png_read_image(png: *mut c_void, rows: *mut *mut u8) -> i32;
     fn tt_pdf_png_read_end(png: *mut c_void, info: *mut c_void) -> i32;
     fn tt_pdf_png_set_gamma(png: *mut c_void, screen: f64, file: f64) -> i32;
-    fn tt_pdf_png_set_background(
-        png: *mut c_void,
-        color: *const c_void,
-        code: i32,
-        expand: i32,
-        gamma: f64,
-    ) -> i32;
+    fn tt_pdf_png_set_background(png: *mut c_void, color: *const c_void, code: i32, expand: i32, gamma: f64) -> i32;
 }
 
 pub(crate) struct Reader {
@@ -40,12 +34,7 @@ impl Reader {
         let mut error = Box::new([0; 1024]);
         // SAFETY: The boxed error buffer remains stable until after native destruction.
         let png = NonNull::new(unsafe { tt_pdf_png_create(error.as_mut_ptr(), handle) })
-            .ok_or_else(|| {
-                PdfError::new(
-                    PdfErrorKind::Backend,
-                    c"PNG: Creating Libpng read struct failed.".into(),
-                )
-            })?;
+            .ok_or_else(|| PdfError::new(PdfErrorKind::Backend, c"PNG: Creating Libpng read struct failed.".into()))?;
         let mut reader = Self {
             png,
             info: std::ptr::null_mut(),
@@ -54,10 +43,7 @@ impl Reader {
         // SAFETY: The owner is initialized before this fallible native allocation.
         reader.info = unsafe { tt_pdf_png_create_info(reader.png.as_ptr()) };
         if reader.info.is_null() {
-            return Err(PdfError::new(
-                PdfErrorKind::Backend,
-                c"PNG: Creating Libpng info struct failed.".into(),
-            ));
+            return Err(PdfError::new(PdfErrorKind::Backend, c"PNG: Creating Libpng info struct failed.".into()));
         }
         Ok(reader)
     }
@@ -105,19 +91,8 @@ pub(crate) unsafe fn read_end(png: *mut c_void, info: *mut c_void) -> Result<(),
 pub(crate) unsafe fn set_gamma(png: *mut c_void, screen: f64, file: f64) -> Result<(), PdfError> {
     unsafe { check(png, tt_pdf_png_set_gamma(png, screen, file)) }
 }
-pub(crate) unsafe fn set_background(
-    png: *mut c_void,
-    color: *const c_void,
-    code: i32,
-    expand: i32,
-    gamma: f64,
-) -> Result<(), PdfError> {
-    unsafe {
-        check(
-            png,
-            tt_pdf_png_set_background(png, color, code, expand, gamma),
-        )
-    }
+pub(crate) unsafe fn set_background(png: *mut c_void, color: *const c_void, code: i32, expand: i32, gamma: f64) -> Result<(), PdfError> {
+    unsafe { check(png, tt_pdf_png_set_background(png, color, code, expand, gamma)) }
 }
 
 #[unsafe(no_mangle)]

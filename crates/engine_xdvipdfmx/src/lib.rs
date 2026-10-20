@@ -126,12 +126,7 @@ impl XdvipdfmxEngine {
     /// file, containing extended features needed for XeTeX Unicode processing.
     ///
     /// The *pdf* parameter gives the name of the output PDF file to create.
-    pub fn process(
-        &mut self,
-        launcher: &mut CoreBridgeLauncher,
-        dvi: &str,
-        pdf: &str,
-    ) -> Result<()> {
+    pub fn process(&mut self, launcher: &mut CoreBridgeLauncher, dvi: &str, pdf: &str) -> Result<()> {
         let paperspec_str = atry!(
             CString::new(self.paper_spec.as_str());
             ["paper_spec may not contain internal NULs"]
@@ -152,20 +147,15 @@ impl XdvipdfmxEngine {
         let cpdf = CString::new(pdf)?;
 
         launcher.with_global_lock(|state| {
-            let runtime =
-                (!self.legacy_backend).then(|| tectonic_pdf_io::PdfRuntime::new(&self.pdf_options));
+            let runtime = (!self.legacy_backend).then(|| tectonic_pdf_io::PdfRuntime::new(&self.pdf_options));
             // SAFETY: This is called while the global lock is held, and with valid C-strings for
             //         dvi and pdf.
-            let r = unsafe {
-                c_api::tt_engine_xdvipdfmx_main(state, &config, cdvi.as_ptr(), cpdf.as_ptr())
-            };
+            let r = unsafe { c_api::tt_engine_xdvipdfmx_main(state, &config, cdvi.as_ptr(), cpdf.as_ptr()) };
             // SAFETY: The native invocation has returned, including on abort.
             unsafe {
                 tectonic_pdf_io::clear_input_state();
             }
-            self.statistics = runtime
-                .as_ref()
-                .map(tectonic_pdf_io::PdfRuntime::statistics);
+            self.statistics = runtime.as_ref().map(tectonic_pdf_io::PdfRuntime::statistics);
 
             // At the moment, the only possible return codes are 0 and 99 (= abort).
             if r == 99 {
@@ -195,10 +185,7 @@ pub mod c_api {
     #[allow(improper_ctypes)] // for CoreBridgeState
     unsafe extern "C" {
         pub fn tt_engine_xdvipdfmx_main(
-            api: &mut CoreBridgeState,
-            cfg: &XdvipdfmxConfig,
-            dviname: *const libc::c_char,
-            pdfname: *const libc::c_char,
+            api: &mut CoreBridgeState, cfg: &XdvipdfmxConfig, dviname: *const libc::c_char, pdfname: *const libc::c_char,
         ) -> libc::c_int;
     }
 }

@@ -14,13 +14,7 @@ use std::{
 use tracing::{error, info, warn};
 
 pub(super) fn select(cli: &BundleCreateCommand) -> Result<()> {
-    let bundle_dir = cli
-        .bundle_spec
-        .canonicalize()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .to_path_buf();
+    let bundle_dir = cli.bundle_spec.canonicalize().unwrap().parent().unwrap().to_path_buf();
 
     let mut file = File::open(&cli.bundle_spec)?;
     let mut file_str = String::new();

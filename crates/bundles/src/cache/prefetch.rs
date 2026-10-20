@@ -43,19 +43,13 @@ fn parse_manifest(reader: impl BufRead) -> HashSet<String> {
 /// Load a prefetch manifest. Missing or unreadable manifests simply disable
 /// the optimization for this run.
 pub(super) fn load_manifest(path: &Path) -> HashSet<String> {
-    File::open(path)
-        .map(|f| parse_manifest(BufReader::new(f)))
-        .unwrap_or_default()
+    File::open(path).map(|f| parse_manifest(BufReader::new(f))).unwrap_or_default()
 }
 
 impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
     /// Warm a learned working set when its metadata remains but file blobs do not.
     pub(super) fn prefetch(&mut self, status: &mut dyn StatusBackend) {
-        if !self.prefetch_supported
-            || self.prefetched
-            || self.only_cached
-            || self.touched.is_empty()
-        {
+        if !self.prefetch_supported || self.prefetched || self.only_cached || self.touched.is_empty() {
             return;
         }
         self.prefetched = true;
@@ -80,10 +74,7 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
 
         for batch in infos.chunks(MAX_PREFETCH_BATCH_FILES) {
             let results = self.bundle.batch_open(batch, status);
-            let mut complete = results.len() == batch.len()
-                && results
-                    .iter()
-                    .all(|result| matches!(result, OpenResult::Ok(_)));
+            let mut complete = results.len() == batch.len() && results.iter().all(|result| matches!(result, OpenResult::Ok(_)));
 
             for (info, result) in batch.iter().zip(results) {
                 let OpenResult::Ok(bytes) = result else {
@@ -134,11 +125,7 @@ impl<T> BundleCache<'_, T> {
         line.extend_from_slice(name.as_bytes());
         line.push(b'\n');
 
-        if let Ok(mut file) = fs::OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&self.manifest_path)
-        {
+        if let Ok(mut file) = fs::OpenOptions::new().create(true).append(true).open(&self.manifest_path) {
             let _ = file.write_all(&line);
         }
     }

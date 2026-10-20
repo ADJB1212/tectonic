@@ -17,50 +17,19 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
     fn getenv(_: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     fn mkstemp(_: *mut ::core::ffi::c_char) -> ::core::ffi::c_int;
-    fn strcat(
-        __s1: *mut ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
-    fn strcpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
-    fn strncmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn strrchr(
-        __s: *const ::core::ffi::c_char,
-        __c: ::core::ffi::c_int,
-    ) -> *mut ::core::ffi::c_char;
+    fn strcat(__s1: *mut ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+    fn strcpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+    fn strncmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char, __n: size_t) -> ::core::ffi::c_int;
+    fn strrchr(__s: *const ::core::ffi::c_char, __c: ::core::ffi::c_int) -> *mut ::core::ffi::c_char;
     fn xstrdup(s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
-    fn ttstub_input_open(
-        path: *const ::core::ffi::c_char,
-        format: ttbc_file_format,
-        is_gz: ::core::ffi::c_int,
-    ) -> rust_input_handle_t;
-    fn ttstub_input_seek(
-        handle: rust_input_handle_t,
-        offset: ssize_t,
-        whence: ::core::ffi::c_int,
-    ) -> size_t;
-    fn ttstub_input_read(
-        handle: rust_input_handle_t,
-        data: *mut ::core::ffi::c_char,
-        len: size_t,
-    ) -> ssize_t;
+    fn ttstub_input_open(path: *const ::core::ffi::c_char, format: ttbc_file_format, is_gz: ::core::ffi::c_int) -> rust_input_handle_t;
+    fn ttstub_input_seek(handle: rust_input_handle_t, offset: ssize_t, whence: ::core::ffi::c_int) -> size_t;
+    fn ttstub_input_read(handle: rust_input_handle_t, data: *mut ::core::ffi::c_char, len: size_t) -> ssize_t;
     fn ttstub_input_close(handle: rust_input_handle_t) -> ::core::ffi::c_int;
     fn remove(_: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_tt_get_unsigned_pair"]
@@ -130,26 +99,17 @@ unsafe extern "C-unwind" fn mfree(mut ptr: *mut ::core::ffi::c_void) -> *mut ::c
     free(ptr);
     return NULL;
 }
-unsafe fn check_stream_is_truetype(
-    handle: rust_input_handle_t,
-    filename: *const ::core::ffi::c_char,
-) -> bool {
+unsafe fn check_stream_is_truetype(handle: rust_input_handle_t, filename: *const ::core::ffi::c_char) -> bool {
     let result = crate::compat::input::probe_font(handle, crate::input::FontKind::TrueType)
         .map_err(|error| error.in_file(unsafe { core::ffi::CStr::from_ptr(filename) }.to_bytes()));
     crate::backend::runtime::legacy_result(result)
 }
-unsafe fn check_stream_is_opentype(
-    handle: rust_input_handle_t,
-    filename: *const ::core::ffi::c_char,
-) -> bool {
+unsafe fn check_stream_is_opentype(handle: rust_input_handle_t, filename: *const ::core::ffi::c_char) -> bool {
     let result = crate::compat::input::probe_font(handle, crate::input::FontKind::OpenType)
         .map_err(|error| error.in_file(unsafe { core::ffi::CStr::from_ptr(filename) }.to_bytes()));
     crate::backend::runtime::legacy_result(result)
 }
-unsafe fn check_stream_is_type1(
-    handle: rust_input_handle_t,
-    filename: *const ::core::ffi::c_char,
-) -> bool {
+unsafe fn check_stream_is_type1(handle: rust_input_handle_t, filename: *const ::core::ffi::c_char) -> bool {
     let result = crate::compat::input::probe_font(handle, crate::input::FontKind::Type1)
         .map_err(|error| error.in_file(unsafe { core::ffi::CStr::from_ptr(filename) }.to_bytes()));
     crate::backend::runtime::legacy_result(result)
@@ -161,22 +121,12 @@ unsafe extern "C-unwind" fn check_stream_is_dfont(mut handle: rust_input_handle_
     crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
     tt_get_unsigned_quad(handle);
     pos = tt_get_unsigned_quad(handle);
-    crate::backend::runtime::input_seek(
-        handle,
-        pos.wrapping_add(0x18 as uint32_t) as ssize_t,
-        SEEK_SET,
-    );
-    crate::backend::runtime::input_seek(
-        handle,
-        pos.wrapping_add(tt_get_unsigned_pair(handle) as uint32_t) as ssize_t,
-        SEEK_SET,
-    );
+    crate::backend::runtime::input_seek(handle, pos.wrapping_add(0x18 as uint32_t) as ssize_t, SEEK_SET);
+    crate::backend::runtime::input_seek(handle, pos.wrapping_add(tt_get_unsigned_pair(handle) as uint32_t) as ssize_t, SEEK_SET);
     n = tt_get_unsigned_pair(handle) as ::core::ffi::c_int;
     i = 0 as ::core::ffi::c_int;
     while i <= n {
-        if tt_get_unsigned_quad(handle) as ::core::ffi::c_ulong
-            == 0x73666e74 as ::core::ffi::c_ulong
-        {
+        if tt_get_unsigned_quad(handle) as ::core::ffi::c_ulong == 0x73666e74 as ::core::ffi::c_ulong {
             return true_0 != 0;
         }
         tt_get_unsigned_quad(handle);
@@ -184,17 +134,13 @@ unsafe extern "C-unwind" fn check_stream_is_dfont(mut handle: rust_input_handle_
     }
     return false_0 != 0;
 }
-unsafe extern "C-unwind" fn ensuresuffix(
-    mut basename: *const ::core::ffi::c_char,
-    mut sfx: *const ::core::ffi::c_char,
-) -> *mut ::core::ffi::c_char {
+unsafe extern "C-unwind" fn ensuresuffix(mut basename: *const ::core::ffi::c_char, mut sfx: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char {
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut p: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    p = new((strlen(basename)
-        .wrapping_add(strlen(sfx))
-        .wrapping_add(1 as size_t) as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
+    p = new(
+        (strlen(basename).wrapping_add(strlen(sfx)).wrapping_add(1 as size_t) as uint32_t as usize)
+            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t,
+    ) as *mut ::core::ffi::c_char;
     strcpy(p, basename);
     q = strrchr(p, '.' as i32);
     if q.is_null() && *sfx.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != 0 {
@@ -204,9 +150,7 @@ unsafe extern "C-unwind" fn ensuresuffix(
 }
 #[unsafe(export_name = "__pdf_impl_dpx_tt_open")]
 pub unsafe extern "C-unwind" fn dpx_tt_open(
-    mut filename: *const ::core::ffi::c_char,
-    mut suffix: *const ::core::ffi::c_char,
-    mut format: ttbc_file_format,
+    mut filename: *const ::core::ffi::c_char, mut suffix: *const ::core::ffi::c_char, mut format: ttbc_file_format,
 ) -> rust_input_handle_t {
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut handle: rust_input_handle_t = 0;
@@ -216,9 +160,7 @@ pub unsafe extern "C-unwind" fn dpx_tt_open(
     return handle;
 }
 #[unsafe(export_name = "__pdf_impl_dpx_open_type1_file")]
-pub unsafe extern "C-unwind" fn dpx_open_type1_file(
-    mut filename: *const ::core::ffi::c_char,
-) -> rust_input_handle_t {
+pub unsafe extern "C-unwind" fn dpx_open_type1_file(mut filename: *const ::core::ffi::c_char) -> rust_input_handle_t {
     let mut handle: rust_input_handle_t = 0;
     handle = ttstub_input_open(filename, TTBC_FILE_FORMAT_TYPE1, 0 as ::core::ffi::c_int);
     if handle == INVALID_HANDLE {
@@ -231,15 +173,9 @@ pub unsafe extern "C-unwind" fn dpx_open_type1_file(
     return handle;
 }
 #[unsafe(export_name = "__pdf_impl_dpx_open_truetype_file")]
-pub unsafe extern "C-unwind" fn dpx_open_truetype_file(
-    mut filename: *const ::core::ffi::c_char,
-) -> rust_input_handle_t {
+pub unsafe extern "C-unwind" fn dpx_open_truetype_file(mut filename: *const ::core::ffi::c_char) -> rust_input_handle_t {
     let mut handle: rust_input_handle_t = 0;
-    handle = ttstub_input_open(
-        filename,
-        TTBC_FILE_FORMAT_TRUE_TYPE,
-        0 as ::core::ffi::c_int,
-    );
+    handle = ttstub_input_open(filename, TTBC_FILE_FORMAT_TRUE_TYPE, 0 as ::core::ffi::c_int);
     if handle == INVALID_HANDLE {
         return INVALID_HANDLE;
     }
@@ -250,15 +186,10 @@ pub unsafe extern "C-unwind" fn dpx_open_truetype_file(
     return handle;
 }
 #[unsafe(export_name = "__pdf_impl_dpx_open_opentype_file")]
-pub unsafe extern "C-unwind" fn dpx_open_opentype_file(
-    mut filename: *const ::core::ffi::c_char,
-) -> rust_input_handle_t {
+pub unsafe extern "C-unwind" fn dpx_open_opentype_file(mut filename: *const ::core::ffi::c_char) -> rust_input_handle_t {
     let mut handle: rust_input_handle_t = 0;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    q = ensuresuffix(
-        filename,
-        b".otf\0" as *const u8 as *const ::core::ffi::c_char,
-    );
+    q = ensuresuffix(filename, b".otf\0" as *const u8 as *const ::core::ffi::c_char);
     handle = ttstub_input_open(q, TTBC_FILE_FORMAT_OPEN_TYPE, 0 as ::core::ffi::c_int);
     free(q as *mut ::core::ffi::c_void);
     if handle == INVALID_HANDLE {
@@ -271,24 +202,20 @@ pub unsafe extern "C-unwind" fn dpx_open_opentype_file(
     return handle;
 }
 #[unsafe(export_name = "__pdf_impl_dpx_open_dfont_file")]
-pub unsafe extern "C-unwind" fn dpx_open_dfont_file(
-    mut filename: *const ::core::ffi::c_char,
-) -> rust_input_handle_t {
+pub unsafe extern "C-unwind" fn dpx_open_dfont_file(mut filename: *const ::core::ffi::c_char) -> rust_input_handle_t {
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut handle: rust_input_handle_t = 0;
     let mut len: ::core::ffi::c_int = strlen(filename) as ::core::ffi::c_int;
     if len > 6 as ::core::ffi::c_int
         && strncmp(
-            filename
-                .offset(len as isize)
-                .offset(-(6 as ::core::ffi::c_int as isize)),
+            filename.offset(len as isize).offset(-(6 as ::core::ffi::c_int as isize)),
             b".dfont\0" as *const u8 as *const ::core::ffi::c_char,
             6 as size_t,
         ) != 0
     {
-        q = new(((len + 6 as ::core::ffi::c_int) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_char;
+        q = new(
+            ((len + 6 as ::core::ffi::c_int) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t,
+        ) as *mut ::core::ffi::c_char;
         strcpy(q, filename);
         strcat(q, b"/rsrc\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
@@ -315,9 +242,7 @@ unsafe extern "C-unwind" fn dpx_get_tmpdir() -> *mut ::core::ffi::c_char {
     }
     ret = crate::backend::runtime::duplicate(_tmpd);
     i = strlen(ret);
-    while i > 1 as size_t
-        && *ret.offset(i.wrapping_sub(1 as size_t) as isize) as ::core::ffi::c_int == '/' as i32
-    {
+    while i > 1 as size_t && *ret.offset(i.wrapping_sub(1 as size_t) as isize) as ::core::ffi::c_int == '/' as i32 {
         *ret.offset(i.wrapping_sub(1 as size_t) as isize) = '\0' as i32 as ::core::ffi::c_char;
         i = i.wrapping_sub(1);
     }
@@ -330,12 +255,8 @@ pub unsafe extern "C-unwind" fn dpx_create_temp_file() -> *mut ::core::ffi::c_ch
     let mut n: size_t = 0;
     let mut tmp: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     tmpdir = dpx_get_tmpdir();
-    n = strlen(tmpdir)
-        .wrapping_add(strlen(TEMPLATE.as_ptr()))
-        .wrapping_add(1 as size_t);
-    tmp = new((n as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
+    n = strlen(tmpdir).wrapping_add(strlen(TEMPLATE.as_ptr())).wrapping_add(1 as size_t);
+    tmp = new((n as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
     strcpy(tmp, tmpdir);
     free(tmpdir as *mut ::core::ffi::c_void);
     strcat(tmp, TEMPLATE.as_ptr());
@@ -347,8 +268,7 @@ pub unsafe extern "C-unwind" fn dpx_create_temp_file() -> *mut ::core::ffi::c_ch
     }
     return tmp;
 }
-pub const TEMPLATE: [::core::ffi::c_char; 17] =
-    crate::backend::c_char_array(*b"/dvipdfmx.XXXXXX\0");
+pub const TEMPLATE: [::core::ffi::c_char; 17] = crate::backend::c_char_array(*b"/dvipdfmx.XXXXXX\0");
 #[unsafe(export_name = "__pdf_impl_dpx_delete_old_cache")]
 pub unsafe extern "C-unwind" fn dpx_delete_old_cache(mut life: ::core::ffi::c_int) {
     if life == -(2 as ::core::ffi::c_int) {
@@ -356,10 +276,7 @@ pub unsafe extern "C-unwind" fn dpx_delete_old_cache(mut life: ::core::ffi::c_in
     }
 }
 #[unsafe(export_name = "__pdf_impl_dpx_delete_temp_file")]
-pub unsafe extern "C-unwind" fn dpx_delete_temp_file(
-    mut tmp: *mut ::core::ffi::c_char,
-    mut force: ::core::ffi::c_int,
-) {
+pub unsafe extern "C-unwind" fn dpx_delete_temp_file(mut tmp: *mut ::core::ffi::c_char, mut force: ::core::ffi::c_int) {
     if tmp.is_null() {
         return;
     }
@@ -370,9 +287,7 @@ pub unsafe extern "C-unwind" fn dpx_delete_temp_file(
 }
 #[unsafe(export_name = "__pdf_impl_dpx_file_apply_filter")]
 pub unsafe extern "C-unwind" fn dpx_file_apply_filter(
-    mut cmdtmpl: *const ::core::ffi::c_char,
-    mut input: *const ::core::ffi::c_char,
-    mut output: *const ::core::ffi::c_char,
+    mut cmdtmpl: *const ::core::ffi::c_char, mut input: *const ::core::ffi::c_char, mut output: *const ::core::ffi::c_char,
     mut version: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     return -(1 as ::core::ffi::c_int);
@@ -380,20 +295,13 @@ pub unsafe extern "C-unwind" fn dpx_file_apply_filter(
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
     fn close(_: ::core::ffi::c_int) -> ::core::ffi::c_int;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_dpx_tt_open(
-    mut filename: *const ::core::ffi::c_char,
-    mut suffix: *const ::core::ffi::c_char,
-    mut format: ttbc_file_format,
-    _result: *mut rust_input_handle_t,
+    mut filename: *const ::core::ffi::c_char, mut suffix: *const ::core::ffi::c_char, mut format: ttbc_file_format, _result: *mut rust_input_handle_t,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { dpx_tt_open(filename, suffix, format) }) {
         Ok(value) => {
@@ -406,10 +314,7 @@ pub unsafe extern "C" fn __pdf_entry_dpx_tt_open(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_dpx_open_type1_file(
-    mut filename: *const ::core::ffi::c_char,
-    _result: *mut rust_input_handle_t,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_dpx_open_type1_file(mut filename: *const ::core::ffi::c_char, _result: *mut rust_input_handle_t) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { dpx_open_type1_file(filename) }) {
         Ok(value) => {
             unsafe {
@@ -421,10 +326,7 @@ pub unsafe extern "C" fn __pdf_entry_dpx_open_type1_file(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_dpx_open_truetype_file(
-    mut filename: *const ::core::ffi::c_char,
-    _result: *mut rust_input_handle_t,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_dpx_open_truetype_file(mut filename: *const ::core::ffi::c_char, _result: *mut rust_input_handle_t) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { dpx_open_truetype_file(filename) }) {
         Ok(value) => {
             unsafe {
@@ -436,10 +338,7 @@ pub unsafe extern "C" fn __pdf_entry_dpx_open_truetype_file(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_dpx_open_opentype_file(
-    mut filename: *const ::core::ffi::c_char,
-    _result: *mut rust_input_handle_t,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_dpx_open_opentype_file(mut filename: *const ::core::ffi::c_char, _result: *mut rust_input_handle_t) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { dpx_open_opentype_file(filename) }) {
         Ok(value) => {
             unsafe {
@@ -451,10 +350,7 @@ pub unsafe extern "C" fn __pdf_entry_dpx_open_opentype_file(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_dpx_open_dfont_file(
-    mut filename: *const ::core::ffi::c_char,
-    _result: *mut rust_input_handle_t,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_dpx_open_dfont_file(mut filename: *const ::core::ffi::c_char, _result: *mut rust_input_handle_t) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { dpx_open_dfont_file(filename) }) {
         Ok(value) => {
             unsafe {
@@ -466,9 +362,7 @@ pub unsafe extern "C" fn __pdf_entry_dpx_open_dfont_file(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_dpx_create_temp_file(
-    _result: *mut *mut ::core::ffi::c_char,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_dpx_create_temp_file(_result: *mut *mut ::core::ffi::c_char) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { dpx_create_temp_file() }) {
         Ok(value) => {
             unsafe {
@@ -491,10 +385,7 @@ pub unsafe extern "C" fn __pdf_entry_dpx_delete_old_cache(mut life: ::core::ffi:
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_dpx_delete_temp_file(
-    mut tmp: *mut ::core::ffi::c_char,
-    mut force: ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_dpx_delete_temp_file(mut tmp: *mut ::core::ffi::c_char, mut force: ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { dpx_delete_temp_file(tmp, force) }) {
         Ok(value) => {
             let _ = value;
@@ -505,15 +396,10 @@ pub unsafe extern "C" fn __pdf_entry_dpx_delete_temp_file(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_dpx_file_apply_filter(
-    mut cmdtmpl: *const ::core::ffi::c_char,
-    mut input: *const ::core::ffi::c_char,
-    mut output: *const ::core::ffi::c_char,
-    mut version: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut cmdtmpl: *const ::core::ffi::c_char, mut input: *const ::core::ffi::c_char, mut output: *const ::core::ffi::c_char,
+    mut version: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        dpx_file_apply_filter(cmdtmpl, input, output, version)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { dpx_file_apply_filter(cmdtmpl, input, output, version) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);

@@ -181,11 +181,7 @@ fn _gcry_burn_stack(bytes: ::core::ffi::c_int) {
     core::hint::black_box(&mut buffer);
 }
 fn write_digest_blocks<const N: usize>(
-    buffer: &mut [u8; N],
-    count: &mut ::core::ffi::c_int,
-    nblocks: &mut usize,
-    mut input: &[u8],
-    mut compress: impl FnMut(&[[u8; N]]),
+    buffer: &mut [u8; N], count: &mut ::core::ffi::c_int, nblocks: &mut usize, mut input: &[u8], mut compress: impl FnMut(&[[u8; N]]),
 ) {
     if *count != 0 {
         let offset = *count as usize;
@@ -208,11 +204,7 @@ fn write_digest_blocks<const N: usize>(
 }
 
 fn finish_digest_blocks<const N: usize>(
-    buffer: &mut [u8; N],
-    count: &mut ::core::ffi::c_int,
-    nblocks: &mut usize,
-    bit_length: &[u8],
-    mut compress: impl FnMut(&[[u8; N]]),
+    buffer: &mut [u8; N], count: &mut ::core::ffi::c_int, nblocks: &mut usize, bit_length: &[u8], mut compress: impl FnMut(&[[u8; N]]),
 ) {
     write_digest_blocks(buffer, count, nblocks, &[], &mut compress);
     let offset = *count as usize;
@@ -234,13 +226,9 @@ fn finish_digest_blocks<const N: usize>(
 impl MD5_CONTEXT {
     fn write(&mut self, input: &[u8]) {
         let mut state = [self.A, self.B, self.C, self.D];
-        write_digest_blocks(
-            &mut self.buf,
-            &mut self.count,
-            &mut self.nblocks,
-            input,
-            |blocks| md5::block_api::compress(&mut state, blocks),
-        );
+        write_digest_blocks(&mut self.buf, &mut self.count, &mut self.nblocks, input, |blocks| {
+            md5::block_api::compress(&mut state, blocks)
+        });
         [self.A, self.B, self.C, self.D] = state;
     }
 
@@ -251,13 +239,9 @@ impl MD5_CONTEXT {
             .wrapping_mul(8)
             .to_le_bytes();
         let mut state = [self.A, self.B, self.C, self.D];
-        finish_digest_blocks(
-            &mut self.buf,
-            &mut self.count,
-            &mut self.nblocks,
-            &bit_length,
-            |blocks| md5::block_api::compress(&mut state, blocks),
-        );
+        finish_digest_blocks(&mut self.buf, &mut self.count, &mut self.nblocks, &bit_length, |blocks| {
+            md5::block_api::compress(&mut state, blocks)
+        });
         [self.A, self.B, self.C, self.D] = state;
         let mut output = [0; 16];
         let (words, _) = output.as_chunks_mut::<4>();
@@ -283,11 +267,7 @@ pub unsafe extern "C-unwind" fn MD5_init(ctx: *mut MD5_CONTEXT) {
 }
 
 #[unsafe(export_name = "__pdf_impl_MD5_write")]
-pub unsafe extern "C-unwind" fn MD5_write(
-    ctx: *mut MD5_CONTEXT,
-    input: *const u8,
-    len: ::core::ffi::c_uint,
-) {
+pub unsafe extern "C-unwind" fn MD5_write(ctx: *mut MD5_CONTEXT, input: *const u8, len: ::core::ffi::c_uint) {
     let input = if input.is_null() || len == 0 {
         &[]
     } else {
@@ -304,19 +284,11 @@ pub unsafe extern "C-unwind" fn MD5_final(output: *mut u8, ctx: *mut MD5_CONTEXT
 
 impl SHA256_CONTEXT {
     fn write(&mut self, input: &[u8]) {
-        let mut state = [
-            self.h0, self.h1, self.h2, self.h3, self.h4, self.h5, self.h6, self.h7,
-        ];
-        write_digest_blocks(
-            &mut self.buf,
-            &mut self.count,
-            &mut self.nblocks,
-            input,
-            |blocks| sha2::block_api::compress256(&mut state, blocks),
-        );
-        [
-            self.h0, self.h1, self.h2, self.h3, self.h4, self.h5, self.h6, self.h7,
-        ] = state;
+        let mut state = [self.h0, self.h1, self.h2, self.h3, self.h4, self.h5, self.h6, self.h7];
+        write_digest_blocks(&mut self.buf, &mut self.count, &mut self.nblocks, input, |blocks| {
+            sha2::block_api::compress256(&mut state, blocks)
+        });
+        [self.h0, self.h1, self.h2, self.h3, self.h4, self.h5, self.h6, self.h7] = state;
     }
 
     fn finish(&mut self) -> [u8; 32] {
@@ -325,19 +297,11 @@ impl SHA256_CONTEXT {
             .wrapping_add(self.count as u64)
             .wrapping_mul(8)
             .to_be_bytes();
-        let mut state = [
-            self.h0, self.h1, self.h2, self.h3, self.h4, self.h5, self.h6, self.h7,
-        ];
-        finish_digest_blocks(
-            &mut self.buf,
-            &mut self.count,
-            &mut self.nblocks,
-            &bit_length,
-            |blocks| sha2::block_api::compress256(&mut state, blocks),
-        );
-        [
-            self.h0, self.h1, self.h2, self.h3, self.h4, self.h5, self.h6, self.h7,
-        ] = state;
+        let mut state = [self.h0, self.h1, self.h2, self.h3, self.h4, self.h5, self.h6, self.h7];
+        finish_digest_blocks(&mut self.buf, &mut self.count, &mut self.nblocks, &bit_length, |blocks| {
+            sha2::block_api::compress256(&mut state, blocks)
+        });
+        [self.h0, self.h1, self.h2, self.h3, self.h4, self.h5, self.h6, self.h7] = state;
         let mut output = [0; 32];
         let (words, _) = output.as_chunks_mut::<4>();
         for (bytes, word) in words.iter_mut().zip(state) {
@@ -366,11 +330,7 @@ pub unsafe extern "C-unwind" fn SHA256_init(ctx: *mut SHA256_CONTEXT) {
 }
 
 #[unsafe(export_name = "__pdf_impl_SHA256_write")]
-pub unsafe extern "C-unwind" fn SHA256_write(
-    ctx: *mut SHA256_CONTEXT,
-    input: *const u8,
-    len: ::core::ffi::c_uint,
-) {
+pub unsafe extern "C-unwind" fn SHA256_write(ctx: *mut SHA256_CONTEXT, input: *const u8, len: ::core::ffi::c_uint) {
     let input = if input.is_null() || len == 0 {
         &[]
     } else {
@@ -397,13 +357,9 @@ impl SHA512_CONTEXT {
             self.state.h6,
             self.state.h7,
         ];
-        write_digest_blocks(
-            &mut self.buf,
-            &mut self.count,
-            &mut self.nblocks,
-            input,
-            |blocks| sha2::block_api::compress512(&mut state, blocks),
-        );
+        write_digest_blocks(&mut self.buf, &mut self.count, &mut self.nblocks, input, |blocks| {
+            sha2::block_api::compress512(&mut state, blocks)
+        });
         [
             self.state.h0,
             self.state.h1,
@@ -432,13 +388,9 @@ impl SHA512_CONTEXT {
             self.state.h6,
             self.state.h7,
         ];
-        finish_digest_blocks(
-            &mut self.buf,
-            &mut self.count,
-            &mut self.nblocks,
-            &bit_length,
-            |blocks| sha2::block_api::compress512(&mut state, blocks),
-        );
+        finish_digest_blocks(&mut self.buf, &mut self.count, &mut self.nblocks, &bit_length, |blocks| {
+            sha2::block_api::compress512(&mut state, blocks)
+        });
         [
             self.state.h0,
             self.state.h1,
@@ -499,11 +451,7 @@ pub unsafe extern "C-unwind" fn SHA384_init(ctx: *mut SHA512_CONTEXT) {
 }
 
 #[unsafe(export_name = "__pdf_impl_SHA512_write")]
-pub unsafe extern "C-unwind" fn SHA512_write(
-    ctx: *mut SHA512_CONTEXT,
-    input: *const u8,
-    len: ::core::ffi::c_uint,
-) {
+pub unsafe extern "C-unwind" fn SHA512_write(ctx: *mut SHA512_CONTEXT, input: *const u8, len: ::core::ffi::c_uint) {
     let input = if input.is_null() || len == 0 {
         &[]
     } else {
@@ -543,19 +491,14 @@ impl ARC4_CONTEXT {
         }
         let mut j = 0u8;
         for i in 0..self.sbox.len() {
-            j = j
-                .wrapping_add(self.sbox[i])
-                .wrapping_add(key[i % key.len()]);
+            j = j.wrapping_add(self.sbox[i]).wrapping_add(key[i % key.len()]);
             self.sbox.swap(i, j as usize);
         }
     }
 }
 #[unsafe(export_name = "__pdf_impl_ARC4")]
 pub unsafe extern "C-unwind" fn ARC4(
-    ctx: *mut ARC4_CONTEXT,
-    len: ::core::ffi::c_uint,
-    inbuf: *const ::core::ffi::c_uchar,
-    outbuf: *mut ::core::ffi::c_uchar,
+    ctx: *mut ARC4_CONTEXT, len: ::core::ffi::c_uint, inbuf: *const ::core::ffi::c_uchar, outbuf: *mut ::core::ffi::c_uchar,
 ) {
     let ctx = unsafe { &mut *ctx };
     for index in 0..len as usize {
@@ -566,11 +509,7 @@ pub unsafe extern "C-unwind" fn ARC4(
     _gcry_burn_stack(64 as ::core::ffi::c_int);
 }
 #[unsafe(export_name = "__pdf_impl_ARC4_set_key")]
-pub unsafe extern "C-unwind" fn ARC4_set_key(
-    ctx: *mut ARC4_CONTEXT,
-    keylen: ::core::ffi::c_uint,
-    key: *const ::core::ffi::c_uchar,
-) {
+pub unsafe extern "C-unwind" fn ARC4_set_key(ctx: *mut ARC4_CONTEXT, keylen: ::core::ffi::c_uint, key: *const ::core::ffi::c_uchar) {
     assert!(keylen > 0);
     let key = unsafe { core::slice::from_raw_parts(key, keylen.min(256) as usize) };
     unsafe { &mut *ctx }.set_key(key);
@@ -622,27 +561,16 @@ impl AesCipher {
 
 fn aes_padded_length(length: usize, padding: bool) -> usize {
     let remainder = length % 16;
-    let padbytes = if padding || remainder != 0 {
-        16 - remainder
-    } else {
-        0
-    };
+    let padbytes = if padding || remainder != 0 { 16 - remainder } else { 0 };
     length
         .checked_add(padbytes)
         .unwrap_or_else(|| crate::backend::runtime::raise(c"AES output length overflow".to_owned()))
 }
 
-pub(crate) fn aes_cbc_owned(
-    key: &[u8],
-    plain: &[u8],
-    iv: [u8; 16],
-) -> Result<Vec<u8>, crate::error::PdfError> {
+pub(crate) fn aes_cbc_owned(key: &[u8], plain: &[u8], iv: [u8; 16]) -> Result<Vec<u8>, crate::error::PdfError> {
     use crate::error::{PdfError, PdfErrorKind};
     if !matches!(key.len(), 16 | 24 | 32) {
-        return Err(PdfError::new(
-            PdfErrorKind::InvalidState,
-            c"Invalid AES key length".into(),
-        ));
+        return Err(PdfError::new(PdfErrorKind::InvalidState, c"Invalid AES key length".into()));
     }
     let padding = 16 - plain.len() % 16;
     let length = plain
@@ -650,32 +578,19 @@ pub(crate) fn aes_cbc_owned(
         .checked_add(padding)
         .and_then(|n| n.checked_add(16))
         .filter(|&n| n <= u32::MAX as usize && n <= isize::MAX as usize)
-        .ok_or_else(|| {
-            PdfError::new(
-                PdfErrorKind::InvalidState,
-                c"AES output is too large".into(),
-            )
-        })?;
+        .ok_or_else(|| PdfError::new(PdfErrorKind::InvalidState, c"AES output is too large".into()))?;
     let aes = AesCipher::new(key);
     let mut output = Vec::new();
-    output.try_reserve_exact(length).map_err(|_| {
-        PdfError::new(
-            PdfErrorKind::InvalidState,
-            c"AES output is too large".into(),
-        )
-    })?;
+    output
+        .try_reserve_exact(length)
+        .map_err(|_| PdfError::new(PdfErrorKind::InvalidState, c"AES output is too large".into()))?;
     output.resize(length, 0);
     output[..16].copy_from_slice(&iv);
     aes.encrypt(plain, &mut output[16..], Some(iv), padding as u8);
     Ok(output)
 }
 
-unsafe fn with_ciphertext(
-    cipher: *mut *mut u8,
-    cipher_len: *mut usize,
-    length: usize,
-    encrypt: impl FnOnce(&mut [u8]),
-) {
+unsafe fn with_ciphertext(cipher: *mut *mut u8, cipher_len: *mut usize, length: usize, encrypt: impl FnOnce(&mut [u8])) {
     let allocation_size = u32::try_from(length)
         .ok()
         .filter(|_| length <= isize::MAX as usize)
@@ -691,12 +606,7 @@ unsafe fn with_ciphertext(
 
 #[unsafe(export_name = "__pdf_impl_AES_ecb_encrypt")]
 pub unsafe extern "C-unwind" fn AES_ecb_encrypt(
-    key: *const u8,
-    key_len: usize,
-    plain: *const u8,
-    plain_len: usize,
-    cipher: *mut *mut u8,
-    cipher_len: *mut usize,
+    key: *const u8, key_len: usize, plain: *const u8, plain_len: usize, cipher: *mut *mut u8, cipher_len: *mut usize,
 ) {
     let key = unsafe { core::slice::from_raw_parts(key, key_len) };
     let aes = AesCipher::new(key);
@@ -707,21 +617,13 @@ pub unsafe extern "C-unwind" fn AES_ecb_encrypt(
     };
     let length = aes_padded_length(plain.len(), false);
     unsafe {
-        with_ciphertext(cipher, cipher_len, length, |output| {
-            aes.encrypt(plain, output, None, 0)
-        });
+        with_ciphertext(cipher, cipher_len, length, |output| aes.encrypt(plain, output, None, 0));
     }
 }
 
 #[unsafe(export_name = "__pdf_impl_AES_cbc_encrypt_tectonic")]
 pub unsafe extern "C-unwind" fn AES_cbc_encrypt_tectonic(
-    key: *const u8,
-    key_len: usize,
-    iv: *const u8,
-    padding: ::core::ffi::c_int,
-    plain: *const u8,
-    plain_len: usize,
-    cipher: *mut *mut u8,
+    key: *const u8, key_len: usize, iv: *const u8, padding: ::core::ffi::c_int, plain: *const u8, plain_len: usize, cipher: *mut *mut u8,
     cipher_len: *mut usize,
 ) {
     let key = unsafe { core::slice::from_raw_parts(key, key_len) };
@@ -743,9 +645,9 @@ pub unsafe extern "C-unwind" fn AES_cbc_encrypt_tectonic(
     };
     let encrypted_len = aes_padded_length(plain.len(), padding != 0);
     let prefix_len = if prepend_iv { 16 } else { 0 };
-    let length = encrypted_len.checked_add(prefix_len).unwrap_or_else(|| {
-        crate::backend::runtime::raise(c"AES output length overflow".to_owned())
-    });
+    let length = encrypted_len
+        .checked_add(prefix_len)
+        .unwrap_or_else(|| crate::backend::runtime::raise(c"AES output length overflow".to_owned()));
     let padbytes = (encrypted_len - plain.len()) as u8;
     unsafe {
         with_ciphertext(cipher, cipher_len, length, |output| {
@@ -764,21 +666,14 @@ pub unsafe extern "C" fn __pdf_entry_MD5_init(ctx: *mut MD5_CONTEXT) -> i32 {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_MD5_write(
-    hd: *mut MD5_CONTEXT,
-    inbuf: *const ::core::ffi::c_uchar,
-    inlen: ::core::ffi::c_uint,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_MD5_write(hd: *mut MD5_CONTEXT, inbuf: *const ::core::ffi::c_uchar, inlen: ::core::ffi::c_uint) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { MD5_write(hd, inbuf, inlen) }) {
         Ok(()) => 0,
         Err(()) => -1,
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_MD5_final(
-    outbuf: *mut ::core::ffi::c_uchar,
-    hd: *mut MD5_CONTEXT,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_MD5_final(outbuf: *mut ::core::ffi::c_uchar, hd: *mut MD5_CONTEXT) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { MD5_final(outbuf, hd) }) {
         Ok(()) => 0,
         Err(()) => -1,
@@ -792,21 +687,14 @@ pub unsafe extern "C" fn __pdf_entry_SHA256_init(hd: *mut SHA256_CONTEXT) -> i32
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_SHA256_write(
-    hd: *mut SHA256_CONTEXT,
-    inbuf: *const ::core::ffi::c_uchar,
-    inlen: ::core::ffi::c_uint,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_SHA256_write(hd: *mut SHA256_CONTEXT, inbuf: *const ::core::ffi::c_uchar, inlen: ::core::ffi::c_uint) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { SHA256_write(hd, inbuf, inlen) }) {
         Ok(()) => 0,
         Err(()) => -1,
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_SHA256_final(
-    outbuf: *mut ::core::ffi::c_uchar,
-    hd: *mut SHA256_CONTEXT,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_SHA256_final(outbuf: *mut ::core::ffi::c_uchar, hd: *mut SHA256_CONTEXT) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { SHA256_final(outbuf, hd) }) {
         Ok(()) => 0,
         Err(()) => -1,
@@ -827,21 +715,14 @@ pub unsafe extern "C" fn __pdf_entry_SHA384_init(ctx: *mut SHA512_CONTEXT) -> i3
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_SHA512_write(
-    hd: *mut SHA512_CONTEXT,
-    inbuf: *const ::core::ffi::c_uchar,
-    inlen: ::core::ffi::c_uint,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_SHA512_write(hd: *mut SHA512_CONTEXT, inbuf: *const ::core::ffi::c_uchar, inlen: ::core::ffi::c_uint) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { SHA512_write(hd, inbuf, inlen) }) {
         Ok(()) => 0,
         Err(()) => -1,
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_SHA512_final(
-    outbuf: *mut ::core::ffi::c_uchar,
-    hd: *mut SHA512_CONTEXT,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_SHA512_final(outbuf: *mut ::core::ffi::c_uchar, hd: *mut SHA512_CONTEXT) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { SHA512_final(outbuf, hd) }) {
         Ok(()) => 0,
         Err(()) => -1,
@@ -849,10 +730,7 @@ pub unsafe extern "C" fn __pdf_entry_SHA512_final(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_ARC4(
-    ctx: *mut ARC4_CONTEXT,
-    len: ::core::ffi::c_uint,
-    inbuf: *const ::core::ffi::c_uchar,
-    outbuf: *mut ::core::ffi::c_uchar,
+    ctx: *mut ARC4_CONTEXT, len: ::core::ffi::c_uint, inbuf: *const ::core::ffi::c_uchar, outbuf: *mut ::core::ffi::c_uchar,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { ARC4(ctx, len, inbuf, outbuf) }) {
         Ok(()) => 0,
@@ -860,11 +738,7 @@ pub unsafe extern "C" fn __pdf_entry_ARC4(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_ARC4_set_key(
-    ctx: *mut ARC4_CONTEXT,
-    keylen: ::core::ffi::c_uint,
-    key: *const ::core::ffi::c_uchar,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_ARC4_set_key(ctx: *mut ARC4_CONTEXT, keylen: ::core::ffi::c_uint, key: *const ::core::ffi::c_uchar) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { ARC4_set_key(ctx, keylen, key) }) {
         Ok(()) => 0,
         Err(()) => -1,
@@ -872,16 +746,10 @@ pub unsafe extern "C" fn __pdf_entry_ARC4_set_key(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_AES_ecb_encrypt(
-    key: *const ::core::ffi::c_uchar,
-    key_len: size_t,
-    plain: *const ::core::ffi::c_uchar,
-    plain_len: size_t,
-    cipher: *mut *mut ::core::ffi::c_uchar,
+    key: *const ::core::ffi::c_uchar, key_len: size_t, plain: *const ::core::ffi::c_uchar, plain_len: size_t, cipher: *mut *mut ::core::ffi::c_uchar,
     cipher_len: *mut size_t,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        AES_ecb_encrypt(key, key_len, plain, plain_len, cipher, cipher_len)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { AES_ecb_encrypt(key, key_len, plain, plain_len, cipher, cipher_len) }) {
         Ok(()) => {
             unsafe {
                 crate::compat::allocation::release((*cipher).cast());
@@ -893,20 +761,10 @@ pub unsafe extern "C" fn __pdf_entry_AES_ecb_encrypt(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_AES_cbc_encrypt_tectonic(
-    key: *const ::core::ffi::c_uchar,
-    key_len: size_t,
-    iv: *const ::core::ffi::c_uchar,
-    padding: ::core::ffi::c_int,
-    plain: *const ::core::ffi::c_uchar,
-    plain_len: size_t,
-    cipher: *mut *mut ::core::ffi::c_uchar,
-    cipher_len: *mut size_t,
+    key: *const ::core::ffi::c_uchar, key_len: size_t, iv: *const ::core::ffi::c_uchar, padding: ::core::ffi::c_int,
+    plain: *const ::core::ffi::c_uchar, plain_len: size_t, cipher: *mut *mut ::core::ffi::c_uchar, cipher_len: *mut size_t,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        AES_cbc_encrypt_tectonic(
-            key, key_len, iv, padding, plain, plain_len, cipher, cipher_len,
-        )
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { AES_cbc_encrypt_tectonic(key, key_len, iv, padding, plain, plain_len, cipher, cipher_len) }) {
         Ok(()) => {
             unsafe {
                 crate::compat::allocation::release((*cipher).cast());

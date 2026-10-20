@@ -19,26 +19,13 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::backend::dpx_pdfdev::{pdf_sprint_coord, pdf_sprint_length};
 use crate::backend::dpx_pdfdraw::pdf_dev_transform;
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-    fn sprintf(
-        _: *mut ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    fn sprintf(_: *mut ::core::ffi::c_char, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_release_obj"]
     fn pdf_release_obj(object: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_obj_typeof"]
@@ -62,11 +49,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_lookup_dict"]
     fn pdf_lookup_dict(dict: *mut pdf_obj, key: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_new_stream"]
     fn pdf_new_stream(flags: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_concat_stream"]
@@ -89,11 +72,7 @@ unsafe extern "C-unwind" {
     fn pdf_import_object(object: *mut pdf_obj) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_doc_get_page"]
     fn pdf_doc_get_page(
-        pf: *mut pdf_file,
-        page_no: ::core::ffi::c_int,
-        opt_bbox: pdf_page_boundary,
-        bbox: *mut pdf_rect,
-        matrix: *mut pdf_tmatrix,
+        pf: *mut pdf_file, page_no: ::core::ffi::c_int, opt_bbox: pdf_page_boundary, bbox: *mut pdf_rect, matrix: *mut pdf_tmatrix,
         resources_p: *mut *mut pdf_obj,
     ) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_doc_add_page_content"]
@@ -101,11 +80,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_ximage_init_form_info"]
     fn pdf_ximage_init_form_info(info: *mut xform_info);
     #[link_name = "__pdf_impl_pdf_ximage_set_form"]
-    fn pdf_ximage_set_form(
-        ximage: *mut pdf_ximage,
-        info: *mut ::core::ffi::c_void,
-        resource: *mut pdf_obj,
-    );
+    fn pdf_ximage_set_form(ximage: *mut pdf_ximage, info: *mut ::core::ffi::c_void, resource: *mut pdf_obj);
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_pdf_dev_currentmatrix"]
     fn pdf_dev_currentmatrix(M: *mut pdf_tmatrix) -> ::core::ffi::c_int;
@@ -114,37 +89,17 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_skip_white"]
     fn skip_white(start: *mut *const ::core::ffi::c_char, end: *const ::core::ffi::c_char);
     #[link_name = "__pdf_impl_parse_ident"]
-    fn parse_ident(
-        start: *mut *const ::core::ffi::c_char,
-        end: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_ident(start: *mut *const ::core::ffi::c_char, end: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_parse_pdf_name"]
-    fn parse_pdf_name(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-    ) -> *mut pdf_obj;
+    fn parse_pdf_name(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_parse_pdf_number"]
-    fn parse_pdf_number(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-    ) -> *mut pdf_obj;
+    fn parse_pdf_number(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_parse_pdf_string"]
-    fn parse_pdf_string(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-    ) -> *mut pdf_obj;
+    fn parse_pdf_string(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_parse_pdf_dict"]
-    fn parse_pdf_dict(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-        pf: *mut pdf_file,
-    ) -> *mut pdf_obj;
+    fn parse_pdf_dict(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char, pf: *mut pdf_file) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_parse_pdf_array"]
-    fn parse_pdf_array(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-        pf: *mut pdf_file,
-    ) -> *mut pdf_obj;
+    fn parse_pdf_array(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char, pf: *mut pdf_file) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_dpx_stack_init"]
     fn dpx_stack_init(st: *mut dpx_stack);
     #[link_name = "__pdf_impl_dpx_stack_pop"]
@@ -217,18 +172,11 @@ pub const PDF_NUMBER: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
 pub const PDF_ARRAY: ::core::ffi::c_int = 5 as ::core::ffi::c_int;
 pub const PDF_STREAM: ::core::ffi::c_int = 7 as ::core::ffi::c_int;
 pub const PDF_NULL: ::core::ffi::c_int = 8 as ::core::ffi::c_int;
-pub const STREAM_COMPRESS: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn get_page_content(
-    mut pf: *mut pdf_file,
-    mut page: *mut pdf_obj,
-) -> *mut pdf_obj {
+pub const STREAM_COMPRESS: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+unsafe extern "C-unwind" fn get_page_content(mut pf: *mut pdf_file, mut page: *mut pdf_obj) -> *mut pdf_obj {
     let mut contents: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut content_new: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    contents = pdf_deref_obj(pdf_lookup_dict(
-        page,
-        b"Contents\0" as *const u8 as *const ::core::ffi::c_char,
-    ));
+    contents = pdf_deref_obj(pdf_lookup_dict(page, b"Contents\0" as *const u8 as *const ::core::ffi::c_char));
     if contents.is_null() {
         return ::core::ptr::null_mut::<pdf_obj>();
     }
@@ -243,20 +191,14 @@ unsafe extern "C-unwind" fn get_page_content(
         while (i as ::core::ffi::c_uint) < pdf_array_length(contents) {
             content_seg = pdf_deref_obj(pdf_get_array(contents, i));
             if content_seg.is_null() {
-                pdf_warning!(
-                    b"Could not read page content stream.\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+                pdf_warning!(b"Could not read page content stream.\0" as *const u8 as *const ::core::ffi::c_char,);
                 pdf_release_obj(content_new);
                 return ::core::ptr::null_mut::<pdf_obj>();
             }
             if !content_seg.is_null() && pdf_obj_typeof(content_seg) == PDF_STREAM {
                 pdf_concat_stream(content_new, content_seg);
             } else if !(!content_seg.is_null() && pdf_obj_typeof(content_seg) == PDF_NULL) {
-                pdf_warning!(
-                    b"Page content not a stream object. Broken PDF file?\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+                pdf_warning!(b"Page content not a stream object. Broken PDF file?\0" as *const u8 as *const ::core::ffi::c_char,);
                 pdf_release_obj(content_seg);
                 pdf_release_obj(content_new);
                 pdf_release_obj(contents);
@@ -269,10 +211,7 @@ unsafe extern "C-unwind" fn get_page_content(
         contents = content_new;
     } else {
         if !(!contents.is_null() && pdf_obj_typeof(contents) == PDF_STREAM) {
-            pdf_warning!(
-                b"Page content not a stream object. Broken PDF file?\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"Page content not a stream object. Broken PDF file?\0" as *const u8 as *const ::core::ffi::c_char,);
             pdf_release_obj(contents);
             return ::core::ptr::null_mut::<pdf_obj>();
         }
@@ -285,10 +224,7 @@ unsafe extern "C-unwind" fn get_page_content(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_include_page")]
 pub unsafe extern "C-unwind" fn pdf_include_page(
-    mut ximage: *mut pdf_ximage,
-    mut handle: rust_input_handle_t,
-    mut ident: *const ::core::ffi::c_char,
-    mut options: load_options,
+    mut ximage: *mut pdf_ximage, mut handle: rust_input_handle_t, mut ident: *const ::core::ffi::c_char, mut options: load_options,
 ) -> ::core::ffi::c_int {
     let mut current_block: u64;
     let mut pf: *mut pdf_file = ::core::ptr::null_mut::<pdf_file>();
@@ -332,29 +268,17 @@ pub unsafe extern "C-unwind" fn pdf_include_page(
     );
     if !page.is_null() {
         catalog = pdf_file_get_catalog(pf);
-        markinfo = pdf_deref_obj(pdf_lookup_dict(
-            catalog,
-            b"MarkInfo\0" as *const u8 as *const ::core::ffi::c_char,
-        ));
+        markinfo = pdf_deref_obj(pdf_lookup_dict(catalog, b"MarkInfo\0" as *const u8 as *const ::core::ffi::c_char));
         if !markinfo.is_null() {
-            let mut tmp: *mut pdf_obj = pdf_deref_obj(pdf_lookup_dict(
-                markinfo,
-                b"Marked\0" as *const u8 as *const ::core::ffi::c_char,
-            ));
+            let mut tmp: *mut pdf_obj = pdf_deref_obj(pdf_lookup_dict(markinfo, b"Marked\0" as *const u8 as *const ::core::ffi::c_char));
             pdf_release_obj(markinfo);
             if !(!tmp.is_null() && pdf_obj_typeof(tmp) == PDF_BOOLEAN) {
                 pdf_release_obj(tmp);
-                pdf_warning!(
-                    b"Cannot parse document. Broken PDF file?\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+                pdf_warning!(b"Cannot parse document. Broken PDF file?\0" as *const u8 as *const ::core::ffi::c_char,);
                 current_block = 6574256748389622106;
             } else {
                 if pdf_boolean_value(tmp) != 0 {
-                    pdf_warning!(
-                        b"PDF file is tagged... Ignoring tags.\0" as *const u8
-                            as *const ::core::ffi::c_char,
-                    );
+                    pdf_warning!(b"PDF file is tagged... Ignoring tags.\0" as *const u8 as *const ::core::ffi::c_char,);
                 }
                 pdf_release_obj(tmp);
                 current_block = 1054647088692577877;
@@ -392,11 +316,7 @@ pub unsafe extern "C-unwind" fn pdf_include_page(
                 pdf_add_array(bbox, pdf_new_number(info.bbox.lly));
                 pdf_add_array(bbox, pdf_new_number(info.bbox.urx));
                 pdf_add_array(bbox, pdf_new_number(info.bbox.ury));
-                pdf_add_dict(
-                    contents_dict,
-                    pdf_new_name(b"BBox\0" as *const u8 as *const ::core::ffi::c_char),
-                    bbox,
-                );
+                pdf_add_dict(contents_dict, pdf_new_name(b"BBox\0" as *const u8 as *const ::core::ffi::c_char), bbox);
                 matrix = pdf_new_array();
                 pdf_add_array(matrix, pdf_new_number(info.matrix.a));
                 pdf_add_array(matrix, pdf_new_number(info.matrix.b));
@@ -541,9 +461,7 @@ const OPERATORS: [operator; 22] = [
     },
 ];
 unsafe extern "C-unwind" fn get_numbers_from_stack(
-    mut stack: *mut dpx_stack,
-    mut v: *mut ::core::ffi::c_double,
-    mut n: ::core::ffi::c_int,
+    mut stack: *mut dpx_stack, mut v: *mut ::core::ffi::c_double, mut n: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut i: ::core::ffi::c_int = 0;
@@ -568,10 +486,7 @@ unsafe extern "C-unwind" fn get_numbers_from_stack(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_copy_clip")]
 pub unsafe extern "C-unwind" fn pdf_copy_clip(
-    mut image_file: rust_input_handle_t,
-    mut pageNo: ::core::ffi::c_int,
-    mut x_user: ::core::ffi::c_double,
-    mut y_user: ::core::ffi::c_double,
+    mut image_file: rust_input_handle_t, mut pageNo: ::core::ffi::c_int, mut x_user: ::core::ffi::c_double, mut y_user: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let mut page_tree: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut contents: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -633,10 +548,7 @@ pub unsafe extern "C-unwind" fn pdf_copy_clip(
         pdf_close(pf);
         return -(1 as ::core::ffi::c_int);
     }
-    pdf_doc_add_page_content(
-        b" \0" as *const u8 as *const ::core::ffi::c_char,
-        1 as ::core::ffi::c_uint,
-    );
+    pdf_doc_add_page_content(b" \0" as *const u8 as *const ::core::ffi::c_char, 1 as ::core::ffi::c_uint);
     p = pdf_stream_dataptr(contents) as *const ::core::ffi::c_char;
     endptr = p.offset(pdf_stream_length(contents) as isize);
     depth = 0 as ::core::ffi::c_int;
@@ -675,11 +587,9 @@ pub unsafe extern "C-unwind" fn pdf_copy_clip(
                 }
                 60 => {
                     if p < endptr.offset(-(1 as ::core::ffi::c_int as isize))
-                        && *p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                            == '<' as i32
+                        && *p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '<' as i32
                     {
-                        obj =
-                            parse_pdf_dict(&raw mut p, endptr, ::core::ptr::null_mut::<pdf_file>());
+                        obj = parse_pdf_dict(&raw mut p, endptr, ::core::ptr::null_mut::<pdf_file>());
                     } else {
                         obj = parse_pdf_string(&raw mut p, endptr);
                     }
@@ -697,10 +607,7 @@ pub unsafe extern "C-unwind" fn pdf_copy_clip(
                 }
                 let mut i: ::core::ffi::c_int = 0;
                 i = 0 as ::core::ffi::c_int;
-                while (i as usize)
-                    < (::core::mem::size_of::<[operator; 22]>() as usize)
-                        .wrapping_div(::core::mem::size_of::<operator>() as usize)
-                {
+                while (i as usize) < (::core::mem::size_of::<[operator; 22]>() as usize).wrapping_div(::core::mem::size_of::<operator>() as usize) {
                     if strcmp(token, OPERATORS[i as usize].token) == 0 {
                         action = OPERATORS[i as usize].action;
                         n_args = OPERATORS[i as usize].n_args;
@@ -712,11 +619,7 @@ pub unsafe extern "C-unwind" fn pdf_copy_clip(
                 match action as ::core::ffi::c_uint {
                     3 => {
                         let mut v: [::core::ffi::c_double; 4] = [0.; 4];
-                        error = get_numbers_from_stack(
-                            &raw mut stack,
-                            &raw mut v as *mut ::core::ffi::c_double,
-                            n_args,
-                        );
+                        error = get_numbers_from_stack(&raw mut stack, &raw mut v as *mut ::core::ffi::c_double, n_args);
                         if error == 0 {
                             if M.b == 0.0f64 && M.c == 0.0f64 {
                                 let mut p0: pdf_coord = pdf_coord { x: 0., y: 0. };
@@ -730,24 +633,19 @@ pub unsafe extern "C-unwind" fn pdf_copy_clip(
                                 let fresh0 = len;
                                 len = len.wrapping_add(1);
                                 buf[fresh0 as usize] = ' ' as i32 as ::core::ffi::c_char;
-                                len = len.wrapping_add(pdf_sprint_coord(
-                                    (&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize),
-                                    &raw mut p0,
-                                ) as size_t);
+                                len = len.wrapping_add(
+                                    pdf_sprint_coord((&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize), &raw mut p0) as size_t,
+                                );
                                 let fresh1 = len;
                                 len = len.wrapping_add(1);
                                 buf[fresh1 as usize] = ' ' as i32 as ::core::ffi::c_char;
-                                len = len.wrapping_add(pdf_sprint_length(
-                                    (&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize),
-                                    w,
-                                ) as size_t);
+                                len =
+                                    len.wrapping_add(pdf_sprint_length((&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize), w) as size_t);
                                 let fresh2 = len;
                                 len = len.wrapping_add(1);
                                 buf[fresh2 as usize] = ' ' as i32 as ::core::ffi::c_char;
-                                len = len.wrapping_add(pdf_sprint_length(
-                                    (&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize),
-                                    h,
-                                ) as size_t);
+                                len =
+                                    len.wrapping_add(pdf_sprint_length((&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize), h) as size_t);
                                 len = len.wrapping_add(sprintf(
                                     (&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize),
                                     b" re\0" as *const u8 as *const ::core::ffi::c_char,
@@ -776,10 +674,10 @@ pub unsafe extern "C-unwind" fn pdf_copy_clip(
                                 let fresh3 = len;
                                 len = len.wrapping_add(1);
                                 buf[fresh3 as usize] = ' ' as i32 as ::core::ffi::c_char;
-                                len = len.wrapping_add(pdf_sprint_coord(
-                                    (&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize),
-                                    &raw mut p0_0,
-                                ) as size_t);
+                                len = len
+                                    .wrapping_add(
+                                        pdf_sprint_coord((&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize), &raw mut p0_0) as size_t,
+                                    );
                                 len = len.wrapping_add(sprintf(
                                     (&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize),
                                     b" m\0" as *const u8 as *const ::core::ffi::c_char,
@@ -787,10 +685,9 @@ pub unsafe extern "C-unwind" fn pdf_copy_clip(
                                 let fresh4 = len;
                                 len = len.wrapping_add(1);
                                 buf[fresh4 as usize] = ' ' as i32 as ::core::ffi::c_char;
-                                len = len.wrapping_add(pdf_sprint_coord(
-                                    (&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize),
-                                    &raw mut p1,
-                                ) as size_t);
+                                len = len.wrapping_add(
+                                    pdf_sprint_coord((&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize), &raw mut p1) as size_t,
+                                );
                                 len = len.wrapping_add(sprintf(
                                     (&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize),
                                     b" l\0" as *const u8 as *const ::core::ffi::c_char,
@@ -798,10 +695,9 @@ pub unsafe extern "C-unwind" fn pdf_copy_clip(
                                 let fresh5 = len;
                                 len = len.wrapping_add(1);
                                 buf[fresh5 as usize] = ' ' as i32 as ::core::ffi::c_char;
-                                len = len.wrapping_add(pdf_sprint_coord(
-                                    (&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize),
-                                    &raw mut p2,
-                                ) as size_t);
+                                len = len.wrapping_add(
+                                    pdf_sprint_coord((&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize), &raw mut p2) as size_t,
+                                );
                                 len = len.wrapping_add(sprintf(
                                     (&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize),
                                     b" l\0" as *const u8 as *const ::core::ffi::c_char,
@@ -809,44 +705,34 @@ pub unsafe extern "C-unwind" fn pdf_copy_clip(
                                 let fresh6 = len;
                                 len = len.wrapping_add(1);
                                 buf[fresh6 as usize] = ' ' as i32 as ::core::ffi::c_char;
-                                len = len.wrapping_add(pdf_sprint_coord(
-                                    (&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize),
-                                    &raw mut p3,
-                                ) as size_t);
+                                len = len.wrapping_add(
+                                    pdf_sprint_coord((&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize), &raw mut p3) as size_t,
+                                );
                                 len = len.wrapping_add(sprintf(
                                     (&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize),
                                     b" l h\0" as *const u8 as *const ::core::ffi::c_char,
                                 ) as size_t);
                             }
-                            pdf_doc_add_page_content(
-                                &raw mut buf as *mut ::core::ffi::c_char,
-                                len as ::core::ffi::c_uint,
-                            );
+                            pdf_doc_add_page_content(&raw mut buf as *mut ::core::ffi::c_char, len as ::core::ffi::c_uint);
                         }
                     }
                     2 => {
                         let mut v_0: [::core::ffi::c_double; 6] = [0.; 6];
                         let mut pt: pdf_coord = pdf_coord { x: 0., y: 0. };
                         let mut i_0: ::core::ffi::c_int = 0;
-                        error = get_numbers_from_stack(
-                            &raw mut stack,
-                            &raw mut v_0 as *mut ::core::ffi::c_double,
-                            n_args,
-                        );
+                        error = get_numbers_from_stack(&raw mut stack, &raw mut v_0 as *mut ::core::ffi::c_double, n_args);
                         if error == 0 {
                             i_0 = 0 as ::core::ffi::c_int;
                             while i_0 < n_args / 2 as ::core::ffi::c_int {
                                 pt.x = v_0[(2 as ::core::ffi::c_int * i_0) as usize];
-                                pt.y = v_0[(2 as ::core::ffi::c_int * i_0 + 1 as ::core::ffi::c_int)
-                                    as usize];
+                                pt.y = v_0[(2 as ::core::ffi::c_int * i_0 + 1 as ::core::ffi::c_int) as usize];
                                 pdf_dev_transform(&raw mut pt, &raw mut M);
                                 let fresh7 = len;
                                 len = len.wrapping_add(1);
                                 buf[fresh7 as usize] = ' ' as i32 as ::core::ffi::c_char;
-                                len = len.wrapping_add(pdf_sprint_coord(
-                                    (&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize),
-                                    &raw mut pt,
-                                ) as size_t);
+                                len = len.wrapping_add(
+                                    pdf_sprint_coord((&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize), &raw mut pt) as size_t,
+                                );
                                 i_0 += 1;
                             }
                             len = len.wrapping_add(sprintf(
@@ -854,10 +740,7 @@ pub unsafe extern "C-unwind" fn pdf_copy_clip(
                                 b" %s\0" as *const u8 as *const ::core::ffi::c_char,
                                 token,
                             ) as size_t);
-                            pdf_doc_add_page_content(
-                                &raw mut buf as *mut ::core::ffi::c_char,
-                                len as ::core::ffi::c_uint,
-                            );
+                            pdf_doc_add_page_content(&raw mut buf as *mut ::core::ffi::c_char, len as ::core::ffi::c_uint);
                         }
                     }
                     4 => {
@@ -870,11 +753,7 @@ pub unsafe extern "C-unwind" fn pdf_copy_clip(
                             e: 0.,
                             f: 0.,
                         };
-                        error = get_numbers_from_stack(
-                            &raw mut stack,
-                            &raw mut v_1 as *mut ::core::ffi::c_double,
-                            n_args,
-                        );
+                        error = get_numbers_from_stack(&raw mut stack, &raw mut v_1 as *mut ::core::ffi::c_double, n_args);
                         if error == 0 {
                             T.a = v_1[0 as ::core::ffi::c_int as usize];
                             T.b = v_1[1 as ::core::ffi::c_int as usize];
@@ -899,20 +778,15 @@ pub unsafe extern "C-unwind" fn pdf_copy_clip(
                         }
                     }
                     5 => {
-                        if *token.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                            >= 'a' as i32
-                            && *token.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                                <= 'z' as i32
+                        if *token.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int >= 'a' as i32
+                            && *token.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int <= 'z' as i32
                         {
                             len = len.wrapping_add(sprintf(
                                 (&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize),
                                 b" h\0" as *const u8 as *const ::core::ffi::c_char,
                             ) as size_t);
                         }
-                        if strlen(token) >= 2 as size_t
-                            && *token.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                                == '*' as i32
-                        {
+                        if strlen(token) >= 2 as size_t && *token.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '*' as i32 {
                             len = len.wrapping_add(sprintf(
                                 (&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize),
                                 b" W* n\0" as *const u8 as *const ::core::ffi::c_char,
@@ -923,10 +797,7 @@ pub unsafe extern "C-unwind" fn pdf_copy_clip(
                                 b" W n\0" as *const u8 as *const ::core::ffi::c_char,
                             ) as size_t);
                         }
-                        pdf_doc_add_page_content(
-                            &raw mut buf as *mut ::core::ffi::c_char,
-                            len as ::core::ffi::c_uint,
-                        );
+                        pdf_doc_add_page_content(&raw mut buf as *mut ::core::ffi::c_char, len as ::core::ffi::c_uint);
                     }
                     6 => {
                         depth += 1;
@@ -979,15 +850,10 @@ pub struct pdf_ximage_ {
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_include_page(
-    mut ximage: *mut pdf_ximage,
-    mut handle: rust_input_handle_t,
-    mut ident: *const ::core::ffi::c_char,
-    mut options: load_options,
+    mut ximage: *mut pdf_ximage, mut handle: rust_input_handle_t, mut ident: *const ::core::ffi::c_char, mut options: load_options,
     _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_include_page(ximage, handle, ident, options)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_include_page(ximage, handle, ident, options) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -999,15 +865,10 @@ pub unsafe extern "C" fn __pdf_entry_pdf_include_page(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_copy_clip(
-    mut image_file: rust_input_handle_t,
-    mut pageNo: ::core::ffi::c_int,
-    mut x_user: ::core::ffi::c_double,
-    mut y_user: ::core::ffi::c_double,
+    mut image_file: rust_input_handle_t, mut pageNo: ::core::ffi::c_int, mut x_user: ::core::ffi::c_double, mut y_user: ::core::ffi::c_double,
     _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_copy_clip(image_file, pageNo, x_user, y_user)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_copy_clip(image_file, pageNo, x_user, y_user) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);

@@ -28,16 +28,14 @@ fn main() {
     // known to be able to profile *without* frame pointers: currently, only
     // Linux/x86_64.
 
-    let profile_target_requires_frame_pointer: bool =
-        target_cfg!(not(all(target_os = "linux", target_arch = "x86_64")));
+    let profile_target_requires_frame_pointer: bool = target_cfg!(not(all(target_os = "linux", target_arch = "x86_64")));
 
     #[allow(unexpected_cfgs)]
     const PROFILE_BUILD_ENABLED: bool = cfg!(feature = "profile");
 
     let profile_config = |cfg: &mut cc::Build| {
         if PROFILE_BUILD_ENABLED {
-            cfg.debug(true)
-                .force_frame_pointer(profile_target_requires_frame_pointer);
+            cfg.debug(true).force_frame_pointer(profile_target_requires_frame_pointer);
         }
     };
 

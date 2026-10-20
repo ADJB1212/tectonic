@@ -17,30 +17,16 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 unsafe extern "C-unwind" {
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
-    fn ttstub_input_read(
-        handle: rust_input_handle_t,
-        data: *mut ::core::ffi::c_char,
-        len: size_t,
-    ) -> ssize_t;
+    fn ttstub_input_read(handle: rust_input_handle_t, data: *mut ::core::ffi::c_char, len: size_t) -> ssize_t;
     #[link_name = "__pdf_impl_tt_get_unsigned_pair"]
     fn tt_get_unsigned_pair(handle: rust_input_handle_t) -> ::core::ffi::c_ushort;
     #[link_name = "__pdf_impl_tt_get_signed_pair"]
     fn tt_get_signed_pair(handle: rust_input_handle_t) -> ::core::ffi::c_short;
     #[link_name = "__pdf_impl_put_big_endian"]
-    fn put_big_endian(
-        s: *mut ::core::ffi::c_void,
-        q: SFNT_LONG,
-        n: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn put_big_endian(s: *mut ::core::ffi::c_void, q: SFNT_LONG, n: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_sfnt_find_table_len"]
     fn sfnt_find_table_len(sfont: *mut sfnt, tag: *const ::core::ffi::c_char) -> SFNT_ULONG;
     #[link_name = "__pdf_impl_sfnt_find_table_pos"]
@@ -262,49 +248,26 @@ fn alloc_table<T: Copy>(value: T) -> *mut T {
 }
 
 #[unsafe(export_name = "__pdf_impl_tt_pack_head_table")]
-pub unsafe extern "C-unwind" fn tt_pack_head_table(
-    mut table: *mut tt_head_table,
-) -> *mut ::core::ffi::c_char {
+pub unsafe extern "C-unwind" fn tt_pack_head_table(mut table: *mut tt_head_table) -> *mut ::core::ffi::c_char {
     let mut i: ::core::ffi::c_int = 0;
     let mut p: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut data: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     if table.is_null() {
         pdf_abort!(b"passed NULL pointer\n\0" as *const u8 as *const ::core::ffi::c_char);
     }
-    data = new((54 as ::core::ffi::c_ulong as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
+    data = new((54 as ::core::ffi::c_ulong as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+        as *mut ::core::ffi::c_char;
     p = data;
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).version as SFNT_LONG,
-        4 as ::core::ffi::c_int,
-    ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).fontRevision as SFNT_LONG,
-        4 as ::core::ffi::c_int,
-    ) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).version as SFNT_LONG, 4 as ::core::ffi::c_int) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).fontRevision as SFNT_LONG, 4 as ::core::ffi::c_int) as isize);
     p = p.offset(put_big_endian(
         p as *mut ::core::ffi::c_void,
         (*table).checkSumAdjustment as SFNT_LONG,
         4 as ::core::ffi::c_int,
     ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).magicNumber as SFNT_LONG,
-        4 as ::core::ffi::c_int,
-    ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).flags as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).unitsPerEm as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).magicNumber as SFNT_LONG, 4 as ::core::ffi::c_int) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).flags as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).unitsPerEm as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
     i = 0 as ::core::ffi::c_int;
     while i < 8 as ::core::ffi::c_int {
         let fresh0 = p;
@@ -319,31 +282,11 @@ pub unsafe extern "C-unwind" fn tt_pack_head_table(
         *fresh1 = (*table).modified[i as usize] as ::core::ffi::c_char;
         i += 1;
     }
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).xMin as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).yMin as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).xMax as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).yMax as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).macStyle as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).xMin as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).yMin as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).xMax as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).yMax as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).macStyle as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
     p = p.offset(put_big_endian(
         p as *mut ::core::ffi::c_void,
         (*table).lowestRecPPEM as SFNT_LONG,
@@ -375,10 +318,7 @@ pub unsafe extern "C-unwind" fn tt_read_head_table(sfont: *mut sfnt) -> *mut tt_
         fontRevision: header.font_revision().to_bits() as u32,
         checkSumAdjustment: header.checksum_adjustment(),
         magicNumber: header.magic_number(),
-        flags: header
-            .offset_data()
-            .read_at(header.flags_byte_range().start)
-            .unwrap(),
+        flags: header.offset_data().read_at(header.flags_byte_range().start).unwrap(),
         unitsPerEm: header.units_per_em(),
         created: header.created().to_be_bytes(),
         modified: header.modified().to_be_bytes(),
@@ -386,10 +326,7 @@ pub unsafe extern "C-unwind" fn tt_read_head_table(sfont: *mut sfnt) -> *mut tt_
         yMin: header.y_min(),
         xMax: header.x_max(),
         yMax: header.y_max(),
-        macStyle: header
-            .offset_data()
-            .read_at(header.mac_style_byte_range().start)
-            .unwrap(),
+        macStyle: header.offset_data().read_at(header.mac_style_byte_range().start).unwrap(),
         lowestRecPPEM: header.lowest_rec_ppem(),
         fontDirectionHint: header.font_direction_hint(),
         indexToLocFormat: header.index_to_loc_format(),
@@ -397,35 +334,16 @@ pub unsafe extern "C-unwind" fn tt_read_head_table(sfont: *mut sfnt) -> *mut tt_
     })
 }
 #[unsafe(export_name = "__pdf_impl_tt_pack_maxp_table")]
-pub unsafe extern "C-unwind" fn tt_pack_maxp_table(
-    mut table: *mut tt_maxp_table,
-) -> *mut ::core::ffi::c_char {
+pub unsafe extern "C-unwind" fn tt_pack_maxp_table(mut table: *mut tt_maxp_table) -> *mut ::core::ffi::c_char {
     let mut p: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut data: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    data = new((32 as ::core::ffi::c_ulong as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
+    data = new((32 as ::core::ffi::c_ulong as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+        as *mut ::core::ffi::c_char;
     p = data;
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).version as SFNT_LONG,
-        4 as ::core::ffi::c_int,
-    ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).numGlyphs as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).maxPoints as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).maxContours as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).version as SFNT_LONG, 4 as ::core::ffi::c_int) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).numGlyphs as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).maxPoints as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).maxContours as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
     p = p.offset(put_big_endian(
         p as *mut ::core::ffi::c_void,
         (*table).maxComponentPoints as SFNT_LONG,
@@ -436,21 +354,13 @@ pub unsafe extern "C-unwind" fn tt_pack_maxp_table(
         (*table).maxComponentContours as SFNT_LONG,
         2 as ::core::ffi::c_int,
     ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).maxZones as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).maxZones as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
     p = p.offset(put_big_endian(
         p as *mut ::core::ffi::c_void,
         (*table).maxTwilightPoints as SFNT_LONG,
         2 as ::core::ffi::c_int,
     ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).maxStorage as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).maxStorage as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
     p = p.offset(put_big_endian(
         p as *mut ::core::ffi::c_void,
         (*table).maxFunctionDefs as SFNT_LONG,
@@ -510,36 +420,17 @@ pub unsafe extern "C-unwind" fn tt_read_maxp_table(sfont: *mut sfnt) -> *mut tt_
     })
 }
 #[unsafe(export_name = "__pdf_impl_tt_pack_hhea_table")]
-pub unsafe extern "C-unwind" fn tt_pack_hhea_table(
-    mut table: *mut tt_hhea_table,
-) -> *mut ::core::ffi::c_char {
+pub unsafe extern "C-unwind" fn tt_pack_hhea_table(mut table: *mut tt_hhea_table) -> *mut ::core::ffi::c_char {
     let mut i: ::core::ffi::c_int = 0;
     let mut p: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut data: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    data = new((36 as ::core::ffi::c_ulong as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
+    data = new((36 as ::core::ffi::c_ulong as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+        as *mut ::core::ffi::c_char;
     p = data;
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).version as SFNT_LONG,
-        4 as ::core::ffi::c_int,
-    ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).ascent as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).descent as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).lineGap as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).version as SFNT_LONG, 4 as ::core::ffi::c_int) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).ascent as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).descent as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).lineGap as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
     p = p.offset(put_big_endian(
         p as *mut ::core::ffi::c_void,
         (*table).advanceWidthMax as SFNT_LONG,
@@ -555,11 +446,7 @@ pub unsafe extern "C-unwind" fn tt_pack_hhea_table(
         (*table).minRightSideBearing as SFNT_LONG,
         2 as ::core::ffi::c_int,
     ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).xMaxExtent as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).xMaxExtent as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
     p = p.offset(put_big_endian(
         p as *mut ::core::ffi::c_void,
         (*table).caretSlopeRise as SFNT_LONG,
@@ -570,11 +457,7 @@ pub unsafe extern "C-unwind" fn tt_pack_hhea_table(
         (*table).caretSlopeRun as SFNT_LONG,
         2 as ::core::ffi::c_int,
     ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*table).caretOffset as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*table).caretOffset as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
     i = 0 as ::core::ffi::c_int;
     while i < 4 as ::core::ffi::c_int {
         p = p.offset(put_big_endian(
@@ -617,17 +500,10 @@ pub unsafe extern "C-unwind" fn tt_read_hhea_table(sfont: *mut sfnt) -> *mut tt_
         caretSlopeRise: header.caret_slope_rise(),
         caretSlopeRun: header.caret_slope_run(),
         caretOffset: header.caret_offset(),
-        reserved: core::array::from_fn(|i| {
-            header
-                .offset_data()
-                .read_at(header.reserved1_byte_range().start + i * 2)
-                .unwrap()
-        }),
+        reserved: core::array::from_fn(|i| header.offset_data().read_at(header.reserved1_byte_range().start + i * 2).unwrap()),
         metricDataFormat: header.metric_data_format(),
         numOfLongHorMetrics: num_metrics,
-        numOfExSideBearings: metrics_len
-            .wrapping_sub(u32::from(num_metrics) * 4)
-            .wrapping_div(2) as u16,
+        numOfExSideBearings: metrics_len.wrapping_sub(u32::from(num_metrics) * 4).wrapping_div(2) as u16,
     })
 }
 #[unsafe(export_name = "__pdf_impl_tt_read_vhea_table")]
@@ -648,17 +524,10 @@ pub unsafe extern "C-unwind" fn tt_read_vhea_table(sfont: *mut sfnt) -> *mut tt_
         caretSlopeRise: header.caret_slope_rise(),
         caretSlopeRun: header.caret_slope_run(),
         caretOffset: header.caret_offset(),
-        reserved: core::array::from_fn(|i| {
-            header
-                .offset_data()
-                .read_at(header.reserved1_byte_range().start + i * 2)
-                .unwrap()
-        }),
+        reserved: core::array::from_fn(|i| header.offset_data().read_at(header.reserved1_byte_range().start + i * 2).unwrap()),
         metricDataFormat: header.metric_data_format(),
         numOfLongVerMetrics: num_metrics,
-        numOfExSideBearings: metrics_len
-            .wrapping_sub(u32::from(num_metrics) * 4)
-            .wrapping_div(2) as u16,
+        numOfExSideBearings: metrics_len.wrapping_sub(u32::from(num_metrics) * 4).wrapping_div(2) as u16,
     })
 }
 #[unsafe(export_name = "__pdf_impl_tt_read_VORG_table")]
@@ -675,8 +544,7 @@ pub unsafe extern "C-unwind" fn tt_read_VORG_table(sfont: *mut sfnt) -> *mut tt_
     if records.len() != usize::from(header.num_vert_origin_y_metrics()) {
         pdf_abort!("Invalid TrueType VORG table");
     }
-    let metrics = new((records.len() * core::mem::size_of::<tt_vertOriginYMetrics>()) as u32)
-        .cast::<tt_vertOriginYMetrics>();
+    let metrics = new((records.len() * core::mem::size_of::<tt_vertOriginYMetrics>()) as u32).cast::<tt_vertOriginYMetrics>();
     for (i, record) in records.iter().enumerate() {
         metrics.add(i).write(tt_vertOriginYMetrics {
             glyphIndex: record.glyph_index().to_u16(),
@@ -691,26 +559,19 @@ pub unsafe extern "C-unwind" fn tt_read_VORG_table(sfont: *mut sfnt) -> *mut tt_
 }
 #[unsafe(export_name = "__pdf_impl_tt_read_longMetrics")]
 pub unsafe extern "C-unwind" fn tt_read_longMetrics(
-    mut sfont: *mut sfnt,
-    mut numGlyphs: USHORT,
-    mut numLongMetrics: USHORT,
-    mut numExSideBearings: USHORT,
+    mut sfont: *mut sfnt, mut numGlyphs: USHORT, mut numLongMetrics: USHORT, mut numExSideBearings: USHORT,
 ) -> *mut tt_longMetrics {
     let mut m: *mut tt_longMetrics = ::core::ptr::null_mut::<tt_longMetrics>();
     let mut gid: USHORT = 0;
     let mut last_adv: USHORT = 0 as USHORT;
     let mut last_esb: SHORT = 0 as SHORT;
-    m = new((numGlyphs as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<tt_longMetrics>() as usize) as uint32_t)
-        as *mut tt_longMetrics;
+    m = new((numGlyphs as uint32_t as usize).wrapping_mul(::core::mem::size_of::<tt_longMetrics>() as usize) as uint32_t) as *mut tt_longMetrics;
     gid = 0 as USHORT;
     while (gid as ::core::ffi::c_int) < numGlyphs as ::core::ffi::c_int {
         if (gid as ::core::ffi::c_int) < numLongMetrics as ::core::ffi::c_int {
             last_adv = tt_get_unsigned_pair((*sfont).handle);
         }
-        if (gid as ::core::ffi::c_int)
-            < numLongMetrics as ::core::ffi::c_int + numExSideBearings as ::core::ffi::c_int
-        {
+        if (gid as ::core::ffi::c_int) < numLongMetrics as ::core::ffi::c_int + numExSideBearings as ::core::ffi::c_int {
             last_esb = tt_get_signed_pair((*sfont).handle);
         }
         (*m.offset(gid as isize)).advance = last_adv;
@@ -759,10 +620,7 @@ pub unsafe extern "C-unwind" fn tt_read_os2__table(sfont: *mut sfnt) -> *mut tt_
         ulUnicodeRange3: header.ul_unicode_range_3(),
         ulUnicodeRange4: header.ul_unicode_range_4(),
         achVendID: header.ach_vend_id().to_be_bytes().map(|byte| byte as i8),
-        fsSelection: header
-            .offset_data()
-            .read_at(header.fs_selection_byte_range().start)
-            .unwrap(),
+        fsSelection: header.offset_data().read_at(header.fs_selection_byte_range().start).unwrap(),
         usFirstCharIndex: header.us_first_char_index(),
         usLastCharIndex: header.us_last_char_index(),
         sTypoAscender: header.s_typo_ascender(),
@@ -779,11 +637,7 @@ pub unsafe extern "C-unwind" fn tt_read_os2__table(sfont: *mut sfnt) -> *mut tt_
         usMaxContext: header.us_max_context().unwrap_or(0),
     })
 }
-fn tt_get_name(
-    table: &read_fonts::tables::name::Name<'_>,
-    output: &mut [u8],
-    ids: (u16, u16, u16, u16),
-) -> usize {
+fn tt_get_name(table: &read_fonts::tables::name::Name<'_>, output: &mut [u8], ids: (u16, u16, u16, u16)) -> usize {
     use read_fonts::Offset;
     let (platform, encoding, language, name_id) = ids;
     let Some(record) = table.name_record().iter().find(|record| {
@@ -804,10 +658,7 @@ fn tt_get_name(
     let length = if utf16 { bytes.len() / 2 } else { bytes.len() };
     let copied = length.min(output.len() - 1);
     if copied < length {
-        pdf_warning!(
-            "Name string too long ({length}), truncating to {}",
-            output.len()
-        );
+        pdf_warning!("Name string too long ({length}), truncating to {}", output.len());
     }
     if utf16 {
         for (output, pair) in output.iter_mut().zip(bytes.as_chunks::<2>().0).take(copied) {
@@ -821,11 +672,7 @@ fn tt_get_name(
 }
 
 #[unsafe(export_name = "__pdf_impl_tt_get_ps_fontname")]
-pub unsafe extern "C-unwind" fn tt_get_ps_fontname(
-    sfont: *mut sfnt,
-    dest: *mut ::core::ffi::c_char,
-    destlen: USHORT,
-) -> USHORT {
+pub unsafe extern "C-unwind" fn tt_get_ps_fontname(sfont: *mut sfnt, dest: *mut ::core::ffi::c_char, destlen: USHORT) -> USHORT {
     use read_fonts::{FontRead, tables::name::Name};
     if destlen == 0 {
         return 0;
@@ -849,10 +696,7 @@ pub unsafe extern "C-unwind" fn tt_get_ps_fontname(
     length as u16
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_pack_head_table(
-    mut table: *mut tt_head_table,
-    _result: *mut *mut ::core::ffi::c_char,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_pack_head_table(mut table: *mut tt_head_table, _result: *mut *mut ::core::ffi::c_char) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_pack_head_table(table) }) {
         Ok(value) => {
             unsafe {
@@ -864,10 +708,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_pack_head_table(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_read_head_table(
-    mut sfont: *mut sfnt,
-    _result: *mut *mut tt_head_table,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_read_head_table(mut sfont: *mut sfnt, _result: *mut *mut tt_head_table) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_read_head_table(sfont) }) {
         Ok(value) => {
             unsafe {
@@ -879,10 +720,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_read_head_table(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_pack_maxp_table(
-    mut table: *mut tt_maxp_table,
-    _result: *mut *mut ::core::ffi::c_char,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_pack_maxp_table(mut table: *mut tt_maxp_table, _result: *mut *mut ::core::ffi::c_char) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_pack_maxp_table(table) }) {
         Ok(value) => {
             unsafe {
@@ -894,10 +732,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_pack_maxp_table(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_read_maxp_table(
-    mut sfont: *mut sfnt,
-    _result: *mut *mut tt_maxp_table,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_read_maxp_table(mut sfont: *mut sfnt, _result: *mut *mut tt_maxp_table) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_read_maxp_table(sfont) }) {
         Ok(value) => {
             unsafe {
@@ -909,10 +744,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_read_maxp_table(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_pack_hhea_table(
-    mut table: *mut tt_hhea_table,
-    _result: *mut *mut ::core::ffi::c_char,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_pack_hhea_table(mut table: *mut tt_hhea_table, _result: *mut *mut ::core::ffi::c_char) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_pack_hhea_table(table) }) {
         Ok(value) => {
             unsafe {
@@ -924,10 +756,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_pack_hhea_table(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_read_hhea_table(
-    mut sfont: *mut sfnt,
-    _result: *mut *mut tt_hhea_table,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_read_hhea_table(mut sfont: *mut sfnt, _result: *mut *mut tt_hhea_table) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_read_hhea_table(sfont) }) {
         Ok(value) => {
             unsafe {
@@ -939,10 +768,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_read_hhea_table(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_read_vhea_table(
-    mut sfont: *mut sfnt,
-    _result: *mut *mut tt_vhea_table,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_read_vhea_table(mut sfont: *mut sfnt, _result: *mut *mut tt_vhea_table) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_read_vhea_table(sfont) }) {
         Ok(value) => {
             unsafe {
@@ -954,10 +780,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_read_vhea_table(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_read_VORG_table(
-    mut sfont: *mut sfnt,
-    _result: *mut *mut tt_VORG_table,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_read_VORG_table(mut sfont: *mut sfnt, _result: *mut *mut tt_VORG_table) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_read_VORG_table(sfont) }) {
         Ok(value) => {
             unsafe {
@@ -970,15 +793,9 @@ pub unsafe extern "C" fn __pdf_entry_tt_read_VORG_table(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_tt_read_longMetrics(
-    mut sfont: *mut sfnt,
-    mut numGlyphs: USHORT,
-    mut numLongMetrics: USHORT,
-    mut numExSideBearings: USHORT,
-    _result: *mut *mut tt_longMetrics,
+    mut sfont: *mut sfnt, mut numGlyphs: USHORT, mut numLongMetrics: USHORT, mut numExSideBearings: USHORT, _result: *mut *mut tt_longMetrics,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        tt_read_longMetrics(sfont, numGlyphs, numLongMetrics, numExSideBearings)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { tt_read_longMetrics(sfont, numGlyphs, numLongMetrics, numExSideBearings) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -989,10 +806,7 @@ pub unsafe extern "C" fn __pdf_entry_tt_read_longMetrics(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_tt_read_os2__table(
-    mut sfont: *mut sfnt,
-    _result: *mut *mut tt_os2__table,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_tt_read_os2__table(mut sfont: *mut sfnt, _result: *mut *mut tt_os2__table) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_read_os2__table(sfont) }) {
         Ok(value) => {
             unsafe {
@@ -1005,13 +819,9 @@ pub unsafe extern "C" fn __pdf_entry_tt_read_os2__table(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_tt_get_ps_fontname(
-    mut sfont: *mut sfnt,
-    mut dest: *mut ::core::ffi::c_char,
-    mut destlen: USHORT,
-    _result: *mut USHORT,
+    mut sfont: *mut sfnt, mut dest: *mut ::core::ffi::c_char, mut destlen: USHORT, _result: *mut USHORT,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { tt_get_ps_fontname(sfont, dest, destlen) })
-    {
+    match crate::backend::runtime::boundary(|| unsafe { tt_get_ps_fontname(sfont, dest, destlen) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);

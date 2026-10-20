@@ -15,9 +15,7 @@ pub(crate) fn header(input: &mut impl Read) -> Result<u32, PdfError> {
         return Err(error("VF file may be corrupt", 0));
     }
     let mut comment = [0; 255];
-    input
-        .read_exact(&mut comment[..preamble[2] as usize])
-        .map_err(io)?;
+    input.read_exact(&mut comment[..preamble[2] as usize]).map_err(io)?;
     let mut fields = [0; 8];
     input.read_exact(&mut fields).map_err(io)?;
     let size = u32::from_be_bytes(fields[4..].try_into().unwrap());
@@ -51,9 +49,7 @@ impl<R: Read + Seek> Records<R> {
         let start = input.stream_position().map_err(io)?;
         let end = input.seek(SeekFrom::End(0)).map_err(io)?;
         input.seek(SeekFrom::Start(start)).map_err(io)?;
-        let remaining = end
-            .checked_sub(start)
-            .ok_or_else(|| error("VF file ended prematurely.", 0))?;
+        let remaining = end.checked_sub(start).ok_or_else(|| error("VF file ended prematurely.", 0))?;
         Ok(Self { input, remaining })
     }
     fn read(&mut self, bytes: &mut [u8]) -> Result<(), PdfError> {
@@ -111,10 +107,7 @@ impl<R: Read + Seek> Records<R> {
                 };
                 self.value(if opcode == 242 { 4 } else { 3 })?;
                 if code >= 0x0100_0000 {
-                    return Err(error(
-                        "Long character (>24 bits) in VF file.\nI can't handle long characters!\n",
-                        0,
-                    ));
+                    return Err(error("Long character (>24 bits) in VF file.\nI can't handle long characters!\n", 0));
                 }
                 Ok(Record::Character {
                     code,
@@ -142,20 +135,13 @@ mod tests {
         assert_eq!(packet, [138, 140]);
         assert!(matches!(records.next().unwrap(), Record::End));
         for end in 0..7 {
-            assert!(
-                Records::new(Cursor::new(&bytes[..end]))
-                    .unwrap()
-                    .next()
-                    .is_err()
-            );
+            assert!(Records::new(Cursor::new(&bytes[..end])).unwrap().next().is_err());
         }
         assert!(
-            Records::new(Cursor::new([
-                242, 255, 255, 255, 255, 0, 0, 0, 1, 0, 0, 0, 0
-            ]))
-            .unwrap()
-            .next()
-            .is_err()
+            Records::new(Cursor::new([242, 255, 255, 255, 255, 0, 0, 0, 1, 0, 0, 0, 0]))
+                .unwrap()
+                .next()
+                .is_err()
         );
     }
 }

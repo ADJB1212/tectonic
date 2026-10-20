@@ -19,34 +19,17 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
     fn isascii(_: ::core::ffi::c_int) -> ::core::ffi::c_int;
     fn cos(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn sin(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn atof(_: *const ::core::ffi::c_char) -> ::core::ffi::c_double;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[cfg_attr(windows, link_name = "_stricmp")]
-    fn strcasecmp(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
+    fn strcasecmp(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_release_obj"]
     fn pdf_release_obj(object: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_obj_typeof"]
@@ -58,68 +41,37 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_get_array"]
     fn pdf_get_array(array: *mut pdf_obj, idx: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_color_rgbcolor"]
-    fn pdf_color_rgbcolor(
-        color: *mut pdf_color,
-        r: ::core::ffi::c_double,
-        g: ::core::ffi::c_double,
-        b: ::core::ffi::c_double,
-    ) -> ::core::ffi::c_int;
+    fn pdf_color_rgbcolor(color: *mut pdf_color, r: ::core::ffi::c_double, g: ::core::ffi::c_double, b: ::core::ffi::c_double) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_color_cmykcolor"]
     fn pdf_color_cmykcolor(
-        color: *mut pdf_color,
-        c: ::core::ffi::c_double,
-        m: ::core::ffi::c_double,
-        y: ::core::ffi::c_double,
-        k: ::core::ffi::c_double,
+        color: *mut pdf_color, c: ::core::ffi::c_double, m: ::core::ffi::c_double, y: ::core::ffi::c_double, k: ::core::ffi::c_double,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_color_graycolor"]
     fn pdf_color_graycolor(color: *mut pdf_color, g: ::core::ffi::c_double) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_color_spotcolor"]
-    fn pdf_color_spotcolor(
-        color: *mut pdf_color,
-        color_name: *mut ::core::ffi::c_char,
-        c: ::core::ffi::c_double,
-    ) -> ::core::ffi::c_int;
+    fn pdf_color_spotcolor(color: *mut pdf_color, color_name: *mut ::core::ffi::c_char, c: ::core::ffi::c_double) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_color_copycolor"]
     fn pdf_color_copycolor(color1: *mut pdf_color, color2: *const pdf_color);
     fn spc_warn(spe: *mut spc_env, fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_spc_lookup_object"]
     fn spc_lookup_object(ident: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_parse_float_decimal"]
-    fn parse_float_decimal(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_float_decimal(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_parse_c_ident"]
-    fn parse_c_ident(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_c_ident(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_skip_white"]
     fn skip_white(start: *mut *const ::core::ffi::c_char, end: *const ::core::ffi::c_char);
     #[link_name = "__pdf_impl_parse_opt_ident"]
-    fn parse_opt_ident(
-        start: *mut *const ::core::ffi::c_char,
-        end: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_opt_ident(start: *mut *const ::core::ffi::c_char, end: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_parse_pdf_name"]
-    fn parse_pdf_name(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-    ) -> *mut pdf_obj;
+    fn parse_pdf_name(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_defineresource"]
     fn pdf_defineresource(
-        category: *const ::core::ffi::c_char,
-        resname: *const ::core::ffi::c_char,
-        object: *mut pdf_obj,
-        flags: ::core::ffi::c_int,
+        category: *const ::core::ffi::c_char, resname: *const ::core::ffi::c_char, object: *mut pdf_obj, flags: ::core::ffi::c_int,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_findresource"]
-    fn pdf_findresource(
-        category: *const ::core::ffi::c_char,
-        resname: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
+    fn pdf_findresource(category: *const ::core::ffi::c_char, resname: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
 }
 pub type __darwin_size_t = usize;
 pub type size_t = __darwin_size_t;
@@ -181,10 +133,7 @@ unsafe extern "C-unwind" fn mfree(mut ptr: *mut ::core::ffi::c_void) -> *mut ::c
     return NULL;
 }
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
@@ -207,22 +156,16 @@ pub const PDF_COLORSPACE_TYPE_DEVICEN: ::core::ffi::c_int = 9 as ::core::ffi::c_
 pub const PDF_COLORSPACE_TYPE_INDEXED: ::core::ffi::c_int = 10 as ::core::ffi::c_int;
 pub const PDF_COLORSPACE_TYPE_PATTERN: ::core::ffi::c_int = 11 as ::core::ffi::c_int;
 pub const PDF_COLOR_COMPONENT_MAX: ::core::ffi::c_int = 32 as ::core::ffi::c_int;
-pub const INFO_HAS_USER_BBOX: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const INFO_HAS_USER_BBOX: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const INFO_HAS_WIDTH: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
-pub const INFO_HAS_HEIGHT: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
+pub const INFO_HAS_HEIGHT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
 pub const INFO_DO_CLIP: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 3 as ::core::ffi::c_int;
 pub const INFO_DO_HIDE: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 4 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn skip_blank(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
-) {
+unsafe extern "C-unwind" fn skip_blank(mut pp: *mut *const ::core::ffi::c_char, mut endptr: *const ::core::ffi::c_char) {
     let mut p: *const ::core::ffi::c_char = *pp;
     while p < endptr
         && (crate::backend::runtime::is_ascii(*p as ::core::ffi::c_int) != 0
-            && (*p as ::core::ffi::c_uchar as ::core::ffi::c_int == ' ' as i32
-                || *p as ::core::ffi::c_uchar as ::core::ffi::c_int == '\t' as i32))
+            && (*p as ::core::ffi::c_uchar as ::core::ffi::c_int == ' ' as i32 || *p as ::core::ffi::c_uchar as ::core::ffi::c_int == '\t' as i32))
     {
         p = p.offset(1);
     }
@@ -230,9 +173,7 @@ unsafe extern "C-unwind" fn skip_blank(
 }
 #[unsafe(export_name = "__pdf_impl_spc_util_read_numbers")]
 pub unsafe extern "C-unwind" fn spc_util_read_numbers(
-    mut values: *mut ::core::ffi::c_double,
-    mut num_values: ::core::ffi::c_int,
-    mut args: *mut spc_arg,
+    mut values: *mut ::core::ffi::c_double, mut num_values: ::core::ffi::c_int, mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
     let mut count: ::core::ffi::c_int = 0;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -251,19 +192,13 @@ pub unsafe extern "C-unwind" fn spc_util_read_numbers(
     return count;
 }
 unsafe extern "C-unwind" fn rgb_color_from_hsv(
-    mut color: *mut pdf_color,
-    mut h: ::core::ffi::c_double,
-    mut s: ::core::ffi::c_double,
-    mut v: ::core::ffi::c_double,
+    mut color: *mut pdf_color, mut h: ::core::ffi::c_double, mut s: ::core::ffi::c_double, mut v: ::core::ffi::c_double,
 ) {
     let mut r: ::core::ffi::c_double = 0.;
     let mut g: ::core::ffi::c_double = 0.;
     let mut b: ::core::ffi::c_double = 0.;
     if color.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"color\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"color\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     b = v;
@@ -281,9 +216,7 @@ unsafe extern "C-unwind" fn rgb_color_from_hsv(
         f = h6 - i as ::core::ffi::c_double;
         v1 = v * (1 as ::core::ffi::c_int as ::core::ffi::c_double - s);
         v2 = v * (1 as ::core::ffi::c_int as ::core::ffi::c_double - s * f);
-        v3 = v
-            * (1 as ::core::ffi::c_int as ::core::ffi::c_double
-                - s * (1 as ::core::ffi::c_int as ::core::ffi::c_double - f));
+        v3 = v * (1 as ::core::ffi::c_int as ::core::ffi::c_double - s * (1 as ::core::ffi::c_int as ::core::ffi::c_double - f));
         match i {
             0 => {
                 r = v;
@@ -325,11 +258,7 @@ unsafe extern "C-unwind" fn rgb_color_from_hsv(
     }
     pdf_color_rgbcolor(color, r, g, b);
 }
-unsafe extern "C-unwind" fn spc_read_color_color(
-    mut spe: *mut spc_env,
-    mut colorspec: *mut pdf_color,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_read_color_color(mut spe: *mut spc_env, mut colorspec: *mut pdf_color, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut cv: [::core::ffi::c_double; 4] = [0.; 4];
     let mut nc: ::core::ffi::c_int = 0;
@@ -341,16 +270,9 @@ unsafe extern "C-unwind" fn spc_read_color_color(
     }
     skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
     if streq_ptr(q, b"rgb\0" as *const u8 as *const ::core::ffi::c_char) {
-        nc = spc_util_read_numbers(
-            &raw mut cv as *mut ::core::ffi::c_double,
-            3 as ::core::ffi::c_int,
-            ap,
-        );
+        nc = spc_util_read_numbers(&raw mut cv as *mut ::core::ffi::c_double, 3 as ::core::ffi::c_int, ap);
         if nc != 3 as ::core::ffi::c_int {
-            pdf_warning!(
-                b"Invalid value for RGB color specification.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Invalid value for RGB color specification.\0" as *const u8 as *const ::core::ffi::c_char);
             error = -(1 as ::core::ffi::c_int);
         } else {
             pdf_color_rgbcolor(
@@ -361,16 +283,9 @@ unsafe extern "C-unwind" fn spc_read_color_color(
             );
         }
     } else if streq_ptr(q, b"cmyk\0" as *const u8 as *const ::core::ffi::c_char) {
-        nc = spc_util_read_numbers(
-            &raw mut cv as *mut ::core::ffi::c_double,
-            4 as ::core::ffi::c_int,
-            ap,
-        );
+        nc = spc_util_read_numbers(&raw mut cv as *mut ::core::ffi::c_double, 4 as ::core::ffi::c_int, ap);
         if nc != 4 as ::core::ffi::c_int {
-            pdf_warning!(
-                b"Invalid value for CMYK color specification.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Invalid value for CMYK color specification.\0" as *const u8 as *const ::core::ffi::c_char);
             error = -(1 as ::core::ffi::c_int);
         } else {
             pdf_color_cmykcolor(
@@ -382,56 +297,32 @@ unsafe extern "C-unwind" fn spc_read_color_color(
             );
         }
     } else if streq_ptr(q, b"gray\0" as *const u8 as *const ::core::ffi::c_char) {
-        nc = spc_util_read_numbers(
-            &raw mut cv as *mut ::core::ffi::c_double,
-            1 as ::core::ffi::c_int,
-            ap,
-        );
+        nc = spc_util_read_numbers(&raw mut cv as *mut ::core::ffi::c_double, 1 as ::core::ffi::c_int, ap);
         if nc != 1 as ::core::ffi::c_int {
-            pdf_warning!(
-                b"Invalid value for gray color specification.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Invalid value for gray color specification.\0" as *const u8 as *const ::core::ffi::c_char);
             error = -(1 as ::core::ffi::c_int);
         } else {
             pdf_color_graycolor(colorspec, cv[0 as ::core::ffi::c_int as usize]);
         }
     } else if streq_ptr(q, b"spot\0" as *const u8 as *const ::core::ffi::c_char) {
-        let mut color_name: *mut ::core::ffi::c_char =
-            parse_c_ident(&raw mut (*ap).curptr, (*ap).endptr);
+        let mut color_name: *mut ::core::ffi::c_char = parse_c_ident(&raw mut (*ap).curptr, (*ap).endptr);
         if color_name.is_null() {
-            pdf_warning!(
-                b"No valid spot color name specified?\0" as *const u8 as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"No valid spot color name specified?\0" as *const u8 as *const ::core::ffi::c_char);
             return -(1 as ::core::ffi::c_int);
         }
         skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
-        nc = spc_util_read_numbers(
-            &raw mut cv as *mut ::core::ffi::c_double,
-            1 as ::core::ffi::c_int,
-            ap,
-        );
+        nc = spc_util_read_numbers(&raw mut cv as *mut ::core::ffi::c_double, 1 as ::core::ffi::c_int, ap);
         if nc != 1 as ::core::ffi::c_int {
-            pdf_warning!(
-                b"Invalid value for spot color specification.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Invalid value for spot color specification.\0" as *const u8 as *const ::core::ffi::c_char);
             error = -(1 as ::core::ffi::c_int);
             free(color_name as *mut ::core::ffi::c_void);
         } else {
             pdf_color_spotcolor(colorspec, color_name, cv[0 as ::core::ffi::c_int as usize]);
         }
     } else if streq_ptr(q, b"hsb\0" as *const u8 as *const ::core::ffi::c_char) {
-        nc = spc_util_read_numbers(
-            &raw mut cv as *mut ::core::ffi::c_double,
-            3 as ::core::ffi::c_int,
-            ap,
-        );
+        nc = spc_util_read_numbers(&raw mut cv as *mut ::core::ffi::c_double, 3 as ::core::ffi::c_int, ap);
         if nc != 3 as ::core::ffi::c_int {
-            pdf_warning!(
-                b"Invalid value for HSB color specification.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Invalid value for HSB color specification.\0" as *const u8 as *const ::core::ffi::c_char);
             error = -(1 as ::core::ffi::c_int);
         } else {
             rgb_color_from_hsv(
@@ -441,8 +332,7 @@ unsafe extern "C-unwind" fn spc_read_color_color(
                 cv[2 as ::core::ffi::c_int as usize],
             );
             pdf_warning!(
-                b"HSB color converted to RGB: hsb: <%g, %g, %g> ==> rgb: <%g, %g, %g>\0"
-                    as *const u8 as *const ::core::ffi::c_char,
+                b"HSB color converted to RGB: hsb: <%g, %g, %g> ==> rgb: <%g, %g, %g>\0" as *const u8 as *const ::core::ffi::c_char,
                 cv[0 as ::core::ffi::c_int as usize],
                 cv[1 as ::core::ffi::c_int as usize],
                 cv[2 as ::core::ffi::c_int as usize],
@@ -454,20 +344,13 @@ unsafe extern "C-unwind" fn spc_read_color_color(
     } else {
         error = pdf_color_namedcolor(colorspec, q);
         if error != 0 {
-            pdf_warning!(
-                b"Unrecognized color name: %s\0" as *const u8 as *const ::core::ffi::c_char,
-                q
-            );
+            pdf_warning!(b"Unrecognized color name: %s\0" as *const u8 as *const ::core::ffi::c_char, q);
         }
     }
     free(q as *mut ::core::ffi::c_void);
     return error;
 }
-unsafe extern "C-unwind" fn spc_read_color_pdf(
-    mut spe: *mut spc_env,
-    mut colorspec: *mut pdf_color,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_read_color_pdf(mut spe: *mut spc_env, mut colorspec: *mut pdf_color, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let mut cv: [::core::ffi::c_double; 32] = [0.; 32];
     let mut nc: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut type_0: ::core::ffi::c_int = PDF_COLORSPACE_TYPE_INVALID;
@@ -481,17 +364,13 @@ unsafe extern "C-unwind" fn spc_read_color_pdf(
         let mut name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
         ident = parse_opt_ident(&raw mut (*ap).curptr, (*ap).endptr);
         skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
-        res_id = pdf_findresource(
-            b"ColorSpace\0" as *const u8 as *const ::core::ffi::c_char,
-            ident,
-        );
+        res_id = pdf_findresource(b"ColorSpace\0" as *const u8 as *const ::core::ffi::c_char, ident);
         let mut cspace: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
         let mut csname: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
         cspace = spc_lookup_object(ident);
         if cspace.is_null() || !(!cspace.is_null() && pdf_obj_typeof(cspace) == PDF_ARRAY) {
             pdf_warning!(
-                b"Couldn't find ColorSpace resource for \"@%s\"... (or not an array object?)\0"
-                    as *const u8 as *const ::core::ffi::c_char,
+                b"Couldn't find ColorSpace resource for \"@%s\"... (or not an array object?)\0" as *const u8 as *const ::core::ffi::c_char,
                 ident,
             );
             free(ident as *mut ::core::ffi::c_void);
@@ -500,25 +379,16 @@ unsafe extern "C-unwind" fn spc_read_color_pdf(
         csname = pdf_get_array(cspace, 0 as ::core::ffi::c_int);
         if csname.is_null() || !(!csname.is_null() && pdf_obj_typeof(csname) == PDF_NAME) {
             pdf_warning!(
-                b"Invalid ColorSpace resource for \"@%s\" found...\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Invalid ColorSpace resource for \"@%s\" found...\0" as *const u8 as *const ::core::ffi::c_char,
                 ident,
             );
             free(ident as *mut ::core::ffi::c_void);
             return -(1 as ::core::ffi::c_int);
         }
         name = pdf_name_value(csname);
-        if strcmp(
-            name,
-            b"Separation\0" as *const u8 as *const ::core::ffi::c_char,
-        ) == 0
-        {
+        if strcmp(name, b"Separation\0" as *const u8 as *const ::core::ffi::c_char) == 0 {
             type_0 = PDF_COLORSPACE_TYPE_SEPARATION;
-        } else if strcmp(
-            name,
-            b"CalGray\0" as *const u8 as *const ::core::ffi::c_char,
-        ) == 0
-        {
+        } else if strcmp(name, b"CalGray\0" as *const u8 as *const ::core::ffi::c_char) == 0 {
             type_0 = PDF_COLORSPACE_TYPE_CALGRAY;
             nc = 1 as ::core::ffi::c_int;
         } else if strcmp(name, b"CalRGB\0" as *const u8 as *const ::core::ffi::c_char) == 0 {
@@ -527,38 +397,21 @@ unsafe extern "C-unwind" fn spc_read_color_pdf(
         } else if strcmp(name, b"LAB\0" as *const u8 as *const ::core::ffi::c_char) == 0 {
             type_0 = PDF_COLORSPACE_TYPE_LAB;
             nc = 3 as ::core::ffi::c_int;
-        } else if strcmp(
-            name,
-            b"ICCBased\0" as *const u8 as *const ::core::ffi::c_char,
-        ) == 0
-        {
+        } else if strcmp(name, b"ICCBased\0" as *const u8 as *const ::core::ffi::c_char) == 0 {
             type_0 = PDF_COLORSPACE_TYPE_ICCBASED;
             nc = -(1 as ::core::ffi::c_int);
-        } else if strcmp(
-            name,
-            b"DeviceN\0" as *const u8 as *const ::core::ffi::c_char,
-        ) == 0
-        {
+        } else if strcmp(name, b"DeviceN\0" as *const u8 as *const ::core::ffi::c_char) == 0 {
             type_0 = PDF_COLORSPACE_TYPE_DEVICEN;
             nc = -(1 as ::core::ffi::c_int);
-        } else if strcmp(
-            name,
-            b"Indexed\0" as *const u8 as *const ::core::ffi::c_char,
-        ) == 0
-        {
+        } else if strcmp(name, b"Indexed\0" as *const u8 as *const ::core::ffi::c_char) == 0 {
             type_0 = PDF_COLORSPACE_TYPE_INDEXED;
             nc = 1 as ::core::ffi::c_int;
-        } else if strcmp(
-            name,
-            b"Pattern\0" as *const u8 as *const ::core::ffi::c_char,
-        ) == 0
-        {
+        } else if strcmp(name, b"Pattern\0" as *const u8 as *const ::core::ffi::c_char) == 0 {
             type_0 = PDF_COLORSPACE_TYPE_PATTERN;
             nc = -(1 as ::core::ffi::c_int);
         } else {
             pdf_warning!(
-                b"Specified object \"%s\" not a ColorSpace???\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Specified object \"%s\" not a ColorSpace???\0" as *const u8 as *const ::core::ffi::c_char,
                 ident,
             );
             return -(1 as ::core::ffi::c_int);
@@ -574,9 +427,7 @@ unsafe extern "C-unwind" fn spc_read_color_pdf(
         free(ident as *mut ::core::ffi::c_void);
         (*colorspec).res_id = res_id;
         (*colorspec).type_0 = type_0;
-        if *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-            == '[' as i32
-        {
+        if *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '[' as i32 {
             (*ap).curptr = (*ap).curptr.offset(1);
             skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
             isarry = 1 as ::core::ffi::c_int;
@@ -585,18 +436,11 @@ unsafe extern "C-unwind" fn spc_read_color_pdf(
             let mut n: ::core::ffi::c_int = 0;
             n = spc_util_read_numbers(&raw mut cv as *mut ::core::ffi::c_double, nc, ap);
             if n != nc {
-                pdf_warning!(
-                    b"Wrong number of color components...\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+                pdf_warning!(b"Wrong number of color components...\0" as *const u8 as *const ::core::ffi::c_char,);
                 return -(1 as ::core::ffi::c_int);
             }
         } else {
-            nc = spc_util_read_numbers(
-                &raw mut cv as *mut ::core::ffi::c_double,
-                PDF_COLOR_COMPONENT_MAX,
-                ap,
-            );
+            nc = spc_util_read_numbers(&raw mut cv as *mut ::core::ffi::c_double, PDF_COLOR_COMPONENT_MAX, ap);
         }
         (*colorspec).num_components = nc;
         loop {
@@ -609,20 +453,12 @@ unsafe extern "C-unwind" fn spc_read_color_pdf(
         }
         if type_0 == PDF_COLORSPACE_TYPE_PATTERN {
             skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
-            if *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                != '@' as i32
-            {
-                pdf_warning!(
-                    b"An object reference expected but not found for Pattern!\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+            if *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '@' as i32 {
+                pdf_warning!(b"An object reference expected but not found for Pattern!\0" as *const u8 as *const ::core::ffi::c_char,);
                 return -(1 as ::core::ffi::c_int);
             }
             ident = parse_opt_ident(&raw mut (*ap).curptr, (*ap).endptr);
-            res_id = pdf_findresource(
-                b"Pattern\0" as *const u8 as *const ::core::ffi::c_char,
-                ident,
-            );
+            res_id = pdf_findresource(b"Pattern\0" as *const u8 as *const ::core::ffi::c_char, ident);
             if res_id < 0 as ::core::ffi::c_int {
                 let mut pattern: *mut pdf_obj = spc_lookup_object(ident);
                 res_id = pdf_defineresource(
@@ -637,64 +473,39 @@ unsafe extern "C-unwind" fn spc_read_color_pdf(
         }
         if isarry != 0 {
             skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
-            if (*ap).curptr >= (*ap).endptr
-                || *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    != ']' as i32
-            {
+            if (*ap).curptr >= (*ap).endptr || *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != ']' as i32 {
                 pdf_warning!(
-                    b"Unbalanced '[' and ']' or wrong number of color components in color specification?\0"
-                    as * const u8 as * const ::core::ffi::c_char
+                    b"Unbalanced '[' and ']' or wrong number of color components in color specification?\0" as *const u8
+                        as *const ::core::ffi::c_char
                 );
                 error = -(1 as ::core::ffi::c_int);
             } else {
                 (*ap).curptr = (*ap).curptr.offset(1);
             }
         }
-    } else if *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-        == '/' as i32
-    {
+    } else if *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '/' as i32 {
         let mut csname_0: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
         csname_0 = parse_pdf_name(&raw mut (*ap).curptr, (*ap).endptr);
         if csname_0.is_null() {
-            pdf_warning!(
-                b"Failed to read a name object while parsing colorspecification...\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"Failed to read a name object while parsing colorspecification...\0" as *const u8 as *const ::core::ffi::c_char,);
             return -(1 as ::core::ffi::c_int);
         } else {
             let mut name_0: *mut ::core::ffi::c_char = pdf_name_value(csname_0);
-            if strcmp(
-                name_0,
-                b"DeviceGray\0" as *const u8 as *const ::core::ffi::c_char,
-            ) == 0
-            {
+            if strcmp(name_0, b"DeviceGray\0" as *const u8 as *const ::core::ffi::c_char) == 0 {
                 type_0 = PDF_COLORSPACE_TYPE_DEVICEGRAY;
                 nc = 1 as ::core::ffi::c_int;
-            } else if strcmp(
-                name_0,
-                b"DeviceRGB\0" as *const u8 as *const ::core::ffi::c_char,
-            ) == 0
-            {
+            } else if strcmp(name_0, b"DeviceRGB\0" as *const u8 as *const ::core::ffi::c_char) == 0 {
                 type_0 = PDF_COLORSPACE_TYPE_DEVICERGB;
                 nc = 3 as ::core::ffi::c_int;
-            } else if strcmp(
-                name_0,
-                b"DeviceCMYK\0" as *const u8 as *const ::core::ffi::c_char,
-            ) == 0
-            {
+            } else if strcmp(name_0, b"DeviceCMYK\0" as *const u8 as *const ::core::ffi::c_char) == 0 {
                 type_0 = PDF_COLORSPACE_TYPE_DEVICECMYK;
                 nc = 4 as ::core::ffi::c_int;
-            } else if strcmp(
-                name_0,
-                b"Pattern\0" as *const u8 as *const ::core::ffi::c_char,
-            ) == 0
-            {
+            } else if strcmp(name_0, b"Pattern\0" as *const u8 as *const ::core::ffi::c_char) == 0 {
                 type_0 = PDF_COLORSPACE_TYPE_PATTERN;
                 nc = 0 as ::core::ffi::c_int;
             } else {
                 pdf_warning!(
-                    b"Unknown ColorSpace name specified: %s\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Unknown ColorSpace name specified: %s\0" as *const u8 as *const ::core::ffi::c_char,
                     name_0,
                 );
                 return -(1 as ::core::ffi::c_int);
@@ -704,20 +515,14 @@ unsafe extern "C-unwind" fn spc_read_color_pdf(
         }
         (*colorspec).res_id = -(1 as ::core::ffi::c_int);
         (*colorspec).type_0 = type_0;
-        if *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-            == '[' as i32
-        {
+        if *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '[' as i32 {
             (*ap).curptr = (*ap).curptr.offset(1);
             skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
             isarry = 1 as ::core::ffi::c_int;
         }
-        let mut n_0: ::core::ffi::c_int =
-            spc_util_read_numbers(&raw mut cv as *mut ::core::ffi::c_double, nc, ap);
+        let mut n_0: ::core::ffi::c_int = spc_util_read_numbers(&raw mut cv as *mut ::core::ffi::c_double, nc, ap);
         if n_0 != nc {
-            pdf_warning!(
-                b"Wrong number of color components for this ColorSpace...\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"Wrong number of color components for this ColorSpace...\0" as *const u8 as *const ::core::ffi::c_char,);
             return -(1 as ::core::ffi::c_int);
         }
         (*colorspec).num_components = nc;
@@ -730,24 +535,15 @@ unsafe extern "C-unwind" fn spc_read_color_pdf(
             (*colorspec).values[nc as usize] = cv[nc as usize];
         }
         if type_0 == PDF_COLORSPACE_TYPE_PATTERN {
-            let mut ident_0: *mut ::core::ffi::c_char =
-                ::core::ptr::null_mut::<::core::ffi::c_char>();
+            let mut ident_0: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
             let mut res_id_0: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
             skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
-            if *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                != '@' as i32
-            {
-                pdf_warning!(
-                    b"An object reference expected but not found for Pattern!\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+            if *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '@' as i32 {
+                pdf_warning!(b"An object reference expected but not found for Pattern!\0" as *const u8 as *const ::core::ffi::c_char,);
                 return -(1 as ::core::ffi::c_int);
             }
             ident_0 = parse_opt_ident(&raw mut (*ap).curptr, (*ap).endptr);
-            res_id_0 = pdf_findresource(
-                b"Pattern\0" as *const u8 as *const ::core::ffi::c_char,
-                ident_0,
-            );
+            res_id_0 = pdf_findresource(b"Pattern\0" as *const u8 as *const ::core::ffi::c_char, ident_0);
             if res_id_0 < 0 as ::core::ffi::c_int {
                 let mut pattern_0: *mut pdf_obj = spc_lookup_object(ident_0);
                 res_id_0 = pdf_defineresource(
@@ -762,13 +558,10 @@ unsafe extern "C-unwind" fn spc_read_color_pdf(
         }
         if isarry != 0 {
             skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
-            if (*ap).curptr >= (*ap).endptr
-                || *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    != ']' as i32
-            {
+            if (*ap).curptr >= (*ap).endptr || *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != ']' as i32 {
                 pdf_warning!(
-                    b"Unbalanced '[' and ']' or wrong number of color components in color specification?\0"
-                    as * const u8 as * const ::core::ffi::c_char
+                    b"Unbalanced '[' and ']' or wrong number of color components in color specification?\0" as *const u8
+                        as *const ::core::ffi::c_char
                 );
                 error = -(1 as ::core::ffi::c_int);
             } else {
@@ -776,18 +569,12 @@ unsafe extern "C-unwind" fn spc_read_color_pdf(
             }
         }
     } else {
-        if *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-            == '[' as i32
-        {
+        if *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '[' as i32 {
             (*ap).curptr = (*ap).curptr.offset(1);
             skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
             isarry = 1 as ::core::ffi::c_int;
         }
-        nc = spc_util_read_numbers(
-            &raw mut cv as *mut ::core::ffi::c_double,
-            4 as ::core::ffi::c_int,
-            ap,
-        );
+        nc = spc_util_read_numbers(&raw mut cv as *mut ::core::ffi::c_double, 4 as ::core::ffi::c_int, ap);
         match nc {
             1 => {
                 pdf_color_graycolor(colorspec, cv[0 as ::core::ffi::c_int as usize]);
@@ -812,16 +599,13 @@ unsafe extern "C-unwind" fn spc_read_color_pdf(
             _ => {
                 q = parse_c_ident(&raw mut (*ap).curptr, (*ap).endptr);
                 if q.is_null() {
-                    pdf_warning!(
-                        b"No valid color specified?\0" as *const u8 as *const ::core::ffi::c_char
-                    );
+                    pdf_warning!(b"No valid color specified?\0" as *const u8 as *const ::core::ffi::c_char);
                     return -(1 as ::core::ffi::c_int);
                 }
                 error = pdf_color_namedcolor(colorspec, q);
                 if error != 0 {
                     pdf_warning!(
-                        b"Unrecognized color name: %s, keep the current color\0" as *const u8
-                            as *const ::core::ffi::c_char,
+                        b"Unrecognized color name: %s, keep the current color\0" as *const u8 as *const ::core::ffi::c_char,
                         q
                     );
                 }
@@ -830,14 +614,8 @@ unsafe extern "C-unwind" fn spc_read_color_pdf(
         }
         if isarry != 0 {
             skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
-            if (*ap).curptr >= (*ap).endptr
-                || *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    != ']' as i32
-            {
-                pdf_warning!(
-                    b"Unbalanced '[' and ']' in color specification.\0" as *const u8
-                        as *const ::core::ffi::c_char
-                );
+            if (*ap).curptr >= (*ap).endptr || *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != ']' as i32 {
+                pdf_warning!(b"Unbalanced '[' and ']' in color specification.\0" as *const u8 as *const ::core::ffi::c_char);
                 error = -(1 as ::core::ffi::c_int);
             } else {
                 (*ap).curptr = (*ap).curptr.offset(1);
@@ -848,15 +626,9 @@ unsafe extern "C-unwind" fn spc_read_color_pdf(
 }
 #[unsafe(export_name = "__pdf_impl_spc_util_read_colorspec")]
 pub unsafe extern "C-unwind" fn spc_util_read_colorspec(
-    mut spe: *mut spc_env,
-    mut colorspec: *mut pdf_color,
-    mut ap: *mut spc_arg,
-    mut syntax: ::core::ffi::c_int,
+    mut spe: *mut spc_env, mut colorspec: *mut pdf_color, mut ap: *mut spc_arg, mut syntax: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
-    if !(!colorspec.is_null() && !spe.is_null() && !ap.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!colorspec.is_null() && !spe.is_null() && !ap.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"colorspec && spe && ap\0" as *const u8 as *const ::core::ffi::c_char
@@ -876,16 +648,10 @@ pub unsafe extern "C-unwind" fn spc_util_read_colorspec(
 }
 #[unsafe(export_name = "__pdf_impl_spc_util_read_pdfcolor")]
 pub unsafe extern "C-unwind" fn spc_util_read_pdfcolor(
-    mut spe: *mut spc_env,
-    mut colorspec: *mut pdf_color,
-    mut ap: *mut spc_arg,
-    mut defaultcolor: *mut pdf_color,
+    mut spe: *mut spc_env, mut colorspec: *mut pdf_color, mut ap: *mut spc_arg, mut defaultcolor: *mut pdf_color,
 ) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    if !(!colorspec.is_null() && !spe.is_null() && !ap.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!colorspec.is_null() && !spe.is_null() && !ap.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"colorspec && spe && ap\0" as *const u8 as *const ::core::ffi::c_char
@@ -903,11 +669,7 @@ pub unsafe extern "C-unwind" fn spc_util_read_pdfcolor(
     }
     return error;
 }
-unsafe extern "C-unwind" fn spc_util_read_length(
-    spe: *mut spc_env,
-    vp: *mut f64,
-    ap: *mut spc_arg,
-) -> i32 {
+unsafe extern "C-unwind" fn spc_util_read_length(spe: *mut spc_env, vp: *mut f64, ap: *mut spc_arg) -> i32 {
     let number = parse_float_decimal(&raw mut (*ap).curptr, (*ap).endptr);
     if number.is_null() {
         return -1;
@@ -920,10 +682,7 @@ unsafe extern "C-unwind" fn spc_util_read_length(
     let mut allocation = parse_c_ident(&raw mut (*ap).curptr, (*ap).endptr);
     if !allocation.is_null() {
         let mut unit = allocation;
-        if std::ffi::CStr::from_ptr(unit)
-            .to_bytes()
-            .starts_with(b"true")
-        {
+        if std::ffi::CStr::from_ptr(unit).to_bytes().starts_with(b"true") {
             scale /= if (*spe).mag != 0.0 { (*spe).mag } else { 1.0 };
             unit = unit.add(4);
             if *unit == 0 {
@@ -951,12 +710,8 @@ unsafe extern "C-unwind" fn spc_util_read_length(
     error
 }
 unsafe extern "C-unwind" fn make_transmatrix(
-    mut M: *mut pdf_tmatrix,
-    mut xoffset: ::core::ffi::c_double,
-    mut yoffset: ::core::ffi::c_double,
-    mut xscale: ::core::ffi::c_double,
-    mut yscale: ::core::ffi::c_double,
-    mut rotate: ::core::ffi::c_double,
+    mut M: *mut pdf_tmatrix, mut xoffset: ::core::ffi::c_double, mut yoffset: ::core::ffi::c_double, mut xscale: ::core::ffi::c_double,
+    mut yscale: ::core::ffi::c_double, mut rotate: ::core::ffi::c_double,
 ) {
     let mut c: ::core::ffi::c_double = 0.;
     let mut s: ::core::ffi::c_double = 0.;
@@ -969,11 +724,7 @@ unsafe extern "C-unwind" fn make_transmatrix(
     (*M).e = xoffset;
     (*M).f = yoffset;
 }
-unsafe extern "C-unwind" fn spc_read_dimtrns_dvips(
-    mut spe: *mut spc_env,
-    mut t: *mut transform_info,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_read_dimtrns_dvips(mut spe: *mut spc_env, mut t: *mut transform_info, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     const DTKEYS: [*const ::core::ffi::c_char; 15] = [
         b"hoffset\0" as *const u8 as *const ::core::ffi::c_char,
         b"voffset\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1017,8 +768,7 @@ unsafe extern "C-unwind" fn spc_read_dimtrns_dvips(
         }
         if DTKEYS[k as usize].is_null() {
             pdf_warning!(
-                b"Unrecognized dimension/transformation key: %s\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Unrecognized dimension/transformation key: %s\0" as *const u8 as *const ::core::ffi::c_char,
                 kp
             );
             error = -(1 as ::core::ffi::c_int);
@@ -1030,35 +780,21 @@ unsafe extern "C-unwind" fn spc_read_dimtrns_dvips(
                 (*t).flags |= INFO_DO_CLIP;
                 free(kp as *mut ::core::ffi::c_void);
             } else {
-                if (*ap).curptr < (*ap).endptr
-                    && *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == '=' as i32
-                {
+                if (*ap).curptr < (*ap).endptr && *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '=' as i32 {
                     (*ap).curptr = (*ap).curptr.offset(1);
                     skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
                 }
                 vp = ::core::ptr::null_mut::<::core::ffi::c_char>();
-                if *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == '\'' as i32
-                    || *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        == '"' as i32
+                if *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\'' as i32
+                    || *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '"' as i32
                 {
-                    let mut qchr: ::core::ffi::c_char =
-                        *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize);
+                    let mut qchr: ::core::ffi::c_char = *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize);
                     (*ap).curptr = (*ap).curptr.offset(1);
                     skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
                     vp = parse_float_decimal(&raw mut (*ap).curptr, (*ap).endptr);
                     skip_blank(&raw mut (*ap).curptr, (*ap).endptr);
-                    if !vp.is_null()
-                        && qchr as ::core::ffi::c_int
-                            != *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize)
-                                as ::core::ffi::c_int
-                    {
-                        pdf_warning!(
-                            b"Syntax error in dimension/transformation specification.\0"
-                                as *const u8
-                                as *const ::core::ffi::c_char
-                        );
+                    if !vp.is_null() && qchr as ::core::ffi::c_int != *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int {
+                        pdf_warning!(b"Syntax error in dimension/transformation specification.\0" as *const u8 as *const ::core::ffi::c_char);
                         error = -(1 as ::core::ffi::c_int);
                         vp = mfree(vp as *mut ::core::ffi::c_void) as *mut ::core::ffi::c_char;
                     }
@@ -1068,8 +804,7 @@ unsafe extern "C-unwind" fn spc_read_dimtrns_dvips(
                 }
                 if error == 0 && vp.is_null() {
                     pdf_warning!(
-                        b"Missing value for dimension/transformation: %s\0" as *const u8
-                            as *const ::core::ffi::c_char,
+                        b"Missing value for dimension/transformation: %s\0" as *const u8 as *const ::core::ffi::c_char,
                         kp
                     );
                     error = -(1 as ::core::ffi::c_int);
@@ -1133,14 +868,7 @@ unsafe extern "C-unwind" fn spc_read_dimtrns_dvips(
             }
         }
     }
-    make_transmatrix(
-        &raw mut (*t).matrix,
-        xoffset,
-        yoffset,
-        xscale,
-        yscale,
-        rotate,
-    );
+    make_transmatrix(&raw mut (*t).matrix, xoffset, yoffset, xscale, yscale, rotate);
     return error;
 }
 pub const K_TRN__HOFFSET: ::core::ffi::c_int = 0;
@@ -1157,11 +885,7 @@ pub const K_DIM__URX: ::core::ffi::c_int = 10;
 pub const K_DIM__URY: ::core::ffi::c_int = 11;
 pub const K_DIM__RWI: ::core::ffi::c_int = 12;
 pub const K_DIM__RHI: ::core::ffi::c_int = 13;
-unsafe extern "C-unwind" fn spc_read_dimtrns_pdfm(
-    mut spe: *mut spc_env,
-    mut p: *mut transform_info,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_read_dimtrns_pdfm(mut spe: *mut spc_env, mut p: *mut transform_info, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let mut has_scale: ::core::ffi::c_int = 0;
     let mut has_xscale: ::core::ffi::c_int = 0;
     let mut has_yscale: ::core::ffi::c_int = 0;
@@ -1265,12 +989,7 @@ unsafe extern "C-unwind" fn spc_read_dimtrns_pdfm(
             }
             K_TRN__BBOX => {
                 let mut v: [::core::ffi::c_double; 4] = [0.; 4];
-                if spc_util_read_numbers(
-                    &raw mut v as *mut ::core::ffi::c_double,
-                    4 as ::core::ffi::c_int,
-                    ap,
-                ) != 4 as ::core::ffi::c_int
-                {
+                if spc_util_read_numbers(&raw mut v as *mut ::core::ffi::c_double, 4 as ::core::ffi::c_int, ap) != 4 as ::core::ffi::c_int {
                     error = -(1 as ::core::ffi::c_int);
                 } else {
                     (*p).bbox.llx = v[0 as ::core::ffi::c_int as usize];
@@ -1282,12 +1001,7 @@ unsafe extern "C-unwind" fn spc_read_dimtrns_pdfm(
             }
             K_TRN__MATRIX => {
                 let mut v_0: [::core::ffi::c_double; 6] = [0.; 6];
-                if spc_util_read_numbers(
-                    &raw mut v_0 as *mut ::core::ffi::c_double,
-                    6 as ::core::ffi::c_int,
-                    ap,
-                ) != 6 as ::core::ffi::c_int
-                {
+                if spc_util_read_numbers(&raw mut v_0 as *mut ::core::ffi::c_double, 6 as ::core::ffi::c_int, ap) != 6 as ::core::ffi::c_int {
                     error = -(1 as ::core::ffi::c_int);
                 } else {
                     (*p).matrix.a = v_0[0 as ::core::ffi::c_int as usize];
@@ -1321,8 +1035,7 @@ unsafe extern "C-unwind" fn spc_read_dimtrns_pdfm(
         }
         if error != 0 {
             pdf_warning!(
-                b"Unrecognized key or invalid value for dimension/transformation: %s\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Unrecognized key or invalid value for dimension/transformation: %s\0" as *const u8 as *const ::core::ffi::c_char,
                 kp
             );
         } else {
@@ -1332,29 +1045,17 @@ unsafe extern "C-unwind" fn spc_read_dimtrns_pdfm(
     }
     if error == 0 {
         if has_xscale != 0 && (*p).flags & INFO_HAS_WIDTH != 0 {
-            pdf_warning!(
-                b"Can't supply both width and xscale. Ignore xscale.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Can't supply both width and xscale. Ignore xscale.\0" as *const u8 as *const ::core::ffi::c_char);
             xscale = 1.0f64;
         } else if has_yscale != 0 && (*p).flags & INFO_HAS_HEIGHT != 0 {
-            pdf_warning!(
-                b"Can't supply both height/depth and yscale. Ignore yscale.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Can't supply both height/depth and yscale. Ignore yscale.\0" as *const u8 as *const ::core::ffi::c_char);
             yscale = 1.0f64;
         } else if has_scale != 0 && (has_xscale != 0 || has_yscale != 0) {
-            pdf_warning!(
-                b"Can't supply overall scale along with axis scales.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Can't supply overall scale along with axis scales.\0" as *const u8 as *const ::core::ffi::c_char);
             error = -(1 as ::core::ffi::c_int);
-        } else if has_matrix != 0
-            && (has_scale != 0 || has_xscale != 0 || has_yscale != 0 || has_rotate != 0)
-        {
+        } else if has_matrix != 0 && (has_scale != 0 || has_xscale != 0 || has_yscale != 0 || has_rotate != 0) {
             pdf_warning!(
-                b"Can't supply transform matrix along with scales or rotate. Ignore scales and rotate.\0"
-                as * const u8 as * const ::core::ffi::c_char
+                b"Can't supply transform matrix along with scales or rotate. Ignore scales and rotate.\0" as *const u8 as *const ::core::ffi::c_char
             );
         }
     }
@@ -1379,10 +1080,7 @@ pub const K__CLIP: ::core::ffi::c_int = 9;
 pub const K__HIDE: ::core::ffi::c_int = 10;
 #[unsafe(export_name = "__pdf_impl_spc_util_read_dimtrns")]
 pub unsafe extern "C-unwind" fn spc_util_read_dimtrns(
-    mut spe: *mut spc_env,
-    mut ti: *mut transform_info,
-    mut args: *mut spc_arg,
-    mut syntax: ::core::ffi::c_int,
+    mut spe: *mut spc_env, mut ti: *mut transform_info, mut args: *mut spc_arg, mut syntax: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     if ti.is_null() || spe.is_null() || args.is_null() {
         return -(1 as ::core::ffi::c_int);
@@ -1395,10 +1093,7 @@ pub unsafe extern "C-unwind" fn spc_util_read_dimtrns(
 }
 #[unsafe(export_name = "__pdf_impl_spc_util_read_blahblah")]
 pub unsafe extern "C-unwind" fn spc_util_read_blahblah(
-    mut spe: *mut spc_env,
-    mut p: *mut transform_info,
-    mut page_no: *mut ::core::ffi::c_int,
-    mut bbox_type: *mut pdf_page_boundary,
+    mut spe: *mut spc_env, mut p: *mut transform_info, mut page_no: *mut ::core::ffi::c_int, mut bbox_type: *mut pdf_page_boundary,
     mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
     let mut has_scale: ::core::ffi::c_int = 0;
@@ -1506,12 +1201,7 @@ pub unsafe extern "C-unwind" fn spc_util_read_blahblah(
             }
             K_TRN__BBOX => {
                 let mut v: [::core::ffi::c_double; 4] = [0.; 4];
-                if spc_util_read_numbers(
-                    &raw mut v as *mut ::core::ffi::c_double,
-                    4 as ::core::ffi::c_int,
-                    ap,
-                ) != 4 as ::core::ffi::c_int
-                {
+                if spc_util_read_numbers(&raw mut v as *mut ::core::ffi::c_double, 4 as ::core::ffi::c_int, ap) != 4 as ::core::ffi::c_int {
                     error = -(1 as ::core::ffi::c_int);
                 } else {
                     (*p).bbox.llx = v[0 as ::core::ffi::c_int as usize];
@@ -1523,12 +1213,7 @@ pub unsafe extern "C-unwind" fn spc_util_read_blahblah(
             }
             K_TRN__MATRIX => {
                 let mut v_0: [::core::ffi::c_double; 6] = [0.; 6];
-                if spc_util_read_numbers(
-                    &raw mut v_0 as *mut ::core::ffi::c_double,
-                    6 as ::core::ffi::c_int,
-                    ap,
-                ) != 6 as ::core::ffi::c_int
-                {
+                if spc_util_read_numbers(&raw mut v_0 as *mut ::core::ffi::c_double, 6 as ::core::ffi::c_int, ap) != 6 as ::core::ffi::c_int {
                     error = -(1 as ::core::ffi::c_int);
                 } else {
                     (*p).matrix.a = v_0[0 as ::core::ffi::c_int as usize];
@@ -1555,10 +1240,7 @@ pub unsafe extern "C-unwind" fn spc_util_read_blahblah(
             }
             K__PAGE => {
                 let mut page: ::core::ffi::c_double = 0.;
-                if !page_no.is_null()
-                    && spc_util_read_numbers(&raw mut page, 1 as ::core::ffi::c_int, ap)
-                        == 1 as ::core::ffi::c_int
-                {
+                if !page_no.is_null() && spc_util_read_numbers(&raw mut page, 1 as ::core::ffi::c_int, ap) == 1 as ::core::ffi::c_int {
                     *page_no = page as ::core::ffi::c_int;
                 } else {
                     error = -(1 as ::core::ffi::c_int);
@@ -1568,38 +1250,19 @@ pub unsafe extern "C-unwind" fn spc_util_read_blahblah(
                 (*p).flags |= INFO_DO_HIDE;
             }
             K__PAGEBOX => {
-                let mut q: *mut ::core::ffi::c_char =
-                    ::core::ptr::null_mut::<::core::ffi::c_char>();
+                let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
                 q = parse_c_ident(&raw mut (*ap).curptr, (*ap).endptr);
                 if !q.is_null() {
                     if !bbox_type.is_null() {
-                        if strcasecmp(q, b"cropbox\0" as *const u8 as *const ::core::ffi::c_char)
-                            == 0 as ::core::ffi::c_int
-                        {
+                        if strcasecmp(q, b"cropbox\0" as *const u8 as *const ::core::ffi::c_char) == 0 as ::core::ffi::c_int {
                             *bbox_type = pdf_page_boundary_cropbox;
-                        } else if strcasecmp(
-                            q,
-                            b"mediabox\0" as *const u8 as *const ::core::ffi::c_char,
-                        ) == 0 as ::core::ffi::c_int
-                        {
+                        } else if strcasecmp(q, b"mediabox\0" as *const u8 as *const ::core::ffi::c_char) == 0 as ::core::ffi::c_int {
                             *bbox_type = pdf_page_boundary_mediabox;
-                        } else if strcasecmp(
-                            q,
-                            b"artbox\0" as *const u8 as *const ::core::ffi::c_char,
-                        ) == 0 as ::core::ffi::c_int
-                        {
+                        } else if strcasecmp(q, b"artbox\0" as *const u8 as *const ::core::ffi::c_char) == 0 as ::core::ffi::c_int {
                             *bbox_type = pdf_page_boundary_artbox;
-                        } else if strcasecmp(
-                            q,
-                            b"trimbox\0" as *const u8 as *const ::core::ffi::c_char,
-                        ) == 0 as ::core::ffi::c_int
-                        {
+                        } else if strcasecmp(q, b"trimbox\0" as *const u8 as *const ::core::ffi::c_char) == 0 as ::core::ffi::c_int {
                             *bbox_type = pdf_page_boundary_trimbox;
-                        } else if strcasecmp(
-                            q,
-                            b"bleedbox\0" as *const u8 as *const ::core::ffi::c_char,
-                        ) == 0 as ::core::ffi::c_int
-                        {
+                        } else if strcasecmp(q, b"bleedbox\0" as *const u8 as *const ::core::ffi::c_char) == 0 as ::core::ffi::c_int {
                             *bbox_type = pdf_page_boundary_bleedbox;
                         }
                     }
@@ -1614,8 +1277,7 @@ pub unsafe extern "C-unwind" fn spc_util_read_blahblah(
         }
         if error != 0 {
             pdf_warning!(
-                b"Unrecognized key or invalid value for dimension/transformation: %s\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Unrecognized key or invalid value for dimension/transformation: %s\0" as *const u8 as *const ::core::ffi::c_char,
                 kp
             );
         } else {
@@ -1625,29 +1287,17 @@ pub unsafe extern "C-unwind" fn spc_util_read_blahblah(
     }
     if error == 0 {
         if has_xscale != 0 && (*p).flags & INFO_HAS_WIDTH != 0 {
-            pdf_warning!(
-                b"Can't supply both width and xscale. Ignore xscale.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Can't supply both width and xscale. Ignore xscale.\0" as *const u8 as *const ::core::ffi::c_char);
             xscale = 1.0f64;
         } else if has_yscale != 0 && (*p).flags & INFO_HAS_HEIGHT != 0 {
-            pdf_warning!(
-                b"Can't supply both height/depth and yscale. Ignore yscale.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Can't supply both height/depth and yscale. Ignore yscale.\0" as *const u8 as *const ::core::ffi::c_char);
             yscale = 1.0f64;
         } else if has_scale != 0 && (has_xscale != 0 || has_yscale != 0) {
-            pdf_warning!(
-                b"Can't supply overall scale along with axis scales.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Can't supply overall scale along with axis scales.\0" as *const u8 as *const ::core::ffi::c_char);
             error = -(1 as ::core::ffi::c_int);
-        } else if has_matrix != 0
-            && (has_scale != 0 || has_xscale != 0 || has_yscale != 0 || has_rotate != 0)
-        {
+        } else if has_matrix != 0 && (has_scale != 0 || has_xscale != 0 || has_yscale != 0 || has_rotate != 0) {
             pdf_warning!(
-                b"Can't supply transform matrix along with scales or rotate. Ignore scales and rotate.\0"
-                as * const u8 as * const ::core::ffi::c_char
+                b"Can't supply transform matrix along with scales or rotate. Ignore scales and rotate.\0" as *const u8 as *const ::core::ffi::c_char
             );
         }
     }
@@ -1670,8 +1320,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.15f64, 0.00f64, 0.69f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.15f64, 0.00f64, 0.69f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1684,8 +1334,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.00f64, 1.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.00f64, 1.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1698,8 +1348,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.10f64, 0.84f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.10f64, 0.84f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1712,8 +1362,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.29f64, 0.84f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.29f64, 0.84f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1726,8 +1376,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.32f64, 0.52f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.32f64, 0.52f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1740,8 +1390,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.50f64, 0.70f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.50f64, 0.70f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1754,8 +1404,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.46f64, 0.50f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.46f64, 0.50f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1768,8 +1418,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.42f64, 1.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.42f64, 1.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1782,8 +1432,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.61f64, 0.87f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.61f64, 0.87f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1796,8 +1446,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.51f64, 1.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.51f64, 1.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1810,8 +1460,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.75f64, 1.00f64, 0.24f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.75f64, 1.00f64, 0.24f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1824,8 +1474,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.77f64, 0.87f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.77f64, 0.87f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1838,8 +1488,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.85f64, 0.87f64, 0.35f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.85f64, 0.87f64, 0.35f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1852,8 +1502,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.87f64, 0.68f64, 0.32f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.87f64, 0.68f64, 0.32f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1866,8 +1516,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.89f64, 0.94f64, 0.28f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.89f64, 0.94f64, 0.28f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1880,8 +1530,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 1.00f64, 1.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 1.00f64, 1.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1894,8 +1544,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 1.00f64, 0.50f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 1.00f64, 0.50f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1908,8 +1558,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 1.00f64, 0.13f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 1.00f64, 0.13f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1922,8 +1572,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.96f64, 0.39f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.96f64, 0.39f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1936,8 +1586,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.53f64, 0.38f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.53f64, 0.38f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1950,8 +1600,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.63f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.63f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1964,8 +1614,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 1.00f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 1.00f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1978,8 +1628,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.81f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.81f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -1992,8 +1642,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.82f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.82f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2006,8 +1656,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.34f64, 0.90f64, 0.00f64, 0.02f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.34f64, 0.90f64, 0.00f64, 0.02f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2020,8 +1670,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.07f64, 0.90f64, 0.00f64, 0.34f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.07f64, 0.90f64, 0.00f64, 0.34f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2034,8 +1684,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.47f64, 0.91f64, 0.00f64, 0.08f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.47f64, 0.91f64, 0.00f64, 0.08f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2048,8 +1698,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.48f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.48f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2062,8 +1712,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.12f64, 0.59f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.12f64, 0.59f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2076,8 +1726,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.32f64, 0.64f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.32f64, 0.64f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2090,8 +1740,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.40f64, 0.80f64, 0.20f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.40f64, 0.80f64, 0.20f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2104,8 +1754,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.45f64, 0.86f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.45f64, 0.86f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2118,8 +1768,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.50f64, 1.00f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.50f64, 1.00f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2132,8 +1782,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.79f64, 0.88f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.79f64, 0.88f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2146,8 +1796,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.75f64, 0.90f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.75f64, 0.90f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2160,8 +1810,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.86f64, 0.91f64, 0.00f64, 0.04f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.86f64, 0.91f64, 0.00f64, 0.04f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2174,8 +1824,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.57f64, 0.55f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.57f64, 0.55f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2188,8 +1838,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.62f64, 0.57f64, 0.23f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.62f64, 0.57f64, 0.23f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2202,8 +1852,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.65f64, 0.13f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.65f64, 0.13f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2216,8 +1866,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.98f64, 0.13f64, 0.00f64, 0.43f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.98f64, 0.13f64, 0.00f64, 0.43f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2230,8 +1880,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.94f64, 0.54f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.94f64, 0.54f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2244,8 +1894,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                1.00f64, 0.50f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                1.00f64, 0.50f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2258,8 +1908,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                1.00f64, 1.00f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                1.00f64, 1.00f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2272,8 +1922,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.94f64, 0.11f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.94f64, 0.11f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2286,8 +1936,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                1.00f64, 0.00f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                1.00f64, 0.00f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2300,8 +1950,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.96f64, 0.00f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.96f64, 0.00f64, 0.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2314,8 +1964,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.62f64, 0.00f64, 0.12f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.62f64, 0.00f64, 0.12f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2328,8 +1978,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.85f64, 0.00f64, 0.20f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.85f64, 0.00f64, 0.20f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2342,8 +1992,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.86f64, 0.00f64, 0.34f64, 0.02f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.86f64, 0.00f64, 0.34f64, 0.02f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2356,8 +2006,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.82f64, 0.00f64, 0.30f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.82f64, 0.00f64, 0.30f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2370,8 +2020,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.85f64, 0.00f64, 0.33f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.85f64, 0.00f64, 0.33f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2384,8 +2034,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                1.00f64, 0.00f64, 0.50f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                1.00f64, 0.00f64, 0.50f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2398,8 +2048,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.99f64, 0.00f64, 0.52f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.99f64, 0.00f64, 0.52f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2412,8 +2062,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.69f64, 0.00f64, 0.50f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.69f64, 0.00f64, 0.50f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2426,8 +2076,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                1.00f64, 0.00f64, 1.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                1.00f64, 0.00f64, 1.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2440,8 +2090,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.91f64, 0.00f64, 0.88f64, 0.12f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.91f64, 0.00f64, 0.88f64, 0.12f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2454,8 +2104,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.92f64, 0.00f64, 0.59f64, 0.25f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.92f64, 0.00f64, 0.59f64, 0.25f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2468,8 +2118,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.50f64, 0.00f64, 1.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.50f64, 0.00f64, 1.00f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2482,8 +2132,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.44f64, 0.00f64, 0.74f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.44f64, 0.00f64, 0.74f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2496,8 +2146,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.26f64, 0.00f64, 0.76f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.26f64, 0.00f64, 0.76f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2510,8 +2160,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.64f64, 0.00f64, 0.95f64, 0.40f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.64f64, 0.00f64, 0.95f64, 0.40f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2524,8 +2174,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.72f64, 1.00f64, 0.45f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.72f64, 1.00f64, 0.45f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2538,8 +2188,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.83f64, 1.00f64, 0.70f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.83f64, 1.00f64, 0.70f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2552,8 +2202,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.00f64, 0.81f64, 1.00f64, 0.60f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.00f64, 0.81f64, 1.00f64, 0.60f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2566,8 +2216,8 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 4 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.14f64, 0.42f64, 0.56f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.14f64, 0.42f64, 0.56f64, 0.00f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2580,8 +2230,7 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 1 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.5f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.5f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2594,8 +2243,7 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 1 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                0.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                0.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2608,8 +2256,7 @@ const COLORDEFS: [colordef_; 69] = [
             num_components: 1 as ::core::ffi::c_int,
             spot_color_name: ::core::ptr::null::<::core::ffi::c_char>() as *mut ::core::ffi::c_char,
             values: [
-                1.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                1.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
             ],
             pattern_id: -(1 as ::core::ffi::c_int),
         },
@@ -2626,10 +2273,7 @@ const COLORDEFS: [colordef_; 69] = [
         },
     },
 ];
-unsafe extern "C-unwind" fn pdf_color_namedcolor(
-    mut color: *mut pdf_color,
-    mut name: *const ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn pdf_color_namedcolor(mut color: *mut pdf_color, mut name: *const ::core::ffi::c_char) -> ::core::ffi::c_int {
     let mut i: ::core::ffi::c_int = 0;
     i = 0 as ::core::ffi::c_int;
     while !COLORDEFS[i as usize].key.is_null() {
@@ -2643,11 +2287,7 @@ unsafe extern "C-unwind" fn pdf_color_namedcolor(
 }
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -2656,14 +2296,9 @@ pub struct pdf_obj {
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_util_read_numbers(
-    mut values: *mut ::core::ffi::c_double,
-    mut num_values: ::core::ffi::c_int,
-    mut args: *mut spc_arg,
-    _result: *mut ::core::ffi::c_int,
+    mut values: *mut ::core::ffi::c_double, mut num_values: ::core::ffi::c_int, mut args: *mut spc_arg, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        spc_util_read_numbers(values, num_values, args)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { spc_util_read_numbers(values, num_values, args) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -2675,15 +2310,9 @@ pub unsafe extern "C" fn __pdf_entry_spc_util_read_numbers(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_util_read_colorspec(
-    mut spe: *mut spc_env,
-    mut colorspec: *mut pdf_color,
-    mut ap: *mut spc_arg,
-    mut syntax: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut spe: *mut spc_env, mut colorspec: *mut pdf_color, mut ap: *mut spc_arg, mut syntax: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        spc_util_read_colorspec(spe, colorspec, ap, syntax)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { spc_util_read_colorspec(spe, colorspec, ap, syntax) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -2695,15 +2324,9 @@ pub unsafe extern "C" fn __pdf_entry_spc_util_read_colorspec(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_util_read_pdfcolor(
-    mut spe: *mut spc_env,
-    mut colorspec: *mut pdf_color,
-    mut ap: *mut spc_arg,
-    mut defaultcolor: *mut pdf_color,
-    _result: *mut ::core::ffi::c_int,
+    mut spe: *mut spc_env, mut colorspec: *mut pdf_color, mut ap: *mut spc_arg, mut defaultcolor: *mut pdf_color, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        spc_util_read_pdfcolor(spe, colorspec, ap, defaultcolor)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { spc_util_read_pdfcolor(spe, colorspec, ap, defaultcolor) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -2715,15 +2338,9 @@ pub unsafe extern "C" fn __pdf_entry_spc_util_read_pdfcolor(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_util_read_dimtrns(
-    mut spe: *mut spc_env,
-    mut ti: *mut transform_info,
-    mut args: *mut spc_arg,
-    mut syntax: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut spe: *mut spc_env, mut ti: *mut transform_info, mut args: *mut spc_arg, mut syntax: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        spc_util_read_dimtrns(spe, ti, args, syntax)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { spc_util_read_dimtrns(spe, ti, args, syntax) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -2735,16 +2352,10 @@ pub unsafe extern "C" fn __pdf_entry_spc_util_read_dimtrns(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_util_read_blahblah(
-    mut spe: *mut spc_env,
-    mut p: *mut transform_info,
-    mut page_no: *mut ::core::ffi::c_int,
-    mut bbox_type: *mut pdf_page_boundary,
-    mut ap: *mut spc_arg,
-    _result: *mut ::core::ffi::c_int,
+    mut spe: *mut spc_env, mut p: *mut transform_info, mut page_no: *mut ::core::ffi::c_int, mut bbox_type: *mut pdf_page_boundary,
+    mut ap: *mut spc_arg, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        spc_util_read_blahblah(spe, p, page_no, bbox_type, ap)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { spc_util_read_blahblah(spe, p, page_no, bbox_type, ap) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);

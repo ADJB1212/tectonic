@@ -28,22 +28,16 @@ impl ShapingFont<'_> {
     fn shape(&self, text: &[u16]) -> Option<PreparedBuffer> {
         let mut buffer = hb::Buffer::new();
         buffer.as_mut().add_utf16(text);
-        buffer.as_mut().set_direction(if self.vertical {
-            hb::Direction::Ttb
-        } else {
-            hb::Direction::Ltr
-        });
+        buffer
+            .as_mut()
+            .set_direction(if self.vertical { hb::Direction::Ttb } else { hb::Direction::Ltr });
         buffer.as_mut().set_script(self.script.to_script());
         buffer.as_mut().set_language(self.language);
         buffer.as_mut().guess_segment_properties();
         let properties = buffer.as_mut().get_segment_properties();
         let shapers = [c"ot".as_ptr(), ptr::null()];
-        let mut plan =
-            hb::ShapePlan::new_cached(self.font.face(), &properties, self.features, Some(&shapers));
-        if plan
-            .as_mut()
-            .execute(self.font, buffer.as_mut(), self.features)
-        {
+        let mut plan = hb::ShapePlan::new_cached(self.font.face(), &properties, self.features, Some(&shapers));
+        if plan.as_mut().execute(self.font, buffer.as_mut(), self.features) {
             Some(PreparedBuffer(buffer))
         } else {
             None
@@ -90,10 +84,7 @@ pub struct PreparedLayouts {
 /// Requests must contain live engines and text buffers. Engines must remain
 /// exclusively accessible to this call and alive until `ttxl_release_prepared_layouts`.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn ttxl_prepare_layouts(
-    requests: *const NativeLayoutRequest,
-    count: usize,
-) -> *mut PreparedLayouts {
+pub unsafe extern "C" fn ttxl_prepare_layouts(requests: *const NativeLayoutRequest, count: usize) -> *mut PreparedLayouts {
     unsafe {
         if count < 4 {
             return ptr::null_mut();
@@ -109,26 +100,18 @@ pub unsafe extern "C" fn ttxl_prepare_layouts(
     }
 }
 
-unsafe fn prepare_layouts(
-    requests: &[NativeLayoutRequest],
-    pool: &rayon::ThreadPool,
-) -> *mut PreparedLayouts {
+unsafe fn prepare_layouts(requests: &[NativeLayoutRequest], pool: &rayon::ThreadPool) -> *mut PreparedLayouts {
     unsafe {
         let mut engines = Vec::new();
         let mut indices = HashMap::new();
         let mut work = Vec::new();
         for request in requests {
             let engine = &*request.engine;
-            if !matches!(engine.shaper, Shaper::OpenType)
-                || engine.shaper_list.len() != 2
-                || CStr::from_ptr(engine.shaper_list[0]) != c"ot"
-            {
+            if !matches!(engine.shaper, Shaper::OpenType) || engine.shaper_list.len() != 2 || CStr::from_ptr(engine.shaper_list[0]) != c"ot" {
                 continue;
             }
             let text = slice::from_raw_parts(request.text, request.length);
-            if !text.iter().all(|&ch| (32..127).contains(&ch))
-                || !text.iter().any(|&ch| (ch as u8).is_ascii_alphabetic())
-            {
+            if !text.iter().all(|&ch| (32..127).contains(&ch)) || !text.iter().any(|&ch| (ch as u8).is_ascii_alphabetic()) {
                 continue;
             }
             let index = *indices.entry(request.engine as usize).or_insert_with(|| {
@@ -156,11 +139,7 @@ unsafe fn prepare_layouts(
                     }
                 })
                 .collect();
-            pool.install(|| {
-                work.par_iter()
-                    .map(|(index, text)| fonts[*index].shape(text))
-                    .collect::<Vec<_>>()
-            })
+            pool.install(|| work.par_iter().map(|(index, text)| fonts[*index].shape(text)).collect::<Vec<_>>())
         };
         for ((index, text), result) in work.into_iter().zip(results) {
             if let Some(buffer) = result {
@@ -219,11 +198,8 @@ mod tests {
 
     #[test]
     fn worker_count_preserves_glyphs_clusters_advances_and_offsets() {
-        let path =
-            Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/assets/lmroman12-regular.otf");
-        let face = Arc::new(Mutex::new(
-            ft::Face::new_memory(std::fs::read(path).unwrap(), 0).unwrap(),
-        ));
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/assets/lmroman12-regular.otf");
+        let face = Arc::new(Mutex::new(ft::Face::new_memory(std::fs::read(path).unwrap(), 0).unwrap()));
         let tables = Arc::clone(&face);
         let mut hb_face = hb::Face::new_tables(move |_, tag| {
             tables
@@ -256,21 +232,10 @@ mod tests {
                     .collect()
             })
             .collect();
-        let expected: Vec<_> = texts
-            .iter()
-            .map(|text| glyphs(&shaper.shape(text).unwrap()))
-            .collect();
+        let expected: Vec<_> = texts.iter().map(|text| glyphs(&shaper.shape(text).unwrap())).collect();
         for workers in [1, 3] {
-            let pool = rayon::ThreadPoolBuilder::new()
-                .num_threads(workers)
-                .build()
-                .unwrap();
-            let actual = pool.install(|| {
-                texts
-                    .par_iter()
-                    .map(|text| shaper.shape(text).unwrap())
-                    .collect::<Vec<_>>()
-            });
+            let pool = rayon::ThreadPoolBuilder::new().num_threads(workers).build().unwrap();
+            let actual = pool.install(|| texts.par_iter().map(|text| shaper.shape(text).unwrap()).collect::<Vec<_>>());
             for (actual, expected) in actual.iter().zip(&expected) {
                 assert_eq!(glyphs(actual), *expected);
             }

@@ -21,9 +21,7 @@ pub(super) unsafe fn final_cleanup() {
     unsafe {
         let command = cur_chr as small_number;
         if command != 1 {
-            (*eqtb.add((INT_BASE + INT_PAR__new_line_char) as usize))
-                .b32
-                .s1 = -1;
+            (*eqtb.add((INT_BASE + INT_PAR__new_line_char) as usize)).b32.s1 = -1;
         }
         if job_name == 0 {
             open_log_file();

@@ -86,10 +86,7 @@ impl WatchCommand {
             args.push("build".to_string());
 
             let cmd = Command {
-                program: Program::Exec {
-                    prog: exe_name.into(),
-                    args,
-                },
+                program: Program::Exec { prog: exe_name.into(), args },
                 options: Default::default(),
             };
 
@@ -113,8 +110,7 @@ impl WatchCommand {
             end.await;
             job.run(|ctx| match ctx.current {
                 CommandState::Finished {
-                    status: ProcessEnd::Success,
-                    ..
+                    status: ProcessEnd::Success, ..
                 } => {
                     println!("[Finished Running. Exit Status: 0]")
                 }
@@ -148,15 +144,9 @@ impl WatchCommand {
                 let mut is_path = false;
 
                 for event in &*action.events {
-                    let is_kill = event.signals().any(|signal| {
-                        matches!(
-                            signal,
-                            Signal::Interrupt
-                                | Signal::Quit
-                                | Signal::Terminate
-                                | Signal::ForceStop
-                        )
-                    });
+                    let is_kill = event
+                        .signals()
+                        .any(|signal| matches!(signal, Signal::Interrupt | Signal::Quit | Signal::Terminate | Signal::ForceStop));
 
                     if is_kill {
                         // Give the jobs a quit signal, then a short time to clean themselves up
@@ -191,10 +181,7 @@ impl WatchCommand {
                 Ok(1)
             }
             Ok(exec_handler) => {
-                exec_handler
-                    .config
-                    .pathset([current_dir])
-                    .filterer(Arc::new(filter));
+                exec_handler.config.pathset([current_dir]).filterer(Arc::new(filter));
                 exec_handler.main().await??;
                 Ok(0)
             }

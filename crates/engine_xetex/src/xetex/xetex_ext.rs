@@ -176,9 +176,7 @@ pub union memory_word {
 
 impl Default for memory_word {
     fn default() -> Self {
-        memory_word {
-            b32: b32x2::default(),
-        }
+        memory_word { b32: b32x2::default() }
     }
 }
 
@@ -224,10 +222,7 @@ pub struct CFRange {
 
 #[inline]
 pub fn CFRangeMake(loc: libc::c_long, len: libc::c_long) -> CFRange {
-    CFRange {
-        location: loc,
-        length: len,
-    }
+    CFRange { location: loc, length: len }
 }
 
 pub const kCFNumberIntType: c_int = 9;
@@ -379,12 +374,7 @@ unsafe extern "C" {
     pub fn print_char(c: i32);
     pub fn print_raw_char(c: u16, in_hex: bool);
     pub fn font_mapping_warning(name: *const c_void, len: i32, warningType: i32);
-    pub fn font_feature_warning(
-        name: *const c_void,
-        len: i32,
-        settingNameP: *const c_void,
-        setLen: i32,
-    );
+    pub fn font_feature_warning(name: *const c_void, len: i32, settingNameP: *const c_void, setLen: i32);
     pub fn get_tracing_fonts_state() -> i32;
     pub fn xn_over_d(x: scaled_t, n: i32, d: i32) -> scaled_t;
 
@@ -393,51 +383,23 @@ unsafe extern "C" {
     pub fn xrealloc(ptr: *mut c_void, size: usize) -> *mut c_void;
     pub fn xstrdup(s: *const c_char) -> *mut c_char;
 
-    pub fn ttstub_input_open(
-        path: *const c_char,
-        format: ttbc_file_format,
-        is_gz: c_int,
-    ) -> rust_input_handle_t;
+    pub fn ttstub_input_open(path: *const c_char, format: ttbc_file_format, is_gz: c_int) -> rust_input_handle_t;
     pub fn ttstub_input_get_size(handle: rust_input_handle_t) -> usize;
-    pub fn ttstub_input_read(
-        handle: rust_input_handle_t,
-        data: *mut c_char,
-        len: usize,
-    ) -> libc::ssize_t;
-    pub fn ttstub_input_read_partial(
-        handle: rust_input_handle_t,
-        data: *mut c_char,
-        len: usize,
-    ) -> libc::ssize_t;
+    pub fn ttstub_input_read(handle: rust_input_handle_t, data: *mut c_char, len: usize) -> libc::ssize_t;
+    pub fn ttstub_input_read_partial(handle: rust_input_handle_t, data: *mut c_char, len: usize) -> libc::ssize_t;
     pub fn ttstub_input_close(handle: rust_input_handle_t) -> c_int;
     pub fn _tt_abort(format: *const c_char, ...) -> !;
 
-    pub fn tt_checkpoint_field(
-        cp: *mut c_void,
-        name: *const c_char,
-        value: *mut c_void,
-        length: usize,
-    );
+    pub fn tt_checkpoint_field(cp: *mut c_void, name: *const c_char, value: *mut c_void, length: usize);
     pub fn tt_checkpoint_register_glyph(node: i32);
 
     // ICU BreakIterator
     #[link_name = "tt_icu_ubrk_open"]
-    pub fn ubrk_open(
-        type_: c_int,
-        locale: *const c_char,
-        text: *const UChar,
-        textLength: i32,
-        status: *mut UErrorCode,
-    ) -> *mut UBreakIterator;
+    pub fn ubrk_open(type_: c_int, locale: *const c_char, text: *const UChar, textLength: i32, status: *mut UErrorCode) -> *mut UBreakIterator;
     #[link_name = "tt_icu_ubrk_close"]
     pub fn ubrk_close(bi: *mut UBreakIterator);
     #[link_name = "tt_icu_ubrk_set_text"]
-    pub fn ubrk_setText(
-        bi: *mut UBreakIterator,
-        text: *const UChar,
-        textLength: i32,
-        status: *mut UErrorCode,
-    );
+    pub fn ubrk_setText(bi: *mut UBreakIterator, text: *const UChar, textLength: i32, status: *mut UErrorCode);
     #[link_name = "tt_icu_ubrk_next"]
     pub fn ubrk_next(bi: *mut UBreakIterator) -> i32;
 
@@ -454,24 +416,14 @@ unsafe extern "C" {
     pub fn ubidi_close(pBiDi: *mut UBiDi);
     #[link_name = "tt_icu_ubidi_set_para"]
     pub fn ubidi_setPara(
-        pBiDi: *mut UBiDi,
-        text: *const UChar,
-        length: i32,
-        paraLevel: u8,
-        embeddingLevels: *mut c_void,
-        pErrorCode: *mut UErrorCode,
+        pBiDi: *mut UBiDi, text: *const UChar, length: i32, paraLevel: u8, embeddingLevels: *mut c_void, pErrorCode: *mut UErrorCode,
     );
     #[link_name = "tt_icu_ubidi_get_direction"]
     pub fn ubidi_getDirection(pBiDi: *const UBiDi) -> c_int;
     #[link_name = "tt_icu_ubidi_count_runs"]
     pub fn ubidi_countRuns(pBiDi: *mut UBiDi, pErrorCode: *mut UErrorCode) -> c_int;
     #[link_name = "tt_icu_ubidi_get_visual_run"]
-    pub fn ubidi_getVisualRun(
-        pBiDi: *mut UBiDi,
-        runIndex: c_int,
-        pLogicalStart: *mut i32,
-        pLength: *mut i32,
-    ) -> c_int;
+    pub fn ubidi_getVisualRun(pBiDi: *mut UBiDi, runIndex: c_int, pLogicalStart: *mut i32, pLength: *mut i32) -> c_int;
 
     // HarfBuzz
     pub fn hb_tag_from_string(str: *const c_char, len: c_int) -> u32;
@@ -481,32 +433,17 @@ unsafe extern "C" {
 
     // TECkit
     pub fn TECkit_CreateConverter(
-        mapping: *mut u8,
-        mappingSize: u32,
-        mapForward: u8,
-        sourceForm: u16,
-        targetForm: u16,
-        converter: *mut TECkit_Converter,
+        mapping: *mut u8, mappingSize: u32, mapForward: u8, sourceForm: u16, targetForm: u16, converter: *mut TECkit_Converter,
     ) -> TECkit_Status;
     pub fn TECkit_DisposeConverter(converter: TECkit_Converter) -> TECkit_Status;
     pub fn TECkit_ResetConverter(converter: TECkit_Converter) -> TECkit_Status;
     pub fn TECkit_ConvertBuffer(
-        converter: TECkit_Converter,
-        inBuffer: *const u8,
-        inLength: u32,
-        inUsed: *mut u32,
-        outBuffer: *mut u8,
-        outLength: u32,
-        outUsed: *mut u32,
+        converter: TECkit_Converter, inBuffer: *const u8, inLength: u32, inUsed: *mut u32, outBuffer: *mut u8, outLength: u32, outUsed: *mut u32,
         inputIsComplete: u8,
     ) -> TECkit_Status;
 
     // xetex_layout engine & font functions
-    pub fn initGraphiteBreaking(
-        engine: XeTeXLayoutEngine,
-        text: *const u16,
-        textLength: i32,
-    ) -> bool;
+    pub fn initGraphiteBreaking(engine: XeTeXLayoutEngine, text: *const u16, textLength: i32) -> bool;
     pub fn findNextGraphiteBreak(engine: XeTeXLayoutEngine) -> c_int;
     pub fn getReqEngine() -> c_char;
     pub fn setReqEngine(req: c_char);
@@ -516,35 +453,18 @@ unsafe extern "C" {
     pub fn createFontFromFile(filename: *const c_char, index: u32, point_size: Fixed) -> XeTeXFont;
     pub fn deleteFont(font: XeTeXFont);
     pub fn getDesignSize(font: XeTeXFont) -> f64;
-    pub fn findFontByName(name: *const c_char, var: *const c_char, size: f64)
-    -> RawPlatformFontRef;
+    pub fn findFontByName(name: *const c_char, var: *const c_char, size: f64) -> RawPlatformFontRef;
     pub fn getFullName(font: RawPlatformFontRef) -> *const c_char;
     pub fn ttxl_platfont_get_desc(font: RawPlatformFontRef) -> *const c_char;
 
     pub fn hasFontTable(font: XeTeXFont, table_tag: u32) -> bool;
     pub fn createLayoutEngine(
-        font: XeTeXFont,
-        script: u32,
-        language: *mut c_char,
-        features: *mut hb_feature_t,
-        n_features: c_int,
-        shapers: *const *const c_char,
-        rgb_value: u32,
-        extend: f32,
-        slant: f32,
-        embolden: f32,
+        font: XeTeXFont, script: u32, language: *mut c_char, features: *mut hb_feature_t, n_features: c_int, shapers: *const *const c_char,
+        rgb_value: u32, extend: f32, slant: f32, embolden: f32,
     ) -> XeTeXLayoutEngine;
     pub fn createLayoutEngineBorrowed(
-        font: XeTeXFont,
-        script: u32,
-        language: *mut c_char,
-        features: *mut hb_feature_t,
-        n_features: c_int,
-        shapers: *const *const c_char,
-        rgb_value: u32,
-        extend: f32,
-        slant: f32,
-        embolden: f32,
+        font: XeTeXFont, script: u32, language: *mut c_char, features: *mut hb_feature_t, n_features: c_int, shapers: *const *const c_char,
+        rgb_value: u32, extend: f32, slant: f32, embolden: f32,
     ) -> XeTeXLayoutEngine;
     pub fn deleteLayoutEngine(this_: XeTeXLayoutEngine);
     pub fn getFont(engine: XeTeXLayoutEngine) -> XeTeXFont;
@@ -558,32 +478,15 @@ unsafe extern "C" {
     pub fn getRgbValue(engine: XeTeXLayoutEngine) -> u32;
     pub fn getGlyphBounds(engine: XeTeXLayoutEngine, glyph_id: u32, bbox: *mut GlyphBBox);
     pub fn getGlyphWidthFromEngine(engine: XeTeXLayoutEngine, glyph_id: u32) -> f32;
-    pub fn getGlyphHeightDepth(
-        engine: XeTeXLayoutEngine,
-        glyph_id: u32,
-        height: *mut f32,
-        depth: *mut f32,
-    );
-    pub fn getGlyphSidebearings(
-        engine: XeTeXLayoutEngine,
-        glyph_id: u32,
-        lsb: *mut f32,
-        rsb: *mut f32,
-    );
+    pub fn getGlyphHeightDepth(engine: XeTeXLayoutEngine, glyph_id: u32, height: *mut f32, depth: *mut f32);
+    pub fn getGlyphSidebearings(engine: XeTeXLayoutEngine, glyph_id: u32, lsb: *mut f32, rsb: *mut f32);
     pub fn getGlyphItalCorr(engine: XeTeXLayoutEngine, glyph_id: u32) -> f32;
     pub fn mapCharToGlyph(engine: XeTeXLayoutEngine, char_code: u32) -> u32;
     pub fn getFontCharRange(engine: XeTeXLayoutEngine, req_first: c_int) -> c_int;
     pub fn mapGlyphToIndex(engine: XeTeXLayoutEngine, glyph_name: *const c_char) -> c_int;
     pub fn usingGraphite(engine: XeTeXLayoutEngine) -> bool;
     pub fn usingOpenType(engine: XeTeXLayoutEngine) -> bool;
-    pub fn layoutChars(
-        engine: XeTeXLayoutEngine,
-        chars: *mut u16,
-        offset: i32,
-        count: i32,
-        max: i32,
-        rtl: bool,
-    ) -> c_int;
+    pub fn layoutChars(engine: XeTeXLayoutEngine, chars: *mut u16, offset: i32, count: i32, max: i32, rtl: bool) -> c_int;
     pub fn getFontFilename(engine: XeTeXLayoutEngine, index: *mut u32) -> *const c_char;
     pub fn freeFontFilename(filename: *const c_char);
     pub fn getGlyphs(engine: XeTeXLayoutEngine, glyphs: *mut u32);
@@ -592,36 +495,13 @@ unsafe extern "C" {
     pub fn countGraphiteFeatures(engine: XeTeXLayoutEngine) -> u32;
     pub fn getGraphiteFeatureCode(engine: XeTeXLayoutEngine, index: u32) -> u32;
     pub fn countGraphiteFeatureSettings(engine: XeTeXLayoutEngine, feature_id: u32) -> u32;
-    pub fn getGraphiteFeatureSettingCode(
-        engine: XeTeXLayoutEngine,
-        feature_id: u32,
-        index: u32,
-    ) -> u32;
+    pub fn getGraphiteFeatureSettingCode(engine: XeTeXLayoutEngine, feature_id: u32, index: u32) -> u32;
     pub fn getGraphiteFeatureDefaultSetting(engine: XeTeXLayoutEngine, feature_id: u32) -> u32;
     pub fn getGraphiteFeatureLabel(engine: XeTeXLayoutEngine, feature_id: u32) -> *mut c_char;
-    pub fn getGraphiteFeatureSettingLabel(
-        engine: XeTeXLayoutEngine,
-        feature_id: u32,
-        setting_id: u32,
-    ) -> *mut c_char;
-    pub fn findGraphiteFeature(
-        engine: XeTeXLayoutEngine,
-        s: *const c_char,
-        e: *const c_char,
-        f: *mut u32,
-        v: *mut c_int,
-    ) -> bool;
-    pub fn findGraphiteFeatureNamed(
-        engine: XeTeXLayoutEngine,
-        name: *const c_char,
-        namelength: c_int,
-    ) -> libc::c_long;
-    pub fn findGraphiteFeatureSettingNamed(
-        engine: XeTeXLayoutEngine,
-        feature_id: c_int,
-        name: *const c_char,
-        namelength: c_int,
-    ) -> libc::c_long;
+    pub fn getGraphiteFeatureSettingLabel(engine: XeTeXLayoutEngine, feature_id: u32, setting_id: u32) -> *mut c_char;
+    pub fn findGraphiteFeature(engine: XeTeXLayoutEngine, s: *const c_char, e: *const c_char, f: *mut u32, v: *mut c_int) -> bool;
+    pub fn findGraphiteFeatureNamed(engine: XeTeXLayoutEngine, name: *const c_char, namelength: c_int) -> libc::c_long;
+    pub fn findGraphiteFeatureSettingNamed(engine: XeTeXLayoutEngine, feature_id: c_int, name: *const c_char, namelength: c_int) -> libc::c_long;
 
     pub fn getSlant(font: XeTeXFont) -> Fixed;
     pub fn countGlyphs(font: XeTeXFont) -> libc::c_uint;
@@ -660,47 +540,19 @@ unsafe extern "C" {
     pub static kCTFontFeatureTypeNameKey: *const c_void;
     pub static kCTFontFeatureSelectorNameKey: *const c_void;
 
-    pub fn loadAATfont(
-        descriptor: CTFontDescriptorRef,
-        scaled_size: i32,
-        cp1: *const c_char,
-    ) -> *mut c_void;
+    pub fn loadAATfont(descriptor: CTFontDescriptorRef, scaled_size: i32, cp1: *const c_char) -> *mut c_void;
     pub fn DoAATLayout(node: *mut c_void, justify: c_int);
     pub fn GetGlyphBBox_AAT(fontAttrs: CFDictionaryRef, gid: u16, bbox: *mut GlyphBBox);
     pub fn GetGlyphWidth_AAT(fontAttrs: CFDictionaryRef, gid: u16) -> f64;
-    pub fn GetGlyphHeightDepth_AAT(
-        fontAttrs: CFDictionaryRef,
-        gid: u16,
-        ht: *mut f32,
-        dp: *mut f32,
-    );
-    pub fn GetGlyphSidebearings_AAT(
-        fontAttrs: CFDictionaryRef,
-        gid: u16,
-        lsb: *mut f32,
-        rsb: *mut f32,
-    );
+    pub fn GetGlyphHeightDepth_AAT(fontAttrs: CFDictionaryRef, gid: u16, ht: *mut f32, dp: *mut f32);
+    pub fn GetGlyphSidebearings_AAT(fontAttrs: CFDictionaryRef, gid: u16, lsb: *mut f32, rsb: *mut f32);
     pub fn GetGlyphItalCorr_AAT(fontAttrs: CFDictionaryRef, gid: u16) -> f64;
     pub fn MapCharToGlyph_AAT(fontAttrs: CFDictionaryRef, ch: u32) -> c_int;
     pub fn MapGlyphToIndex_AAT(attributes: CFDictionaryRef, glyphName: *const c_char) -> c_int;
-    pub fn GetGlyphNameFromCTFont(ctFontRef: CTFontRef, gid: u16, len: *mut c_int)
-    -> *const c_char;
-    pub fn findDictionaryInArray(
-        array: CFArrayRef,
-        nameKey: *const c_void,
-        name: *const c_char,
-        nameLength: c_int,
-    ) -> CFDictionaryRef;
-    pub fn findDictionaryInArrayWithIdentifier(
-        array: CFArrayRef,
-        identifierKey: *const c_void,
-        identifier: c_int,
-    ) -> CFDictionaryRef;
-    pub fn findSelectorByName(
-        feature: CFDictionaryRef,
-        name: *const c_char,
-        nameLength: c_int,
-    ) -> CFNumberRef;
+    pub fn GetGlyphNameFromCTFont(ctFontRef: CTFontRef, gid: u16, len: *mut c_int) -> *const c_char;
+    pub fn findDictionaryInArray(array: CFArrayRef, nameKey: *const c_void, name: *const c_char, nameLength: c_int) -> CFDictionaryRef;
+    pub fn findDictionaryInArrayWithIdentifier(array: CFArrayRef, identifierKey: *const c_void, identifier: c_int) -> CFDictionaryRef;
+    pub fn findSelectorByName(feature: CFDictionaryRef, name: *const c_char, nameLength: c_int) -> CFNumberRef;
     pub fn GetFontCharRange_AAT(fontAttrs: CFDictionaryRef, reqFirst: c_int) -> c_int;
     pub fn fontFromAttributes(fontAttrs: CFDictionaryRef) -> CTFontRef;
     pub fn fontFromInteger(font: i32) -> CTFontRef;
@@ -709,17 +561,9 @@ unsafe extern "C" {
     pub fn CFArrayGetCount(theArray: CFArrayRef) -> libc::c_long;
     pub fn CFArrayGetValueAtIndex(theArray: CFArrayRef, idx: libc::c_long) -> *const c_void;
     pub fn CFDictionaryGetValue(theDict: CFDictionaryRef, key: *const c_void) -> *const c_void;
-    pub fn CFDictionaryGetValueIfPresent(
-        theDict: CFDictionaryRef,
-        key: *const c_void,
-        value: *mut *const c_void,
-    ) -> u8;
+    pub fn CFDictionaryGetValueIfPresent(theDict: CFDictionaryRef, key: *const c_void, value: *mut *const c_void) -> u8;
     pub fn CFBooleanGetValue(boolean: CFBooleanRef) -> c_int;
-    pub fn CFNumberGetValue(
-        number: CFNumberRef,
-        theType: libc::c_long,
-        valuePtr: *mut c_void,
-    ) -> u8;
+    pub fn CFNumberGetValue(number: CFNumberRef, theType: libc::c_long, valuePtr: *mut c_void) -> u8;
     pub fn CFStringGetLength(theString: CFStringRef) -> libc::c_long;
     pub fn CFStringGetCharacters(theString: CFStringRef, range: CFRange, buffer: *mut UniChar);
 
@@ -743,19 +587,12 @@ static mut xdvBufSize: i32 = 0;
 static mut outLength: u32 = 0;
 
 #[unsafe(export_name = "linebreak_start")]
-pub unsafe extern "C" fn linebreak_start(
-    f: c_int,
-    localeStrNum: i32,
-    text: *mut u16,
-    textLength: i32,
-) {
+pub unsafe extern "C" fn linebreak_start(f: c_int, localeStrNum: i32, text: *mut u16, textLength: i32) {
     unsafe {
         let mut status: UErrorCode = U_ZERO_ERROR;
         let locale = gettexstring(localeStrNum);
 
-        if *font_area.add(f as usize) as u32 == OTGR_FONT_FLAG
-            && streq_ptr(locale, b"G\0".as_ptr() as *const c_char)
-        {
+        if *font_area.add(f as usize) as u32 == OTGR_FONT_FLAG && streq_ptr(locale, b"G\0".as_ptr() as *const c_char) {
             let engine = *font_layout_engine.add(f as usize) as XeTeXLayoutEngine;
             if initGraphiteBreaking(engine, text, textLength) {
                 libc::free(locale as *mut c_void);
@@ -775,9 +612,7 @@ pub unsafe extern "C" fn linebreak_start(
                 print_nl(b'E' as i32);
                 print_c_string(b"rror \0".as_ptr() as *const c_char);
                 print_int(status);
-                print_c_string(
-                    b" creating linebreak iterator for locale `\0".as_ptr() as *const c_char
-                );
+                print_c_string(b" creating linebreak iterator for locale `\0".as_ptr() as *const c_char);
                 print_c_string(locale);
                 print_c_string(b"'; trying default locale `en_us'.\0".as_ptr() as *const c_char);
                 end_diagnostic(true);
@@ -785,13 +620,7 @@ pub unsafe extern "C" fn linebreak_start(
                     ubrk_close(brkIter);
                 }
                 status = U_ZERO_ERROR;
-                brkIter = ubrk_open(
-                    UBRK_LINE,
-                    b"en_us\0".as_ptr() as *const c_char,
-                    std::ptr::null(),
-                    0,
-                    &mut status,
-                );
+                brkIter = ubrk_open(UBRK_LINE, b"en_us\0".as_ptr() as *const c_char, std::ptr::null(), 0, &mut status);
             }
             libc::free(locale as *mut c_void);
             brkLocaleStrNum = localeStrNum;
@@ -888,11 +717,7 @@ pub unsafe extern "C" fn print_chars(mut str: *const u16, mut len: c_int) {
     }
 }
 
-unsafe fn load_mapping_file(
-    s: *const c_char,
-    e: *const c_char,
-    byteMapping: c_char,
-) -> *mut c_void {
+unsafe fn load_mapping_file(s: *const c_char, e: *const c_char, byteMapping: c_char) -> *mut c_void {
     unsafe {
         let mut cnv: TECkit_Converter = std::ptr::null_mut();
         let name_len = e.offset_from(s) as usize;
@@ -909,10 +734,7 @@ unsafe fn load_mapping_file(
             let r = ttstub_input_read(map, mapping as *mut c_char, mappingSize);
 
             if r < 0 || (r as usize) != mappingSize {
-                _tt_abort(
-                    b"could not read mapping file \"%s\"\0".as_ptr() as *const c_char,
-                    buffer,
-                );
+                _tt_abort(b"could not read mapping file \"%s\"\0".as_ptr() as *const c_char, buffer);
             }
 
             ttstub_input_close(map);
@@ -923,23 +745,9 @@ unsafe fn load_mapping_file(
             let utf16_native = kForm_UTF16LE;
 
             if byteMapping != 0 {
-                TECkit_CreateConverter(
-                    mapping,
-                    mappingSize as u32,
-                    0,
-                    utf16_native,
-                    kForm_Bytes,
-                    &mut cnv,
-                );
+                TECkit_CreateConverter(mapping, mappingSize as u32, 0, utf16_native, kForm_Bytes, &mut cnv);
             } else {
-                TECkit_CreateConverter(
-                    mapping,
-                    mappingSize as u32,
-                    1,
-                    utf16_native,
-                    utf16_native,
-                    &mut cnv,
-                );
+                TECkit_CreateConverter(mapping, mappingSize as u32, 1, utf16_native, utf16_native, &mut cnv);
             }
 
             let buf_len = libc::strlen(buffer);
@@ -1052,12 +860,7 @@ pub unsafe extern "C" fn read_double(s: *mut *const c_char) -> f64 {
 unsafe fn read_tag_with_param(mut cp: *const c_char, param: *mut c_int) -> u32 {
     unsafe {
         let mut cp2 = cp;
-        while *cp2 != 0
-            && *cp2 != b':' as c_char
-            && *cp2 != b';' as c_char
-            && *cp2 != b',' as c_char
-            && *cp2 != b'=' as c_char
-        {
+        while *cp2 != 0 && *cp2 != b':' as c_char && *cp2 != b';' as c_char && *cp2 != b',' as c_char && *cp2 != b'=' as c_char {
             cp2 = cp2.add(1);
         }
 
@@ -1133,13 +936,7 @@ pub unsafe extern "C" fn read_rgb_a(cp: *mut *const c_char) -> libc::c_uint {
 }
 
 pub unsafe fn readCommonFeatures(
-    feat: *const c_char,
-    end: *const c_char,
-    extend: *mut f32,
-    slant: *mut f32,
-    embolden: *mut f32,
-    letterspace: *mut f32,
-    rgbValue: *mut u32,
+    feat: *const c_char, end: *const c_char, extend: *mut f32, slant: *mut f32, embolden: *mut f32, letterspace: *mut f32, rgbValue: *mut u32,
 ) -> c_int {
     unsafe {
         let mut sep = strstartswith(feat, b"mapping\0".as_ptr() as *const c_char);
@@ -1211,12 +1008,7 @@ pub unsafe fn readCommonFeatures(
     }
 }
 
-unsafe fn readFeatureNumber(
-    mut s: *const c_char,
-    e: *const c_char,
-    f: *mut u32,
-    v: *mut c_int,
-) -> bool {
+unsafe fn readFeatureNumber(mut s: *const c_char, e: *const c_char, f: *mut u32, v: *mut c_int) -> bool {
     unsafe {
         *f = 0;
         *v = 0;
@@ -1249,12 +1041,7 @@ unsafe fn readFeatureNumber(
     }
 }
 
-unsafe fn loadOTfont(
-    fontRef: RawPlatformFontRef,
-    font: XeTeXFont,
-    mut scaled_size: Fixed,
-    mut cp1: *mut c_char,
-) -> XeTeXLayoutEngine {
+unsafe fn loadOTfont(fontRef: RawPlatformFontRef, font: XeTeXFont, mut scaled_size: Fixed, mut cp1: *mut c_char) -> XeTeXLayoutEngine {
     unsafe {
         let mut engine: XeTeXLayoutEngine = std::ptr::null_mut();
         let mut script: u32 = HB_TAG_NONE;
@@ -1279,8 +1066,7 @@ unsafe fn loadOTfont(
         }
 
         if reqEngine == b'G' as c_char {
-            let graphiteShaper: [*const c_char; 2] =
-                [b"graphite2\0".as_ptr() as *const c_char, std::ptr::null()];
+            let graphiteShaper: [*const c_char; 2] = [b"graphite2\0".as_ptr() as *const c_char, std::ptr::null()];
             engine = createLayoutEngineBorrowed(
                 font,
                 script,
@@ -1311,23 +1097,14 @@ unsafe fn loadOTfont(
                 }
 
                 let mut cp2 = cp1;
-                while *cp2 != 0
-                    && *cp2 != b':' as c_char
-                    && *cp2 != b';' as c_char
-                    && *cp2 != b',' as c_char
-                {
+                while *cp2 != 0 && *cp2 != b':' as c_char && *cp2 != b';' as c_char && *cp2 != b',' as c_char {
                     cp2 = cp2.add(1);
                 }
 
                 let mut cp3 = strstartswith(cp1, b"script\0".as_ptr() as *const c_char);
                 if !cp3.is_null() {
                     if *cp3 != b'=' as c_char {
-                        font_feature_warning(
-                            cp1 as *const c_void,
-                            cp2.offset_from(cp1) as i32,
-                            std::ptr::null(),
-                            0,
-                        );
+                        font_feature_warning(cp1 as *const c_void, cp2.offset_from(cp1) as i32, std::ptr::null(), 0);
                         cp1 = cp2;
                         continue;
                     }
@@ -1340,12 +1117,7 @@ unsafe fn loadOTfont(
                 cp3 = strstartswith(cp1, b"language\0".as_ptr() as *const c_char);
                 if !cp3.is_null() {
                     if *cp3 != b'=' as c_char {
-                        font_feature_warning(
-                            cp1 as *const c_void,
-                            cp2.offset_from(cp1) as i32,
-                            std::ptr::null(),
-                            0,
-                        );
+                        font_feature_warning(cp1 as *const c_void, cp2.offset_from(cp1) as i32, std::ptr::null(), 0);
                         cp1 = cp2;
                         continue;
                     }
@@ -1362,12 +1134,7 @@ unsafe fn loadOTfont(
                 cp3 = strstartswith(cp1, b"shaper\0".as_ptr() as *const c_char);
                 if !cp3.is_null() {
                     if *cp3 != b'=' as c_char {
-                        font_feature_warning(
-                            cp1 as *const c_void,
-                            cp2.offset_from(cp1) as i32,
-                            std::ptr::null(),
-                            0,
-                        );
+                        font_feature_warning(cp1 as *const c_void, cp2.offset_from(cp1) as i32, std::ptr::null(), 0);
                         cp1 = cp2;
                         continue;
                     }
@@ -1381,25 +1148,12 @@ unsafe fn loadOTfont(
                     continue;
                 }
 
-                let ret = readCommonFeatures(
-                    cp1,
-                    cp2,
-                    &mut extend,
-                    &mut slant,
-                    &mut embolden,
-                    &mut letterspace,
-                    &mut rgbValue,
-                );
+                let ret = readCommonFeatures(cp1, cp2, &mut extend, &mut slant, &mut embolden, &mut letterspace, &mut rgbValue);
                 if ret == 1 {
                     cp1 = cp2;
                     continue;
                 } else if ret == -1 {
-                    font_feature_warning(
-                        cp1 as *const c_void,
-                        cp2.offset_from(cp1) as i32,
-                        std::ptr::null(),
-                        0,
-                    );
+                    font_feature_warning(cp1 as *const c_void, cp2.offset_from(cp1) as i32, std::ptr::null(), 0);
                     cp1 = cp2;
                     continue;
                 }
@@ -1407,9 +1161,7 @@ unsafe fn loadOTfont(
                 if reqEngine == b'G' as c_char {
                     let mut tag: u32 = 0;
                     let mut value: c_int = 0;
-                    if readFeatureNumber(cp1, cp2, &mut tag, &mut value)
-                        || findGraphiteFeature(engine, cp1, cp2, &mut tag, &mut value)
-                    {
+                    if readFeatureNumber(cp1, cp2, &mut tag, &mut value) || findGraphiteFeature(engine, cp1, cp2, &mut tag, &mut value) {
                         features.push(hb_feature_t {
                             tag,
                             value: value as u32,
@@ -1452,10 +1204,7 @@ unsafe fn loadOTfont(
 
                 if !strstartswith(cp1, b"vertical\0".as_ptr() as *const c_char).is_null() {
                     let mut cp_end = cp2;
-                    if *cp_end == b';' as c_char
-                        || *cp_end == b':' as c_char
-                        || *cp_end == b',' as c_char
-                    {
+                    if *cp_end == b';' as c_char || *cp_end == b':' as c_char || *cp_end == b',' as c_char {
                         cp_end = cp_end.sub(1);
                     }
                     while *cp_end == 0 || *cp_end == b' ' as c_char || *cp_end == b'\t' as c_char {
@@ -1465,19 +1214,13 @@ unsafe fn loadOTfont(
                         cp_end = cp_end.add(1);
                     }
                     if cp_end == cp1.add(8) {
-                        loaded_font_flags =
-                            (loaded_font_flags as u32 | FONT_FLAGS_VERTICAL) as c_char;
+                        loaded_font_flags = (loaded_font_flags as u32 | FONT_FLAGS_VERTICAL) as c_char;
                         cp1 = cp2;
                         continue;
                     }
                 }
 
-                font_feature_warning(
-                    cp1 as *const c_void,
-                    cp2.offset_from(cp1) as i32,
-                    std::ptr::null(),
-                    0,
-                );
+                font_feature_warning(cp1 as *const c_void, cp2.offset_from(cp1) as i32, std::ptr::null(), 0);
                 cp1 = cp2;
             }
         }
@@ -1495,8 +1238,7 @@ unsafe fn loadOTfont(
         }
 
         if letterspace != 0.0 {
-            loaded_font_letter_space =
-                ((letterspace as f64 / 100.0) * scaled_size as f64) as scaled_t;
+            loaded_font_letter_space = ((letterspace as f64 / 100.0) * scaled_size as f64) as scaled_t;
         }
 
         if (loaded_font_flags as u32 & FONT_FLAGS_COLORED) == 0 {
@@ -1517,11 +1259,7 @@ unsafe fn loadOTfont(
                 features.as_mut_ptr()
             },
             features.len() as c_int,
-            if shapers.is_empty() {
-                std::ptr::null()
-            } else {
-                shapers.as_ptr()
-            },
+            if shapers.is_empty() { std::ptr::null() } else { shapers.as_ptr() },
             rgbValue,
             extend,
             slant,
@@ -1539,13 +1277,7 @@ unsafe fn loadOTfont(
     }
 }
 
-unsafe fn splitFontName(
-    mut name: *mut c_char,
-    var: *mut *mut c_char,
-    feat: *mut *mut c_char,
-    end: *mut *mut c_char,
-    index: *mut c_int,
-) {
+unsafe fn splitFontName(mut name: *mut c_char, var: *mut *mut c_char, feat: *mut *mut c_char, end: *mut *mut c_char, index: *mut c_int) {
     unsafe {
         *var = std::ptr::null_mut();
         *feat = std::ptr::null_mut();
@@ -1654,20 +1386,16 @@ pub unsafe fn find_native_font(uname: *mut c_char, mut scaled_size: i32) -> *mut
                 if !varString.is_null() {
                     if !strstartswith(varString, b"/AAT\0".as_ptr() as *const c_char).is_null() {
                         setReqEngine(b'A' as c_char);
-                    } else if !strstartswith(varString, b"/OT\0".as_ptr() as *const c_char)
-                        .is_null()
+                    } else if !strstartswith(varString, b"/OT\0".as_ptr() as *const c_char).is_null()
                         || !strstartswith(varString, b"/ICU\0".as_ptr() as *const c_char).is_null()
                     {
                         setReqEngine(b'O' as c_char);
-                    } else if !strstartswith(varString, b"/GR\0".as_ptr() as *const c_char)
-                        .is_null()
-                    {
+                    } else if !strstartswith(varString, b"/GR\0".as_ptr() as *const c_char).is_null() {
                         setReqEngine(b'G' as c_char);
                     }
                 }
 
-                rval =
-                    loadOTfont(std::ptr::null_mut(), font, scaled_size, featString) as *mut c_void;
+                rval = loadOTfont(std::ptr::null_mut(), font, scaled_size, featString) as *mut c_void;
                 if rval.is_null() {
                     deleteFont(font);
                 }
@@ -1732,8 +1460,7 @@ pub unsafe fn find_native_font(uname: *mut c_char, mut scaled_size: i32) -> *mut
                                 || hasFontTable(font, kGSUB)
                                 || hasFontTable(font, kGPOS)
                             {
-                                rval = loadOTfont(fontRef, font, scaled_size, featString)
-                                    as *mut c_void;
+                                rval = loadOTfont(fontRef, font, scaled_size, featString) as *mut c_void;
                             }
                             if rval.is_null() {
                                 rval = loadAATfont(fontRef, scaled_size, featString);
@@ -1789,12 +1516,7 @@ pub unsafe extern "C" fn release_font_engine(engine: *mut c_void, type_flag: c_i
 
 #[unsafe(export_name = "ot_get_font_metrics")]
 pub unsafe extern "C" fn ot_get_font_metrics(
-    pEngine: *mut c_void,
-    ascent: *mut scaled_t,
-    descent: *mut scaled_t,
-    xheight: *mut scaled_t,
-    capheight: *mut scaled_t,
-    slant: *mut scaled_t,
+    pEngine: *mut c_void, ascent: *mut scaled_t, descent: *mut scaled_t, xheight: *mut scaled_t, capheight: *mut scaled_t, slant: *mut scaled_t,
 ) {
     unsafe {
         let engine = pEngine as XeTeXLayoutEngine;
@@ -1805,10 +1527,7 @@ pub unsafe extern "C" fn ot_get_font_metrics(
         *ascent = D2Fix(a as f64);
         *descent = D2Fix(d as f64);
 
-        *slant = D2Fix(
-            Fix2D(getSlant(getFont(engine))) * (getExtendFactor(engine) as f64)
-                + (getSlantFactor(engine) as f64),
-        );
+        *slant = D2Fix(Fix2D(getSlant(getFont(engine))) * (getExtendFactor(engine) as f64) + (getSlantFactor(engine) as f64));
 
         getCapAndXHeight(engine, &mut a, &mut d);
         *capheight = D2Fix(a as f64);
@@ -1867,23 +1586,14 @@ pub unsafe extern "C" fn ot_font_get_1(what: i32, pEngine: *mut c_void, param: i
 }
 
 #[unsafe(export_name = "ot_font_get_2")]
-pub unsafe extern "C" fn ot_font_get_2(
-    what: i32,
-    pEngine: *mut c_void,
-    param1: i32,
-    param2: i32,
-) -> i32 {
+pub unsafe extern "C" fn ot_font_get_2(what: i32, pEngine: *mut c_void, param1: i32, param2: i32) -> i32 {
     unsafe {
         let engine = pEngine as XeTeXLayoutEngine;
         let fontInst = getFont(engine);
         match what {
-            XeTeX_OT_language_code => {
-                getIndLanguage(fontInst, param1 as u32, param2 as libc::c_uint) as i32
-            }
+            XeTeX_OT_language_code => getIndLanguage(fontInst, param1 as u32, param2 as libc::c_uint) as i32,
             XeTeX_OT_count_features => countFeatures(fontInst, param1 as u32, param2 as u32) as i32,
-            XeTeX_selector_code => {
-                getGraphiteFeatureSettingCode(engine, param1 as u32, param2 as u32) as i32
-            }
+            XeTeX_selector_code => getGraphiteFeatureSettingCode(engine, param1 as u32, param2 as u32) as i32,
             XeTeX_is_default_selector => {
                 if getGraphiteFeatureDefaultSetting(engine, param1 as u32) == param2 as u32 {
                     1
@@ -1897,35 +1607,19 @@ pub unsafe extern "C" fn ot_font_get_2(
 }
 
 #[unsafe(export_name = "ot_font_get_3")]
-pub unsafe extern "C" fn ot_font_get_3(
-    what: i32,
-    pEngine: *mut c_void,
-    param1: i32,
-    param2: i32,
-    param3: i32,
-) -> i32 {
+pub unsafe extern "C" fn ot_font_get_3(what: i32, pEngine: *mut c_void, param1: i32, param2: i32, param3: i32) -> i32 {
     unsafe {
         let engine = pEngine as XeTeXLayoutEngine;
         let fontInst = getFont(engine);
         match what {
-            XeTeX_OT_feature_code => getIndFeature(
-                fontInst,
-                param1 as u32,
-                param2 as u32,
-                param3 as libc::c_uint,
-            ) as i32,
+            XeTeX_OT_feature_code => getIndFeature(fontInst, param1 as u32, param2 as u32, param3 as libc::c_uint) as i32,
             _ => 0,
         }
     }
 }
 
 #[unsafe(export_name = "gr_print_font_name")]
-pub unsafe extern "C" fn gr_print_font_name(
-    what: i32,
-    pEngine: *mut c_void,
-    param1: i32,
-    param2: i32,
-) {
+pub unsafe extern "C" fn gr_print_font_name(what: i32, pEngine: *mut c_void, param1: i32, param2: i32) {
     unsafe {
         let engine = pEngine as XeTeXLayoutEngine;
         let mut name: *mut c_char = std::ptr::null_mut();
@@ -2020,18 +1714,8 @@ pub unsafe extern "C" fn tt_checkpoint_fonts(cp: *mut tt_checkpoint) {
 
             if (*cp).restoring {
                 let expected = xmalloc(length as usize) as *mut c_char;
-                tt_checkpoint_field(
-                    cp.cast(),
-                    b"font\0".as_ptr() as *const c_char,
-                    expected as *mut c_void,
-                    length as usize,
-                );
-                if libc::memcmp(
-                    expected as *const c_void,
-                    xdv_buffer as *const c_void,
-                    length as usize,
-                ) != 0
-                {
+                tt_checkpoint_field(cp.cast(), b"font\0".as_ptr() as *const c_char, expected as *mut c_void, length as usize);
+                if libc::memcmp(expected as *const c_void, xdv_buffer as *const c_void, length as usize) != 0 {
                     (*cp).valid = false;
                 }
                 libc::free(expected as *mut c_void);
@@ -2039,11 +1723,7 @@ pub unsafe extern "C" fn tt_checkpoint_fonts(cp: *mut tt_checkpoint) {
             } else {
                 let mut path: [c_char; 257] = [0; 257];
                 let path_length = (*xdv_buffer.add(6) as u8) as usize;
-                libc::memcpy(
-                    path.as_mut_ptr() as *mut c_void,
-                    xdv_buffer.add(7) as *const c_void,
-                    path_length,
-                );
+                libc::memcpy(path.as_mut_ptr() as *mut c_void, xdv_buffer.add(7) as *const c_void, path_length);
                 path[path_length] = 0;
                 let handle = ttstub_input_open(path.as_ptr(), TTBC_FILE_FORMAT_OPEN_TYPE, 0);
                 if handle == 0 {
@@ -2062,12 +1742,7 @@ pub unsafe extern "C" fn tt_checkpoint_fonts(cp: *mut tt_checkpoint) {
                     (*cp).valid = false;
                 }
                 ttstub_input_close(handle);
-                tt_checkpoint_field(
-                    cp.cast(),
-                    b"font\0".as_ptr() as *const c_char,
-                    xdv_buffer as *mut c_void,
-                    length as usize,
-                );
+                tt_checkpoint_field(cp.cast(), b"font\0".as_ptr() as *const c_char, xdv_buffer as *mut c_void, length as usize);
             }
 
             f += 1;
@@ -2189,11 +1864,7 @@ pub unsafe extern "C" fn make_font_def(f: i32) -> c_int {
                 CFDictionaryGetValue(attributes, kXeTeXEmboldenAttributeName)
             };
             if !emboldenNumber.is_null() {
-                CFNumberGetValue(
-                    emboldenNumber,
-                    kCFNumberFloatType.into(),
-                    &mut embolden as *mut f32 as *mut c_void,
-                );
+                CFNumberGetValue(emboldenNumber, kCFNumberFloatType.into(), &mut embolden as *mut f32 as *mut c_void);
             }
 
             let fSize = CTFontGetSize(font);
@@ -2293,11 +1964,7 @@ pub unsafe extern "C" fn make_font_def(f: i32) -> c_int {
 }
 
 #[unsafe(export_name = "apply_mapping")]
-pub unsafe extern "C" fn apply_mapping(
-    pCnv: *mut c_void,
-    txtPtr: *mut u16,
-    txtLen: c_int,
-) -> c_int {
+pub unsafe extern "C" fn apply_mapping(pCnv: *mut c_void, txtPtr: *mut u16, txtLen: c_int) -> c_int {
     unsafe {
         let cnv = pCnv as TECkit_Converter;
         let mut inUsed: UInt32 = 0;
@@ -2351,12 +2018,7 @@ unsafe fn snap_zone(value: *mut scaled_t, snap_value: scaled_t, fuzz: scaled_t) 
 }
 
 #[unsafe(export_name = "get_native_char_height_depth")]
-pub unsafe extern "C" fn get_native_char_height_depth(
-    font: i32,
-    ch: i32,
-    height: *mut scaled_t,
-    depth: *mut scaled_t,
-) {
+pub unsafe extern "C" fn get_native_char_height_depth(font: i32, ch: i32, height: *mut scaled_t, depth: *mut scaled_t) {
     unsafe {
         let mut ht: f32 = 0.0;
         let mut dp: f32 = 0.0;
@@ -2378,10 +2040,7 @@ pub unsafe extern "C" fn get_native_char_height_depth(
                 let gid = mapCharToGlyph(engine, ch as u32);
                 getGlyphHeightDepth(engine, gid, &mut ht, &mut dp);
             } else {
-                _tt_abort(
-                    b"bad native font flag in `get_native_char_height_depth`\0".as_ptr()
-                        as *const c_char,
-                );
+                _tt_abort(b"bad native font flag in `get_native_char_height_depth`\0".as_ptr() as *const c_char);
             }
         }
 
@@ -2417,12 +2076,7 @@ pub unsafe extern "C" fn getnativechardp(f: i32, c: i32) -> scaled_t {
 }
 
 #[unsafe(export_name = "get_native_char_sidebearings")]
-pub unsafe extern "C" fn get_native_char_sidebearings(
-    font: i32,
-    ch: i32,
-    lsb: *mut scaled_t,
-    rsb: *mut scaled_t,
-) {
+pub unsafe extern "C" fn get_native_char_sidebearings(font: i32, ch: i32, lsb: *mut scaled_t, rsb: *mut scaled_t) {
     unsafe {
         let mut l: f32 = 0.0;
         let mut r: f32 = 0.0;
@@ -2444,10 +2098,7 @@ pub unsafe extern "C" fn get_native_char_sidebearings(
                 let gid = mapCharToGlyph(engine, ch as u32);
                 getGlyphSidebearings(engine, gid, &mut l, &mut r);
             } else {
-                _tt_abort(
-                    b"bad native font flag in `get_native_char_side_bearings`\0".as_ptr()
-                        as *const c_char,
-                );
+                _tt_abort(b"bad native font flag in `get_native_char_side_bearings`\0".as_ptr() as *const c_char);
             }
         }
 
@@ -2500,11 +2151,7 @@ pub unsafe extern "C" fn getnativecharic(f: i32, c: i32) -> scaled_t {
         let mut rsb: scaled_t = 0;
         get_native_char_sidebearings(f, c, &mut lsb, &mut rsb);
         let letter_space = *font_letter_space.add(f as usize);
-        if rsb < 0 {
-            letter_space - rsb
-        } else {
-            letter_space
-        }
+        if rsb < 0 { letter_space - rsb } else { letter_space }
     }
 }
 
@@ -2529,9 +2176,7 @@ pub unsafe extern "C" fn getnativecharwd(f: i32, c: i32) -> scaled_t {
                 let gid = mapCharToGlyph(engine, c as u32);
                 wd = D2Fix(getGlyphWidthFromEngine(engine, gid) as f64);
             } else {
-                _tt_abort(
-                    b"bad native font flag in `get_native_char_wd`\0".as_ptr() as *const c_char
-                );
+                _tt_abort(b"bad native font flag in `get_native_char_wd`\0".as_ptr() as *const c_char);
             }
         }
 
@@ -2599,8 +2244,7 @@ pub unsafe extern "C" fn store_justified_native_glyphs(pNode: *mut c_void) {
             } else if glyphCount > 1 {
                 for i in 1..glyphCount {
                     let loc_x = (*locations.add(i)).x;
-                    (*locations.add(i)).x =
-                        D2Fix(Fix2D(loc_x) + justAmount * (i as f64) / ((glyphCount - 1) as f64));
+                    (*locations.add(i)).x = D2Fix(Fix2D(loc_x) + justAmount * (i as f64) / ((glyphCount - 1) as f64));
                 }
             }
 
@@ -2712,16 +2356,8 @@ pub unsafe extern "C" fn measure_native_node(pNode: *mut c_void, use_glyph_metri
                         let mut y = 0.0f64;
 
                         for runIndex in 0..nRuns {
-                            let run_dir =
-                                ubidi_getVisualRun(pBiDi, runIndex, &mut logicalStart, &mut length);
-                            let nGlyphs = layoutChars(
-                                engine,
-                                txtPtr,
-                                logicalStart,
-                                length,
-                                txtLen,
-                                run_dir == UBIDI_RTL,
-                            );
+                            let run_dir = ubidi_getVisualRun(pBiDi, runIndex, &mut logicalStart, &mut length);
+                            let nGlyphs = layoutChars(engine, txtPtr, logicalStart, length, txtLen, run_dir == UBIDI_RTL);
 
                             scratch.resize(nGlyphs as usize, font_ls != 0);
                             glyphs = scratch.glyphs.as_mut_ptr();
@@ -2741,9 +2377,7 @@ pub unsafe extern "C" fn measure_native_node(pNode: *mut c_void, use_glyph_metri
                                     y: D2Fix((*positions.add(i as usize)).y as f64 + y),
                                 });
                                 if font_ls != 0 {
-                                    scratch
-                                        .fixed_advances
-                                        .push(D2Fix(*advances.add(i as usize) as f64));
+                                    scratch.fixed_advances.push(D2Fix(*advances.add(i as usize) as f64));
                                 }
                                 totalGlyphCount += 1;
                             }
@@ -2758,16 +2392,8 @@ pub unsafe extern "C" fn measure_native_node(pNode: *mut c_void, use_glyph_metri
                         glyph_info = xcalloc(totalGlyphCount as usize, native_glyph_info_size);
                         locations = glyph_info as *mut FixedPoint;
                         glyphIDs = locations.add(totalGlyphCount as usize) as *mut u16;
-                        std::ptr::copy_nonoverlapping(
-                            scratch.locations.as_ptr(),
-                            locations,
-                            totalGlyphCount as usize,
-                        );
-                        std::ptr::copy_nonoverlapping(
-                            scratch.ids.as_ptr(),
-                            glyphIDs,
-                            totalGlyphCount as usize,
-                        );
+                        std::ptr::copy_nonoverlapping(scratch.locations.as_ptr(), locations, totalGlyphCount as usize);
+                        std::ptr::copy_nonoverlapping(scratch.ids.as_ptr(), glyphIDs, totalGlyphCount as usize);
                     }
 
                     *node_width(node) = D2Fix(width);
@@ -2778,8 +2404,7 @@ pub unsafe extern "C" fn measure_native_node(pNode: *mut c_void, use_glyph_metri
                     }
                 } else {
                     let mut width = 0.0f64;
-                    totalGlyphCount =
-                        layoutChars(engine, txtPtr, 0, txtLen, txtLen, dir == UBIDI_RTL);
+                    totalGlyphCount = layoutChars(engine, txtPtr, 0, txtLen, txtLen, dir == UBIDI_RTL);
 
                     scratch.resize(totalGlyphCount as usize, font_ls != 0);
                     glyphs = scratch.glyphs.as_mut_ptr();
@@ -2799,14 +2424,10 @@ pub unsafe extern "C" fn measure_native_node(pNode: *mut c_void, use_glyph_metri
                         for i in 0..totalGlyphCount {
                             *glyphIDs.add(i as usize) = *glyphs.add(i as usize) as u16;
                             if font_ls != 0 {
-                                scratch
-                                    .fixed_advances
-                                    .push(D2Fix(*advances.add(i as usize) as f64));
+                                scratch.fixed_advances.push(D2Fix(*advances.add(i as usize) as f64));
                             }
-                            (*locations.add(i as usize)).x =
-                                D2Fix((*positions.add(i as usize)).x as f64);
-                            (*locations.add(i as usize)).y =
-                                D2Fix((*positions.add(i as usize)).y as f64);
+                            (*locations.add(i as usize)).x = D2Fix((*positions.add(i as usize)).x as f64);
+                            (*locations.add(i as usize)).y = D2Fix((*positions.add(i as usize)).y as f64);
                         }
                         width = (*positions.add(totalGlyphCount as usize)).x as f64;
                     }
@@ -2836,9 +2457,7 @@ pub unsafe extern "C" fn measure_native_node(pNode: *mut c_void, use_glyph_metri
                     }
                 }
             } else {
-                _tt_abort(
-                    b"bad native font flag in `measure_native_node`\0".as_ptr() as *const c_char
-                );
+                _tt_abort(b"bad native font flag in `measure_native_node`\0".as_ptr() as *const c_char);
             }
         }
 
@@ -2865,11 +2484,7 @@ pub unsafe extern "C" fn measure_native_node(pNode: *mut c_void, use_glyph_metri
                         got_bbox = true;
                     }
                     if !got_bbox && *font_area.add(f) as u32 == OTGR_FONT_FLAG {
-                        getGlyphBounds(
-                            *font_layout_engine.add(f) as XeTeXLayoutEngine,
-                            gid as u32,
-                            &mut bbox,
-                        );
+                        getGlyphBounds(*font_layout_engine.add(f) as XeTeXLayoutEngine, gid as u32, &mut bbox);
                     }
 
                     cacheGlyphBBox(f as u16, gid, &bbox);
@@ -2906,14 +2521,12 @@ pub unsafe extern "C" fn real_get_native_italic_correction(pNode: *mut c_void) -
 
             #[cfg(target_os = "macos")]
             if area == AAT_FONT_FLAG {
-                return D2Fix(GetGlyphItalCorr_AAT(*font_layout_engine.add(f), last_gid))
-                    + *font_letter_space.add(f);
+                return D2Fix(GetGlyphItalCorr_AAT(*font_layout_engine.add(f), last_gid)) + *font_letter_space.add(f);
             }
 
             if area == OTGR_FONT_FLAG {
                 let engine = *font_layout_engine.add(f) as XeTeXLayoutEngine;
-                return D2Fix(getGlyphItalCorr(engine, last_gid as u32) as f64)
-                    + *font_letter_space.add(f);
+                return D2Fix(getGlyphItalCorr(engine, last_gid as u32) as f64) + *font_letter_space.add(f);
             }
         }
         0
@@ -2973,9 +2586,7 @@ pub unsafe extern "C" fn measure_native_glyph(pNode: *mut c_void, use_glyph_metr
                     getGlyphHeightDepth(engine, gid as u32, &mut ht, &mut dp);
                 }
             } else {
-                _tt_abort(
-                    b"bad native font flag in `measure_native_glyph`\0".as_ptr() as *const c_char
-                );
+                _tt_abort(b"bad native font flag in `measure_native_glyph`\0".as_ptr() as *const c_char);
             }
         }
 
@@ -3060,12 +2671,7 @@ pub extern "C" fn Fix2D(f: Fixed) -> f64 {
 
 #[unsafe(export_name = "aat_get_font_metrics")]
 pub unsafe extern "C" fn aat_get_font_metrics(
-    attributes: CFDictionaryRef,
-    ascent: *mut i32,
-    descent: *mut i32,
-    xheight: *mut i32,
-    capheight: *mut i32,
-    slant: *mut i32,
+    attributes: CFDictionaryRef, ascent: *mut i32, descent: *mut i32, xheight: *mut i32, capheight: *mut i32, slant: *mut i32,
 ) {
     unsafe {
         #[cfg(target_os = "macos")]
@@ -3106,11 +2712,7 @@ pub unsafe extern "C" fn aat_font_get(what: c_int, attributes: CFDictionaryRef) 
 }
 
 #[unsafe(export_name = "aat_font_get_1")]
-pub unsafe extern "C" fn aat_font_get_1(
-    what: c_int,
-    attributes: CFDictionaryRef,
-    param: c_int,
-) -> c_int {
+pub unsafe extern "C" fn aat_font_get_1(what: c_int, attributes: CFDictionaryRef, param: c_int) -> c_int {
     unsafe {
         let mut rval = -1;
         #[cfg(target_os = "macos")]
@@ -3122,14 +2724,9 @@ pub unsafe extern "C" fn aat_font_get_1(
                     if !features.is_null() {
                         if (CFArrayGetCount(features) as c_int) > param {
                             let feature = CFArrayGetValueAtIndex(features, param as libc::c_long);
-                            let identifier =
-                                CFDictionaryGetValue(feature, kCTFontFeatureTypeIdentifierKey);
+                            let identifier = CFDictionaryGetValue(feature, kCTFontFeatureTypeIdentifierKey);
                             if !identifier.is_null() {
-                                CFNumberGetValue(
-                                    identifier,
-                                    kCFNumberIntType.into(),
-                                    &mut rval as *mut c_int as *mut c_void,
-                                );
+                                CFNumberGetValue(identifier, kCFNumberIntType.into(), &mut rval as *mut c_int as *mut c_void);
                             }
                         }
                         CFRelease(features);
@@ -3139,11 +2736,7 @@ pub unsafe extern "C" fn aat_font_get_1(
                     let features = CTFontCopyFeatures(font);
                     if !features.is_null() {
                         let mut value: CFBooleanRef = std::ptr::null_mut();
-                        let feature = findDictionaryInArrayWithIdentifier(
-                            features,
-                            kCTFontFeatureTypeIdentifierKey,
-                            param,
-                        );
+                        let feature = findDictionaryInArrayWithIdentifier(features, kCTFontFeatureTypeIdentifierKey, param);
                         let found = CFDictionaryGetValueIfPresent(
                             feature,
                             kCTFontFeatureTypeExclusiveKey,
@@ -3158,14 +2751,9 @@ pub unsafe extern "C" fn aat_font_get_1(
                 XeTeX_count_selectors => {
                     let features = CTFontCopyFeatures(font);
                     if !features.is_null() {
-                        let feature = findDictionaryInArrayWithIdentifier(
-                            features,
-                            kCTFontFeatureTypeIdentifierKey,
-                            param,
-                        );
+                        let feature = findDictionaryInArrayWithIdentifier(features, kCTFontFeatureTypeIdentifierKey, param);
                         if !feature.is_null() {
-                            let selectors =
-                                CFDictionaryGetValue(feature, kCTFontFeatureTypeSelectorsKey);
+                            let selectors = CFDictionaryGetValue(feature, kCTFontFeatureTypeSelectorsKey);
                             if !selectors.is_null() {
                                 rval = CFArrayGetCount(selectors) as c_int;
                             }
@@ -3181,12 +2769,7 @@ pub unsafe extern "C" fn aat_font_get_1(
 }
 
 #[unsafe(export_name = "aat_font_get_2")]
-pub unsafe extern "C" fn aat_font_get_2(
-    what: c_int,
-    attributes: CFDictionaryRef,
-    param1: c_int,
-    param2: c_int,
-) -> c_int {
+pub unsafe extern "C" fn aat_font_get_2(what: c_int, attributes: CFDictionaryRef, param1: c_int, param2: c_int) -> c_int {
     unsafe {
         let mut rval = -1;
         #[cfg(target_os = "macos")]
@@ -3194,38 +2777,22 @@ pub unsafe extern "C" fn aat_font_get_2(
             let font = fontFromAttributes(attributes);
             let features = CTFontCopyFeatures(font);
             if !features.is_null() {
-                let feature = findDictionaryInArrayWithIdentifier(
-                    features,
-                    kCTFontFeatureTypeIdentifierKey,
-                    param1,
-                );
+                let feature = findDictionaryInArrayWithIdentifier(features, kCTFontFeatureTypeIdentifierKey, param1);
                 if !feature.is_null() {
                     let selectors = CFDictionaryGetValue(feature, kCTFontFeatureTypeSelectorsKey);
                     if !selectors.is_null() {
                         match what {
                             XeTeX_selector_code => {
                                 if (CFArrayGetCount(selectors) as c_int) > param2 {
-                                    let selector =
-                                        CFArrayGetValueAtIndex(selectors, param2 as libc::c_long);
-                                    let identifier = CFDictionaryGetValue(
-                                        selector,
-                                        kCTFontFeatureSelectorIdentifierKey,
-                                    );
+                                    let selector = CFArrayGetValueAtIndex(selectors, param2 as libc::c_long);
+                                    let identifier = CFDictionaryGetValue(selector, kCTFontFeatureSelectorIdentifierKey);
                                     if !identifier.is_null() {
-                                        CFNumberGetValue(
-                                            identifier,
-                                            kCFNumberIntType.into(),
-                                            &mut rval as *mut c_int as *mut c_void,
-                                        );
+                                        CFNumberGetValue(identifier, kCFNumberIntType.into(), &mut rval as *mut c_int as *mut c_void);
                                     }
                                 }
                             }
                             XeTeX_is_default_selector => {
-                                let selector = findDictionaryInArrayWithIdentifier(
-                                    selectors,
-                                    kCTFontFeatureSelectorIdentifierKey,
-                                    param2,
-                                );
+                                let selector = findDictionaryInArrayWithIdentifier(selectors, kCTFontFeatureSelectorIdentifierKey, param2);
                                 if !selector.is_null() {
                                     let mut isDefault: CFBooleanRef = std::ptr::null_mut();
                                     let found = CFDictionaryGetValueIfPresent(
@@ -3258,19 +2825,10 @@ pub unsafe extern "C" fn aat_font_get_named(what: c_int, attributes: CFDictionar
             let font = fontFromAttributes(attributes);
             let features = CTFontCopyFeatures(font);
             if !features.is_null() {
-                let feature = findDictionaryInArray(
-                    features,
-                    kCTFontFeatureTypeNameKey,
-                    name_of_file,
-                    name_length,
-                );
+                let feature = findDictionaryInArray(features, kCTFontFeatureTypeNameKey, name_of_file, name_length);
                 if !feature.is_null() {
                     let identifier = CFDictionaryGetValue(feature, kCTFontFeatureTypeIdentifierKey);
-                    CFNumberGetValue(
-                        identifier,
-                        kCFNumberIntType.into(),
-                        &mut rval as *mut c_int as *mut c_void,
-                    );
+                    CFNumberGetValue(identifier, kCFNumberIntType.into(), &mut rval as *mut c_int as *mut c_void);
                 }
                 CFRelease(features);
             }
@@ -3280,11 +2838,7 @@ pub unsafe extern "C" fn aat_font_get_named(what: c_int, attributes: CFDictionar
 }
 
 #[unsafe(export_name = "aat_font_get_named_1")]
-pub unsafe extern "C" fn aat_font_get_named_1(
-    what: c_int,
-    attributes: CFDictionaryRef,
-    param: c_int,
-) -> c_int {
+pub unsafe extern "C" fn aat_font_get_named_1(what: c_int, attributes: CFDictionaryRef, param: c_int) -> c_int {
     unsafe {
         let mut rval = -1;
         #[cfg(target_os = "macos")]
@@ -3292,19 +2846,11 @@ pub unsafe extern "C" fn aat_font_get_named_1(
             let font = fontFromAttributes(attributes);
             let features = CTFontCopyFeatures(font);
             if !features.is_null() {
-                let feature = findDictionaryInArrayWithIdentifier(
-                    features,
-                    kCTFontFeatureTypeIdentifierKey,
-                    param,
-                );
+                let feature = findDictionaryInArrayWithIdentifier(features, kCTFontFeatureTypeIdentifierKey, param);
                 if !feature.is_null() {
                     let selector = findSelectorByName(feature, name_of_file, name_length);
                     if !selector.is_null() {
-                        CFNumberGetValue(
-                            selector,
-                            kCFNumberIntType.into(),
-                            &mut rval as *mut c_int as *mut c_void,
-                        );
+                        CFNumberGetValue(selector, kCFNumberIntType.into(), &mut rval as *mut c_int as *mut c_void);
                     }
                 }
                 CFRelease(features);
@@ -3315,12 +2861,7 @@ pub unsafe extern "C" fn aat_font_get_named_1(
 }
 
 #[unsafe(export_name = "aat_print_font_name")]
-pub unsafe extern "C" fn aat_print_font_name(
-    what: c_int,
-    attributes: CFDictionaryRef,
-    param1: c_int,
-    param2: c_int,
-) {
+pub unsafe extern "C" fn aat_print_font_name(what: c_int, attributes: CFDictionaryRef, param1: c_int, param2: c_int) {
     unsafe {
         #[cfg(target_os = "macos")]
         {
@@ -3329,26 +2870,15 @@ pub unsafe extern "C" fn aat_print_font_name(
                 let font = fontFromAttributes(attributes);
                 let features = CTFontCopyFeatures(font);
                 if !features.is_null() {
-                    let feature = findDictionaryInArrayWithIdentifier(
-                        features,
-                        kCTFontFeatureTypeIdentifierKey,
-                        param1,
-                    );
+                    let feature = findDictionaryInArrayWithIdentifier(features, kCTFontFeatureTypeIdentifierKey, param1);
                     if !feature.is_null() {
                         if what == XETEX_FEATURE_NAME_CODE {
-                            name = CFDictionaryGetValue(feature, kCTFontFeatureTypeNameKey)
-                                as CFStringRef;
+                            name = CFDictionaryGetValue(feature, kCTFontFeatureTypeNameKey) as CFStringRef;
                         } else {
-                            let selectors =
-                                CFDictionaryGetValue(feature, kCTFontFeatureTypeSelectorsKey);
-                            let selector = findDictionaryInArrayWithIdentifier(
-                                selectors,
-                                kCTFontFeatureSelectorIdentifierKey,
-                                param2,
-                            );
+                            let selectors = CFDictionaryGetValue(feature, kCTFontFeatureTypeSelectorsKey);
+                            let selector = findDictionaryInArrayWithIdentifier(selectors, kCTFontFeatureSelectorIdentifierKey, param2);
                             if !selector.is_null() {
-                                name = CFDictionaryGetValue(selector, kCTFontFeatureSelectorNameKey)
-                                    as CFStringRef;
+                                name = CFDictionaryGetValue(selector, kCTFontFeatureSelectorNameKey) as CFStringRef;
                             }
                         }
                     }

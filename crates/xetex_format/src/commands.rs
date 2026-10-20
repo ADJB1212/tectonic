@@ -294,10 +294,7 @@ where
 {
     macro_rules! foreach_resolved_helper {
         ($typename:ident $symname:ident $parseroverload:tt $macrooverload:tt $since:literal $group:ident) => {
-            cb(
-                &$typename::metadata(),
-                Box::new($typename::build(version, symbols)?),
-            );
+            cb(&$typename::metadata(), Box::new($typename::build(version, symbols)?));
         };
     }
 
@@ -324,18 +321,14 @@ pub fn initialize_command_code_symbols(version: FormatVersion, symbols: &mut Sym
             let (bonus_symbol, delta) = match (prev_group, md.group) {
                 (CommandGroup::Group1, CommandGroup::Group2) => (Some("MAX_CHAR_CODE"), -1),
                 (CommandGroup::Group2, CommandGroup::Group3) => (Some("MIN_INTERNAL"), 0),
-                (CommandGroup::Group3, CommandGroup::Group4) => {
-                    (Some("MAX_NON_PREFIXED_COMMAND"), -1)
-                }
+                (CommandGroup::Group3, CommandGroup::Group4) => (Some("MAX_NON_PREFIXED_COMMAND"), -1),
                 (CommandGroup::Group4, CommandGroup::Group5) => (Some("MAX_INTERNAL"), -1),
                 (CommandGroup::Group5, CommandGroup::Group6) => (Some("MAX_COMMAND"), -1),
                 _ => (None, 0),
             };
 
             if let Some(bs) = bonus_symbol {
-                symbols
-                    .add(SymbolCategory::Commands, bs, n + delta)
-                    .unwrap();
+                symbols.add(SymbolCategory::Commands, bs, n + delta).unwrap();
             }
 
             n += 1;
@@ -372,12 +365,7 @@ impl Commands {
         }
     }
 
-    pub fn describe_extended(
-        &self,
-        code: CommandCode,
-        arg: CommandArgument,
-        format: &Format,
-    ) -> (String, Option<String>) {
+    pub fn describe_extended(&self, code: CommandCode, arg: CommandArgument, format: &Format) -> (String, Option<String>) {
         if let Some(cmd) = self.codes.get(&code) {
             (cmd.describe(arg), cmd.extended_info(arg, format))
         } else {
@@ -423,14 +411,7 @@ typedef struct xetex_format_primitive_def_t {{
                     PrimitiveExtraInit::Frozen(s) => s,
                 };
 
-                writeln!(
-                    stream,
-                    "    {{ \"{}\", {}, {}, {} }}, \\",
-                    prim.name,
-                    cmd.symbol(),
-                    arg,
-                    extra_init
-                )?;
+                writeln!(stream, "    {{ \"{}\", {}, {}, {} }}, \\", prim.name, cmd.symbol(), arg, extra_init)?;
             }
         }
 

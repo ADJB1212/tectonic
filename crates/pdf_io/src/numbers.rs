@@ -2,18 +2,7 @@
 
 use std::io::Write;
 
-pub(crate) const POWERS_OF_TEN: [u32; 10] = [
-    1,
-    10,
-    100,
-    1000,
-    10_000,
-    100_000,
-    1_000_000,
-    10_000_000,
-    100_000_000,
-    1_000_000_000,
-];
+pub(crate) const POWERS_OF_TEN: [u32; 10] = [1, 10, 100, 1000, 10_000, 100_000, 1_000_000, 10_000_000, 100_000_000, 1_000_000_000];
 pub(crate) const INVERSE_POWERS_OF_TEN: [f64; 10] = [
     1.0,
     0.1,
@@ -64,15 +53,8 @@ pub(crate) fn format_integer(value: i32, buffer: &mut [u8]) -> Result<usize, For
     copy_output(&bytes[start..], buffer)
 }
 
-pub(crate) fn format_decimal(
-    value: f64,
-    precision: i32,
-    buffer: &mut [u8],
-) -> Result<usize, FormatError> {
-    let Some(&scale) = usize::try_from(precision)
-        .ok()
-        .and_then(|p| POWERS_OF_TEN.get(p))
-    else {
+pub(crate) fn format_decimal(value: f64, precision: i32, buffer: &mut [u8]) -> Result<usize, FormatError> {
+    let Some(&scale) = usize::try_from(precision).ok().and_then(|p| POWERS_OF_TEN.get(p)) else {
         return Err(FormatError::InvalidPrecision(precision));
     };
     let mut bytes = [0; DECIMAL_BUFFER_SIZE];
@@ -93,11 +75,7 @@ pub(crate) fn format_decimal(
         if integer <= f64::from(i32::MAX) {
             length += format_integer(integer as i32, &mut bytes[length..]).unwrap();
         } else if integer.is_nan() {
-            let text = if integer.is_sign_negative() {
-                &b"-nan"[..]
-            } else {
-                &b"nan"[..]
-            };
+            let text = if integer.is_sign_negative() { &b"-nan"[..] } else { &b"nan"[..] };
             length += copy_output(text, &mut bytes[length..]).unwrap();
         } else {
             let available = bytes.len() - length;
@@ -128,11 +106,7 @@ pub(crate) fn format_decimal(
 pub(crate) fn scaled_fixword(value: i32, fixword: i32) -> i32 {
     let product = i64::from(value) * i64::from(fixword);
     let rounded = ((product.unsigned_abs() + (1 << 19)) >> 20) as u32;
-    if product < 0 {
-        rounded.wrapping_neg() as i32
-    } else {
-        rounded as i32
-    }
+    if product < 0 { rounded.wrapping_neg() as i32 } else { rounded as i32 }
 }
 
 pub(crate) fn write_big_endian(value: i32, buffer: &mut [u8]) {
@@ -173,11 +147,7 @@ mod tests {
         ] {
             let mut bytes = [0xaa; DECIMAL_BUFFER_SIZE];
             let length = format_decimal(value, precision, &mut bytes).unwrap();
-            assert_eq!(
-                &bytes[..length],
-                expected.as_bytes(),
-                "{value}, precision {precision}"
-            );
+            assert_eq!(&bytes[..length], expected.as_bytes(), "{value}, precision {precision}");
             assert_eq!(bytes[length], 0xaa);
             let mut short = [0xaa; DECIMAL_BUFFER_SIZE];
             assert_eq!(
@@ -190,15 +160,9 @@ mod tests {
             assert!(short.iter().all(|&byte| byte == 0xaa));
         }
         for precision in [-1, 10, i32::MAX] {
-            assert_eq!(
-                format_decimal(1.0, precision, &mut []),
-                Err(FormatError::InvalidPrecision(precision))
-            );
+            assert_eq!(format_decimal(1.0, precision, &mut []), Err(FormatError::InvalidPrecision(precision)));
         }
-        assert_eq!(
-            format_decimal(f64::MAX, 9, &mut [0; DECIMAL_BUFFER_SIZE]),
-            Ok(309)
-        );
+        assert_eq!(format_decimal(f64::MAX, 9, &mut [0; DECIMAL_BUFFER_SIZE]), Ok(309));
     }
 
     #[test]
@@ -236,10 +200,7 @@ mod tests {
         for length in 0..=8 {
             let mut bytes = [0; 8];
             write_big_endian(-0x1234568, &mut bytes[..length]);
-            assert_eq!(
-                &bytes[..length],
-                &(-0x1234568i64).to_be_bytes()[8 - length..]
-            );
+            assert_eq!(&bytes[..length], &(-0x1234568i64).to_be_bytes()[8 - length..]);
         }
     }
 }

@@ -12,9 +12,7 @@ use tectonic_bridge_fontconfig as fc;
 use tectonic_bridge_freetype2 as ft;
 use tectonic_bridge_harfbuzz as hb;
 #[cfg(target_os = "macos")]
-use tectonic_mac_core::{
-    CFArray, CFDictionary, CFType, CFUrl, CTFont, CTFontDescriptor, FontAttribute, FontNameKey,
-};
+use tectonic_mac_core::{CFArray, CFDictionary, CFType, CFUrl, CTFont, CTFontDescriptor, FontAttribute, FontNameKey};
 
 fn get_glyph_advance(face: &ft::Face, gid: libc::c_uint, vertical: bool) -> ft::Fixed {
     let flags = if vertical {
@@ -43,21 +41,10 @@ pub(crate) fn get_font_funcs() -> hb::FontFuncsRef<'static, Arc<Mutex<ft::Face>>
             let mut funcs = hb::FontFuncs::<Arc<Mutex<ft::Face>>>::new();
 
             let mut f = funcs.as_mut();
-            f.nominal_glyph_func(|_, face, ch| {
-                face.lock().unwrap().get_char_index(ch).map(|cc| cc.get())
-            });
-            f.variation_glyph_func(|_, face, ch, vs| {
-                face.lock()
-                    .unwrap()
-                    .get_char_variant_index(ch, vs)
-                    .map(|cc| cc.get())
-            });
-            f.glyph_h_advance(|_, face, gid| {
-                get_glyph_advance(&face.lock().unwrap(), gid, false) as hb::Position
-            });
-            f.glyph_v_advance(|_, face, gid| {
-                get_glyph_advance(&face.lock().unwrap(), gid, true) as hb::Position
-            });
+            f.nominal_glyph_func(|_, face, ch| face.lock().unwrap().get_char_index(ch).map(|cc| cc.get()));
+            f.variation_glyph_func(|_, face, ch, vs| face.lock().unwrap().get_char_variant_index(ch, vs).map(|cc| cc.get()));
+            f.glyph_h_advance(|_, face, gid| get_glyph_advance(&face.lock().unwrap(), gid, false) as hb::Position);
+            f.glyph_v_advance(|_, face, gid| get_glyph_advance(&face.lock().unwrap(), gid, true) as hb::Position);
             f.glyph_h_origin(|_, _, _| Some((0, 0)));
             f.glyph_v_origin(|_, _, _| {
                 Some((0, 0))
@@ -81,16 +68,12 @@ pub(crate) fn get_font_funcs() -> hb::FontFuncsRef<'static, Arc<Mutex<ft::Face>>
                 return !error;
                  */
             });
-            f.glyph_h_kerning(|_, face, gid1, gid2| {
-                match face
-                    .lock()
-                    .unwrap()
-                    .get_kerning(gid1, gid2, ft::KerningMode::Unscaled)
-                {
+            f.glyph_h_kerning(
+                |_, face, gid1, gid2| match face.lock().unwrap().get_kerning(gid1, gid2, ft::KerningMode::Unscaled) {
                     Ok(vec) => vec.x as hb::Position,
                     Err(_) => 0,
-                }
-            });
+                },
+            );
             f.glyph_v_kerning(|_, _, _, _| 0);
             f.glyph_extents(|_, face, gid| {
                 let mut face = face.lock().unwrap();
@@ -118,13 +101,11 @@ pub(crate) fn get_font_funcs() -> hb::FontFuncsRef<'static, Arc<Mutex<ft::Face>>
                 }
                 None
             });
-            f.glyph_name(
-                |_, face, gid, buf| match face.lock().unwrap().get_glyph_name(gid, buf) {
-                    Ok(str) if !str.to_bytes().is_empty() && str.to_bytes()[0] == 0 => 0,
-                    Err(_) => 0,
-                    Ok(str) => str.to_bytes().len(),
-                },
-            );
+            f.glyph_name(|_, face, gid, buf| match face.lock().unwrap().get_glyph_name(gid, buf) {
+                Ok(str) if !str.to_bytes().is_empty() && str.to_bytes()[0] == 0 => 0,
+                Err(_) => 0,
+                Ok(str) => str.to_bytes().len(),
+            });
 
             funcs.make_immutable()
         })
@@ -207,11 +188,7 @@ impl Font {
         Ok(out)
     }
 
-    pub(crate) fn new_path_index(
-        path: Option<&str>,
-        index: usize,
-        point_size: f32,
-    ) -> Result<Font, ()> {
+    pub(crate) fn new_path_index(path: Option<&str>, index: usize, point_size: f32) -> Result<Font, ()> {
         let mut out = Font {
             units_per_em: 0,
             point_size,
@@ -245,9 +222,7 @@ impl Font {
 
             let sz = engine.input_get_size(handle);
             let mut backing_data = vec![0; sz];
-            engine
-                .input_read(handle, &mut backing_data)
-                .expect("failed to read font file");
+            engine.input_read(handle, &mut backing_data).expect("failed to read font file");
 
             engine.input_close(handle);
 
@@ -261,10 +236,7 @@ impl Font {
             }
 
             if index == 0 && !self.ft_face().is_sfnt() {
-                let afm = Path::new(pathname)
-                    .file_name()
-                    .map(Path::new)
-                    .unwrap_or_else(|| Path::new(pathname));
+                let afm = Path::new(pathname).file_name().map(Path::new).unwrap_or_else(|| Path::new(pathname));
                 let afm = afm.with_extension("afm");
 
                 let afm_handle = engine.input_open(afm.to_str().unwrap(), FileFormat::Afm, false);
@@ -272,9 +244,7 @@ impl Font {
                 if let Some(afm_handle) = afm_handle {
                     let sz = engine.input_get_size(afm_handle);
                     let mut backing_data2 = vec![0; sz];
-                    engine
-                        .input_read(afm_handle, &mut backing_data2)
-                        .expect("failed to read AFM file");
+                    engine.input_read(afm_handle, &mut backing_data2).expect("failed to read AFM file");
 
                     self.ft_face().attach_stream_mem(backing_data2).unwrap();
                     engine.input_close(afm_handle);
@@ -317,11 +287,7 @@ impl Font {
 
         let ft_face = Arc::clone(self.ft_face.as_ref().unwrap());
         let mut hb_face = hb::Face::new_tables(move |_, tag| {
-            if let Ok(table) = ft_face
-                .lock()
-                .unwrap()
-                .load_sfnt_table(ft::TableTag::Other(tag.to_raw()))
-            {
+            if let Ok(table) = ft_face.lock().unwrap().load_sfnt_table(ft::TableTag::Other(tag.to_raw())) {
                 Some(hb::Blob::new(table))
             } else {
                 None
@@ -333,12 +299,8 @@ impl Font {
 
         let mut hb_font = hb::Font::new(hb_face.as_ref());
 
-        hb_font
-            .as_mut()
-            .set_funcs(get_font_funcs(), Arc::clone(self.ft_face.as_ref().unwrap()));
-        hb_font
-            .as_mut()
-            .set_scale(self.units_per_em as i32, self.units_per_em as i32);
+        hb_font.as_mut().set_funcs(get_font_funcs(), Arc::clone(self.ft_face.as_ref().unwrap()));
+        hb_font.as_mut().set_scale(self.units_per_em as i32, self.units_per_em as i32);
         hb_font.as_mut().set_ppem(0, 0);
 
         self.hb_font = Some(hb_font);
@@ -353,14 +315,10 @@ impl Font {
         };
 
         let empty_cascade_list = CFArray::<CFType>::empty();
-        let attributes =
-            CFDictionary::new([(FontAttribute::CascadeList.to_str(), empty_cascade_list)]);
+        let attributes = CFDictionary::new([(FontAttribute::CascadeList.to_str(), empty_cascade_list)]);
 
         *descriptor = descriptor.copy_with_attrs(&attributes);
-        *font_ref = Some(CTFont::new_descriptor(
-            descriptor,
-            self.point_size as f64 * 72.0 / 72.27,
-        ));
+        *font_ref = Some(CTFont::new_descriptor(descriptor, self.point_size as f64 * 72.0 / 72.27));
         let mut index = 0;
         let pathname = get_file_name_from_ct_font(font_ref.as_ref().unwrap(), &mut index).unwrap();
         self.initialize_ft(pathname.to_str().unwrap(), index as usize)
@@ -381,12 +339,7 @@ impl Font {
         }
     }
 
-    pub(crate) fn get_glyph_sidebearings(
-        &mut self,
-        gid: GlyphID,
-        lsb: Option<&mut f32>,
-        rsb: Option<&mut f32>,
-    ) {
+    pub(crate) fn get_glyph_sidebearings(&mut self, gid: GlyphID, lsb: Option<&mut f32>, rsb: Option<&mut f32>) {
         let width = self.get_glyph_width(gid as u32);
 
         let bbox = self.get_glyph_bounds(gid);
@@ -403,11 +356,7 @@ impl Font {
         let width = self.get_glyph_width(gid as u32);
         let bbox = self.get_glyph_bounds(gid);
 
-        if bbox.x_max > width {
-            bbox.x_max - width
-        } else {
-            0.0
-        }
+        if bbox.x_max > width { bbox.x_max - width } else { 0.0 }
     }
 
     pub(crate) fn map_char_to_glyph(&self, ch: u32) -> GlyphID {
@@ -447,18 +396,11 @@ impl Font {
     pub(crate) fn get_glyph_bounds(&mut self, gid: GlyphID) -> GlyphBBox {
         let mut ft_face = self.ft_face();
 
-        let glyph = ft_face
-            .load_glyph(gid as u32, ft::LoadFlags::NO_SCALE)
-            .and_then(|slot| slot.get_glyph());
+        let glyph = ft_face.load_glyph(gid as u32, ft::LoadFlags::NO_SCALE).and_then(|slot| slot.get_glyph());
 
         match glyph {
             Ok(glyph) => {
-                let ft::BBox {
-                    x_min,
-                    y_min,
-                    x_max,
-                    y_max,
-                } = glyph.get_cbox(ft::BBoxMode::Unscaled);
+                let ft::BBox { x_min, y_min, x_max, y_max } = glyph.get_cbox(ft::BBoxMode::Unscaled);
                 drop(ft_face);
                 GlyphBBox {
                     x_min: self.units_to_points(x_min as f64) as f32,
@@ -471,12 +413,7 @@ impl Font {
         }
     }
 
-    pub(crate) fn get_glyph_height_depth(
-        &mut self,
-        gid: GlyphID,
-        height: Option<&mut f32>,
-        depth: Option<&mut f32>,
-    ) {
+    pub(crate) fn get_glyph_height_depth(&mut self, gid: GlyphID, height: Option<&mut f32>, depth: Option<&mut f32>) {
         let bbox = self.get_glyph_bounds(gid);
         if let Some(height) = height {
             *height = bbox.y_max;
@@ -581,9 +518,7 @@ pub(crate) fn get_file_name_from_ct_font(ct_font: &CTFont, index: &mut u32) -> O
                         *index = i as u32;
                         break;
                     }
-                    (Some(name1), Some(name2))
-                        if name1.as_cstr().is_some_and(|name1| name1 == name2) =>
-                    {
+                    (Some(name1), Some(name2)) if name1.as_cstr().is_some_and(|name1| name1 == name2) => {
                         *index = i as u32;
                         break;
                     }
@@ -593,9 +528,5 @@ pub(crate) fn get_file_name_from_ct_font(ct_font: &CTFont, index: &mut u32) -> O
         }
     }
 
-    if *index != u32::MAX {
-        Some(pathname)
-    } else {
-        None
-    }
+    if *index != u32::MAX { Some(pathname) } else { None }
 }

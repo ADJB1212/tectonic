@@ -6,41 +6,23 @@ fn pdf_parser_checks_container_depth_truncated_tokens_and_recovers() {
     let _document = crate::compat::document::DocumentScope::new().unwrap();
     crate::compat::document::with_diagnostics(|state| state.quiet = 2);
     unsafe {
-        let mut inputs = vec![
-            b"<".to_vec(),
-            b"<<".to_vec(),
-            b"[true".to_vec(),
-            b"(\\".to_vec(),
-            b"<< /a 1 >".to_vec(),
-        ];
+        let mut inputs = vec![b"<".to_vec(), b"<<".to_vec(), b"[true".to_vec(), b"(\\".to_vec(), b"<< /a 1 >".to_vec()];
         inputs.push([vec![b'['; 257], vec![b']'; 257]].concat());
         for bytes in inputs {
             let mut start = bytes.as_ptr().cast();
-            let result = super::dpx_pdfparse::parse_pdf_object(
-                &mut start,
-                bytes.as_ptr().add(bytes.len()).cast(),
-                core::ptr::null_mut(),
-            );
+            let result = super::dpx_pdfparse::parse_pdf_object(&mut start, bytes.as_ptr().add(bytes.len()).cast(), core::ptr::null_mut());
             assert!(result.is_null());
             let bytes = b"<< /a [true null 12.25 (ok)] >>";
             let mut start = bytes.as_ptr().cast();
-            let result = super::dpx_pdfparse::parse_pdf_object(
-                &mut start,
-                bytes.as_ptr().add(bytes.len()).cast(),
-                core::ptr::null_mut(),
-            );
+            let result = super::dpx_pdfparse::parse_pdf_object(&mut start, bytes.as_ptr().add(bytes.len()).cast(), core::ptr::null_mut());
             assert!(!result.is_null());
             assert_eq!(start, bytes.as_ptr().add(bytes.len()).cast());
             super::dpx_pdfobj::pdf_release_obj(result.cast());
         }
         let name = [b"/".as_slice(), &[b'a'; 200]].concat();
         let mut start = name.as_ptr().cast();
-        let result =
-            super::dpx_pdfparse::parse_pdf_name(&mut start, name.as_ptr().add(name.len()).cast());
-        assert_eq!(
-            CStr::from_ptr(super::dpx_pdfobj::pdf_name_value(result.cast())).to_bytes(),
-            &[b'a'; 200]
-        );
+        let result = super::dpx_pdfparse::parse_pdf_name(&mut start, name.as_ptr().add(name.len()).cast());
+        assert_eq!(CStr::from_ptr(super::dpx_pdfobj::pdf_name_value(result.cast())).to_bytes(), &[b'a'; 200]);
         super::dpx_pdfobj::pdf_release_obj(result.cast());
     }
 }
@@ -54,26 +36,14 @@ fn dictionary_comparison_preserves_order_and_does_not_allocate_objects() {
         let second = pdf_new_dict();
         for index in 0..4096 {
             let key = std::ffi::CString::new(format!("key{index}")).unwrap();
-            pdf_add_dict(
-                first,
-                pdf_new_name(key.as_ptr()),
-                pdf_new_number(index as f64),
-            );
-            pdf_add_dict(
-                second,
-                pdf_new_name(key.as_ptr()),
-                pdf_new_number(index as f64),
-            );
+            pdf_add_dict(first, pdf_new_name(key.as_ptr()), pdf_new_number(index as f64));
+            pdf_add_dict(second, pdf_new_name(key.as_ptr()), pdf_new_number(index as f64));
         }
         let before = pdf_new_null();
         assert_eq!(pdf_compare_object(first, second), 0);
         let after = pdf_new_null();
         assert_eq!((*after).id.0, (*before).id.0 + 1);
-        pdf_add_dict(
-            second,
-            pdf_new_name(c"key4095".as_ptr()),
-            pdf_new_number(-1.0),
-        );
+        pdf_add_dict(second, pdf_new_name(c"key4095".as_ptr()), pdf_new_number(-1.0));
         assert!(pdf_compare_object(first, second) > 0);
         pdf_remove_dict(second, c"key0".as_ptr());
         pdf_add_dict(second, pdf_new_name(c"key0".as_ptr()), pdf_new_number(0.0));
@@ -119,41 +89,19 @@ fn name_tree_index_handles_collisions_and_preserves_bucket_order() {
     unsafe {
         let mut table = pdf_new_name_tree();
         let keys: Vec<Vec<u8>> = (0..2048)
-            .map(|index| {
-                (0..11)
-                    .flat_map(|bit| {
-                        if index & (1 << bit) == 0 {
-                            *b"aA"
-                        } else {
-                            *b"b "
-                        }
-                    })
-                    .collect()
-            })
+            .map(|index| (0..11).flat_map(|bit| if index & (1 << bit) == 0 { *b"aA" } else { *b"b " }).collect())
             .collect();
         for (index, key) in keys.iter().enumerate() {
             assert_eq!(
-                pdf_names_add_object(
-                    table,
-                    key.as_ptr().cast(),
-                    key.len() as i32,
-                    pdf_new_number(index as f64)
-                ),
+                pdf_names_add_object(table, key.as_ptr().cast(), key.len() as i32, pdf_new_number(index as f64)),
                 0
             );
         }
-        let nonempty: Vec<_> = (*table)
-            .table
-            .iter()
-            .filter(|entry| !entry.is_null())
-            .collect();
+        let nonempty: Vec<_> = (*table).table.iter().filter(|entry| !entry.is_null()).collect();
         assert_eq!(nonempty.len(), 1);
         let mut entry = *nonempty[0];
         for key in &keys {
-            assert_eq!(
-                std::slice::from_raw_parts((*entry).key.cast::<u8>(), (*entry).keylen as usize),
-                key
-            );
+            assert_eq!(std::slice::from_raw_parts((*entry).key.cast::<u8>(), (*entry).keylen as usize), key);
             entry = (*entry).next;
         }
         assert!(entry.is_null());
@@ -162,11 +110,7 @@ fn name_tree_index_handles_collisions_and_preserves_bucket_order() {
             assert_eq!(pdf_number_value(object), index as f64);
             let indexed = super::dpx_pdfnames::lookup_index(table as usize, key).unwrap();
             assert_eq!(
-                super::dpx_dpxutil::ht_lookup_table(
-                    table.cast(),
-                    key.as_ptr().cast(),
-                    key.len() as i32
-                ),
+                super::dpx_dpxutil::ht_lookup_table(table.cast(), key.as_ptr().cast(), key.len() as i32),
                 indexed
             );
         }
@@ -186,10 +130,7 @@ fn object_containers_preserve_shared_identity_replacement_and_order() {
         let dict = pdf_new_dict();
         pdf_add_dict(dict, pdf_new_name(c"a".as_ptr()), pdf_link_obj(shared));
         pdf_add_dict(dict, pdf_new_name(c"b".as_ptr()), array);
-        assert_eq!(
-            pdf_add_dict(dict, pdf_new_name(c"a".as_ptr()), pdf_new_number(42.0)),
-            1
-        );
+        assert_eq!(pdf_add_dict(dict, pdf_new_name(c"a".as_ptr()), pdf_new_number(42.0)), 1);
         assert_eq!(pdf_number_value(pdf_get_array(array, -1)), 12.0);
         assert!(pdf_get_array(array, -2).is_null());
         let keys = pdf_dict_keys(dict);
@@ -250,10 +191,7 @@ fn object_leases_preserve_queued_targets_until_the_last_owner_releases() {
         let queued = pdf_link_obj(contents);
         pdf_release_obj(contents);
         assert_eq!(pdf_stream_length(queued), 7);
-        assert_eq!(
-            std::slice::from_raw_parts(pdf_stream_dataptr(queued).cast::<u8>(), 7),
-            b"pending"
-        );
+        assert_eq!(std::slice::from_raw_parts(pdf_stream_dataptr(queued).cast::<u8>(), 7), b"pending");
         pdf_release_obj(queued);
         assert_eq!(pdf_obj_typeof(contents), PDF_OBJ_INVALID);
     }
@@ -265,35 +203,20 @@ fn name_tree_sorting_preserves_binary_keys_and_c_table_queries() {
     let _document = crate::compat::document::DocumentScope::new().unwrap();
     unsafe {
         let mut names = pdf_new_name_tree();
-        for (index, key) in [b"z".as_slice(), b"a\0b", b"a\xff", b"a"]
-            .into_iter()
-            .enumerate()
-        {
+        for (index, key) in [b"z".as_slice(), b"a\0b", b"a\xff", b"a"].into_iter().enumerate() {
             let number = pdf_new_number(index as f64);
-            assert_eq!(
-                pdf_names_add_object(names, key.as_ptr().cast(), key.len() as i32, number),
-                0
-            );
-            assert_eq!(
-                pdf_names_lookup_object(names, key.as_ptr().cast(), key.len() as i32),
-                number
-            );
+            assert_eq!(pdf_names_add_object(names, key.as_ptr().cast(), key.len() as i32, number), 0);
+            assert_eq!(pdf_names_lookup_object(names, key.as_ptr().cast(), key.len() as i32), number);
         }
         assert_eq!((*names).count, 4);
         let mut count = 0;
         let tree = pdf_names_create_tree(names, &mut count, std::ptr::null_mut());
         assert_eq!(count, 4);
         let entries = pdf_lookup_dict(tree, c"Names".as_ptr());
-        for (index, expected) in [b"a".as_slice(), b"a\0b", b"a\xff", b"z"]
-            .into_iter()
-            .enumerate()
-        {
+        for (index, expected) in [b"a".as_slice(), b"a\0b", b"a\xff", b"z"].into_iter().enumerate() {
             let key = pdf_get_array(entries, index as i32 * 2);
             assert_eq!(
-                std::slice::from_raw_parts(
-                    pdf_string_value(key).cast::<u8>(),
-                    pdf_string_length(key) as usize
-                ),
+                std::slice::from_raw_parts(pdf_string_value(key).cast::<u8>(), pdf_string_length(key) as usize),
                 expected
             );
         }
@@ -311,10 +234,7 @@ fn name_reservations_resolve_after_definition_without_recycling_placeholder_hand
         let mut names = pdf_new_name_tree();
         let reference = pdf_names_reserve(names, b"later".as_ptr().cast(), 5);
         let number = pdf_new_number(17.0);
-        assert_eq!(
-            pdf_names_add_object(names, b"later".as_ptr().cast(), 5, number),
-            0
-        );
+        assert_eq!(pdf_names_add_object(names, b"later".as_ptr().cast(), 5, number), 0);
         let resolved = pdf_deref_obj(reference);
         assert_eq!(resolved, number);
         pdf_release_obj(resolved);
@@ -334,10 +254,7 @@ fn resource_ids_and_references_survive_replacement_and_registry_growth() {
         let id = pdf_defineresource(c"Font".as_ptr(), c"Shared".as_ptr(), first, 0);
         let old_reference = pdf_get_resource_reference(id);
         let replacement = pdf_new_number(6.0);
-        assert_eq!(
-            pdf_defineresource(c"Font".as_ptr(), c"Shared".as_ptr(), replacement, 0),
-            id
-        );
+        assert_eq!(pdf_defineresource(c"Font".as_ptr(), c"Shared".as_ptr(), replacement, 0), id);
         assert_eq!(pdf_findresource(c"Font".as_ptr(), c"Shared".as_ptr()), id);
         assert_eq!(pdf_obj_typeof(first), PDF_OBJ_INVALID);
         assert!(pdf_deref_obj(old_reference).is_null());
@@ -346,18 +263,12 @@ fn resource_ids_and_references_survive_replacement_and_registry_growth() {
         for index in 1..300 {
             let object = pdf_new_null();
             let name = std::ffi::CString::new(format!("resource{index}")).unwrap();
-            assert_eq!(
-                pdf_defineresource(c"Font".as_ptr(), name.as_ptr(), object, 0),
-                index
-            );
+            assert_eq!(pdf_defineresource(c"Font".as_ptr(), name.as_ptr(), object, 0), index);
             assert_eq!(pdf_findresource(c"Font".as_ptr(), name.as_ptr()), index);
         }
         let other = pdf_defineresource(c"XObject".as_ptr(), c"Shared".as_ptr(), pdf_new_null(), 0);
         assert_ne!(id, other);
-        assert_eq!(
-            pdf_findresource(c"XObject".as_ptr(), c"Shared".as_ptr()),
-            other
-        );
+        assert_eq!(pdf_findresource(c"XObject".as_ptr(), c"Shared".as_ptr()), other);
         let unnamed = pdf_defineresource(c"Font".as_ptr(), std::ptr::null(), pdf_new_null(), 0);
         let empty = pdf_defineresource(c"Font".as_ptr(), c"".as_ptr(), pdf_new_null(), 0);
         assert_ne!(unnamed, empty);
@@ -368,10 +279,7 @@ fn resource_ids_and_references_survive_replacement_and_registry_growth() {
         pdf_close_resources();
         assert_eq!(pdf_obj_typeof(replacement), PDF_OBJ_INVALID);
         assert_eq!(pdf_findresource(c"Font".as_ptr(), c"Shared".as_ptr()), -1);
-        assert_eq!(
-            pdf_defineresource(c"Font".as_ptr(), c"Shared".as_ptr(), pdf_new_null(), 0),
-            0
-        );
+        assert_eq!(pdf_defineresource(c"Font".as_ptr(), c"Shared".as_ptr(), pdf_new_null(), 0), 0);
         pdf_release_obj(old_reference);
         pdf_release_obj(new_reference);
     }
@@ -384,18 +292,9 @@ fn invalid_object_operations_return_errors_and_leave_handles_usable() {
     unsafe {
         let number = pdf_new_number(7.0);
         assert_eq!(__pdf_entry_pdf_add_array(std::ptr::null_mut(), number), -1);
-        assert_eq!(
-            CStr::from_ptr(runtime::tt_pdf_last_error()),
-            c"Missing PDF object"
-        );
-        assert_eq!(
-            __pdf_entry_pdf_set_string(number, b"bad".as_ptr().cast_mut(), 3),
-            -1
-        );
-        assert_eq!(
-            CStr::from_ptr(runtime::tt_pdf_last_error()),
-            c"Invalid PDF object type"
-        );
+        assert_eq!(CStr::from_ptr(runtime::tt_pdf_last_error()), c"Missing PDF object");
+        assert_eq!(__pdf_entry_pdf_set_string(number, b"bad".as_ptr().cast_mut(), 3), -1);
+        assert_eq!(CStr::from_ptr(runtime::tt_pdf_last_error()), c"Invalid PDF object type");
         assert_eq!(pdf_number_value(number), 7.0);
         let array = pdf_new_array();
         pdf_add_array(array, number);
@@ -412,46 +311,29 @@ fn c_allocator_handoffs_remain_c_owned_across_document_completion() {
         assert_eq!(super::dpx_mem::__pdf_entry_new(8, &mut memory), 0);
         memory.cast::<u8>().write_bytes(0x5a, 8);
         assert!((*crate::compat::document::current()).allocations.is_empty());
-        assert_eq!(
-            super::dpx_mem::__pdf_entry_renew(memory, 32, &mut memory),
-            0
-        );
+        assert_eq!(super::dpx_mem::__pdf_entry_renew(memory, 32, &mut memory), 0);
         assert!((*crate::compat::document::current()).allocations.is_empty());
         let input = b"identifier ";
         let mut start = input.as_ptr().cast();
         let end = input.as_ptr().add(input.len()).cast();
         let mut identifier = std::ptr::null_mut();
-        assert_eq!(
-            super::dpx_pdfparse::__pdf_entry_parse_ident(&mut start, end, &mut identifier),
-            0
-        );
+        assert_eq!(super::dpx_pdfparse::__pdf_entry_parse_ident(&mut start, end, &mut identifier), 0);
         assert!((*crate::compat::document::current()).allocations.is_empty());
         let mut cipher = std::ptr::null_mut();
         let mut cipher_len = 0;
         assert_eq!(
-            __pdf_entry_AES_ecb_encrypt(
-                [0u8; 16].as_ptr(),
-                16,
-                [0u8; 16].as_ptr(),
-                16,
-                &mut cipher,
-                &mut cipher_len
-            ),
+            __pdf_entry_AES_ecb_encrypt([0u8; 16].as_ptr(), 16, [0u8; 16].as_ptr(), 16, &mut cipher, &mut cipher_len),
             0
         );
         assert_eq!(cipher_len, 16);
         assert!((*crate::compat::document::current()).allocations.is_empty());
         drop(document);
-        assert_eq!(
-            std::slice::from_raw_parts(memory.cast::<u8>(), 8),
-            &[0x5a; 8]
-        );
+        assert_eq!(std::slice::from_raw_parts(memory.cast::<u8>(), 8), &[0x5a; 8]);
         assert_eq!(CStr::from_ptr(identifier), c"identifier");
         assert_eq!(
             std::slice::from_raw_parts(cipher, cipher_len),
             &[
-                0x66, 0xe9, 0x4b, 0xd4, 0xef, 0x8a, 0x2c, 0x3b, 0x88, 0x4c, 0xfa, 0x59, 0xca, 0x34,
-                0x2b, 0x2e
+                0x66, 0xe9, 0x4b, 0xd4, 0xef, 0x8a, 0x2c, 0x3b, 0x88, 0x4c, 0xfa, 0x59, 0xca, 0x34, 0x2b, 0x2e
             ]
         );
         libc::free(memory);
@@ -468,10 +350,7 @@ fn document_failure_reclaims_state_and_resets_abi_configuration_and_diagnostics(
     };
     let failure = runtime::catch_backend::<()>(|| {
         let _document = document::DocumentScope::new()?;
-        assert_eq!(
-            document::DocumentScope::new().err().unwrap().kind,
-            PdfErrorKind::InvalidState
-        );
+        assert_eq!(document::DocumentScope::new().err().unwrap().kind, PdfErrorKind::InvalidState);
         document::with_diagnostics(|state| {
             state.quiet = 2;
             state.last_warning = true;
@@ -480,11 +359,7 @@ fn document_failure_reclaims_state_and_resets_abi_configuration_and_diagnostics(
             use super::dpx_pdfobj::*;
             let cycle = pdf_new_array();
             let dictionary = pdf_new_dict();
-            pdf_add_dict(
-                dictionary,
-                pdf_new_name(c"cycle".as_ptr()),
-                pdf_link_obj(cycle),
-            );
+            pdf_add_dict(dictionary, pdf_new_name(c"cycle".as_ptr()), pdf_link_obj(cycle));
             pdf_add_array(cycle, dictionary);
             super::dpx_dpxconf::dpx_conf.verbose_level = 7;
             super::dpx_dpxconf::dpx_conf.file.keep_cache = 1;
@@ -499,10 +374,7 @@ fn document_failure_reclaims_state_and_resets_abi_configuration_and_diagnostics(
             let abandoned = allocation::malloc(16);
             assert!(!abandoned.is_null());
         }
-        runtime::legacy_result(Err(PdfError::new(
-            PdfErrorKind::MalformedInput,
-            c"injected document failure".to_owned(),
-        )))
+        runtime::legacy_result(Err(PdfError::new(PdfErrorKind::MalformedInput, c"injected document failure".to_owned())))
     });
     assert_eq!(failure.unwrap_err().kind, PdfErrorKind::MalformedInput);
     assert!(!document::active());
@@ -538,12 +410,9 @@ fn typed_errors_cross_only_the_compatibility_boundary() {
     }
     let error = runtime::catch_backend::<()>(|| {
         let _guard = Guard(&dropped);
-        runtime::legacy_result(Err(PdfError::new(
-            PdfErrorKind::MalformedInput,
-            c"malformed".to_owned(),
-        )
-        .at(19)
-        .in_file(b"bad\xff.tex")))
+        runtime::legacy_result(Err(PdfError::new(PdfErrorKind::MalformedInput, c"malformed".to_owned())
+            .at(19)
+            .in_file(b"bad\xff.tex")))
     })
     .unwrap_err();
     assert!(dropped.get());
@@ -551,10 +420,7 @@ fn typed_errors_cross_only_the_compatibility_boundary() {
     assert_eq!(error.offset, Some(19));
     assert_eq!(error.file.as_deref(), Some(&b"bad\xff.tex"[..]));
     assert!(runtime::result_boundary::<()>(|| Err(error)).is_err());
-    assert_eq!(
-        unsafe { CStr::from_ptr(runtime::tt_pdf_last_error()) },
-        c"malformed"
-    );
+    assert_eq!(unsafe { CStr::from_ptr(runtime::tt_pdf_last_error()) }, c"malformed");
     assert_eq!(runtime::result_boundary(|| Ok(42)), Ok(42));
 
     let panic = std::panic::catch_unwind(|| {
@@ -590,24 +456,15 @@ fn stdio_errors_return_through_c_status_and_allow_another_operation() {
         assert!(!file.0.is_null());
         assert_eq!(libc::fwrite(b"abc".as_ptr().cast(), 1, 3, file.0), 3);
         let mut size = -1;
-        assert_eq!(
-            super::dpx_mfileio::__pdf_entry_file_size(file.0.cast(), &mut size),
-            0
-        );
+        assert_eq!(super::dpx_mfileio::__pdf_entry_file_size(file.0.cast(), &mut size), 0);
         assert_eq!(size, 3);
         assert_eq!(libc::ftell(file.0), 0);
-        assert_eq!(
-            super::dpx_mfileio::__pdf_entry_seek_relative(file.0.cast(), -1),
-            -1
-        );
+        assert_eq!(super::dpx_mfileio::__pdf_entry_seek_relative(file.0.cast(), -1), -1);
         assert_eq!(
             CStr::from_ptr(runtime::tt_pdf_last_error()),
             c"io:  An OS command failed that should not have.\n"
         );
-        assert_eq!(
-            super::dpx_mfileio::__pdf_entry_file_size(file.0.cast(), &mut size),
-            0
-        );
+        assert_eq!(super::dpx_mfileio::__pdf_entry_file_size(file.0.cast(), &mut size), 0);
         assert_eq!(size, 3);
     }
 }
@@ -615,8 +472,7 @@ fn stdio_errors_return_through_c_status_and_allow_another_operation() {
 #[test]
 fn sfnt_directory_initialization_can_be_cleaned_up_after_failure() {
     unsafe {
-        let font = runtime::allocate(std::mem::size_of::<super::dpx_sfnt::sfnt>())
-            .cast::<super::dpx_sfnt::sfnt>();
+        let font = runtime::allocate(std::mem::size_of::<super::dpx_sfnt::sfnt>()).cast::<super::dpx_sfnt::sfnt>();
         font.write(super::dpx_sfnt::sfnt {
             type_0: 0,
             directory: std::ptr::null_mut(),
@@ -624,22 +480,17 @@ fn sfnt_directory_initialization_can_be_cleaned_up_after_failure() {
             offset: 0,
         });
         assert!(runtime::boundary(|| super::dpx_sfnt::sfnt_read_table_directory(font, 0)).is_err());
-        assert_eq!(
-            CStr::from_ptr(runtime::tt_pdf_last_error()),
-            c"assertion failed: sfont->handle"
-        );
+        assert_eq!(CStr::from_ptr(runtime::tt_pdf_last_error()), c"assertion failed: sfont->handle");
         super::dpx_sfnt::sfnt_close(font);
     }
     assert_eq!(runtime::boundary(|| 42), Ok(42));
 }
 
 fn hex(bytes: &[u8]) -> String {
-    bytes
-        .iter()
-        .fold(String::with_capacity(bytes.len() * 2), |mut text, byte| {
-            write!(text, "{byte:02x}").unwrap();
-            text
-        })
+    bytes.iter().fold(String::with_capacity(bytes.len() * 2), |mut text, byte| {
+        write!(text, "{byte:02x}").unwrap();
+        text
+    })
 }
 
 #[test]
@@ -653,10 +504,7 @@ fn digest_vectors_accept_unaligned_output() {
         MD5_write(&mut md5, b"a".as_ptr(), 1);
         MD5_write(&mut md5, b"bc".as_ptr(), 2);
         MD5_final(result, &mut md5);
-        assert_eq!(
-            hex(&output[offset..offset + 16]),
-            "900150983cd24fb0d6963f7d28e17f72"
-        );
+        assert_eq!(hex(&output[offset..offset + 16]), "900150983cd24fb0d6963f7d28e17f72");
 
         let mut sha256: SHA256_CONTEXT = zeroed();
         SHA256_init(&mut sha256);
@@ -698,14 +546,7 @@ fn encryption_matches_known_vectors() {
         ] {
             let mut cipher = std::ptr::null_mut();
             let mut length = 0;
-            AES_ecb_encrypt(
-                key.as_ptr(),
-                key_len,
-                plain.as_ptr(),
-                plain.len(),
-                &mut cipher,
-                &mut length,
-            );
+            AES_ecb_encrypt(key.as_ptr(), key_len, plain.as_ptr(), plain.len(), &mut cipher, &mut length);
             assert_eq!(hex(std::slice::from_raw_parts(cipher, length)), expected);
             libc::free(cipher.cast());
         }
@@ -736,10 +577,7 @@ fn backend_errors_unwind_destructors_before_returning_to_c() {
         .is_err()
     );
     assert!(dropped);
-    assert_eq!(
-        unsafe { CStr::from_ptr(runtime::tt_pdf_last_error()) },
-        c"invalid PDF input"
-    );
+    assert_eq!(unsafe { CStr::from_ptr(runtime::tt_pdf_last_error()) }, c"invalid PDF input");
     assert_eq!(runtime::boundary(|| 42), Ok(42));
 }
 
@@ -748,13 +586,11 @@ fn aes_cbc_preserves_vectors_padding_and_block_boundaries() {
     use aes::cipher::{Array, BlockCipherDecrypt, KeyInit};
     unsafe {
         let key = [
-            0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf,
-            0x4f, 0x3c,
+            0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6, 0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c,
         ];
         let iv: [u8; 16] = core::array::from_fn(|i| i as u8);
         let plain = [
-            0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93,
-            0x17, 0x2a,
+            0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96, 0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a,
         ];
         let mut encrypted = core::ptr::null_mut();
         let mut length = 0;
@@ -768,10 +604,7 @@ fn aes_cbc_preserves_vectors_padding_and_block_boundaries() {
             &mut encrypted,
             &mut length,
         );
-        assert_eq!(
-            hex(core::slice::from_raw_parts(encrypted, length)),
-            "7649abac8119b246cee98e9b12e9197d"
-        );
+        assert_eq!(hex(core::slice::from_raw_parts(encrypted, length)), "7649abac8119b246cee98e9b12e9197d");
         libc::free(encrypted.cast());
         for key_len in [16, 24, 32] {
             let key = vec![0x35; key_len];
@@ -788,11 +621,7 @@ fn aes_cbc_preserves_vectors_padding_and_block_boundaries() {
                         &mut encrypted,
                         &mut length,
                     );
-                    let pad = if padding != 0 || size % 16 != 0 {
-                        16 - size % 16
-                    } else {
-                        0
-                    };
+                    let pad = if padding != 0 || size % 16 != 0 { 16 - size % 16 } else { 0 };
                     assert_eq!(length, size + pad);
                     let ciphertext = core::slice::from_raw_parts(encrypted, length);
                     let mut decoded = Vec::new();
@@ -800,15 +629,9 @@ fn aes_cbc_preserves_vectors_padding_and_block_boundaries() {
                     for bytes in ciphertext.as_chunks::<16>().0 {
                         let mut block = Array::from(*bytes);
                         match key_len {
-                            16 => aes::Aes128::new_from_slice(&key)
-                                .unwrap()
-                                .decrypt_block(&mut block),
-                            24 => aes::Aes192::new_from_slice(&key)
-                                .unwrap()
-                                .decrypt_block(&mut block),
-                            32 => aes::Aes256::new_from_slice(&key)
-                                .unwrap()
-                                .decrypt_block(&mut block),
+                            16 => aes::Aes128::new_from_slice(&key).unwrap().decrypt_block(&mut block),
+                            24 => aes::Aes192::new_from_slice(&key).unwrap().decrypt_block(&mut block),
+                            32 => aes::Aes256::new_from_slice(&key).unwrap().decrypt_block(&mut block),
                             _ => unreachable!(),
                         }
                         decoded.extend(block.iter().zip(previous).map(|(byte, old)| byte ^ old));
@@ -857,9 +680,7 @@ fn pdf_encryption_revisions_match_the_starting_revision() {
             security.label.objnum = 17;
             security.label.gennum = 2;
             super::dpx_mt19937ar::init_genrand(12345);
-            let output =
-                super::dpx_pdfencrypt::encrypt_owned(&mut security, b"PDF encryption fixture")
-                    .unwrap();
+            let output = super::dpx_pdfencrypt::encrypt_owned(&mut security, b"PDF encryption fixture").unwrap();
             assert_eq!(hex(&output), expected);
         }
         let mut security: super::dpx_pdfencrypt::pdf_sec = zeroed();
@@ -881,27 +702,18 @@ fn unicode_legacy_encoding_and_decoding_are_preserved() {
             (&b"\xfc\x80\x80\x80\x80\x80"[..], 0),
         ] {
             let mut pointer = input.as_ptr();
-            assert_eq!(
-                UC_UTF8_decode_char(&mut pointer, pointer.add(input.len())),
-                expected
-            );
+            assert_eq!(UC_UTF8_decode_char(&mut pointer, pointer.add(input.len())), expected);
             assert_eq!(pointer, input.as_ptr().add(input.len()));
         }
         let input = [0xd8, 0, 0, 0];
         let mut pointer = input.as_ptr();
-        assert_eq!(
-            UC_UTF16BE_decode_char(&mut pointer, pointer.add(4)),
-            0x10000
-        );
+        assert_eq!(UC_UTF16BE_decode_char(&mut pointer, pointer.add(4)), 0x10000);
         let mut output = [0; 4];
         let mut pointer = output.as_mut_ptr();
         assert_eq!(UC_UTF8_encode_char(0x7f, &mut pointer, pointer.add(4)), 2);
         assert_eq!(&output[..2], &[0xc1, 0xbf]);
         let mut pointer = output.as_mut_ptr();
-        assert_eq!(
-            UC_UTF16BE_encode_char(0xd800, &mut pointer, pointer.add(4)),
-            2
-        );
+        assert_eq!(UC_UTF16BE_encode_char(0xd800, &mut pointer, pointer.add(4)), 2);
         assert_eq!(&output[..2], &[0xd8, 0]);
         let mut pointer = output.as_mut_ptr();
         assert_eq!(UC_UTF16BE_encode_char(-1, &mut pointer, pointer.add(4)), 2);
@@ -914,10 +726,7 @@ fn unicode_adapters_preserve_positions_and_output_on_failure() {
     use super::dpx_unicode::*;
     unsafe {
         for (decode, input) in [
-            (
-                UC_UTF8_decode_char as unsafe extern "C-unwind" fn(_, _) -> _,
-                &b"\xe2\x82"[..],
-            ),
+            (UC_UTF8_decode_char as unsafe extern "C-unwind" fn(_, _) -> _, &b"\xe2\x82"[..]),
             (UC_UTF16BE_decode_char, &b"\xd8\0\xdc"[..]),
         ] {
             for length in 0..=input.len() {

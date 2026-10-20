@@ -49,7 +49,6 @@ pub const kOptionsMask_InputComplete: UInt32 = 0x0100;
 pub const kOptionsComplete_InputIsComplete: UInt32 = 0x0100;
 
 pub use super::teckit_engine::{
-    TECkit_ConvertBuffer, TECkit_ConvertBufferOpt, TECkit_CreateConverter, TECkit_DisposeConverter,
-    TECkit_Flush, TECkit_FlushOpt, TECkit_GetConverterFlags, TECkit_GetConverterName,
-    TECkit_GetMappingFlags, TECkit_GetMappingName, TECkit_GetVersion, TECkit_ResetConverter,
+    TECkit_ConvertBuffer, TECkit_ConvertBufferOpt, TECkit_CreateConverter, TECkit_DisposeConverter, TECkit_Flush, TECkit_FlushOpt,
+    TECkit_GetConverterFlags, TECkit_GetConverterName, TECkit_GetMappingFlags, TECkit_GetMappingName, TECkit_GetVersion, TECkit_ResetConverter,
 };

@@ -30,40 +30,18 @@
  * printing. Otherwise, we must encrypt the document. Acrobat does
  * not use 'OS/2' table, though...
  */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
     fn floor(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn atoi(_: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
-    fn strchr(__s: *const ::core::ffi::c_char, __c: ::core::ffi::c_int)
-    -> *mut ::core::ffi::c_char;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-    fn strcpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn strchr(__s: *const ::core::ffi::c_char, __c: ::core::ffi::c_int) -> *mut ::core::ffi::c_char;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    fn strcpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
     fn ttstub_input_close(handle: rust_input_handle_t) -> ::core::ffi::c_int;
-    fn sprintf(
-        _: *mut ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
+    fn sprintf(_: *mut ::core::ffi::c_char, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_release_obj"]
     fn pdf_release_obj(object: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_obj_typeof"]
@@ -83,11 +61,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_merge_dict"]
     fn pdf_merge_dict(dict1: *mut pdf_obj, dict2: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_stream_length"]
     fn pdf_stream_length(stream: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_font_get_resource"]
@@ -96,17 +70,11 @@ unsafe extern "C-unwind" {
     fn pdf_font_get_descriptor(font: *mut pdf_font) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_check_tfm_widths"]
     fn pdf_check_tfm_widths(
-        ident: *const ::core::ffi::c_char,
-        widths: *mut ::core::ffi::c_double,
-        firstchar: ::core::ffi::c_int,
-        lastchar: ::core::ffi::c_int,
+        ident: *const ::core::ffi::c_char, widths: *mut ::core::ffi::c_double, firstchar: ::core::ffi::c_int, lastchar: ::core::ffi::c_int,
         usedchars: *const ::core::ffi::c_char,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_agl_chop_suffix"]
-    fn agl_chop_suffix(
-        glyphname: *const ::core::ffi::c_char,
-        suffix: *mut *mut ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn agl_chop_suffix(glyphname: *const ::core::ffi::c_char, suffix: *mut *mut ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_agl_name_is_unicode"]
     fn agl_name_is_unicode(glyphname: *const ::core::ffi::c_char) -> bool;
     #[link_name = "__pdf_impl_agl_name_convert_unicode"]
@@ -127,11 +95,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_encoding_get_encoding"]
     fn pdf_encoding_get_encoding(enc_id: ::core::ffi::c_int) -> *mut *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_put_big_endian"]
-    fn put_big_endian(
-        s: *mut ::core::ffi::c_void,
-        q: SFNT_LONG,
-        n: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn put_big_endian(s: *mut ::core::ffi::c_void, q: SFNT_LONG, n: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_sfnt_open"]
     fn sfnt_open(handle: rust_input_handle_t) -> *mut sfnt;
     #[link_name = "__pdf_impl_dfont_open"]
@@ -141,29 +105,16 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_sfnt_read_table_directory"]
     fn sfnt_read_table_directory(sfont: *mut sfnt, offset: SFNT_ULONG) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_sfnt_set_table"]
-    fn sfnt_set_table(
-        sfont: *mut sfnt,
-        tag: *const ::core::ffi::c_char,
-        data: *mut ::core::ffi::c_void,
-        length: SFNT_ULONG,
-    );
+    fn sfnt_set_table(sfont: *mut sfnt, tag: *const ::core::ffi::c_char, data: *mut ::core::ffi::c_void, length: SFNT_ULONG);
     #[link_name = "__pdf_impl_sfnt_require_table"]
-    fn sfnt_require_table(
-        sfont: *mut sfnt,
-        tag: *const ::core::ffi::c_char,
-        must_exist: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn sfnt_require_table(sfont: *mut sfnt, tag: *const ::core::ffi::c_char, must_exist: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_sfnt_create_FontFile_stream"]
     fn sfnt_create_FontFile_stream(sfont: *mut sfnt) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_ttc_read_offset"]
     fn ttc_read_offset(sfont: *mut sfnt, ttc_idx: SFNT_ULONG) -> SFNT_ULONG;
     #[link_name = "__pdf_impl_tt_get_fontdesc"]
     fn tt_get_fontdesc(
-        sfont: *mut sfnt,
-        embed: *mut ::core::ffi::c_int,
-        stemv: ::core::ffi::c_int,
-        type_0: ::core::ffi::c_int,
-        fontname: *const ::core::ffi::c_char,
+        sfont: *mut sfnt, embed: *mut ::core::ffi::c_int, stemv: ::core::ffi::c_int, type_0: ::core::ffi::c_int, fontname: *const ::core::ffi::c_char,
     ) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_tt_cmap_read"]
     fn tt_cmap_read(sfont: *mut sfnt, platform: USHORT, encoding: USHORT) -> *mut tt_cmap;
@@ -189,49 +140,27 @@ unsafe extern "C-unwind" {
     fn otl_gsub_release(gsub_list: *mut otl_gsub);
     #[link_name = "__pdf_impl_otl_gsub_select"]
     fn otl_gsub_select(
-        gsub_list: *mut otl_gsub,
-        script: *const ::core::ffi::c_char,
-        language: *const ::core::ffi::c_char,
-        feature: *const ::core::ffi::c_char,
+        gsub_list: *mut otl_gsub, script: *const ::core::ffi::c_char, language: *const ::core::ffi::c_char, feature: *const ::core::ffi::c_char,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_otl_gsub_add_feat"]
     fn otl_gsub_add_feat(
-        gsub_list: *mut otl_gsub,
-        script: *const ::core::ffi::c_char,
-        language: *const ::core::ffi::c_char,
-        feature: *const ::core::ffi::c_char,
+        gsub_list: *mut otl_gsub, script: *const ::core::ffi::c_char, language: *const ::core::ffi::c_char, feature: *const ::core::ffi::c_char,
         sfont: *mut sfnt,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_otl_gsub_apply"]
     fn otl_gsub_apply(gsub_list: *mut otl_gsub, gid: *mut USHORT) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_otl_gsub_apply_alt"]
-    fn otl_gsub_apply_alt(
-        gsub_list: *mut otl_gsub,
-        alt_idx: USHORT,
-        gid: *mut USHORT,
-    ) -> ::core::ffi::c_int;
+    fn otl_gsub_apply_alt(gsub_list: *mut otl_gsub, alt_idx: USHORT, gid: *mut USHORT) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_otl_gsub_apply_lig"]
-    fn otl_gsub_apply_lig(
-        gsub_list: *mut otl_gsub,
-        gid_in: *mut USHORT,
-        num_gids: USHORT,
-        gid_out: *mut USHORT,
-    ) -> ::core::ffi::c_int;
+    fn otl_gsub_apply_lig(gsub_list: *mut otl_gsub, gid_in: *mut USHORT, num_gids: USHORT, gid_out: *mut USHORT) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_tt_read_post_table"]
     fn tt_read_post_table(sfont: *mut sfnt) -> *mut tt_post_table;
     #[link_name = "__pdf_impl_tt_release_post_table"]
     fn tt_release_post_table(post: *mut tt_post_table);
     #[link_name = "__pdf_impl_tt_lookup_post_table"]
-    fn tt_lookup_post_table(
-        post: *mut tt_post_table,
-        glyphname: *const ::core::ffi::c_char,
-    ) -> USHORT;
+    fn tt_lookup_post_table(post: *mut tt_post_table, glyphname: *const ::core::ffi::c_char) -> USHORT;
     #[link_name = "__pdf_impl_tt_get_ps_fontname"]
-    fn tt_get_ps_fontname(
-        sfont: *mut sfnt,
-        dest: *mut ::core::ffi::c_char,
-        destlen: USHORT,
-    ) -> USHORT;
+    fn tt_get_ps_fontname(sfont: *mut sfnt, dest: *mut ::core::ffi::c_char, destlen: USHORT) -> USHORT;
 }
 pub type __darwin_size_t = usize;
 pub type size_t = __darwin_size_t;
@@ -427,21 +356,16 @@ pub const __DARWIN_NULL: *mut ::core::ffi::c_void = ::core::ptr::null_mut::<::co
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 pub const INVALID_HANDLE: uintptr_t = 0 as ::core::ffi::c_int as uintptr_t;
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
     return false_0 != 0;
 }
 pub const PDF_FONT_FONTTYPE_TRUETYPE: ::core::ffi::c_int = 3 as ::core::ffi::c_int;
-pub const SFNT_TYPE_TRUETYPE: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const SFNT_TYPE_TRUETYPE: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const SFNT_TYPE_TTC: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 4 as ::core::ffi::c_int;
-pub const SFNT_TYPE_DFONT: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 8 as ::core::ffi::c_int;
+pub const SFNT_TYPE_DFONT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 8 as ::core::ffi::c_int;
 pub const TT_MAC: ::core::ffi::c_uint = 1 as ::core::ffi::c_uint;
 pub const TT_WIN: ::core::ffi::c_uint = 3 as ::core::ffi::c_uint;
 pub const TT_WIN_UNICODE: ::core::ffi::c_uint = 1 as ::core::ffi::c_uint;
@@ -449,10 +373,7 @@ pub const TT_WIN_UCS4: ::core::ffi::c_uint = 10 as ::core::ffi::c_uint;
 pub const TT_MAC_ROMAN: ::core::ffi::c_uint = 0 as ::core::ffi::c_uint;
 #[unsafe(export_name = "__pdf_impl_pdf_font_open_truetype")]
 pub unsafe extern "C-unwind" fn pdf_font_open_truetype(
-    mut font: *mut pdf_font,
-    mut ident: *const ::core::ffi::c_char,
-    mut index: ::core::ffi::c_int,
-    mut encoding_id: ::core::ffi::c_int,
+    mut font: *mut pdf_font, mut ident: *const ::core::ffi::c_char, mut index: ::core::ffi::c_int, mut encoding_id: ::core::ffi::c_int,
     mut embedding: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut fontdict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -462,17 +383,11 @@ pub unsafe extern "C-unwind" fn pdf_font_open_truetype(
     let mut length: ::core::ffi::c_int = 0;
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     if font.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"font\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"font\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if ident.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"ident\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"ident\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     handle = dpx_open_truetype_file(ident);
@@ -486,10 +401,7 @@ pub unsafe extern "C-unwind" fn pdf_font_open_truetype(
         sfont = sfnt_open(handle);
     }
     if sfont.is_null() {
-        pdf_warning!(
-            b"Could not open TrueType font: %s\0" as *const u8 as *const ::core::ffi::c_char,
-            ident,
-        );
+        pdf_warning!(b"Could not open TrueType font: %s\0" as *const u8 as *const ::core::ffi::c_char, ident,);
         crate::backend::runtime::input_close(handle);
         return -(1 as ::core::ffi::c_int);
     }
@@ -497,10 +409,7 @@ pub unsafe extern "C-unwind" fn pdf_font_open_truetype(
         let mut offset: SFNT_ULONG = 0;
         offset = ttc_read_offset(sfont, index as SFNT_ULONG);
         if offset == 0 as SFNT_ULONG {
-            pdf_warning!(
-                b"Invalid TTC index in %s.\0" as *const u8 as *const ::core::ffi::c_char,
-                ident,
-            );
+            pdf_warning!(b"Invalid TTC index in %s.\0" as *const u8 as *const ::core::ffi::c_char, ident,);
             error = -(1 as ::core::ffi::c_int);
         } else {
             error = sfnt_read_table_directory(sfont, offset);
@@ -515,9 +424,7 @@ pub unsafe extern "C-unwind" fn pdf_font_open_truetype(
     }
     fontdict = pdf_font_get_resource(font);
     descriptor = pdf_font_get_descriptor(font);
-    if !(!fontdict.is_null() && !descriptor.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long
-        != 0
-    {
+    if !(!fontdict.is_null() && !descriptor.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"fontdict && descriptor\0" as *const u8 as *const ::core::ffi::c_char
@@ -532,17 +439,9 @@ pub unsafe extern "C-unwind" fn pdf_font_open_truetype(
         0 as ::core::ffi::c_int,
         256 as size_t,
     );
-    length = tt_get_ps_fontname(
-        sfont,
-        &raw mut fontname as *mut ::core::ffi::c_char,
-        255 as USHORT,
-    ) as ::core::ffi::c_int;
+    length = tt_get_ps_fontname(sfont, &raw mut fontname as *mut ::core::ffi::c_char, 255 as USHORT) as ::core::ffi::c_int;
     if length < 1 as ::core::ffi::c_int {
-        length = (if strlen(ident) < 255 as size_t {
-            strlen(ident)
-        } else {
-            255 as size_t
-        }) as ::core::ffi::c_int;
+        length = (if strlen(ident) < 255 as size_t { strlen(ident) } else { 255 as size_t }) as ::core::ffi::c_int;
         memcpy(
             &raw mut fontname as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
             ident as *const ::core::ffi::c_void,
@@ -554,12 +453,10 @@ pub unsafe extern "C-unwind" fn pdf_font_open_truetype(
     while n < length {
         if fontname[n as usize] as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
             memmove(
-                (&raw mut fontname as *mut ::core::ffi::c_char).offset(n as isize)
-                    as *mut ::core::ffi::c_void,
+                (&raw mut fontname as *mut ::core::ffi::c_char).offset(n as isize) as *mut ::core::ffi::c_void,
                 (&raw mut fontname as *mut ::core::ffi::c_char)
                     .offset(n as isize)
-                    .offset(1 as ::core::ffi::c_int as isize)
-                    as *const ::core::ffi::c_void,
+                    .offset(1 as ::core::ffi::c_int as isize) as *const ::core::ffi::c_void,
                 (length - n - 1 as ::core::ffi::c_int) as size_t,
             );
         }
@@ -572,14 +469,11 @@ pub unsafe extern "C-unwind" fn pdf_font_open_truetype(
         );
         error = -(1 as ::core::ffi::c_int);
     } else {
-        (*font).fontname = new((strlen(&raw mut fontname as *mut ::core::ffi::c_char)
-            .wrapping_add(1 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_char;
-        strcpy(
-            (*font).fontname,
-            &raw mut fontname as *mut ::core::ffi::c_char,
-        );
+        (*font).fontname = new(
+            (strlen(&raw mut fontname as *mut ::core::ffi::c_char).wrapping_add(1 as size_t) as uint32_t as usize)
+                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t,
+        ) as *mut ::core::ffi::c_char;
+        strcpy((*font).fontname, &raw mut fontname as *mut ::core::ffi::c_char);
         tmp = tt_get_fontdesc(
             sfont,
             &raw mut embedding,
@@ -589,16 +483,12 @@ pub unsafe extern "C-unwind" fn pdf_font_open_truetype(
         );
         if tmp.is_null() {
             pdf_warning!(
-                b"Could not obtain necessary font info: %s\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Could not obtain necessary font info: %s\0" as *const u8 as *const ::core::ffi::c_char,
                 ident,
             );
             error = -(1 as ::core::ffi::c_int);
         } else {
-            if !(pdf_obj_typeof(tmp) == 6 as ::core::ffi::c_int) as ::core::ffi::c_int
-                as ::core::ffi::c_long
-                != 0
-            {
+            if !(pdf_obj_typeof(tmp) == 6 as ::core::ffi::c_int) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
                 pdf_abort!(
                     c"assertion failed: %s".as_ptr(),
                     b"pdf_obj_typeof(tmp) == PDF_DICT\0" as *const u8 as *const ::core::ffi::c_char
@@ -616,8 +506,7 @@ pub unsafe extern "C-unwind" fn pdf_font_open_truetype(
     }
     if embedding == 0 {
         pdf_warning!(
-            b"Font file=\"%s\" can't be embedded due to liscence restrictions.\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Font file=\"%s\" can't be embedded due to liscence restrictions.\0" as *const u8 as *const ::core::ffi::c_char,
             ident,
         );
         error = -(1 as ::core::ffi::c_int);
@@ -693,10 +582,7 @@ const REQUIRED_TABLE: [C2RustUnnamed_2; 13] = [
         must_exist: 0 as ::core::ffi::c_int,
     },
 ];
-unsafe extern "C-unwind" fn do_widths(
-    mut font: *mut pdf_font,
-    mut widths: *mut ::core::ffi::c_double,
-) {
+unsafe extern "C-unwind" fn do_widths(mut font: *mut pdf_font, mut widths: *mut ::core::ffi::c_double) {
     let mut fontdict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut array: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut code: ::core::ffi::c_int = 0;
@@ -728,10 +614,7 @@ unsafe extern "C-unwind" fn do_widths(
     code = firstchar;
     while code <= lastchar {
         if *usedchars.offset(code as isize) != 0 {
-            pdf_add_array(
-                array,
-                pdf_new_number(floor(*widths.offset(code as isize) / 0.1f64 + 0.5f64) * 0.1f64),
-            );
+            pdf_add_array(array, pdf_new_number(floor(*widths.offset(code as isize) / 0.1f64 + 0.5f64) * 0.1f64));
         } else {
             pdf_add_array(array, pdf_new_number(0.0f64));
         }
@@ -757,9 +640,7 @@ unsafe extern "C-unwind" fn do_widths(
     );
 }
 unsafe extern "C-unwind" fn do_builtin_encoding(
-    mut font: *mut pdf_font,
-    mut usedchars: *const ::core::ffi::c_char,
-    mut sfont: *mut sfnt,
+    mut font: *mut pdf_font, mut usedchars: *const ::core::ffi::c_char, mut sfont: *mut sfnt,
 ) -> ::core::ffi::c_int {
     let mut glyphs: *mut tt_glyphs = ::core::ptr::null_mut::<tt_glyphs>();
     let mut cmap_table: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -771,25 +652,14 @@ unsafe extern "C-unwind" fn do_builtin_encoding(
     let mut widths: [::core::ffi::c_double; 256] = [0.; 256];
     ttcm = tt_cmap_read(sfont, TT_MAC as USHORT, TT_MAC_ROMAN as USHORT);
     if ttcm.is_null() {
-        pdf_warning!(
-            b"Could not read Mac-Roman TrueType cmap table...\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Could not read Mac-Roman TrueType cmap table...\0" as *const u8 as *const ::core::ffi::c_char,);
         return -(1 as ::core::ffi::c_int);
     }
-    cmap_table = new((274 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
-    memset(
-        cmap_table as *mut ::core::ffi::c_void,
-        0 as ::core::ffi::c_int,
-        274 as size_t,
-    );
-    put_big_endian(
-        cmap_table as *mut ::core::ffi::c_void,
-        0 as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    );
+    cmap_table =
+        new((274 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+            as *mut ::core::ffi::c_char;
+    memset(cmap_table as *mut ::core::ffi::c_void, 0 as ::core::ffi::c_int, 274 as size_t);
+    put_big_endian(cmap_table as *mut ::core::ffi::c_void, 0 as SFNT_LONG, 2 as ::core::ffi::c_int);
     put_big_endian(
         cmap_table.offset(2 as ::core::ffi::c_int as isize) as *mut ::core::ffi::c_void,
         1 as SFNT_LONG,
@@ -834,16 +704,12 @@ unsafe extern "C-unwind" fn do_builtin_encoding(
     while code < 256 as ::core::ffi::c_int {
         if !(*usedchars.offset(code as isize) == 0) {
             if dpx_conf.verbose_level > 2 as ::core::ffi::c_int {
-                pdf_message!(
-                    b"/.c0x%02x\0" as *const u8 as *const ::core::ffi::c_char,
-                    code,
-                );
+                pdf_message!(b"/.c0x%02x\0" as *const u8 as *const ::core::ffi::c_char, code,);
             }
             gid = tt_cmap_lookup(ttcm, code as SFNT_ULONG);
             if gid as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
                 pdf_warning!(
-                    b"Glyph for character code=0x%02x missing in font font-file=\"%s\".\0"
-                        as *const u8 as *const ::core::ffi::c_char,
+                    b"Glyph for character code=0x%02x missing in font font-file=\"%s\".\0" as *const u8 as *const ::core::ffi::c_char,
                     code,
                     (*font).filename,
                 );
@@ -865,9 +731,7 @@ unsafe extern "C-unwind" fn do_builtin_encoding(
         pdf_message!(b"]\0" as *const u8 as *const ::core::ffi::c_char);
     }
     if tt_build_tables(sfont, glyphs) < 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Packing TrueType font into SFNT failed!\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Packing TrueType font into SFNT failed!\0" as *const u8 as *const ::core::ffi::c_char,);
         tt_build_finish(glyphs);
         free(cmap_table as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
@@ -875,14 +739,9 @@ unsafe extern "C-unwind" fn do_builtin_encoding(
     code = 0 as ::core::ffi::c_int;
     while code < 256 as ::core::ffi::c_int {
         if *usedchars.offset(code as isize) != 0 {
-            idx = tt_get_index(
-                glyphs,
-                *cmap_table.offset((18 as ::core::ffi::c_int + code) as isize) as USHORT,
-            );
+            idx = tt_get_index(glyphs, *cmap_table.offset((18 as ::core::ffi::c_int + code) as isize) as USHORT);
             widths[code as usize] = floor(
-                1000.0f64
-                    * (*(*glyphs).gd.offset(idx as isize)).advw as ::core::ffi::c_int
-                        as ::core::ffi::c_double
+                1000.0f64 * (*(*glyphs).gd.offset(idx as isize)).advw as ::core::ffi::c_int as ::core::ffi::c_double
                     / (*glyphs).emsize as ::core::ffi::c_int as ::core::ffi::c_double
                     / 1 as ::core::ffi::c_int as ::core::ffi::c_double
                     + 0.5f64,
@@ -909,9 +768,7 @@ unsafe extern "C-unwind" fn do_builtin_encoding(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn agl_decompose_glyphname(
-    mut glyphname: *mut ::core::ffi::c_char,
-    mut nptrs: *mut *mut ::core::ffi::c_char,
-    mut size: ::core::ffi::c_int,
+    mut glyphname: *mut ::core::ffi::c_char, mut nptrs: *mut *mut ::core::ffi::c_char, mut size: ::core::ffi::c_int,
     mut suffix: *mut *mut ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -930,9 +787,7 @@ unsafe extern "C-unwind" fn agl_decompose_glyphname(
     n = 1 as ::core::ffi::c_int;
     while !p.is_null() && *p as ::core::ffi::c_int != 0 {
         p = strchr(p, '_' as i32);
-        if p.is_null()
-            || *p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\0' as i32
-        {
+        if p.is_null() || *p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\0' as i32 {
             break;
         }
         if n >= size {
@@ -946,17 +801,10 @@ unsafe extern "C-unwind" fn agl_decompose_glyphname(
     }
     return n;
 }
-unsafe extern "C-unwind" fn select_gsub(
-    mut feat: *const ::core::ffi::c_char,
-    mut gm: *mut glyph_mapper,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn select_gsub(mut feat: *const ::core::ffi::c_char, mut gm: *mut glyph_mapper) -> ::core::ffi::c_int {
     let mut idx: ::core::ffi::c_int = 0;
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    if feat.is_null()
-        || *feat as ::core::ffi::c_int == 0 as ::core::ffi::c_int
-        || gm.is_null()
-        || (*gm).gsub.is_null()
-    {
+    if feat.is_null() || *feat as ::core::ffi::c_int == 0 as ::core::ffi::c_int || gm.is_null() || (*gm).gsub.is_null() {
         return -(1 as ::core::ffi::c_int);
     }
     idx = otl_gsub_select(
@@ -970,8 +818,7 @@ unsafe extern "C-unwind" fn select_gsub(
     }
     if dpx_conf.verbose_level > 1 as ::core::ffi::c_int {
         pdf_message!(
-            b"\ntrutype>> Try loading OTL GSUB for \"*.*.%s\"...\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"\ntrutype>> Try loading OTL GSUB for \"*.*.%s\"...\0" as *const u8 as *const ::core::ffi::c_char,
             feat,
         );
     }
@@ -998,10 +845,7 @@ unsafe extern "C-unwind" fn select_gsub(
     return -(1 as ::core::ffi::c_int);
 }
 unsafe extern "C-unwind" fn selectglyph(
-    mut in_0: USHORT,
-    mut suffix: *const ::core::ffi::c_char,
-    mut gm: *mut glyph_mapper,
-    mut out: *mut USHORT,
+    mut in_0: USHORT, mut suffix: *const ::core::ffi::c_char, mut gm: *mut glyph_mapper, mut out: *mut USHORT,
 ) -> ::core::ffi::c_int {
     let mut s: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -1009,20 +853,14 @@ unsafe extern "C-unwind" fn selectglyph(
     let mut r: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut n: ::core::ffi::c_int = 0;
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    if !(!suffix.is_null() && !gm.is_null() && !out.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!suffix.is_null() && !gm.is_null() && !out.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"suffix && gm && out\0" as *const u8 as *const ::core::ffi::c_char
         );
     } else {
     };
-    if !(!suffix.is_null() && *suffix as ::core::ffi::c_int != 0 as ::core::ffi::c_int)
-        as ::core::ffi::c_int as ::core::ffi::c_long
-        != 0
-    {
+    if !(!suffix.is_null() && *suffix as ::core::ffi::c_int != 0 as ::core::ffi::c_int) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"suffix && *suffix != 0\0" as *const u8 as *const ::core::ffi::c_char
@@ -1030,8 +868,7 @@ unsafe extern "C-unwind" fn selectglyph(
     } else {
     };
     s = new(
-        (strlen(suffix).wrapping_add(1 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
+        (strlen(suffix).wrapping_add(1 as size_t) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
             as uint32_t,
     ) as *mut ::core::ffi::c_char;
     strcpy(s, suffix);
@@ -1063,13 +900,8 @@ unsafe extern "C-unwind" fn selectglyph(
         if error == 0 {
             error = otl_gsub_apply((*gm).gsub, &raw mut in_0);
         } else {
-            q = s
-                .offset(strlen(s) as isize)
-                .offset(-(1 as ::core::ffi::c_int as isize));
-            while q > s
-                && *q as ::core::ffi::c_int >= '0' as i32
-                && *q as ::core::ffi::c_int <= '9' as i32
-            {
+            q = s.offset(strlen(s) as isize).offset(-(1 as ::core::ffi::c_int as isize));
+            while q > s && *q as ::core::ffi::c_int >= '0' as i32 && *q as ::core::ffi::c_int <= '9' as i32 {
                 q = q.offset(-1);
             }
             if q == s {
@@ -1104,11 +936,7 @@ unsafe extern "C-unwind" fn selectglyph(
     return error;
 }
 unsafe extern "C-unwind" fn composeglyph(
-    mut glyphs: *mut USHORT,
-    mut n_glyphs: ::core::ffi::c_int,
-    mut feat: *const ::core::ffi::c_char,
-    mut gm: *mut glyph_mapper,
-    mut gid: *mut USHORT,
+    mut glyphs: *mut USHORT, mut n_glyphs: ::core::ffi::c_int, mut feat: *const ::core::ffi::c_char, mut gm: *mut glyph_mapper, mut gid: *mut USHORT,
 ) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut t: [::core::ffi::c_char; 5] = [
@@ -1118,9 +946,7 @@ unsafe extern "C-unwind" fn composeglyph(
         ' ' as i32 as ::core::ffi::c_char,
         0 as ::core::ffi::c_int as ::core::ffi::c_char,
     ];
-    if !(!glyphs.is_null() && n_glyphs > 0 as ::core::ffi::c_int && !gm.is_null() && !gid.is_null())
-        as ::core::ffi::c_int as ::core::ffi::c_long
-        != 0
+    if !(!glyphs.is_null() && n_glyphs > 0 as ::core::ffi::c_int && !gm.is_null() && !gid.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0
     {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
@@ -1128,13 +954,8 @@ unsafe extern "C-unwind" fn composeglyph(
         );
     } else {
     };
-    if feat.is_null()
-        || *feat.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\0' as i32
-    {
-        error = select_gsub(
-            b"(?lig|lig?|?cmp|cmp?|frac|afrc)\0" as *const u8 as *const ::core::ffi::c_char,
-            gm,
-        );
+    if feat.is_null() || *feat.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\0' as i32 {
+        error = select_gsub(b"(?lig|lig?|?cmp|cmp?|frac|afrc)\0" as *const u8 as *const ::core::ffi::c_char, gm);
     } else if strlen(feat) > 4 as size_t {
         error = -(1 as ::core::ffi::c_int);
     } else {
@@ -1151,10 +972,7 @@ unsafe extern "C-unwind" fn composeglyph(
     return error;
 }
 unsafe extern "C-unwind" fn composeuchar(
-    mut unicodes: *mut int32_t,
-    mut n_unicodes: ::core::ffi::c_int,
-    mut feat: *const ::core::ffi::c_char,
-    mut gm: *mut glyph_mapper,
+    mut unicodes: *mut int32_t, mut n_unicodes: ::core::ffi::c_int, mut feat: *const ::core::ffi::c_char, mut gm: *mut glyph_mapper,
     mut gid: *mut USHORT,
 ) -> ::core::ffi::c_int {
     let mut gids: *mut USHORT = ::core::ptr::null_mut::<USHORT>();
@@ -1163,13 +981,10 @@ unsafe extern "C-unwind" fn composeuchar(
     if (*gm).codetogid.is_null() {
         return -(1 as ::core::ffi::c_int);
     }
-    gids = new((n_unicodes as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<USHORT>() as usize) as uint32_t)
-        as *mut USHORT;
+    gids = new((n_unicodes as uint32_t as usize).wrapping_mul(::core::mem::size_of::<USHORT>() as usize) as uint32_t) as *mut USHORT;
     i = 0 as ::core::ffi::c_int;
     while error == 0 && i < n_unicodes {
-        *gids.offset(i as isize) =
-            tt_cmap_lookup((*gm).codetogid, *unicodes.offset(i as isize) as SFNT_ULONG);
+        *gids.offset(i as isize) = tt_cmap_lookup((*gm).codetogid, *unicodes.offset(i as isize) as SFNT_ULONG);
         error = if *gids.offset(i as isize) as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
             -(1 as ::core::ffi::c_int)
         } else {
@@ -1184,9 +999,7 @@ unsafe extern "C-unwind" fn composeuchar(
     return error;
 }
 unsafe extern "C-unwind" fn findposttable(
-    mut glyph_name: *const ::core::ffi::c_char,
-    mut gid: *mut USHORT,
-    mut gm: *mut glyph_mapper,
+    mut glyph_name: *const ::core::ffi::c_char, mut gid: *mut USHORT, mut gm: *mut glyph_mapper,
 ) -> ::core::ffi::c_int {
     if (*gm).nametogid.is_null() {
         return -(1 as ::core::ffi::c_int);
@@ -1199,15 +1012,12 @@ unsafe extern "C-unwind" fn findposttable(
     };
 }
 unsafe extern "C-unwind" fn findcomposite(
-    mut glyphname: *const ::core::ffi::c_char,
-    mut gid: *mut USHORT,
-    mut gm: *mut glyph_mapper,
+    mut glyphname: *const ::core::ffi::c_char, mut gid: *mut USHORT, mut gm: *mut glyph_mapper,
 ) -> ::core::ffi::c_int {
     let mut gname: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut suffix: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut gids: [USHORT; 32] = [0; 32];
-    let mut nptrs: [*mut ::core::ffi::c_char; 32] =
-        [::core::ptr::null_mut::<::core::ffi::c_char>(); 32];
+    let mut nptrs: [*mut ::core::ffi::c_char; 32] = [::core::ptr::null_mut::<::core::ffi::c_char>(); 32];
     let mut i: ::core::ffi::c_int = 0;
     let mut n_comp: ::core::ffi::c_int = 0;
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
@@ -1215,11 +1025,8 @@ unsafe extern "C-unwind" fn findcomposite(
     if error == 0 {
         return 0 as ::core::ffi::c_int;
     }
-    gname = new(
-        (strlen(glyphname).wrapping_add(1 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t,
-    ) as *mut ::core::ffi::c_char;
+    gname = new((strlen(glyphname).wrapping_add(1 as size_t) as uint32_t as usize)
+        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
     strcpy(gname, glyphname);
     memset(
         &raw mut gids as *mut USHORT as *mut ::core::ffi::c_void,
@@ -1235,15 +1042,10 @@ unsafe extern "C-unwind" fn findcomposite(
     error = 0 as ::core::ffi::c_int;
     i = 0 as ::core::ffi::c_int;
     while error == 0 && i < n_comp {
-        error = resolve_glyph(
-            nptrs[i as usize],
-            (&raw mut gids as *mut USHORT).offset(i as isize) as *mut USHORT,
-            gm,
-        );
+        error = resolve_glyph(nptrs[i as usize], (&raw mut gids as *mut USHORT).offset(i as isize) as *mut USHORT, gm);
         if error != 0 {
             pdf_warning!(
-                b"Could not resolve glyph \"%s\" (%dth component of glyph \"%s\").\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Could not resolve glyph \"%s\" (%dth component of glyph \"%s\").\0" as *const u8 as *const ::core::ffi::c_char,
                 nptrs[i as usize],
                 i,
                 glyphname,
@@ -1253,34 +1055,16 @@ unsafe extern "C-unwind" fn findcomposite(
     }
     if error == 0 {
         if !suffix.is_null()
-            && (streq_ptr(suffix, b"liga\0" as *const u8 as *const ::core::ffi::c_char)
-                as ::core::ffi::c_int
-                != 0
-                || streq_ptr(suffix, b"dlig\0" as *const u8 as *const ::core::ffi::c_char)
-                    as ::core::ffi::c_int
-                    != 0
-                || streq_ptr(suffix, b"hlig\0" as *const u8 as *const ::core::ffi::c_char)
-                    as ::core::ffi::c_int
-                    != 0
-                || streq_ptr(suffix, b"frac\0" as *const u8 as *const ::core::ffi::c_char)
-                    as ::core::ffi::c_int
-                    != 0
-                || streq_ptr(suffix, b"ccmp\0" as *const u8 as *const ::core::ffi::c_char)
-                    as ::core::ffi::c_int
-                    != 0
-                || streq_ptr(suffix, b"afrc\0" as *const u8 as *const ::core::ffi::c_char)
-                    as ::core::ffi::c_int
-                    != 0)
+            && (streq_ptr(suffix, b"liga\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+                || streq_ptr(suffix, b"dlig\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+                || streq_ptr(suffix, b"hlig\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+                || streq_ptr(suffix, b"frac\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+                || streq_ptr(suffix, b"ccmp\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+                || streq_ptr(suffix, b"afrc\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0)
         {
             error = composeglyph(&raw mut gids as *mut USHORT, n_comp, suffix, gm, gid);
         } else {
-            error = composeglyph(
-                &raw mut gids as *mut USHORT,
-                n_comp,
-                ::core::ptr::null::<::core::ffi::c_char>(),
-                gm,
-                gid,
-            );
+            error = composeglyph(&raw mut gids as *mut USHORT, n_comp, ::core::ptr::null::<::core::ffi::c_char>(), gm, gid);
             if error == 0 && !suffix.is_null() {
                 error = selectglyph(*gid, suffix, gm, gid);
             }
@@ -1290,9 +1074,7 @@ unsafe extern "C-unwind" fn findcomposite(
     return error;
 }
 unsafe extern "C-unwind" fn findparanoiac(
-    mut glyphname: *const ::core::ffi::c_char,
-    mut gid: *mut USHORT,
-    mut gm: *mut glyph_mapper,
+    mut glyphname: *const ::core::ffi::c_char, mut gid: *mut USHORT, mut gm: *mut glyph_mapper,
 ) -> ::core::ffi::c_int {
     let mut agln: *mut agl_name = ::core::ptr::null_mut::<agl_name>();
     let mut idx: USHORT = 0 as USHORT;
@@ -1307,27 +1089,19 @@ unsafe extern "C-unwind" fn findparanoiac(
             error = selectglyph(idx, (*agln).suffix, gm, &raw mut idx);
             if error != 0 {
                 pdf_warning!(
-                    b"Variant \"%s\" for glyph \"%s\" might not be found.\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Variant \"%s\" for glyph \"%s\" might not be found.\0" as *const u8 as *const ::core::ffi::c_char,
                     (*agln).suffix,
                     (*agln).name,
                 );
-                pdf_warning!(
-                    b"Using glyph name without suffix instead...\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+                pdf_warning!(b"Using glyph name without suffix instead...\0" as *const u8 as *const ::core::ffi::c_char,);
                 error = 0 as ::core::ffi::c_int;
             }
         } else if (*agln).n_components == 1 as ::core::ffi::c_int {
-            idx = tt_cmap_lookup(
-                (*gm).codetogid,
-                (*agln).unicodes[0 as ::core::ffi::c_int as usize] as SFNT_ULONG,
-            );
+            idx = tt_cmap_lookup((*gm).codetogid, (*agln).unicodes[0 as ::core::ffi::c_int as usize] as SFNT_ULONG);
         } else if (*agln).n_components > 1 as ::core::ffi::c_int {
             if dpx_conf.verbose_level >= 0 as ::core::ffi::c_int {
                 pdf_warning!(
-                    b"Glyph \"%s\" looks like a composite glyph...\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Glyph \"%s\" looks like a composite glyph...\0" as *const u8 as *const ::core::ffi::c_char,
                     (*agln).name,
                 );
             }
@@ -1344,12 +1118,10 @@ unsafe extern "C-unwind" fn findparanoiac(
                 } else {
                     let mut _i: ::core::ffi::c_int = 0;
                     let mut _n: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-                    let mut _p: *mut ::core::ffi::c_char =
-                        ::core::ptr::null_mut::<::core::ffi::c_char>();
+                    let mut _p: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
                     let mut _buf: [::core::ffi::c_char; 256] = [0; 256];
                     pdf_warning!(
-                        b">> Composite glyph glyph-name=\"%s\" found at glyph-id=\"%u\".\0"
-                            as *const u8 as *const ::core::ffi::c_char,
+                        b">> Composite glyph glyph-name=\"%s\" found at glyph-id=\"%u\".\0" as *const u8 as *const ::core::ffi::c_char,
                         (*agln).name,
                         idx as ::core::ffi::c_int,
                     );
@@ -1358,12 +1130,7 @@ unsafe extern "C-unwind" fn findparanoiac(
                     while _i < (*agln).n_components && _n < 245 as ::core::ffi::c_int {
                         let fresh0 = _n;
                         _n = _n + 1;
-                        *_p.offset(fresh0 as isize) = (if _i == 0 as ::core::ffi::c_int {
-                            '<' as i32
-                        } else {
-                            ' ' as i32
-                        })
-                            as ::core::ffi::c_char;
+                        *_p.offset(fresh0 as isize) = (if _i == 0 as ::core::ffi::c_int { '<' as i32 } else { ' ' as i32 }) as ::core::ffi::c_char;
                         if (*agln).unicodes[_i as usize] >= 0x10000 as int32_t {
                             _n += sprintf(
                                 _p.offset(_n as isize),
@@ -1379,30 +1146,27 @@ unsafe extern "C-unwind" fn findparanoiac(
                         }
                         let fresh1 = _n;
                         _n = _n + 1;
-                        *_p.offset(fresh1 as isize) =
-                            (if _i == (*agln).n_components - 1 as ::core::ffi::c_int {
-                                '>' as i32
-                            } else {
-                                ',' as i32
-                            }) as ::core::ffi::c_char;
+                        *_p.offset(fresh1 as isize) = (if _i == (*agln).n_components - 1 as ::core::ffi::c_int {
+                            '>' as i32
+                        } else {
+                            ',' as i32
+                        }) as ::core::ffi::c_char;
                         _i += 1;
                     }
                     let fresh2 = _n;
                     _n = _n + 1;
                     *_p.offset(fresh2 as isize) = '\0' as i32 as ::core::ffi::c_char;
                     pdf_warning!(
-                        b">> Input Unicode seq.=\"%s\" ==> glyph-id=\"%u\" in font-file=\"_please_try_-v_\".\0"
-                        as * const u8 as * const ::core::ffi::c_char, & raw mut _buf as *
-                        mut ::core::ffi::c_char, idx as ::core::ffi::c_int,
+                        b">> Input Unicode seq.=\"%s\" ==> glyph-id=\"%u\" in font-file=\"_please_try_-v_\".\0" as *const u8
+                            as *const ::core::ffi::c_char,
+                        &raw mut _buf as *mut ::core::ffi::c_char,
+                        idx as ::core::ffi::c_int,
                     );
                 }
             }
         } else {
             if (0 as ::core::ffi::c_int == 0) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-                pdf_abort!(
-                    c"assertion failed: %s".as_ptr(),
-                    b"0\0" as *const u8 as *const ::core::ffi::c_char
-                );
+                pdf_abort!(c"assertion failed: %s".as_ptr(), b"0\0" as *const u8 as *const ::core::ffi::c_char);
             } else {
             };
         }
@@ -1416,9 +1180,7 @@ unsafe extern "C-unwind" fn findparanoiac(
     };
 }
 unsafe extern "C-unwind" fn resolve_glyph(
-    mut glyphname: *const ::core::ffi::c_char,
-    mut gid: *mut USHORT,
-    mut gm: *mut glyph_mapper,
+    mut glyphname: *const ::core::ffi::c_char, mut gid: *mut USHORT, mut gm: *mut glyph_mapper,
 ) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -1456,15 +1218,11 @@ unsafe extern "C-unwind" fn resolve_glyph(
         error = selectglyph(*gid, suffix, gm, gid);
         if error != 0 {
             pdf_warning!(
-                b"Variant \"%s\" for glyph \"%s\" might not be found.\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Variant \"%s\" for glyph \"%s\" might not be found.\0" as *const u8 as *const ::core::ffi::c_char,
                 suffix,
                 name,
             );
-            pdf_warning!(
-                b"Using glyph name without suffix instead...\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"Using glyph name without suffix instead...\0" as *const u8 as *const ::core::ffi::c_char,);
             error = 0 as ::core::ffi::c_int;
         }
     }
@@ -1472,10 +1230,7 @@ unsafe extern "C-unwind" fn resolve_glyph(
     free(name as *mut ::core::ffi::c_void);
     return error;
 }
-unsafe extern "C-unwind" fn setup_glyph_mapper(
-    mut gm: *mut glyph_mapper,
-    mut sfont: *mut sfnt,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn setup_glyph_mapper(mut gm: *mut glyph_mapper, mut sfont: *mut sfnt) -> ::core::ffi::c_int {
     (*gm).sfont = sfont;
     (*gm).nametogid = tt_read_post_table(sfont);
     (*gm).codetogid = tt_cmap_read(sfont, TT_WIN as USHORT, TT_WIN_UCS4 as USHORT);
@@ -1504,10 +1259,7 @@ unsafe extern "C-unwind" fn clean_glyph_mapper(mut gm: *mut glyph_mapper) {
     (*gm).sfont = ::core::ptr::null_mut::<sfnt>();
 }
 unsafe extern "C-unwind" fn do_custom_encoding(
-    mut font: *mut pdf_font,
-    mut encoding: *mut *mut ::core::ffi::c_char,
-    mut usedchars: *const ::core::ffi::c_char,
-    mut sfont: *mut sfnt,
+    mut font: *mut pdf_font, mut encoding: *mut *mut ::core::ffi::c_char, mut usedchars: *const ::core::ffi::c_char, mut sfont: *mut sfnt,
 ) -> ::core::ffi::c_int {
     let mut glyphs: *mut tt_glyphs = ::core::ptr::null_mut::<tt_glyphs>();
     let mut cmap_table: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -1523,10 +1275,7 @@ unsafe extern "C-unwind" fn do_custom_encoding(
     let mut idx: USHORT = 0;
     let mut gid: USHORT = 0;
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    if !(!font.is_null() && !encoding.is_null() && !usedchars.is_null() && !sfont.is_null())
-        as ::core::ffi::c_int as ::core::ffi::c_long
-        != 0
-    {
+    if !(!font.is_null() && !encoding.is_null() && !usedchars.is_null() && !sfont.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"font && encoding && usedchars && sfont\0" as *const u8 as *const ::core::ffi::c_char
@@ -1536,28 +1285,17 @@ unsafe extern "C-unwind" fn do_custom_encoding(
     error = setup_glyph_mapper(&raw mut gm, sfont);
     if error != 0 {
         pdf_warning!(
-            b"No post table nor Unicode cmap found in font: %s\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"No post table nor Unicode cmap found in font: %s\0" as *const u8 as *const ::core::ffi::c_char,
             (*font).filename,
         );
-        pdf_warning!(
-            b">> I can't find glyphs without this!\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b">> I can't find glyphs without this!\0" as *const u8 as *const ::core::ffi::c_char,);
         return -(1 as ::core::ffi::c_int);
     }
-    cmap_table = new((274 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
-    memset(
-        cmap_table as *mut ::core::ffi::c_void,
-        0 as ::core::ffi::c_int,
-        274 as size_t,
-    );
-    put_big_endian(
-        cmap_table as *mut ::core::ffi::c_void,
-        0 as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    );
+    cmap_table =
+        new((274 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+            as *mut ::core::ffi::c_char;
+    memset(cmap_table as *mut ::core::ffi::c_void, 0 as ::core::ffi::c_int, 274 as size_t);
+    put_big_endian(cmap_table as *mut ::core::ffi::c_void, 0 as SFNT_LONG, 2 as ::core::ffi::c_int);
     put_big_endian(
         cmap_table.offset(2 as ::core::ffi::c_int as isize) as *mut ::core::ffi::c_void,
         1 as SFNT_LONG,
@@ -1599,41 +1337,31 @@ unsafe extern "C-unwind" fn do_custom_encoding(
     while code < 256 as ::core::ffi::c_int {
         if !(*usedchars.offset(code as isize) == 0) {
             if (*encoding.offset(code as isize)).is_null()
-                || streq_ptr(
-                    *encoding.offset(code as isize),
-                    b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
-                ) as ::core::ffi::c_int
-                    != 0
+                || streq_ptr(*encoding.offset(code as isize), b".notdef\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
             {
                 pdf_warning!(
-                    b"Character code=\"0x%02X\" mapped to \".notdef\" glyph used in font font-file=\"%s\"\0"
-                    as * const u8 as * const ::core::ffi::c_char, code, (* font)
-                    .filename,
-                );
-                pdf_warning!(
-                    b">> Maybe incorrect encoding specified?\0" as *const u8
+                    b"Character code=\"0x%02X\" mapped to \".notdef\" glyph used in font font-file=\"%s\"\0" as *const u8
                         as *const ::core::ffi::c_char,
+                    code,
+                    (*font).filename,
                 );
+                pdf_warning!(b">> Maybe incorrect encoding specified?\0" as *const u8 as *const ::core::ffi::c_char,);
                 idx = 0 as USHORT;
             } else {
                 if !strchr(*encoding.offset(code as isize), '_' as i32).is_null() {
-                    error =
-                        findcomposite(*encoding.offset(code as isize), &raw mut gid, &raw mut gm);
+                    error = findcomposite(*encoding.offset(code as isize), &raw mut gid, &raw mut gm);
                 } else {
-                    error =
-                        resolve_glyph(*encoding.offset(code as isize), &raw mut gid, &raw mut gm);
+                    error = resolve_glyph(*encoding.offset(code as isize), &raw mut gid, &raw mut gm);
                 }
                 if error != 0 {
                     pdf_warning!(
-                        b"Glyph \"%s\" not available in font \"%s\".\0" as *const u8
-                            as *const ::core::ffi::c_char,
+                        b"Glyph \"%s\" not available in font \"%s\".\0" as *const u8 as *const ::core::ffi::c_char,
                         *encoding.offset(code as isize),
                         (*font).filename,
                     );
                 } else if dpx_conf.verbose_level > 1 as ::core::ffi::c_int {
                     pdf_message!(
-                        b"truetype>> Glyph glyph-name=\"%s\" found at glyph-id=\"%u\".\n\0"
-                            as *const u8 as *const ::core::ffi::c_char,
+                        b"truetype>> Glyph glyph-name=\"%s\" found at glyph-id=\"%u\".\n\0" as *const u8 as *const ::core::ffi::c_char,
                         *encoding.offset(code as isize),
                         gid as ::core::ffi::c_int,
                     );
@@ -1651,10 +1379,7 @@ unsafe extern "C-unwind" fn do_custom_encoding(
     }
     clean_glyph_mapper(&raw mut gm);
     if tt_build_tables(sfont, glyphs) < 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Packing TrueType font into SFNT file faild...\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Packing TrueType font into SFNT file faild...\0" as *const u8 as *const ::core::ffi::c_char,);
         tt_build_finish(glyphs);
         free(cmap_table as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
@@ -1662,14 +1387,9 @@ unsafe extern "C-unwind" fn do_custom_encoding(
     code = 0 as ::core::ffi::c_int;
     while code < 256 as ::core::ffi::c_int {
         if *usedchars.offset(code as isize) != 0 {
-            idx = tt_get_index(
-                glyphs,
-                *cmap_table.offset((18 as ::core::ffi::c_int + code) as isize) as USHORT,
-            );
+            idx = tt_get_index(glyphs, *cmap_table.offset((18 as ::core::ffi::c_int + code) as isize) as USHORT);
             widths[code as usize] = floor(
-                1000.0f64
-                    * (*(*glyphs).gd.offset(idx as isize)).advw as ::core::ffi::c_int
-                        as ::core::ffi::c_double
+                1000.0f64 * (*(*glyphs).gd.offset(idx as isize)).advw as ::core::ffi::c_int as ::core::ffi::c_double
                     / (*glyphs).emsize as ::core::ffi::c_int as ::core::ffi::c_double
                     / 1 as ::core::ffi::c_int as ::core::ffi::c_double
                     + 0.5f64,
@@ -1696,16 +1416,13 @@ unsafe extern "C-unwind" fn do_custom_encoding(
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_font_load_truetype")]
-pub unsafe extern "C-unwind" fn pdf_font_load_truetype(
-    mut font: *mut pdf_font,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_font_load_truetype(mut font: *mut pdf_font) -> ::core::ffi::c_int {
     let mut descriptor: *mut pdf_obj = (*font).descriptor;
     let mut ident: *mut ::core::ffi::c_char = (*font).filename;
     let mut encoding_id: ::core::ffi::c_int = (*font).encoding_id;
     let mut usedchars: *mut ::core::ffi::c_char = (*font).usedchars;
     let mut index: ::core::ffi::c_int = (*font).index as ::core::ffi::c_int;
-    let mut enc_vec: *mut *mut ::core::ffi::c_char =
-        ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
+    let mut enc_vec: *mut *mut ::core::ffi::c_char = ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
     let mut fontfile: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut handle: rust_input_handle_t = INVALID_HANDLE;
     let mut sfont: *mut sfnt = ::core::ptr::null_mut::<sfnt>();
@@ -1719,8 +1436,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_truetype(
         handle = dpx_open_dfont_file(ident);
         if handle == INVALID_HANDLE {
             pdf_abort!(
-                b"Unable to open TrueType/dfont font file: %s\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Unable to open TrueType/dfont font file: %s\0" as *const u8 as *const ::core::ffi::c_char,
                 ident,
             );
         }
@@ -1734,10 +1450,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_truetype(
             b"Unable to open TrueType/dfont file: %s\0" as *const u8 as *const ::core::ffi::c_char,
             ident,
         );
-    } else if (*sfont).type_0 != SFNT_TYPE_TRUETYPE
-        && (*sfont).type_0 != SFNT_TYPE_TTC
-        && (*sfont).type_0 != SFNT_TYPE_DFONT
-    {
+    } else if (*sfont).type_0 != SFNT_TYPE_TRUETYPE && (*sfont).type_0 != SFNT_TYPE_TTC && (*sfont).type_0 != SFNT_TYPE_DFONT {
         sfnt_close(sfont);
         crate::backend::runtime::input_close(handle);
         pdf_abort!(
@@ -1749,10 +1462,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_truetype(
         let mut offset: SFNT_ULONG = 0;
         offset = ttc_read_offset(sfont, index as SFNT_ULONG);
         if offset == 0 as SFNT_ULONG {
-            pdf_abort!(
-                b"Invalid TTC index in %s.\0" as *const u8 as *const ::core::ffi::c_char,
-                ident,
-            );
+            pdf_abort!(b"Invalid TTC index in %s.\0" as *const u8 as *const ::core::ffi::c_char, ident,);
         }
         error = sfnt_read_table_directory(sfont, offset);
     } else {
@@ -1762,8 +1472,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_truetype(
         sfnt_close(sfont);
         crate::backend::runtime::input_close(handle);
         pdf_abort!(
-            b"Reading SFND table dir failed for font-file=\"%s\"... Not a TrueType font?\0"
-                as *const u8 as *const ::core::ffi::c_char,
+            b"Reading SFND table dir failed for font-file=\"%s\"... Not a TrueType font?\0" as *const u8 as *const ::core::ffi::c_char,
             ident,
         );
     }
@@ -1777,24 +1486,17 @@ pub unsafe extern "C-unwind" fn pdf_font_load_truetype(
         sfnt_close(sfont);
         crate::backend::runtime::input_close(handle);
         pdf_abort!(
-            b"Error occured while creating font subfont for \"%s\"\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Error occured while creating font subfont for \"%s\"\0" as *const u8 as *const ::core::ffi::c_char,
             ident,
         );
     }
     i = 0 as ::core::ffi::c_int;
     while !REQUIRED_TABLE[i as usize].name.is_null() {
-        if sfnt_require_table(
-            sfont,
-            REQUIRED_TABLE[i as usize].name,
-            REQUIRED_TABLE[i as usize].must_exist,
-        ) < 0 as ::core::ffi::c_int
-        {
+        if sfnt_require_table(sfont, REQUIRED_TABLE[i as usize].name, REQUIRED_TABLE[i as usize].must_exist) < 0 as ::core::ffi::c_int {
             sfnt_close(sfont);
             crate::backend::runtime::input_close(handle);
             pdf_abort!(
-                b"Required TrueType table \"%s\" does not exist in font: %s\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Required TrueType table \"%s\" does not exist in font: %s\0" as *const u8 as *const ::core::ffi::c_char,
                 REQUIRED_TABLE[i as usize].name,
                 ident,
             );
@@ -1804,18 +1506,14 @@ pub unsafe extern "C-unwind" fn pdf_font_load_truetype(
     fontfile = sfnt_create_FontFile_stream(sfont);
     if fontfile.is_null() {
         pdf_abort!(
-            b"Could not created FontFile stream for \"%s\".\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Could not created FontFile stream for \"%s\".\0" as *const u8 as *const ::core::ffi::c_char,
             ident,
         );
     }
     sfnt_close(sfont);
     crate::backend::runtime::input_close(handle);
     if dpx_conf.verbose_level > 1 as ::core::ffi::c_int {
-        pdf_message!(
-            b"[%d bytes]\0" as *const u8 as *const ::core::ffi::c_char,
-            pdf_stream_length(fontfile),
-        );
+        pdf_message!(b"[%d bytes]\0" as *const u8 as *const ::core::ffi::c_char, pdf_stream_length(fontfile),);
     }
     pdf_add_dict(
         descriptor,
@@ -1827,21 +1525,9 @@ pub unsafe extern "C-unwind" fn pdf_font_load_truetype(
 }
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memcpy(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_void;
-    fn memmove(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
-    fn memset(
-        __b: *mut ::core::ffi::c_void,
-        __c: ::core::ffi::c_int,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memcpy(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __n: size_t) -> *mut ::core::ffi::c_void;
+    fn memmove(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __len: size_t) -> *mut ::core::ffi::c_void;
+    fn memset(__b: *mut ::core::ffi::c_void, __c: ::core::ffi::c_int, __len: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -1854,16 +1540,10 @@ pub struct otl_gsub {
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_font_open_truetype(
-    mut font: *mut pdf_font,
-    mut ident: *const ::core::ffi::c_char,
-    mut index: ::core::ffi::c_int,
-    mut encoding_id: ::core::ffi::c_int,
-    mut embedding: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut font: *mut pdf_font, mut ident: *const ::core::ffi::c_char, mut index: ::core::ffi::c_int, mut encoding_id: ::core::ffi::c_int,
+    mut embedding: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_font_open_truetype(font, ident, index, encoding_id, embedding)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_font_open_truetype(font, ident, index, encoding_id, embedding) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -1874,10 +1554,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_font_open_truetype(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_font_load_truetype(
-    mut font: *mut pdf_font,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_font_load_truetype(mut font: *mut pdf_font, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_font_load_truetype(font) }) {
         Ok(value) => {
             unsafe {

@@ -7,10 +7,7 @@ fn native_text_growth_handles_large_requests_in_one_allocation() {
     assert_eq!(native_text_capacity(0, 1), 128);
     assert_eq!(native_text_capacity(128, 128), 256);
     assert_eq!(native_text_capacity(128, 100_000), 100_001);
-    assert_eq!(
-        native_text_capacity(i32::MAX / 2 + 1, i32::MAX - 1),
-        i32::MAX
-    );
+    assert_eq!(native_text_capacity(i32::MAX / 2 + 1, i32::MAX - 1), i32::MAX);
     let mut capacity = 0;
     let mut growths = 0;
     for length in 1..100_000 {
@@ -46,18 +43,9 @@ fn rust_hyphenation_minimum_clamps_boundaries() {
 #[test]
 fn rust_format_byte_swapping_preserves_item_boundaries_and_round_trips() {
     for size in [1, 2, 4, 8, 16] {
-        for count in [
-            0,
-            1,
-            3,
-            257,
-            16 * 1024 * 1024 / size - 1,
-            16 * 1024 * 1024 / size + 1,
-        ] {
+        for count in [0, 1, 3, 257, 16 * 1024 * 1024 / size - 1, 16 * 1024 * 1024 / size + 1] {
             for offset in [0, 1, 7] {
-                let original: Vec<u8> = (0..count * size + offset + 1)
-                    .map(|byte| byte as u8)
-                    .collect();
+                let original: Vec<u8> = (0..count * size + offset + 1).map(|byte| byte as u8).collect();
                 let mut expected = original.clone();
                 if cfg!(target_endian = "little") {
                     for item in expected[offset..offset + count * size].chunks_exact_mut(size) {
@@ -115,10 +103,7 @@ fn benchmark_format_byte_swapping() {
                     }
                     black_box(&bytes);
                 }
-                eprintln!(
-                    "swap length={length} size={size} optimized={optimized}: {:?}",
-                    start.elapsed()
-                );
+                eprintln!("swap length={length} size={size} optimized={optimized}: {:?}", start.elapsed());
             }
         }
     }
@@ -128,10 +113,7 @@ fn benchmark_format_byte_swapping() {
 fn rust_normalization_preserves_state_across_input_and_output_chunks() {
     let input = "a\u{315}\u{300}\u{1100}\u{1161}\u{11a8}\u{9c7}\u{9be}\u{1d15e}\u{ffff}";
     for (form, expected) in [
-        (
-            kForm_NFC,
-            "\u{e0}\u{315}\u{ac01}\u{9cb}\u{1d157}\u{1d165}\u{ffff}",
-        ),
+        (kForm_NFC, "\u{e0}\u{315}\u{ac01}\u{9cb}\u{1d157}\u{1d165}\u{ffff}"),
         (
             kForm_NFD,
             "a\u{300}\u{315}\u{1100}\u{1161}\u{11a8}\u{9c7}\u{9be}\u{1d157}\u{1d165}\u{ffff}",
@@ -141,21 +123,11 @@ fn rust_normalization_preserves_state_across_input_and_output_chunks() {
             unsafe {
                 let mut converter = std::ptr::null_mut();
                 assert_eq!(
-                    TECkit_CreateConverter(
-                        std::ptr::null_mut(),
-                        0,
-                        1,
-                        kForm_UTF8,
-                        kForm_UTF8 | form,
-                        &mut converter,
-                    ),
+                    TECkit_CreateConverter(std::ptr::null_mut(), 0, 1, kForm_UTF8, kForm_UTF8 | form, &mut converter,),
                     kStatus_NoError
                 );
                 let mut result = Vec::new();
-                for (chunk, complete) in [
-                    (&input.as_bytes()[..split], 0),
-                    (&input.as_bytes()[split..], 1),
-                ] {
+                for (chunk, complete) in [(&input.as_bytes()[..split], 0), (&input.as_bytes()[split..], 1)] {
                     let mut consumed = 0;
                     loop {
                         let mut output = [0; 4];
@@ -179,11 +151,7 @@ fn rust_normalization_preserves_state_across_input_and_output_chunks() {
                         }
                         assert_eq!(
                             status,
-                            if complete == 0 {
-                                kStatus_NeedMoreInput
-                            } else {
-                                kStatus_NoError
-                            },
+                            if complete == 0 { kStatus_NeedMoreInput } else { kStatus_NoError },
                             "split {split}, form {form}"
                         );
                         assert_eq!(consumed, chunk.len());
@@ -204,26 +172,14 @@ fn teckit_endian_conversion_preserves_split_characters_and_small_output_buffers(
             kForm_UTF8 => text.as_bytes().to_vec(),
             kForm_UTF16BE => text.encode_utf16().flat_map(u16::to_be_bytes).collect(),
             kForm_UTF16LE => text.encode_utf16().flat_map(u16::to_le_bytes).collect(),
-            kForm_UTF32BE => text
-                .chars()
-                .flat_map(|c| (c as u32).to_be_bytes())
-                .collect(),
-            kForm_UTF32LE => text
-                .chars()
-                .flat_map(|c| (c as u32).to_le_bytes())
-                .collect(),
+            kForm_UTF32BE => text.chars().flat_map(|c| (c as u32).to_be_bytes()).collect(),
+            kForm_UTF32LE => text.chars().flat_map(|c| (c as u32).to_le_bytes()).collect(),
             _ => unreachable!(),
         }
     }
 
     let text = "\0A\u{80}\u{7ff}\u{800}\u{ffff}\u{10000}\u{1f600}\u{10ffff}";
-    let forms = [
-        kForm_UTF8,
-        kForm_UTF16BE,
-        kForm_UTF16LE,
-        kForm_UTF32BE,
-        kForm_UTF32LE,
-    ];
+    let forms = [kForm_UTF8, kForm_UTF16BE, kForm_UTF16LE, kForm_UTF32BE, kForm_UTF32LE];
     for input_form in forms {
         let input = encode(text, input_form);
         for output_form in forms {
@@ -232,14 +188,7 @@ fn teckit_endian_conversion_preserves_split_characters_and_small_output_buffers(
                 unsafe {
                     let mut converter = std::ptr::null_mut();
                     assert_eq!(
-                        TECkit_CreateConverter(
-                            std::ptr::null_mut(),
-                            0,
-                            1,
-                            input_form,
-                            output_form,
-                            &mut converter
-                        ),
+                        TECkit_CreateConverter(std::ptr::null_mut(), 0, 1, input_form, output_form, &mut converter),
                         kStatus_NoError
                     );
                     let mut actual = Vec::new();
@@ -269,23 +218,13 @@ fn teckit_endian_conversion_preserves_split_characters_and_small_output_buffers(
                                 capacity = capacity % 7 + 1;
                                 continue;
                             }
-                            assert_eq!(
-                                status,
-                                if complete == 0 {
-                                    kStatus_NeedMoreInput
-                                } else {
-                                    kStatus_NoError
-                                }
-                            );
+                            assert_eq!(status, if complete == 0 { kStatus_NeedMoreInput } else { kStatus_NoError });
                             assert_eq!(consumed, chunk.len());
                             break;
                         }
                     }
                     assert_eq!(TECkit_DisposeConverter(converter), kStatus_NoError);
-                    assert_eq!(
-                        actual, expected,
-                        "input {input_form}, output {output_form}, split {split}"
-                    );
+                    assert_eq!(actual, expected, "input {input_form}, output {output_form}, split {split}");
                 }
             }
         }
@@ -306,10 +245,7 @@ fn engine_symbols_resolve_to_rust_implementations() {
         super::xetex_xetexd::main_control as *const (),
         super::xetex_xetex0::main_control as *const (),
     );
-    assert_eq!(
-        super::xetex_xetexd::get_next as *const (),
-        super::xetex_xetex0::get_next as *const (),
-    );
+    assert_eq!(super::xetex_xetexd::get_next as *const (), super::xetex_xetex0::get_next as *const (),);
     assert_eq!(
         super::xetex_xetexd::get_x_token as *const (),
         super::xetex_xetex0::get_x_token as *const (),
@@ -359,14 +295,7 @@ fn rust_converter_normalizes_unicode() {
         unsafe {
             let mut converter = std::ptr::null_mut();
             assert_eq!(
-                TECkit_CreateConverter(
-                    std::ptr::null_mut(),
-                    0,
-                    1,
-                    kForm_UTF8,
-                    kForm_UTF8 | form,
-                    &mut converter,
-                ),
+                TECkit_CreateConverter(std::ptr::null_mut(), 0, 1, kForm_UTF8, kForm_UTF8 | form, &mut converter,),
                 kStatus_NoError
             );
 

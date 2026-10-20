@@ -18,10 +18,7 @@
 //! [`tectonic`]: https://docs.rs/tectonic/
 
 use crate::{
-    auxi::{
-        AuxCommand, AuxData, get_aux_command_and_process, last_check_for_aux_errors,
-        pop_the_aux_stack,
-    },
+    auxi::{AuxCommand, AuxData, get_aux_command_and_process, last_check_for_aux_errors, pop_the_aux_stack},
     bibs::{BibCommand, BibData},
     bst::{BstCommand, get_bst_command_and_process},
     buffer::{BufTy, GlobalBuffer},
@@ -30,10 +27,7 @@ use crate::{
     exec::{ControlSeq, ExecCtx},
     global::{GLOB_STR_SIZE, GlobalData},
     hash::{BstBuiltin, BstFn, HashData, HashPointer},
-    log::{
-        AsBytes, bib_close_log, log_pr_aux_name, print_aux_name, print_confusion,
-        sam_wrong_file_name_print,
-    },
+    log::{AsBytes, bib_close_log, log_pr_aux_name, print_aux_name, print_confusion, sam_wrong_file_name_print},
     other::OtherData,
     peekable::{PeekableInput, input_ln},
     pool::{StrNumber, StringPool},
@@ -134,11 +128,7 @@ impl BibtexEngine {
     ///
     /// The *aux* parameter gives the name of the "aux" file, created by the TeX
     /// engine, that BibTeX will process.
-    pub fn process(
-        &mut self,
-        launcher: &mut CoreBridgeLauncher<'_>,
-        aux: &str,
-    ) -> Result<BibtexOutcome> {
+    pub fn process(&mut self, launcher: &mut CoreBridgeLauncher<'_>, aux: &str) -> Result<BibtexOutcome> {
         let caux = CString::new(aux)?;
 
         launcher.with_global_lock(|state| {
@@ -233,10 +223,7 @@ pub(crate) struct Bibtex<'a, 'cbs> {
 }
 
 impl<'a, 'cbs> Bibtex<'a, 'cbs> {
-    pub(crate) fn new(
-        engine: &'a mut CoreBridgeState<'cbs>,
-        config: BibtexConfig,
-    ) -> Bibtex<'a, 'cbs> {
+    pub(crate) fn new(engine: &'a mut CoreBridgeState<'cbs>, config: BibtexConfig) -> Bibtex<'a, 'cbs> {
         Bibtex {
             engine,
             config,
@@ -283,28 +270,16 @@ impl<'a, 'cbs> Bibtex<'a, 'cbs> {
     }
 
     pub(crate) fn write_logs<B: ?Sized + AsBytes>(&mut self, str: &B) {
-        let _ = self
-            .engine
-            .get_output(self.logs.file.unwrap())
-            .write_all(str.as_bytes());
-        let _ = self
-            .engine
-            .get_output(self.logs.stdout.unwrap())
-            .write_all(str.as_bytes());
+        let _ = self.engine.get_output(self.logs.file.unwrap()).write_all(str.as_bytes());
+        let _ = self.engine.get_output(self.logs.stdout.unwrap()).write_all(str.as_bytes());
     }
 
     pub(crate) fn write_stdout<B: ?Sized + AsBytes>(&mut self, str: &B) {
-        let _ = self
-            .engine
-            .get_output(self.logs.stdout.unwrap())
-            .write_all(str.as_bytes());
+        let _ = self.engine.get_output(self.logs.stdout.unwrap()).write_all(str.as_bytes());
     }
 
     pub(crate) fn write_log_file<B: ?Sized + AsBytes>(&mut self, str: &B) {
-        self.engine
-            .get_output(self.logs.file.unwrap())
-            .write_all(str.as_bytes())
-            .unwrap();
+        self.engine.get_output(self.logs.file.unwrap()).write_all(str.as_bytes()).unwrap();
     }
 
     pub(crate) fn init_stdout(&mut self) -> bool {
@@ -420,13 +395,8 @@ pub(crate) fn bibtex_main(ctx: &mut Bibtex<'_, '_>, aux_file_name: &CStr) -> His
 }
 
 pub(crate) fn pre_def_certain_strings(
-    ctx: &mut Bibtex<'_, '_>,
-    GlobalItems {
-        pool,
-        hash,
-        other,
-        entries,
-        ..
+    ctx: &mut Bibtex<'_, '_>, GlobalItems {
+        pool, hash, other, entries, ..
     }: &mut GlobalItems<'_>,
 ) {
     let res = hash.lookup_str_insert::<hash::FileExt>(pool, b".aux", ());
@@ -452,10 +422,7 @@ pub(crate) fn pre_def_certain_strings(
     hash.lookup_str_insert::<BibCommand>(pool, b"preamble", BibCommand::Preamble);
     hash.lookup_str_insert::<BibCommand>(pool, b"string", BibCommand::String);
 
-    let mut build_in = |pds: &[ASCIICode], builtin| {
-        hash.lookup_str_insert(pool, pds, BstFn::Builtin(builtin))
-            .loc
-    };
+    let mut build_in = |pds: &[ASCIICode], builtin| hash.lookup_str_insert(pool, pds, BstFn::Builtin(builtin)).loc;
 
     build_in(b"=", BstBuiltin::Eq);
     build_in(b">", BstBuiltin::Gt);
@@ -531,11 +498,7 @@ pub(crate) fn pre_def_certain_strings(
     hash.lookup_str_insert::<BstFn>(pool, b"global.max$", BstFn::IntGlbl(GLOB_STR_SIZE as i64));
 }
 
-pub(crate) fn inner_bibtex_main(
-    ctx: &mut Bibtex<'_, '_>,
-    globals: &mut GlobalItems<'_>,
-    aux_file_name: &CStr,
-) -> Result<History, BibtexError> {
+pub(crate) fn inner_bibtex_main(ctx: &mut Bibtex<'_, '_>, globals: &mut GlobalItems<'_>, aux_file_name: &CStr) -> Result<History, BibtexError> {
     if !ctx.init_stdout() {
         return Ok(History::FatalError);
     }
@@ -569,11 +532,7 @@ pub(crate) fn inner_bibtex_main(
     let last_aux = loop {
         globals.aux.top_file_mut().line += 1;
 
-        if !input_ln(
-            ctx.engine,
-            &mut globals.aux.top_file_mut().file,
-            globals.buffers,
-        ) {
+        if !input_ln(ctx.engine, &mut globals.aux.top_file_mut().file, globals.buffers) {
             if let Some(last) = pop_the_aux_stack(ctx, globals.aux) {
                 break last;
             }
@@ -588,9 +547,7 @@ pub(crate) fn inner_bibtex_main(
         return Err(BibtexError::NoBst);
     }
 
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.init(BufTy::Base));
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.init(BufTy::Base));
 
     let mut exec = ExecCtx::new(ctx);
     loop {
@@ -604,11 +561,7 @@ pub(crate) fn inner_bibtex_main(
 }
 
 pub(crate) fn get_the_top_level_aux_file_name(
-    ctx: &mut Bibtex<'_, '_>,
-    GlobalItems {
-        pool, hash, aux, ..
-    }: &mut GlobalItems<'_>,
-    aux_file_name: &CStr,
+    ctx: &mut Bibtex<'_, '_>, GlobalItems { pool, hash, aux, .. }: &mut GlobalItems<'_>, aux_file_name: &CStr,
 ) -> Result<i32, BibtexError> {
     let aux_bytes = aux_file_name.to_bytes_with_nul();
 

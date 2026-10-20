@@ -19,44 +19,25 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use super::dpx_pdfobj::{
-    pdf_add_array, pdf_add_dict, pdf_link_obj, pdf_new_array, pdf_new_dict, pdf_new_name,
-    pdf_new_null, pdf_new_string, pdf_new_undefined, pdf_obj_typeof, pdf_ref_obj, pdf_release_obj,
-    pdf_string_length, pdf_string_value, pdf_transfer_label,
+    pdf_add_array, pdf_add_dict, pdf_link_obj, pdf_new_array, pdf_new_dict, pdf_new_name, pdf_new_null, pdf_new_string, pdf_new_undefined,
+    pdf_obj_typeof, pdf_ref_obj, pdf_release_obj, pdf_string_length, pdf_string_value, pdf_transfer_label,
 };
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
     fn isprint(_: ::core::ffi::c_int) -> ::core::ffi::c_int;
 
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
     #[link_name = "__pdf_impl_ht_lookup_table"]
-    fn ht_lookup_table(
-        ht: *mut ht_table,
-        key: *const ::core::ffi::c_void,
-        keylen: ::core::ffi::c_int,
-    ) -> *mut ::core::ffi::c_void;
+    fn ht_lookup_table(ht: *mut ht_table, key: *const ::core::ffi::c_void, keylen: ::core::ffi::c_int) -> *mut ::core::ffi::c_void;
 
     #[link_name = "__pdf_impl_ht_set_iter"]
     fn ht_set_iter(ht: *mut ht_table, iter: *mut ht_iter) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_ht_clear_iter"]
     fn ht_clear_iter(iter: *mut ht_iter);
     #[link_name = "__pdf_impl_ht_iter_getkey"]
-    fn ht_iter_getkey(
-        iter: *mut ht_iter,
-        keylen: *mut ::core::ffi::c_int,
-    ) -> *mut ::core::ffi::c_char;
+    fn ht_iter_getkey(iter: *mut ht_iter, keylen: *mut ::core::ffi::c_int) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_ht_iter_getval"]
     fn ht_iter_getval(iter: *mut ht_iter) -> *mut ::core::ffi::c_void;
     #[link_name = "__pdf_impl_ht_iter_next"]
@@ -111,10 +92,7 @@ pub const PDF_DICT: ::core::ffi::c_int = 6;
 pub const PDF_STREAM: ::core::ffi::c_int = 7;
 pub const PDF_UNDEFINED: ::core::ffi::c_int = 10 as ::core::ffi::c_int;
 pub const PDF_OBJ_INVALID: ::core::ffi::c_int = 0;
-unsafe fn printable_key(
-    mut key: *const ::core::ffi::c_char,
-    mut keylen: ::core::ffi::c_int,
-) -> [::core::ffi::c_char; 36] {
+unsafe fn printable_key(mut key: *const ::core::ffi::c_char, mut keylen: ::core::ffi::c_int) -> [::core::ffi::c_char; 36] {
     let mut pkey: [::core::ffi::c_char; 36] = [0; 36];
     let mut i: ::core::ffi::c_int = 0;
     let mut len: ::core::ffi::c_int = 0;
@@ -128,10 +106,8 @@ unsafe fn printable_key(
             len = len + 1;
             pkey[fresh0 as usize] = *key.offset(i as isize);
         } else {
-            hi = (*key.offset(i as isize) as ::core::ffi::c_int >> 4 as ::core::ffi::c_int
-                & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
-            lo = (*key.offset(i as isize) as ::core::ffi::c_int & 0xff as ::core::ffi::c_int)
-                as ::core::ffi::c_uchar;
+            hi = (*key.offset(i as isize) as ::core::ffi::c_int >> 4 as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+            lo = (*key.offset(i as isize) as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
             let fresh1 = len;
             len = len + 1;
             pkey[fresh1 as usize] = '#' as i32 as ::core::ffi::c_char;
@@ -195,15 +171,9 @@ unsafe extern "C-unwind" fn check_objects_defined(mut ht_tab: *mut ht_table) {
             key = ht_iter_getkey(&raw mut iter, &raw mut keylen);
             value = ht_iter_getval(&raw mut iter) as *mut obj_data;
             if !(*value).object.is_null() && pdf_obj_typeof((*value).object) == PDF_UNDEFINED {
-                pdf_names_add_object(
-                    ht_tab,
-                    key as *const ::core::ffi::c_void,
-                    keylen,
-                    pdf_new_null(),
-                );
+                pdf_names_add_object(ht_tab, key as *const ::core::ffi::c_void, keylen, pdf_new_null());
                 pdf_warning!(
-                    b"Object @%s used, but not defined. Replaced by null.\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Object @%s used, but not defined. Replaced by null.\0" as *const u8 as *const ::core::ffi::c_char,
                     printable_key(key, keylen).as_ptr(),
                 );
             }
@@ -232,10 +202,7 @@ pub unsafe extern "C-unwind" fn pdf_delete_name_tree(mut names: *mut *mut ht_tab
 }
 #[unsafe(export_name = "__pdf_impl_pdf_names_add_object")]
 pub unsafe extern "C-unwind" fn pdf_names_add_object(
-    mut names: *mut ht_table,
-    mut key: *const ::core::ffi::c_void,
-    mut keylen: ::core::ffi::c_int,
-    mut object: *mut pdf_obj,
+    mut names: *mut ht_table, mut key: *const ::core::ffi::c_void, mut keylen: ::core::ffi::c_int, mut object: *mut pdf_obj,
 ) -> ::core::ffi::c_int {
     let mut value: *mut obj_data = ::core::ptr::null_mut::<obj_data>();
     if !(!names.is_null() && !object.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -246,9 +213,7 @@ pub unsafe extern "C-unwind" fn pdf_names_add_object(
     } else {
     };
     if key.is_null() || keylen < 1 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Null string used for name tree key.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Null string used for name tree key.\0" as *const u8 as *const ::core::ffi::c_char,);
         return -(1 as ::core::ffi::c_int);
     }
     value = ht_lookup_table(names, key, keylen) as *mut obj_data;
@@ -258,9 +223,7 @@ pub unsafe extern "C-unwind" fn pdf_names_add_object(
         (*value).reference = ::core::ptr::null_mut::<pdf_obj>();
         (*value).closed = 0 as ::core::ffi::c_int;
         append_name(names, key, keylen, value);
-    } else if !(*value).object.is_null()
-        && (!(*value).object.is_null() && pdf_obj_typeof((*value).object) == PDF_UNDEFINED)
-    {
+    } else if !(*value).object.is_null() && (!(*value).object.is_null() && pdf_obj_typeof((*value).object) == PDF_UNDEFINED) {
         pdf_transfer_label(object, (*value).object);
         pdf_release_obj((*value).object);
         (*value).object = object;
@@ -276,23 +239,16 @@ pub unsafe extern "C-unwind" fn pdf_names_add_object(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_names_reserve")]
 pub unsafe extern "C-unwind" fn pdf_names_reserve(
-    mut names: *mut ht_table,
-    mut key: *const ::core::ffi::c_void,
-    mut keylen: ::core::ffi::c_int,
+    mut names: *mut ht_table, mut key: *const ::core::ffi::c_void, mut keylen: ::core::ffi::c_int,
 ) -> *mut pdf_obj {
     let mut obj_ref: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut value: *mut obj_data = ::core::ptr::null_mut::<obj_data>();
     if names.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"names\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"names\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if key.is_null() || keylen < 1 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Null string used for name tree key.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Null string used for name tree key.\0" as *const u8 as *const ::core::ffi::c_char,);
         return ::core::ptr::null_mut::<pdf_obj>();
     }
     value = ht_lookup_table(names, key, keylen) as *mut obj_data;
@@ -303,9 +259,7 @@ pub unsafe extern "C-unwind" fn pdf_names_reserve(
         (*value).closed = 0 as ::core::ffi::c_int;
         append_name(names, key, keylen, value);
         obj_ref = pdf_ref_obj((*value).object);
-    } else if !(*value).object.is_null()
-        && (!(*value).object.is_null() && pdf_obj_typeof((*value).object) == PDF_UNDEFINED)
-    {
+    } else if !(*value).object.is_null() && (!(*value).object.is_null() && pdf_obj_typeof((*value).object) == PDF_UNDEFINED) {
         if (*value).reference.is_null() {
             (*value).reference = pdf_ref_obj((*value).object);
         }
@@ -321,17 +275,12 @@ pub unsafe extern "C-unwind" fn pdf_names_reserve(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_names_lookup_reference")]
 pub unsafe extern "C-unwind" fn pdf_names_lookup_reference(
-    mut names: *mut ht_table,
-    mut key: *const ::core::ffi::c_void,
-    mut keylen: ::core::ffi::c_int,
+    mut names: *mut ht_table, mut key: *const ::core::ffi::c_void, mut keylen: ::core::ffi::c_int,
 ) -> *mut pdf_obj {
     let mut value: *mut obj_data = ::core::ptr::null_mut::<obj_data>();
     let mut obj_ref: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     if names.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"names\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"names\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     value = ht_lookup_table(names, key, keylen) as *mut obj_data;
@@ -341,8 +290,7 @@ pub unsafe extern "C-unwind" fn pdf_names_lookup_reference(
                 (*value).reference = pdf_ref_obj((*value).object);
             } else {
                 pdf_warning!(
-                    b"Can't create object ref for already released object: %s\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Can't create object ref for already released object: %s\0" as *const u8 as *const ::core::ffi::c_char,
                     printable_key(key as *const ::core::ffi::c_char, keylen).as_ptr(),
                 );
             }
@@ -355,22 +303,15 @@ pub unsafe extern "C-unwind" fn pdf_names_lookup_reference(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_names_lookup_object")]
 pub unsafe extern "C-unwind" fn pdf_names_lookup_object(
-    mut names: *mut ht_table,
-    mut key: *const ::core::ffi::c_void,
-    mut keylen: ::core::ffi::c_int,
+    mut names: *mut ht_table, mut key: *const ::core::ffi::c_void, mut keylen: ::core::ffi::c_int,
 ) -> *mut pdf_obj {
     let mut value: *mut obj_data = ::core::ptr::null_mut::<obj_data>();
     if names.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"names\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"names\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     value = ht_lookup_table(names, key, keylen) as *mut obj_data;
-    if value.is_null()
-        || !(*value).object.is_null() && pdf_obj_typeof((*value).object) == PDF_UNDEFINED
-    {
+    if value.is_null() || !(*value).object.is_null() && pdf_obj_typeof((*value).object) == PDF_UNDEFINED {
         return ::core::ptr::null_mut::<pdf_obj>();
     }
     if (*value).closed != 0 {
@@ -383,22 +324,15 @@ pub unsafe extern "C-unwind" fn pdf_names_lookup_object(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_names_close_object")]
 pub unsafe extern "C-unwind" fn pdf_names_close_object(
-    mut names: *mut ht_table,
-    mut key: *const ::core::ffi::c_void,
-    mut keylen: ::core::ffi::c_int,
+    mut names: *mut ht_table, mut key: *const ::core::ffi::c_void, mut keylen: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut value: *mut obj_data = ::core::ptr::null_mut::<obj_data>();
     if names.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"names\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"names\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     value = ht_lookup_table(names, key, keylen) as *mut obj_data;
-    if value.is_null()
-        || !(*value).object.is_null() && pdf_obj_typeof((*value).object) == PDF_UNDEFINED
-    {
+    if value.is_null() || !(*value).object.is_null() && pdf_obj_typeof((*value).object) == PDF_UNDEFINED {
         pdf_warning!(
             b"Cannot close undefined object @%s.\0" as *const u8 as *const ::core::ffi::c_char,
             printable_key(key as *const ::core::ffi::c_char, keylen).as_ptr(),
@@ -428,9 +362,7 @@ pub unsafe extern "C-unwind" fn pdf_names_close_object(
 }
 pub const NAME_CLUSTER: ::core::ffi::c_int = 4 as ::core::ffi::c_int;
 unsafe extern "C-unwind" fn build_name_tree(
-    mut first: *mut named_object,
-    mut num_leaves: ::core::ffi::c_int,
-    mut is_root: ::core::ffi::c_int,
+    mut first: *mut named_object, mut num_leaves: ::core::ffi::c_int, mut is_root: ::core::ffi::c_int,
 ) -> *mut pdf_obj {
     let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut i: ::core::ffi::c_int = 0;
@@ -442,39 +374,22 @@ unsafe extern "C-unwind" fn build_name_tree(
         last = first.offset((num_leaves - 1 as ::core::ffi::c_int) as isize) as *mut named_object;
         pdf_add_array(
             limits,
-            pdf_new_string(
-                (*first).key as *const ::core::ffi::c_void,
-                (*first).keylen as size_t,
-            ),
+            pdf_new_string((*first).key as *const ::core::ffi::c_void, (*first).keylen as size_t),
         );
         pdf_add_array(
             limits,
-            pdf_new_string(
-                (*last).key as *const ::core::ffi::c_void,
-                (*last).keylen as size_t,
-            ),
+            pdf_new_string((*last).key as *const ::core::ffi::c_void, (*last).keylen as size_t),
         );
-        pdf_add_dict(
-            result,
-            pdf_new_name(b"Limits\0" as *const u8 as *const ::core::ffi::c_char),
-            limits,
-        );
+        pdf_add_dict(result, pdf_new_name(b"Limits\0" as *const u8 as *const ::core::ffi::c_char), limits);
     }
-    if num_leaves > 0 as ::core::ffi::c_int && num_leaves <= 2 as ::core::ffi::c_int * NAME_CLUSTER
-    {
+    if num_leaves > 0 as ::core::ffi::c_int && num_leaves <= 2 as ::core::ffi::c_int * NAME_CLUSTER {
         let mut names: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
         names = pdf_new_array();
         i = 0 as ::core::ffi::c_int;
         while i < num_leaves {
             let mut cur: *mut named_object = ::core::ptr::null_mut::<named_object>();
             cur = first.offset(i as isize) as *mut named_object;
-            pdf_add_array(
-                names,
-                pdf_new_string(
-                    (*cur).key as *const ::core::ffi::c_void,
-                    (*cur).keylen as size_t,
-                ),
-            );
+            pdf_add_array(names, pdf_new_string((*cur).key as *const ::core::ffi::c_void, (*cur).keylen as size_t));
             match pdf_obj_typeof((*cur).value) {
                 PDF_ARRAY | PDF_DICT | PDF_STREAM | PDF_STRING => {
                     pdf_add_array(names, pdf_ref_obj((*cur).value));
@@ -493,11 +408,7 @@ unsafe extern "C-unwind" fn build_name_tree(
             (*cur).value = ::core::ptr::null_mut::<pdf_obj>();
             i += 1;
         }
-        pdf_add_dict(
-            result,
-            pdf_new_name(b"Names\0" as *const u8 as *const ::core::ffi::c_char),
-            names,
-        );
+        pdf_add_dict(result, pdf_new_name(b"Names\0" as *const u8 as *const ::core::ffi::c_char), names);
     } else if num_leaves > 0 as ::core::ffi::c_int {
         let mut kids: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
         kids = pdf_new_array();
@@ -508,28 +419,16 @@ unsafe extern "C-unwind" fn build_name_tree(
             let mut end: ::core::ffi::c_int = 0;
             start = i * num_leaves / NAME_CLUSTER;
             end = (i + 1 as ::core::ffi::c_int) * num_leaves / NAME_CLUSTER;
-            subtree = build_name_tree(
-                first.offset(start as isize) as *mut named_object,
-                end - start,
-                0 as ::core::ffi::c_int,
-            );
+            subtree = build_name_tree(first.offset(start as isize) as *mut named_object, end - start, 0 as ::core::ffi::c_int);
             pdf_add_array(kids, pdf_ref_obj(subtree));
             pdf_release_obj(subtree);
             i += 1;
         }
-        pdf_add_dict(
-            result,
-            pdf_new_name(b"Kids\0" as *const u8 as *const ::core::ffi::c_char),
-            kids,
-        );
+        pdf_add_dict(result, pdf_new_name(b"Kids\0" as *const u8 as *const ::core::ffi::c_char), kids);
     }
     return result;
 }
-unsafe fn flat_table(
-    ht_tab: *mut ht_table,
-    num_entries: *mut i32,
-    filter: *mut ht_table,
-) -> Vec<named_object> {
+unsafe fn flat_table(ht_tab: *mut ht_table, num_entries: *mut i32, filter: *mut ht_table) -> Vec<named_object> {
     let mut objects = Vec::with_capacity((*ht_tab).count as usize);
     for bucket in (*ht_tab).table {
         let mut entry = bucket;
@@ -556,11 +455,7 @@ unsafe fn flat_table(
             } else {
                 pdf_link_obj((*value).object)
             };
-            objects.push(named_object {
-                key,
-                keylen,
-                value: object,
-            });
+            objects.push(named_object { key, keylen, value: object });
             entry = (*entry).next;
         }
     }
@@ -569,9 +464,7 @@ unsafe fn flat_table(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_names_create_tree")]
 pub unsafe extern "C-unwind" fn pdf_names_create_tree(
-    mut names: *mut ht_table,
-    mut count: *mut ::core::ffi::c_int,
-    mut filter: *mut ht_table,
+    mut names: *mut ht_table, mut count: *mut ::core::ffi::c_int, mut filter: *mut ht_table,
 ) -> *mut pdf_obj {
     let mut flat = flat_table(names, count, filter);
     if flat.is_empty() {
@@ -585,11 +478,7 @@ pub unsafe extern "C-unwind" fn pdf_names_create_tree(
     build_name_tree(flat.as_mut_ptr(), *count, 1)
 }
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
 }
 pub(crate) use super::dpx_pdfobj::pdf_obj;
 #[unsafe(no_mangle)]
@@ -616,15 +505,10 @@ pub unsafe extern "C" fn __pdf_entry_pdf_delete_name_tree(mut names: *mut *mut h
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_names_add_object(
-    mut names: *mut ht_table,
-    mut key: *const ::core::ffi::c_void,
-    mut keylen: ::core::ffi::c_int,
-    mut object: *mut pdf_obj,
+    mut names: *mut ht_table, mut key: *const ::core::ffi::c_void, mut keylen: ::core::ffi::c_int, mut object: *mut pdf_obj,
     _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_names_add_object(names, key, keylen, object)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_names_add_object(names, key, keylen, object) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -636,10 +520,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_names_add_object(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_names_reserve(
-    mut names: *mut ht_table,
-    mut key: *const ::core::ffi::c_void,
-    mut keylen: ::core::ffi::c_int,
-    _result: *mut *mut pdf_obj,
+    mut names: *mut ht_table, mut key: *const ::core::ffi::c_void, mut keylen: ::core::ffi::c_int, _result: *mut *mut pdf_obj,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_names_reserve(names, key, keylen) }) {
         Ok(value) => {
@@ -653,14 +534,9 @@ pub unsafe extern "C" fn __pdf_entry_pdf_names_reserve(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_names_lookup_reference(
-    mut names: *mut ht_table,
-    mut key: *const ::core::ffi::c_void,
-    mut keylen: ::core::ffi::c_int,
-    _result: *mut *mut pdf_obj,
+    mut names: *mut ht_table, mut key: *const ::core::ffi::c_void, mut keylen: ::core::ffi::c_int, _result: *mut *mut pdf_obj,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_names_lookup_reference(names, key, keylen)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_names_lookup_reference(names, key, keylen) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -672,14 +548,9 @@ pub unsafe extern "C" fn __pdf_entry_pdf_names_lookup_reference(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_names_lookup_object(
-    mut names: *mut ht_table,
-    mut key: *const ::core::ffi::c_void,
-    mut keylen: ::core::ffi::c_int,
-    _result: *mut *mut pdf_obj,
+    mut names: *mut ht_table, mut key: *const ::core::ffi::c_void, mut keylen: ::core::ffi::c_int, _result: *mut *mut pdf_obj,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_names_lookup_object(names, key, keylen)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_names_lookup_object(names, key, keylen) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -691,14 +562,9 @@ pub unsafe extern "C" fn __pdf_entry_pdf_names_lookup_object(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_names_close_object(
-    mut names: *mut ht_table,
-    mut key: *const ::core::ffi::c_void,
-    mut keylen: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut names: *mut ht_table, mut key: *const ::core::ffi::c_void, mut keylen: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_names_close_object(names, key, keylen)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_names_close_object(names, key, keylen) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -710,14 +576,9 @@ pub unsafe extern "C" fn __pdf_entry_pdf_names_close_object(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_names_create_tree(
-    mut names: *mut ht_table,
-    mut count: *mut ::core::ffi::c_int,
-    mut filter: *mut ht_table,
-    _result: *mut *mut pdf_obj,
+    mut names: *mut ht_table, mut count: *mut ::core::ffi::c_int, mut filter: *mut ht_table, _result: *mut *mut pdf_obj,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_names_create_tree(names, count, filter)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_names_create_tree(names, count, filter) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -751,14 +612,9 @@ impl Default for NameIndex {
 }
 
 pub(crate) unsafe fn lookup_index(table: usize, key: &[u8]) -> Option<*mut core::ffi::c_void> {
-    (*(*storage()).indices.get()).get(&table).map(|index| {
-        index
-            .values
-            .get(key)
-            .copied()
-            .unwrap_or(core::ptr::null_mut())
-            .cast()
-    })
+    (*(*storage()).indices.get())
+        .get(&table)
+        .map(|index| index.values.get(key).copied().unwrap_or(core::ptr::null_mut()).cast())
 }
 
 unsafe fn storage() -> *mut Storage {
@@ -775,17 +631,12 @@ unsafe fn new_name_value() -> *mut obj_data {
     (*storage).values.pointer(index)
 }
 
-unsafe fn append_name(
-    names: *mut ht_table,
-    key: *const core::ffi::c_void,
-    keylen: i32,
-    value: *mut obj_data,
-) {
+unsafe fn append_name(names: *mut ht_table, key: *const core::ffi::c_void, keylen: i32, value: *mut obj_data) {
     let bytes = core::slice::from_raw_parts(key.cast::<u8>(), keylen as usize);
-    let hash = bytes.iter().fold(0u32, |hash, &byte| {
-        hash.wrapping_mul(33)
-            .wrapping_add(byte as core::ffi::c_char as u32)
-    }) % 503;
+    let hash = bytes
+        .iter()
+        .fold(0u32, |hash, &byte| hash.wrapping_mul(33).wrapping_add(byte as core::ffi::c_char as u32))
+        % 503;
     let mut owned = Box::<[u8]>::from(bytes);
     let key = owned.as_mut_ptr().cast();
     let storage = storage();
@@ -796,9 +647,7 @@ unsafe fn append_name(
         next: core::ptr::null_mut(),
     });
     let entry = (*storage).entries.pointer(index);
-    let index = (*(*storage).indices.get())
-        .get_mut(&(names as usize))
-        .expect("PDF name index");
+    let index = (*(*storage).indices.get()).get_mut(&(names as usize)).expect("PDF name index");
     let tail = &mut index.tails[hash as usize];
     if tail.is_null() {
         (*names).table[hash as usize] = entry;

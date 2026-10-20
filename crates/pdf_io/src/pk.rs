@@ -97,17 +97,12 @@ struct Nibbles<'a> {
 }
 impl Nibbles<'_> {
     fn next(&mut self) -> Result<u8, PdfError> {
-        let byte = self.bytes.get(self.position / 2).copied().ok_or_else(|| {
-            error(
-                "EOD reached while unpacking pk_packed_num.",
-                self.position / 2,
-            )
-        })?;
-        let value = if self.position.is_multiple_of(2) {
-            byte >> 4
-        } else {
-            byte & 15
-        };
+        let byte = self
+            .bytes
+            .get(self.position / 2)
+            .copied()
+            .ok_or_else(|| error("EOD reached while unpacking pk_packed_num.", self.position / 2))?;
+        let value = if self.position.is_multiple_of(2) { byte >> 4 } else { byte & 15 };
         self.position += 1;
         Ok(value)
     }
@@ -138,12 +133,7 @@ impl Nibbles<'_> {
                     .ok_or_else(|| error("Invalid PK run length.", self.position / 2))?
             }
             value if value <= dynamic => usize::from(value),
-            value @ 1..=13 => {
-                usize::from(value - dynamic - 1) * 16
-                    + usize::from(self.next()?)
-                    + usize::from(dynamic)
-                    + 1
-            }
+            value @ 1..=13 => usize::from(value - dynamic - 1) * 16 + usize::from(self.next()?) + usize::from(dynamic) + 1,
             _ => return Err(error("Invalid PK repeat count.", self.position / 2)),
         };
         if value == 0 {
@@ -154,27 +144,13 @@ impl Nibbles<'_> {
 }
 
 pub(crate) fn decode(
-    bytes: &[u8],
-    width: u32,
-    height: u32,
-    dynamic: u8,
-    mut color: bool,
-    mut emit: impl FnMut(&[u8]),
-    mut warning: impl FnMut(&'static str),
+    bytes: &[u8], width: u32, height: u32, dynamic: u8, mut color: bool, mut emit: impl FnMut(&[u8]), mut warning: impl FnMut(&'static str),
 ) -> Result<(), PdfError> {
     let width = width as usize;
     let height = height as usize;
-    let row_bytes = width
-        .checked_add(7)
-        .map(|n| n / 8)
-        .ok_or_else(|| error("PK raster is too large.", 0))?;
-    let pixels = width
-        .checked_mul(height)
-        .ok_or_else(|| error("PK raster is too large.", 0))?;
-    if row_bytes
-        .checked_mul(height)
-        .is_none_or(|n| n > i32::MAX as usize)
-    {
+    let row_bytes = width.checked_add(7).map(|n| n / 8).ok_or_else(|| error("PK raster is too large.", 0))?;
+    let pixels = width.checked_mul(height).ok_or_else(|| error("PK raster is too large.", 0))?;
+    if row_bytes.checked_mul(height).is_none_or(|n| n > i32::MAX as usize) {
         return Err(error("PK raster is too large.", 0));
     }
     if width == 0 || height == 0 {
@@ -217,11 +193,7 @@ pub(crate) fn decode(
                     if repeat != 0 {
                         warning("Second repeat count for this row!");
                     }
-                    repeat = if nibble == 14 {
-                        input.number(dynamic)?
-                    } else {
-                        1
-                    };
+                    repeat = if nibble == 14 { input.number(dynamic)? } else { 1 };
                     continue;
                 }
                 input.position = start;
@@ -272,50 +244,20 @@ mod tests {
                         expected[bit / 8] &= !(128 >> (bit % 8));
                     }
                     let mut actual = Vec::new();
-                    decode(
-                        &bytes,
-                        width as u32,
-                        1,
-                        13,
-                        false,
-                        |row| actual.extend_from_slice(row),
-                        |_| {},
-                    )
-                    .unwrap();
-                    assert_eq!(
-                        actual, expected,
-                        "prefix={prefix}, run={run}, suffix={suffix}"
-                    );
+                    decode(&bytes, width as u32, 1, 13, false, |row| actual.extend_from_slice(row), |_| {}).unwrap();
+                    assert_eq!(actual, expected, "prefix={prefix}, run={run}, suffix={suffix}");
                 }
             }
         }
         let mut actual = Vec::new();
-        decode(
-            &[0x00, 0x01, 0x00, 0x20],
-            4096,
-            1,
-            13,
-            true,
-            |row| actual.extend_from_slice(row),
-            |_| {},
-        )
-        .unwrap();
+        decode(&[0x00, 0x01, 0x00, 0x20], 4096, 1, 13, true, |row| actual.extend_from_slice(row), |_| {}).unwrap();
         assert_eq!(actual, vec![0; 512]);
     }
 
     #[test]
     fn packed_runs_and_repeat_rows_preserve_output() {
         let mut output = Vec::new();
-        decode(
-            &[0xf4],
-            4,
-            2,
-            13,
-            true,
-            |row| output.extend_from_slice(row),
-            |_| {},
-        )
-        .unwrap();
+        decode(&[0xf4], 4, 2, 13, true, |row| output.extend_from_slice(row), |_| {}).unwrap();
         assert_eq!(output, [15, 15]);
         assert!(decode(&[0xf4], 4, 1, 13, true, |_| {}, |_| {}).is_err());
         assert!(decode(&[0], 4, 1, 13, true, |_| {}, |_| {}).is_err());
@@ -324,16 +266,7 @@ mod tests {
     #[test]
     fn bitmap_checks_input_length_and_preserves_polarity() {
         let mut output = Vec::new();
-        decode(
-            &[0xa5, 0xff],
-            8,
-            2,
-            14,
-            false,
-            |row| output.extend_from_slice(row),
-            |_| {},
-        )
-        .unwrap();
+        decode(&[0xa5, 0xff], 8, 2, 14, false, |row| output.extend_from_slice(row), |_| {}).unwrap();
         assert_eq!(output, [0x5a, 0]);
         assert!(decode(&[], 8, 1, 14, false, |_| {}, |_| {}).is_err());
         assert!(decode(&[], u32::MAX, u32::MAX, 14, false, |_| {}, |_| {}).is_err());
@@ -344,12 +277,7 @@ mod tests {
         let bytes = [9, 65, 0, 0, 1, 2, 8, 1, 255, 254];
         let parsed = header(&mut bytes.as_slice(), 0).unwrap();
         assert_eq!(
-            (
-                parsed.packet_length,
-                parsed.code,
-                parsed.horizontal_offset,
-                parsed.vertical_offset
-            ),
+            (parsed.packet_length, parsed.code, parsed.horizontal_offset, parsed.vertical_offset),
             (1, 65, -1, -2)
         );
         for end in 0..bytes.len() {

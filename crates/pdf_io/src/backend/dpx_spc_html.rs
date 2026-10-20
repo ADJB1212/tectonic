@@ -19,40 +19,20 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::backend::dpx_pdfdev::transform_info_clear;
 use crate::backend::dpx_pdfdraw::pdf_dev_transform;
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
     fn isspace(_: ::core::ffi::c_int) -> ::core::ffi::c_int;
     fn cos(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn sin(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn tan(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn atof(_: *const ::core::ffi::c_char) -> ::core::ffi::c_double;
-    fn strcat(
-        __s1: *mut ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-    fn strcpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn strcat(__s1: *mut ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    fn strcpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_pdf_release_obj"]
     fn pdf_release_obj(object: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_link_obj"]
@@ -76,11 +56,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_lookup_dict"]
     fn pdf_lookup_dict(dict: *mut pdf_obj, key: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     fn spc_warn(spe: *mut spc_env, fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_spc_begin_annot"]
     fn spc_begin_annot(spe: *mut spc_env, annot_dict: *mut pdf_obj) -> ::core::ffi::c_int;
@@ -88,22 +64,12 @@ unsafe extern "C-unwind" {
     fn spc_end_annot(spe: *mut spc_env) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_spc_put_image"]
     fn spc_put_image(
-        spe: *mut spc_env,
-        res_id: ::core::ffi::c_int,
-        ti: *mut transform_info,
-        xpos: ::core::ffi::c_double,
-        ypos: ::core::ffi::c_double,
+        spe: *mut spc_env, res_id: ::core::ffi::c_int, ti: *mut transform_info, xpos: ::core::ffi::c_double, ypos: ::core::ffi::c_double,
     );
     #[link_name = "__pdf_impl_parse_float_decimal"]
-    fn parse_float_decimal(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_float_decimal(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_parse_c_ident"]
-    fn parse_c_ident(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_c_ident(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_new"]
     fn new(size: uint32_t) -> *mut ::core::ffi::c_void;
@@ -111,21 +77,14 @@ unsafe extern "C-unwind" {
     fn pdf_doc_get_reference(category: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_doc_add_names"]
     fn pdf_doc_add_names(
-        category: *const ::core::ffi::c_char,
-        key: *const ::core::ffi::c_void,
-        keylen: ::core::ffi::c_int,
-        value: *mut pdf_obj,
+        category: *const ::core::ffi::c_char, key: *const ::core::ffi::c_void, keylen: ::core::ffi::c_int, value: *mut pdf_obj,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_xgstate_push"]
     fn pdf_dev_xgstate_push(object: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_dev_xgstate_pop"]
     fn pdf_dev_xgstate_pop();
     #[link_name = "__pdf_impl_pdf_ximage_load_image"]
-    fn pdf_ximage_load_image(
-        ident: *const ::core::ffi::c_char,
-        filename: *const ::core::ffi::c_char,
-        options: load_options,
-    ) -> ::core::ffi::c_int;
+    fn pdf_ximage_load_image(ident: *const ::core::ffi::c_char, filename: *const ::core::ffi::c_char, options: load_options) -> ::core::ffi::c_int;
 }
 pub type __darwin_size_t = usize;
 pub type size_t = __darwin_size_t;
@@ -157,8 +116,7 @@ pub struct spc_arg {
     pub base: *const ::core::ffi::c_char,
     pub command: *const ::core::ffi::c_char,
 }
-pub type spc_handler_fn_ptr =
-    Option<unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int>;
+pub type spc_handler_fn_ptr = Option<unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int>;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct spc_handler {
@@ -201,25 +159,19 @@ unsafe extern "C-unwind" fn mfree(mut ptr: *mut ::core::ffi::c_void) -> *mut ::c
     return NULL;
 }
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
     return false_0 != 0;
 }
 pub const INFO_HAS_WIDTH: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
-pub const INFO_HAS_HEIGHT: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
+pub const INFO_HAS_HEIGHT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
 pub const ANCHOR_TYPE_HREF: ::core::ffi::c_int = 0;
 pub const ANCHOR_TYPE_NAME: ::core::ffi::c_int = 1;
 
 unsafe extern "C-unwind" fn parse_key_val(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
-    mut kp: *mut *mut ::core::ffi::c_char,
+    mut pp: *mut *const ::core::ffi::c_char, mut endptr: *const ::core::ffi::c_char, mut kp: *mut *mut ::core::ffi::c_char,
     mut vp: *mut *mut ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
     let mut q: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
@@ -251,14 +203,9 @@ unsafe extern "C-unwind" fn parse_key_val(
         *kp = *vp;
         return -(1 as ::core::ffi::c_int);
     }
-    k = new(((n + 1 as ::core::ffi::c_int) as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
-    memcpy(
-        k as *mut ::core::ffi::c_void,
-        q as *const ::core::ffi::c_void,
-        n as size_t,
-    );
+    k = new(((n + 1 as ::core::ffi::c_int) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+        as *mut ::core::ffi::c_char;
+    memcpy(k as *mut ::core::ffi::c_void, q as *const ::core::ffi::c_void, n as size_t);
     *k.offset(n as isize) = '\0' as i32 as ::core::ffi::c_char;
     if p.offset(2 as ::core::ffi::c_int as isize) >= endptr
         || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '=' as i32
@@ -280,14 +227,10 @@ unsafe extern "C-unwind" fn parse_key_val(
         if p == endptr || *p as ::core::ffi::c_int != qchr as ::core::ffi::c_int {
             error = -(1 as ::core::ffi::c_int);
         } else {
-            v = new(((n + 1 as ::core::ffi::c_int) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t) as *mut ::core::ffi::c_char;
-            memcpy(
-                v as *mut ::core::ffi::c_void,
-                q as *const ::core::ffi::c_void,
-                n as size_t,
-            );
+            v = new(
+                ((n + 1 as ::core::ffi::c_int) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t,
+            ) as *mut ::core::ffi::c_char;
+            memcpy(v as *mut ::core::ffi::c_void, q as *const ::core::ffi::c_void, n as size_t);
             *v.offset(n as isize) = '\0' as i32 as ::core::ffi::c_char;
             p = p.offset(1);
         }
@@ -302,10 +245,7 @@ pub const HTML_TAG_TYPE_EMPTY: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const HTML_TAG_TYPE_OPEN: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const HTML_TAG_TYPE_CLOSE: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
 unsafe extern "C-unwind" fn read_html_tag(
-    mut name: *mut ::core::ffi::c_char,
-    mut attr: *mut pdf_obj,
-    mut type_0: *mut ::core::ffi::c_int,
-    mut pp: *mut *const ::core::ffi::c_char,
+    mut name: *mut ::core::ffi::c_char, mut attr: *mut pdf_obj, mut type_0: *mut ::core::ffi::c_int, mut pp: *mut *const ::core::ffi::c_char,
     mut endptr: *const ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
     let mut p: *const ::core::ffi::c_char = *pp;
@@ -353,11 +293,7 @@ unsafe extern "C-unwind" fn read_html_tag(
     while p < endptr && isspace(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0 {
         p = p.offset(1);
     }
-    while p < endptr
-        && error == 0
-        && *p as ::core::ffi::c_int != '/' as i32
-        && *p as ::core::ffi::c_int != '>' as i32
-    {
+    while p < endptr && error == 0 && *p as ::core::ffi::c_int != '/' as i32 && *p as ::core::ffi::c_int != '>' as i32 {
         let mut kp: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
         let mut vp: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
         error = parse_key_val(&raw mut p, endptr, &raw mut kp, &raw mut vp);
@@ -365,11 +301,8 @@ unsafe extern "C-unwind" fn read_html_tag(
             if !kp.is_null() {
                 let mut _p: *mut ::core::ffi::c_char = kp;
                 while *_p as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
-                    if *_p as ::core::ffi::c_int >= 'A' as i32
-                        && *_p as ::core::ffi::c_int <= 'Z' as i32
-                    {
-                        *_p = (*_p as ::core::ffi::c_int - 'A' as i32 + 'a' as i32)
-                            as ::core::ffi::c_char;
+                    if *_p as ::core::ffi::c_int >= 'A' as i32 && *_p as ::core::ffi::c_int <= 'Z' as i32 {
+                        *_p = (*_p as ::core::ffi::c_int - 'A' as i32 + 'a' as i32) as ::core::ffi::c_char;
                     }
                     _p = _p.offset(1);
                 }
@@ -377,10 +310,7 @@ unsafe extern "C-unwind" fn read_html_tag(
             pdf_add_dict(
                 attr,
                 pdf_new_name(kp),
-                pdf_new_string(
-                    vp as *const ::core::ffi::c_void,
-                    strlen(vp).wrapping_add(1 as size_t),
-                ),
+                pdf_new_string(vp as *const ::core::ffi::c_void, strlen(vp).wrapping_add(1 as size_t)),
             );
             free(kp as *mut ::core::ffi::c_void);
             free(vp as *mut ::core::ffi::c_void);
@@ -408,11 +338,8 @@ unsafe extern "C-unwind" fn read_html_tag(
     if !name.is_null() {
         let mut _p_0: *mut ::core::ffi::c_char = name;
         while *_p_0 as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
-            if *_p_0 as ::core::ffi::c_int >= 'A' as i32
-                && *_p_0 as ::core::ffi::c_int <= 'Z' as i32
-            {
-                *_p_0 =
-                    (*_p_0 as ::core::ffi::c_int - 'A' as i32 + 'a' as i32) as ::core::ffi::c_char;
+            if *_p_0 as ::core::ffi::c_int >= 'A' as i32 && *_p_0 as ::core::ffi::c_int <= 'Z' as i32 {
+                *_p_0 = (*_p_0 as ::core::ffi::c_int - 'A' as i32 + 'a' as i32) as ::core::ffi::c_char;
             }
             _p_0 = _p_0.offset(1);
         }
@@ -420,19 +347,14 @@ unsafe extern "C-unwind" fn read_html_tag(
     *pp = p;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_html__init(
-    mut dp: *mut ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_html__init(mut dp: *mut ::core::ffi::c_void) -> ::core::ffi::c_int {
     let mut sd: *mut spc_html_ = dp as *mut spc_html_;
     (*sd).link_dict = ::core::ptr::null_mut::<pdf_obj>();
     (*sd).baseurl = ::core::ptr::null_mut::<::core::ffi::c_char>();
     (*sd).pending_type = -(1 as ::core::ffi::c_int);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_html__clean(
-    mut spe: *mut spc_env,
-    mut dp: *mut ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_html__clean(mut spe: *mut spc_env, mut dp: *mut ::core::ffi::c_void) -> ::core::ffi::c_int {
     let mut sd: *mut spc_html_ = dp as *mut spc_html_;
     free((*sd).baseurl as *mut ::core::ffi::c_void);
     if (*sd).pending_type >= 0 as ::core::ffi::c_int || !(*sd).link_dict.is_null() {
@@ -444,54 +366,34 @@ unsafe extern "C-unwind" fn spc_handler_html__clean(
     (*sd).link_dict = ::core::ptr::null_mut::<pdf_obj>();
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_html__bophook(
-    mut spe: *mut spc_env,
-    mut dp: *mut ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_html__bophook(mut spe: *mut spc_env, mut dp: *mut ::core::ffi::c_void) -> ::core::ffi::c_int {
     let mut sd: *mut spc_html_ = dp as *mut spc_html_;
     if (*sd).pending_type >= 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"...html anchor continues from previous page processed...\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"...html anchor continues from previous page processed...\0" as *const u8 as *const ::core::ffi::c_char);
     }
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_html__eophook(
-    mut spe: *mut spc_env,
-    mut dp: *mut ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_html__eophook(mut spe: *mut spc_env, mut dp: *mut ::core::ffi::c_void) -> ::core::ffi::c_int {
     let mut sd: *mut spc_html_ = dp as *mut spc_html_;
     if (*sd).pending_type >= 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Unclosed html anchor at end-of-page!\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Unclosed html anchor at end-of-page!\0" as *const u8 as *const ::core::ffi::c_char);
     }
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn fqurl(
-    mut baseurl: *const ::core::ffi::c_char,
-    mut name: *const ::core::ffi::c_char,
-) -> *mut ::core::ffi::c_char {
+unsafe extern "C-unwind" fn fqurl(mut baseurl: *const ::core::ffi::c_char, mut name: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char {
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     len = strlen(name) as ::core::ffi::c_int;
     if !baseurl.is_null() {
-        len = (len as size_t).wrapping_add(strlen(baseurl).wrapping_add(1 as size_t))
-            as ::core::ffi::c_int as ::core::ffi::c_int;
+        len = (len as size_t).wrapping_add(strlen(baseurl).wrapping_add(1 as size_t)) as ::core::ffi::c_int as ::core::ffi::c_int;
     }
-    q = new(((len + 1 as ::core::ffi::c_int) as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
+    q = new(((len + 1 as ::core::ffi::c_int) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+        as *mut ::core::ffi::c_char;
     *q = '\0' as i32 as ::core::ffi::c_char;
-    if !baseurl.is_null()
-        && *baseurl.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != 0
-    {
+    if !baseurl.is_null() && *baseurl.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != 0 {
         let mut p: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
         strcpy(q, baseurl);
-        p = q
-            .offset(strlen(q) as isize)
-            .offset(-(1 as ::core::ffi::c_int as isize));
+        p = q.offset(strlen(q) as isize).offset(-(1 as ::core::ffi::c_int as isize));
         if *p as ::core::ffi::c_int == '/' as i32 {
             *p = '\0' as i32 as ::core::ffi::c_char;
         }
@@ -505,17 +407,12 @@ unsafe extern "C-unwind" fn fqurl(
     return q;
 }
 unsafe extern "C-unwind" fn html_open_link(
-    mut spe: *mut spc_env,
-    mut name: *const ::core::ffi::c_char,
-    mut sd: *mut spc_html_,
+    mut spe: *mut spc_env, mut name: *const ::core::ffi::c_char, mut sd: *mut spc_html_,
 ) -> ::core::ffi::c_int {
     let mut color: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut url: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     if name.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"name\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"name\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if !(*sd).link_dict.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -540,11 +437,7 @@ unsafe extern "C-unwind" fn html_open_link(
     pdf_add_array(color, pdf_new_number(0.0f64));
     pdf_add_array(color, pdf_new_number(0.0f64));
     pdf_add_array(color, pdf_new_number(1.0f64));
-    pdf_add_dict(
-        (*sd).link_dict,
-        pdf_new_name(b"C\0" as *const u8 as *const ::core::ffi::c_char),
-        color,
-    );
+    pdf_add_dict((*sd).link_dict, pdf_new_name(b"C\0" as *const u8 as *const ::core::ffi::c_char), color);
     url = fqurl((*sd).baseurl, name);
     if *url.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '#' as i32 {
         pdf_add_dict(
@@ -585,9 +478,7 @@ unsafe extern "C-unwind" fn html_open_link(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn html_open_dest(
-    mut spe: *mut spc_env,
-    mut name: *const ::core::ffi::c_char,
-    mut sd: *mut spc_html_,
+    mut spe: *mut spc_env, mut name: *const ::core::ffi::c_char, mut sd: *mut spc_html_,
 ) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = 0;
     let mut array: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -598,18 +489,12 @@ unsafe extern "C-unwind" fn html_open_dest(
     pdf_dev_transform(&raw mut cp, ::core::ptr::null::<pdf_tmatrix>());
     page_ref = pdf_doc_get_reference(b"@THISPAGE\0" as *const u8 as *const ::core::ffi::c_char);
     if page_ref.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"page_ref\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"page_ref\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     array = pdf_new_array();
     pdf_add_array(array, page_ref);
-    pdf_add_array(
-        array,
-        pdf_new_name(b"XYZ\0" as *const u8 as *const ::core::ffi::c_char),
-    );
+    pdf_add_array(array, pdf_new_name(b"XYZ\0" as *const u8 as *const ::core::ffi::c_char));
     pdf_add_array(array, pdf_new_null());
     pdf_add_array(array, pdf_new_number(cp.y + 24.0f64));
     pdf_add_array(array, pdf_new_null());
@@ -620,19 +505,12 @@ unsafe extern "C-unwind" fn html_open_dest(
         array,
     );
     if error != 0 {
-        pdf_warning!(
-            b"Failed to add named destination: %s\0" as *const u8 as *const ::core::ffi::c_char,
-            name
-        );
+        pdf_warning!(b"Failed to add named destination: %s\0" as *const u8 as *const ::core::ffi::c_char, name);
     }
     (*sd).pending_type = ANCHOR_TYPE_NAME;
     return error;
 }
-unsafe extern "C-unwind" fn spc_html__anchor_open(
-    mut spe: *mut spc_env,
-    mut attr: *mut pdf_obj,
-    mut sd: *mut spc_html_,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_html__anchor_open(mut spe: *mut spc_env, mut attr: *mut pdf_obj, mut sd: *mut spc_html_) -> ::core::ffi::c_int {
     let mut href: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut name: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
@@ -643,36 +521,19 @@ unsafe extern "C-unwind" fn spc_html__anchor_open(
     href = pdf_lookup_dict(attr, b"href\0" as *const u8 as *const ::core::ffi::c_char);
     name = pdf_lookup_dict(attr, b"name\0" as *const u8 as *const ::core::ffi::c_char);
     if !href.is_null() && !name.is_null() {
-        pdf_warning!(
-            b"Sorry, you can't have both \"href\" and \"name\" in anchor tag...\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Sorry, you can't have both \"href\" and \"name\" in anchor tag...\0" as *const u8 as *const ::core::ffi::c_char);
         error = -(1 as ::core::ffi::c_int);
     } else if !href.is_null() {
-        error = html_open_link(
-            spe,
-            pdf_string_value(href) as *const ::core::ffi::c_char,
-            sd,
-        );
+        error = html_open_link(spe, pdf_string_value(href) as *const ::core::ffi::c_char, sd);
     } else if !name.is_null() {
-        error = html_open_dest(
-            spe,
-            pdf_string_value(name) as *const ::core::ffi::c_char,
-            sd,
-        );
+        error = html_open_dest(spe, pdf_string_value(name) as *const ::core::ffi::c_char, sd);
     } else {
-        pdf_warning!(
-            b"You should have \"href\" or \"name\" in anchor tag!\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"You should have \"href\" or \"name\" in anchor tag!\0" as *const u8 as *const ::core::ffi::c_char);
         error = -(1 as ::core::ffi::c_int);
     }
     return error;
 }
-unsafe extern "C-unwind" fn spc_html__anchor_close(
-    mut spe: *mut spc_env,
-    mut sd: *mut spc_html_,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_html__anchor_close(mut spe: *mut spc_env, mut sd: *mut spc_html_) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     match (*sd).pending_type {
         ANCHOR_TYPE_HREF => {
@@ -682,10 +543,7 @@ unsafe extern "C-unwind" fn spc_html__anchor_close(
                 (*sd).link_dict = ::core::ptr::null_mut::<pdf_obj>();
                 (*sd).pending_type = -(1 as ::core::ffi::c_int);
             } else {
-                pdf_warning!(
-                    b"Closing html anchor (link) without starting!\0" as *const u8
-                        as *const ::core::ffi::c_char
-                );
+                pdf_warning!(b"Closing html anchor (link) without starting!\0" as *const u8 as *const ::core::ffi::c_char);
                 error = -(1 as ::core::ffi::c_int);
             }
         }
@@ -693,27 +551,18 @@ unsafe extern "C-unwind" fn spc_html__anchor_close(
             (*sd).pending_type = -(1 as ::core::ffi::c_int);
         }
         _ => {
-            pdf_warning!(
-                b"No corresponding opening tag for html anchor.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"No corresponding opening tag for html anchor.\0" as *const u8 as *const ::core::ffi::c_char);
             error = -(1 as ::core::ffi::c_int);
         }
     }
     return error;
 }
-unsafe extern "C-unwind" fn spc_html__base_empty(
-    mut spe: *mut spc_env,
-    mut attr: *mut pdf_obj,
-    mut sd: *mut spc_html_,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_html__base_empty(mut spe: *mut spc_env, mut attr: *mut pdf_obj, mut sd: *mut spc_html_) -> ::core::ffi::c_int {
     let mut href: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut vp: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     href = pdf_lookup_dict(attr, b"href\0" as *const u8 as *const ::core::ffi::c_char);
     if href.is_null() {
-        pdf_warning!(
-            b"\"href\" not found for \"base\" tag!\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"\"href\" not found for \"base\" tag!\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     vp = pdf_string_value(href) as *mut ::core::ffi::c_char;
@@ -725,9 +574,9 @@ unsafe extern "C-unwind" fn spc_html__base_empty(
         );
         free((*sd).baseurl as *mut ::core::ffi::c_void);
     }
-    (*sd).baseurl = new((strlen(vp).wrapping_add(1 as size_t) as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
+    (*sd).baseurl = new(
+        (strlen(vp).wrapping_add(1 as size_t) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t
+    ) as *mut ::core::ffi::c_char;
     strcpy((*sd).baseurl, vp);
     return 0 as ::core::ffi::c_int;
 }
@@ -736,11 +585,7 @@ unsafe extern "C-unwind" fn atopt(input: *const ::core::ffi::c_char) -> f64 {
     let end = input.add(strlen(input));
     let number = parse_float_decimal(&mut cursor, end);
     if number.is_null() {
-        pdf_warning!(
-            c"Invalid length value: %s (%c)".as_ptr(),
-            input,
-            *cursor as ::core::ffi::c_int
-        );
+        pdf_warning!(c"Invalid length value: %s (%c)".as_ptr(), input, *cursor as ::core::ffi::c_int);
         return 0.0;
     }
     let value = atof(number);
@@ -769,17 +614,10 @@ unsafe extern "C-unwind" fn create_xgstate(mut a: ::core::ffi::c_double) -> *mut
         pdf_new_name(b"Type\0" as *const u8 as *const ::core::ffi::c_char),
         pdf_new_name(b"ExtGState\0" as *const u8 as *const ::core::ffi::c_char),
     );
-    pdf_add_dict(
-        dict,
-        pdf_new_name(b"ca\0" as *const u8 as *const ::core::ffi::c_char),
-        pdf_new_number(a),
-    );
+    pdf_add_dict(dict, pdf_new_name(b"ca\0" as *const u8 as *const ::core::ffi::c_char), pdf_new_number(a));
     return dict;
 }
-unsafe extern "C-unwind" fn spc_html__img_empty(
-    mut spe: *mut spc_env,
-    mut attr: *mut pdf_obj,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_html__img_empty(mut spe: *mut spc_env, mut attr: *mut pdf_obj) -> ::core::ffi::c_int {
     let mut src: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut obj: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut ti: transform_info = transform_info {
@@ -810,16 +648,10 @@ unsafe extern "C-unwind" fn spc_html__img_empty(
     let mut id: ::core::ffi::c_int = 0;
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut alpha: ::core::ffi::c_double = 1.0f64;
-    pdf_warning!(
-        b"html \"img\" tag found (not completed, plese don't use!).\0" as *const u8
-            as *const ::core::ffi::c_char
-    );
+    pdf_warning!(b"html \"img\" tag found (not completed, plese don't use!).\0" as *const u8 as *const ::core::ffi::c_char);
     src = pdf_lookup_dict(attr, b"src\0" as *const u8 as *const ::core::ffi::c_char);
     if src.is_null() {
-        pdf_warning!(
-            b"\"src\" attribute not found for \"img\" tag!\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"\"src\" attribute not found for \"img\" tag!\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     transform_info_clear(&raw mut ti);
@@ -833,10 +665,7 @@ unsafe extern "C-unwind" fn spc_html__img_empty(
         ti.height = atopt(pdf_string_value(obj) as *const ::core::ffi::c_char);
         ti.flags |= INFO_HAS_HEIGHT;
     }
-    obj = pdf_lookup_dict(
-        attr,
-        b"svg:opacity\0" as *const u8 as *const ::core::ffi::c_char,
-    );
+    obj = pdf_lookup_dict(attr, b"svg:opacity\0" as *const u8 as *const ::core::ffi::c_char);
     if !obj.is_null() {
         alpha = atof(pdf_string_value(obj) as *const ::core::ffi::c_char);
         if alpha < 0.0f64 || alpha > 1.0f64 {
@@ -847,10 +676,7 @@ unsafe extern "C-unwind" fn spc_html__img_empty(
             alpha = 1.0f64;
         }
     }
-    obj = pdf_lookup_dict(
-        attr,
-        b"svg:transform\0" as *const u8 as *const ::core::ffi::c_char,
-    );
+    obj = pdf_lookup_dict(attr, b"svg:transform\0" as *const u8 as *const ::core::ffi::c_char);
     if !obj.is_null() {
         let mut p: *const ::core::ffi::c_char = pdf_string_value(obj) as *const ::core::ffi::c_char;
         let mut N: pdf_tmatrix = pdf_tmatrix {
@@ -861,9 +687,7 @@ unsafe extern "C-unwind" fn spc_html__img_empty(
             e: 0.,
             f: 0.,
         };
-        while *p as ::core::ffi::c_int != 0
-            && isspace(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0
-        {
+        while *p as ::core::ffi::c_int != 0 && isspace(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0 {
             p = p.offset(1);
         }
         while *p as ::core::ffi::c_int != 0 && error == 0 {
@@ -890,16 +714,12 @@ unsafe extern "C-unwind" fn spc_html__img_empty(
                 ti.matrix.d = N.c * _tmp_b + N.d * _tmp_d;
                 ti.matrix.e += N.e * _tmp_a + N.f * _tmp_c;
                 ti.matrix.f += N.e * _tmp_b + N.f * _tmp_d;
-                while *p as ::core::ffi::c_int != 0
-                    && isspace(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0
-                {
+                while *p as ::core::ffi::c_int != 0 && isspace(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0 {
                     p = p.offset(1);
                 }
                 if *p as ::core::ffi::c_int == ',' as i32 {
                     p = p.offset(1);
-                    while *p as ::core::ffi::c_int != 0
-                        && isspace(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0
-                    {
+                    while *p as ::core::ffi::c_int != 0 && isspace(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0 {
                         p = p.offset(1);
                     }
                 }
@@ -907,9 +727,7 @@ unsafe extern "C-unwind" fn spc_html__img_empty(
         }
     }
     if error != 0 {
-        pdf_warning!(
-            b"Error in html \"img\" tag attribute.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Error in html \"img\" tag attribute.\0" as *const u8 as *const ::core::ffi::c_char);
         return error;
     }
     id = pdf_ximage_load_image(
@@ -936,10 +754,7 @@ unsafe extern "C-unwind" fn spc_html__img_empty(
     }
     return error;
 }
-unsafe extern "C-unwind" fn spc_handler_html_default(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_html_default(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut sd: *mut spc_html_ = &raw mut (*__pdf_state)._html_state;
     let mut name: [::core::ffi::c_char; 128] = [0; 128];
@@ -973,9 +788,7 @@ unsafe extern "C-unwind" fn spc_handler_html_default(
                 error = spc_html__anchor_close(spe, sd);
             }
             _ => {
-                pdf_warning!(
-                    b"Empty html anchor tag???\0" as *const u8 as *const ::core::ffi::c_char
-                );
+                pdf_warning!(b"Empty html anchor tag???\0" as *const u8 as *const ::core::ffi::c_char);
                 error = -(1 as ::core::ffi::c_int);
             }
         }
@@ -1002,19 +815,14 @@ unsafe extern "C-unwind" fn spc_handler_html_default(
     }
     pdf_release_obj(attr);
     while (*ap).curptr < (*ap).endptr
-        && isspace(
-            *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_uchar
-                as ::core::ffi::c_int,
-        ) != 0
+        && isspace(*(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0
     {
         (*ap).curptr = (*ap).curptr.offset(1);
     }
     return error;
 }
 unsafe extern "C-unwind" fn cvt_a_to_tmatrix(
-    mut M: *mut pdf_tmatrix,
-    mut ptr: *const ::core::ffi::c_char,
-    mut nextptr: *mut *const ::core::ffi::c_char,
+    mut M: *mut pdf_tmatrix, mut ptr: *const ::core::ffi::c_char, mut nextptr: *mut *const ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut p: *const ::core::ffi::c_char = ptr;
@@ -1030,9 +838,7 @@ unsafe extern "C-unwind" fn cvt_a_to_tmatrix(
         ::core::ptr::null::<::core::ffi::c_char>(),
     ];
     let mut k: ::core::ffi::c_int = 0;
-    while *p as ::core::ffi::c_int != 0
-        && isspace(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0
-    {
+    while *p as ::core::ffi::c_int != 0 && isspace(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0 {
         p = p.offset(1);
     }
     q = parse_c_ident(&raw mut p, p.offset(strlen(p) as isize));
@@ -1044,28 +850,18 @@ unsafe extern "C-unwind" fn cvt_a_to_tmatrix(
         k += 1;
     }
     free(q as *mut ::core::ffi::c_void);
-    while *p as ::core::ffi::c_int != 0
-        && isspace(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0
-    {
+    while *p as ::core::ffi::c_int != 0 && isspace(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0 {
         p = p.offset(1);
     }
-    if *p as ::core::ffi::c_int != '(' as i32
-        || *p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-            == 0 as ::core::ffi::c_int
-    {
+    if *p as ::core::ffi::c_int != '(' as i32 || *p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
         return -(1 as ::core::ffi::c_int);
     }
     p = p.offset(1);
-    while *p as ::core::ffi::c_int != 0
-        && isspace(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0
-    {
+    while *p as ::core::ffi::c_int != 0 && isspace(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0 {
         p = p.offset(1);
     }
     n = 0 as ::core::ffi::c_int;
-    while n < 6 as ::core::ffi::c_int
-        && *p as ::core::ffi::c_int != 0
-        && *p as ::core::ffi::c_int != ')' as i32
-    {
+    while n < 6 as ::core::ffi::c_int && *p as ::core::ffi::c_int != 0 && *p as ::core::ffi::c_int != ')' as i32 {
         q = parse_float_decimal(&raw mut p, p.offset(strlen(p) as isize));
         if q.is_null() {
             break;
@@ -1074,16 +870,12 @@ unsafe extern "C-unwind" fn cvt_a_to_tmatrix(
         if *p as ::core::ffi::c_int == ',' as i32 {
             p = p.offset(1);
         }
-        while *p as ::core::ffi::c_int != 0
-            && isspace(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0
-        {
+        while *p as ::core::ffi::c_int != 0 && isspace(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0 {
             p = p.offset(1);
         }
         if *p as ::core::ffi::c_int == ',' as i32 {
             p = p.offset(1);
-            while *p as ::core::ffi::c_int != 0
-                && isspace(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0
-            {
+            while *p as ::core::ffi::c_int != 0 && isspace(*p as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0 {
                 p = p.offset(1);
             }
         }
@@ -1196,34 +988,22 @@ pub unsafe extern "C-unwind" fn spc_html_at_begin_document() -> ::core::ffi::c_i
 pub unsafe extern "C-unwind" fn spc_html_at_begin_page() -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut sd: *mut spc_html_ = &raw mut (*__pdf_state)._html_state;
-    return spc_handler_html__bophook(
-        ::core::ptr::null_mut::<spc_env>(),
-        sd as *mut ::core::ffi::c_void,
-    );
+    return spc_handler_html__bophook(::core::ptr::null_mut::<spc_env>(), sd as *mut ::core::ffi::c_void);
 }
 #[unsafe(export_name = "__pdf_impl_spc_html_at_end_page")]
 pub unsafe extern "C-unwind" fn spc_html_at_end_page() -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut sd: *mut spc_html_ = &raw mut (*__pdf_state)._html_state;
-    return spc_handler_html__eophook(
-        ::core::ptr::null_mut::<spc_env>(),
-        sd as *mut ::core::ffi::c_void,
-    );
+    return spc_handler_html__eophook(::core::ptr::null_mut::<spc_env>(), sd as *mut ::core::ffi::c_void);
 }
 #[unsafe(export_name = "__pdf_impl_spc_html_at_end_document")]
 pub unsafe extern "C-unwind" fn spc_html_at_end_document() -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut sd: *mut spc_html_ = &raw mut (*__pdf_state)._html_state;
-    return spc_handler_html__clean(
-        ::core::ptr::null_mut::<spc_env>(),
-        sd as *mut ::core::ffi::c_void,
-    );
+    return spc_handler_html__clean(::core::ptr::null_mut::<spc_env>(), sd as *mut ::core::ffi::c_void);
 }
 #[unsafe(export_name = "__pdf_impl_spc_html_check_special")]
-pub unsafe extern "C-unwind" fn spc_html_check_special(
-    mut buffer: *const ::core::ffi::c_char,
-    mut size: ::core::ffi::c_int,
-) -> bool {
+pub unsafe extern "C-unwind" fn spc_html_check_special(mut buffer: *const ::core::ffi::c_char, mut size: ::core::ffi::c_int) -> bool {
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut endptr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     p = buffer;
@@ -1244,15 +1024,8 @@ pub unsafe extern "C-unwind" fn spc_html_check_special(
     return false_0 != 0;
 }
 #[unsafe(export_name = "__pdf_impl_spc_html_setup_handler")]
-pub unsafe extern "C-unwind" fn spc_html_setup_handler(
-    mut sph: *mut spc_handler,
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
-    if !(!sph.is_null() && !spe.is_null() && !ap.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+pub unsafe extern "C-unwind" fn spc_html_setup_handler(mut sph: *mut spc_handler, mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
+    if !(!sph.is_null() && !spe.is_null() && !ap.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"sph && spe && ap\0" as *const u8 as *const ::core::ffi::c_char
@@ -1260,10 +1033,7 @@ pub unsafe extern "C-unwind" fn spc_html_setup_handler(
     } else {
     };
     while (*ap).curptr < (*ap).endptr
-        && isspace(
-            *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_uchar
-                as ::core::ffi::c_int,
-        ) != 0
+        && isspace(*(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0
     {
         (*ap).curptr = (*ap).curptr.offset(1);
     }
@@ -1281,18 +1051,13 @@ pub unsafe extern "C-unwind" fn spc_html_setup_handler(
     }
     (*ap).command = b"\0" as *const u8 as *const ::core::ffi::c_char;
     (*sph).key = b"html:\0" as *const u8 as *const ::core::ffi::c_char;
-    (*sph).exec = Some(
-        spc_handler_html_default
-            as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-    ) as spc_handler_fn_ptr;
+    (*sph).exec =
+        Some(spc_handler_html_default as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int) as spc_handler_fn_ptr;
     (*ap).curptr = (*ap)
         .curptr
         .offset(strlen(b"html:\0" as *const u8 as *const ::core::ffi::c_char) as isize);
     while (*ap).curptr < (*ap).endptr
-        && isspace(
-            *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_uchar
-                as ::core::ffi::c_int,
-        ) != 0
+        && isspace(*(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0
     {
         (*ap).curptr = (*ap).curptr.offset(1);
     }
@@ -1301,16 +1066,8 @@ pub unsafe extern "C-unwind" fn spc_html_setup_handler(
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn memcpy(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
+    fn memcpy(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __n: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -1318,9 +1075,7 @@ pub struct pdf_obj {
     _private: [u8; 0],
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_spc_html_at_begin_document(
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_spc_html_at_begin_document(_result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_html_at_begin_document() }) {
         Ok(value) => {
             unsafe {
@@ -1332,9 +1087,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_html_at_begin_document(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_spc_html_at_begin_page(
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_spc_html_at_begin_page(_result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_html_at_begin_page() }) {
         Ok(value) => {
             unsafe {
@@ -1358,9 +1111,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_html_at_end_page(_result: *mut ::core::
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_spc_html_at_end_document(
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_spc_html_at_end_document(_result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_html_at_end_document() }) {
         Ok(value) => {
             unsafe {
@@ -1373,9 +1124,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_html_at_end_document(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_html_check_special(
-    mut buffer: *const ::core::ffi::c_char,
-    mut size: ::core::ffi::c_int,
-    _result: *mut bool,
+    mut buffer: *const ::core::ffi::c_char, mut size: ::core::ffi::c_int, _result: *mut bool,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_html_check_special(buffer, size) }) {
         Ok(value) => {
@@ -1389,10 +1138,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_html_check_special(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_html_setup_handler(
-    mut sph: *mut spc_handler,
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-    _result: *mut ::core::ffi::c_int,
+    mut sph: *mut spc_handler, mut spe: *mut spc_env, mut ap: *mut spc_arg, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_html_setup_handler(sph, spe, ap) }) {
         Ok(value) => {
@@ -1426,10 +1172,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_spc_html
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_spc_html.pointer }
 }

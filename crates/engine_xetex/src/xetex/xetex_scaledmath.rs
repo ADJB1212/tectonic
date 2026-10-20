@@ -56,12 +56,7 @@ pub unsafe extern "C" fn half(x: i32) -> i32 {
 }
 
 #[unsafe(export_name = "mult_and_add")]
-pub unsafe extern "C" fn mult_and_add(
-    mut n: i32,
-    mut x: scaled_t,
-    y: scaled_t,
-    max_answer: scaled_t,
-) -> scaled_t {
+pub unsafe extern "C" fn mult_and_add(mut n: i32, mut x: scaled_t, y: scaled_t, max_answer: scaled_t) -> scaled_t {
     unsafe {
         if n < 0 {
             x = -x;

@@ -144,16 +144,10 @@ impl PersistentConfig {
         }
 
         if self.default_bundles.len() != 1 {
-            return Err(Error::msg(
-                "exactly one default_bundle item must be specified (for now)",
-            ));
+            return Err(Error::msg("exactly one default_bundle item must be specified (for now)"));
         }
 
-        Ok(
-            detect_bundle(self.default_bundles[0].url.clone(), only_cached, None)
-                .unwrap()
-                .unwrap(),
-        )
+        Ok(detect_bundle(self.default_bundles[0].url.clone(), only_cached, None).unwrap().unwrap())
     }
 
     /// Get the cache directory to use for format files

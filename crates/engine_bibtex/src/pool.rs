@@ -65,8 +65,7 @@ impl PoolCursor<'_> {
 
     pub fn append_substr(&mut self, str: StrNumber, range: Range<usize>) {
         let start = self.pool.str_start(str);
-        self.pool
-            .copy_range_raw(start + range.start..start + range.end, self.end);
+        self.pool.copy_range_raw(start + range.start..start + range.end, self.end);
     }
 
     pub fn insert_str(&mut self, str: StrNumber, offset: usize) {
@@ -124,8 +123,7 @@ impl StringPool {
     }
 
     pub fn get_str(&self, s: StrNumber) -> &[u8] {
-        self.try_get_str(s)
-            .unwrap_or_else(|| panic!("String number {s} doesn't exist"))
+        self.try_get_str(s).unwrap_or_else(|| panic!("String number {s} doesn't exist"))
     }
 
     pub fn add_string(&mut self, str: &[u8]) -> StrNumber {

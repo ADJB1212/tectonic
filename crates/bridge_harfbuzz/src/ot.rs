@@ -73,15 +73,7 @@ impl<'a> Table<'a> {
         let tag = self.1.as_tag();
 
         // SAFETY: Internal pointer guaranteed valid
-        let len = unsafe {
-            sys::hb_ot_layout_table_get_script_tags(
-                self.0.as_ptr(),
-                tag.0,
-                0,
-                ptr::null_mut(),
-                ptr::null_mut(),
-            )
-        };
+        let len = unsafe { sys::hb_ot_layout_table_get_script_tags(self.0.as_ptr(), tag.0, 0, ptr::null_mut(), ptr::null_mut()) };
         len as usize
     }
 
@@ -91,14 +83,7 @@ impl<'a> Table<'a> {
 
         let mut pos = 0;
         // SAFETY: Internal pointer guaranteed valid
-        let found = unsafe {
-            sys::hb_ot_layout_table_find_script(
-                self.0.as_ptr(),
-                tag.to_raw(),
-                script.to_raw(),
-                &mut pos,
-            )
-        };
+        let found = unsafe { sys::hb_ot_layout_table_find_script(self.0.as_ptr(), tag.to_raw(), script.to_raw(), &mut pos) };
         if found != 0 {
             Some(Script {
                 face: self.0,
@@ -313,10 +298,7 @@ mod tests {
                 let script = table.script(0).unwrap();
                 assert_eq!(script.tag(), Tag::from_str("DFLT"));
                 assert_eq!(script.language_tags_len(), 0);
-                assert_eq!(
-                    script.script,
-                    table.find_script(script.tag()).unwrap().script
-                );
+                assert_eq!(script.script, table.find_script(script.tag()).unwrap().script);
 
                 script.swap_table().unwrap();
 
@@ -324,10 +306,7 @@ mod tests {
 
                 assert_eq!(script2.tag(), Tag::from_str("cyrl"));
                 assert_eq!(script2.language_tags_len(), 0);
-                assert_eq!(
-                    script2.script,
-                    table.find_script(script2.tag()).unwrap().script
-                );
+                assert_eq!(script2.script, table.find_script(script2.tag()).unwrap().script);
 
                 script2.swap_table().unwrap();
             }

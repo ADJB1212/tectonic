@@ -1,7 +1,4 @@
-use super::{
-    FontInfo, FontManager, FontManagerBackend, FontMaps, NameCollection,
-    base_get_op_size_rec_and_style_flags,
-};
+use super::{FontInfo, FontManager, FontManagerBackend, FontMaps, NameCollection, base_get_op_size_rec_and_style_flags};
 use crate::c_api::PlatformFontRef;
 use enrede::Str;
 use enrede::encoding::{MacRoman, Utf8, Utf16BE};
@@ -108,10 +105,7 @@ impl FontManagerBackend for FcBackend {
         }
 
         let bytes = name.to_bytes();
-        let split = bytes
-            .iter()
-            .position(|c| *c == b'-')
-            .map(|index| (&bytes[..index], &bytes[index + 1..]));
+        let split = bytes.iter().position(|c| *c == b'-').map(|index| (&bytes[..index], &bytes[index + 1..]));
 
         let (fam_name, hyph) = match split {
             Some((fam, _)) => (fam, fam.len()),
@@ -223,28 +217,18 @@ impl FontManagerBackend for FcBackend {
                 };
 
                 match name_rec.name_id {
-                    FONT_FULL_NAME
-                    | FONT_FAMILY_NAME
-                    | FONT_STYLE_NAME
-                    | PREFERRED_FAMILY_NAME
-                    | PREFERRED_SUBFAMILY_NAME => {
+                    FONT_FULL_NAME | FONT_FAMILY_NAME | FONT_STYLE_NAME | PREFERRED_FAMILY_NAME | PREFERRED_SUBFAMILY_NAME => {
                         let mut preferred_name = false;
                         if name_rec.platform_id == ft::PlatformId::MACINTOSH
                             && name_rec.encoding_id == ft::EncodingId::MAC_ROMAN
                             && name_rec.language_id == ft::LanguageId::MAC_ENGLISH
                         {
                             let str = Str::<MacRoman>::from_bytes_infallible(name_rec.string);
-                            utf8_name = Some(
-                                enrede::CString::try_from(str.recode::<Utf8>().unwrap()).unwrap(),
-                            );
+                            utf8_name = Some(enrede::CString::try_from(str.recode::<Utf8>().unwrap()).unwrap());
                             preferred_name = true;
-                        } else if name_rec.platform_id == ft::PlatformId::APPLE_UNICODE
-                            || name_rec.platform_id == ft::PlatformId::MICROSOFT
-                        {
+                        } else if name_rec.platform_id == ft::PlatformId::APPLE_UNICODE || name_rec.platform_id == ft::PlatformId::MICROSOFT {
                             let str = Str::<Utf16BE>::from_bytes(name_rec.string).unwrap();
-                            utf8_name = Some(
-                                enrede::CString::try_from(str.recode::<Utf8>().unwrap()).unwrap(),
-                            );
+                            utf8_name = Some(enrede::CString::try_from(str.recode::<Utf8>().unwrap()).unwrap());
                         }
 
                         if let Some(name) = utf8_name {

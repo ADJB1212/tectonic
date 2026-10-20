@@ -9,17 +9,12 @@ use crate::{
     hash,
     hash::{BstBuiltin, BstFn, HashData},
     log::{
-        brace_lvl_one_letters_complaint, braces_unbalanced_complaint,
-        bst_1print_string_size_exceeded, bst_2print_string_size_exceeded,
-        bst_cant_mess_with_entries_print, output_bbl_line, output_bbl_slice, print_a_pool_str,
-        print_confusion, print_fn_class,
+        brace_lvl_one_letters_complaint, braces_unbalanced_complaint, bst_1print_string_size_exceeded, bst_2print_string_size_exceeded,
+        bst_cant_mess_with_entries_print, output_bbl_line, output_bbl_slice, print_a_pool_str, print_confusion, print_fn_class,
     },
     other::WizOp,
     pool::{Checkpoint, MAX_PRINT_LINE, MIN_PRINT_LINE, StrNumber, StringPool},
-    scan::{
-        check_brace_level, decr_brace_level, enough_text_chars, name_scan_for_and,
-        von_name_ends_and_last_name_starts_stuff, von_token_found,
-    },
+    scan::{check_brace_level, decr_brace_level, enough_text_chars, name_scan_for_and, von_name_ends_and_last_name_starts_stuff, von_token_found},
 };
 use std::ops::{Deref, DerefMut, Index};
 
@@ -94,11 +89,7 @@ impl<'a, 'bib, 'cbs> ExecCtx<'a, 'bib, 'cbs> {
         self.lit_stack.push(val);
     }
 
-    pub(crate) fn pop_stack(
-        &mut self,
-        pool: &mut StringPool,
-        cites: &CiteInfo,
-    ) -> Result<ExecVal, BibtexError> {
+    pub(crate) fn pop_stack(&mut self, pool: &mut StringPool, cites: &CiteInfo) -> Result<ExecVal, BibtexError> {
         if let Some(pop) = self.lit_stack.pop() {
             if let ExecVal::String(str) = pop
                 && self.checkpoint.is_before(str)
@@ -131,12 +122,7 @@ impl DerefMut for ExecCtx<'_, '_, '_> {
     }
 }
 
-pub(crate) fn print_lit(
-    ctx: &mut Bibtex<'_, '_>,
-    pool: &StringPool,
-    hash: &HashData,
-    val: ExecVal,
-) -> Result<(), BibtexError> {
+pub(crate) fn print_lit(ctx: &mut Bibtex<'_, '_>, pool: &StringPool, hash: &HashData, val: ExecVal) -> Result<(), BibtexError> {
     match val {
         ExecVal::Integer(val) => {
             ctx.write_logs(&format!("{val}\n"));
@@ -161,12 +147,7 @@ pub(crate) fn print_lit(
     Ok(())
 }
 
-pub(crate) fn print_stk_lit(
-    ctx: &mut Bibtex<'_, '_>,
-    pool: &StringPool,
-    hash: &HashData,
-    val: ExecVal,
-) -> Result<(), BibtexError> {
+pub(crate) fn print_stk_lit(ctx: &mut Bibtex<'_, '_>, pool: &StringPool, hash: &HashData, val: ExecVal) -> Result<(), BibtexError> {
     match val {
         ExecVal::Integer(val) => ctx.write_logs(&format!("{val} is an integer literal")),
         ExecVal::String(str) => {
@@ -193,12 +174,7 @@ pub(crate) fn print_stk_lit(
 }
 
 pub(crate) fn print_wrong_stk_lit(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-    val: ExecVal,
-    typ2: StkType,
+    ctx: &mut ExecCtx<'_, '_, '_>, pool: &StringPool, hash: &HashData, cites: &CiteInfo, val: ExecVal, typ2: StkType,
 ) -> Result<(), BibtexError> {
     match val {
         ExecVal::Illegal => Ok(()),
@@ -220,11 +196,7 @@ pub(crate) fn print_wrong_stk_lit(
     }
 }
 
-pub(crate) fn bst_ex_warn_print(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &StringPool,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+pub(crate) fn bst_ex_warn_print(ctx: &mut ExecCtx<'_, '_, '_>, pool: &StringPool, cites: &CiteInfo) -> Result<(), BibtexError> {
     if ctx.mess_with_entries {
         ctx.write_logs(" for entry ");
         print_a_pool_str(ctx, cites.get_cite(cites.ptr()), pool)?;
@@ -236,22 +208,12 @@ pub(crate) fn bst_ex_warn_print(
     Ok(())
 }
 
-pub(crate) fn bst_ln_num_print(
-    ctx: &mut Bibtex<'_, '_>,
-    pool: &StringPool,
-) -> Result<(), BibtexError> {
-    ctx.write_logs(&format!(
-        "--line {} of file ",
-        ctx.bst.as_ref().unwrap().line
-    ));
+pub(crate) fn bst_ln_num_print(ctx: &mut Bibtex<'_, '_>, pool: &StringPool) -> Result<(), BibtexError> {
+    ctx.write_logs(&format!("--line {} of file ", ctx.bst.as_ref().unwrap().line));
     print_bst_name(ctx, pool, ctx.bst.as_ref().unwrap().name)
 }
 
-pub(crate) fn print_bst_name(
-    ctx: &mut Bibtex<'_, '_>,
-    pool: &StringPool,
-    name: StrNumber,
-) -> Result<(), BibtexError> {
+pub(crate) fn print_bst_name(ctx: &mut Bibtex<'_, '_>, pool: &StringPool, name: StrNumber) -> Result<(), BibtexError> {
     print_a_pool_str(ctx, name, pool)?;
     ctx.write_logs(".bst\n");
     Ok(())
@@ -262,12 +224,7 @@ pub fn illegal_literal_confusion(ctx: &mut Bibtex<'_, '_>) {
     print_confusion(ctx);
 }
 
-fn pop_top_and_print(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn pop_top_and_print(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     ctx.pop_stack(pool, cites).and_then(|val| {
         if let ExecVal::Illegal = val {
             ctx.write_logs("Empty literal\n");
@@ -278,12 +235,7 @@ fn pop_top_and_print(
     })
 }
 
-fn pop_whole_stack(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn pop_whole_stack(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     while !ctx.lit_stack.is_empty() {
         pop_top_and_print(ctx, pool, hash, cites)?;
     }
@@ -305,20 +257,9 @@ pub fn skip_brace_level_greater_than_one(str: &[ASCIICode], brace_level: &mut i3
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn figure_out_the_formatted_name(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    buffers: &mut GlobalBuffer,
-    pool: &StringPool,
-    cites: &CiteInfo,
-    s1: StrNumber,
-    first_start: BufPointer,
-    first_end: BufPointer,
-    last_end: BufPointer,
-    von_start: BufPointer,
-    von_end: BufPointer,
-    name_bf_ptr: &mut BufPointer,
-    name_bf_xptr: &mut BufPointer,
-    jr_end: BufPointer,
-    brace_level: &mut i32,
+    ctx: &mut ExecCtx<'_, '_, '_>, buffers: &mut GlobalBuffer, pool: &StringPool, cites: &CiteInfo, s1: StrNumber, first_start: BufPointer,
+    first_end: BufPointer, last_end: BufPointer, von_start: BufPointer, von_end: BufPointer, name_bf_ptr: &mut BufPointer,
+    name_bf_xptr: &mut BufPointer, jr_end: BufPointer, brace_level: &mut i32,
 ) -> Result<(), BibtexError> {
     let mut old_idx;
     let mut inner_brace_level = 0;
@@ -405,9 +346,7 @@ pub(crate) fn figure_out_the_formatted_name(
                     end_of_group = true;
                 } else if str[idx] == b'{' {
                     inner_brace_level += 1;
-                    idx =
-                        skip_brace_level_greater_than_one(&str[idx + 1..], &mut inner_brace_level)
-                            + idx;
+                    idx = skip_brace_level_greater_than_one(&str[idx + 1..], &mut inner_brace_level) + idx;
                     idx += 1;
                 } else {
                     idx += 1;
@@ -431,19 +370,14 @@ pub(crate) fn figure_out_the_formatted_name(
                             inner_brace_level += 1;
                             idx += 1;
                             old_idx = idx;
-                            idx = skip_brace_level_greater_than_one(
-                                &str[idx..],
-                                &mut inner_brace_level,
-                            ) + idx;
+                            idx = skip_brace_level_greater_than_one(&str[idx..], &mut inner_brace_level) + idx;
                             sp_xptr2 = idx - 1;
                         }
                         while cur_token < last_token {
                             *name_bf_ptr = buffers.name_tok(cur_token);
                             *name_bf_xptr = buffers.name_tok(cur_token + 1);
                             if double_letter {
-                                if buffers.init(BufTy::Ex) + (*name_bf_xptr - *name_bf_ptr)
-                                    > buffers.len()
-                                {
+                                if buffers.init(BufTy::Ex) + (*name_bf_xptr - *name_bf_ptr) > buffers.len() {
                                     buffers.grow_all();
                                 }
                                 let ptr = buffers.offset(BufTy::Ex, 1);
@@ -453,22 +387,12 @@ pub(crate) fn figure_out_the_formatted_name(
                                 *name_bf_ptr += len;
                             } else {
                                 while *name_bf_ptr < *name_bf_xptr {
-                                    if LexClass::of(buffers.at(BufTy::Sv, *name_bf_ptr))
-                                        == LexClass::Alpha
-                                    {
+                                    if LexClass::of(buffers.at(BufTy::Sv, *name_bf_ptr)) == LexClass::Alpha {
                                         if buffers.offset(BufTy::Ex, 1) == buffers.len() {
                                             buffers.grow_all();
                                         }
-                                        buffers.set_at(
-                                            BufTy::Ex,
-                                            buffers.offset(BufTy::Ex, 1),
-                                            buffers.at(BufTy::Sv, *name_bf_ptr),
-                                        );
-                                        buffers.set_offset(
-                                            BufTy::Ex,
-                                            1,
-                                            buffers.offset(BufTy::Ex, 1) + 1,
-                                        );
+                                        buffers.set_at(BufTy::Ex, buffers.offset(BufTy::Ex, 1), buffers.at(BufTy::Sv, *name_bf_ptr));
+                                        buffers.set_offset(BufTy::Ex, 1, buffers.offset(BufTy::Ex, 1) + 1);
                                         break;
                                     } else if *name_bf_ptr + 1 < *name_bf_xptr
                                         && buffers.at(BufTy::Sv, *name_bf_ptr) == b'{'
@@ -494,16 +418,8 @@ pub(crate) fn figure_out_the_formatted_name(
                                                 buffers.grow_all();
                                             }
 
-                                            buffers.set_at(
-                                                BufTy::Ex,
-                                                buffers.offset(BufTy::Ex, 1),
-                                                buffers.at(BufTy::Sv, *name_bf_ptr),
-                                            );
-                                            buffers.set_offset(
-                                                BufTy::Ex,
-                                                1,
-                                                buffers.offset(BufTy::Ex, 1) + 1,
-                                            );
+                                            buffers.set_at(BufTy::Ex, buffers.offset(BufTy::Ex, 1), buffers.at(BufTy::Sv, *name_bf_ptr));
+                                            buffers.set_offset(BufTy::Ex, 1, buffers.offset(BufTy::Ex, 1) + 1);
                                             *name_bf_ptr += 1;
                                         }
                                         break;
@@ -519,43 +435,25 @@ pub(crate) fn figure_out_the_formatted_name(
                                         if buffers.offset(BufTy::Ex, 1) == buffers.len() {
                                             buffers.grow_all();
                                         }
-                                        buffers.set_at(
-                                            BufTy::Ex,
-                                            buffers.offset(BufTy::Ex, 1),
-                                            b'.',
-                                        );
-                                        buffers.set_offset(
-                                            BufTy::Ex,
-                                            1,
-                                            buffers.offset(BufTy::Ex, 1) + 1,
-                                        );
+                                        buffers.set_at(BufTy::Ex, buffers.offset(BufTy::Ex, 1), b'.');
+                                        buffers.set_offset(BufTy::Ex, 1, buffers.offset(BufTy::Ex, 1) + 1);
                                     }
 
                                     if buffers.offset(BufTy::Ex, 1) == buffers.len() {
                                         buffers.grow_all();
                                     }
 
-                                    let c = if LexClass::of(buffers.at(BufTy::NameSep, cur_token))
-                                        == LexClass::Sep
-                                    {
+                                    let c = if LexClass::of(buffers.at(BufTy::NameSep, cur_token)) == LexClass::Sep {
                                         buffers.at(BufTy::NameSep, cur_token)
-                                    } else if cur_token == last_token - 1
-                                        || (!enough_text_chars(buffers, 3, buf_ptr, brace_level))
-                                    {
+                                    } else if cur_token == last_token - 1 || (!enough_text_chars(buffers, 3, buf_ptr, brace_level)) {
                                         b'~'
                                     } else {
                                         b' '
                                     };
                                     buffers.set_at(BufTy::Ex, buffers.offset(BufTy::Ex, 1), c);
-                                    buffers.set_offset(
-                                        BufTy::Ex,
-                                        1,
-                                        buffers.offset(BufTy::Ex, 1) + 1,
-                                    );
+                                    buffers.set_offset(BufTy::Ex, 1, buffers.offset(BufTy::Ex, 1) + 1);
                                 } else {
-                                    if buffers.offset(BufTy::Ex, 1) + (sp_xptr2 - old_idx)
-                                        > buffers.len()
-                                    {
+                                    if buffers.offset(BufTy::Ex, 1) + (sp_xptr2 - old_idx) > buffers.len() {
                                         buffers.grow_all();
                                     }
 
@@ -597,9 +495,7 @@ pub(crate) fn figure_out_the_formatted_name(
                         idx += 1;
                     }
                 }
-                if buffers.offset(BufTy::Ex, 1) > 0
-                    && buffers.at(BufTy::Ex, buffers.offset(BufTy::Ex, 1) - 1) == b'~'
-                {
+                if buffers.offset(BufTy::Ex, 1) > 0 && buffers.at(BufTy::Ex, buffers.offset(BufTy::Ex, 1) - 1) == b'~' {
                     buffers.set_offset(BufTy::Ex, 1, buffers.offset(BufTy::Ex, 1) - 1);
                     if buffers.at(BufTy::Ex, buffers.offset(BufTy::Ex, 1) - 1) == b'~' {
                     } else if !enough_text_chars(buffers, 3, buf_ptr, brace_level) {
@@ -645,12 +541,7 @@ pub(crate) fn add_buf_pool(pool: &StringPool, buffers: &mut GlobalBuffer, str: S
     buffers.set_init(BufTy::Ex, start + str.len());
 }
 
-pub(crate) fn add_out_pool(
-    ctx: &mut Bibtex<'_, '_>,
-    buffers: &mut GlobalBuffer,
-    pool: &StringPool,
-    str: StrNumber,
-) {
+pub(crate) fn add_out_pool(ctx: &mut Bibtex<'_, '_>, buffers: &mut GlobalBuffer, pool: &StringPool, str: StrNumber) {
     let str = pool.get_str(str);
 
     while buffers.init(BufTy::Out) + str.len() > buffers.len() {
@@ -668,9 +559,7 @@ pub(crate) fn add_out_pool(
         let mut out_offset = start + MAX_PRINT_LINE;
         let mut break_pt_found = false;
 
-        while LexClass::of(buffers.at(BufTy::Out, out_offset)) != LexClass::Whitespace
-            && out_offset >= start + MIN_PRINT_LINE
-        {
+        while LexClass::of(buffers.at(BufTy::Out, out_offset)) != LexClass::Whitespace && out_offset >= start + MIN_PRINT_LINE {
             out_offset -= 1;
         }
 
@@ -689,8 +578,7 @@ pub(crate) fn add_out_pool(
             } else {
                 break_pt_found = true;
                 while out_offset + 1 < end_ptr {
-                    if LexClass::of(buffers.at(BufTy::Out, out_offset + 1)) == LexClass::Whitespace
-                    {
+                    if LexClass::of(buffers.at(BufTy::Out, out_offset + 1)) == LexClass::Whitespace {
                         out_offset += 1;
                     } else {
                         break;
@@ -717,10 +605,7 @@ pub(crate) fn add_out_pool(
 }
 
 pub(crate) fn check_command_execution(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
+    ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo,
 ) -> Result<(), BibtexError> {
     if !ctx.lit_stack.is_empty() {
         let msg = format!("ptr={}, stack=\n", ctx.lit_stack.len());
@@ -737,11 +622,7 @@ pub(crate) fn check_command_execution(
     Ok(())
 }
 
-fn add_pool_buf_and_push(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    buffers: &mut GlobalBuffer,
-    pool: &mut StringPool,
-) -> Result<(), BibtexError> {
+fn add_pool_buf_and_push(ctx: &mut ExecCtx<'_, '_, '_>, buffers: &mut GlobalBuffer, pool: &mut StringPool) -> Result<(), BibtexError> {
     buffers.set_offset(BufTy::Ex, 1, buffers.init(BufTy::Ex));
     let str = &buffers.buffer(BufTy::Ex)[0..buffers.init(BufTy::Ex)];
     let val = ExecVal::String(pool.add_string(str));
@@ -749,12 +630,7 @@ fn add_pool_buf_and_push(
     Ok(())
 }
 
-fn interp_eq(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_eq(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     let pop2 = ctx.pop_stack(pool, cites)?;
 
@@ -764,9 +640,7 @@ fn interp_eq(
         }
         (ExecVal::String(s1), ExecVal::String(s2)) => {
             // TODO: Can we just compare str numbers here?
-            ctx.push_stack(ExecVal::Integer(
-                (pool.get_str(s1) == pool.get_str(s2)) as i64,
-            ));
+            ctx.push_stack(ExecVal::Integer((pool.get_str(s1) == pool.get_str(s2)) as i64));
         }
         _ if pop1.ty() != pop2.ty() => {
             if pop1.ty() != StkType::Illegal && pop2.ty() != StkType::Illegal {
@@ -790,12 +664,7 @@ fn interp_eq(
     Ok(())
 }
 
-fn interp_gt(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_gt(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     let pop2 = ctx.pop_stack(pool, cites)?;
 
@@ -815,12 +684,7 @@ fn interp_gt(
     Ok(())
 }
 
-fn interp_lt(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_lt(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     let pop2 = ctx.pop_stack(pool, cites)?;
 
@@ -840,12 +704,7 @@ fn interp_lt(
     Ok(())
 }
 
-fn interp_plus(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_plus(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     let pop2 = ctx.pop_stack(pool, cites)?;
 
@@ -865,12 +724,7 @@ fn interp_plus(
     Ok(())
 }
 
-fn interp_minus(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_minus(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     let pop2 = ctx.pop_stack(pool, cites)?;
 
@@ -890,12 +744,7 @@ fn interp_minus(
     Ok(())
 }
 
-fn interp_concat(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_concat(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     let pop2 = ctx.pop_stack(pool, cites)?;
 
@@ -984,12 +833,7 @@ fn interp_concat(
 }
 
 fn interp_gets(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &mut HashData,
-    entries: &mut EntryData,
-    globals: &mut GlobalData,
-    cites: &CiteInfo,
+    ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &mut HashData, entries: &mut EntryData, globals: &mut GlobalData, cites: &CiteInfo,
 ) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     let pop2 = ctx.pop_stack(pool, cites)?;
@@ -1063,12 +907,7 @@ fn interp_gets(
     Ok(())
 }
 
-fn interp_add_period(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_add_period(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
 
     let s1 = match pop1 {
@@ -1118,12 +957,7 @@ fn interp_add_period(
     Ok(())
 }
 
-fn interp_change_case(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    cites: &CiteInfo,
-    hash: &HashData,
-) -> Result<(), BibtexError> {
+fn interp_change_case(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, cites: &CiteInfo, hash: &HashData) -> Result<(), BibtexError> {
     #[derive(PartialEq)]
     enum ConvTy {
         TitleLower,
@@ -1167,19 +1001,14 @@ fn interp_change_case(
                     if !(brace_level != 1
                         || idx + 4 > scratch.len()
                         || scratch[idx + 1] != b'\\'
-                        || (conv_ty == ConvTy::TitleLower
-                            && (idx == 0
-                                || (prev_colon
-                                    && LexClass::of(scratch[idx - 1]) == LexClass::Whitespace))))
+                        || (conv_ty == ConvTy::TitleLower && (idx == 0 || (prev_colon && LexClass::of(scratch[idx - 1]) == LexClass::Whitespace))))
                     {
                         idx += 1;
 
                         while idx < scratch.len() && brace_level > 0 {
                             idx += 1;
                             let old_idx = idx;
-                            while idx < scratch.len()
-                                && LexClass::of(scratch[idx]) == LexClass::Alpha
-                            {
+                            while idx < scratch.len() && LexClass::of(scratch[idx]) == LexClass::Alpha {
                                 idx += 1;
                             }
 
@@ -1189,33 +1018,20 @@ fn interp_change_case(
                                 let seq = *hash.get(loc).extra();
                                 match conv_ty {
                                     ConvTy::TitleLower | ConvTy::AllLower => match seq {
-                                        ControlSeq::UpperOE
-                                        | ControlSeq::UpperAE
-                                        | ControlSeq::UpperAA
-                                        | ControlSeq::UpperO
-                                        | ControlSeq::UpperL => {
+                                        ControlSeq::UpperOE | ControlSeq::UpperAE | ControlSeq::UpperAA | ControlSeq::UpperO | ControlSeq::UpperL => {
                                             scratch[old_idx..idx].make_ascii_lowercase()
                                         }
                                         _ => (),
                                     },
                                     ConvTy::AllUpper => match seq {
-                                        ControlSeq::LowerOE
-                                        | ControlSeq::LowerAE
-                                        | ControlSeq::LowerAA
-                                        | ControlSeq::LowerO
-                                        | ControlSeq::LowerL => {
+                                        ControlSeq::LowerOE | ControlSeq::LowerAE | ControlSeq::LowerAA | ControlSeq::LowerO | ControlSeq::LowerL => {
                                             scratch[old_idx..idx].make_ascii_uppercase()
                                         }
-                                        ControlSeq::LowerI
-                                        | ControlSeq::LowerJ
-                                        | ControlSeq::LowerSS => {
+                                        ControlSeq::LowerI | ControlSeq::LowerJ | ControlSeq::LowerSS => {
                                             scratch[old_idx..idx].make_ascii_uppercase();
                                             scratch.copy_within(old_idx..idx, old_idx - 1);
                                             let old_idx = idx - 1;
-                                            while idx < scratch.len()
-                                                && LexClass::of(scratch[idx])
-                                                    == LexClass::Whitespace
-                                            {
+                                            while idx < scratch.len() && LexClass::of(scratch[idx]) == LexClass::Whitespace {
                                                 idx += 1;
                                             }
                                             scratch.copy_within(idx.., old_idx);
@@ -1239,9 +1055,7 @@ fn interp_change_case(
                             }
 
                             match conv_ty {
-                                ConvTy::TitleLower | ConvTy::AllLower => {
-                                    scratch[old_idx..idx].make_ascii_lowercase()
-                                }
+                                ConvTy::TitleLower | ConvTy::AllLower => scratch[old_idx..idx].make_ascii_lowercase(),
                                 ConvTy::AllUpper => scratch[old_idx..idx].make_ascii_uppercase(),
                                 ConvTy::Bad => (),
                             }
@@ -1256,10 +1070,7 @@ fn interp_change_case(
                 } else if brace_level == 0 {
                     match conv_ty {
                         ConvTy::TitleLower => {
-                            if idx != 0
-                                && !(prev_colon
-                                    && LexClass::of(scratch[idx - 1]) == LexClass::Whitespace)
-                            {
+                            if idx != 0 && !(prev_colon && LexClass::of(scratch[idx - 1]) == LexClass::Whitespace) {
                                 scratch[idx].make_ascii_lowercase()
                             }
 
@@ -1292,12 +1103,7 @@ fn interp_change_case(
     Ok(())
 }
 
-fn interp_chr_to_int(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_chr_to_int(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     match pop1 {
         ExecVal::String(s1) => {
@@ -1320,11 +1126,7 @@ fn interp_chr_to_int(
     Ok(())
 }
 
-fn interp_cite(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &StringPool,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_cite(ctx: &mut ExecCtx<'_, '_, '_>, pool: &StringPool, cites: &CiteInfo) -> Result<(), BibtexError> {
     if !ctx.mess_with_entries {
         bst_cant_mess_with_entries_print(ctx, pool, cites)?;
     } else {
@@ -1333,11 +1135,7 @@ fn interp_cite(
     Ok(())
 }
 
-fn interp_dup(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_dup(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     match pop1 {
         ExecVal::String(s1) => {
@@ -1364,12 +1162,7 @@ fn interp_dup(
     Ok(())
 }
 
-fn interp_empty(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_empty(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     match pop1 {
         ExecVal::String(s1) => {
@@ -1394,11 +1187,7 @@ fn interp_empty(
 }
 
 fn interp_format_name(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    buffers: &mut GlobalBuffer,
-    cites: &CiteInfo,
-    hash: &HashData,
+    ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, buffers: &mut GlobalBuffer, cites: &CiteInfo, hash: &HashData,
 ) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     let pop2 = ctx.pop_stack(pool, cites)?;
@@ -1586,16 +1375,7 @@ fn interp_format_name(
                 name_ptr = buffers.name_tok(von_start);
                 name_ptr2 = buffers.name_tok(von_start + 1);
                 if von_token_found(buffers, hash, pool, &mut name_ptr, name_ptr2) {
-                    von_name_ends_and_last_name_starts_stuff(
-                        buffers,
-                        hash,
-                        pool,
-                        last_end,
-                        von_start,
-                        &mut von_end,
-                        &mut name_ptr,
-                        &mut name_ptr2,
-                    );
+                    von_name_ends_and_last_name_starts_stuff(buffers, hash, pool, last_end, von_start, &mut von_end, &mut name_ptr, &mut name_ptr2);
                     second_loop = false;
                     break;
                 }
@@ -1604,9 +1384,7 @@ fn interp_format_name(
 
             if second_loop {
                 while von_start > 0 {
-                    if LexClass::of(buffers.at(BufTy::NameSep, von_start)) != LexClass::Sep
-                        || buffers.at(BufTy::NameSep, von_start) == b'~'
-                    {
+                    if LexClass::of(buffers.at(BufTy::NameSep, von_start)) != LexClass::Sep || buffers.at(BufTy::NameSep, von_start) == b'~' {
                         break;
                     }
                     von_start -= 1;
@@ -1620,32 +1398,14 @@ fn interp_format_name(
             jr_end = last_end;
             first_start = jr_end;
             first_end = num_tokens;
-            von_name_ends_and_last_name_starts_stuff(
-                buffers,
-                hash,
-                pool,
-                last_end,
-                von_start,
-                &mut von_end,
-                &mut name_ptr,
-                &mut name_ptr2,
-            );
+            von_name_ends_and_last_name_starts_stuff(buffers, hash, pool, last_end, von_start, &mut von_end, &mut name_ptr, &mut name_ptr2);
         }
         Commas::Two(comma1, comma2) => {
             last_end = comma1;
             jr_end = comma2;
             first_start = jr_end;
             first_end = num_tokens;
-            von_name_ends_and_last_name_starts_stuff(
-                buffers,
-                hash,
-                pool,
-                last_end,
-                von_start,
-                &mut von_end,
-                &mut name_ptr,
-                &mut name_ptr2,
-            );
+            von_name_ends_and_last_name_starts_stuff(buffers, hash, pool, last_end, von_start, &mut von_end, &mut name_ptr, &mut name_ptr2);
         }
     }
 
@@ -1672,12 +1432,7 @@ fn interp_format_name(
     Ok(())
 }
 
-fn interp_int_to_chr(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_int_to_chr(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     let i1 = match pop1 {
         ExecVal::Integer(i1) => i1,
@@ -1699,12 +1454,7 @@ fn interp_int_to_chr(
     Ok(())
 }
 
-fn interp_int_to_str(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_int_to_str(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     let i1 = match pop1 {
         ExecVal::Integer(i1) => i1,
@@ -1721,12 +1471,7 @@ fn interp_int_to_str(
     Ok(())
 }
 
-fn interp_missing(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_missing(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     if !ctx.mess_with_entries {
         bst_cant_mess_with_entries_print(ctx, pool, cites)?;
@@ -1753,11 +1498,7 @@ fn interp_missing(
 }
 
 fn interp_num_names(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    buffers: &mut GlobalBuffer,
-    hash: &HashData,
-    cites: &CiteInfo,
+    ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, buffers: &mut GlobalBuffer, hash: &HashData, cites: &CiteInfo,
 ) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     match pop1 {
@@ -1781,11 +1522,7 @@ fn interp_num_names(
     Ok(())
 }
 
-fn interp_preamble(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    bibs: &mut BibData,
-) -> Result<(), BibtexError> {
+fn interp_preamble(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, bibs: &mut BibData) -> Result<(), BibtexError> {
     let mut out = Vec::with_capacity(bibs.preamble_len() * 32);
     for s in bibs.preamble() {
         out.extend(pool.get_str(*s));
@@ -1795,12 +1532,7 @@ fn interp_preamble(
     Ok(())
 }
 
-fn interp_purify(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_purify(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     let s1 = match pop1 {
         ExecVal::String(s1) => s1,
@@ -1834,9 +1566,7 @@ fn interp_purify(
                         while idx < scratch.len() && brace_level > 0 {
                             idx += 1;
                             let old_idx = idx;
-                            while idx < scratch.len()
-                                && LexClass::of(scratch[idx]) == LexClass::Alpha
-                            {
+                            while idx < scratch.len() && LexClass::of(scratch[idx]) == LexClass::Alpha {
                                 idx += 1;
                             }
 
@@ -1846,11 +1576,7 @@ fn interp_purify(
                                 scratch[write_idx] = scratch[old_idx];
                                 write_idx += 1;
                                 match seq {
-                                    ControlSeq::LowerOE
-                                    | ControlSeq::UpperOE
-                                    | ControlSeq::LowerAE
-                                    | ControlSeq::UpperAE
-                                    | ControlSeq::LowerSS => {
+                                    ControlSeq::LowerOE | ControlSeq::UpperOE | ControlSeq::LowerAE | ControlSeq::UpperAE | ControlSeq::LowerSS => {
                                         scratch[write_idx] = scratch[old_idx + 1];
                                         write_idx += 1;
                                     }
@@ -1923,12 +1649,7 @@ impl<T> Index<SLRange> for [T] {
     }
 }
 
-fn interp_substr(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_substr(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     let pop2 = ctx.pop_stack(pool, cites)?;
     let pop3 = ctx.pop_stack(pool, cites)?;
@@ -1988,18 +1709,12 @@ fn interp_substr(
     Ok(())
 }
 
-fn interp_swap(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_swap(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     let pop2 = ctx.pop_stack(pool, cites)?;
 
     match (pop1, pop2) {
-        (ExecVal::String(s1), ExecVal::String(s2))
-            if ctx.checkpoint.is_before(s1) && ctx.checkpoint.is_before(s2) =>
-        {
+        (ExecVal::String(s1), ExecVal::String(s2)) if ctx.checkpoint.is_before(s1) && ctx.checkpoint.is_before(s2) => {
             let tmp = Vec::from(pool.get_str(s2));
             let new = pool.write_str(|cursor| {
                 cursor.append_str(s1);
@@ -2023,12 +1738,7 @@ fn interp_swap(
     Ok(())
 }
 
-fn interp_text_len(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_text_len(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
 
     let s1 = match pop1 {
@@ -2073,12 +1783,7 @@ fn interp_text_len(
     Ok(())
 }
 
-fn interp_text_prefix(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_text_prefix(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     let pop2 = ctx.pop_stack(pool, cites)?;
 
@@ -2146,12 +1851,7 @@ fn interp_text_prefix(
     Ok(())
 }
 
-fn interp_ty(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_ty(ctx: &mut ExecCtx<'_, '_, '_>, pool: &StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     if !ctx.mess_with_entries {
         bst_cant_mess_with_entries_print(ctx, pool, cites)?;
         return Ok(());
@@ -2167,12 +1867,7 @@ fn interp_ty(
     Ok(())
 }
 
-fn interp_warning(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_warning(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     match pop1 {
         ExecVal::String(_) => {
@@ -2185,12 +1880,7 @@ fn interp_warning(
     Ok(())
 }
 
-fn interp_width(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    cites: &CiteInfo,
-) -> Result<(), BibtexError> {
+fn interp_width(ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, cites: &CiteInfo) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
 
     let s1 = match pop1 {
@@ -2274,11 +1964,7 @@ fn interp_width(
 }
 
 fn interp_write(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &mut StringPool,
-    hash: &HashData,
-    buffers: &mut GlobalBuffer,
-    cites: &CiteInfo,
+    ctx: &mut ExecCtx<'_, '_, '_>, pool: &mut StringPool, hash: &HashData, buffers: &mut GlobalBuffer, cites: &CiteInfo,
 ) -> Result<(), BibtexError> {
     let pop1 = ctx.pop_stack(pool, cites)?;
     match pop1 {
@@ -2292,11 +1978,7 @@ fn interp_write(
     Ok(())
 }
 
-pub(crate) fn execute_fn(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    globals: &mut GlobalItems<'_>,
-    ex_fn_loc: HashPointer<BstFn>,
-) -> Result<(), BibtexError> {
+pub(crate) fn execute_fn(ctx: &mut ExecCtx<'_, '_, '_>, globals: &mut GlobalItems<'_>, ex_fn_loc: HashPointer<BstFn>) -> Result<(), BibtexError> {
     match globals.hash.get(ex_fn_loc).extra() {
         BstFn::Builtin(builtin) => match builtin {
             BstBuiltin::Eq => interp_eq(ctx, globals.pool, globals.hash, globals.cites),
@@ -2305,17 +1987,8 @@ pub(crate) fn execute_fn(
             BstBuiltin::Plus => interp_plus(ctx, globals.pool, globals.hash, globals.cites),
             BstBuiltin::Minus => interp_minus(ctx, globals.pool, globals.hash, globals.cites),
             BstBuiltin::Concat => interp_concat(ctx, globals.pool, globals.hash, globals.cites),
-            BstBuiltin::Set => interp_gets(
-                ctx,
-                globals.pool,
-                globals.hash,
-                globals.entries,
-                globals.globals,
-                globals.cites,
-            ),
-            BstBuiltin::AddPeriod => {
-                interp_add_period(ctx, globals.pool, globals.hash, globals.cites)
-            }
+            BstBuiltin::Set => interp_gets(ctx, globals.pool, globals.hash, globals.entries, globals.globals, globals.cites),
+            BstBuiltin::AddPeriod => interp_add_period(ctx, globals.pool, globals.hash, globals.cites),
             BstBuiltin::CallType => {
                 let default = globals.cites.get_type(globals.cites.ptr());
                 if !ctx.mess_with_entries {
@@ -2329,22 +2002,12 @@ pub(crate) fn execute_fn(
                     Ok(())
                 }
             }
-            BstBuiltin::ChangeCase => {
-                interp_change_case(ctx, globals.pool, globals.cites, globals.hash)
-            }
-            BstBuiltin::ChrToInt => {
-                interp_chr_to_int(ctx, globals.pool, globals.hash, globals.cites)
-            }
+            BstBuiltin::ChangeCase => interp_change_case(ctx, globals.pool, globals.cites, globals.hash),
+            BstBuiltin::ChrToInt => interp_chr_to_int(ctx, globals.pool, globals.hash, globals.cites),
             BstBuiltin::Cite => interp_cite(ctx, globals.pool, globals.cites),
             BstBuiltin::Duplicate => interp_dup(ctx, globals.pool, globals.cites),
             BstBuiltin::Empty => interp_empty(ctx, globals.pool, globals.hash, globals.cites),
-            BstBuiltin::FormatName => interp_format_name(
-                ctx,
-                globals.pool,
-                globals.buffers,
-                globals.cites,
-                globals.hash,
-            ),
+            BstBuiltin::FormatName => interp_format_name(ctx, globals.pool, globals.buffers, globals.cites, globals.hash),
             BstBuiltin::If => {
                 let pop1 = ctx.pop_stack(globals.pool, globals.cites)?;
                 let pop2 = ctx.pop_stack(globals.pool, globals.cites)?;
@@ -2358,50 +2021,21 @@ pub(crate) fn execute_fn(
                             execute_fn(ctx, globals, f1)
                         }
                     }
-                    (ExecVal::Function(_), ExecVal::Function(_), _) => print_wrong_stk_lit(
-                        ctx,
-                        globals.pool,
-                        globals.hash,
-                        globals.cites,
-                        pop3,
-                        StkType::Integer,
-                    ),
-                    (ExecVal::Function(_), _, _) => print_wrong_stk_lit(
-                        ctx,
-                        globals.pool,
-                        globals.hash,
-                        globals.cites,
-                        pop2,
-                        StkType::Function,
-                    ),
-                    (_, _, _) => print_wrong_stk_lit(
-                        ctx,
-                        globals.pool,
-                        globals.hash,
-                        globals.cites,
-                        pop1,
-                        StkType::Function,
-                    ),
+                    (ExecVal::Function(_), ExecVal::Function(_), _) => {
+                        print_wrong_stk_lit(ctx, globals.pool, globals.hash, globals.cites, pop3, StkType::Integer)
+                    }
+                    (ExecVal::Function(_), _, _) => print_wrong_stk_lit(ctx, globals.pool, globals.hash, globals.cites, pop2, StkType::Function),
+                    (_, _, _) => print_wrong_stk_lit(ctx, globals.pool, globals.hash, globals.cites, pop1, StkType::Function),
                 }
             }
-            BstBuiltin::IntToChr => {
-                interp_int_to_chr(ctx, globals.pool, globals.hash, globals.cites)
-            }
-            BstBuiltin::IntToStr => {
-                interp_int_to_str(ctx, globals.pool, globals.hash, globals.cites)
-            }
+            BstBuiltin::IntToChr => interp_int_to_chr(ctx, globals.pool, globals.hash, globals.cites),
+            BstBuiltin::IntToStr => interp_int_to_str(ctx, globals.pool, globals.hash, globals.cites),
             BstBuiltin::Missing => interp_missing(ctx, globals.pool, globals.hash, globals.cites),
             BstBuiltin::Newline => {
                 output_bbl_line(ctx, globals.buffers);
                 Ok(())
             }
-            BstBuiltin::NumNames => interp_num_names(
-                ctx,
-                globals.pool,
-                globals.buffers,
-                globals.hash,
-                globals.cites,
-            ),
+            BstBuiltin::NumNames => interp_num_names(ctx, globals.pool, globals.buffers, globals.hash, globals.cites),
             BstBuiltin::Pop => ctx.pop_stack(globals.pool, globals.cites).map(|_| ()),
             BstBuiltin::Preamble => interp_preamble(ctx, globals.pool, globals.bibs),
             BstBuiltin::Purify => interp_purify(ctx, globals.pool, globals.hash, globals.cites),
@@ -2410,12 +2044,8 @@ pub(crate) fn execute_fn(
             BstBuiltin::Stack => pop_whole_stack(ctx, globals.pool, globals.hash, globals.cites),
             BstBuiltin::Substring => interp_substr(ctx, globals.pool, globals.hash, globals.cites),
             BstBuiltin::Swap => interp_swap(ctx, globals.pool, globals.cites),
-            BstBuiltin::TextLength => {
-                interp_text_len(ctx, globals.pool, globals.hash, globals.cites)
-            }
-            BstBuiltin::TextPrefix => {
-                interp_text_prefix(ctx, globals.pool, globals.hash, globals.cites)
-            }
+            BstBuiltin::TextLength => interp_text_len(ctx, globals.pool, globals.hash, globals.cites),
+            BstBuiltin::TextPrefix => interp_text_prefix(ctx, globals.pool, globals.hash, globals.cites),
             BstBuiltin::Top => pop_top_and_print(ctx, globals.pool, globals.hash, globals.cites),
             BstBuiltin::Type => interp_ty(ctx, globals.pool, globals.hash, globals.cites),
             BstBuiltin::Warning => interp_warning(ctx, globals.pool, globals.hash, globals.cites),
@@ -2435,45 +2065,18 @@ pub(crate) fn execute_fn(
                                     break;
                                 }
                             } else {
-                                print_wrong_stk_lit(
-                                    ctx,
-                                    globals.pool,
-                                    globals.hash,
-                                    globals.cites,
-                                    res,
-                                    StkType::Integer,
-                                )?;
+                                print_wrong_stk_lit(ctx, globals.pool, globals.hash, globals.cites, res, StkType::Integer)?;
                                 break;
                             }
                         }
                         Ok(())
                     }
-                    (ExecVal::Function(_), _) => print_wrong_stk_lit(
-                        ctx,
-                        globals.pool,
-                        globals.hash,
-                        globals.cites,
-                        pop2,
-                        StkType::Function,
-                    ),
-                    (_, _) => print_wrong_stk_lit(
-                        ctx,
-                        globals.pool,
-                        globals.hash,
-                        globals.cites,
-                        pop1,
-                        StkType::Function,
-                    ),
+                    (ExecVal::Function(_), _) => print_wrong_stk_lit(ctx, globals.pool, globals.hash, globals.cites, pop2, StkType::Function),
+                    (_, _) => print_wrong_stk_lit(ctx, globals.pool, globals.hash, globals.cites, pop1, StkType::Function),
                 }
             }
             BstBuiltin::Width => interp_width(ctx, globals.pool, globals.hash, globals.cites),
-            BstBuiltin::Write => interp_write(
-                ctx,
-                globals.pool,
-                globals.hash,
-                globals.buffers,
-                globals.cites,
-            ),
+            BstBuiltin::Write => interp_write(ctx, globals.pool, globals.hash, globals.buffers, globals.cites),
         },
         &BstFn::Wizard(mut wiz_ptr) => {
             loop {
@@ -2521,9 +2124,7 @@ pub(crate) fn execute_fn(
                 bst_cant_mess_with_entries_print(ctx, globals.pool, globals.cites)
             } else {
                 ctx.push_stack(ExecVal::Integer(
-                    globals
-                        .entries
-                        .ints(globals.cites.ptr() * globals.entries.num_ent_ints() + *entry),
+                    globals.entries.ints(globals.cites.ptr() * globals.entries.num_ent_ints() + *entry),
                 ));
                 Ok(())
             }
@@ -2592,10 +2193,7 @@ mod tests {
         let r1 = SLRange { start: 1, len: 100 };
         assert_eq!(&slice[r1], b"0123456789");
 
-        let r1 = SLRange {
-            start: -1,
-            len: 100,
-        };
+        let r1 = SLRange { start: -1, len: 100 };
         assert_eq!(&slice[r1], b"0123456789");
     }
 }

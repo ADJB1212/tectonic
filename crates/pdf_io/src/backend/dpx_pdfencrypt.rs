@@ -17,46 +17,24 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 use crate::unicode::is_valid as UC_is_valid;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
-    fn strcpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
+    fn strcpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     fn time(_: *mut time_t) -> time_t;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
     #[link_name = "__pdf_impl_MD5_init"]
     fn MD5_init(ctx: *mut MD5_CONTEXT);
     #[link_name = "__pdf_impl_MD5_write"]
-    fn MD5_write(
-        ctx: *mut MD5_CONTEXT,
-        inbuf: *const ::core::ffi::c_uchar,
-        inlen: ::core::ffi::c_uint,
-    );
+    fn MD5_write(ctx: *mut MD5_CONTEXT, inbuf: *const ::core::ffi::c_uchar, inlen: ::core::ffi::c_uint);
     #[link_name = "__pdf_impl_MD5_final"]
     fn MD5_final(outbuf: *mut ::core::ffi::c_uchar, ctx: *mut MD5_CONTEXT);
     #[link_name = "__pdf_impl_SHA256_init"]
     fn SHA256_init(ctx: *mut SHA256_CONTEXT);
     #[link_name = "__pdf_impl_SHA256_write"]
-    fn SHA256_write(
-        ctx: *mut SHA256_CONTEXT,
-        inbuf: *const ::core::ffi::c_uchar,
-        inlen: ::core::ffi::c_uint,
-    );
+    fn SHA256_write(ctx: *mut SHA256_CONTEXT, inbuf: *const ::core::ffi::c_uchar, inlen: ::core::ffi::c_uint);
     #[link_name = "__pdf_impl_SHA256_final"]
     fn SHA256_final(outbuf: *mut ::core::ffi::c_uchar, ctx: *mut SHA256_CONTEXT);
     #[link_name = "__pdf_impl_SHA384_init"]
@@ -64,45 +42,22 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_SHA512_init"]
     fn SHA512_init(ctx: *mut SHA512_CONTEXT);
     #[link_name = "__pdf_impl_SHA512_write"]
-    fn SHA512_write(
-        ctx: *mut SHA512_CONTEXT,
-        inbuf: *const ::core::ffi::c_uchar,
-        inlen: ::core::ffi::c_uint,
-    );
+    fn SHA512_write(ctx: *mut SHA512_CONTEXT, inbuf: *const ::core::ffi::c_uchar, inlen: ::core::ffi::c_uint);
     #[link_name = "__pdf_impl_SHA512_final"]
     fn SHA512_final(outbuf: *mut ::core::ffi::c_uchar, ctx: *mut SHA512_CONTEXT);
     #[link_name = "__pdf_impl_ARC4"]
-    fn ARC4(
-        ctx: *mut ARC4_CONTEXT,
-        len: ::core::ffi::c_uint,
-        inbuf: *const ::core::ffi::c_uchar,
-        outbuf: *mut ::core::ffi::c_uchar,
-    );
+    fn ARC4(ctx: *mut ARC4_CONTEXT, len: ::core::ffi::c_uint, inbuf: *const ::core::ffi::c_uchar, outbuf: *mut ::core::ffi::c_uchar);
     #[link_name = "__pdf_impl_ARC4_set_key"]
-    fn ARC4_set_key(
-        ctx: *mut ARC4_CONTEXT,
-        keylen: ::core::ffi::c_uint,
-        key: *const ::core::ffi::c_uchar,
-    );
+    fn ARC4_set_key(ctx: *mut ARC4_CONTEXT, keylen: ::core::ffi::c_uint, key: *const ::core::ffi::c_uchar);
     #[link_name = "__pdf_impl_AES_ecb_encrypt"]
     fn AES_ecb_encrypt(
-        key: *const ::core::ffi::c_uchar,
-        key_len: size_t,
-        plain: *const ::core::ffi::c_uchar,
-        plain_len: size_t,
-        cipher: *mut *mut ::core::ffi::c_uchar,
-        cipher_len: *mut size_t,
+        key: *const ::core::ffi::c_uchar, key_len: size_t, plain: *const ::core::ffi::c_uchar, plain_len: size_t,
+        cipher: *mut *mut ::core::ffi::c_uchar, cipher_len: *mut size_t,
     );
     #[link_name = "__pdf_impl_AES_cbc_encrypt_tectonic"]
     fn AES_cbc_encrypt_tectonic(
-        key: *const ::core::ffi::c_uchar,
-        key_len: size_t,
-        iv: *const ::core::ffi::c_uchar,
-        padding: ::core::ffi::c_int,
-        plain: *const ::core::ffi::c_uchar,
-        plain_len: size_t,
-        cipher: *mut *mut ::core::ffi::c_uchar,
-        cipher_len: *mut size_t,
+        key: *const ::core::ffi::c_uchar, key_len: size_t, iv: *const ::core::ffi::c_uchar, padding: ::core::ffi::c_int,
+        plain: *const ::core::ffi::c_uchar, plain_len: size_t, cipher: *mut *mut ::core::ffi::c_uchar, cipher_len: *mut size_t,
     );
     #[link_name = "__pdf_impl_dpx_util_get_unique_time_if_given"]
     fn dpx_util_get_unique_time_if_given() -> time_t;
@@ -124,16 +79,9 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_new_dict"]
     fn pdf_new_dict() -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_UC_UTF8_decode_char"]
-    fn UC_UTF8_decode_char(
-        pp: *mut *const ::core::ffi::c_uchar,
-        endptr: *const ::core::ffi::c_uchar,
-    ) -> int32_t;
+    fn UC_UTF8_decode_char(pp: *mut *const ::core::ffi::c_uchar, endptr: *const ::core::ffi::c_uchar) -> int32_t;
 }
 pub type int32_t = i32;
 pub type uint8_t = u8;
@@ -266,19 +214,12 @@ const PADDING_BYTES: [::core::ffi::c_uchar; 32] = [
 ];
 #[unsafe(export_name = "__pdf_impl_pdf_enc_init")]
 pub unsafe extern "C-unwind" fn pdf_enc_init(
-    mut id: *const ::core::ffi::c_uchar,
-    mut keybits: ::core::ffi::c_int,
-    mut permission: uint32_t,
-    mut opasswd: *const ::core::ffi::c_char,
-    mut upasswd: *const ::core::ffi::c_char,
-    mut use_aes: ::core::ffi::c_int,
-    mut encrypt_metadata: ::core::ffi::c_int,
+    mut id: *const ::core::ffi::c_uchar, mut keybits: ::core::ffi::c_int, mut permission: uint32_t, mut opasswd: *const ::core::ffi::c_char,
+    mut upasswd: *const ::core::ffi::c_char, mut use_aes: ::core::ffi::c_int, mut encrypt_metadata: ::core::ffi::c_int,
 ) -> *mut pdf_sec {
     let mut current_time: time_t = 0;
     let mut p_sec: *mut pdf_sec = ::core::ptr::null_mut::<pdf_sec>();
-    p_sec = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<pdf_sec>() as usize) as uint32_t)
-        as *mut pdf_sec;
+    p_sec = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_sec>() as usize) as uint32_t) as *mut pdf_sec;
     memset(
         p_sec as *mut ::core::ffi::c_void,
         0 as ::core::ffi::c_int,
@@ -297,13 +238,7 @@ pub unsafe extern "C-unwind" fn pdf_enc_init(
         id as *const ::core::ffi::c_void,
         16 as size_t,
     );
-    pdf_enc_set_password(
-        p_sec,
-        keybits as ::core::ffi::c_uint,
-        permission as ::core::ffi::c_uint,
-        opasswd,
-        upasswd,
-    );
+    pdf_enc_set_password(p_sec, keybits as ::core::ffi::c_uint, permission as ::core::ffi::c_uint, opasswd, upasswd);
     return p_sec;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_enc_close")]
@@ -313,21 +248,10 @@ pub unsafe extern "C-unwind" fn pdf_enc_close(mut p_sec: *mut *mut pdf_sec) {
         *p_sec = ::core::ptr::null_mut::<pdf_sec>();
     }
 }
-unsafe extern "C-unwind" fn passwd_padding(
-    mut src: *const ::core::ffi::c_char,
-    mut dst: *mut ::core::ffi::c_uchar,
-) {
+unsafe extern "C-unwind" fn passwd_padding(mut src: *const ::core::ffi::c_char, mut dst: *mut ::core::ffi::c_uchar) {
     let mut len: ::core::ffi::c_int = 0;
-    len = (if (32 as size_t) < strlen(src) {
-        32 as size_t
-    } else {
-        strlen(src)
-    }) as ::core::ffi::c_int;
-    memcpy(
-        dst as *mut ::core::ffi::c_void,
-        src as *const ::core::ffi::c_void,
-        len as size_t,
-    );
+    len = (if (32 as size_t) < strlen(src) { 32 as size_t } else { strlen(src) }) as ::core::ffi::c_int;
+    memcpy(dst as *mut ::core::ffi::c_void, src as *const ::core::ffi::c_void, len as size_t);
     memcpy(
         dst.offset(len as isize) as *mut ::core::ffi::c_void,
         PADDING_BYTES.as_ptr() as *const ::core::ffi::c_void,
@@ -335,9 +259,7 @@ unsafe extern "C-unwind" fn passwd_padding(
     );
 }
 unsafe extern "C-unwind" fn compute_owner_password(
-    mut p_sec: *mut pdf_sec,
-    mut opasswd: *const ::core::ffi::c_char,
-    mut upasswd: *const ::core::ffi::c_char,
+    mut p_sec: *mut pdf_sec, mut opasswd: *const ::core::ffi::c_char, mut upasswd: *const ::core::ffi::c_char,
 ) {
     let mut i: ::core::ffi::c_int = 0;
     let mut j: ::core::ffi::c_int = 0;
@@ -358,19 +280,11 @@ unsafe extern "C-unwind" fn compute_owner_password(
     };
     let mut hash: [::core::ffi::c_uchar; 32] = [0; 32];
     passwd_padding(
-        if strlen(opasswd) > 0 as size_t {
-            opasswd
-        } else {
-            upasswd
-        },
+        if strlen(opasswd) > 0 as size_t { opasswd } else { upasswd },
         &raw mut padded as *mut ::core::ffi::c_uchar,
     );
     MD5_init(&raw mut md5);
-    MD5_write(
-        &raw mut md5,
-        &raw mut padded as *mut ::core::ffi::c_uchar,
-        32 as ::core::ffi::c_uint,
-    );
+    MD5_write(&raw mut md5, &raw mut padded as *mut ::core::ffi::c_uchar, 32 as ::core::ffi::c_uint);
     MD5_final(&raw mut hash as *mut ::core::ffi::c_uchar, &raw mut md5);
     if (*p_sec).R >= 3 as ::core::ffi::c_int {
         i = 0 as ::core::ffi::c_int;
@@ -410,8 +324,7 @@ unsafe extern "C-unwind" fn compute_owner_password(
             );
             j = 0 as ::core::ffi::c_int;
             while j < (*p_sec).key_size {
-                key[j as usize] =
-                    (hash[j as usize] as ::core::ffi::c_int ^ i) as ::core::ffi::c_uchar;
+                key[j as usize] = (hash[j as usize] as ::core::ffi::c_int ^ i) as ::core::ffi::c_uchar;
                 j += 1;
             }
             ARC4_set_key(
@@ -434,10 +347,7 @@ unsafe extern "C-unwind" fn compute_owner_password(
         32 as size_t,
     );
 }
-unsafe extern "C-unwind" fn compute_encryption_key(
-    mut p_sec: *mut pdf_sec,
-    mut passwd: *const ::core::ffi::c_char,
-) {
+unsafe extern "C-unwind" fn compute_encryption_key(mut p_sec: *mut pdf_sec, mut passwd: *const ::core::ffi::c_char) {
     let mut i: ::core::ffi::c_int = 0;
     let mut hash: [::core::ffi::c_uchar; 32] = [0; 32];
     let mut padded: [::core::ffi::c_uchar; 32] = [0; 32];
@@ -452,39 +362,19 @@ unsafe extern "C-unwind" fn compute_encryption_key(
     };
     passwd_padding(passwd, &raw mut padded as *mut ::core::ffi::c_uchar);
     MD5_init(&raw mut md5);
-    MD5_write(
-        &raw mut md5,
-        &raw mut padded as *mut ::core::ffi::c_uchar,
-        32 as ::core::ffi::c_uint,
-    );
-    MD5_write(
-        &raw mut md5,
-        &raw mut (*p_sec).O as *mut ::core::ffi::c_uchar,
-        32 as ::core::ffi::c_uint,
-    );
+    MD5_write(&raw mut md5, &raw mut padded as *mut ::core::ffi::c_uchar, 32 as ::core::ffi::c_uint);
+    MD5_write(&raw mut md5, &raw mut (*p_sec).O as *mut ::core::ffi::c_uchar, 32 as ::core::ffi::c_uint);
     let mut tmp: [::core::ffi::c_uchar; 4] = [0; 4];
     tmp[0 as ::core::ffi::c_int as usize] =
-        ((*p_sec).P as ::core::ffi::c_uchar as ::core::ffi::c_int & 0xff as ::core::ffi::c_int)
-            as ::core::ffi::c_uchar;
+        ((*p_sec).P as ::core::ffi::c_uchar as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
     tmp[1 as ::core::ffi::c_int as usize] =
-        (((*p_sec).P >> 8 as ::core::ffi::c_int) as ::core::ffi::c_uchar as ::core::ffi::c_int
-            & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+        (((*p_sec).P >> 8 as ::core::ffi::c_int) as ::core::ffi::c_uchar as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
     tmp[2 as ::core::ffi::c_int as usize] =
-        (((*p_sec).P >> 16 as ::core::ffi::c_int) as ::core::ffi::c_uchar as ::core::ffi::c_int
-            & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+        (((*p_sec).P >> 16 as ::core::ffi::c_int) as ::core::ffi::c_uchar as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
     tmp[3 as ::core::ffi::c_int as usize] =
-        (((*p_sec).P >> 24 as ::core::ffi::c_int) as ::core::ffi::c_uchar as ::core::ffi::c_int
-            & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
-    MD5_write(
-        &raw mut md5,
-        &raw mut tmp as *mut ::core::ffi::c_uchar,
-        4 as ::core::ffi::c_uint,
-    );
-    MD5_write(
-        &raw mut md5,
-        &raw mut (*p_sec).ID as *mut ::core::ffi::c_uchar,
-        16 as ::core::ffi::c_uint,
-    );
+        (((*p_sec).P >> 24 as ::core::ffi::c_int) as ::core::ffi::c_uchar as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+    MD5_write(&raw mut md5, &raw mut tmp as *mut ::core::ffi::c_uchar, 4 as ::core::ffi::c_uint);
+    MD5_write(&raw mut md5, &raw mut (*p_sec).ID as *mut ::core::ffi::c_uchar, 16 as ::core::ffi::c_uint);
     MD5_final(&raw mut hash as *mut ::core::ffi::c_uchar, &raw mut md5);
     if (*p_sec).R >= 3 as ::core::ffi::c_int {
         i = 0 as ::core::ffi::c_int;
@@ -505,10 +395,7 @@ unsafe extern "C-unwind" fn compute_encryption_key(
         (*p_sec).key_size as size_t,
     );
 }
-unsafe extern "C-unwind" fn compute_user_password(
-    mut p_sec: *mut pdf_sec,
-    mut uplain: *const ::core::ffi::c_char,
-) {
+unsafe extern "C-unwind" fn compute_user_password(mut p_sec: *mut pdf_sec, mut uplain: *const ::core::ffi::c_char) {
     let mut i: ::core::ffi::c_int = 0;
     let mut j: ::core::ffi::c_int = 0;
     let mut arc4: ARC4_CONTEXT = ARC4_CONTEXT {
@@ -546,16 +433,8 @@ unsafe extern "C-unwind" fn compute_user_password(
             let mut tmp1: [::core::ffi::c_uchar; 32] = [0; 32];
             let mut tmp2: [::core::ffi::c_uchar; 32] = [0; 32];
             MD5_init(&raw mut md5);
-            MD5_write(
-                &raw mut md5,
-                PADDING_BYTES.as_ptr(),
-                32 as ::core::ffi::c_uint,
-            );
-            MD5_write(
-                &raw mut md5,
-                &raw mut (*p_sec).ID as *mut ::core::ffi::c_uchar,
-                16 as ::core::ffi::c_uint,
-            );
+            MD5_write(&raw mut md5, PADDING_BYTES.as_ptr(), 32 as ::core::ffi::c_uint);
+            MD5_write(&raw mut md5, &raw mut (*p_sec).ID as *mut ::core::ffi::c_uchar, 16 as ::core::ffi::c_uint);
             MD5_final(&raw mut hash as *mut ::core::ffi::c_uchar, &raw mut md5);
             ARC4_set_key(
                 &raw mut arc4,
@@ -578,8 +457,7 @@ unsafe extern "C-unwind" fn compute_user_password(
                 );
                 j = 0 as ::core::ffi::c_int;
                 while j < (*p_sec).key_size {
-                    key[j as usize] = ((*p_sec).key[j as usize] as ::core::ffi::c_int ^ i)
-                        as ::core::ffi::c_uchar;
+                    key[j as usize] = ((*p_sec).key[j as usize] as ::core::ffi::c_int ^ i) as ::core::ffi::c_uchar;
                     j += 1;
                 }
                 ARC4_set_key(
@@ -612,11 +490,8 @@ unsafe extern "C-unwind" fn compute_user_password(
     );
 }
 unsafe extern "C-unwind" fn compute_hash_V5(
-    mut hash: *mut ::core::ffi::c_uchar,
-    mut passwd: *const ::core::ffi::c_char,
-    mut salt: *const ::core::ffi::c_uchar,
-    mut user_key: *const ::core::ffi::c_uchar,
-    mut R: ::core::ffi::c_int,
+    mut hash: *mut ::core::ffi::c_uchar, mut passwd: *const ::core::ffi::c_char, mut salt: *const ::core::ffi::c_uchar,
+    mut user_key: *const ::core::ffi::c_uchar, mut R: ::core::ffi::c_int,
 ) {
     let mut K: [::core::ffi::c_uchar; 64] = [0; 64];
     let mut K_len: size_t = 0;
@@ -635,20 +510,13 @@ unsafe extern "C-unwind" fn compute_hash_V5(
         count: 0,
     };
     SHA256_init(&raw mut sha);
-    SHA256_write(
-        &raw mut sha,
-        passwd as *const ::core::ffi::c_uchar,
-        strlen(passwd) as ::core::ffi::c_uint,
-    );
+    SHA256_write(&raw mut sha, passwd as *const ::core::ffi::c_uchar, strlen(passwd) as ::core::ffi::c_uint);
     SHA256_write(&raw mut sha, salt, 8 as ::core::ffi::c_uint);
     if !user_key.is_null() {
         SHA256_write(&raw mut sha, user_key, 48 as ::core::ffi::c_uint);
     }
     SHA256_final(hash, &raw mut sha);
-    if !(R == 5 as ::core::ffi::c_int || R == 6 as ::core::ffi::c_int) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(R == 5 as ::core::ffi::c_int || R == 6 as ::core::ffi::c_int) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"R ==5 || R == 6\0" as *const u8 as *const ::core::ffi::c_char
@@ -694,8 +562,7 @@ unsafe extern "C-unwind" fn compute_hash_V5(
             strlen(passwd),
         );
         memcpy(
-            (&raw mut K1 as *mut ::core::ffi::c_uchar).offset(strlen(passwd) as isize)
-                as *mut ::core::ffi::c_void,
+            (&raw mut K1 as *mut ::core::ffi::c_uchar).offset(strlen(passwd) as isize) as *mut ::core::ffi::c_void,
             &raw mut K as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
             K_len,
         );
@@ -708,9 +575,10 @@ unsafe extern "C-unwind" fn compute_hash_V5(
                 48 as size_t,
             );
         }
-        Kr = new((K1_len.wrapping_mul(64 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_uchar;
+        Kr = new(
+            (K1_len.wrapping_mul(64 as size_t) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
+                as uint32_t,
+        ) as *mut ::core::ffi::c_uchar;
         i = 0 as ::core::ffi::c_int;
         while i < 64 as ::core::ffi::c_int {
             memcpy(
@@ -814,10 +682,7 @@ unsafe extern "C-unwind" fn compute_hash_V5(
         32 as size_t,
     );
 }
-unsafe extern "C-unwind" fn compute_owner_password_V5(
-    mut p_sec: *mut pdf_sec,
-    mut oplain: *const ::core::ffi::c_char,
-) {
+unsafe extern "C-unwind" fn compute_owner_password_V5(mut p_sec: *mut pdf_sec, mut oplain: *const ::core::ffi::c_char) {
     let mut vsalt: [::core::ffi::c_uchar; 8] = [0; 8];
     let mut ksalt: [::core::ffi::c_uchar; 8] = [0; 8];
     let mut hash: [::core::ffi::c_uchar; 32] = [0; 32];
@@ -844,14 +709,12 @@ unsafe extern "C-unwind" fn compute_owner_password_V5(
         32 as size_t,
     );
     memcpy(
-        (&raw mut (*p_sec).O as *mut ::core::ffi::c_uchar).offset(32 as ::core::ffi::c_int as isize)
-            as *mut ::core::ffi::c_void,
+        (&raw mut (*p_sec).O as *mut ::core::ffi::c_uchar).offset(32 as ::core::ffi::c_int as isize) as *mut ::core::ffi::c_void,
         &raw mut vsalt as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
         8 as size_t,
     );
     memcpy(
-        (&raw mut (*p_sec).O as *mut ::core::ffi::c_uchar).offset(40 as ::core::ffi::c_int as isize)
-            as *mut ::core::ffi::c_void,
+        (&raw mut (*p_sec).O as *mut ::core::ffi::c_uchar).offset(40 as ::core::ffi::c_int as isize) as *mut ::core::ffi::c_void,
         &raw mut ksalt as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
         8 as size_t,
     );
@@ -884,10 +747,7 @@ unsafe extern "C-unwind" fn compute_owner_password_V5(
     );
     free(OE as *mut ::core::ffi::c_void);
 }
-unsafe extern "C-unwind" fn compute_user_password_V5(
-    mut p_sec: *mut pdf_sec,
-    mut uplain: *const ::core::ffi::c_char,
-) {
+unsafe extern "C-unwind" fn compute_user_password_V5(mut p_sec: *mut pdf_sec, mut uplain: *const ::core::ffi::c_char) {
     let mut vsalt: [::core::ffi::c_uchar; 8] = [0; 8];
     let mut ksalt: [::core::ffi::c_uchar; 8] = [0; 8];
     let mut hash: [::core::ffi::c_uchar; 32] = [0; 32];
@@ -914,14 +774,12 @@ unsafe extern "C-unwind" fn compute_user_password_V5(
         32 as size_t,
     );
     memcpy(
-        (&raw mut (*p_sec).U as *mut ::core::ffi::c_uchar).offset(32 as ::core::ffi::c_int as isize)
-            as *mut ::core::ffi::c_void,
+        (&raw mut (*p_sec).U as *mut ::core::ffi::c_uchar).offset(32 as ::core::ffi::c_int as isize) as *mut ::core::ffi::c_void,
         &raw mut vsalt as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
         8 as size_t,
     );
     memcpy(
-        (&raw mut (*p_sec).U as *mut ::core::ffi::c_uchar).offset(40 as ::core::ffi::c_int as isize)
-            as *mut ::core::ffi::c_void,
+        (&raw mut (*p_sec).U as *mut ::core::ffi::c_uchar).offset(40 as ::core::ffi::c_int as isize) as *mut ::core::ffi::c_void,
         &raw mut ksalt as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
         8 as size_t,
     );
@@ -954,27 +812,17 @@ unsafe extern "C-unwind" fn compute_user_password_V5(
     );
     free(UE as *mut ::core::ffi::c_void);
 }
-unsafe extern "C-unwind" fn check_version(
-    mut p_sec: *mut pdf_sec,
-    mut version: ::core::ffi::c_int,
-) {
+unsafe extern "C-unwind" fn check_version(mut p_sec: *mut pdf_sec, mut version: ::core::ffi::c_int) {
     if (*p_sec).V > 2 as ::core::ffi::c_int && version < 14 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Current encryption setting requires PDF version >= 1.4.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Current encryption setting requires PDF version >= 1.4.\0" as *const u8 as *const ::core::ffi::c_char,);
         (*p_sec).V = 1 as ::core::ffi::c_int;
         (*p_sec).key_size = 5 as ::core::ffi::c_int;
     } else if (*p_sec).V == 4 as ::core::ffi::c_int && version < 15 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Current encryption setting requires PDF version >= 1.5.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Current encryption setting requires PDF version >= 1.5.\0" as *const u8 as *const ::core::ffi::c_char,);
         (*p_sec).V = 2 as ::core::ffi::c_int;
     } else if (*p_sec).V == 5 as ::core::ffi::c_int && version < 17 as ::core::ffi::c_int {
         pdf_warning!(
-            b"Current encryption setting requires PDF version >= 1.7 (plus Adobe Extension Level 3).\0"
-            as * const u8 as * const ::core::ffi::c_char,
+            b"Current encryption setting requires PDF version >= 1.7 (plus Adobe Extension Level 3).\0" as *const u8 as *const ::core::ffi::c_char,
         );
         (*p_sec).V = 4 as ::core::ffi::c_int;
         (*p_sec).key_size = 16 as ::core::ffi::c_int;
@@ -986,9 +834,7 @@ unsafe extern "C-unwind" fn check_version(
 pub const STRINGPREP_OK: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const STRINGPREP_ERROR: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
 unsafe extern "C-unwind" fn stringprep_profile(
-    mut input: *const ::core::ffi::c_char,
-    mut output: *mut *mut ::core::ffi::c_char,
-    mut profile: *const ::core::ffi::c_char,
+    mut input: *const ::core::ffi::c_char, mut output: *mut *mut ::core::ffi::c_char, mut profile: *const ::core::ffi::c_char,
     mut flags: Stringprep_profile_flags,
 ) -> ::core::ffi::c_int {
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
@@ -996,34 +842,24 @@ unsafe extern "C-unwind" fn stringprep_profile(
     p = input;
     endptr = p.offset(strlen(p) as isize);
     while p < endptr {
-        let mut ucv: int32_t = UC_UTF8_decode_char(
-            &raw mut p as *mut *const ::core::ffi::c_uchar,
-            endptr as *const ::core::ffi::c_uchar,
-        );
+        let mut ucv: int32_t = UC_UTF8_decode_char(&raw mut p as *mut *const ::core::ffi::c_uchar, endptr as *const ::core::ffi::c_uchar);
         if !UC_is_valid(ucv) {
             return STRINGPREP_ERROR;
         }
     }
     *output = new(
-        (strlen(input).wrapping_add(1 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
+        (strlen(input).wrapping_add(1 as size_t) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
             as uint32_t,
     ) as *mut ::core::ffi::c_char;
     strcpy(*output, input);
     return STRINGPREP_OK;
 }
 unsafe extern "C-unwind" fn preproc_password(
-    mut passwd: *const ::core::ffi::c_char,
-    mut outbuf: *mut ::core::ffi::c_char,
-    mut V: ::core::ffi::c_int,
+    mut passwd: *const ::core::ffi::c_char, mut outbuf: *mut ::core::ffi::c_char, mut V: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut saslpwd: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
-    memset(
-        outbuf as *mut ::core::ffi::c_void,
-        0 as ::core::ffi::c_int,
-        128 as size_t,
-    );
+    memset(outbuf as *mut ::core::ffi::c_void, 0 as ::core::ffi::c_int, 128 as size_t);
     match V {
         1 | 2 | 3 | 4 => {
             let passwd_len = strlen(passwd);
@@ -1033,10 +869,7 @@ unsafe extern "C-unwind" fn preproc_password(
                 if (*passwd.offset(i as isize) as ::core::ffi::c_int) < 0x20 as ::core::ffi::c_int
                     || *passwd.offset(i as isize) as ::core::ffi::c_int > 0x7e as ::core::ffi::c_int
                 {
-                    pdf_warning!(
-                        b"Non-ASCII-printable character found in password.\0" as *const u8
-                            as *const ::core::ffi::c_char,
-                    );
+                    pdf_warning!(b"Non-ASCII-printable character found in password.\0" as *const u8 as *const ::core::ffi::c_char,);
                 }
                 i = i.wrapping_add(1);
             }
@@ -1075,10 +908,7 @@ unsafe extern "C-unwind" fn preproc_password(
     return error;
 }
 unsafe extern "C-unwind" fn pdf_enc_set_password(
-    mut p_sec: *mut pdf_sec,
-    mut bits: ::core::ffi::c_uint,
-    mut perm: ::core::ffi::c_uint,
-    mut oplain: *const ::core::ffi::c_char,
+    mut p_sec: *mut pdf_sec, mut bits: ::core::ffi::c_uint, mut perm: ::core::ffi::c_uint, mut oplain: *const ::core::ffi::c_char,
     mut uplain: *const ::core::ffi::c_char,
 ) {
     let mut opasswd: [::core::ffi::c_char; 128] = [0; 128];
@@ -1100,18 +930,14 @@ unsafe extern "C-unwind" fn pdf_enc_set_password(
     } else if (*p_sec).key_size == 32 as ::core::ffi::c_int {
         (*p_sec).V = 5 as ::core::ffi::c_int;
     } else {
-        pdf_warning!(
-            b"Key length %d unsupported.\0" as *const u8 as *const ::core::ffi::c_char,
-            bits,
-        );
+        pdf_warning!(b"Key length %d unsupported.\0" as *const u8 as *const ::core::ffi::c_char, bits,);
         (*p_sec).key_size = 5 as ::core::ffi::c_int;
         (*p_sec).V = 2 as ::core::ffi::c_int;
     }
     check_version(p_sec, version);
     (*p_sec).P = (perm | 0xc0 as ::core::ffi::c_uint) as int32_t;
     if version >= 20 as ::core::ffi::c_int {
-        (*p_sec).P = ((*p_sec).P as ::core::ffi::c_int
-            | (1 as ::core::ffi::c_int) << 9 as ::core::ffi::c_int) as int32_t;
+        (*p_sec).P = ((*p_sec).P as ::core::ffi::c_int | (1 as ::core::ffi::c_int) << 9 as ::core::ffi::c_int) as int32_t;
     }
     match (*p_sec).V {
         1 => {
@@ -1145,15 +971,8 @@ unsafe extern "C-unwind" fn pdf_enc_set_password(
         128 as size_t,
     );
     if !oplain.is_null() {
-        if preproc_password(
-            oplain,
-            &raw mut opasswd as *mut ::core::ffi::c_char,
-            (*p_sec).V,
-        ) < 0 as ::core::ffi::c_int
-        {
-            pdf_warning!(
-                b"Invaid UTF-8 string for password.\0" as *const u8 as *const ::core::ffi::c_char,
-            );
+        if preproc_password(oplain, &raw mut opasswd as *mut ::core::ffi::c_char, (*p_sec).V) < 0 as ::core::ffi::c_int {
+            pdf_warning!(b"Invaid UTF-8 string for password.\0" as *const u8 as *const ::core::ffi::c_char,);
         }
     } else {
         preproc_password(
@@ -1163,15 +982,8 @@ unsafe extern "C-unwind" fn pdf_enc_set_password(
         );
     }
     if !uplain.is_null() {
-        if preproc_password(
-            uplain,
-            &raw mut upasswd as *mut ::core::ffi::c_char,
-            (*p_sec).V,
-        ) < 0 as ::core::ffi::c_int
-        {
-            pdf_warning!(
-                b"Invalid UTF-8 string for passowrd.\0" as *const u8 as *const ::core::ffi::c_char,
-            );
+        if preproc_password(uplain, &raw mut upasswd as *mut ::core::ffi::c_char, (*p_sec).V) < 0 as ::core::ffi::c_int {
+            pdf_warning!(b"Invalid UTF-8 string for passowrd.\0" as *const u8 as *const ::core::ffi::c_char,);
         }
     } else {
         preproc_password(
@@ -1181,8 +993,7 @@ unsafe extern "C-unwind" fn pdf_enc_set_password(
         );
     }
     if (*p_sec).R >= 3 as ::core::ffi::c_int {
-        (*p_sec).P =
-            ((*p_sec).P as ::core::ffi::c_uint | 0xfffff000 as ::core::ffi::c_uint) as int32_t;
+        (*p_sec).P = ((*p_sec).P as ::core::ffi::c_uint | 0xfffff000 as ::core::ffi::c_uint) as int32_t;
     }
     if (*p_sec).V < 5 as ::core::ffi::c_int {
         compute_owner_password(
@@ -1195,8 +1006,7 @@ unsafe extern "C-unwind" fn pdf_enc_set_password(
         let mut i: ::core::ffi::c_int = 0;
         i = 0 as ::core::ffi::c_int;
         while i < 32 as ::core::ffi::c_int {
-            (*p_sec).key[i as usize] =
-                (genrand_int31() % 256 as ::core::ffi::c_long) as ::core::ffi::c_uchar;
+            (*p_sec).key[i as usize] = (genrand_int31() % 256 as ::core::ffi::c_long) as ::core::ffi::c_uchar;
             i += 1;
         }
         (*p_sec).key_size = 32 as ::core::ffi::c_int;
@@ -1204,10 +1014,7 @@ unsafe extern "C-unwind" fn pdf_enc_set_password(
         compute_owner_password_V5(p_sec, &raw mut opasswd as *mut ::core::ffi::c_char);
     }
 }
-unsafe extern "C-unwind" fn calculate_key(
-    mut p_sec: *mut pdf_sec,
-    mut key: *mut ::core::ffi::c_uchar,
-) {
+unsafe extern "C-unwind" fn calculate_key(mut p_sec: *mut pdf_sec, mut key: *mut ::core::ffi::c_uchar) {
     let mut len: ::core::ffi::c_int = (*p_sec).key_size + 5 as ::core::ffi::c_int;
     let mut tmp: [::core::ffi::c_uchar; 25] = [0; 25];
     let mut md5: MD5_CONTEXT = MD5_CONTEXT {
@@ -1224,24 +1031,19 @@ unsafe extern "C-unwind" fn calculate_key(
         &raw mut (*p_sec).key as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
         (*p_sec).key_size as size_t,
     );
-    tmp[(*p_sec).key_size as usize] = ((*p_sec).label.objnum as ::core::ffi::c_uchar
+    tmp[(*p_sec).key_size as usize] =
+        ((*p_sec).label.objnum as ::core::ffi::c_uchar as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+    tmp[((*p_sec).key_size + 1 as ::core::ffi::c_int) as usize] = (((*p_sec).label.objnum >> 8 as ::core::ffi::c_int) as ::core::ffi::c_uchar
         as ::core::ffi::c_int
         & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
-    tmp[((*p_sec).key_size + 1 as ::core::ffi::c_int) as usize] =
-        (((*p_sec).label.objnum >> 8 as ::core::ffi::c_int) as ::core::ffi::c_uchar
-            as ::core::ffi::c_int
-            & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
-    tmp[((*p_sec).key_size + 2 as ::core::ffi::c_int) as usize] =
-        (((*p_sec).label.objnum >> 16 as ::core::ffi::c_int) as ::core::ffi::c_uchar
-            as ::core::ffi::c_int
-            & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+    tmp[((*p_sec).key_size + 2 as ::core::ffi::c_int) as usize] = (((*p_sec).label.objnum >> 16 as ::core::ffi::c_int) as ::core::ffi::c_uchar
+        as ::core::ffi::c_int
+        & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
     tmp[((*p_sec).key_size + 3 as ::core::ffi::c_int) as usize] =
-        ((*p_sec).label.gennum as ::core::ffi::c_uchar as ::core::ffi::c_int
-            & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
-    tmp[((*p_sec).key_size + 4 as ::core::ffi::c_int) as usize] =
-        (((*p_sec).label.gennum as ::core::ffi::c_int >> 8 as ::core::ffi::c_int)
-            as ::core::ffi::c_uchar as ::core::ffi::c_int
-            & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+        ((*p_sec).label.gennum as ::core::ffi::c_uchar as ::core::ffi::c_int & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
+    tmp[((*p_sec).key_size + 4 as ::core::ffi::c_int) as usize] = (((*p_sec).label.gennum as ::core::ffi::c_int >> 8 as ::core::ffi::c_int)
+        as ::core::ffi::c_uchar as ::core::ffi::c_int
+        & 0xff as ::core::ffi::c_int) as ::core::ffi::c_uchar;
     if (*p_sec).V >= 4 as ::core::ffi::c_int {
         tmp[((*p_sec).key_size + 5 as ::core::ffi::c_int) as usize] = 0x73 as ::core::ffi::c_uchar;
         tmp[((*p_sec).key_size + 6 as ::core::ffi::c_int) as usize] = 0x41 as ::core::ffi::c_uchar;
@@ -1250,24 +1052,13 @@ unsafe extern "C-unwind" fn calculate_key(
         len += 4 as ::core::ffi::c_int;
     }
     MD5_init(&raw mut md5);
-    MD5_write(
-        &raw mut md5,
-        &raw mut tmp as *mut ::core::ffi::c_uchar,
-        len as ::core::ffi::c_uint,
-    );
+    MD5_write(&raw mut md5, &raw mut tmp as *mut ::core::ffi::c_uchar, len as ::core::ffi::c_uint);
     MD5_final(key, &raw mut md5);
 }
-pub(crate) unsafe fn encrypt_owned(
-    security: *mut pdf_sec,
-    plain: &[u8],
-) -> Result<Vec<u8>, crate::error::PdfError> {
+pub(crate) unsafe fn encrypt_owned(security: *mut pdf_sec, plain: &[u8]) -> Result<Vec<u8>, crate::error::PdfError> {
     use crate::error::{PdfError, PdfErrorKind};
-    let security_ref = unsafe { security.as_ref() }.ok_or_else(|| {
-        PdfError::new(
-            PdfErrorKind::InvalidState,
-            c"Invalid PDF encryption state".into(),
-        )
-    })?;
+    let security_ref =
+        unsafe { security.as_ref() }.ok_or_else(|| PdfError::new(PdfErrorKind::InvalidState, c"Invalid PDF encryption state".into()))?;
     let version = security_ref.V;
     if !matches!(version, 1 | 2 | 4 | 5) {
         return Err(PdfError::new(
@@ -1278,12 +1069,7 @@ pub(crate) unsafe fn encrypt_owned(
     let key_size = usize::try_from(security_ref.key_size)
         .ok()
         .filter(|&size| size > 0 && size <= if version == 5 { 32 } else { 16 })
-        .ok_or_else(|| {
-            PdfError::new(
-                PdfErrorKind::InvalidState,
-                c"Invalid PDF encryption key size".into(),
-            )
-        })?;
+        .ok_or_else(|| PdfError::new(PdfErrorKind::InvalidState, c"Invalid PDF encryption key size".into()))?;
     let mut key = [0; 32];
     let key = if version == 5 {
         &security_ref.key[..key_size]
@@ -1298,10 +1084,7 @@ pub(crate) unsafe fn encrypt_owned(
     };
     if matches!(version, 1 | 2) {
         if plain.len() > u32::MAX as usize {
-            return Err(PdfError::new(
-                PdfErrorKind::InvalidState,
-                c"PDF encrypted data is too large".into(),
-            ));
+            return Err(PdfError::new(PdfErrorKind::InvalidState, c"PDF encrypted data is too large".into()));
         }
         let mut context = super::dpx_dpxcrypt::ARC4_CONTEXT {
             idx_i: 0,
@@ -1321,19 +1104,14 @@ pub(crate) unsafe fn encrypt_owned(
 
 #[unsafe(export_name = "__pdf_impl_pdf_encrypt_data")]
 pub unsafe extern "C-unwind" fn pdf_encrypt_data(
-    security: *mut pdf_sec,
-    plain: *const u8,
-    plain_len: usize,
-    cipher: *mut *mut u8,
-    cipher_len: *mut usize,
+    security: *mut pdf_sec, plain: *const u8, plain_len: usize, cipher: *mut *mut u8, cipher_len: *mut usize,
 ) {
     let plain = if plain_len == 0 {
         &[]
     } else {
         unsafe { core::slice::from_raw_parts(plain, plain_len) }
     };
-    let output = unsafe { encrypt_owned(security, plain) }
-        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+    let output = unsafe { encrypt_owned(security, plain) }.unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
     unsafe {
         let bytes = new(output.len() as u32).cast::<u8>();
         core::ptr::copy_nonoverlapping(output.as_ptr(), bytes, output.len());
@@ -1345,10 +1123,7 @@ pub unsafe extern "C-unwind" fn pdf_encrypt_data(
 pub unsafe extern "C-unwind" fn pdf_enc_get_encrypt_dict(mut p_sec: *mut pdf_sec) -> *mut pdf_obj {
     let mut doc_encrypt: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     if p_sec.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p_sec\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p_sec\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     doc_encrypt = pdf_new_dict();
@@ -1391,16 +1166,8 @@ pub unsafe extern "C-unwind" fn pdf_enc_get_encrypt_dict(mut p_sec: *mut pdf_sec
             pdf_new_name(b"Length\0" as *const u8 as *const ::core::ffi::c_char),
             pdf_new_number((*p_sec).key_size as ::core::ffi::c_double),
         );
-        pdf_add_dict(
-            CF,
-            pdf_new_name(b"StdCF\0" as *const u8 as *const ::core::ffi::c_char),
-            StdCF,
-        );
-        pdf_add_dict(
-            doc_encrypt,
-            pdf_new_name(b"CF\0" as *const u8 as *const ::core::ffi::c_char),
-            CF,
-        );
+        pdf_add_dict(CF, pdf_new_name(b"StdCF\0" as *const u8 as *const ::core::ffi::c_char), StdCF);
+        pdf_add_dict(doc_encrypt, pdf_new_name(b"CF\0" as *const u8 as *const ::core::ffi::c_char), CF);
         pdf_add_dict(
             doc_encrypt,
             pdf_new_name(b"StmF\0" as *const u8 as *const ::core::ffi::c_char),
@@ -1477,14 +1244,10 @@ pub unsafe extern "C-unwind" fn pdf_enc_get_encrypt_dict(mut p_sec: *mut pdf_sec
                 32 as size_t,
             ),
         );
-        perms[0 as ::core::ffi::c_int as usize] =
-            ((*p_sec).P & 0xff as int32_t) as ::core::ffi::c_uchar;
-        perms[1 as ::core::ffi::c_int as usize] =
-            ((*p_sec).P >> 8 as ::core::ffi::c_int & 0xff as int32_t) as ::core::ffi::c_uchar;
-        perms[2 as ::core::ffi::c_int as usize] =
-            ((*p_sec).P >> 16 as ::core::ffi::c_int & 0xff as int32_t) as ::core::ffi::c_uchar;
-        perms[3 as ::core::ffi::c_int as usize] =
-            ((*p_sec).P >> 24 as ::core::ffi::c_int & 0xff as int32_t) as ::core::ffi::c_uchar;
+        perms[0 as ::core::ffi::c_int as usize] = ((*p_sec).P & 0xff as int32_t) as ::core::ffi::c_uchar;
+        perms[1 as ::core::ffi::c_int as usize] = ((*p_sec).P >> 8 as ::core::ffi::c_int & 0xff as int32_t) as ::core::ffi::c_uchar;
+        perms[2 as ::core::ffi::c_int as usize] = ((*p_sec).P >> 16 as ::core::ffi::c_int & 0xff as int32_t) as ::core::ffi::c_uchar;
+        perms[3 as ::core::ffi::c_int as usize] = ((*p_sec).P >> 24 as ::core::ffi::c_int & 0xff as int32_t) as ::core::ffi::c_uchar;
         perms[4 as ::core::ffi::c_int as usize] = 0xff as ::core::ffi::c_uchar;
         perms[5 as ::core::ffi::c_int as usize] = 0xff as ::core::ffi::c_uchar;
         perms[6 as ::core::ffi::c_int as usize] = 0xff as ::core::ffi::c_uchar;
@@ -1519,16 +1282,11 @@ pub unsafe extern "C-unwind" fn pdf_enc_get_encrypt_dict(mut p_sec: *mut pdf_sec
     return doc_encrypt;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_enc_get_extension_dict")]
-pub unsafe extern "C-unwind" fn pdf_enc_get_extension_dict(
-    mut p_sec: *mut pdf_sec,
-) -> *mut pdf_obj {
+pub unsafe extern "C-unwind" fn pdf_enc_get_extension_dict(mut p_sec: *mut pdf_sec) -> *mut pdf_obj {
     let mut ext: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut adbe: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     if p_sec.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p_sec\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p_sec\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if (*p_sec).setting.need_adobe_extension != 0 {
@@ -1550,54 +1308,30 @@ pub unsafe extern "C-unwind" fn pdf_enc_get_extension_dict(
                 }) as ::core::ffi::c_double,
             ),
         );
-        pdf_add_dict(
-            ext,
-            pdf_new_name(b"ADBE\0" as *const u8 as *const ::core::ffi::c_char),
-            adbe,
-        );
+        pdf_add_dict(ext, pdf_new_name(b"ADBE\0" as *const u8 as *const ::core::ffi::c_char), adbe);
     }
     return ext;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_enc_set_label")]
-pub unsafe extern "C-unwind" fn pdf_enc_set_label(
-    mut p_sec: *mut pdf_sec,
-    mut label: ::core::ffi::c_uint,
-) {
+pub unsafe extern "C-unwind" fn pdf_enc_set_label(mut p_sec: *mut pdf_sec, mut label: ::core::ffi::c_uint) {
     if p_sec.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p_sec\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p_sec\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     (*p_sec).label.objnum = label as uint64_t;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_enc_set_generation")]
-pub unsafe extern "C-unwind" fn pdf_enc_set_generation(
-    mut p_sec: *mut pdf_sec,
-    mut generation: ::core::ffi::c_uint,
-) {
+pub unsafe extern "C-unwind" fn pdf_enc_set_generation(mut p_sec: *mut pdf_sec, mut generation: ::core::ffi::c_uint) {
     if p_sec.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p_sec\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p_sec\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     (*p_sec).label.gennum = generation as uint16_t;
 }
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 unsafe extern "C" {
-    fn memcpy(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_void;
-    fn memset(
-        __b: *mut ::core::ffi::c_void,
-        __c: ::core::ffi::c_int,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memcpy(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __n: size_t) -> *mut ::core::ffi::c_void;
+    fn memset(__b: *mut ::core::ffi::c_void, __c: ::core::ffi::c_int, __len: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -1606,26 +1340,10 @@ pub struct pdf_obj {
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_enc_init(
-    mut id: *const ::core::ffi::c_uchar,
-    mut keybits: ::core::ffi::c_int,
-    mut permission: uint32_t,
-    mut opasswd: *const ::core::ffi::c_char,
-    mut upasswd: *const ::core::ffi::c_char,
-    mut use_aes: ::core::ffi::c_int,
-    mut encrypt_metadata: ::core::ffi::c_int,
-    _result: *mut *mut pdf_sec,
+    mut id: *const ::core::ffi::c_uchar, mut keybits: ::core::ffi::c_int, mut permission: uint32_t, mut opasswd: *const ::core::ffi::c_char,
+    mut upasswd: *const ::core::ffi::c_char, mut use_aes: ::core::ffi::c_int, mut encrypt_metadata: ::core::ffi::c_int, _result: *mut *mut pdf_sec,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_enc_init(
-            id,
-            keybits,
-            permission,
-            opasswd,
-            upasswd,
-            use_aes,
-            encrypt_metadata,
-        )
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_enc_init(id, keybits, permission, opasswd, upasswd, use_aes, encrypt_metadata) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -1647,15 +1365,10 @@ pub unsafe extern "C" fn __pdf_entry_pdf_enc_close(mut p_sec: *mut *mut pdf_sec)
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_encrypt_data(
-    mut p_sec: *mut pdf_sec,
-    mut plain: *const ::core::ffi::c_uchar,
-    mut plain_len: size_t,
-    mut cipher: *mut *mut ::core::ffi::c_uchar,
+    mut p_sec: *mut pdf_sec, mut plain: *const ::core::ffi::c_uchar, mut plain_len: size_t, mut cipher: *mut *mut ::core::ffi::c_uchar,
     mut cipher_len: *mut size_t,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_encrypt_data(p_sec, plain, plain_len, cipher, cipher_len)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_encrypt_data(p_sec, plain, plain_len, cipher, cipher_len) }) {
         Ok(value) => {
             unsafe {
                 crate::compat::allocation::release((*cipher).cast());
@@ -1667,10 +1380,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_encrypt_data(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_enc_get_encrypt_dict(
-    mut p_sec: *mut pdf_sec,
-    _result: *mut *mut pdf_obj,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_enc_get_encrypt_dict(mut p_sec: *mut pdf_sec, _result: *mut *mut pdf_obj) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_enc_get_encrypt_dict(p_sec) }) {
         Ok(value) => {
             unsafe {
@@ -1682,10 +1392,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_enc_get_encrypt_dict(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_enc_get_extension_dict(
-    mut p_sec: *mut pdf_sec,
-    _result: *mut *mut pdf_obj,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_enc_get_extension_dict(mut p_sec: *mut pdf_sec, _result: *mut *mut pdf_obj) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_enc_get_extension_dict(p_sec) }) {
         Ok(value) => {
             unsafe {
@@ -1697,10 +1404,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_enc_get_extension_dict(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_enc_set_label(
-    mut p_sec: *mut pdf_sec,
-    mut label: ::core::ffi::c_uint,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_enc_set_label(mut p_sec: *mut pdf_sec, mut label: ::core::ffi::c_uint) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_enc_set_label(p_sec, label) }) {
         Ok(value) => {
             let _ = value;
@@ -1710,12 +1414,8 @@ pub unsafe extern "C" fn __pdf_entry_pdf_enc_set_label(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_enc_set_generation(
-    mut p_sec: *mut pdf_sec,
-    mut generation: ::core::ffi::c_uint,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { pdf_enc_set_generation(p_sec, generation) })
-    {
+pub unsafe extern "C" fn __pdf_entry_pdf_enc_set_generation(mut p_sec: *mut pdf_sec, mut generation: ::core::ffi::c_uint) -> i32 {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_enc_set_generation(p_sec, generation) }) {
         Ok(value) => {
             let _ = value;
             0

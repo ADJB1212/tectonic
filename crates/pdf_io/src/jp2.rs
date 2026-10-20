@@ -25,11 +25,7 @@ struct BoxHeader {
     end: u64,
 }
 
-fn box_header(
-    input: &mut (impl Read + Seek),
-    end: u64,
-    to_end: bool,
-) -> Result<BoxHeader, PdfError> {
+fn box_header(input: &mut (impl Read + Seek), end: u64, to_end: bool) -> Result<BoxHeader, PdfError> {
     let start = position(input)?;
     if end.saturating_sub(start) < 8 {
         return Err(error("JPEG2000: Truncated box header.", start as usize));
@@ -44,10 +40,7 @@ fn box_header(
             }
             let length = u64::from_be_bytes(read(input)?);
             if length > u32::MAX.into() {
-                return Err(error(
-                    "JPEG2000: LBox value in JP2 file >32 bits.\nI can't handle this!",
-                    start as usize,
-                ));
+                return Err(error("JPEG2000: LBox value in JP2 file >32 bits.\nI can't handle this!", start as usize));
             }
             (length, 16)
         }
@@ -71,10 +64,7 @@ pub(crate) fn probe(input: &mut (impl Read + Seek)) -> Result<bool, PdfError> {
         return Ok(false);
     }
     let header = box_header(input, end, false)?;
-    if header.kind != *b"ftyp"
-        || header.end - header.start < 8
-        || (header.end - header.start) % 4 != 0
-    {
+    if header.kind != *b"ftyp" || header.end - header.start < 8 || (header.end - header.start) % 4 != 0 {
         return Ok(false);
     }
     let brand = read::<4>(input)?;
@@ -98,10 +88,7 @@ pub(crate) struct Metadata {
     pub(crate) soft_mask: bool,
 }
 
-pub(crate) fn scan(
-    input: &mut (impl Read + Seek),
-    mut warning: impl FnMut(&'static str),
-) -> Result<Metadata, PdfError> {
+pub(crate) fn scan(input: &mut (impl Read + Seek), mut warning: impl FnMut(&'static str)) -> Result<Metadata, PdfError> {
     if !probe(input)? {
         return Err(error("JPEG2000: Reading JPEG 2000 file failed.", 0));
     }
@@ -132,45 +119,26 @@ pub(crate) fn scan(
         seek(input, header.end)?;
     }
     if !have_header {
-        return Err(error(
-            "JPEG2000: No JP2 Header box found. Not a JP2/JPX baseline file?",
-            end as usize,
-        ));
+        return Err(error("JPEG2000: No JP2 Header box found. Not a JP2/JPX baseline file?", end as usize));
     }
     Ok(info)
 }
 
-fn parse_header(
-    input: &mut (impl Read + Seek),
-    end: u64,
-    info: &mut Metadata,
-    warning: &mut impl FnMut(&'static str),
-) -> Result<(), PdfError> {
+fn parse_header(input: &mut (impl Read + Seek), end: u64, info: &mut Metadata, warning: &mut impl FnMut(&'static str)) -> Result<(), PdfError> {
     let mut have_image = false;
     while position(input)? < end {
         let header = box_header(input, end, false)?;
         match &header.kind {
             b"ihdr" => {
                 if header.end - header.start < 14 {
-                    return Err(error(
-                        "JPEG2000: Truncated image header.",
-                        header.start as usize,
-                    ));
+                    return Err(error("JPEG2000: Truncated image header.", header.start as usize));
                 }
                 let height = u32::from_be_bytes(read(input)?);
                 let width = u32::from_be_bytes(read(input)?);
                 let components = u16::from_be_bytes(read(input)?);
                 read::<4>(input)?;
-                if width == 0
-                    || height == 0
-                    || width > i32::MAX as u32
-                    || height > i32::MAX as u32
-                    || components == 0
-                {
-                    return Err(error(
-                        "JPEG2000: Invalid image dimensions.",
-                        header.start as usize,
-                    ));
+                if width == 0 || height == 0 || width > i32::MAX as u32 || height > i32::MAX as u32 || components == 0 {
+                    return Err(error("JPEG2000: Invalid image dimensions.", header.start as usize));
                 }
                 info.width = width as i32;
                 info.height = height as i32;
@@ -180,17 +148,11 @@ fn parse_header(
             b"res " => resolution(input, header.end, info, warning)?,
             b"cdef" => {
                 if header.end - header.start < 2 {
-                    return Err(error(
-                        "JPEG2000: Inconsistent N value in Channel Definition box.",
-                        header.start as usize,
-                    ));
+                    return Err(error("JPEG2000: Inconsistent N value in Channel Definition box.", header.start as usize));
                 }
                 let count = u16::from_be_bytes(read(input)?);
                 if header.end - header.start < 2 + u64::from(count) * 6 {
-                    return Err(error(
-                        "JPEG2000: Inconsistent N value in Channel Definition box.",
-                        header.start as usize,
-                    ));
+                    return Err(error("JPEG2000: Inconsistent N value in Channel Definition box.", header.start as usize));
                 }
                 let (mut opacity, mut type0) = (0, false);
                 for _ in 0..count {
@@ -214,38 +176,24 @@ fn parse_header(
             }
             b"bpcc" | b"colr" | b"pclr" | b"cmap" | b"lbl " => {}
             _ => {
-                return Err(error(
-                    "JPEG2000: Unknown JPEG 2000 box in JP2 Header box.",
-                    header.start as usize,
-                ));
+                return Err(error("JPEG2000: Unknown JPEG 2000 box in JP2 Header box.", header.start as usize));
             }
         }
         seek(input, header.end)?;
     }
     if !have_image {
-        return Err(error(
-            "JPEG2000: Expecting JPEG 2000 Image Header box but could not find.",
-            end as usize,
-        ));
+        return Err(error("JPEG2000: Expecting JPEG 2000 Image Header box but could not find.", end as usize));
     }
     Ok(())
 }
 
-fn resolution(
-    input: &mut (impl Read + Seek),
-    end: u64,
-    info: &mut Metadata,
-    warning: &mut impl FnMut(&'static str),
-) -> Result<(), PdfError> {
+fn resolution(input: &mut (impl Read + Seek), end: u64, info: &mut Metadata, warning: &mut impl FnMut(&'static str)) -> Result<(), PdfError> {
     let mut display = false;
     while position(input)? < end {
         let header = box_header(input, end, false)?;
         if header.kind == *b"resd" || (header.kind == *b"resc" && !display) {
             if header.end - header.start < 10 {
-                return Err(error(
-                    "JPEG2000: Truncated resolution box.",
-                    header.start as usize,
-                ));
+                return Err(error("JPEG2000: Truncated resolution box.", header.start as usize));
             }
             let vn = u16::from_be_bytes(read(input)?);
             let vd = u16::from_be_bytes(read(input)?);
@@ -253,15 +201,10 @@ fn resolution(
             let hd = u16::from_be_bytes(read(input)?);
             let [ve, he] = read(input)?;
             if [vn, vd, hn, hd].contains(&0) {
-                return Err(error(
-                    "JPEG2000: Invalid resolution.",
-                    header.start as usize,
-                ));
+                return Err(error("JPEG2000: Invalid resolution.", header.start as usize));
             }
-            info.x_density =
-                72.0 / (f64::from(hn) / f64::from(hd) * 10.0f64.powf(f64::from(he)) * 0.0254);
-            info.y_density =
-                72.0 / (f64::from(vn) / f64::from(vd) * 10.0f64.powf(f64::from(ve)) * 0.0254);
+            info.x_density = 72.0 / (f64::from(hn) / f64::from(hd) * 10.0f64.powf(f64::from(he)) * 0.0254);
+            info.y_density = 72.0 / (f64::from(vn) / f64::from(vd) * 10.0f64.powf(f64::from(ve)) * 0.0254);
             display |= header.kind == *b"resd";
         } else if header.kind != *b"resc" {
             warning("JPEG2000: Unknown JPEG 2000 box type in Resolution box.");
@@ -277,20 +220,10 @@ mod tests {
     use std::io::Cursor;
 
     fn boxed(kind: [u8; 4], bytes: &[u8]) -> Vec<u8> {
-        [
-            (bytes.len() as u32 + 8).to_be_bytes().as_slice(),
-            &kind,
-            bytes,
-        ]
-        .concat()
+        [(bytes.len() as u32 + 8).to_be_bytes().as_slice(), &kind, bytes].concat()
     }
     fn fixture() -> Vec<u8> {
-        let image = [
-            2u32.to_be_bytes().as_slice(),
-            3u32.to_be_bytes().as_slice(),
-            &[0, 3, 7, 7, 0, 0],
-        ]
-        .concat();
+        let image = [2u32.to_be_bytes().as_slice(), 3u32.to_be_bytes().as_slice(), &[0, 3, 7, 7, 0, 0]].concat();
         [
             b"\0\0\0\x0cjP  \r\n\x87\n".as_slice(),
             &boxed(*b"ftyp", b"jp2 \0\0\0\0"),

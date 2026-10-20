@@ -89,14 +89,7 @@ impl GlobalBuffer {
         buf.copy_within(from..from + len, to);
     }
 
-    pub fn copy_within(
-        &mut self,
-        from: BufTy,
-        to: BufTy,
-        from_start: usize,
-        to_start: usize,
-        len: usize,
-    ) {
+    pub fn copy_within(&mut self, from: BufTy, to: BufTy, from_start: usize, to_start: usize, len: usize) {
         assert!(to_start + len < self.buf_len);
         assert!(from_start + len < self.buf_len);
         if from == to {

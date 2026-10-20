@@ -19,13 +19,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::backend::dpx_pdfdraw::pdf_dev_transform;
 use crate::compat::allocation::free;
 
@@ -57,20 +51,13 @@ mod performance_tests {
             }
             for index in 0..4 {
                 let dict = super::super::dpx_pdfobj::pdf_new_dict().cast();
-                pdf_add_dict(
-                    dict,
-                    pdf_new_name(c"Scale".as_ptr()),
-                    pdf_new_number(if index == 3 { 2.0 } else { 1.0 }),
-                );
+                pdf_add_dict(dict, pdf_new_name(c"Scale".as_ptr()), pdf_new_number(if index == 3 { 2.0 } else { 1.0 }));
                 let options = load_options {
                     page_no: if index == 0 { 1 } else { 2 },
                     bbox_type: u32::from(index >= 2),
                     dict,
                 };
-                assert_eq!(
-                    pdf_ximage_load_image(core::ptr::null(), c"same.pdf".as_ptr(), options),
-                    index
-                );
+                assert_eq!(pdf_ximage_load_image(core::ptr::null(), c"same.pdf".as_ptr(), options), index);
                 pdf_release_obj(dict);
             }
             pdf_close_images();
@@ -78,36 +65,14 @@ mod performance_tests {
     }
 }
 unsafe extern "C-unwind" {
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-    fn strcpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
-    fn strncmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    fn strcpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+    fn strncmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char, __n: size_t) -> ::core::ffi::c_int;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
-    fn ttstub_input_open(
-        path: *const ::core::ffi::c_char,
-        format: ttbc_file_format,
-        is_gz: ::core::ffi::c_int,
-    ) -> rust_input_handle_t;
-    fn ttstub_input_seek(
-        handle: rust_input_handle_t,
-        offset: ssize_t,
-        whence: ::core::ffi::c_int,
-    ) -> size_t;
+    fn ttstub_input_open(path: *const ::core::ffi::c_char, format: ttbc_file_format, is_gz: ::core::ffi::c_int) -> rust_input_handle_t;
+    fn ttstub_input_seek(handle: rust_input_handle_t, offset: ssize_t, whence: ::core::ffi::c_int) -> size_t;
     fn ttstub_input_close(handle: rust_input_handle_t) -> ::core::ffi::c_int;
-    fn sprintf(
-        _: *mut ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
+    fn sprintf(_: *mut ::core::ffi::c_char, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_release_obj"]
     fn pdf_release_obj(object: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_obj_typeof"]
@@ -123,11 +88,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_merge_dict"]
     fn pdf_merge_dict(dict1: *mut pdf_obj, dict2: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_stream_dict"]
     fn pdf_stream_dict(stream: *mut pdf_obj) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_compare_object"]
@@ -137,85 +98,44 @@ unsafe extern "C-unwind" {
     static mut global_names: *mut ht_table;
     static mut work_buffer: [::core::ffi::c_char; 0];
     #[link_name = "__pdf_impl_tt_mfgets"]
-    fn tt_mfgets(
-        buffer: *mut ::core::ffi::c_char,
-        length: ::core::ffi::c_int,
-        file: rust_input_handle_t,
-    ) -> *mut ::core::ffi::c_char;
+    fn tt_mfgets(buffer: *mut ::core::ffi::c_char, length: ::core::ffi::c_int, file: rust_input_handle_t) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_bmp_include_image"]
-    fn bmp_include_image(
-        ximage: *mut pdf_ximage,
-        handle: rust_input_handle_t,
-    ) -> ::core::ffi::c_int;
+    fn bmp_include_image(ximage: *mut pdf_ximage, handle: rust_input_handle_t) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_check_for_bmp"]
     fn check_for_bmp(handle: rust_input_handle_t) -> ::core::ffi::c_int;
     static mut dpx_conf: _dpx_conf;
     #[link_name = "__pdf_impl_dpx_delete_temp_file"]
     fn dpx_delete_temp_file(tmp: *mut ::core::ffi::c_char, force: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_min4"]
-    fn min4(
-        v1: ::core::ffi::c_double,
-        v2: ::core::ffi::c_double,
-        v3: ::core::ffi::c_double,
-        v4: ::core::ffi::c_double,
-    ) -> ::core::ffi::c_double;
+    fn min4(v1: ::core::ffi::c_double, v2: ::core::ffi::c_double, v3: ::core::ffi::c_double, v4: ::core::ffi::c_double) -> ::core::ffi::c_double;
     #[link_name = "__pdf_impl_max4"]
-    fn max4(
-        v1: ::core::ffi::c_double,
-        v2: ::core::ffi::c_double,
-        v3: ::core::ffi::c_double,
-        v4: ::core::ffi::c_double,
-    ) -> ::core::ffi::c_double;
+    fn max4(v1: ::core::ffi::c_double, v2: ::core::ffi::c_double, v3: ::core::ffi::c_double, v4: ::core::ffi::c_double) -> ::core::ffi::c_double;
     #[link_name = "__pdf_impl_pdf_include_page"]
     fn pdf_include_page(
-        ximage: *mut pdf_ximage,
-        handle: rust_input_handle_t,
-        ident: *const ::core::ffi::c_char,
-        options: load_options,
+        ximage: *mut pdf_ximage, handle: rust_input_handle_t, ident: *const ::core::ffi::c_char, options: load_options,
     ) -> ::core::ffi::c_int;
     fn dpx_message(fmt: *const ::core::ffi::c_char, ...);
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_check_for_jpeg"]
     fn check_for_jpeg(handle: rust_input_handle_t) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_jpeg_include_image"]
-    fn jpeg_include_image(
-        ximage: *mut pdf_ximage,
-        handle: rust_input_handle_t,
-    ) -> ::core::ffi::c_int;
+    fn jpeg_include_image(ximage: *mut pdf_ximage, handle: rust_input_handle_t) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_new"]
     fn new(size: uint32_t) -> *mut ::core::ffi::c_void;
     #[link_name = "__pdf_impl_renew"]
     fn renew(p: *mut ::core::ffi::c_void, size: uint32_t) -> *mut ::core::ffi::c_void;
     #[link_name = "__pdf_impl_pdf_names_add_object"]
     fn pdf_names_add_object(
-        names: *mut ht_table,
-        key: *const ::core::ffi::c_void,
-        keylen: ::core::ffi::c_int,
-        object: *mut pdf_obj,
+        names: *mut ht_table, key: *const ::core::ffi::c_void, keylen: ::core::ffi::c_int, object: *mut pdf_obj,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_names_lookup_reference"]
-    fn pdf_names_lookup_reference(
-        names: *mut ht_table,
-        key: *const ::core::ffi::c_void,
-        keylen: ::core::ffi::c_int,
-    ) -> *mut pdf_obj;
+    fn pdf_names_lookup_reference(names: *mut ht_table, key: *const ::core::ffi::c_void, keylen: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_names_close_object"]
-    fn pdf_names_close_object(
-        names: *mut ht_table,
-        key: *const ::core::ffi::c_void,
-        keylen: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn pdf_names_close_object(names: *mut ht_table, key: *const ::core::ffi::c_void, keylen: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_names_reserve"]
-    fn pdf_names_reserve(
-        names: *mut ht_table,
-        key: *const ::core::ffi::c_void,
-        keylen: ::core::ffi::c_int,
-    ) -> *mut pdf_obj;
+    fn pdf_names_reserve(names: *mut ht_table, key: *const ::core::ffi::c_void, keylen: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_png_include_image"]
-    fn png_include_image(
-        ximage: *mut pdf_ximage,
-        handle: rust_input_handle_t,
-    ) -> ::core::ffi::c_int;
+    fn png_include_image(ximage: *mut pdf_ximage, handle: rust_input_handle_t) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_check_for_png"]
     fn check_for_png(handle: rust_input_handle_t) -> ::core::ffi::c_int;
 }
@@ -372,20 +292,14 @@ unsafe extern "C-unwind" fn mfree(mut ptr: *mut ::core::ffi::c_void) -> *mut ::c
     return NULL;
 }
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
     return false_0 != 0;
 }
 #[inline]
-unsafe extern "C-unwind" fn strstartswith(
-    mut s: *const ::core::ffi::c_char,
-    mut prefix: *const ::core::ffi::c_char,
-) -> *const ::core::ffi::c_char {
+unsafe extern "C-unwind" fn strstartswith(mut s: *const ::core::ffi::c_char, mut prefix: *const ::core::ffi::c_char) -> *const ::core::ffi::c_char {
     let mut length: size_t = 0;
     length = strlen(prefix);
     if strncmp(s, prefix, length) == 0 as ::core::ffi::c_int {
@@ -394,11 +308,9 @@ unsafe extern "C-unwind" fn strstartswith(
     return ::core::ptr::null::<::core::ffi::c_char>();
 }
 pub const PDF_STREAM: ::core::ffi::c_int = 7 as ::core::ffi::c_int;
-pub const INFO_HAS_USER_BBOX: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const INFO_HAS_USER_BBOX: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const INFO_HAS_WIDTH: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
-pub const INFO_HAS_HEIGHT: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
+pub const INFO_HAS_HEIGHT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
 pub const PDF_XOBJECT_TYPE_FORM: ::core::ffi::c_int = 0;
 pub const PDF_XOBJECT_TYPE_IMAGE: ::core::ffi::c_int = 1;
 pub const WORK_BUFFER_SIZE: ::core::ffi::c_int = 1024 as ::core::ffi::c_int;
@@ -464,12 +376,9 @@ pub unsafe extern "C-unwind" fn pdf_close_images() {
         while i < (*ic).count {
             let mut I: *mut pdf_ximage = (*ic).ximages.offset(i as isize);
             if (*I).attr.tempfile != 0 {
-                if dpx_conf.verbose_level > 1 as ::core::ffi::c_int
-                    && dpx_conf.file.keep_cache != 1 as ::core::ffi::c_int
-                {
+                if dpx_conf.verbose_level > 1 as ::core::ffi::c_int && dpx_conf.file.keep_cache != 1 as ::core::ffi::c_int {
                     pdf_message!(
-                        b"pdf_image>> deleting temporary file \"%s\"\n\0" as *const u8
-                            as *const ::core::ffi::c_char,
+                        b"pdf_image>> deleting temporary file \"%s\"\n\0" as *const u8 as *const ::core::ffi::c_char,
                         (*I).filename,
                     );
                 }
@@ -485,12 +394,9 @@ pub unsafe extern "C-unwind" fn pdf_close_images() {
         (*ic).capacity = 0 as ::core::ffi::c_int;
         (*ic).count = (*ic).capacity;
     }
-    (*__pdf_state)._opts.cmdtmpl =
-        mfree((*__pdf_state)._opts.cmdtmpl as *mut ::core::ffi::c_void) as *mut ::core::ffi::c_char;
+    (*__pdf_state)._opts.cmdtmpl = mfree((*__pdf_state)._opts.cmdtmpl as *mut ::core::ffi::c_void) as *mut ::core::ffi::c_char;
 }
-unsafe extern "C-unwind" fn source_image_type(
-    mut handle: rust_input_handle_t,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn source_image_type(mut handle: rust_input_handle_t) -> ::core::ffi::c_int {
     let mut format: ::core::ffi::c_int = IMAGE_TYPE_UNKNOWN;
     crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
     if check_for_jpeg(handle) != 0 {
@@ -504,22 +410,15 @@ unsafe extern "C-unwind" fn source_image_type(
     } else if check_for_ps(handle) != 0 {
         format = IMAGE_TYPE_EPS;
     } else {
-        pdf_warning!(
-            b"Tectonic was unable to detect an image's format\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Tectonic was unable to detect an image's format\0" as *const u8 as *const ::core::ffi::c_char,);
         format = IMAGE_TYPE_UNKNOWN;
     }
     crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
     return format;
 }
 unsafe extern "C-unwind" fn load_image(
-    ident: *const ::core::ffi::c_char,
-    filename: *const ::core::ffi::c_char,
-    fullname: *const ::core::ffi::c_char,
-    format: ::core::ffi::c_int,
-    handle: rust_input_handle_t,
-    options: load_options,
+    ident: *const ::core::ffi::c_char, filename: *const ::core::ffi::c_char, fullname: *const ::core::ffi::c_char, format: ::core::ffi::c_int,
+    handle: rust_input_handle_t, options: load_options,
 ) -> ::core::ffi::c_int {
     let state = document_state();
     let cache = &raw mut (*state)._ic;
@@ -528,9 +427,7 @@ unsafe extern "C-unwind" fn load_image(
     } else {
         (0..(*cache).count).find(|&id| {
             let image = (*cache).ximages.add(id as usize);
-            (*image).reserved != 0
-                && !(*image).ident.is_null()
-                && strcmp(ident, (*image).ident) == 0
+            (*image).reserved != 0 && !(*image).ident.is_null() && strcmp(ident, (*image).ident) == 0
         })
     };
     let id = reserved.unwrap_or_else(|| {
@@ -551,20 +448,15 @@ unsafe extern "C-unwind" fn load_image(
         let image = (*cache).ximages.add(id as usize);
         pdf_init_ximage_struct(image);
         if !ident.is_null() {
-            (*image).ident =
-                super::dpx_dpxutil::copy_c_string(std::ffi::CStr::from_ptr(ident).to_bytes());
+            (*image).ident = super::dpx_dpxutil::copy_c_string(std::ffi::CStr::from_ptr(ident).to_bytes());
         }
         (*cache).count += 1;
         id
     });
     let image = (*cache).ximages.add(id as usize);
-    for (source, target) in [
-        (filename, &raw mut (*image).filename),
-        (fullname, &raw mut (*image).fullname),
-    ] {
+    for (source, target) in [(filename, &raw mut (*image).filename), (fullname, &raw mut (*image).fullname)] {
         if !source.is_null() {
-            *target =
-                super::dpx_dpxutil::copy_c_string(std::ffi::CStr::from_ptr(source).to_bytes());
+            *target = super::dpx_dpxutil::copy_c_string(std::ffi::CStr::from_ptr(source).to_bytes());
         }
     }
     (*image).attr.page_no = options.page_no;
@@ -612,19 +504,12 @@ unsafe extern "C-unwind" fn load_image(
         (*image).subtype = PDF_XOBJECT_TYPE_IMAGE;
         c"Im"
     };
-    sprintf(
-        (*image).res_name.as_mut_ptr(),
-        c"%s%d".as_ptr(),
-        prefix.as_ptr(),
-        id,
-    );
+    sprintf((*image).res_name.as_mut_ptr(), c"%s%d".as_ptr(), prefix.as_ptr(), id);
     id
 }
 #[unsafe(export_name = "__pdf_impl_pdf_ximage_load_image")]
 pub unsafe extern "C-unwind" fn pdf_ximage_load_image(
-    mut ident: *const ::core::ffi::c_char,
-    mut filename: *const ::core::ffi::c_char,
-    mut options: load_options,
+    mut ident: *const ::core::ffi::c_char, mut filename: *const ::core::ffi::c_char, mut options: load_options,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut ic: *mut ic_ = &raw mut (*__pdf_state)._ic;
@@ -639,8 +524,7 @@ pub unsafe extern "C-unwind" fn pdf_ximage_load_image(
         if !(*I).filename.is_null()
             && streq_ptr(filename, (*I).filename)
             && (*I).attr.page_no == options.page_no
-            && (*I).attr.bbox_type as ::core::ffi::c_uint
-                == options.bbox_type as ::core::ffi::c_uint
+            && (*I).attr.bbox_type as ::core::ffi::c_uint == options.bbox_type as ::core::ffi::c_uint
             && pdf_compare_object((*I).attr.dict, options.dict) == 0
         {
             return i;
@@ -649,13 +533,8 @@ pub unsafe extern "C-unwind" fn pdf_ximage_load_image(
     }
     handle = ttstub_input_open(filename, TTBC_FILE_FORMAT_PICT, 0 as ::core::ffi::c_int);
     if handle == INVALID_HANDLE {
-        if dpx_conf.compat_mode as ::core::ffi::c_uint
-            == dpx_mode_compat_mode as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
-            pdf_warning!(
-                b"Error opening image file \"%s\"\0" as *const u8 as *const ::core::ffi::c_char,
-                filename,
-            );
+        if dpx_conf.compat_mode as ::core::ffi::c_uint == dpx_mode_compat_mode as ::core::ffi::c_int as ::core::ffi::c_uint {
+            pdf_warning!(b"Error opening image file \"%s\"\0" as *const u8 as *const ::core::ffi::c_char, filename,);
         } else {
             pdf_abort!(
                 b"Image inclusion failed for \"%s\".\0" as *const u8 as *const ::core::ffi::c_char,
@@ -665,10 +544,7 @@ pub unsafe extern "C-unwind" fn pdf_ximage_load_image(
         return -(1 as ::core::ffi::c_int);
     }
     if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
-        pdf_message!(
-            b"(Image:%s\0" as *const u8 as *const ::core::ffi::c_char,
-            filename
-        );
+        pdf_message!(b"(Image:%s\0" as *const u8 as *const ::core::ffi::c_char, filename);
     }
     format = source_image_type(handle);
     id = load_image(ident, filename, filename, format, handle, options);
@@ -677,34 +553,28 @@ pub unsafe extern "C-unwind" fn pdf_ximage_load_image(
         pdf_message!(b")\0" as *const u8 as *const ::core::ffi::c_char);
     }
     if id < 0 as ::core::ffi::c_int {
-        if dpx_conf.compat_mode as ::core::ffi::c_uint
-            == dpx_mode_compat_mode as ::core::ffi::c_int as ::core::ffi::c_uint
-        {
+        if dpx_conf.compat_mode as ::core::ffi::c_uint == dpx_mode_compat_mode as ::core::ffi::c_int as ::core::ffi::c_uint {
             if format == IMAGE_TYPE_PDF || format == IMAGE_TYPE_EPS {
                 pdf_warning!(
-                    b"pdf: image inclusion failed for \"%s\" (page=%d).\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"pdf: image inclusion failed for \"%s\" (page=%d).\0" as *const u8 as *const ::core::ffi::c_char,
                     filename,
                     options.page_no,
                 );
             } else {
                 pdf_warning!(
-                    b"pdf: image inclusion failed for \"%s\".\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"pdf: image inclusion failed for \"%s\".\0" as *const u8 as *const ::core::ffi::c_char,
                     filename,
                 );
             }
         } else if format == IMAGE_TYPE_PDF || format == IMAGE_TYPE_EPS {
             pdf_abort!(
-                b"pdf: image inclusion failed for \"%s\" (page=%d).\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"pdf: image inclusion failed for \"%s\" (page=%d).\0" as *const u8 as *const ::core::ffi::c_char,
                 filename,
                 options.page_no,
             );
         } else {
             pdf_abort!(
-                b"pdf: image inclusion failed for \"%s\".\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"pdf: image inclusion failed for \"%s\".\0" as *const u8 as *const ::core::ffi::c_char,
                 filename,
             );
         }
@@ -712,9 +582,7 @@ pub unsafe extern "C-unwind" fn pdf_ximage_load_image(
     return id;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_ximage_findresource")]
-pub unsafe extern "C-unwind" fn pdf_ximage_findresource(
-    mut ident: *const ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_ximage_findresource(mut ident: *const ::core::ffi::c_char) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut ic: *mut ic_ = &raw mut (*__pdf_state)._ic;
     let mut id: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
@@ -755,17 +623,11 @@ pub unsafe extern "C-unwind" fn pdf_ximage_init_image_info(mut info: *mut ximage
     (*info).xdensity = (*info).ydensity;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_ximage_set_image")]
-pub unsafe extern "C-unwind" fn pdf_ximage_set_image(
-    mut I: *mut pdf_ximage,
-    mut image_info: *mut ::core::ffi::c_void,
-    mut resource: *mut pdf_obj,
-) {
+pub unsafe extern "C-unwind" fn pdf_ximage_set_image(mut I: *mut pdf_ximage, mut image_info: *mut ::core::ffi::c_void, mut resource: *mut pdf_obj) {
     let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut info: *mut ximage_info = image_info as *mut ximage_info;
     if !(!resource.is_null() && pdf_obj_typeof(resource) == PDF_STREAM) {
-        pdf_abort!(
-            b"Image XObject must be of stream type.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"Image XObject must be of stream type.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     (*I).subtype = PDF_XOBJECT_TYPE_IMAGE;
     (*I).attr.width = (*info).width;
@@ -836,11 +698,7 @@ pub unsafe extern "C-unwind" fn pdf_ximage_set_image(
     (*I).resource = ::core::ptr::null_mut::<pdf_obj>();
 }
 #[unsafe(export_name = "__pdf_impl_pdf_ximage_set_form")]
-pub unsafe extern "C-unwind" fn pdf_ximage_set_form(
-    mut I: *mut pdf_ximage,
-    mut form_info: *mut ::core::ffi::c_void,
-    mut resource: *mut pdf_obj,
-) {
+pub unsafe extern "C-unwind" fn pdf_ximage_set_form(mut I: *mut pdf_ximage, mut form_info: *mut ::core::ffi::c_void, mut resource: *mut pdf_obj) {
     let mut info: *mut xform_info = form_info as *mut xform_info;
     let mut p1: pdf_coord = pdf_coord { x: 0., y: 0. };
     let mut p2: pdf_coord = pdf_coord { x: 0., y: 0. };
@@ -900,17 +758,12 @@ pub unsafe extern "C-unwind" fn pdf_ximage_get_page(mut I: *mut pdf_ximage) -> :
     return (*I).attr.page_no;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_ximage_get_reference")]
-pub unsafe extern "C-unwind" fn pdf_ximage_get_reference(
-    mut id: ::core::ffi::c_int,
-) -> *mut pdf_obj {
+pub unsafe extern "C-unwind" fn pdf_ximage_get_reference(mut id: ::core::ffi::c_int) -> *mut pdf_obj {
     let __pdf_state = unsafe { document_state() };
     let mut ic: *mut ic_ = &raw mut (*__pdf_state)._ic;
     let mut I: *mut pdf_ximage = ::core::ptr::null_mut::<pdf_ximage>();
     if id < 0 as ::core::ffi::c_int || id >= (*ic).count {
-        pdf_abort!(
-            b"Invalid XObject ID: %d\0" as *const u8 as *const ::core::ffi::c_char,
-            id,
-        );
+        pdf_abort!(b"Invalid XObject ID: %d\0" as *const u8 as *const ::core::ffi::c_char, id,);
     }
     I = (*ic).ximages.offset(id as isize) as *mut pdf_ximage;
     if (*I).reference.is_null() && !(*I).resource.is_null() {
@@ -920,10 +773,7 @@ pub unsafe extern "C-unwind" fn pdf_ximage_get_reference(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_ximage_defineresource")]
 pub unsafe extern "C-unwind" fn pdf_ximage_defineresource(
-    mut ident: *const ::core::ffi::c_char,
-    mut subtype: ::core::ffi::c_int,
-    mut info: *mut ::core::ffi::c_void,
-    mut resource: *mut pdf_obj,
+    mut ident: *const ::core::ffi::c_char, mut subtype: ::core::ffi::c_int, mut info: *mut ::core::ffi::c_void, mut resource: *mut pdf_obj,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut ic: *mut ic_ = &raw mut (*__pdf_state)._ic;
@@ -945,27 +795,20 @@ pub unsafe extern "C-unwind" fn pdf_ximage_defineresource(
     if reserved == 0 {
         id = (*ic).count;
         if (*ic).count >= (*ic).capacity {
-            (*ic).capacity = crate::compat::allocation::grow_capacity(
-                (*ic).capacity as usize,
-                (*ic).count as usize + 1,
-                core::mem::size_of::<pdf_ximage>(),
-                16,
-            ) as i32;
+            (*ic).capacity =
+                crate::compat::allocation::grow_capacity((*ic).capacity as usize, (*ic).count as usize + 1, core::mem::size_of::<pdf_ximage>(), 16)
+                    as i32;
             (*ic).ximages = renew(
                 (*ic).ximages as *mut ::core::ffi::c_void,
-                ((*ic).capacity as uint32_t as usize)
-                    .wrapping_mul(::core::mem::size_of::<pdf_ximage>() as usize)
-                    as uint32_t,
+                ((*ic).capacity as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_ximage>() as usize) as uint32_t,
             ) as *mut pdf_ximage;
         }
         I = (*ic).ximages.offset(id as isize) as *mut pdf_ximage;
         pdf_init_ximage_struct(I);
         if !ident.is_null() {
-            (*I).ident = new(
-                (strlen(ident).wrapping_add(1 as size_t) as uint32_t as usize)
-                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                    as uint32_t,
-            ) as *mut ::core::ffi::c_char;
+            (*I).ident = new((strlen(ident).wrapping_add(1 as size_t) as uint32_t as usize)
+                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+                as *mut ::core::ffi::c_char;
             strcpy((*I).ident, ident);
         }
         (*ic).count += 1;
@@ -988,18 +831,13 @@ pub unsafe extern "C-unwind" fn pdf_ximage_defineresource(
             );
         }
         _ => {
-            pdf_abort!(
-                b"Unknown XObject subtype: %d\0" as *const u8 as *const ::core::ffi::c_char,
-                subtype,
-            );
+            pdf_abort!(b"Unknown XObject subtype: %d\0" as *const u8 as *const ::core::ffi::c_char, subtype,);
         }
     }
     return id;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_ximage_reserve")]
-pub unsafe extern "C-unwind" fn pdf_ximage_reserve(
-    mut ident: *const ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_ximage_reserve(mut ident: *const ::core::ffi::c_char) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut ic: *mut ic_ = &raw mut (*__pdf_state)._ic;
     let mut id: ::core::ffi::c_int = 0;
@@ -1008,37 +846,26 @@ pub unsafe extern "C-unwind" fn pdf_ximage_reserve(
     while id < (*ic).count {
         I = (*ic).ximages.offset(id as isize) as *mut pdf_ximage;
         if !(*I).ident.is_null() && strcmp(ident, (*I).ident) == 0 {
-            pdf_warning!(
-                b"XObject ID \"%s\" already used!\0" as *const u8 as *const ::core::ffi::c_char,
-                ident,
-            );
+            pdf_warning!(b"XObject ID \"%s\" already used!\0" as *const u8 as *const ::core::ffi::c_char, ident,);
             return -(1 as ::core::ffi::c_int);
         }
         id += 1;
     }
     id = (*ic).count;
     if (*ic).count >= (*ic).capacity {
-        (*ic).capacity = crate::compat::allocation::grow_capacity(
-            (*ic).capacity as usize,
-            (*ic).count as usize + 1,
-            core::mem::size_of::<pdf_ximage>(),
-            16,
-        ) as i32;
+        (*ic).capacity =
+            crate::compat::allocation::grow_capacity((*ic).capacity as usize, (*ic).count as usize + 1, core::mem::size_of::<pdf_ximage>(), 16)
+                as i32;
         (*ic).ximages = renew(
             (*ic).ximages as *mut ::core::ffi::c_void,
-            ((*ic).capacity as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<pdf_ximage>() as usize)
-                as uint32_t,
+            ((*ic).capacity as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_ximage>() as usize) as uint32_t,
         ) as *mut pdf_ximage;
     }
     I = (*ic).ximages.offset(id as isize) as *mut pdf_ximage;
     pdf_init_ximage_struct(I);
     if !ident.is_null() {
-        (*I).ident = new(
-            (strlen(ident).wrapping_add(1 as size_t) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t,
-        ) as *mut ::core::ffi::c_char;
+        (*I).ident = new((strlen(ident).wrapping_add(1 as size_t) as uint32_t as usize)
+            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
         strcpy((*I).ident, ident);
     }
     (*I).reference = pdf_names_reserve(
@@ -1056,57 +883,38 @@ pub unsafe extern "C-unwind" fn pdf_ximage_reserve(
     return id;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_ximage_get_resname")]
-pub unsafe extern "C-unwind" fn pdf_ximage_get_resname(
-    mut id: ::core::ffi::c_int,
-) -> *mut ::core::ffi::c_char {
+pub unsafe extern "C-unwind" fn pdf_ximage_get_resname(mut id: ::core::ffi::c_int) -> *mut ::core::ffi::c_char {
     let __pdf_state = unsafe { document_state() };
     let mut ic: *mut ic_ = &raw mut (*__pdf_state)._ic;
     let mut I: *mut pdf_ximage = ::core::ptr::null_mut::<pdf_ximage>();
     if id < 0 as ::core::ffi::c_int || id >= (*ic).count {
-        pdf_abort!(
-            b"Invalid XObject ID: %d\0" as *const u8 as *const ::core::ffi::c_char,
-            id,
-        );
+        pdf_abort!(b"Invalid XObject ID: %d\0" as *const u8 as *const ::core::ffi::c_char, id,);
     }
     I = (*ic).ximages.offset(id as isize) as *mut pdf_ximage;
     return &raw mut (*I).res_name as *mut ::core::ffi::c_char;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_ximage_get_subtype")]
-pub unsafe extern "C-unwind" fn pdf_ximage_get_subtype(
-    mut id: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_ximage_get_subtype(mut id: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut ic: *mut ic_ = &raw mut (*__pdf_state)._ic;
     let mut I: *mut pdf_ximage = ::core::ptr::null_mut::<pdf_ximage>();
     if id < 0 as ::core::ffi::c_int || id >= (*ic).count {
-        pdf_abort!(
-            b"Invalid XObject ID: %d\0" as *const u8 as *const ::core::ffi::c_char,
-            id,
-        );
+        pdf_abort!(b"Invalid XObject ID: %d\0" as *const u8 as *const ::core::ffi::c_char, id,);
     }
     I = (*ic).ximages.offset(id as isize) as *mut pdf_ximage;
     return (*I).subtype;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_ximage_set_attr")]
 pub unsafe extern "C-unwind" fn pdf_ximage_set_attr(
-    mut id: ::core::ffi::c_int,
-    mut width: ::core::ffi::c_int,
-    mut height: ::core::ffi::c_int,
-    mut xdensity: ::core::ffi::c_double,
-    mut ydensity: ::core::ffi::c_double,
-    mut llx: ::core::ffi::c_double,
-    mut lly: ::core::ffi::c_double,
-    mut urx: ::core::ffi::c_double,
+    mut id: ::core::ffi::c_int, mut width: ::core::ffi::c_int, mut height: ::core::ffi::c_int, mut xdensity: ::core::ffi::c_double,
+    mut ydensity: ::core::ffi::c_double, mut llx: ::core::ffi::c_double, mut lly: ::core::ffi::c_double, mut urx: ::core::ffi::c_double,
     mut ury: ::core::ffi::c_double,
 ) {
     let __pdf_state = unsafe { document_state() };
     let mut ic: *mut ic_ = &raw mut (*__pdf_state)._ic;
     let mut I: *mut pdf_ximage = ::core::ptr::null_mut::<pdf_ximage>();
     if id < 0 as ::core::ffi::c_int || id >= (*ic).count {
-        pdf_abort!(
-            b"Invalid XObject ID: %d\0" as *const u8 as *const ::core::ffi::c_char,
-            id,
-        );
+        pdf_abort!(b"Invalid XObject ID: %d\0" as *const u8 as *const ::core::ffi::c_char, id,);
     }
     I = (*ic).ximages.offset(id as isize) as *mut pdf_ximage;
     (*I).attr.width = width;
@@ -1118,11 +926,7 @@ pub unsafe extern "C-unwind" fn pdf_ximage_set_attr(
     (*I).attr.bbox.urx = urx;
     (*I).attr.bbox.ury = ury;
 }
-unsafe extern "C-unwind" fn scale_to_fit_I(
-    mut T: *mut pdf_tmatrix,
-    mut p: *mut transform_info,
-    mut I: *mut pdf_ximage,
-) {
+unsafe extern "C-unwind" fn scale_to_fit_I(mut T: *mut pdf_tmatrix, mut p: *mut transform_info, mut I: *mut pdf_ximage) {
     let mut s_x: ::core::ffi::c_double = 0.;
     let mut s_y: ::core::ffi::c_double = 0.;
     let mut d_x: ::core::ffi::c_double = 0.;
@@ -1161,15 +965,11 @@ unsafe extern "C-unwind" fn scale_to_fit_I(
         dp = (*p).depth * yscale;
     } else if (*p).flags & INFO_HAS_WIDTH != 0 {
         s_x = (*p).width * xscale;
-        s_y = s_x
-            * ((*I).attr.height as ::core::ffi::c_double
-                / (*I).attr.width as ::core::ffi::c_double);
+        s_y = s_x * ((*I).attr.height as ::core::ffi::c_double / (*I).attr.width as ::core::ffi::c_double);
         dp = 0.0f64;
     } else if (*p).flags & INFO_HAS_HEIGHT != 0 {
         s_y = ((*p).height + (*p).depth) * yscale;
-        s_x = s_y
-            * ((*I).attr.width as ::core::ffi::c_double
-                / (*I).attr.height as ::core::ffi::c_double);
+        s_x = s_y * ((*I).attr.width as ::core::ffi::c_double / (*I).attr.height as ::core::ffi::c_double);
         dp = (*p).depth * yscale;
     } else {
         s_x = wd0;
@@ -1183,11 +983,7 @@ unsafe extern "C-unwind" fn scale_to_fit_I(
     (*T).e = d_x * s_x / xscale;
     (*T).f = d_y * s_y / yscale - dp;
 }
-unsafe extern "C-unwind" fn scale_to_fit_F(
-    mut T: *mut pdf_tmatrix,
-    mut p: *mut transform_info,
-    mut I: *mut pdf_ximage,
-) {
+unsafe extern "C-unwind" fn scale_to_fit_F(mut T: *mut pdf_tmatrix, mut p: *mut transform_info, mut I: *mut pdf_ximage) {
     let mut s_x: ::core::ffi::c_double = 0.;
     let mut s_y: ::core::ffi::c_double = 0.;
     let mut d_x: ::core::ffi::c_double = 0.;
@@ -1240,19 +1036,13 @@ unsafe extern "C-unwind" fn scale_to_fit_F(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_ximage_scale_image")]
 pub unsafe extern "C-unwind" fn pdf_ximage_scale_image(
-    mut id: ::core::ffi::c_int,
-    mut M: *mut pdf_tmatrix,
-    mut r: *mut pdf_rect,
-    mut p: *mut transform_info,
+    mut id: ::core::ffi::c_int, mut M: *mut pdf_tmatrix, mut r: *mut pdf_rect, mut p: *mut transform_info,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut ic: *mut ic_ = &raw mut (*__pdf_state)._ic;
     let mut I: *mut pdf_ximage = ::core::ptr::null_mut::<pdf_ximage>();
     if id < 0 as ::core::ffi::c_int || id >= (*ic).count {
-        pdf_abort!(
-            b"Invalid XObject ID: %d\0" as *const u8 as *const ::core::ffi::c_char,
-            id,
-        );
+        pdf_abort!(b"Invalid XObject ID: %d\0" as *const u8 as *const ::core::ffi::c_char, id,);
     }
     I = (*ic).ximages.offset(id as isize) as *mut pdf_ximage;
     (*M).a = 1.0f64;
@@ -1265,14 +1055,10 @@ pub unsafe extern "C-unwind" fn pdf_ximage_scale_image(
         PDF_XOBJECT_TYPE_IMAGE => {
             scale_to_fit_I(M, p, I);
             if (*p).flags & INFO_HAS_USER_BBOX != 0 {
-                (*r).llx =
-                    (*p).bbox.llx / ((*I).attr.width as ::core::ffi::c_double * (*I).attr.xdensity);
-                (*r).lly = (*p).bbox.lly
-                    / ((*I).attr.height as ::core::ffi::c_double * (*I).attr.ydensity);
-                (*r).urx =
-                    (*p).bbox.urx / ((*I).attr.width as ::core::ffi::c_double * (*I).attr.xdensity);
-                (*r).ury = (*p).bbox.ury
-                    / ((*I).attr.height as ::core::ffi::c_double * (*I).attr.ydensity);
+                (*r).llx = (*p).bbox.llx / ((*I).attr.width as ::core::ffi::c_double * (*I).attr.xdensity);
+                (*r).lly = (*p).bbox.lly / ((*I).attr.height as ::core::ffi::c_double * (*I).attr.ydensity);
+                (*r).urx = (*p).bbox.urx / ((*I).attr.width as ::core::ffi::c_double * (*I).attr.xdensity);
+                (*r).ury = (*p).bbox.ury / ((*I).attr.height as ::core::ffi::c_double * (*I).attr.ydensity);
             } else {
                 (*r).llx = 0.0f64;
                 (*r).lly = 0.0f64;
@@ -1317,10 +1103,9 @@ pub unsafe extern "C-unwind" fn set_distiller_template(mut s: *mut ::core::ffi::
     if s.is_null() || *s as ::core::ffi::c_int == '\0' as i32 {
         (*__pdf_state)._opts.cmdtmpl = ::core::ptr::null_mut::<::core::ffi::c_char>();
     } else {
-        (*__pdf_state)._opts.cmdtmpl = new((strlen(s).wrapping_add(1 as size_t) as uint32_t
-            as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_char;
+        (*__pdf_state)._opts.cmdtmpl = new((strlen(s).wrapping_add(1 as size_t) as uint32_t as usize)
+            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+            as *mut ::core::ffi::c_char;
         strcpy((*__pdf_state)._opts.cmdtmpl, s);
     };
 }
@@ -1331,11 +1116,7 @@ pub unsafe extern "C-unwind" fn get_distiller_template() -> *mut ::core::ffi::c_
 }
 unsafe extern "C-unwind" fn check_for_ps(mut handle: rust_input_handle_t) -> ::core::ffi::c_int {
     crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-    tt_mfgets(
-        &raw mut work_buffer as *mut ::core::ffi::c_char,
-        WORK_BUFFER_SIZE,
-        handle,
-    );
+    tt_mfgets(&raw mut work_buffer as *mut ::core::ffi::c_char, WORK_BUFFER_SIZE, handle);
     if !strstartswith(
         &raw mut work_buffer as *mut ::core::ffi::c_char,
         b"%!\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1363,11 +1144,7 @@ pub unsafe extern "C-unwind" fn pdf_error_cleanup_cache() {
 }
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memset(
-        __b: *mut ::core::ffi::c_void,
-        __c: ::core::ffi::c_int,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memset(__b: *mut ::core::ffi::c_void, __c: ::core::ffi::c_int, __len: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -1396,14 +1173,9 @@ pub unsafe extern "C" fn __pdf_entry_pdf_close_images() -> i32 {
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_ximage_load_image(
-    mut ident: *const ::core::ffi::c_char,
-    mut filename: *const ::core::ffi::c_char,
-    mut options: load_options,
-    _result: *mut ::core::ffi::c_int,
+    mut ident: *const ::core::ffi::c_char, mut filename: *const ::core::ffi::c_char, mut options: load_options, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_ximage_load_image(ident, filename, options)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_ximage_load_image(ident, filename, options) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -1414,10 +1186,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_ximage_load_image(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_ximage_findresource(
-    mut ident: *const ::core::ffi::c_char,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_ximage_findresource(mut ident: *const ::core::ffi::c_char, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_ximage_findresource(ident) }) {
         Ok(value) => {
             unsafe {
@@ -1450,13 +1219,9 @@ pub unsafe extern "C" fn __pdf_entry_pdf_ximage_init_image_info(mut info: *mut x
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_ximage_set_image(
-    mut I: *mut pdf_ximage,
-    mut image_info: *mut ::core::ffi::c_void,
-    mut resource: *mut pdf_obj,
+    mut I: *mut pdf_ximage, mut image_info: *mut ::core::ffi::c_void, mut resource: *mut pdf_obj,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_ximage_set_image(I, image_info, resource)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_ximage_set_image(I, image_info, resource) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -1466,13 +1231,9 @@ pub unsafe extern "C" fn __pdf_entry_pdf_ximage_set_image(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_ximage_set_form(
-    mut I: *mut pdf_ximage,
-    mut form_info: *mut ::core::ffi::c_void,
-    mut resource: *mut pdf_obj,
+    mut I: *mut pdf_ximage, mut form_info: *mut ::core::ffi::c_void, mut resource: *mut pdf_obj,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_ximage_set_form(I, form_info, resource)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_ximage_set_form(I, form_info, resource) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -1481,10 +1242,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_ximage_set_form(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_ximage_get_page(
-    mut I: *mut pdf_ximage,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_ximage_get_page(mut I: *mut pdf_ximage, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_ximage_get_page(I) }) {
         Ok(value) => {
             unsafe {
@@ -1496,10 +1254,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_ximage_get_page(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_ximage_get_reference(
-    mut id: ::core::ffi::c_int,
-    _result: *mut *mut pdf_obj,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_ximage_get_reference(mut id: ::core::ffi::c_int, _result: *mut *mut pdf_obj) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_ximage_get_reference(id) }) {
         Ok(value) => {
             unsafe {
@@ -1512,15 +1267,10 @@ pub unsafe extern "C" fn __pdf_entry_pdf_ximage_get_reference(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_ximage_defineresource(
-    mut ident: *const ::core::ffi::c_char,
-    mut subtype: ::core::ffi::c_int,
-    mut info: *mut ::core::ffi::c_void,
-    mut resource: *mut pdf_obj,
+    mut ident: *const ::core::ffi::c_char, mut subtype: ::core::ffi::c_int, mut info: *mut ::core::ffi::c_void, mut resource: *mut pdf_obj,
     _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_ximage_defineresource(ident, subtype, info, resource)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_ximage_defineresource(ident, subtype, info, resource) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -1531,10 +1281,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_ximage_defineresource(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_ximage_reserve(
-    mut ident: *const ::core::ffi::c_char,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_ximage_reserve(mut ident: *const ::core::ffi::c_char, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_ximage_reserve(ident) }) {
         Ok(value) => {
             unsafe {
@@ -1546,10 +1293,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_ximage_reserve(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_ximage_get_resname(
-    mut id: ::core::ffi::c_int,
-    _result: *mut *mut ::core::ffi::c_char,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_ximage_get_resname(mut id: ::core::ffi::c_int, _result: *mut *mut ::core::ffi::c_char) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_ximage_get_resname(id) }) {
         Ok(value) => {
             unsafe {
@@ -1561,10 +1305,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_ximage_get_resname(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_ximage_get_subtype(
-    mut id: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_ximage_get_subtype(mut id: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_ximage_get_subtype(id) }) {
         Ok(value) => {
             unsafe {
@@ -1577,19 +1318,11 @@ pub unsafe extern "C" fn __pdf_entry_pdf_ximage_get_subtype(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_ximage_set_attr(
-    mut id: ::core::ffi::c_int,
-    mut width: ::core::ffi::c_int,
-    mut height: ::core::ffi::c_int,
-    mut xdensity: ::core::ffi::c_double,
-    mut ydensity: ::core::ffi::c_double,
-    mut llx: ::core::ffi::c_double,
-    mut lly: ::core::ffi::c_double,
-    mut urx: ::core::ffi::c_double,
+    mut id: ::core::ffi::c_int, mut width: ::core::ffi::c_int, mut height: ::core::ffi::c_int, mut xdensity: ::core::ffi::c_double,
+    mut ydensity: ::core::ffi::c_double, mut llx: ::core::ffi::c_double, mut lly: ::core::ffi::c_double, mut urx: ::core::ffi::c_double,
     mut ury: ::core::ffi::c_double,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_ximage_set_attr(id, width, height, xdensity, ydensity, llx, lly, urx, ury)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_ximage_set_attr(id, width, height, xdensity, ydensity, llx, lly, urx, ury) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -1599,11 +1332,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_ximage_set_attr(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_ximage_scale_image(
-    mut id: ::core::ffi::c_int,
-    mut M: *mut pdf_tmatrix,
-    mut r: *mut pdf_rect,
-    mut p: *mut transform_info,
-    _result: *mut ::core::ffi::c_int,
+    mut id: ::core::ffi::c_int, mut M: *mut pdf_tmatrix, mut r: *mut pdf_rect, mut p: *mut transform_info, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_ximage_scale_image(id, M, r, p) }) {
         Ok(value) => {
@@ -1616,9 +1345,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_ximage_scale_image(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_set_distiller_template(
-    mut s: *mut ::core::ffi::c_char,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_set_distiller_template(mut s: *mut ::core::ffi::c_char) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { set_distiller_template(s) }) {
         Ok(value) => {
             let _ = value;
@@ -1628,9 +1355,7 @@ pub unsafe extern "C" fn __pdf_entry_set_distiller_template(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_get_distiller_template(
-    _result: *mut *mut ::core::ffi::c_char,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_get_distiller_template(_result: *mut *mut ::core::ffi::c_char) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { get_distiller_template() }) {
         Ok(value) => {
             unsafe {
@@ -1676,10 +1401,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_pdfximage
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_pdfximage.pointer }
 }

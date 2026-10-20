@@ -68,8 +68,7 @@ impl StringTable {
         let (input, str_ptr) = be_i32(input)?;
         let n_strings = str_ptr - TOO_BIG_CHAR + 1;
 
-        let (input, str_starts) =
-            count(parseutils::ranged_be_i32(0, pool_ptr), n_strings as usize).parse(input)?;
+        let (input, str_starts) = count(parseutils::ranged_be_i32(0, pool_ptr), n_strings as usize).parse(input)?;
 
         let (input, str_pool) = count(be_u16, pool_ptr as usize).parse(input)?;
         let mut strings = Vec::with_capacity(n_strings as usize);
@@ -83,10 +82,7 @@ impl StringTable {
             };
             let s = String::from_utf16(sl).map_err(|_| {
                 use nom::error::ParseError;
-                NomErr::Error(nom::error::Error::from_error_kind(
-                    input,
-                    nom::error::ErrorKind::Satisfy,
-                ))
+                NomErr::Error(nom::error::Error::from_error_kind(input, nom::error::ErrorKind::Satisfy))
             })?;
             strings.push(s);
         }

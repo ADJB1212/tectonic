@@ -2,15 +2,8 @@
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum ReadError {
-    Truncated {
-        offset: usize,
-        needed: usize,
-        remaining: usize,
-    },
-    InvalidWidth {
-        offset: usize,
-        width: usize,
-    },
+    Truncated { offset: usize, needed: usize, remaining: usize },
+    InvalidWidth { offset: usize, width: usize },
 }
 
 pub(crate) struct ByteCursor<'a> {
@@ -51,15 +44,9 @@ impl<'a> ByteCursor<'a> {
 
     pub(crate) fn read_unsigned(&mut self, width: usize) -> Result<u32, ReadError> {
         if !(1..=4).contains(&width) {
-            return Err(ReadError::InvalidWidth {
-                offset: self.offset,
-                width,
-            });
+            return Err(ReadError::InvalidWidth { offset: self.offset, width });
         }
-        Ok(self
-            .read(width)?
-            .iter()
-            .fold(0, |value, &byte| (value << 8) | u32::from(byte)))
+        Ok(self.read(width)?.iter().fold(0, |value, &byte| (value << 8) | u32::from(byte)))
     }
 
     pub(crate) fn read_signed(&mut self, width: usize) -> Result<i32, ReadError> {
@@ -101,10 +88,7 @@ mod tests {
     fn sign_extends_all_supported_widths() {
         for width in 1..=4 {
             assert_eq!(ByteCursor::new(&[0xff; 4]).read_signed(width), Ok(-1));
-            assert_eq!(
-                ByteCursor::new(&[0x80, 0, 0, 0]).read_signed(width),
-                Ok(i32::MIN >> ((4 - width) * 8))
-            );
+            assert_eq!(ByteCursor::new(&[0x80, 0, 0, 0]).read_signed(width), Ok(i32::MIN >> ((4 - width) * 8)));
             assert_eq!(
                 ByteCursor::new(&[0x7f, 0xff, 0xff, 0xff]).read_signed(width),
                 Ok(i32::MAX >> ((4 - width) * 8))
@@ -128,10 +112,7 @@ mod tests {
             assert_eq!(cursor.offset(), 1);
         }
         for width in [0, 5, usize::MAX] {
-            assert_eq!(
-                cursor.read_unsigned(width),
-                Err(ReadError::InvalidWidth { offset: 1, width })
-            );
+            assert_eq!(cursor.read_unsigned(width), Err(ReadError::InvalidWidth { offset: 1, width }));
             assert_eq!(cursor.offset(), 1);
         }
         assert_eq!(cursor.read_u16(), Ok(0x0203));

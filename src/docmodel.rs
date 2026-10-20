@@ -81,10 +81,7 @@ pub trait DocumentExt {
     /// The *output_profile* argument gives the name of the document’s output profile to
     /// use.
     fn setup_session(
-        &self,
-        output_profile: &str,
-        setup_options: &DocumentSetupOptions,
-        status: &mut dyn StatusBackend,
+        &self, output_profile: &str, setup_options: &DocumentSetupOptions, status: &mut dyn StatusBackend,
     ) -> Result<ProcessingSessionBuilder>;
 }
 
@@ -105,16 +102,12 @@ impl DocumentExt for Document {
     }
 
     fn setup_session(
-        &self,
-        output_profile: &str,
-        setup_options: &DocumentSetupOptions,
-        status: &mut dyn StatusBackend,
+        &self, output_profile: &str, setup_options: &DocumentSetupOptions, status: &mut dyn StatusBackend,
     ) -> Result<ProcessingSessionBuilder> {
-        let profile = self.outputs.get(output_profile).ok_or_else(|| {
-            Error::msg(format!(
-                "unrecognized output profile name \"{output_profile}\""
-            ))
-        })?;
+        let profile = self
+            .outputs
+            .get(output_profile)
+            .ok_or_else(|| Error::msg(format!("unrecognized output profile name \"{output_profile}\"")))?;
 
         let output_format = match profile.target_type {
             BuildTargetType::Html => OutputFormat::Html,
@@ -134,15 +127,10 @@ impl DocumentExt for Document {
             };
         }
 
-        let mut sess_builder =
-            ProcessingSessionBuilder::new_with_security(setup_options.security.clone());
+        let mut sess_builder = ProcessingSessionBuilder::new_with_security(setup_options.security.clone());
 
         // Interpret all extra paths as relative to our working dir
-        let extra_paths: Vec<PathBuf> = self
-            .extra_paths
-            .iter()
-            .map(|x| self.src_dir().join(x))
-            .collect();
+        let extra_paths: Vec<PathBuf> = self.extra_paths.iter().map(|x| self.src_dir().join(x)).collect();
 
         sess_builder
             .output_format(output_format)
@@ -178,12 +166,7 @@ impl DocumentExt for Document {
 
         let mut output_dir = self.build_dir().to_owned();
         output_dir.push(output_profile);
-        fs::create_dir_all(&output_dir).with_context(|| {
-            format!(
-                "couldn\'t create output directory `{}`",
-                output_dir.display()
-            )
-        })?;
+        fs::create_dir_all(&output_dir).with_context(|| format!("couldn\'t create output directory `{}`", output_dir.display()))?;
         sess_builder.output_dir(&output_dir);
 
         Ok(sess_builder)
@@ -197,19 +180,11 @@ pub trait WorkspaceCreatorExt {
     /// This method is a thin wrapper on [`WorkspaceCreator::create`] that uses
     /// the current configuration to determine a good default bundle location
     /// for the main document.
-    fn create_defaulted(
-        self,
-        config: &config::PersistentConfig,
-        bundle: Option<String>,
-    ) -> Result<Workspace>;
+    fn create_defaulted(self, config: &config::PersistentConfig, bundle: Option<String>) -> Result<Workspace>;
 }
 
 impl WorkspaceCreatorExt for WorkspaceCreator {
-    fn create_defaulted(
-        self,
-        config: &config::PersistentConfig,
-        bundle: Option<String>,
-    ) -> Result<Workspace> {
+    fn create_defaulted(self, config: &config::PersistentConfig, bundle: Option<String>) -> Result<Workspace> {
         let bundle_loc = if config::is_test_bundle_wanted(bundle.clone()) {
             "test-bundle://".to_owned()
         } else {

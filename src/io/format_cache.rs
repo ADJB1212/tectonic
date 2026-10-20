@@ -30,10 +30,7 @@ impl FormatCache {
     /// call for whichever bundle is active. The `formats_base` path should be
     /// a local cache directory.
     pub fn new(bundle_digest: DigestData, formats_base: PathBuf) -> FormatCache {
-        FormatCache {
-            bundle_digest,
-            formats_base,
-        }
+        FormatCache { bundle_digest, formats_base }
     }
 
     /// Get an on-disk path name for a given format file. This function simply
@@ -51,22 +48,13 @@ impl FormatCache {
         };
 
         let mut p = self.formats_base.clone();
-        p.push(format!(
-            "{}-{}-{}.fmt",
-            self.bundle_digest,
-            stem,
-            crate::FORMAT_SERIAL
-        ));
+        p.push(format!("{}-{}-{}.fmt", self.bundle_digest, stem, crate::FORMAT_SERIAL));
         Ok(p)
     }
 }
 
 impl IoProvider for FormatCache {
-    fn input_open_format(
-        &mut self,
-        name: &str,
-        _status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_format(&mut self, name: &str, _status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         let path = match self.path_for_format(name) {
             Ok(p) => p,
             Err(e) => return OpenResult::Err(e),
@@ -78,25 +66,13 @@ impl IoProvider for FormatCache {
             OpenResult::Err(e) => return OpenResult::Err(e),
         };
 
-        OpenResult::Ok(InputHandle::new_read_only(
-            name,
-            BufReader::new(f),
-            InputOrigin::Other,
-        ))
+        OpenResult::Ok(InputHandle::new_read_only(name, BufReader::new(f), InputOrigin::Other))
     }
 
-    fn write_format(
-        &mut self,
-        name: &str,
-        data: &[u8],
-        _status: &mut dyn StatusBackend,
-    ) -> Result<()> {
+    fn write_format(&mut self, name: &str, data: &[u8], _status: &mut dyn StatusBackend) -> Result<()> {
         let final_path = self.path_for_format(name)?;
         std::fs::create_dir_all(&self.formats_base)?;
-        let mut temp_dest = tempfile::Builder::new()
-            .prefix("format_")
-            .rand_bytes(6)
-            .tempfile_in(&self.formats_base)?;
+        let mut temp_dest = tempfile::Builder::new().prefix("format_").rand_bytes(6).tempfile_in(&self.formats_base)?;
         temp_dest.write_all(data)?;
         temp_dest.persist(final_path)?;
         Ok(())

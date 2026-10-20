@@ -70,12 +70,7 @@ impl ShowShellCompletionsCommand {
         // The current v1 & v2 cli mixture makes it a bit difficult to offer
         // clean completions for the `tectonic` command, so for now we only
         // target the `nextonic` command exclusively for the v2 cli.
-        clap_complete::generate(
-            self.shell,
-            &mut V2CliOptions::command(),
-            "nextonic",
-            &mut std::io::stdout(),
-        );
+        clap_complete::generate(self.shell, &mut V2CliOptions::command(), "nextonic", &mut std::io::stdout());
         Ok(0)
     }
 }

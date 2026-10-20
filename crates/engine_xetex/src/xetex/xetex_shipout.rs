@@ -431,9 +431,7 @@ macro_rules! GLUE_SPEC_shrink {
 }
 macro_rules! SYNCTEX_tag {
     ($p:expr, $nodesize:expr) => {
-        (*mem.offset((($p) + ($nodesize) as i32 - SYNCTEX_FIELD_SIZE as i32) as isize))
-            .b32
-            .s0
+        (*mem.offset((($p) + ($nodesize) as i32 - SYNCTEX_FIELD_SIZE as i32) as isize)).b32.s0
     };
 }
 macro_rules! MATH_NODE_lr_dir {
@@ -468,19 +466,13 @@ macro_rules! INTPAR {
         (*eqtb.offset((INT_BASE + INT_PAR__mag) as isize)).b32.s1
     };
     (tracing_online) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__tracing_online) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__tracing_online) as isize)).b32.s1
     };
     (tracing_output) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__tracing_output) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__tracing_output) as isize)).b32.s1
     };
     (xetex_interword_space_shaping) => {
-        (*eqtb.offset((INT_BASE + INT_PAR__xetex_interword_space_shaping) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((INT_BASE + INT_PAR__xetex_interword_space_shaping) as isize)).b32.s1
     };
 }
 macro_rules! COUNT_REG {
@@ -490,24 +482,16 @@ macro_rules! COUNT_REG {
 }
 macro_rules! DIMENPAR {
     (h_offset) => {
-        (*eqtb.offset((DIMEN_BASE + DIMEN_PAR__h_offset) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((DIMEN_BASE + DIMEN_PAR__h_offset) as isize)).b32.s1
     };
     (v_offset) => {
-        (*eqtb.offset((DIMEN_BASE + DIMEN_PAR__v_offset) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((DIMEN_BASE + DIMEN_PAR__v_offset) as isize)).b32.s1
     };
     (pdf_page_width) => {
-        (*eqtb.offset((DIMEN_BASE + DIMEN_PAR__pdf_page_width) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((DIMEN_BASE + DIMEN_PAR__pdf_page_width) as isize)).b32.s1
     };
     (pdf_page_height) => {
-        (*eqtb.offset((DIMEN_BASE + DIMEN_PAR__pdf_page_height) as isize))
-            .b32
-            .s1
+        (*eqtb.offset((DIMEN_BASE + DIMEN_PAR__pdf_page_height) as isize)).b32.s1
     };
 }
 
@@ -637,9 +621,7 @@ unsafe extern "C" {
     pub fn begin_diagnostic();
     pub fn show_box(p: i32);
     pub fn end_diagnostic(blank_line: bool);
-    pub fn error_here_with_diagnostic(
-        msg: *const libc::c_char,
-    ) -> *mut tectonic_bridge_core::Diagnostic;
+    pub fn error_here_with_diagnostic(msg: *const libc::c_char) -> *mut tectonic_bridge_core::Diagnostic;
     pub fn capture_to_diagnostic(diagnostic: *mut tectonic_bridge_core::Diagnostic);
     pub fn error();
     pub fn fatal_error(msg: *const libc::c_char) -> !;
@@ -672,29 +654,14 @@ unsafe extern "C" {
     pub fn flush_list(p: i32);
     pub fn diagnostic_begin_capture_warning_here() -> *mut tectonic_bridge_core::Diagnostic;
 
-    pub fn tt_checkpoint_field(
-        cp: *mut libc::c_void,
-        name: *const libc::c_char,
-        value: *mut libc::c_void,
-        length: usize,
-    );
-    pub fn tt_checkpoint_array(
-        cp: *mut tt_checkpoint,
-        name: *const libc::c_char,
-        value: *mut *mut libc::c_void,
-        count: usize,
-        item_size: usize,
-    );
+    pub fn tt_checkpoint_field(cp: *mut libc::c_void, name: *const libc::c_char, value: *mut libc::c_void, length: usize);
+    pub fn tt_checkpoint_array(cp: *mut tt_checkpoint, name: *const libc::c_char, value: *mut *mut libc::c_void, count: usize, item_size: usize);
     pub fn tt_xetex_checkpoint_handle_valid(handle: usize, output: bool) -> bool;
 
     pub fn ttstub_output_open(path: *const libc::c_char, is_gz: i32) -> rust_output_handle_t;
     pub fn ttstub_output_close(handle: rust_output_handle_t) -> i32;
     pub fn ttstub_output_flush(handle: rust_output_handle_t) -> i32;
-    pub fn ttstub_output_write(
-        handle: rust_output_handle_t,
-        data: *const libc::c_char,
-        len: usize,
-    ) -> usize;
+    pub fn ttstub_output_write(handle: rust_output_handle_t, data: *const libc::c_char, len: usize) -> usize;
     pub fn ttstub_shell_escape(cmd: *const u16, len: usize) -> i32;
     pub fn xmalloc(size: usize) -> *mut libc::c_void;
 }
@@ -717,20 +684,9 @@ unsafe fn cp_value<T>(cp: *mut tt_checkpoint, name: *const libc::c_char, val: *m
 }
 
 #[inline(always)]
-unsafe fn cp_array<T>(
-    cp: *mut tt_checkpoint,
-    name: *const libc::c_char,
-    val: *mut *mut T,
-    count: usize,
-) {
+unsafe fn cp_array<T>(cp: *mut tt_checkpoint, name: *const libc::c_char, val: *mut *mut T, count: usize) {
     unsafe {
-        tt_checkpoint_array(
-            cp,
-            name,
-            val as *mut *mut libc::c_void,
-            count,
-            size_of::<T>(),
-        );
+        tt_checkpoint_array(cp, name, val as *mut *mut libc::c_void, count, size_of::<T>());
     }
 }
 
@@ -753,18 +709,10 @@ pub unsafe extern "C" fn tt_checkpoint_shipout(cp: *mut tt_checkpoint) {
         cp_value(cp, c"dvi_v".as_ptr(), &raw mut dvi_v);
         cp_value(cp, c"dvi_f".as_ptr(), &raw mut dvi_f);
         cp_value(cp, c"cur_s".as_ptr(), &raw mut cur_s);
-        if (*cp).restoring
-            && (dvi_ptr < 0
-                || dvi_ptr > DVI_BUF_SIZE as i32
-                || dvi_limit < 0
-                || dvi_limit > DVI_BUF_SIZE as i32)
-        {
+        if (*cp).restoring && (dvi_ptr < 0 || dvi_ptr > DVI_BUF_SIZE as i32 || dvi_limit < 0 || dvi_limit > DVI_BUF_SIZE as i32) {
             (*cp).valid = false;
         }
-        if (*cp).restoring
-            && output_file_name != 0
-            && !tt_xetex_checkpoint_handle_valid(dvi_file, true)
-        {
+        if (*cp).restoring && output_file_name != 0 && !tt_xetex_checkpoint_handle_valid(dvi_file, true) {
             (*cp).valid = false;
         }
     }
@@ -857,8 +805,7 @@ pub unsafe extern "C" fn ship_out(p: i32) {
                 capture_to_diagnostic(ptr::null_mut());
                 help_ptr = 2;
                 help_line[1] = c"The page just created is more than 18 feet tall or".as_ptr();
-                help_line[0] =
-                    c"more than 18 feet wide, so I suspect something went wrong.".as_ptr();
+                help_line[0] = c"more than 18 feet wide, so I suspect something went wrong.".as_ptr();
                 error();
 
                 if INTPAR!(tracing_output) <= 0 {
@@ -1030,8 +977,7 @@ unsafe fn hlist_out() {
                     if p != TEX_NULL
                         && !is_char_node(p)
                         && NODE_type!(p) == WHATSIT_NODE
-                        && (NODE_subtype!(p) == NATIVE_WORD_NODE
-                            || NODE_subtype!(p) == NATIVE_WORD_NODE_AT)
+                        && (NODE_subtype!(p) == NATIVE_WORD_NODE || NODE_subtype!(p) == NATIVE_WORD_NODE_AT)
                         && *font_letter_space.offset(NATIVE_NODE_font!(p) as isize) == 0
                     {
                         let r = p;
@@ -1051,12 +997,8 @@ unsafe fn hlist_out() {
                             }
 
                             if q != TEX_NULL && !is_char_node(q) {
-                                if NODE_type!(q) == GLUE_NODE
-                                    && GLUE_SPEC_shrink_order!(q) == NORMAL as u16
-                                {
-                                    if GLUE_NODE_glue_ptr!(q)
-                                        == *font_glue.offset(NATIVE_NODE_font!(r) as isize)
-                                    {
+                                if NODE_type!(q) == GLUE_NODE && GLUE_SPEC_shrink_order!(q) == NORMAL as u16 {
+                                    if GLUE_NODE_glue_ptr!(q) == *font_glue.offset(NATIVE_NODE_font!(r) as isize) {
                                         q = LLIST_link!(q);
 
                                         while q != TEX_NULL
@@ -1065,8 +1007,7 @@ unsafe fn hlist_out() {
                                                 || NODE_type!(q) == INS_NODE
                                                 || NODE_type!(q) == MARK_NODE
                                                 || NODE_type!(q) == ADJUST_NODE
-                                                || (NODE_type!(q) == WHATSIT_NODE
-                                                    && NODE_subtype!(q) <= 4))
+                                                || (NODE_type!(q) == WHATSIT_NODE && NODE_subtype!(q) <= 4))
                                         {
                                             q = LLIST_link!(q);
                                         }
@@ -1074,8 +1015,7 @@ unsafe fn hlist_out() {
                                         if q != TEX_NULL
                                             && !is_char_node(q)
                                             && NODE_type!(q) == WHATSIT_NODE
-                                            && (NODE_subtype!(q) == NATIVE_WORD_NODE
-                                                || NODE_subtype!(q) == NATIVE_WORD_NODE_AT)
+                                            && (NODE_subtype!(q) == NATIVE_WORD_NODE || NODE_subtype!(q) == NATIVE_WORD_NODE_AT)
                                             && (mem!(q + 4).b16.s2 == mem!(r + 4).b16.s2)
                                         {
                                             p = q;
@@ -1087,11 +1027,7 @@ unsafe fn hlist_out() {
                                         q = LLIST_link!(q);
                                     }
 
-                                    if q != TEX_NULL
-                                        && !is_char_node(q)
-                                        && NODE_type!(q) == KERN_NODE
-                                        && NODE_subtype!(q) == SPACE_ADJUSTMENT
-                                    {
+                                    if q != TEX_NULL && !is_char_node(q) && NODE_type!(q) == KERN_NODE && NODE_subtype!(q) == SPACE_ADJUSTMENT {
                                         q = LLIST_link!(q);
 
                                         while q != TEX_NULL
@@ -1100,8 +1036,7 @@ unsafe fn hlist_out() {
                                                 || NODE_type!(q) == INS_NODE
                                                 || NODE_type!(q) == MARK_NODE
                                                 || NODE_type!(q) == ADJUST_NODE
-                                                || (NODE_type!(q) == WHATSIT_NODE
-                                                    && NODE_subtype!(q) <= 4))
+                                                || (NODE_type!(q) == WHATSIT_NODE && NODE_subtype!(q) <= 4))
                                         {
                                             q = LLIST_link!(q);
                                         }
@@ -1109,8 +1044,7 @@ unsafe fn hlist_out() {
                                         if q != TEX_NULL
                                             && !is_char_node(q)
                                             && NODE_type!(q) == WHATSIT_NODE
-                                            && (NODE_subtype!(q) == NATIVE_WORD_NODE
-                                                || NODE_subtype!(q) == NATIVE_WORD_NODE_AT)
+                                            && (NODE_subtype!(q) == NATIVE_WORD_NODE || NODE_subtype!(q) == NATIVE_WORD_NODE_AT)
                                             && NATIVE_NODE_font!(q) == NATIVE_NODE_font!(r)
                                         {
                                             p = q;
@@ -1125,8 +1059,7 @@ unsafe fn hlist_out() {
                                 if q != TEX_NULL
                                     && !is_char_node(q)
                                     && NODE_type!(q) == WHATSIT_NODE
-                                    && (NODE_subtype!(q) == NATIVE_WORD_NODE
-                                        || NODE_subtype!(q) == NATIVE_WORD_NODE_AT)
+                                    && (NODE_subtype!(q) == NATIVE_WORD_NODE || NODE_subtype!(q) == NATIVE_WORD_NODE_AT)
                                     && NATIVE_NODE_font!(q) == NATIVE_NODE_font!(r)
                                 {
                                     p = q;
@@ -1148,9 +1081,7 @@ unsafe fn hlist_out() {
 
                             loop {
                                 if NODE_type!(q_run) == WHATSIT_NODE {
-                                    if NODE_subtype!(q_run) == NATIVE_WORD_NODE
-                                        || NODE_subtype!(q_run) == NATIVE_WORD_NODE_AT
-                                    {
+                                    if NODE_subtype!(q_run) == NATIVE_WORD_NODE || NODE_subtype!(q_run) == NATIVE_WORD_NODE_AT {
                                         let text_ptr = NATIVE_NODE_text!(q_run);
                                         for j in 0..NATIVE_NODE_length!(q_run) as usize {
                                             *str_pool.offset(pool_ptr as isize) = *text_ptr.add(j);
@@ -1167,17 +1098,11 @@ unsafe fn hlist_out() {
                                     if g_sign != NORMAL {
                                         if g_sign == STRETCHING {
                                             if GLUE_SPEC_stretch_order!(g) == g_order as u16 {
-                                                k += tex_round(
-                                                    BOX_glue_set!(this_box)
-                                                        * GLUE_SPEC_stretch!(g) as f64,
-                                                );
+                                                k += tex_round(BOX_glue_set!(this_box) * GLUE_SPEC_stretch!(g) as f64);
                                             }
                                         } else {
                                             if GLUE_SPEC_shrink_order!(g) == g_order as u16 {
-                                                k -= tex_round(
-                                                    BOX_glue_set!(this_box)
-                                                        * GLUE_SPEC_shrink!(g) as f64,
-                                                );
+                                                k -= tex_round(BOX_glue_set!(this_box) * GLUE_SPEC_shrink!(g) as f64);
                                             }
                                         }
                                     }
@@ -1192,17 +1117,13 @@ unsafe fn hlist_out() {
                                 }
                             }
 
-                            let mut q_new = new_native_word_node(
-                                NATIVE_NODE_font!(r) as internal_font_number,
-                                cur_length(),
-                            );
+                            let mut q_new = new_native_word_node(NATIVE_NODE_font!(r) as internal_font_number, cur_length());
                             NODE_subtype!(q_new) = NODE_subtype!(r);
 
                             let text_ptr = NATIVE_NODE_text!(q_new);
                             let start_idx = *str_start.offset((str_ptr - TOO_BIG_CHAR) as isize);
                             for j in 0..cur_length() as usize {
-                                *text_ptr.add(j) =
-                                    *str_pool.offset((start_idx as usize + j) as isize);
+                                *text_ptr.add(j) = *str_pool.offset((start_idx as usize + j) as isize);
                             }
 
                             BOX_width!(q_new) = k;
@@ -1305,8 +1226,7 @@ unsafe fn hlist_out() {
                         let f = CHAR_NODE_font!(p) as internal_font_number;
                         let mut c = CHAR_NODE_character!(p);
                         if p != LIG_TRICK && !(*font_mapping.offset(f as isize)).is_null() {
-                            c = apply_tfm_font_mapping(*font_mapping.offset(f as isize), c as i32)
-                                as u16;
+                            c = apply_tfm_font_mapping(*font_mapping.offset(f as isize), c as i32) as u16;
                         }
 
                         if f != dvi_f {
@@ -1463,9 +1383,7 @@ unsafe fn hlist_out() {
                                     cur_h += BOX_width!(p);
                                 } else {
                                     if NODE_subtype!(p) == NATIVE_WORD_NODE_AT {
-                                        if NATIVE_NODE_length!(p) > 0
-                                            || !NATIVE_NODE_glyph_info_ptr!(p).is_null()
-                                        {
+                                        if NATIVE_NODE_length!(p) > 0 || !NATIVE_NODE_glyph_info_ptr!(p).is_null() {
                                             dvi_out(SET_TEXT_AND_GLYPHS);
                                             let len = NATIVE_NODE_length!(p) as i32;
                                             dvi_two(len as UTF16_code);
@@ -1552,10 +1470,8 @@ unsafe fn hlist_out() {
 
                             rule_wd += cur_g;
 
-                            if (g_sign == STRETCHING
-                                && GLUE_SPEC_stretch_order!(g) == g_order as u16)
-                                || (g_sign == SHRINKING
-                                    && GLUE_SPEC_shrink_order!(g) == g_order as u16)
+                            if (g_sign == STRETCHING && GLUE_SPEC_stretch_order!(g) == g_order as u16)
+                                || (g_sign == SHRINKING && GLUE_SPEC_shrink_order!(g) == g_order as u16)
                             {
                                 if GLUE_SPEC_ref_count!(g) == TEX_NULL {
                                     free_node(g, GLUE_SPEC_SIZE);
@@ -1626,8 +1542,7 @@ unsafe fn hlist_out() {
 
                                         if NODE_subtype!(p) == A_LEADERS {
                                             let save_h = cur_h;
-                                            cur_h = left_edge
-                                                + leader_wd * ((cur_h - left_edge) / leader_wd);
+                                            cur_h = left_edge + leader_wd * ((cur_h - left_edge) / leader_wd);
                                             if cur_h < save_h {
                                                 cur_h = cur_h + leader_wd;
                                             }
@@ -1735,12 +1650,7 @@ unsafe fn hlist_out() {
                                     p = new_edge(cur_dir, rule_wd);
                                     LLIST_link!(prev_p) = p;
                                     cur_h = cur_h - left_edge + rule_wd;
-                                    LLIST_link!(p) = reverse(
-                                        this_box,
-                                        new_edge(1 - cur_dir, 0),
-                                        &raw mut cur_g,
-                                        &raw mut cur_glue,
-                                    );
+                                    LLIST_link!(p) = reverse(this_box, new_edge(1 - cur_dir, 0), &raw mut cur_g, &raw mut cur_glue);
                                     EDGE_NODE_edge_dist!(p) = cur_h;
                                     cur_dir = 1 - cur_dir;
                                     cur_h = save_h;
@@ -2092,8 +2002,7 @@ unsafe fn vlist_out() {
 
                                     if NODE_subtype!(p) == A_LEADERS {
                                         let save_v = cur_v;
-                                        cur_v =
-                                            top_edge + leader_ht * ((cur_v - top_edge) / leader_ht);
+                                        cur_v = top_edge + leader_ht * ((cur_v - top_edge) / leader_ht);
                                         if cur_v < save_v {
                                             cur_v = cur_v + leader_ht;
                                         }
@@ -2206,8 +2115,7 @@ unsafe fn reverse(this_box: i32, t: i32, cur_g: *mut scaled_t, cur_glue: *mut f6
                         loop {
                             let f = CHAR_NODE_font!(p) as internal_font_number;
                             let c = CHAR_NODE_character!(p);
-                            cur_h +=
-                                FONT_CHARACTER_WIDTH!(f, effective_char(true, f, c) as UTF16_code);
+                            cur_h += FONT_CHARACTER_WIDTH!(f, effective_char(true, f, c) as UTF16_code);
                             let q = LLIST_link!(p);
                             LLIST_link!(p) = l;
                             l = p;
@@ -2343,9 +2251,7 @@ unsafe fn reverse(this_box: i32, t: i32, cur_g: *mut scaled_t, cur_glue: *mut f6
                                     LLIST_link!(temp_ptr) = LR_ptr;
                                     LR_ptr = temp_ptr;
 
-                                    if n > MIN_HALFWORD
-                                        || MATH_NODE_lr_dir!(p) as small_number != cur_dir
-                                    {
+                                    if n > MIN_HALFWORD || MATH_NODE_lr_dir!(p) as small_number != cur_dir {
                                         n += 1;
                                         NODE_subtype!(p) += 1;
                                     } else {
@@ -2500,9 +2406,7 @@ unsafe fn dvi_native_font_def(f: internal_font_number) {
 #[unsafe(export_name = "dvi_font_def")]
 pub unsafe extern "C" fn dvi_font_def(f: internal_font_number) {
     unsafe {
-        if *font_area.offset(f as isize) as u32 == AAT_FONT_FLAG
-            || *font_area.offset(f as isize) as u32 == OTGR_FONT_FLAG
-        {
+        if *font_area.offset(f as isize) as u32 == AAT_FONT_FLAG || *font_area.offset(f as isize) as u32 == OTGR_FONT_FLAG {
             dvi_native_font_def(f);
         } else {
             if f <= 256 {
@@ -2640,9 +2544,7 @@ unsafe fn movement(mut w: scaled_t, o: eight_bits) {
                     val if val == (MOV_NONE_SEEN as i32 + MOV_Z_HERE) => {
                         mstate = MOV_Z_SEEN;
                     }
-                    val if val == (MOV_Y_SEEN as i32 + MOV_Z_HERE)
-                        || val == (MOV_Z_SEEN as i32 + MOV_Y_HERE) =>
-                    {
+                    val if val == (MOV_Y_SEEN as i32 + MOV_Z_HERE) || val == (MOV_Z_SEEN as i32 + MOV_Y_HERE) => {
                         break;
                     }
                     _ => {}
@@ -2765,11 +2667,7 @@ unsafe fn special_out(p: i32) {
         doing_special = true;
         let old_setting = selector;
         selector = SELECTOR_NEW_STRING;
-        show_token_list(
-            mem!(mem!(p + 1).b32.s1).b32.s1,
-            TEX_NULL,
-            pool_size - pool_ptr,
-        );
+        show_token_list(mem!(mem!(p + 1).b32.s1).b32.s1, TEX_NULL, pool_size - pool_ptr);
         selector = old_setting;
 
         if pool_ptr + 1 > pool_size {
@@ -3069,12 +2967,7 @@ unsafe fn write_to_dvi(a: i32, b: i32) {
     unsafe {
         let n = (b - a + 1) as usize;
 
-        if ttstub_output_write(
-            dvi_file,
-            dvi_buf.offset(a as isize) as *const libc::c_char,
-            n,
-        ) != n
-        {
+        if ttstub_output_write(dvi_file, dvi_buf.offset(a as isize) as *const libc::c_char, n) != n {
             _tt_abort(c"failed to write data to XDV file".as_ptr());
         }
     }

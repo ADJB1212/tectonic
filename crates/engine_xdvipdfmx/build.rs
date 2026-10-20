@@ -10,10 +10,7 @@ fn main() {
     let pi_include_path = env::var("DEP_TECTONIC_PDF_IO_INCLUDE_PATH").unwrap();
 
     let mut build = cc::Build::new();
-    build
-        .warnings(true)
-        .file("xdvipdfmx/dvipdfmx.c")
-        .include(&bc_include_dir);
+    build.warnings(true).file("xdvipdfmx/dvipdfmx.c").include(&bc_include_dir);
 
     for item in pi_include_path.split(';') {
         build.include(item);

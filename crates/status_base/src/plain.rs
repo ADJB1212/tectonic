@@ -76,24 +76,14 @@ impl StatusBackend for PlainStatusBackend {
     }
 
     fn note_highlighted(&mut self, before: &str, highlighted: &str, after: &str) {
-        self.report(
-            MessageKind::Note,
-            format_args!("{before}{highlighted}{after}"),
-            None,
-        );
+        self.report(MessageKind::Note, format_args!("{before}{highlighted}{after}"), None);
     }
 
     fn dump_error_logs(&mut self, output: &[u8]) {
-        eprintln!(
-            "==============================================================================="
-        );
+        eprintln!("===============================================================================");
 
-        io::stderr()
-            .write_all(output)
-            .expect("write to stderr failed");
+        io::stderr().write_all(output).expect("write to stderr failed");
 
-        eprintln!(
-            "==============================================================================="
-        );
+        eprintln!("===============================================================================");
     }
 }

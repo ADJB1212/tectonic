@@ -21,19 +21,15 @@ pub const kUnmappedChar: UInt32 = 0xfffffffc;
 pub const matchYes: UInt32 = 1;
 pub const matchNo: UInt32 = 0;
 
-pub static offsetsFromUTF8: [UInt32; 6] = [
-    0x00000000, 0x00003080, 0x000E2080, 0x03C82080, 0xFA082080, 0x82082080,
-];
+pub static offsetsFromUTF8: [UInt32; 6] = [0x00000000, 0x00003080, 0x000E2080, 0x03C82080, 0xFA082080, 0x82082080];
 
 pub static bytesFromUTF8: [UInt8; 256] = [
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+    3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5,
 ];
 
 pub static firstByteMark: [UInt8; 7] = [0x00, 0x00, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC];
@@ -173,23 +169,11 @@ mod tests {
         let bytes = values.map(|value| value as u8);
         for count in 0..=values.len() {
             for value in 0..=256 {
-                let expected = values[..count]
-                    .iter()
-                    .position(|&item| item >= value)
-                    .unwrap_or(count);
+                let expected = values[..count].iter().position(|&item| item >= value).unwrap_or(count);
                 unsafe {
-                    assert_eq!(
-                        binary_search_u32(dwords.as_ptr(), count as u32, value),
-                        dwords.as_ptr().add(expected)
-                    );
-                    assert_eq!(
-                        binary_search_u16(words.as_ptr(), count as u32, value),
-                        words.as_ptr().add(expected)
-                    );
-                    assert_eq!(
-                        binary_search_u8(bytes.as_ptr(), count as u32, value),
-                        bytes.as_ptr().add(expected)
-                    );
+                    assert_eq!(binary_search_u32(dwords.as_ptr(), count as u32, value), dwords.as_ptr().add(expected));
+                    assert_eq!(binary_search_u16(words.as_ptr(), count as u32, value), words.as_ptr().add(expected));
+                    assert_eq!(binary_search_u8(bytes.as_ptr(), count as u32, value), bytes.as_ptr().add(expected));
                 }
             }
         }
@@ -217,16 +201,8 @@ mod tests {
                 decompose_canonical(c, |part| normalizer.push_decomposed(part));
             }
             normalizer.flush_pending();
-            let actual: String = normalizer
-                .output
-                .into_iter()
-                .map(|c| char::from_u32(c).unwrap())
-                .collect();
-            let expected: String = if compose {
-                input.nfc().collect()
-            } else {
-                input.nfd().collect()
-            };
+            let actual: String = normalizer.output.into_iter().map(|c| char::from_u32(c).unwrap()).collect();
+            let expected: String = if compose { input.nfc().collect() } else { input.nfd().collect() };
             assert_eq!(actual, expected, "compose {compose}");
         }
     }
@@ -334,8 +310,7 @@ impl Pass {
             let mut numPageMaps: UInt8 = 1;
             let table_bytes = inTable as *const Byte;
             let mut pageBase = table_bytes.add(READ_u32((*inTable).pageBase) as usize);
-            let lookupBase =
-                table_bytes.add(READ_u32((*inTable).lookupBase) as usize) as *const Lookup;
+            let lookupBase = table_bytes.add(READ_u32((*inTable).lookupBase) as usize) as *const Lookup;
             let matchClassBase = table_bytes.add(READ_u32((*inTable).matchClassBase) as usize);
             let repClassBase = table_bytes.add(READ_u32((*inTable).repClassBase) as usize);
             let stringListBase = table_bytes.add(READ_u32((*inTable).stringListBase) as usize);
@@ -353,13 +328,10 @@ impl Pass {
                 + READ_u8((*inTable).maxPost) as libc::c_long
                 + 7)
                 & !0x0003) as libc::c_long;
-            let iBuffer =
-                libc::malloc(iBufSize as usize * std::mem::size_of::<UInt32>()) as *mut UInt32;
+            let iBuffer = libc::malloc(iBufSize as usize * std::mem::size_of::<UInt32>()) as *mut UInt32;
 
-            let oBufSize =
-                ((READ_u8((*inTable).maxOutput) as libc::c_long + 7) & !0x0003) as libc::c_long;
-            let oBuffer =
-                libc::malloc(oBufSize as usize * std::mem::size_of::<UInt32>()) as *mut UInt32;
+            let oBufSize = ((READ_u8((*inTable).maxOutput) as libc::c_long + 7) & !0x0003) as libc::c_long;
+            let oBuffer = libc::malloc(oBufSize as usize * std::mem::size_of::<UInt32>()) as *mut UInt32;
 
             Self {
                 oBuffer,
@@ -506,8 +478,7 @@ impl Pass {
 
     pub unsafe fn classMatch(&self, classNumber: UInt32, inChar: UInt32) -> libc::c_long {
         unsafe {
-            let offset =
-                READ_u32(*(self.matchClassBase as *const UInt32).add(classNumber as usize));
+            let offset = READ_u32(*(self.matchClassBase as *const UInt32).add(classNumber as usize));
             let mut classPtr = self.matchClassBase.add(offset as usize) as *const UInt32;
             let memberCount = READ_u32(*classPtr);
             classPtr = classPtr.add(1);
@@ -559,12 +530,7 @@ impl Pass {
         }
     }
 
-    pub unsafe fn match_pattern(
-        &mut self,
-        mut index: libc::c_int,
-        mut repeats: libc::c_int,
-        mut textLoc: libc::c_int,
-    ) -> UInt32 {
+    pub unsafe fn match_pattern(&mut self, mut index: libc::c_int, mut repeats: libc::c_int, mut textLoc: libc::c_int) -> UInt32 {
         unsafe {
             let mut _rval = matchNo;
 
@@ -608,13 +574,8 @@ impl Pass {
                                 _rval = mr;
                                 break 'restart;
                             }
-                            altIndex +=
-                                READ_u8((*self.pattern.add(altIndex as usize)).value.bgroup.dNext)
-                                    as libc::c_int;
-                            if (READ_u8((*self.pattern.add(altIndex as usize)).flags.type_)
-                                & kMatchElem_TypeMask)
-                                != kMatchElem_Type_OR
-                            {
+                            altIndex += READ_u8((*self.pattern.add(altIndex as usize)).value.bgroup.dNext) as libc::c_int;
+                            if (READ_u8((*self.pattern.add(altIndex as usize)).flags.type_) & kMatchElem_TypeMask) != kMatchElem_Type_OR {
                                 break;
                             }
                         }
@@ -627,17 +588,11 @@ impl Pass {
                                 self.info[index as usize].matchedSpan.limit = textLoc as UInt16;
                                 for i in (index + 1..(index + dAfter)).rev() {
                                     if i < self.infoLimit {
-                                        if (self.info[i as usize].matchedSpan.start as libc::c_int)
-                                            > textLoc
-                                        {
-                                            self.info[i as usize].matchedSpan.start =
-                                                textLoc as UInt16;
+                                        if (self.info[i as usize].matchedSpan.start as libc::c_int) > textLoc {
+                                            self.info[i as usize].matchedSpan.start = textLoc as UInt16;
                                         }
-                                        if (self.info[i as usize].matchedSpan.limit as libc::c_int)
-                                            > textLoc
-                                        {
-                                            self.info[i as usize].matchedSpan.limit =
-                                                textLoc as UInt16;
+                                        if (self.info[i as usize].matchedSpan.limit as libc::c_int) > textLoc {
+                                            self.info[i as usize].matchedSpan.limit = textLoc as UInt16;
                                         }
                                     }
                                 }
@@ -650,20 +605,13 @@ impl Pass {
                     break 'restart;
                 } else if type_ == kMatchElem_Type_OR || type_ == kMatchElem_Type_EGroup {
                     let startIndex = index - READ_u8(m.value.egroup.dStart) as libc::c_int;
-                    let mr = self.match_pattern(
-                        startIndex,
-                        self.info[startIndex as usize].groupRepeats + 1,
-                        textLoc,
-                    );
+                    let mr = self.match_pattern(startIndex, self.info[startIndex as usize].groupRepeats + 1, textLoc);
                     _rval = mr;
                     break 'restart;
                 } else {
                     while repeats < repeatMin {
                         let inChar = self.inputChar(textLoc as libc::c_long);
-                        if inChar == kInvalidChar
-                            || inChar == kNeedMoreInput
-                            || inChar == kUnmappedChar
-                        {
+                        if inChar == kInvalidChar || inChar == kNeedMoreInput || inChar == kUnmappedChar {
                             _rval = inChar;
                             break 'restart;
                         }
@@ -673,8 +621,7 @@ impl Pass {
                                 matches = (READ_u32(m.value.usv.data) & kUSVMask) == inChar;
                             }
                             kMatchElem_Type_Class => {
-                                let classIndex =
-                                    self.classMatch(READ_u16(m.value.cls.index) as UInt32, inChar);
+                                let classIndex = self.classMatch(READ_u16(m.value.cls.index) as UInt32, inChar);
                                 matches = classIndex != -1;
                                 if matches && repeats == 0 && index < self.infoLimit {
                                     self.info[index as usize].classIndex = classIndex as UInt32;
@@ -709,10 +656,7 @@ impl Pass {
 
                     if repeats < repeatMax {
                         let inChar = self.inputChar(textLoc as libc::c_long);
-                        if inChar == kInvalidChar
-                            || inChar == kNeedMoreInput
-                            || inChar == kUnmappedChar
-                        {
+                        if inChar == kInvalidChar || inChar == kNeedMoreInput || inChar == kUnmappedChar {
                             _rval = inChar;
                             break 'restart;
                         }
@@ -722,8 +666,7 @@ impl Pass {
                                 matches = (READ_u32(m.value.usv.data) & kUSVMask) == inChar;
                             }
                             kMatchElem_Type_Class => {
-                                let classIndex =
-                                    self.classMatch(READ_u16(m.value.cls.index) as UInt32, inChar);
+                                let classIndex = self.classMatch(READ_u16(m.value.cls.index) as UInt32, inChar);
                                 matches = classIndex != -1;
                                 if matches && repeats == 0 && index < self.infoLimit {
                                     self.info[index as usize].classIndex = classIndex as UInt32;
@@ -739,8 +682,7 @@ impl Pass {
                         }
                         matches = matches != negate;
                         if matches {
-                            let mr =
-                                self.match_pattern(index, repeats + 1, textLoc + self.direction);
+                            let mr = self.match_pattern(index, repeats + 1, textLoc + self.direction);
                             if mr != matchNo {
                                 _rval = mr;
                                 break 'restart;
@@ -786,15 +728,11 @@ impl Pass {
                     let mut pageMap: *const UInt8 = std::ptr::null();
                     if self.bSupplementaryChars {
                         if plane < 17 && READ_u8(*self.planeMap.add(plane as usize)) != 0xff {
-                            pageMap = self
-                                .pageBase
-                                .add(256 * READ_u8(*self.planeMap.add(plane as usize)) as usize);
+                            pageMap = self.pageBase.add(256 * READ_u8(*self.planeMap.add(plane as usize)) as usize);
                             let page = ((inChar >> 8) & 0xff) as usize;
                             if READ_u8(*pageMap.add(page)) != 0xff {
-                                let charMapBase = self.pageBase.add(256 * self.numPageMaps as usize)
-                                    as *const UInt16;
-                                let charMap =
-                                    charMapBase.add(256 * READ_u8(*pageMap.add(page)) as usize);
+                                let charMapBase = self.pageBase.add(256 * self.numPageMaps as usize) as *const UInt16;
+                                let charMap = charMapBase.add(256 * READ_u8(*pageMap.add(page)) as usize);
                                 charIndex = READ_u16(*charMap.add((inChar & 0xff) as usize));
                             }
                         }
@@ -802,10 +740,8 @@ impl Pass {
                         pageMap = self.pageBase;
                         let page = ((inChar >> 8) & 0xff) as usize;
                         if READ_u8(*pageMap.add(page)) != 0xff {
-                            let charMapBase =
-                                self.pageBase.add(256 * self.numPageMaps as usize) as *const UInt16;
-                            let charMap =
-                                charMapBase.add(256 * READ_u8(*pageMap.add(page)) as usize);
+                            let charMapBase = self.pageBase.add(256 * self.numPageMaps as usize) as *const UInt16;
+                            let charMap = charMapBase.add(256 * READ_u8(*pageMap.add(page)) as usize);
                             charIndex = READ_u16(*charMap.add((inChar & 0xff) as usize));
                         }
                     }
@@ -818,18 +754,13 @@ impl Pass {
                         lookup = self.lookupBase.add(inChar as usize);
                     } else {
                         let nextChar = self.inputChar(1);
-                        if nextChar == kNeedMoreInput
-                            || nextChar == kInvalidChar
-                            || nextChar == kUnmappedChar
-                        {
+                        if nextChar == kNeedMoreInput || nextChar == kInvalidChar || nextChar == kUnmappedChar {
                             return nextChar;
                         }
                         if nextChar == kEndOfText {
                             lookup = self.lookupBase.add(inChar as usize);
                         } else {
-                            lookup = self
-                                .lookupBase
-                                .add((pageNumber * 256 + nextChar as libc::c_long) as usize);
+                            lookup = self.lookupBase.add((pageNumber * 256 + nextChar as libc::c_long) as usize);
                             if READ_u8((*lookup).rules.type_) == kLookupType_IllegalDBCS {
                                 lookup = self.lookupBase.add(inChar as usize);
                             } else {
@@ -843,11 +774,8 @@ impl Pass {
             }
 
             let ruleType = READ_u8((*lookup).rules.type_);
-            if ruleType == kLookupType_StringRules
-                || (ruleType & kLookupType_RuleTypeMask) == kLookupType_ExtStringRules
-            {
-                let mut ruleList = (self.stringListBase as *const UInt32)
-                    .add(READ_u16((*lookup).rules.ruleIndex) as usize);
+            if ruleType == kLookupType_StringRules || (ruleType & kLookupType_RuleTypeMask) == kLookupType_ExtStringRules {
+                let mut ruleList = (self.stringListBase as *const UInt32).add(READ_u16((*lookup).rules.ruleIndex) as usize);
                 let mut matched = false;
                 let mut allowInsertion = true;
                 let mut ruleCount = READ_u8((*lookup).rules.ruleCount) as libc::c_int;
@@ -857,16 +785,14 @@ impl Pass {
 
                 while ruleCount > 0 {
                     ruleCount -= 1;
-                    let rule =
-                        self.stringRuleData.add(READ_u32(*ruleList) as usize) as *const StringRule;
+                    let rule = self.stringRuleData.add(READ_u32(*ruleList) as usize) as *const StringRule;
                     ruleList = ruleList.add(1);
 
                     self.matchElems = READ_u8((*rule).matchLength) as libc::c_int;
                     if self.matchElems == 0 && !allowInsertion {
                         continue;
                     }
-                    self.patternLength =
-                        self.matchElems + READ_u8((*rule).postLength) as libc::c_int;
+                    self.patternLength = self.matchElems + READ_u8((*rule).postLength) as libc::c_int;
                     self.pattern = rule.add(1) as *const MatchElem;
                     self.direction = 1;
                     self.infoLimit = self.matchElems;
@@ -890,28 +816,21 @@ impl Pass {
                             mr = self.match_pattern(0, 0, -1);
                         }
                         if mr == matchYes {
-                            let mut r =
-                                self.pattern.add(self.patternLength as usize) as *const RepElem;
+                            let mut r = self.pattern.add(self.patternLength as usize) as *const RepElem;
                             for _ in 0..READ_u8((*rule).repLength) {
                                 match READ_u8((*r).flags.type_) {
                                     kRepElem_Literal => {
                                         self.outputChar(READ_u32((*r).value));
                                     }
                                     kRepElem_Class => {
-                                        let myInfo =
-                                            &self.info[READ_u8((*r).flags.matchIndex) as usize];
+                                        let myInfo = &self.info[READ_u8((*r).flags.matchIndex) as usize];
                                         if myInfo.matchedSpan.start < myInfo.matchedSpan.limit {
-                                            self.outputChar(self.repClassMember(
-                                                READ_u16((*r).flags.repClass) as UInt32,
-                                                myInfo.classIndex,
-                                            ));
+                                            self.outputChar(self.repClassMember(READ_u16((*r).flags.repClass) as UInt32, myInfo.classIndex));
                                         }
                                     }
                                     kRepElem_Copy => {
-                                        let myInfo =
-                                            &self.info[READ_u8((*r).flags.matchIndex) as usize];
-                                        for j in myInfo.matchedSpan.start..myInfo.matchedSpan.limit
-                                        {
+                                        let myInfo = &self.info[READ_u8((*r).flags.matchIndex) as usize];
+                                        for j in myInfo.matchedSpan.start..myInfo.matchedSpan.limit {
                                             let ch = self.inputChar(j as libc::c_long);
                                             self.outputChar(ch);
                                         }
@@ -925,16 +844,11 @@ impl Pass {
                                                     return kUnmappedChar;
                                                 }
                                                 kOptionsUnmapped_UseReplacementCharWithWarning => {
-                                                    (*self.converter).warningStatus |=
-                                                        kStatus_UsedReplacement as UInt32;
-                                                    self.outputChar(READ_u32(
-                                                        (*self.tableHeader).replacementChar,
-                                                    ));
+                                                    (*self.converter).warningStatus |= kStatus_UsedReplacement as UInt32;
+                                                    self.outputChar(READ_u32((*self.tableHeader).replacementChar));
                                                 }
                                                 _ => {
-                                                    self.outputChar(READ_u32(
-                                                        (*self.tableHeader).replacementChar,
-                                                    ));
+                                                    self.outputChar(READ_u32((*self.tableHeader).replacementChar));
                                                 }
                                             }
                                         }
@@ -966,8 +880,7 @@ impl Pass {
                                 return kUnmappedChar;
                             }
                             kOptionsUnmapped_UseReplacementCharWithWarning => {
-                                (*self.converter).warningStatus |=
-                                    kStatus_UsedReplacement as UInt32;
+                                (*self.converter).warningStatus |= kStatus_UsedReplacement as UInt32;
                                 self.outputChar(READ_u32((*self.tableHeader).replacementChar));
                             }
                             _ => {
@@ -1096,13 +1009,7 @@ pub struct Converter {
 }
 
 impl Converter {
-    pub unsafe fn new(
-        inTable: *const Byte,
-        inTableSize: UInt32,
-        inForward: bool,
-        inForm: UInt16,
-        outForm: UInt16,
-    ) -> Box<Self> {
+    pub unsafe fn new(inTable: *const Byte, inTableSize: UInt32, inForward: bool, inForm: UInt16, outForm: UInt16) -> Box<Self> {
         unsafe {
             let mut cnv = Box::new(Self {
                 oBuffer: std::ptr::null_mut(),
@@ -1189,9 +1096,7 @@ impl Converter {
                 };
 
                 if (targetFlags & kFlags_Unicode) != 0 {
-                    if (cnv.outputForm as UInt16) < kForm_UTF8
-                        || (cnv.outputForm as UInt16) > kForm_UTF32LE
-                    {
+                    if (cnv.outputForm as UInt16) < kForm_UTF8 || (cnv.outputForm as UInt16) > kForm_UTF32LE {
                         cnv.status = kStatus_InvalidForm;
                         return cnv;
                     }
@@ -1209,9 +1114,7 @@ impl Converter {
                 };
 
                 if (sourceFlags & kFlags_Unicode) != 0 {
-                    if (cnv.inputForm as UInt16) < kForm_UTF8
-                        || (cnv.inputForm as UInt16) > kForm_UTF32LE
-                    {
+                    if (cnv.inputForm as UInt16) < kForm_UTF8 || (cnv.inputForm as UInt16) > kForm_UTF32LE {
                         cnv.status = kStatus_InvalidForm;
                         return cnv;
                     }
@@ -1235,8 +1138,7 @@ impl Converter {
                 }
 
                 for i in 0..numTables {
-                    let t = cnv.table.add(READ_u32(*tableBase.add(i as usize)) as usize)
-                        as *const TableHeader;
+                    let t = cnv.table.add(READ_u32(*tableBase.add(i as usize)) as usize) as *const TableHeader;
                     let mut p: *mut dyn Stage = std::ptr::null_mut::<Converter>() as *mut dyn Stage;
                     match READ_u32((*t).type_) {
                         kTableType_BB | kTableType_BU | kTableType_UU | kTableType_UB => {
@@ -1271,14 +1173,11 @@ impl Converter {
                 }
             }
 
-            if (cnv.outputForm as UInt16) >= kForm_UTF8
-                && (cnv.outputForm as UInt16) <= kForm_UTF32LE
-            {
+            if (cnv.outputForm as UInt16) >= kForm_UTF8 && (cnv.outputForm as UInt16) <= kForm_UTF32LE {
                 let mut n: *mut dyn Stage = std::ptr::null_mut::<Converter>() as *mut dyn Stage;
                 if (outForm & kForm_NormalizationMask) == kForm_NFD && normForm != kForm_NFD {
                     n = Box::into_raw(Box::new(Normalizer::new(false)));
-                } else if (outForm & kForm_NormalizationMask) == kForm_NFC && normForm != kForm_NFC
-                {
+                } else if (outForm & kForm_NormalizationMask) == kForm_NFC && normForm != kForm_NFC {
                     n = Box::into_raw(Box::new(Normalizer::new(true)));
                 }
                 if !n.is_null() {
@@ -1312,12 +1211,7 @@ impl Converter {
         }
     }
 
-    pub unsafe fn GetNamePtr(
-        &self,
-        inNameID: UInt16,
-        outNamePtr: *mut *const Byte,
-        outNameLen: *mut UInt32,
-    ) -> bool {
+    pub unsafe fn GetNamePtr(&self, inNameID: UInt16, outNamePtr: *mut *const Byte, outNameLen: *mut UInt32) -> bool {
         unsafe { getNamePtrFromTable(self.table, inNameID, outNamePtr, outNameLen) }
     }
 
@@ -1342,8 +1236,7 @@ impl Converter {
 
             match self.inputForm as UInt16 {
                 kForm_UTF8 => {
-                    let extraBytes =
-                        bytesFromUTF8[*self.data.add(self.dataPtr as usize) as usize] as UInt32;
+                    let extraBytes = bytesFromUTF8[*self.data.add(self.dataPtr as usize) as usize] as UInt32;
                     if self.dataPtr + extraBytes + 1 > self.dataLen {
                         if self.inputComplete {
                             return kInvalidChar;
@@ -1369,11 +1262,7 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = u16::from_be_bytes(
-                        std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 2)
-                            .try_into()
-                            .unwrap(),
-                    ) as UInt32;
+                    rval = u16::from_be_bytes(std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 2).try_into().unwrap()) as UInt32;
                     self.dataPtr += 2;
                     if rval >= kSurrogateHighStart && rval <= kSurrogateHighEnd {
                         self.dataPtr -= 2;
@@ -1386,15 +1275,10 @@ impl Converter {
                             }
                         }
                         self.dataPtr += 2;
-                        let low = u16::from_be_bytes(
-                            std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 2)
-                                .try_into()
-                                .unwrap(),
-                        ) as UInt32;
+                        let low =
+                            u16::from_be_bytes(std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 2).try_into().unwrap()) as UInt32;
                         self.dataPtr += 2;
-                        rval = ((rval - kSurrogateHighStart) << halfShift)
-                            + (low - kSurrogateLowStart)
-                            + halfBase;
+                        rval = ((rval - kSurrogateHighStart) << halfShift) + (low - kSurrogateLowStart) + halfBase;
                     }
                 }
                 kForm_UTF16LE => {
@@ -1406,11 +1290,7 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = u16::from_le_bytes(
-                        std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 2)
-                            .try_into()
-                            .unwrap(),
-                    ) as UInt32;
+                    rval = u16::from_le_bytes(std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 2).try_into().unwrap()) as UInt32;
                     self.dataPtr += 2;
                     if rval >= kSurrogateHighStart && rval <= kSurrogateHighEnd {
                         self.dataPtr -= 2;
@@ -1423,15 +1303,10 @@ impl Converter {
                             }
                         }
                         self.dataPtr += 2;
-                        let low = u16::from_le_bytes(
-                            std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 2)
-                                .try_into()
-                                .unwrap(),
-                        ) as UInt32;
+                        let low =
+                            u16::from_le_bytes(std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 2).try_into().unwrap()) as UInt32;
                         self.dataPtr += 2;
-                        rval = ((rval - kSurrogateHighStart) << halfShift)
-                            + (low - kSurrogateLowStart)
-                            + halfBase;
+                        rval = ((rval - kSurrogateHighStart) << halfShift) + (low - kSurrogateLowStart) + halfBase;
                     }
                 }
                 kForm_UTF32BE => {
@@ -1443,11 +1318,7 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = u32::from_be_bytes(
-                        std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 4)
-                            .try_into()
-                            .unwrap(),
-                    );
+                    rval = u32::from_be_bytes(std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 4).try_into().unwrap());
                     self.dataPtr += 4;
                 }
                 kForm_UTF32LE => {
@@ -1459,11 +1330,7 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = u32::from_le_bytes(
-                        std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 4)
-                            .try_into()
-                            .unwrap(),
-                    );
+                    rval = u32::from_le_bytes(std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 4).try_into().unwrap());
                     self.dataPtr += 4;
                 }
                 _ => {}
@@ -1476,11 +1343,7 @@ impl Converter {
     pub unsafe fn _getCharWithSavedBytes(&mut self) -> UInt32 {
         unsafe {
             let mut rval: UInt32 = 0;
-            let data_byte = |savedCount: UInt32,
-                             savedBytes: &[Byte; 8],
-                             data: *const Byte,
-                             idx: UInt32|
-             -> UInt32 {
+            let data_byte = |savedCount: UInt32, savedBytes: &[Byte; 8], data: *const Byte, idx: UInt32| -> UInt32 {
                 if idx < savedCount {
                     savedBytes[idx as usize] as UInt32
                 } else {
@@ -1488,24 +1351,10 @@ impl Converter {
                 }
             };
             let word_bytes = |position: UInt32| -> [u8; 2] {
-                std::array::from_fn(|i| {
-                    data_byte(
-                        self.savedCount,
-                        &self.savedBytes,
-                        self.data,
-                        position + i as u32,
-                    ) as u8
-                })
+                std::array::from_fn(|i| data_byte(self.savedCount, &self.savedBytes, self.data, position + i as u32) as u8)
             };
             let dword_bytes = |position: UInt32| -> [u8; 4] {
-                std::array::from_fn(|i| {
-                    data_byte(
-                        self.savedCount,
-                        &self.savedBytes,
-                        self.data,
-                        position + i as u32,
-                    ) as u8
-                })
+                std::array::from_fn(|i| data_byte(self.savedCount, &self.savedBytes, self.data, position + i as u32) as u8)
             };
 
             match self.inputForm as UInt16 {
@@ -1521,8 +1370,7 @@ impl Converter {
                         }
                     }
                     for _ in 0..=extraBytes {
-                        rval +=
-                            data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr);
+                        rval += data_byte(self.savedCount, &self.savedBytes, self.data, self.dataPtr);
                         self.dataPtr += 1;
                         rval <<= 6;
                     }
@@ -1553,9 +1401,7 @@ impl Converter {
                         self.dataPtr += 2;
                         let low = u16::from_be_bytes(word_bytes(self.dataPtr)) as UInt32;
                         self.dataPtr += 2;
-                        rval = ((rval - kSurrogateHighStart) << halfShift)
-                            + (low - kSurrogateLowStart)
-                            + halfBase;
+                        rval = ((rval - kSurrogateHighStart) << halfShift) + (low - kSurrogateLowStart) + halfBase;
                     }
                 }
                 kForm_UTF16LE => {
@@ -1582,9 +1428,7 @@ impl Converter {
                         self.dataPtr += 2;
                         let low = u16::from_le_bytes(word_bytes(self.dataPtr)) as UInt32;
                         self.dataPtr += 2;
-                        rval = ((rval - kSurrogateHighStart) << halfShift)
-                            + (low - kSurrogateLowStart)
-                            + halfBase;
+                        rval = ((rval - kSurrogateHighStart) << halfShift) + (low - kSurrogateLowStart) + halfBase;
                     }
                 }
                 kForm_UTF32BE => {
@@ -1624,15 +1468,8 @@ impl Converter {
     }
 
     pub unsafe fn ConvertBufferOpt(
-        cnv: *mut Self,
-        inBuffer: *const Byte,
-        inLength: UInt32,
-        inUsed: *mut UInt32,
-        outBuffer: *mut Byte,
-        outLength: UInt32,
-        outUsed: *mut UInt32,
-        inOptions: UInt32,
-        lookaheadCount: *mut UInt32,
+        cnv: *mut Self, inBuffer: *const Byte, inLength: UInt32, inUsed: *mut UInt32, outBuffer: *mut Byte, outLength: UInt32, outUsed: *mut UInt32,
+        inOptions: UInt32, lookaheadCount: *mut UInt32,
     ) -> TECkit_Status {
         unsafe {
             let mut outPtr: UInt32 = 0;
@@ -1641,8 +1478,7 @@ impl Converter {
             (*cnv).data = inBuffer;
             (*cnv).dataLen = inLength;
             (*cnv).dataPtr = 0;
-            (*cnv).inputComplete =
-                (inOptions & kOptionsMask_InputComplete) == kOptionsComplete_InputIsComplete;
+            (*cnv).inputComplete = (inOptions & kOptionsMask_InputComplete) == kOptionsComplete_InputIsComplete;
             (*cnv).unmappedBehavior = (inOptions & kOptionsMask_UnmappedBehavior) as Byte;
 
             let mut c: UInt32;
@@ -1713,47 +1549,37 @@ impl Converter {
                             match bytesToWrite {
                                 4 => {
                                     write_pos -= 1;
-                                    *outBuffer.add(write_pos as usize) =
-                                        ((temp_c | byteMark) & byteMask) as Byte;
+                                    *outBuffer.add(write_pos as usize) = ((temp_c | byteMark) & byteMask) as Byte;
                                     temp_c >>= 6;
                                     write_pos -= 1;
-                                    *outBuffer.add(write_pos as usize) =
-                                        ((temp_c | byteMark) & byteMask) as Byte;
+                                    *outBuffer.add(write_pos as usize) = ((temp_c | byteMark) & byteMask) as Byte;
                                     temp_c >>= 6;
                                     write_pos -= 1;
-                                    *outBuffer.add(write_pos as usize) =
-                                        ((temp_c | byteMark) & byteMask) as Byte;
+                                    *outBuffer.add(write_pos as usize) = ((temp_c | byteMark) & byteMask) as Byte;
                                     temp_c >>= 6;
                                     write_pos -= 1;
-                                    *outBuffer.add(write_pos as usize) =
-                                        (temp_c | firstByteMark[bytesToWrite] as UInt32) as Byte;
+                                    *outBuffer.add(write_pos as usize) = (temp_c | firstByteMark[bytesToWrite] as UInt32) as Byte;
                                 }
                                 3 => {
                                     write_pos -= 1;
-                                    *outBuffer.add(write_pos as usize) =
-                                        ((temp_c | byteMark) & byteMask) as Byte;
+                                    *outBuffer.add(write_pos as usize) = ((temp_c | byteMark) & byteMask) as Byte;
                                     temp_c >>= 6;
                                     write_pos -= 1;
-                                    *outBuffer.add(write_pos as usize) =
-                                        ((temp_c | byteMark) & byteMask) as Byte;
+                                    *outBuffer.add(write_pos as usize) = ((temp_c | byteMark) & byteMask) as Byte;
                                     temp_c >>= 6;
                                     write_pos -= 1;
-                                    *outBuffer.add(write_pos as usize) =
-                                        (temp_c | firstByteMark[bytesToWrite] as UInt32) as Byte;
+                                    *outBuffer.add(write_pos as usize) = (temp_c | firstByteMark[bytesToWrite] as UInt32) as Byte;
                                 }
                                 2 => {
                                     write_pos -= 1;
-                                    *outBuffer.add(write_pos as usize) =
-                                        ((temp_c | byteMark) & byteMask) as Byte;
+                                    *outBuffer.add(write_pos as usize) = ((temp_c | byteMark) & byteMask) as Byte;
                                     temp_c >>= 6;
                                     write_pos -= 1;
-                                    *outBuffer.add(write_pos as usize) =
-                                        (temp_c | firstByteMark[bytesToWrite] as UInt32) as Byte;
+                                    *outBuffer.add(write_pos as usize) = (temp_c | firstByteMark[bytesToWrite] as UInt32) as Byte;
                                 }
                                 1 => {
                                     write_pos -= 1;
-                                    *outBuffer.add(write_pos as usize) =
-                                        (temp_c | firstByteMark[bytesToWrite] as UInt32) as Byte;
+                                    *outBuffer.add(write_pos as usize) = (temp_c | firstByteMark[bytesToWrite] as UInt32) as Byte;
                                 }
                                 _ => {}
                             }
@@ -1765,8 +1591,7 @@ impl Converter {
                                     rval = kStatus_OutputBufferFull;
                                     break 'convert_loop;
                                 }
-                                std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 2)
-                                    .copy_from_slice(&(c as u16).to_be_bytes());
+                                std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 2).copy_from_slice(&(c as u16).to_be_bytes());
                                 outPtr += 2;
                             } else {
                                 if outPtr + 4 > outLength {
@@ -1777,10 +1602,7 @@ impl Converter {
                                 let c_sub = c - halfBase;
                                 let hi = (c_sub >> halfShift) + kSurrogateHighStart;
                                 let lo = (c_sub & halfMask) + kSurrogateLowStart;
-                                let output = std::slice::from_raw_parts_mut(
-                                    outBuffer.add(outPtr as usize),
-                                    4,
-                                );
+                                let output = std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 4);
                                 output[..2].copy_from_slice(&(hi as u16).to_be_bytes());
                                 output[2..].copy_from_slice(&(lo as u16).to_be_bytes());
                                 outPtr += 4;
@@ -1793,8 +1615,7 @@ impl Converter {
                                     rval = kStatus_OutputBufferFull;
                                     break 'convert_loop;
                                 }
-                                std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 2)
-                                    .copy_from_slice(&(c as u16).to_le_bytes());
+                                std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 2).copy_from_slice(&(c as u16).to_le_bytes());
                                 outPtr += 2;
                             } else {
                                 if outPtr + 4 > outLength {
@@ -1805,10 +1626,7 @@ impl Converter {
                                 let c_sub = c - halfBase;
                                 let hi = (c_sub >> halfShift) + kSurrogateHighStart;
                                 let lo = (c_sub & halfMask) + kSurrogateLowStart;
-                                let output = std::slice::from_raw_parts_mut(
-                                    outBuffer.add(outPtr as usize),
-                                    4,
-                                );
+                                let output = std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 4);
                                 output[..2].copy_from_slice(&(hi as u16).to_le_bytes());
                                 output[2..].copy_from_slice(&(lo as u16).to_le_bytes());
                                 outPtr += 4;
@@ -1820,8 +1638,7 @@ impl Converter {
                                 rval = kStatus_OutputBufferFull;
                                 break 'convert_loop;
                             }
-                            std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 4)
-                                .copy_from_slice(&c.to_be_bytes());
+                            std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 4).copy_from_slice(&c.to_be_bytes());
                             outPtr += 4;
                         }
                         kForm_UTF32LE => {
@@ -1830,8 +1647,7 @@ impl Converter {
                                 rval = kStatus_OutputBufferFull;
                                 break 'convert_loop;
                             }
-                            std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 4)
-                                .copy_from_slice(&c.to_le_bytes());
+                            std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 4).copy_from_slice(&c.to_le_bytes());
                             outPtr += 4;
                         }
                         _ => {}
@@ -1921,11 +1737,7 @@ impl Stage for Converter {
     unsafe fn getChar(&mut self) -> UInt32 {
         unsafe {
             if self.dataPtr >= self.savedCount + self.dataLen {
-                return if self.inputComplete {
-                    kEndOfText
-                } else {
-                    kNeedMoreInput
-                };
+                return if self.inputComplete { kEndOfText } else { kNeedMoreInput };
             }
             if self.inputForm == kForm_Bytes as Byte {
                 let ch = *self.data.add(self.dataPtr as usize);
@@ -1953,12 +1765,7 @@ impl Stage for Converter {
     unsafe fn setPrevStage(&mut self, _prev: *mut dyn Stage) {}
 }
 
-pub unsafe fn getNamePtrFromTable(
-    table: *const Byte,
-    nameID: UInt16,
-    outNamePtr: *mut *const Byte,
-    outNameLen: *mut UInt32,
-) -> bool {
+pub unsafe fn getNamePtrFromTable(table: *const Byte, nameID: UInt16, outNamePtr: *mut *const Byte, outNameLen: *mut UInt32) -> bool {
     unsafe {
         let fh = table as *const FileHeader;
         let nameOffsets = table.add(std::mem::size_of::<FileHeader>()) as *const UInt32;
@@ -1976,12 +1783,7 @@ pub unsafe fn getNamePtrFromTable(
 
 #[unsafe(export_name = "tectonic_rust_TECkit_CreateConverter")]
 pub unsafe extern "C" fn TECkit_CreateConverter(
-    mapping: *mut Byte,
-    mappingSize: UInt32,
-    mapForward: Byte,
-    inputForm: UInt16,
-    outputForm: UInt16,
-    converter: *mut TECkit_Converter,
+    mapping: *mut Byte, mappingSize: UInt32, mapForward: Byte, inputForm: UInt16, outputForm: UInt16, converter: *mut TECkit_Converter,
 ) -> TECkit_Status {
     unsafe {
         *converter = std::ptr::null_mut();
@@ -2009,11 +1811,7 @@ pub unsafe extern "C" fn TECkit_DisposeConverter(converter: TECkit_Converter) ->
 
 #[unsafe(export_name = "tectonic_rust_TECkit_GetConverterName")]
 pub unsafe extern "C" fn TECkit_GetConverterName(
-    converter: TECkit_Converter,
-    nameID: UInt16,
-    nameBuffer: *mut Byte,
-    bufferSize: UInt32,
-    nameLength: *mut UInt32,
+    converter: TECkit_Converter, nameID: UInt16, nameBuffer: *mut Byte, bufferSize: UInt32, nameLength: *mut UInt32,
 ) -> TECkit_Status {
     unsafe {
         let cnv = converter as *mut Converter;
@@ -2034,11 +1832,7 @@ pub unsafe extern "C" fn TECkit_GetConverterName(
 }
 
 #[unsafe(export_name = "tectonic_rust_TECkit_GetConverterFlags")]
-pub unsafe extern "C" fn TECkit_GetConverterFlags(
-    converter: TECkit_Converter,
-    sourceFlags: *mut UInt32,
-    targetFlags: *mut UInt32,
-) -> TECkit_Status {
+pub unsafe extern "C" fn TECkit_GetConverterFlags(converter: TECkit_Converter, sourceFlags: *mut UInt32, targetFlags: *mut UInt32) -> TECkit_Status {
     unsafe {
         let cnv = converter as *mut Converter;
         if !Converter::Validate(cnv) {
@@ -2065,46 +1859,23 @@ pub unsafe extern "C" fn TECkit_ResetConverter(converter: TECkit_Converter) -> T
 
 #[unsafe(export_name = "tectonic_rust_TECkit_ConvertBufferOpt")]
 pub unsafe extern "C" fn TECkit_ConvertBufferOpt(
-    converter: TECkit_Converter,
-    inBuffer: *const Byte,
-    inLength: UInt32,
-    inUsed: *mut UInt32,
-    outBuffer: *mut Byte,
-    outLength: UInt32,
-    outUsed: *mut UInt32,
-    inOptions: UInt32,
-    lookaheadCount: *mut UInt32,
+    converter: TECkit_Converter, inBuffer: *const Byte, inLength: UInt32, inUsed: *mut UInt32, outBuffer: *mut Byte, outLength: UInt32,
+    outUsed: *mut UInt32, inOptions: UInt32, lookaheadCount: *mut UInt32,
 ) -> TECkit_Status {
     unsafe {
         let cnv = converter as *mut Converter;
         if !Converter::Validate(cnv) {
             kStatus_InvalidConverter
         } else {
-            Converter::ConvertBufferOpt(
-                cnv,
-                inBuffer,
-                inLength,
-                inUsed,
-                outBuffer,
-                outLength,
-                outUsed,
-                inOptions,
-                lookaheadCount,
-            )
+            Converter::ConvertBufferOpt(cnv, inBuffer, inLength, inUsed, outBuffer, outLength, outUsed, inOptions, lookaheadCount)
         }
     }
 }
 
 #[unsafe(export_name = "tectonic_rust_TECkit_ConvertBuffer")]
 pub unsafe extern "C" fn TECkit_ConvertBuffer(
-    converter: TECkit_Converter,
-    inBuffer: *const Byte,
-    inLength: UInt32,
-    inUsed: *mut UInt32,
-    outBuffer: *mut Byte,
-    outLength: UInt32,
-    outUsed: *mut UInt32,
-    inputIsComplete: Byte,
+    converter: TECkit_Converter, inBuffer: *const Byte, inLength: UInt32, inUsed: *mut UInt32, outBuffer: *mut Byte, outLength: UInt32,
+    outUsed: *mut UInt32, inputIsComplete: Byte,
 ) -> TECkit_Status {
     unsafe {
         TECkit_ConvertBufferOpt(
@@ -2128,12 +1899,7 @@ pub unsafe extern "C" fn TECkit_ConvertBuffer(
 
 #[unsafe(export_name = "tectonic_rust_TECkit_FlushOpt")]
 pub unsafe extern "C" fn TECkit_FlushOpt(
-    converter: TECkit_Converter,
-    outBuffer: *mut Byte,
-    outLength: UInt32,
-    outUsed: *mut UInt32,
-    inOptions: UInt32,
-    lookaheadCount: *mut UInt32,
+    converter: TECkit_Converter, outBuffer: *mut Byte, outLength: UInt32, outUsed: *mut UInt32, inOptions: UInt32, lookaheadCount: *mut UInt32,
 ) -> TECkit_Status {
     unsafe {
         let cnv = converter as *mut Converter;
@@ -2156,12 +1922,7 @@ pub unsafe extern "C" fn TECkit_FlushOpt(
 }
 
 #[unsafe(export_name = "tectonic_rust_TECkit_Flush")]
-pub unsafe extern "C" fn TECkit_Flush(
-    converter: TECkit_Converter,
-    outBuffer: *mut Byte,
-    outLength: UInt32,
-    outUsed: *mut UInt32,
-) -> TECkit_Status {
+pub unsafe extern "C" fn TECkit_Flush(converter: TECkit_Converter, outBuffer: *mut Byte, outLength: UInt32, outUsed: *mut UInt32) -> TECkit_Status {
     unsafe {
         TECkit_FlushOpt(
             converter,
@@ -2176,10 +1937,7 @@ pub unsafe extern "C" fn TECkit_Flush(
 
 #[unsafe(export_name = "tectonic_rust_TECkit_GetMappingFlags")]
 pub unsafe extern "C" fn TECkit_GetMappingFlags(
-    mapping: *mut Byte,
-    mappingSize: UInt32,
-    lhsFlags: *mut UInt32,
-    rhsFlags: *mut UInt32,
+    mapping: *mut Byte, mappingSize: UInt32, lhsFlags: *mut UInt32, rhsFlags: *mut UInt32,
 ) -> TECkit_Status {
     unsafe {
         if mapping.is_null() {
@@ -2199,8 +1957,7 @@ pub unsafe extern "C" fn TECkit_GetMappingFlags(
             );
             if !matches!(
                 res,
-                tectonic_bridge_flate::FlateResult::Success
-                    | tectonic_bridge_flate::FlateResult::BufError
+                tectonic_bridge_flate::FlateResult::Success | tectonic_bridge_flate::FlateResult::BufError
             ) {
                 status = kStatus_InvalidMapping;
             }
@@ -2224,12 +1981,7 @@ pub unsafe extern "C" fn TECkit_GetMappingFlags(
 
 #[unsafe(export_name = "tectonic_rust_TECkit_GetMappingName")]
 pub unsafe extern "C" fn TECkit_GetMappingName(
-    mapping: *mut Byte,
-    mappingSize: UInt32,
-    nameID: UInt16,
-    nameBuffer: *mut Byte,
-    bufferSize: UInt32,
-    nameLength: *mut UInt32,
+    mapping: *mut Byte, mappingSize: UInt32, nameID: UInt16, nameBuffer: *mut Byte, bufferSize: UInt32, nameLength: *mut UInt32,
 ) -> TECkit_Status {
     unsafe {
         if mapping.is_null() {
@@ -2250,8 +2002,7 @@ pub unsafe extern "C" fn TECkit_GetMappingName(
             );
             if !matches!(
                 res,
-                tectonic_bridge_flate::FlateResult::Success
-                    | tectonic_bridge_flate::FlateResult::BufError
+                tectonic_bridge_flate::FlateResult::Success | tectonic_bridge_flate::FlateResult::BufError
             ) {
                 status = kStatus_InvalidMapping;
             } else {
@@ -2269,8 +2020,7 @@ pub unsafe extern "C" fn TECkit_GetMappingName(
                     );
                     if !matches!(
                         res2,
-                        tectonic_bridge_flate::FlateResult::Success
-                            | tectonic_bridge_flate::FlateResult::BufError
+                        tectonic_bridge_flate::FlateResult::Success | tectonic_bridge_flate::FlateResult::BufError
                     ) {
                         status = kStatus_InvalidMapping;
                     }

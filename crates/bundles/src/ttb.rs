@@ -96,9 +96,7 @@ impl TTBFileIndex {
     fn read_filelist_line(&mut self, line: &str) -> Result<()> {
         let mut bits = line.split_whitespace();
 
-        if let (Some(start), Some(gzip_len), Some(real_len), Some(hash)) =
-            (bits.next(), bits.next(), bits.next(), bits.next())
-        {
+        if let (Some(start), Some(gzip_len), Some(real_len), Some(hash)) = (bits.next(), bits.next(), bits.next(), bits.next()) {
             let path = match bits.next() {
                 Some(first) => match bits.next() {
                     None => first.to_owned(),
@@ -116,11 +114,7 @@ impl TTBFileIndex {
                 },
                 None => bail!("malformed FILELIST line: missing path"),
             };
-            let name = path
-                .rsplit_once('/')
-                .map(|(_, n)| n)
-                .unwrap_or(&path)
-                .to_owned();
+            let name = path.rsplit_once('/').map(|(_, n)| n).unwrap_or(&path).to_owned();
 
             // Basic path validation.
             // TODO: more robust checks
@@ -293,9 +287,7 @@ impl<'this> FileIndex<'this> for TTBFileIndex {
                         let prefix_len = info.path().len().saturating_sub(name.len());
                         &info.path()[0..prefix_len] == rule
                     };
-                    if matches
-                        && picked.is_none_or(|previous| info.path < self.content[previous].path)
-                    {
+                    if matches && picked.is_none_or(|previous| info.path < self.content[previous].path) {
                         picked = Some(idx);
                     }
                 }
@@ -346,9 +338,7 @@ mod tests {
     #[test]
     fn exact_search_does_not_match_subdirectories() {
         let mut index = index();
-        index
-            .search_orders
-            .insert("main".into(), vec!["/first/".into()]);
+        index.search_orders.insert("main".into(), vec!["/first/".into()]);
         assert!(index.search("file.tex").is_none());
         assert_eq!(index.search("exact.tex").unwrap().path, "first/exact.tex");
     }

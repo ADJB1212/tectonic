@@ -48,10 +48,7 @@ fn prefetch_indices(lengths: impl Iterator<Item = usize>) -> Vec<usize> {
 }
 
 pub(crate) fn open<I: Sync>(
-    url: &str,
-    infos: &[I],
-    size: fn(&I) -> usize,
-    read_file: fn(&mut DefaultRangeReader, &I, &mut dyn StatusBackend) -> OpenResult<Vec<u8>>,
+    url: &str, infos: &[I], size: fn(&I) -> usize, read_file: fn(&mut DefaultRangeReader, &I, &mut dyn StatusBackend) -> OpenResult<Vec<u8>>,
     status: &mut dyn StatusBackend,
 ) -> Vec<OpenResult<Vec<u8>>> {
     if infos.is_empty() {
@@ -75,9 +72,7 @@ pub(crate) fn open<I: Sync>(
 
     let next = AtomicUsize::new(0);
     let abort = AtomicBool::new(false);
-    let result_slots: Vec<Mutex<OpenResult<Vec<u8>>>> = (0..infos.len())
-        .map(|_| Mutex::new(OpenResult::NotAvailable))
-        .collect();
+    let result_slots: Vec<Mutex<OpenResult<Vec<u8>>>> = (0..infos.len()).map(|_| Mutex::new(OpenResult::NotAvailable)).collect();
 
     thread::scope(|scope| {
         let mut workers = Vec::with_capacity(concurrency);
@@ -160,10 +155,7 @@ mod tests {
                 for _ in 0..concurrency {
                     received.recv_timeout(Duration::from_secs(5)).unwrap();
                 }
-                assert!(matches!(
-                    received.try_recv(),
-                    Err(mpsc::TryRecvError::Empty)
-                ));
+                assert!(matches!(received.try_recv(), Err(mpsc::TryRecvError::Empty)));
                 for release in releases.into_iter().rev() {
                     release.send(()).unwrap();
                 }
@@ -175,11 +167,7 @@ mod tests {
                 |info| if info.index == 2 { usize::MAX } else { 1 },
                 |_, info, _| {
                     info.started.send(info.index).unwrap();
-                    info.release
-                        .lock()
-                        .unwrap()
-                        .recv_timeout(Duration::from_secs(5))
-                        .unwrap();
+                    info.release.lock().unwrap().recv_timeout(Duration::from_secs(5)).unwrap();
                     OpenResult::Ok(vec![info.index])
                 },
                 &mut NoopStatusBackend {},

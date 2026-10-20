@@ -7,10 +7,7 @@ use std::{collections::HashMap, io::Read};
 use tectonic_errors::prelude::*;
 use tectonic_status_base::tt_warning;
 
-use crate::{
-    Common, EmittingState, FixedPoint, TexFontNum, fonts::FontEnsemble, html::Element,
-    specials::Special, templating::Templating,
-};
+use crate::{Common, EmittingState, FixedPoint, TexFontNum, fonts::FontEnsemble, html::Element, specials::Special, templating::Templating};
 
 #[derive(Debug)]
 pub(crate) struct InitializationState {
@@ -65,32 +62,19 @@ impl InitializationState {
     /// that might not work well as a file path.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn handle_define_native_font(
-        &mut self,
-        name: &str,
-        font_num: TexFontNum,
-        size: FixedPoint,
-        face_index: u32,
-        color_rgba: Option<u32>,
-        extend: Option<u32>,
-        slant: Option<u32>,
-        embolden: Option<u32>,
-        common: &mut Common,
+        &mut self, name: &str, font_num: TexFontNum, size: FixedPoint, face_index: u32, color_rgba: Option<u32>, extend: Option<u32>,
+        slant: Option<u32>, embolden: Option<u32>, common: &mut Common,
     ) -> Result<()> {
         if self.fonts.contains(font_num) {
             // Should we override the definition or something?
             return Ok(());
         }
 
-        self.fonts.register_tex_font(
-            font_num, size, face_index, color_rgba, extend, slant, embolden, name, common,
-        )
+        self.fonts
+            .register_tex_font(font_num, size, face_index, color_rgba, extend, slant, embolden, name, common)
     }
 
-    pub(crate) fn handle_special(
-        &mut self,
-        special: Special<'_>,
-        common: &mut Common,
-    ) -> Result<()> {
+    pub(crate) fn handle_special(&mut self, special: Special<'_>, common: &mut Common) -> Result<()> {
         match special {
             Special::AddTemplate(t) => self.handle_add_template(t, common),
             Special::SetTemplate(t) => self.handle_set_template(t, common),
@@ -98,13 +82,9 @@ impl InitializationState {
             Special::SetTemplateVariable(t) => self.handle_set_template_variable(t, common),
             Special::StartDefineFontFamily => self.handle_start_define_font_family(),
             Special::EndDefineFontFamily => self.handle_end_define_font_family(common),
-            Special::StartFontFamilyTagAssociations => {
-                self.handle_start_font_family_tag_associations()
-            }
+            Special::StartFontFamilyTagAssociations => self.handle_start_font_family_tag_associations(),
 
-            Special::EndFontFamilyTagAssociations => {
-                self.handle_end_font_family_tag_associations(common)
-            }
+            Special::EndFontFamilyTagAssociations => self.handle_end_font_family_tag_associations(common),
 
             Special::ProvideFile(_) => {
                 tt_warning!(common.status, "ignoring too-soon tdux:provideFile special");
@@ -130,9 +110,7 @@ impl InitializationState {
         self.templates.insert(texpath.to_owned(), contents);
 
         let (name, digest_opt) = ih.into_name_digest();
-        common
-            .hooks
-            .event_input_closed(name, digest_opt, common.status);
+        common.hooks.event_input_closed(name, digest_opt, common.status);
         Ok(())
     }
 
@@ -150,11 +128,7 @@ impl InitializationState {
         if let Some((varname, varval)) = remainder.split_once(' ') {
             self.variables.insert(varname.to_owned(), varval.to_owned());
         } else {
-            tt_warning!(
-                common.status,
-                "ignoring malformatted tdux:setTemplateVariable special `{}`",
-                remainder
-            );
+            tt_warning!(common.status, "ignoring malformatted tdux:setTemplateVariable special `{}`", remainder);
         }
 
         Ok(())
@@ -177,13 +151,9 @@ impl InitializationState {
             let italic = a_ok_or!(b.italic; ["no italic face defined"]);
             let bold_italic = a_ok_or!(b.bold_italic; ["no bold-italic face defined"]);
 
-            self.fonts
-                .register_family(family_name, regular, bold, italic, bold_italic)?;
+            self.fonts.register_family(family_name, regular, bold, italic, bold_italic)?;
         } else {
-            tt_warning!(
-                common.status,
-                "end of font-family definition block that didn't start"
-            );
+            tt_warning!(common.status, "end of font-family definition block that didn't start");
         }
 
         Ok(())
@@ -204,10 +174,7 @@ impl InitializationState {
                 self.tag_associations.insert(k, v);
             }
         } else {
-            tt_warning!(
-                common.status,
-                "end of font-family tag-association block that didn't start"
-            );
+            tt_warning!(common.status, "end of font-family tag-association block that didn't start");
         }
 
         Ok(())
@@ -218,13 +185,7 @@ impl InitializationState {
     /// the definition of a font family). Otherwise, the higher-level callback
     /// will declare initialization done and move to the emitting state.
     pub(crate) fn handle_text_and_glyphs(
-        &mut self,
-        font_num: TexFontNum,
-        text: &str,
-        _glyphs: &[u16],
-        _xs: &[i32],
-        _ys: &[i32],
-        common: &mut Common,
+        &mut self, font_num: TexFontNum, text: &str, _glyphs: &[u16], _xs: &[i32], _ys: &[i32], common: &mut Common,
     ) -> Result<()> {
         if let Some(b) = self.cur_font_family_definition.as_mut() {
             if text.starts_with("bold-italic") {
@@ -255,11 +216,7 @@ impl InitializationState {
         } else {
             // This shouldn't happen; the top-level processor should exit init
             // phase if it's invoked and none of the above cases hold.
-            tt_warning!(
-                common.status,
-                "internal bug; losing text `{}` in initialization phase",
-                text
-            );
+            tt_warning!(common.status, "internal bug; losing text `{}` in initialization phase", text);
         }
 
         Ok(())
@@ -291,21 +248,11 @@ impl InitializationState {
             context.insert(varname, &varvalue);
         }
 
-        let templating = Templating::new(
-            tera,
-            context,
-            self.next_template_path,
-            self.next_output_path,
-        );
+        let templating = Templating::new(tera, context, self.next_template_path, self.next_output_path);
 
         // Ready to hand off.
 
-        EmittingState::new_from_init(
-            self.fonts,
-            self.main_body_font_num,
-            templating,
-            self.tag_associations,
-        )
+        EmittingState::new_from_init(self.fonts, self.main_body_font_num, templating, self.tag_associations)
     }
 }
 

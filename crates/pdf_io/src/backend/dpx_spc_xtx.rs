@@ -26,47 +26,18 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
     fn cos(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn sin(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn fabs(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-    fn strncmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn strncpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_char;
-    fn xrealloc(
-        old_address: *mut ::core::ffi::c_void,
-        new_size: size_t,
-    ) -> *mut ::core::ffi::c_void;
-    fn sprintf(
-        _: *mut ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    fn strncmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char, __n: size_t) -> ::core::ffi::c_int;
+    fn strncpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char, __n: size_t) -> *mut ::core::ffi::c_char;
+    fn xrealloc(old_address: *mut ::core::ffi::c_void, new_size: size_t) -> *mut ::core::ffi::c_void;
+    fn sprintf(_: *mut ::core::ffi::c_char, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_reset_fonts"]
     fn pdf_dev_reset_fonts(newpage: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_dev_reset_color"]
@@ -75,48 +46,29 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_spc_set_fixed_point"]
     fn spc_set_fixed_point(spe: *mut spc_env, x: ::core::ffi::c_double, y: ::core::ffi::c_double);
     #[link_name = "__pdf_impl_spc_get_fixed_point"]
-    fn spc_get_fixed_point(
-        spe: *mut spc_env,
-        x: *mut ::core::ffi::c_double,
-        y: *mut ::core::ffi::c_double,
-    );
+    fn spc_get_fixed_point(spe: *mut spc_env, x: *mut ::core::ffi::c_double, y: *mut ::core::ffi::c_double);
     #[link_name = "__pdf_impl_spc_dup_fixed_point"]
     fn spc_dup_fixed_point(spe: *mut spc_env);
     #[link_name = "__pdf_impl_spc_pop_fixed_point"]
     fn spc_pop_fixed_point(spe: *mut spc_env);
     #[link_name = "__pdf_impl_parse_c_ident"]
-    fn parse_c_ident(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_c_ident(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_pdf_init_fontmap_record"]
     fn pdf_init_fontmap_record(mrec: *mut fontmap_rec);
     #[link_name = "__pdf_impl_pdf_clear_fontmap_record"]
     fn pdf_clear_fontmap_record(mrec: *mut fontmap_rec);
     #[link_name = "__pdf_impl_pdf_load_fontmap_file"]
-    fn pdf_load_fontmap_file(
-        filename: *const ::core::ffi::c_char,
-        mode: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn pdf_load_fontmap_file(filename: *const ::core::ffi::c_char, mode: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_read_fontmap_line"]
     fn pdf_read_fontmap_line(
-        mrec: *mut fontmap_rec,
-        mline: *const ::core::ffi::c_char,
-        mline_strlen: ::core::ffi::c_int,
-        format: ::core::ffi::c_int,
+        mrec: *mut fontmap_rec, mline: *const ::core::ffi::c_char, mline_strlen: ::core::ffi::c_int, format: ::core::ffi::c_int,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_append_fontmap_record"]
-    fn pdf_append_fontmap_record(
-        kp: *const ::core::ffi::c_char,
-        mrec: *const fontmap_rec,
-    ) -> ::core::ffi::c_int;
+    fn pdf_append_fontmap_record(kp: *const ::core::ffi::c_char, mrec: *const fontmap_rec) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_remove_fontmap_record"]
     fn pdf_remove_fontmap_record(kp: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_insert_fontmap_record"]
-    fn pdf_insert_fontmap_record(
-        kp: *const ::core::ffi::c_char,
-        mrec: *const fontmap_rec,
-    ) -> *mut fontmap_rec;
+    fn pdf_insert_fontmap_record(kp: *const ::core::ffi::c_char, mrec: *const fontmap_rec) -> *mut fontmap_rec;
     #[link_name = "__pdf_impl_is_pdfm_mapline"]
     fn is_pdfm_mapline(mline: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_new"]
@@ -137,28 +89,13 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_skip_white"]
     fn skip_white(start: *mut *const ::core::ffi::c_char, end: *const ::core::ffi::c_char);
     #[link_name = "__pdf_impl_parse_ident"]
-    fn parse_ident(
-        start: *mut *const ::core::ffi::c_char,
-        end: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_ident(start: *mut *const ::core::ffi::c_char, end: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_parse_val_ident"]
-    fn parse_val_ident(
-        start: *mut *const ::core::ffi::c_char,
-        end: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_val_ident(start: *mut *const ::core::ffi::c_char, end: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_spc_util_read_colorspec"]
-    fn spc_util_read_colorspec(
-        spe: *mut spc_env,
-        colorspec: *mut pdf_color,
-        args: *mut spc_arg,
-        syntax: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn spc_util_read_colorspec(spe: *mut spc_env, colorspec: *mut pdf_color, args: *mut spc_arg, syntax: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_spc_util_read_numbers"]
-    fn spc_util_read_numbers(
-        values: *mut ::core::ffi::c_double,
-        num_values: ::core::ffi::c_int,
-        args: *mut spc_arg,
-    ) -> ::core::ffi::c_int;
+    fn spc_util_read_numbers(values: *mut ::core::ffi::c_double, num_values: ::core::ffi::c_int, args: *mut spc_arg) -> ::core::ffi::c_int;
 }
 pub type __darwin_size_t = usize;
 pub type size_t = __darwin_size_t;
@@ -199,8 +136,7 @@ pub struct spc_arg {
     pub base: *const ::core::ffi::c_char,
     pub command: *const ::core::ffi::c_char,
 }
-pub type spc_handler_fn_ptr =
-    Option<unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int>;
+pub type spc_handler_fn_ptr = Option<unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int>;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct spc_handler {
@@ -241,10 +177,7 @@ pub struct C2RustUnnamed_0 {
 }
 pub const M_PI: ::core::ffi::c_double = 3.14159265358979323846264338327950288f64;
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
@@ -255,14 +188,8 @@ pub const FONTMAP_RMODE_APPEND: ::core::ffi::c_int = '+' as i32;
 pub const FONTMAP_RMODE_REMOVE: ::core::ffi::c_int = '-' as i32;
 #[unsafe(export_name = "__pdf_impl_spc_handler_xtx_do_transform")]
 pub unsafe extern "C-unwind" fn spc_handler_xtx_do_transform(
-    mut spe: *mut spc_env,
-    mut x_user: ::core::ffi::c_double,
-    mut y_user: ::core::ffi::c_double,
-    mut a: ::core::ffi::c_double,
-    mut b: ::core::ffi::c_double,
-    mut c: ::core::ffi::c_double,
-    mut d: ::core::ffi::c_double,
-    mut e: ::core::ffi::c_double,
+    mut spe: *mut spc_env, mut x_user: ::core::ffi::c_double, mut y_user: ::core::ffi::c_double, mut a: ::core::ffi::c_double,
+    mut b: ::core::ffi::c_double, mut c: ::core::ffi::c_double, mut d: ::core::ffi::c_double, mut e: ::core::ffi::c_double,
     mut f: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let mut M: pdf_tmatrix = pdf_tmatrix {
@@ -285,14 +212,10 @@ pub unsafe extern "C-unwind" fn spc_handler_xtx_do_transform(
     spc_set_fixed_point(spe, x_user - pt.x, y_user - pt.y);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_xtx_scale(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_xtx_scale(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut values: [::core::ffi::c_double; 2] = [0.; 2];
     if spc_util_read_numbers(
-        (&raw mut values as *mut ::core::ffi::c_double).offset(0 as ::core::ffi::c_int as isize)
-            as *mut ::core::ffi::c_double,
+        (&raw mut values as *mut ::core::ffi::c_double).offset(0 as ::core::ffi::c_int as isize) as *mut ::core::ffi::c_double,
         2 as ::core::ffi::c_int,
         args,
     ) < 2 as ::core::ffi::c_int
@@ -313,43 +236,30 @@ unsafe extern "C-unwind" fn spc_handler_xtx_scale(
     );
 }
 
-unsafe extern "C-unwind" fn spc_handler_xtx_bscale(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_xtx_bscale(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut values: [::core::ffi::c_double; 2] = [0.; 2];
     (*__pdf_state).scaleFactorCount += 1;
     if (*__pdf_state).scaleFactorCount & 0xf as ::core::ffi::c_int == 0 {
         (*__pdf_state).scaleFactors = crate::backend::runtime::reallocate(
             (*__pdf_state).scaleFactors as *mut ::core::ffi::c_void,
-            (((*__pdf_state).scaleFactorCount + 16 as ::core::ffi::c_int) as size_t)
-                .wrapping_mul(::core::mem::size_of::<pdf_coord>() as size_t),
+            (((*__pdf_state).scaleFactorCount + 16 as ::core::ffi::c_int) as size_t).wrapping_mul(::core::mem::size_of::<pdf_coord>() as size_t),
         ) as *mut pdf_coord;
     }
     if spc_util_read_numbers(
-        (&raw mut values as *mut ::core::ffi::c_double).offset(0 as ::core::ffi::c_int as isize)
-            as *mut ::core::ffi::c_double,
+        (&raw mut values as *mut ::core::ffi::c_double).offset(0 as ::core::ffi::c_int as isize) as *mut ::core::ffi::c_double,
         2 as ::core::ffi::c_int,
         args,
     ) < 2 as ::core::ffi::c_int
     {
         return -(1 as ::core::ffi::c_int);
     }
-    if fabs(values[0 as ::core::ffi::c_int as usize]) < 1.0e-7f64
-        || fabs(values[1 as ::core::ffi::c_int as usize]) < 1.0e-7f64
-    {
+    if fabs(values[0 as ::core::ffi::c_int as usize]) < 1.0e-7f64 || fabs(values[1 as ::core::ffi::c_int as usize]) < 1.0e-7f64 {
         return -(1 as ::core::ffi::c_int);
     }
-    (*(*__pdf_state)
-        .scaleFactors
-        .offset((*__pdf_state).scaleFactorCount as isize))
-    .x =
+    (*(*__pdf_state).scaleFactors.offset((*__pdf_state).scaleFactorCount as isize)).x =
         1 as ::core::ffi::c_int as ::core::ffi::c_double / values[0 as ::core::ffi::c_int as usize];
-    (*(*__pdf_state)
-        .scaleFactors
-        .offset((*__pdf_state).scaleFactorCount as isize))
-    .y =
+    (*(*__pdf_state).scaleFactors.offset((*__pdf_state).scaleFactorCount as isize)).y =
         1 as ::core::ffi::c_int as ::core::ffi::c_double / values[1 as ::core::ffi::c_int as usize];
     (*args).curptr = (*args).endptr;
     return spc_handler_xtx_do_transform(
@@ -364,10 +274,7 @@ unsafe extern "C-unwind" fn spc_handler_xtx_bscale(
         0 as ::core::ffi::c_int as ::core::ffi::c_double,
     );
 }
-unsafe extern "C-unwind" fn spc_handler_xtx_escale(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_xtx_escale(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let fresh2 = (*__pdf_state).scaleFactorCount;
     (*__pdf_state).scaleFactorCount = (*__pdf_state).scaleFactorCount - 1;
@@ -385,14 +292,9 @@ unsafe extern "C-unwind" fn spc_handler_xtx_escale(
         0 as ::core::ffi::c_int as ::core::ffi::c_double,
     );
 }
-unsafe extern "C-unwind" fn spc_handler_xtx_rotate(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_xtx_rotate(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut value: ::core::ffi::c_double = 0.;
-    if spc_util_read_numbers(&raw mut value, 1 as ::core::ffi::c_int, args)
-        < 1 as ::core::ffi::c_int
-    {
+    if spc_util_read_numbers(&raw mut value, 1 as ::core::ffi::c_int, args) < 1 as ::core::ffi::c_int {
         return -(1 as ::core::ffi::c_int);
     }
     (*args).curptr = (*args).endptr;
@@ -409,19 +311,13 @@ unsafe extern "C-unwind" fn spc_handler_xtx_rotate(
     );
 }
 #[unsafe(export_name = "__pdf_impl_spc_handler_xtx_gsave")]
-pub unsafe extern "C-unwind" fn spc_handler_xtx_gsave(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn spc_handler_xtx_gsave(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     pdf_dev_gsave();
     spc_dup_fixed_point(spe);
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_spc_handler_xtx_grestore")]
-pub unsafe extern "C-unwind" fn spc_handler_xtx_grestore(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn spc_handler_xtx_grestore(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     pdf_dev_grestore();
     spc_pop_fixed_point(spe);
     pdf_dev_reset_fonts(0 as ::core::ffi::c_int);
@@ -429,16 +325,10 @@ pub unsafe extern "C-unwind" fn spc_handler_xtx_grestore(
     pdf_dev_reset_xgstate(0 as ::core::ffi::c_int);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_xtx_papersize(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_xtx_papersize(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_xtx_backgroundcolor(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_xtx_backgroundcolor(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = 0;
     let mut colorspec: pdf_color = pdf_color {
         res_id: 0,
@@ -457,10 +347,7 @@ unsafe extern "C-unwind" fn spc_handler_xtx_backgroundcolor(
     return error;
 }
 pub const THEBUFFLENGTH: ::core::ffi::c_int = 1024 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn spc_handler_xtx_fontmapline(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_xtx_fontmapline(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut mrec: *mut fontmap_rec = ::core::ptr::null_mut::<fontmap_rec>();
     let mut map_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -486,17 +373,13 @@ unsafe extern "C-unwind" fn spc_handler_xtx_fontmapline(
                 pdf_remove_fontmap_record(map_name);
                 free(map_name as *mut ::core::ffi::c_void);
             } else {
-                pdf_warning!(
-                    b"Invalid fontmap line: Missing TFM name.\0" as *const u8
-                        as *const ::core::ffi::c_char
-                );
+                pdf_warning!(b"Invalid fontmap line: Missing TFM name.\0" as *const u8 as *const ::core::ffi::c_char);
                 error = -(1 as ::core::ffi::c_int);
             }
         }
         _ => {
             p = (*ap).curptr;
-            q = &raw mut (*__pdf_state).spc_handler_xtx_fontmapline_buffer
-                as *mut ::core::ffi::c_char;
+            q = &raw mut (*__pdf_state).spc_handler_xtx_fontmapline_buffer as *mut ::core::ffi::c_char;
             count = 0 as ::core::ffi::c_int;
             while p < (*ap).endptr && count < THEBUFFLENGTH - 1 as ::core::ffi::c_int {
                 let fresh0 = p;
@@ -507,27 +390,19 @@ unsafe extern "C-unwind" fn spc_handler_xtx_fontmapline(
                 count += 1;
             }
             if count == THEBUFFLENGTH - 1 as ::core::ffi::c_int {
-                pdf_warning!(
-                    b"Invalid fontmap line: Too long a line.\0" as *const u8
-                        as *const ::core::ffi::c_char
-                );
+                pdf_warning!(b"Invalid fontmap line: Too long a line.\0" as *const u8 as *const ::core::ffi::c_char);
                 *q = 0 as ::core::ffi::c_char;
                 return -(1 as ::core::ffi::c_int);
             }
             *q = '\0' as i32 as ::core::ffi::c_char;
-            mrec = new((1 as ::core::ffi::c_int as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<fontmap_rec>() as usize)
-                as uint32_t) as *mut fontmap_rec;
+            mrec = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<fontmap_rec>() as usize) as uint32_t)
+                as *mut fontmap_rec;
             pdf_init_fontmap_record(mrec);
             error = pdf_read_fontmap_line(
                 mrec,
-                &raw mut (*__pdf_state).spc_handler_xtx_fontmapline_buffer
-                    as *mut ::core::ffi::c_char,
+                &raw mut (*__pdf_state).spc_handler_xtx_fontmapline_buffer as *mut ::core::ffi::c_char,
                 (*ap).endptr.offset_from((*ap).curptr) as ::core::ffi::c_long as ::core::ffi::c_int,
-                is_pdfm_mapline(
-                    &raw mut (*__pdf_state).spc_handler_xtx_fontmapline_buffer
-                        as *mut ::core::ffi::c_char,
-                ),
+                is_pdfm_mapline(&raw mut (*__pdf_state).spc_handler_xtx_fontmapline_buffer as *mut ::core::ffi::c_char),
             );
             if error != 0 {
                 pdf_warning!(b"Invalid fontmap line.\0" as *const u8 as *const ::core::ffi::c_char);
@@ -545,10 +420,7 @@ unsafe extern "C-unwind" fn spc_handler_xtx_fontmapline(
     }
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_xtx_fontmapfile(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_xtx_fontmapfile(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut mapfile: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut mode: ::core::ffi::c_int = 0;
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
@@ -579,10 +451,7 @@ unsafe extern "C-unwind" fn spc_handler_xtx_fontmapfile(
     return error;
 }
 
-unsafe extern "C-unwind" fn spc_handler_xtx_initoverlay(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_xtx_initoverlay(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     if (*args).curptr >= (*args).endptr {
@@ -593,16 +462,11 @@ unsafe extern "C-unwind" fn spc_handler_xtx_initoverlay(
         (*args).curptr,
         (*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as size_t,
     );
-    (*__pdf_state).overlay_name
-        [(*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as usize] =
-        0 as ::core::ffi::c_char;
+    (*__pdf_state).overlay_name[(*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as usize] = 0 as ::core::ffi::c_char;
     (*args).curptr = (*args).endptr;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_xtx_clipoverlay(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_xtx_clipoverlay(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     if (*args).curptr >= (*args).endptr {
@@ -621,27 +485,17 @@ unsafe extern "C-unwind" fn spc_handler_xtx_clipoverlay(
             strlen(b"all\0" as *const u8 as *const ::core::ffi::c_char),
         ) != 0 as ::core::ffi::c_int
     {
-        pdf_doc_add_page_content(
-            b" 0 0 m W n\0" as *const u8 as *const ::core::ffi::c_char,
-            10 as ::core::ffi::c_uint,
-        );
+        pdf_doc_add_page_content(b" 0 0 m W n\0" as *const u8 as *const ::core::ffi::c_char, 10 as ::core::ffi::c_uint);
     }
     (*args).curptr = (*args).endptr;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_xtx_renderingmode(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_xtx_renderingmode(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut value: ::core::ffi::c_double = 0.;
-    if spc_util_read_numbers(&raw mut value, 1 as ::core::ffi::c_int, args)
-        < 1 as ::core::ffi::c_int
-    {
+    if spc_util_read_numbers(&raw mut value, 1 as ::core::ffi::c_int, args) < 1 as ::core::ffi::c_int {
         return -(1 as ::core::ffi::c_int);
     }
-    if (value as ::core::ffi::c_int) < 0 as ::core::ffi::c_int
-        || value as ::core::ffi::c_int > 7 as ::core::ffi::c_int
-    {
+    if (value as ::core::ffi::c_int) < 0 as ::core::ffi::c_int || value as ::core::ffi::c_int > 7 as ::core::ffi::c_int {
         pdf_warning!(
             b"Invalid text rendering mode %d.\n\0" as *const u8 as *const ::core::ffi::c_char,
             value as ::core::ffi::c_int
@@ -659,37 +513,27 @@ unsafe extern "C-unwind" fn spc_handler_xtx_renderingmode(
     );
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     if (*args).curptr < (*args).endptr {
-        pdf_doc_add_page_content(
-            b" \0" as *const u8 as *const ::core::ffi::c_char,
-            1 as ::core::ffi::c_uint,
-        );
+        pdf_doc_add_page_content(b" \0" as *const u8 as *const ::core::ffi::c_char, 1 as ::core::ffi::c_uint);
         pdf_doc_add_page_content(
             (*args).curptr,
-            (*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long
-                as ::core::ffi::c_uint,
+            (*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as ::core::ffi::c_uint,
         );
     }
     (*args).curptr = (*args).endptr;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_xtx_unsupportedcolor(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_xtx_unsupportedcolor(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     pdf_warning!(
-        b"xetex-style \\special{x:%s} is not supported by this driver;\nupdate document or driver to use \\special{color} instead.\0"
-        as * const u8 as * const ::core::ffi::c_char, (* args).command
+        b"xetex-style \\special{x:%s} is not supported by this driver;\nupdate document or driver to use \\special{color} instead.\0" as *const u8
+            as *const ::core::ffi::c_char,
+        (*args).command
     );
     (*args).curptr = (*args).endptr;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_xtx_unsupported(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_xtx_unsupported(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     pdf_warning!(
-        b"xetex-style \\special{x:%s} is not supported by this driver.\0" as *const u8
-            as *const ::core::ffi::c_char,
+        b"xetex-style \\special{x:%s} is not supported by this driver.\0" as *const u8 as *const ::core::ffi::c_char,
         (*args).command
     );
     (*args).curptr = (*args).endptr;
@@ -698,157 +542,91 @@ unsafe extern "C-unwind" fn spc_handler_xtx_unsupported(
 const XTX_HANDLERS: [spc_handler; 21] = [
     spc_handler {
         key: b"textcolor\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_unsupportedcolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_unsupportedcolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"textcolorpush\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_unsupportedcolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_unsupportedcolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"textcolorpop\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_unsupportedcolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_unsupportedcolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"rulecolor\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_unsupportedcolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_unsupportedcolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"rulecolorpush\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_unsupportedcolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_unsupportedcolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"rulecolorpop\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_unsupportedcolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_unsupportedcolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"papersize\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_papersize
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_papersize as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"backgroundcolor\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_backgroundcolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_backgroundcolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"gsave\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_gsave
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_gsave as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"grestore\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_grestore
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_grestore as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"scale\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_scale
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_scale as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bscale\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_bscale
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_bscale as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"escale\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_escale
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_escale as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"rotate\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_rotate
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_rotate as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"fontmapline\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_fontmapline
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_fontmapline as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"fontmapfile\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_fontmapfile
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_fontmapfile as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"shadow\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_unsupported
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_unsupported as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"colorshadow\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_unsupported
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_unsupported as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"renderingmode\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_renderingmode
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_renderingmode as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"initoverlay\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_initoverlay
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_initoverlay as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"clipoverlay\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_xtx_clipoverlay
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_xtx_clipoverlay as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
 ];
 #[unsafe(export_name = "__pdf_impl_spc_xtx_check_special")]
-pub unsafe extern "C-unwind" fn spc_xtx_check_special(
-    mut buf: *const ::core::ffi::c_char,
-    mut len: ::core::ffi::c_int,
-) -> bool {
+pub unsafe extern "C-unwind" fn spc_xtx_check_special(mut buf: *const ::core::ffi::c_char, mut len: ::core::ffi::c_int) -> bool {
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut endptr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     p = buf;
@@ -866,18 +644,11 @@ pub unsafe extern "C-unwind" fn spc_xtx_check_special(
     return false_0 != 0;
 }
 #[unsafe(export_name = "__pdf_impl_spc_xtx_setup_handler")]
-pub unsafe extern "C-unwind" fn spc_xtx_setup_handler(
-    mut sph: *mut spc_handler,
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn spc_xtx_setup_handler(mut sph: *mut spc_handler, mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut i: ::core::ffi::c_uint = 0;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    if !(!sph.is_null() && !spe.is_null() && !ap.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!sph.is_null() && !spe.is_null() && !ap.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"sph && spe && ap\0" as *const u8 as *const ::core::ffi::c_char
@@ -885,10 +656,7 @@ pub unsafe extern "C-unwind" fn spc_xtx_setup_handler(
     } else {
     };
     skip_white(&raw mut (*ap).curptr, (*ap).endptr);
-    if (*ap)
-        .curptr
-        .offset(strlen(b"x:\0" as *const u8 as *const ::core::ffi::c_char) as isize)
-        >= (*ap).endptr
+    if (*ap).curptr.offset(strlen(b"x:\0" as *const u8 as *const ::core::ffi::c_char) as isize) >= (*ap).endptr
         || memcmp(
             (*ap).curptr as *const ::core::ffi::c_void,
             b"x:\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
@@ -898,17 +666,12 @@ pub unsafe extern "C-unwind" fn spc_xtx_setup_handler(
         pdf_warning!(b"Not x: special???\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
-    (*ap).curptr = (*ap)
-        .curptr
-        .offset(strlen(b"x:\0" as *const u8 as *const ::core::ffi::c_char) as isize);
+    (*ap).curptr = (*ap).curptr.offset(strlen(b"x:\0" as *const u8 as *const ::core::ffi::c_char) as isize);
     skip_white(&raw mut (*ap).curptr, (*ap).endptr);
     q = parse_c_ident(&raw mut (*ap).curptr, (*ap).endptr);
     if !q.is_null() {
         i = 0 as ::core::ffi::c_uint;
-        while (i as usize)
-            < (::core::mem::size_of::<[spc_handler; 21]>() as usize)
-                .wrapping_div(::core::mem::size_of::<spc_handler>() as usize)
-        {
+        while (i as usize) < (::core::mem::size_of::<[spc_handler; 21]>() as usize).wrapping_div(::core::mem::size_of::<spc_handler>() as usize) {
             if streq_ptr(q, XTX_HANDLERS[i as usize].key) {
                 (*ap).command = XTX_HANDLERS[i as usize].key;
                 (*sph).key = b"x:\0" as *const u8 as *const ::core::ffi::c_char;
@@ -927,29 +690,16 @@ pub unsafe extern "C-unwind" fn spc_xtx_setup_handler(
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_handler_xtx_do_transform(
-    mut spe: *mut spc_env,
-    mut x_user: ::core::ffi::c_double,
-    mut y_user: ::core::ffi::c_double,
-    mut a: ::core::ffi::c_double,
-    mut b: ::core::ffi::c_double,
-    mut c: ::core::ffi::c_double,
-    mut d: ::core::ffi::c_double,
-    mut e: ::core::ffi::c_double,
-    mut f: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
+    mut spe: *mut spc_env, mut x_user: ::core::ffi::c_double, mut y_user: ::core::ffi::c_double, mut a: ::core::ffi::c_double,
+    mut b: ::core::ffi::c_double, mut c: ::core::ffi::c_double, mut d: ::core::ffi::c_double, mut e: ::core::ffi::c_double,
+    mut f: ::core::ffi::c_double, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        spc_handler_xtx_do_transform(spe, x_user, y_user, a, b, c, d, e, f)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { spc_handler_xtx_do_transform(spe, x_user, y_user, a, b, c, d, e, f) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -960,11 +710,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_handler_xtx_do_transform(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_spc_handler_xtx_gsave(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_spc_handler_xtx_gsave(mut spe: *mut spc_env, mut args: *mut spc_arg, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_handler_xtx_gsave(spe, args) }) {
         Ok(value) => {
             unsafe {
@@ -977,9 +723,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_handler_xtx_gsave(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_handler_xtx_grestore(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-    _result: *mut ::core::ffi::c_int,
+    mut spe: *mut spc_env, mut args: *mut spc_arg, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_handler_xtx_grestore(spe, args) }) {
         Ok(value) => {
@@ -993,9 +737,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_handler_xtx_grestore(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_xtx_check_special(
-    mut buf: *const ::core::ffi::c_char,
-    mut len: ::core::ffi::c_int,
-    _result: *mut bool,
+    mut buf: *const ::core::ffi::c_char, mut len: ::core::ffi::c_int, _result: *mut bool,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_xtx_check_special(buf, len) }) {
         Ok(value) => {
@@ -1009,10 +751,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_xtx_check_special(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_xtx_setup_handler(
-    mut sph: *mut spc_handler,
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-    _result: *mut ::core::ffi::c_int,
+    mut sph: *mut spc_handler, mut spe: *mut spc_env, mut ap: *mut spc_arg, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_xtx_setup_handler(sph, spe, ap) }) {
         Ok(value) => {
@@ -1045,10 +784,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_spc_xtx
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_spc_xtx.pointer }
 }

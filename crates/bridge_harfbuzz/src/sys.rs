@@ -41,12 +41,8 @@ pub type hb_font_get_variation_glyph_func_t = unsafe extern "C" fn(
     glyph: *mut hb_codepoint_t,
     user_data: *mut (),
 ) -> hb_bool_t;
-pub type hb_font_get_glyph_advance_func_t = unsafe extern "C" fn(
-    font: *mut hb_font_t,
-    font_data: *mut (),
-    glyph: hb_codepoint_t,
-    user_data: *mut (),
-) -> hb_position_t;
+pub type hb_font_get_glyph_advance_func_t =
+    unsafe extern "C" fn(font: *mut hb_font_t, font_data: *mut (), glyph: hb_codepoint_t, user_data: *mut ()) -> hb_position_t;
 pub type hb_font_get_glyph_h_advance_func_t = hb_font_get_glyph_advance_func_t;
 pub type hb_font_get_glyph_v_advance_func_t = hb_font_get_glyph_advance_func_t;
 pub type hb_font_get_glyph_origin_func_t = unsafe extern "C" fn(
@@ -92,8 +88,7 @@ pub type hb_font_get_glyph_name_func_t = unsafe extern "C" fn(
     size: libc::c_uint,
     user_data: *mut (),
 ) -> hb_bool_t;
-pub type hb_reference_table_func_t =
-    unsafe extern "C" fn(face: *mut hb_face_t, tag: hb_tag_t, user_data: *mut ()) -> *mut hb_blob_t;
+pub type hb_reference_table_func_t = unsafe extern "C" fn(face: *mut hb_face_t, tag: hb_tag_t, user_data: *mut ()) -> *mut hb_blob_t;
 pub type hb_unicode_decompose_compatibility_func_t = unsafe extern "C" fn(
     ufuncs: *mut hb_unicode_funcs_t,
     u: hb_codepoint_t,
@@ -218,135 +213,71 @@ pub enum hb_direction_t {
 unsafe extern "C" {
     pub fn hb_font_funcs_create() -> *mut hb_font_funcs_t;
     pub fn hb_font_funcs_set_nominal_glyph_func(
-        ffuncs: *mut hb_font_funcs_t,
-        func: hb_font_get_nominal_glyph_func_t,
-        user_data: *mut (),
-        destroy: Option<hb_destroy_func_t>,
+        ffuncs: *mut hb_font_funcs_t, func: hb_font_get_nominal_glyph_func_t, user_data: *mut (), destroy: Option<hb_destroy_func_t>,
     );
     pub fn hb_font_funcs_set_variation_glyph_func(
-        ffuncs: *mut hb_font_funcs_t,
-        func: hb_font_get_variation_glyph_func_t,
-        user_data: *mut (),
-        destroy: Option<hb_destroy_func_t>,
+        ffuncs: *mut hb_font_funcs_t, func: hb_font_get_variation_glyph_func_t, user_data: *mut (), destroy: Option<hb_destroy_func_t>,
     );
     pub fn hb_font_funcs_set_glyph_h_advance_func(
-        ffuncs: *mut hb_font_funcs_t,
-        func: hb_font_get_glyph_h_advance_func_t,
-        user_data: *mut (),
-        destroy: Option<hb_destroy_func_t>,
+        ffuncs: *mut hb_font_funcs_t, func: hb_font_get_glyph_h_advance_func_t, user_data: *mut (), destroy: Option<hb_destroy_func_t>,
     );
     pub fn hb_font_funcs_set_glyph_v_advance_func(
-        ffuncs: *mut hb_font_funcs_t,
-        func: hb_font_get_glyph_v_advance_func_t,
-        user_data: *mut (),
-        destroy: Option<hb_destroy_func_t>,
+        ffuncs: *mut hb_font_funcs_t, func: hb_font_get_glyph_v_advance_func_t, user_data: *mut (), destroy: Option<hb_destroy_func_t>,
     );
     pub fn hb_font_funcs_set_glyph_h_origin_func(
-        ffuncs: *mut hb_font_funcs_t,
-        func: hb_font_get_glyph_h_origin_func_t,
-        user_data: *mut (),
-        destroy: Option<hb_destroy_func_t>,
+        ffuncs: *mut hb_font_funcs_t, func: hb_font_get_glyph_h_origin_func_t, user_data: *mut (), destroy: Option<hb_destroy_func_t>,
     );
     pub fn hb_font_funcs_set_glyph_v_origin_func(
-        ffuncs: *mut hb_font_funcs_t,
-        func: hb_font_get_glyph_v_origin_func_t,
-        user_data: *mut (),
-        destroy: Option<hb_destroy_func_t>,
+        ffuncs: *mut hb_font_funcs_t, func: hb_font_get_glyph_v_origin_func_t, user_data: *mut (), destroy: Option<hb_destroy_func_t>,
     );
     pub fn hb_font_funcs_set_glyph_h_kerning_func(
-        ffuncs: *mut hb_font_funcs_t,
-        func: hb_font_get_glyph_h_kerning_func_t,
-        user_data: *mut (),
-        destroy: Option<hb_destroy_func_t>,
+        ffuncs: *mut hb_font_funcs_t, func: hb_font_get_glyph_h_kerning_func_t, user_data: *mut (), destroy: Option<hb_destroy_func_t>,
     );
     pub fn hb_font_funcs_set_glyph_v_kerning_func(
-        ffuncs: *mut hb_font_funcs_t,
-        func: hb_font_get_glyph_v_kerning_func_t,
-        user_data: *mut (),
-        destroy: Option<hb_destroy_func_t>,
+        ffuncs: *mut hb_font_funcs_t, func: hb_font_get_glyph_v_kerning_func_t, user_data: *mut (), destroy: Option<hb_destroy_func_t>,
     );
     pub fn hb_font_funcs_set_glyph_extents_func(
-        ffuncs: *mut hb_font_funcs_t,
-        func: hb_font_get_glyph_extents_func_t,
-        user_data: *mut (),
-        destroy: Option<hb_destroy_func_t>,
+        ffuncs: *mut hb_font_funcs_t, func: hb_font_get_glyph_extents_func_t, user_data: *mut (), destroy: Option<hb_destroy_func_t>,
     );
     pub fn hb_font_funcs_set_glyph_contour_point_func(
-        ffuncs: *mut hb_font_funcs_t,
-        func: hb_font_get_glyph_contour_point_func_t,
-        user_data: *mut (),
-        destroy: Option<hb_destroy_func_t>,
+        ffuncs: *mut hb_font_funcs_t, func: hb_font_get_glyph_contour_point_func_t, user_data: *mut (), destroy: Option<hb_destroy_func_t>,
     );
     pub fn hb_font_funcs_set_glyph_name_func(
-        ffuncs: *mut hb_font_funcs_t,
-        func: hb_font_get_glyph_name_func_t,
-        user_data: *mut (),
-        destroy: Option<hb_destroy_func_t>,
+        ffuncs: *mut hb_font_funcs_t, func: hb_font_get_glyph_name_func_t, user_data: *mut (), destroy: Option<hb_destroy_func_t>,
     );
     pub fn hb_blob_create(
-        data: *mut libc::c_char,
-        length: libc::c_uint,
-        mode: hb_memory_mode_t,
-        user_data: *mut (),
-        destroy: Option<hb_destroy_func_t>,
+        data: *mut libc::c_char, length: libc::c_uint, mode: hb_memory_mode_t, user_data: *mut (), destroy: Option<hb_destroy_func_t>,
     ) -> *mut hb_blob_t;
     pub fn hb_face_create_for_tables(
-        reference_table_func: hb_reference_table_func_t,
-        user_data: *mut (),
-        destroy: Option<hb_destroy_func_t>,
+        reference_table_func: hb_reference_table_func_t, user_data: *mut (), destroy: Option<hb_destroy_func_t>,
     ) -> *mut hb_face_t;
     pub fn hb_face_set_index(face: *mut hb_face_t, index: libc::c_uint);
     pub fn hb_face_set_upem(face: *mut hb_face_t, upem: libc::c_uint);
     pub fn hb_face_destroy(face: *mut hb_face_t);
     pub fn hb_font_create(face: *mut hb_face_t) -> *mut hb_font_t;
     pub fn hb_font_make_immutable(font: *mut hb_font_t);
-    pub fn hb_font_set_funcs(
-        font: *mut hb_font_t,
-        klass: *mut hb_font_funcs_t,
-        font_data: *mut (),
-        destroy: Option<hb_destroy_func_t>,
-    );
+    pub fn hb_font_set_funcs(font: *mut hb_font_t, klass: *mut hb_font_funcs_t, font_data: *mut (), destroy: Option<hb_destroy_func_t>);
     pub fn hb_font_set_scale(font: *mut hb_font_t, x_scale: libc::c_int, y_scale: libc::c_int);
     pub fn hb_font_set_ppem(font: *mut hb_font_t, x_ppem: libc::c_uint, y_ppem: libc::c_uint);
     pub fn hb_font_destroy(font: *mut hb_font_t);
     pub fn hb_font_get_face(font: *mut hb_font_t) -> *mut hb_face_t;
     pub fn hb_ot_layout_table_get_script_tags(
-        face: *mut hb_face_t,
-        table_tag: hb_tag_t,
-        start_offset: libc::c_uint,
-        script_count: *mut libc::c_uint,
-        script_tags: *mut hb_tag_t,
+        face: *mut hb_face_t, table_tag: hb_tag_t, start_offset: libc::c_uint, script_count: *mut libc::c_uint, script_tags: *mut hb_tag_t,
     ) -> libc::c_uint;
     pub fn hb_ot_layout_script_get_language_tags(
-        face: *mut hb_face_t,
-        table_tag: hb_tag_t,
-        script_index: libc::c_uint,
-        start_offset: libc::c_uint,
-        language_count: *mut libc::c_uint,
+        face: *mut hb_face_t, table_tag: hb_tag_t, script_index: libc::c_uint, start_offset: libc::c_uint, language_count: *mut libc::c_uint,
         script_tags: *mut hb_tag_t,
     ) -> libc::c_uint;
     pub fn hb_ot_layout_table_find_script(
-        face: *mut hb_face_t,
-        table_tag: hb_tag_t,
-        script_tag: hb_tag_t,
-        script_index: *mut libc::c_uint,
+        face: *mut hb_face_t, table_tag: hb_tag_t, script_tag: hb_tag_t, script_index: *mut libc::c_uint,
     ) -> hb_bool_t;
     pub fn hb_ot_layout_script_select_language(
-        face: *mut hb_face_t,
-        table_tag: hb_tag_t,
-        script_index: libc::c_uint,
-        language_count: libc::c_uint,
-        language_tags: *const hb_tag_t,
+        face: *mut hb_face_t, table_tag: hb_tag_t, script_index: libc::c_uint, language_count: libc::c_uint, language_tags: *const hb_tag_t,
         language_index: *mut libc::c_uint,
     ) -> hb_bool_t;
     pub fn hb_ot_layout_language_get_feature_tags(
-        face: *mut hb_face_t,
-        table_tag: hb_tag_t,
-        script_index: libc::c_uint,
-        language_index: libc::c_uint,
-        start_offset: libc::c_uint,
-        feature_count: *mut libc::c_uint,
-        feature_tags: *mut hb_tag_t,
+        face: *mut hb_face_t, table_tag: hb_tag_t, script_index: libc::c_uint, language_index: libc::c_uint, start_offset: libc::c_uint,
+        feature_count: *mut libc::c_uint, feature_tags: *mut hb_tag_t,
     ) -> libc::c_uint;
     pub fn hb_graphite2_face_get_gr_face(face: *mut hb_face_t) -> *mut ();
     pub fn hb_language_from_string(str: *const libc::c_char, len: libc::c_int) -> hb_language_t;
@@ -355,14 +286,8 @@ unsafe extern "C" {
     pub fn hb_buffer_create() -> *mut hb_buffer_t;
     pub fn hb_buffer_destroy(buffer: *mut hb_buffer_t);
     pub fn hb_buffer_get_length(buffer: *const hb_buffer_t) -> libc::c_uint;
-    pub fn hb_buffer_get_glyph_infos(
-        buffer: *mut hb_buffer_t,
-        length: *mut libc::c_uint,
-    ) -> *mut hb_glyph_info_t;
-    pub fn hb_buffer_get_glyph_positions(
-        buffer: *mut hb_buffer_t,
-        length: *mut libc::c_uint,
-    ) -> *mut hb_glyph_position_t;
+    pub fn hb_buffer_get_glyph_infos(buffer: *mut hb_buffer_t, length: *mut libc::c_uint) -> *mut hb_glyph_info_t;
+    pub fn hb_buffer_get_glyph_positions(buffer: *mut hb_buffer_t, length: *mut libc::c_uint) -> *mut hb_glyph_position_t;
     pub fn hb_language_to_string(lang: hb_language_t) -> *const libc::c_char;
     pub fn hb_buffer_get_script(buffer: *const hb_buffer_t) -> hb_script_t;
     pub fn hb_script_get_horizontal_direction(script: hb_script_t) -> hb_direction_t;
@@ -370,72 +295,39 @@ unsafe extern "C" {
     pub fn hb_ot_tag_to_script(tag: hb_tag_t) -> hb_script_t;
     pub fn hb_buffer_reset(buffer: *mut hb_buffer_t);
     pub fn hb_buffer_add_utf16(
-        buffer: *mut hb_buffer_t,
-        text: *const u16,
-        text_length: libc::c_int,
-        item_offset: libc::c_uint,
-        item_length: libc::c_int,
+        buffer: *mut hb_buffer_t, text: *const u16, text_length: libc::c_int, item_offset: libc::c_uint, item_length: libc::c_int,
     );
     pub fn hb_buffer_set_direction(buffer: *mut hb_buffer_t, direction: hb_direction_t);
     pub fn hb_buffer_set_script(buffer: *mut hb_buffer_t, script: hb_script_t);
     pub fn hb_buffer_set_language(buffer: *mut hb_buffer_t, language: hb_language_t);
     pub fn hb_buffer_guess_segment_properties(buffer: *mut hb_buffer_t);
-    pub fn hb_buffer_get_segment_properties(
-        buffer: *const hb_buffer_t,
-        props: *mut hb_segment_properties_t,
-    );
+    pub fn hb_buffer_get_segment_properties(buffer: *const hb_buffer_t, props: *mut hb_segment_properties_t);
     pub fn hb_shape_plan_create(
-        bufferface: *mut hb_face_t,
-        props: *const hb_segment_properties_t,
-        user_features: *const hb_feature_t,
-        num_user_features: libc::c_uint,
+        bufferface: *mut hb_face_t, props: *const hb_segment_properties_t, user_features: *const hb_feature_t, num_user_features: libc::c_uint,
         shaper_list: *const *const libc::c_char,
     ) -> *mut hb_shape_plan_t;
     pub fn hb_shape_plan_create_cached(
-        face: *mut hb_face_t,
-        props: *const hb_segment_properties_t,
-        user_features: *const hb_feature_t,
-        num_user_features: libc::c_uint,
+        face: *mut hb_face_t, props: *const hb_segment_properties_t, user_features: *const hb_feature_t, num_user_features: libc::c_uint,
         shaper_list: *const *const libc::c_char,
     ) -> *mut hb_shape_plan_t;
     pub fn hb_shape_plan_execute(
-        shape_plan: *mut hb_shape_plan_t,
-        font: *mut hb_font_t,
-        buffer: *mut hb_buffer_t,
-        features: *const hb_feature_t,
-        num_features: libc::c_uint,
+        shape_plan: *mut hb_shape_plan_t, font: *mut hb_font_t, buffer: *mut hb_buffer_t, features: *const hb_feature_t, num_features: libc::c_uint,
     ) -> hb_bool_t;
     pub fn hb_shape_plan_get_shaper(shape_plan: *mut hb_shape_plan_t) -> *const libc::c_char;
     pub fn hb_shape_plan_destroy(shape_plane: *mut hb_shape_plan_t);
-    pub fn hb_buffer_set_content_type(
-        buffer: *mut hb_buffer_t,
-        content_type: hb_buffer_content_type_t,
-    );
+    pub fn hb_buffer_set_content_type(buffer: *mut hb_buffer_t, content_type: hb_buffer_content_type_t);
     pub fn hb_icu_get_unicode_funcs() -> *mut hb_unicode_funcs_t;
     pub fn hb_unicode_funcs_create(parent: *mut hb_unicode_funcs_t) -> *mut hb_unicode_funcs_t;
     pub fn hb_unicode_funcs_set_decompose_compatibility_func(
-        ufuncs: *mut hb_unicode_funcs_t,
-        func: hb_unicode_decompose_compatibility_func_t,
-        user_data: *mut libc::c_void,
+        ufuncs: *mut hb_unicode_funcs_t, func: hb_unicode_decompose_compatibility_func_t, user_data: *mut libc::c_void,
         destroy: Option<hb_destroy_func_t>,
     );
-    pub fn hb_buffer_set_unicode_funcs(
-        buffer: *mut hb_buffer_t,
-        unicode_funcs: *mut hb_unicode_funcs_t,
-    );
-    pub fn hb_version_atleast(
-        major: libc::c_uint,
-        minor: libc::c_uint,
-        patch: libc::c_uint,
-    ) -> hb_bool_t;
+    pub fn hb_buffer_set_unicode_funcs(buffer: *mut hb_buffer_t, unicode_funcs: *mut hb_unicode_funcs_t);
+    pub fn hb_version_atleast(major: libc::c_uint, minor: libc::c_uint, patch: libc::c_uint) -> hb_bool_t;
     pub fn hb_font_get_ptem(font: *mut hb_font_t) -> f32;
     pub fn hb_ot_layout_get_size_params(
-        face: *mut hb_face_t,
-        design_size: *mut libc::c_uint,
-        subfamily_id: *mut libc::c_uint,
-        subfamily_name_id: *mut hb_ot_name_id_t,
-        range_start: *mut libc::c_uint,
-        range_end: *mut libc::c_uint,
+        face: *mut hb_face_t, design_size: *mut libc::c_uint, subfamily_id: *mut libc::c_uint, subfamily_name_id: *mut hb_ot_name_id_t,
+        range_start: *mut libc::c_uint, range_end: *mut libc::c_uint,
     ) -> hb_bool_t;
     pub fn hb_font_funcs_destroy(ffuncs: *mut hb_font_funcs_t);
     pub fn hb_font_funcs_reference(ffuncs: *mut hb_font_funcs_t) -> *mut hb_font_funcs_t;

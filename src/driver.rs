@@ -289,9 +289,7 @@ impl BridgeState {
     /// mode", in which the "primary input" is fixed, based on the requested
     /// format file name, and filesystem I/O is bypassed.
     fn enter_format_mode(&mut self, format_file_name: &str) {
-        self.format_primary = Some(BufferedPrimaryIo::from_text(format!(
-            "\\input {format_file_name}"
-        )));
+        self.format_primary = Some(BufferedPrimaryIo::from_text(format!("\\input {format_file_name}")));
     }
 
     /// Leave "format mode".
@@ -300,11 +298,7 @@ impl BridgeState {
     }
 
     /// Invoke an external tool as a pass in the processing pipeline.
-    fn external_tool_pass(
-        &mut self,
-        tool: &ExternalToolPass,
-        status: &mut dyn StatusBackend,
-    ) -> Result<()> {
+    fn external_tool_pass(&mut self, tool: &ExternalToolPass, status: &mut dyn StatusBackend) -> Result<()> {
         status.note_highlighted("Running external tool ", &tool.argv[0], " ...");
 
         // Process the command arguments. Filenames appearing in the arguments
@@ -387,19 +381,13 @@ impl BridgeState {
 
         if let Some(0) = output.status.code() {
         } else {
-            tt_error!(
-                status,
-                "the external tool exited with an error code; its stdout was:\n"
-            );
+            tt_error!(status, "the external tool exited with an error code; its stdout was:\n");
             status.dump_error_logs(&output.stdout[..]);
             tt_error!(status, "its stderr was:\n");
             status.dump_error_logs(&output.stderr[..]);
 
             return if let Some(n) = output.status.code() {
-                Err(Error::msg(format!(
-                    "the external tool exited with error code {}",
-                    n
-                )))
+                Err(Error::msg(format!("the external tool exited with error code {}", n)))
             } else {
                 Err(Error::msg("the external tool was terminated by a signal"))
             };
@@ -431,10 +419,8 @@ impl BridgeState {
                 );
 
                 self.mem.create_entry(basename, data);
-                self.events.insert(
-                    basename.to_owned(),
-                    FileSummary::new(AccessPattern::Written, InputOrigin::NotInput),
-                );
+                self.events
+                    .insert(basename.to_owned(), FileSummary::new(AccessPattern::Written, InputOrigin::NotInput));
             }
         }
 
@@ -525,10 +511,8 @@ impl IoProvider for BridgeState {
                     c => c, // identity mapping makes sense for remaining options
                 };
             } else {
-                self.events.insert(
-                    name.to_owned(),
-                    FileSummary::new(AccessPattern::Written, InputOrigin::NotInput),
-                );
+                self.events
+                    .insert(name.to_owned(), FileSummary::new(AccessPattern::Written, InputOrigin::NotInput));
             }
         }
 
@@ -550,21 +534,15 @@ impl IoProvider for BridgeState {
                     c => c, // identity mapping makes sense for remaining options
                 };
             } else {
-                self.events.insert(
-                    String::from(""),
-                    FileSummary::new(AccessPattern::Written, InputOrigin::NotInput),
-                );
+                self.events
+                    .insert(String::from(""), FileSummary::new(AccessPattern::Written, InputOrigin::NotInput));
             }
         }
 
         r
     }
 
-    fn input_open_name(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_name(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         match self.input_open_name_with_abspath(name, status) {
             OpenResult::Ok((ih, _path)) => OpenResult::Ok(ih),
             OpenResult::Err(e) => OpenResult::Err(e),
@@ -572,11 +550,7 @@ impl IoProvider for BridgeState {
         }
     }
 
-    fn input_open_name_with_abspath(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<(InputHandle, Option<PathBuf>)> {
+    fn input_open_name_with_abspath(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<(InputHandle, Option<PathBuf>)> {
         let r = (|| {
             bridgestate_ioprovider_cascade!(self, input_open_name_with_abspath(name, status));
         })();
@@ -589,10 +563,7 @@ impl IoProvider for BridgeState {
                         c => c, // identity mapping makes sense for remaining options
                     };
                 } else {
-                    self.events.insert(
-                        name.to_owned(),
-                        FileSummary::new(AccessPattern::Read, ih.origin()),
-                    );
+                    self.events.insert(name.to_owned(), FileSummary::new(AccessPattern::Read, ih.origin()));
                 }
             }
 
@@ -632,18 +603,11 @@ impl IoProvider for BridgeState {
         }
     }
 
-    fn input_open_primary_with_abspath(
-        &mut self,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<(InputHandle, Option<PathBuf>)> {
+    fn input_open_primary_with_abspath(&mut self, status: &mut dyn StatusBackend) -> OpenResult<(InputHandle, Option<PathBuf>)> {
         bridgestate_ioprovider_cascade!(self, input_open_primary_with_abspath(status));
     }
 
-    fn input_open_format(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_format(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         let r = (|| {
             bridgestate_ioprovider_cascade!(self, input_open_format(name, status));
         })();
@@ -655,10 +619,7 @@ impl IoProvider for BridgeState {
                     c => c, // identity mapping makes sense for remaining options
                 };
             } else {
-                self.events.insert(
-                    name.to_owned(),
-                    FileSummary::new(AccessPattern::Read, ih.origin()),
-                );
+                self.events.insert(name.to_owned(), FileSummary::new(AccessPattern::Read, ih.origin()));
             }
         }
 
@@ -677,23 +638,12 @@ impl DriverHooks for BridgeState {
     }
 
     fn event_output_closed(&mut self, name: String, digest: DigestData) {
-        let summ = self
-            .events
-            .get_mut(&name)
-            .expect("closing file that wasn't opened?");
+        let summ = self.events.get_mut(&name).expect("closing file that wasn't opened?");
         summ.write_digest = Some(digest);
     }
 
-    fn event_input_closed(
-        &mut self,
-        name: String,
-        digest: Option<DigestData>,
-        _status: &mut dyn StatusBackend,
-    ) {
-        let summ = self
-            .events
-            .get_mut(&name)
-            .expect("closing file that wasn't opened?");
+    fn event_input_closed(&mut self, name: String, digest: Option<DigestData>, _status: &mut dyn StatusBackend) {
+        let summ = self.events.get_mut(&name).expect("closing file that wasn't opened?");
 
         // It's what was in the file the *first* time that it was read that
         // matters, so don't replace the read digest if it's already got one.
@@ -703,11 +653,7 @@ impl DriverHooks for BridgeState {
         }
     }
 
-    fn sysrq_shell_escape(
-        &mut self,
-        command: &str,
-        status: &mut dyn StatusBackend,
-    ) -> StdResult<(), SystemRequestError> {
+    fn sysrq_shell_escape(&mut self, command: &str, status: &mut dyn StatusBackend) -> StdResult<(), SystemRequestError> {
         #[cfg(unix)]
         const SHELL: &[&str] = &["sh", "-c"];
 
@@ -754,12 +700,7 @@ impl DriverHooks for BridgeState {
 
             tt_note!(status, "running shell command: `{}`", command);
 
-            match Command::new(SHELL[0])
-                .args(&SHELL[1..])
-                .arg(command)
-                .current_dir(work.root())
-                .status()
-            {
+            match Command::new(SHELL[0]).args(&SHELL[1..]).arg(command).current_dir(work.root()).status() {
                 Ok(s) => match s.code() {
                     Some(0) => Ok(()),
                     Some(n) => {
@@ -784,10 +725,7 @@ impl DriverHooks for BridgeState {
         } else {
             // No shell-escape work directory. This "shouldn't happen" but means
             // that shell-escape is supposed to be disabled anyway!
-            tt_error!(
-                status,
-                "the engine requested a shell-escape invocation but it's currently disabled"
-            );
+            tt_error!(status, "the engine requested a shell-escape invocation but it's currently disabled");
             Err(SystemRequestError::NotAllowed)
         }
     }
@@ -1047,13 +985,9 @@ impl ProcessingSessionBuilder {
         let fixed = force_deterministic || build_date_str.is_some();
         let build_date = match (force_deterministic, build_date_str) {
             (_, Some(s)) => {
-                let epoch = s
-                    .parse::<u64>()
-                    .expect("invalid SOURCE_DATE_EPOCH (not a number)");
+                let epoch = s.parse::<u64>().expect("invalid SOURCE_DATE_EPOCH (not a number)");
 
-                SystemTime::UNIX_EPOCH
-                    .checked_add(Duration::from_secs(epoch))
-                    .expect("time overflow")
+                SystemTime::UNIX_EPOCH.checked_add(Duration::from_secs(epoch)).expect("time overflow")
             }
             (true, None) => SystemTime::UNIX_EPOCH,
             (false, None) => SystemTime::now(),
@@ -1076,8 +1010,7 @@ impl ProcessingSessionBuilder {
     /// in which case a driver-managed temporary directory will be used.
     pub fn shell_escape_with_work_dir<P: AsRef<Path>>(&mut self, path: P) -> &mut Self {
         if self.security.allow_shell_escape() {
-            self.shell_escape_mode =
-                ShellEscapeMode::ExternallyManagedDir(path.as_ref().to_owned());
+            self.shell_escape_mode = ShellEscapeMode::ExternallyManagedDir(path.as_ref().to_owned());
         }
         self
     }
@@ -1233,9 +1166,7 @@ impl ProcessingSessionBuilder {
             }
         };
 
-        let format_cache_path = self
-            .format_cache_path
-            .unwrap_or_else(|| filesystem_root.clone());
+        let format_cache_path = self.format_cache_path.unwrap_or_else(|| filesystem_root.clone());
         let bundle_digest = bundle.get_digest()?;
         let incremental_identity = format!(
             "{incremental_identity}|{bundle_digest}|{:?}",
@@ -1243,11 +1174,7 @@ impl ProcessingSessionBuilder {
         );
         let format_cache = FormatCache::new(bundle_digest, format_cache_path);
 
-        let genuine_stdout = if self.print_stdout {
-            Some(GenuineStdoutIo::new())
-        } else {
-            None
-        };
+        let genuine_stdout = if self.print_stdout { Some(GenuineStdoutIo::new()) } else { None };
 
         // move this out of self to get around borrow checker issues
         let hidden_input_paths = self.hidden_input_paths;
@@ -1291,17 +1218,11 @@ impl ProcessingSessionBuilder {
             OutputDestination::Nowhere => None,
         };
 
-        let tex_input_name = self
-            .tex_input_name
-            .expect("tex_input_name must be specified");
+        let tex_input_name = self.tex_input_name.expect("tex_input_name must be specified");
         let mut aux_path = PathBuf::from(tex_input_name.clone());
         aux_path.set_extension("aux");
         let mut xdv_path = aux_path.clone();
-        xdv_path.set_extension(if self.output_format == OutputFormat::Html {
-            "spx"
-        } else {
-            "xdv"
-        });
+        xdv_path.set_extension(if self.output_format == OutputFormat::Html { "spx" } else { "xdv" });
         let mut pdf_path = aux_path.clone();
         pdf_path.set_extension("pdf");
 
@@ -1449,11 +1370,7 @@ impl ProcessingSession {
                     (&None, &Some(_)) => true,
                     (_, _) => {
                         // Other cases shouldn't happen.
-                        tt_warning!(
-                            status,
-                            "internal consistency problem when checking if {} changed",
-                            name
-                        );
+                        tt_warning!(status, "internal consistency problem when checking if {} changed", name);
                         true
                     }
                 };
@@ -1479,14 +1396,7 @@ impl ProcessingSession {
                     Some(ref d) => d.to_string(),
                     None => "-".into(),
                 };
-                tt_note!(
-                    status,
-                    "ACCESS: {} {:?} {:?} {:?}",
-                    name,
-                    info.access_pattern,
-                    r,
-                    w
-                );
+                tt_note!(status, "ACCESS: {} {:?} {:?} {:?}", name, info.access_pattern, r, w);
             }
         }
     }
@@ -1507,22 +1417,11 @@ impl ProcessingSession {
         let (shell_escape_work, clean_up_shell_escape) = match self.shell_escape_mode {
             ShellEscapeMode::Disabled => (None, false),
 
-            ShellEscapeMode::ExternallyManagedDir(ref p) => (
-                Some(FilesystemIo::new(p, false, false, HashSet::new())),
-                false,
-            ),
+            ShellEscapeMode::ExternallyManagedDir(ref p) => (Some(FilesystemIo::new(p, false, false, HashSet::new())), false),
 
             ShellEscapeMode::TempDir => {
                 let tempdir = ctry!(tempfile::Builder::new().tempdir(); "can't create temporary directory for shell-escape work");
-                (
-                    Some(FilesystemIo::new(
-                        &tempdir.keep(),
-                        false,
-                        false,
-                        HashSet::new(),
-                    )),
-                    true,
-                )
+                (Some(FilesystemIo::new(&tempdir.keep(), false, false, HashSet::new())), true)
             }
 
             ShellEscapeMode::Defaulted => unreachable!(),
@@ -1566,11 +1465,7 @@ impl ProcessingSession {
                     "incremental compilation unavailable for this input or engine mode; using a full build"
                 );
             } else {
-                match crate::incremental::Cache::open(
-                    path,
-                    &self.incremental_identity,
-                    self.build_date,
-                ) {
+                match crate::incremental::Cache::open(path, &self.incremental_identity, self.build_date) {
                     Ok((cache, warning)) => {
                         if let Some(warning) = warning {
                             tt_note!(status, "{}", warning);
@@ -1578,11 +1473,7 @@ impl ProcessingSession {
                         self.build_date = cache.build_date;
                         self.bs.incremental = Some(cache);
                     }
-                    Err(error) => tt_note!(
-                        status,
-                        "incremental cache unavailable; using a full build: {}",
-                        error
-                    ),
+                    Err(error) => tt_note!(status, "incremental cache unavailable; using a full build: {}", error),
                 }
             }
         }
@@ -1595,9 +1486,7 @@ impl ProcessingSession {
                 OpenResult::Ok(_) => false,
                 OpenResult::NotAvailable => true,
                 OpenResult::Err(e) => {
-                    return Err(e).with_context(|| {
-                        format!("could not open format file {}", self.format_name)
-                    });
+                    return Err(e).with_context(|| format!("could not open format file {}", self.format_name));
                 }
             }
         };
@@ -1632,10 +1521,7 @@ impl ProcessingSession {
         let mut mf_dest_maybe = match self.makefile_output_path {
             Some(ref p) => {
                 if self.output_path.is_none() {
-                    tt_warning!(
-                        status,
-                        "requested to generate Makefile rules, but no files written to disk!"
-                    );
+                    tt_warning!(status, "requested to generate Makefile rules, but no files written to disk!");
                     None
                 } else {
                     Some(BufWriter::new(File::create(p)?))
@@ -1645,11 +1531,7 @@ impl ProcessingSession {
             None => None,
         };
 
-        let n_skipped_intermediates = self.write_files(
-            mf_dest_maybe.as_mut().map(|w| w as &mut dyn Write),
-            status,
-            false,
-        )?;
+        let n_skipped_intermediates = self.write_files(mf_dest_maybe.as_mut().map(|w| w as &mut dyn Write), status, false)?;
 
         if n_skipped_intermediates > 0 {
             status.note_highlighted(
@@ -1709,12 +1591,7 @@ impl ProcessingSession {
         Ok(())
     }
 
-    fn write_files(
-        &mut self,
-        mut mf_dest_maybe: Option<&mut dyn Write>,
-        status: &mut dyn StatusBackend,
-        only_logs: bool,
-    ) -> Result<u32> {
+    fn write_files(&mut self, mut mf_dest_maybe: Option<&mut dyn Write>, status: &mut dyn StatusBackend, only_logs: bool) -> Result<u32> {
         let root = match self.output_path {
             Some(ref p) => p,
 
@@ -1744,10 +1621,7 @@ impl ProcessingSession {
                     continue;
                 }
             } else if !self.keep_intermediates
-                && (summ.access_pattern != AccessPattern::Written
-                    || ALWAYS_INTERMEDIATE_EXTENSIONS
-                        .iter()
-                        .any(|ext| sname.ends_with(ext)))
+                && (summ.access_pattern != AccessPattern::Written || ALWAYS_INTERMEDIATE_EXTENSIONS.iter().any(|ext| sname.ends_with(ext)))
             {
                 n_skipped_intermediates += 1;
                 continue;
@@ -1764,11 +1638,7 @@ impl ProcessingSession {
             }
 
             if file.data.is_empty() {
-                status.note_highlighted(
-                    "Not writing ",
-                    &format!("`{sname}`"),
-                    ": it would be empty.",
-                );
+                status.note_highlighted("Not writing ", &format!("`{sname}`"), ": it would be empty.");
                 continue;
             }
 
@@ -1864,11 +1734,7 @@ impl ProcessingSession {
                 rerun_result = self.is_rerun_needed(status);
 
                 if rerun_result.is_some() && i == DEFAULT_MAX_TEX_PASSES - 1 {
-                    tt_warning!(
-                        status,
-                        "TeX rerun seems needed, but stopping at {} passes",
-                        DEFAULT_MAX_TEX_PASSES
-                    );
+                    tt_warning!(status, "TeX rerun seems needed, but stopping at {} passes", DEFAULT_MAX_TEX_PASSES);
                     break;
                 }
             }
@@ -1912,19 +1778,16 @@ impl ProcessingSession {
         // PathBuf.file_stem() doesn't do what we want since it only strips
         // one extension. As of 1.17, the compiler needs a type annotation for
         // some reason, which is why we use the `r` variable.
-        let r: Result<&str> = self.format_name.split('.').next().ok_or_else(|| {
-            Error::msg(format!(
-                "incomprehensible format file name \"{}\"",
-                self.format_name
-            ))
-        });
+        let r: Result<&str> = self
+            .format_name
+            .split('.')
+            .next()
+            .ok_or_else(|| Error::msg(format!("incomprehensible format file name \"{}\"", self.format_name)));
         let stem = r?;
 
         let result = {
-            self.bs
-                .enter_format_mode(&format!("tectonic-format-{stem}.tex"));
-            let mut launcher =
-                CoreBridgeLauncher::new_with_security(&mut self.bs, status, self.security.clone());
+            self.bs.enter_format_mode(&format!("tectonic-format-{stem}.tex"));
+            let mut launcher = CoreBridgeLauncher::new_with_security(&mut self.bs, status, self.security.clone());
             let r = TexEngine::default()
                 .halt_on_error_mode(true)
                 .initex_mode(true)
@@ -1980,38 +1843,21 @@ impl ProcessingSession {
     }
 
     /// Run one pass of the TeX engine.
-    fn tex_pass(
-        &mut self,
-        rerun_explanation: Option<&str>,
-        status: &mut dyn StatusBackend,
-    ) -> Result<Option<&'static str>> {
-        let candidates = self
-            .bs
-            .incremental
-            .as_ref()
-            .map_or_else(Vec::new, |cache| cache.candidates());
-        let baseline = (!candidates.is_empty())
-            .then(|| (self.bs.mem.files.borrow().clone(), self.bs.events.clone()));
+    fn tex_pass(&mut self, rerun_explanation: Option<&str>, status: &mut dyn StatusBackend) -> Result<Option<&'static str>> {
+        let candidates = self.bs.incremental.as_ref().map_or_else(Vec::new, |cache| cache.candidates());
+        let baseline = (!candidates.is_empty()).then(|| (self.bs.mem.files.borrow().clone(), self.bs.events.clone()));
         let mut result = None;
         for candidate in candidates {
             let checkpoint = match candidate.decode() {
                 Ok(checkpoint) => checkpoint,
                 Err(error) => {
-                    tt_note!(
-                        status,
-                        "discarding invalid incremental checkpoint: {}",
-                        error
-                    );
+                    tt_note!(status, "discarding invalid incremental checkpoint: {}", error);
                     continue;
                 }
             };
             let attempt = self.run_tex_engine(rerun_explanation, Some(checkpoint), status);
             match attempt {
-                Err(error)
-                    if error
-                        .downcast_ref::<tectonic_engine_xetex::CheckpointRejected>()
-                        .is_some() =>
-                {
+                Err(error) if error.downcast_ref::<tectonic_engine_xetex::CheckpointRejected>().is_some() => {
                     tt_note!(status, "incremental checkpoint invalidated: {}", error);
                     if let Some((files, events)) = &baseline {
                         self.bs.mem.files.borrow_mut().clone_from(files);
@@ -2034,9 +1880,7 @@ impl ProcessingSession {
 
         let warnings = match result {
             Ok(TexOutcome::Spotless) => None,
-            Ok(TexOutcome::Warnings) => Some(
-                "warnings were issued by the TeX engine; use --print and/or --keep-logs for details.",
-            ),
+            Ok(TexOutcome::Warnings) => Some("warnings were issued by the TeX engine; use --print and/or --keep-logs for details."),
             Ok(TexOutcome::Errors) => Some(
                 "errors were issued by the TeX engine, but were ignored; \
                          use --print and/or --keep-logs for details.",
@@ -2055,10 +1899,7 @@ impl ProcessingSession {
     }
 
     fn run_tex_engine(
-        &mut self,
-        rerun_explanation: Option<&str>,
-        checkpoint: Option<tectonic_engine_xetex::TexCheckpoint>,
-        status: &mut dyn StatusBackend,
+        &mut self, rerun_explanation: Option<&str>, checkpoint: Option<tectonic_engine_xetex::TexCheckpoint>, status: &mut dyn StatusBackend,
     ) -> Result<TexOutcome> {
         let recording = self.bs.incremental.is_some();
         {
@@ -2068,8 +1909,7 @@ impl ProcessingSession {
                 status.note_highlighted("Running ", "TeX", " ...");
             }
 
-            let mut launcher =
-                CoreBridgeLauncher::new_with_security(&mut self.bs, status, self.security.clone());
+            let mut launcher = CoreBridgeLauncher::new_with_security(&mut self.bs, status, self.security.clone());
 
             // In deterministic mode, we stub a few aspects of the environment.
             // They default to a "realistic" view, but we override them with static values:
@@ -2095,32 +1935,19 @@ impl ProcessingSession {
                 .semantic_pagination(self.output_format == OutputFormat::Html)
                 .shell_escape(self.shell_escape_mode != ShellEscapeMode::Disabled)
                 .build_date(self.build_date)
-                .process(
-                    &mut launcher,
-                    &self.format_name,
-                    &self.primary_input_tex_path,
-                );
+                .process(&mut launcher, &self.format_name, &self.primary_input_tex_path);
             if result.is_ok() && engine.resumed_dispatches() > 0 {
-                tt_note!(
-                    status,
-                    "resumed TeX execution; skipped {} prefix dispatches",
-                    engine.resumed_dispatches()
-                );
+                tt_note!(status, "resumed TeX execution; skipped {} prefix dispatches", engine.resumed_dispatches());
             }
             result
         }
     }
 
     // Run Bibtex process for one .aux file.
-    fn bibtex_pass_for_one_aux_file(
-        &mut self,
-        status: &mut dyn StatusBackend,
-        aux_file: &String,
-    ) -> Result<i32> {
+    fn bibtex_pass_for_one_aux_file(&mut self, status: &mut dyn StatusBackend, aux_file: &String) -> Result<i32> {
         let result = {
             status.note_highlighted("Running ", "BibTeX", &format!(" on {aux_file} ..."));
-            let mut launcher =
-                CoreBridgeLauncher::new_with_security(&mut self.bs, status, self.security.clone());
+            let mut launcher = CoreBridgeLauncher::new_with_security(&mut self.bs, status, self.security.clone());
             let mut engine = BibtexEngine::new();
             engine.process(&mut launcher, aux_file, &self.unstables)
         };
@@ -2128,10 +1955,7 @@ impl ProcessingSession {
         match result {
             Ok(TexOutcome::Spotless) => {}
             Ok(TexOutcome::Warnings) => {
-                tt_note!(
-                    status,
-                    "warnings were issued by BibTeX; use --print and/or --keep-logs for details."
-                );
+                tt_note!(status, "warnings were issued by BibTeX; use --print and/or --keep-logs for details.");
             }
             Ok(TexOutcome::Errors) => {
                 tt_warning!(
@@ -2169,13 +1993,10 @@ impl ProcessingSession {
         {
             status.note_highlighted("Running ", "xdvipdfmx", " ...");
 
-            let mut launcher =
-                CoreBridgeLauncher::new_with_security(&mut self.bs, status, self.security.clone());
+            let mut launcher = CoreBridgeLauncher::new_with_security(&mut self.bs, status, self.security.clone());
             let mut engine = XdvipdfmxEngine::default();
 
-            engine
-                .build_date(self.build_date)
-                .pdf_build_options(self.pdf_options.clone());
+            engine.build_date(self.build_date).pdf_build_options(self.pdf_options.clone());
 
             if let Some(ref ps) = self.unstables.paper_size {
                 engine.paper_spec(ps.clone());
@@ -2247,10 +2068,7 @@ impl ProcessingSession {
     /// `loqreq` package to figure out what files `biber` needs. This
     /// functionality should probably become more generic, but I don't have a
     /// great sense as to how widely-used `logreq` is.
-    fn check_biber_requirement(
-        &self,
-        status: &mut dyn StatusBackend,
-    ) -> Result<Option<ExternalToolPass>> {
+    fn check_biber_requirement(&self, status: &mut dyn StatusBackend) -> Result<Option<ExternalToolPass>> {
         // Is there a `.run.xml` file?
 
         let mut run_xml_path = PathBuf::from(&self.primary_input_tex_path);
@@ -2267,15 +2085,10 @@ impl ProcessingSession {
         // we let the rig specify a custom executable to use, which lets us
         // exercise different pieces of the external-tool behavior.
 
-        let s = (
-            crate::config::is_config_test_mode_activated(),
-            std::env::var("TECTONIC_TEST_FAKE_BIBER"),
-        );
+        let s = (crate::config::is_config_test_mode_activated(), std::env::var("TECTONIC_TEST_FAKE_BIBER"));
 
         let mut argv = match s {
-            (true, Ok(text)) if !text.trim().is_empty() => {
-                text.split_whitespace().map(|x| x.to_owned()).collect()
-            }
+            (true, Ok(text)) if !text.trim().is_empty() => text.split_whitespace().map(|x| x.to_owned()).collect(),
             // when `TECTONIC_TEST_FAKE_BIBER` is empty, proceed to discover
             // the biber binary as follows.
             _ => vec!["biber".to_owned()],
@@ -2450,10 +2263,7 @@ impl ProcessingSession {
             if use_tectonic_biber_override {
                 tt_note!(status, "using `tectonic-biber`, found at {}", argv[0]);
             }
-            Some(ExternalToolPass {
-                argv,
-                extra_requires,
-            })
+            Some(ExternalToolPass { argv, extra_requires })
         })
     }
 }

@@ -19,13 +19,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::{free, malloc, realloc};
 unsafe extern "C-unwind" {
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
@@ -39,26 +33,16 @@ pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 pub unsafe extern "C-unwind" fn new(mut size: uint32_t) -> *mut ::core::ffi::c_void {
     let mut result: *mut ::core::ffi::c_void = malloc(size as size_t);
     if result.is_null() {
-        pdf_abort!(
-            b"Out of memory - asked for %u bytes\n\0" as *const u8 as *const ::core::ffi::c_char,
-            size,
-        );
+        pdf_abort!(b"Out of memory - asked for %u bytes\n\0" as *const u8 as *const ::core::ffi::c_char, size,);
     }
     return result;
 }
 #[unsafe(export_name = "__pdf_impl_renew")]
-pub unsafe extern "C-unwind" fn renew(
-    mut mem: *mut ::core::ffi::c_void,
-    mut size: uint32_t,
-) -> *mut ::core::ffi::c_void {
+pub unsafe extern "C-unwind" fn renew(mut mem: *mut ::core::ffi::c_void, mut size: uint32_t) -> *mut ::core::ffi::c_void {
     if size != 0 {
         let mut result: *mut ::core::ffi::c_void = realloc(mem, size as size_t);
         if result.is_null() {
-            pdf_abort!(
-                b"Out of memory - asked for %u bytes\n\0" as *const u8
-                    as *const ::core::ffi::c_char,
-                size,
-            );
+            pdf_abort!(b"Out of memory - asked for %u bytes\n\0" as *const u8 as *const ::core::ffi::c_char, size,);
         }
         return result;
     } else {
@@ -67,10 +51,7 @@ pub unsafe extern "C-unwind" fn renew(
     };
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_new(
-    mut size: uint32_t,
-    _result: *mut *mut ::core::ffi::c_void,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_new(mut size: uint32_t, _result: *mut *mut ::core::ffi::c_void) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { new(size) }) {
         Ok(value) => {
             unsafe {
@@ -83,11 +64,7 @@ pub unsafe extern "C" fn __pdf_entry_new(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_renew(
-    mut mem: *mut ::core::ffi::c_void,
-    mut size: uint32_t,
-    _result: *mut *mut ::core::ffi::c_void,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_renew(mut mem: *mut ::core::ffi::c_void, mut size: uint32_t, _result: *mut *mut ::core::ffi::c_void) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { renew(mem, size) }) {
         Ok(value) => {
             unsafe {

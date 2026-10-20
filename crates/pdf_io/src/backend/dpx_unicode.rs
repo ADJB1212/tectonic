@@ -37,10 +37,7 @@ pub extern "C-unwind" fn UC_is_valid(ucv: i32) -> bool {
 }
 
 #[unsafe(export_name = "__pdf_impl_UC_UTF16BE_is_valid_string")]
-pub unsafe extern "C-unwind" fn UC_UTF16BE_is_valid_string(
-    p: *const u8,
-    endptr: *const u8,
-) -> bool {
+pub unsafe extern "C-unwind" fn UC_UTF16BE_is_valid_string(p: *const u8, endptr: *const u8) -> bool {
     unsafe { with_input(p, endptr, unicode::is_valid_utf16be) }
 }
 
@@ -50,10 +47,7 @@ pub unsafe extern "C-unwind" fn UC_UTF8_is_valid_string(p: *const u8, endptr: *c
 }
 
 #[unsafe(export_name = "__pdf_impl_UC_UTF16BE_decode_char")]
-pub unsafe extern "C-unwind" fn UC_UTF16BE_decode_char(
-    pp: *mut *const u8,
-    endptr: *const u8,
-) -> i32 {
+pub unsafe extern "C-unwind" fn UC_UTF16BE_decode_char(pp: *mut *const u8, endptr: *const u8) -> i32 {
     match unsafe { with_input(*pp, endptr, unicode::decode_utf16be) } {
         Ok((value, consumed)) => {
             unsafe {
@@ -79,20 +73,12 @@ pub unsafe extern "C-unwind" fn UC_UTF8_decode_char(pp: *mut *const u8, endptr: 
 }
 
 #[unsafe(export_name = "__pdf_impl_UC_UTF16BE_encode_char")]
-pub unsafe extern "C-unwind" fn UC_UTF16BE_encode_char(
-    ucv: i32,
-    pp: *mut *mut u8,
-    endptr: *mut u8,
-) -> usize {
+pub unsafe extern "C-unwind" fn UC_UTF16BE_encode_char(ucv: i32, pp: *mut *mut u8, endptr: *mut u8) -> usize {
     unsafe { encode(ucv, pp, endptr, unicode::encode_utf16be) }
 }
 
 #[unsafe(export_name = "__pdf_impl_UC_UTF8_encode_char")]
-pub unsafe extern "C-unwind" fn UC_UTF8_encode_char(
-    ucv: i32,
-    pp: *mut *mut u8,
-    endptr: *mut u8,
-) -> usize {
+pub unsafe extern "C-unwind" fn UC_UTF8_encode_char(ucv: i32, pp: *mut *mut u8, endptr: *mut u8) -> usize {
     if pp.is_null() || unsafe { (*pp).is_null() } || endptr.is_null() {
         crate::backend::runtime::raise(c"assertion failed: pp && *pp && endptr".to_owned());
     }
@@ -100,18 +86,9 @@ pub unsafe extern "C-unwind" fn UC_UTF8_encode_char(
 }
 
 // The caller supplies a writable start/end range; pp advances on success.
-unsafe fn encode(
-    value: i32,
-    pp: *mut *mut u8,
-    end: *mut u8,
-    encode: fn(i32, &mut [u8]) -> Result<usize, unicode::EncodeError>,
-) -> usize {
+unsafe fn encode(value: i32, pp: *mut *mut u8, end: *mut u8, encode: fn(i32, &mut [u8]) -> Result<usize, unicode::EncodeError>) -> usize {
     let start = unsafe { *pp };
-    let available = if start >= end {
-        0
-    } else {
-        unsafe { end.offset_from(start) as usize }
-    };
+    let available = if start >= end { 0 } else { unsafe { end.offset_from(start) as usize } };
     let mut bytes = [0; 4];
     match encode(value, &mut bytes[..available.min(4)]) {
         Ok(written) => {
@@ -138,9 +115,7 @@ pub unsafe extern "C" fn __pdf_entry_UC_is_valid(mut ucv: i32, _result: *mut boo
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_UC_UTF16BE_is_valid_string(
-    mut p: *const ::core::ffi::c_uchar,
-    mut endptr: *const ::core::ffi::c_uchar,
-    _result: *mut bool,
+    mut p: *const ::core::ffi::c_uchar, mut endptr: *const ::core::ffi::c_uchar, _result: *mut bool,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { UC_UTF16BE_is_valid_string(p, endptr) }) {
         Ok(value) => {
@@ -154,9 +129,7 @@ pub unsafe extern "C" fn __pdf_entry_UC_UTF16BE_is_valid_string(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_UC_UTF8_is_valid_string(
-    mut p: *const ::core::ffi::c_uchar,
-    mut endptr: *const ::core::ffi::c_uchar,
-    _result: *mut bool,
+    mut p: *const ::core::ffi::c_uchar, mut endptr: *const ::core::ffi::c_uchar, _result: *mut bool,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { UC_UTF8_is_valid_string(p, endptr) }) {
         Ok(value) => {
@@ -170,9 +143,7 @@ pub unsafe extern "C" fn __pdf_entry_UC_UTF8_is_valid_string(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_UC_UTF16BE_decode_char(
-    mut pp: *mut *const ::core::ffi::c_uchar,
-    mut endptr: *const ::core::ffi::c_uchar,
-    _result: *mut i32,
+    mut pp: *mut *const ::core::ffi::c_uchar, mut endptr: *const ::core::ffi::c_uchar, _result: *mut i32,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { UC_UTF16BE_decode_char(pp, endptr) }) {
         Ok(value) => {
@@ -186,10 +157,7 @@ pub unsafe extern "C" fn __pdf_entry_UC_UTF16BE_decode_char(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_UC_UTF16BE_encode_char(
-    mut ucv: i32,
-    mut pp: *mut *mut ::core::ffi::c_uchar,
-    mut endptr: *mut ::core::ffi::c_uchar,
-    _result: *mut usize,
+    mut ucv: i32, mut pp: *mut *mut ::core::ffi::c_uchar, mut endptr: *mut ::core::ffi::c_uchar, _result: *mut usize,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { UC_UTF16BE_encode_char(ucv, pp, endptr) }) {
         Ok(value) => {
@@ -203,9 +171,7 @@ pub unsafe extern "C" fn __pdf_entry_UC_UTF16BE_encode_char(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_UC_UTF8_decode_char(
-    mut pp: *mut *const ::core::ffi::c_uchar,
-    mut endptr: *const ::core::ffi::c_uchar,
-    _result: *mut i32,
+    mut pp: *mut *const ::core::ffi::c_uchar, mut endptr: *const ::core::ffi::c_uchar, _result: *mut i32,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { UC_UTF8_decode_char(pp, endptr) }) {
         Ok(value) => {
@@ -219,10 +185,7 @@ pub unsafe extern "C" fn __pdf_entry_UC_UTF8_decode_char(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_UC_UTF8_encode_char(
-    mut ucv: i32,
-    mut pp: *mut *mut ::core::ffi::c_uchar,
-    mut endptr: *mut ::core::ffi::c_uchar,
-    _result: *mut usize,
+    mut ucv: i32, mut pp: *mut *mut ::core::ffi::c_uchar, mut endptr: *mut ::core::ffi::c_uchar, _result: *mut usize,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { UC_UTF8_encode_char(ucv, pp, endptr) }) {
         Ok(value) => {

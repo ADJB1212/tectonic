@@ -62,10 +62,7 @@ impl Drop for Label {
 
 /// A feature of a [`Face`](FaceRef)
 #[derive(Copy, Clone)]
-pub struct FeatureRef<'a>(
-    NonNull<sys::gr_feature_ref>,
-    PhantomData<&'a sys::gr_feature_ref>,
-);
+pub struct FeatureRef<'a>(NonNull<sys::gr_feature_ref>, PhantomData<&'a sys::gr_feature_ref>);
 
 impl FeatureRef<'_> {
     fn as_ptr(self) -> *const sys::gr_feature_ref {
@@ -101,8 +98,7 @@ impl FeatureRef<'_> {
     pub fn set_feat_value(self, mut feat: FeatureValMut<'_>, value: u16) -> Result<(), FeatErr> {
         // SAFETY: Contained pointer guaranteed valid
         //         Feat pointer guaranteed valid
-        let res =
-            unsafe { sys::gr_fref_set_feature_value(self.as_ptr(), value, feat.as_ptr_mut()) };
+        let res = unsafe { sys::gr_fref_set_feature_value(self.as_ptr(), value, feat.as_ptr_mut()) };
         if res != 0 { Ok(()) } else { Err(FeatErr(())) }
     }
 
@@ -111,14 +107,7 @@ impl FeatureRef<'_> {
         let mut actual_id = lang_id;
         let mut len = 0;
         // SAFETY: Contained pointer guaranteed valid
-        let ptr = unsafe {
-            sys::gr_fref_label(
-                self.as_ptr(),
-                &mut actual_id,
-                sys::gr_encform::utf8,
-                &mut len,
-            )
-        };
+        let ptr = unsafe { sys::gr_fref_label(self.as_ptr(), &mut actual_id, sys::gr_encform::utf8, &mut len) };
         NonNull::new(ptr.cast()).map(|ptr| Label(len as usize, ptr))
     }
 
@@ -127,25 +116,14 @@ impl FeatureRef<'_> {
         let mut actual_id = lang_id;
         let mut len = 0;
         // SAFETY: Contained pointer guaranteed valid
-        let ptr = unsafe {
-            sys::gr_fref_value_label(
-                self.as_ptr(),
-                idx as u16,
-                &mut actual_id,
-                sys::gr_encform::utf8,
-                &mut len,
-            )
-        };
+        let ptr = unsafe { sys::gr_fref_value_label(self.as_ptr(), idx as u16, &mut actual_id, sys::gr_encform::utf8, &mut len) };
         NonNull::new(ptr.cast()).map(|ptr| Label(len as usize, ptr))
     }
 }
 
 /// A feature-value reference. See [`FeatureVal`].
 #[derive(Copy, Clone)]
-pub struct FeatureValRef<'a>(
-    NonNull<sys::gr_feature_val>,
-    PhantomData<&'a sys::gr_feature_val>,
-);
+pub struct FeatureValRef<'a>(NonNull<sys::gr_feature_val>, PhantomData<&'a sys::gr_feature_val>);
 
 impl FeatureValRef<'_> {
     fn as_ptr(self) -> *const sys::gr_feature_val {
@@ -154,10 +132,7 @@ impl FeatureValRef<'_> {
 }
 
 /// A feature-value mutable reference. See [`FeatureVal`].
-pub struct FeatureValMut<'a>(
-    NonNull<sys::gr_feature_val>,
-    PhantomData<&'a mut sys::gr_feature_val>,
-);
+pub struct FeatureValMut<'a>(NonNull<sys::gr_feature_val>, PhantomData<&'a mut sys::gr_feature_val>);
 
 impl FeatureValMut<'_> {
     fn as_ptr_mut(&mut self) -> *mut sys::gr_feature_val {
@@ -367,13 +342,7 @@ pub struct Segment(NonNull<sys::gr_segment>);
 
 impl Segment {
     /// Create a new segment from all necessary information and a string to shape.
-    pub fn new<S: ?Sized + StrEnc>(
-        font: FontRef<'_>,
-        face: FaceRef<'_>,
-        script: u32,
-        features: FeatureValRef<'_>,
-        s: &S,
-    ) -> Option<Segment> {
+    pub fn new<S: ?Sized + StrEnc>(font: FontRef<'_>, face: FaceRef<'_>, script: u32, features: FeatureValRef<'_>, s: &S) -> Option<Segment> {
         // SAFETY: Font pointer guaranteed valid
         //         Face pointer guaranteed valid
         //         Features pointer guaranteed valid
@@ -418,10 +387,7 @@ impl Slot {
 
 /// Information about a specific character in a [`Segment`].
 #[derive(Copy, Clone)]
-pub struct CharInfoRef<'a>(
-    NonNull<sys::gr_char_info>,
-    PhantomData<&'a sys::gr_char_info>,
-);
+pub struct CharInfoRef<'a>(NonNull<sys::gr_char_info>, PhantomData<&'a sys::gr_char_info>);
 
 impl CharInfoRef<'_> {
     fn as_ptr(self) -> *const sys::gr_char_info {

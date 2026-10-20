@@ -27,10 +27,7 @@ impl Header {
         let mut bytes = [0; 138];
         read(input, &mut bytes[..18], "Could not read BMP file header...")?;
         if &bytes[..2] != b"BM" {
-            return Err(error(
-                "File not starting with 'B' 'M'... Not a BMP file?",
-                0,
-            ));
+            return Err(error("File not starting with 'B' 'M'... Not a BMP file?", 0));
         }
         if bytes[6..10] != [0; 4] {
             return Err(error("Not a BMP file???", 6));
@@ -39,11 +36,7 @@ impl Header {
         if !matches!(size, 12 | 40 | 64 | 108 | 124) {
             return Err(error("Unknown BMP header type.", 14));
         }
-        read(
-            input,
-            &mut bytes[18..14 + size as usize],
-            "Could not read BMP file header...",
-        )?;
+        read(input, &mut bytes[18..14 + size as usize], "Could not read BMP file header...")?;
         Self::parse(&bytes[..14 + size as usize])
     }
 
@@ -113,11 +106,7 @@ pub(crate) fn read_raster(input: &mut (impl Read + Seek)) -> Result<Raster, PdfE
         palette.reserve(count * 3);
         for _ in 0..count {
             let mut entry = [0; 4];
-            read(
-                input,
-                &mut entry[..header.palette_entry],
-                "Reading file failed...",
-            )?;
+            read(input, &mut entry[..header.palette_entry], "Reading file failed...")?;
             palette.extend_from_slice(&[entry[2], entry[1], entry[0]]);
         }
     }
@@ -125,28 +114,19 @@ pub(crate) fn read_raster(input: &mut (impl Read + Seek)) -> Result<Raster, PdfE
         .seek(SeekFrom::Start(header.offset.into()))
         .map_err(|e| PdfError::io(c"Invalid BMP raster offset.".into(), e))?;
     let mut bytes = Vec::new();
-    bytes
-        .try_reserve_exact(len)
-        .map_err(|_| error("BMP raster is too large.", 18))?;
+    bytes.try_reserve_exact(len).map_err(|_| error("BMP raster is too large.", 18))?;
     bytes.resize(len, 0);
     match (header.compression, header.bits) {
         (0, _) => {
             let padding = (4 - row_bytes % 4) % 4;
             for row in bytes.chunks_exact_mut(row_bytes) {
                 read(input, row, "Reading BMP raster data failed...")?;
-                read(
-                    input,
-                    &mut [0; 3][..padding],
-                    "Reading BMP raster data failed...",
-                )?;
+                read(input, &mut [0; 3][..padding], "Reading BMP raster data failed...")?;
             }
         }
         (1, 8) | (2, 4) => decode_rle(input, &mut bytes, width, height, header.bits)?,
         _ => {
-            return Err(error(
-                "Unknown/Unsupported compression type for BMP image.",
-                30,
-            ));
+            return Err(error("Unknown/Unsupported compression type for BMP image.", 30));
         }
     }
     if header.bits == 24 {
@@ -162,13 +142,7 @@ pub(crate) fn read_raster(input: &mut (impl Read + Seek)) -> Result<Raster, PdfE
     })
 }
 
-fn decode_rle(
-    input: &mut impl Read,
-    output: &mut [u8],
-    width: usize,
-    height: usize,
-    bits: u16,
-) -> Result<(), PdfError> {
+fn decode_rle(input: &mut impl Read, output: &mut [u8], width: usize, height: usize, bits: u16) -> Result<(), PdfError> {
     fn byte(input: &mut impl Read) -> Result<u8, PdfError> {
         let mut value = [0];
         read(input, &mut value, "Reading BMP raster data failed...")?;
@@ -201,11 +175,7 @@ fn decode_rle(
                 _ => {}
             }
         }
-        let pixels = if count == 0 {
-            value as usize
-        } else {
-            count as usize
-        };
+        let pixels = if count == 0 { value as usize } else { count as usize };
         if y >= height || x + pixels > width {
             return Err(error("RLE decode failed...", 0));
         }

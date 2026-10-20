@@ -38,8 +38,7 @@ fn parse_check_time(text: &str) -> Result<SystemTime> {
 }
 
 fn check_expired(time: SystemTime, now: SystemTime) -> bool {
-    now.duration_since(time)
-        .is_ok_and(|age| age > Duration::from_secs(7 * 24 * 60 * 60))
+    now.duration_since(time).is_ok_and(|age| age > Duration::from_secs(7 * 24 * 60 * 60))
 }
 
 /// A convenience method to provide a better error message when writing to a created file.
@@ -139,11 +138,7 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
     /// This method will fail if we can't connect to the bundle AND
     /// we don't already have it in our cache.
     /// Other than that, this method does not require network access.
-    pub fn new(
-        mut bundle: Box<dyn CachableBundle<'this, T>>,
-        only_cached: bool,
-        cache_root: Option<PathBuf>,
-    ) -> Result<Self> {
+    pub fn new(mut bundle: Box<dyn CachableBundle<'this, T>>, only_cached: bool, cache_root: Option<PathBuf>) -> Result<Self> {
         // If cache_root is none, use default location.
         let cache_root = match cache_root {
             None => app_dirs::get_user_cache_dir("bundles").context("while making cache root")?,
@@ -161,15 +156,13 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
                 f.take(digest::DIGEST_LEN as u64)
                     .read_to_string(&mut digest_text)
                     .with_context(|| format!("while reading hash from {hash_file:?} in cache"))?;
-                let digest = DigestData::from_str(&digest_text)
-                    .with_context(|| format!("while parsing hash `{digest_text}`"))?;
+                let digest = DigestData::from_str(&digest_text).with_context(|| format!("while parsing hash `{digest_text}`"))?;
 
                 let last_check = match File::open(&check_file) {
                     Ok(mut f) => {
                         let mut last_check = String::new();
-                        f.read_to_string(&mut last_check).with_context(|| {
-                            format!("while reading last check time from {check_file:?} in cache")
-                        })?;
+                        f.read_to_string(&mut last_check)
+                            .with_context(|| format!("while reading last check time from {check_file:?} in cache"))?;
                         parse_check_time(&last_check)?
                     }
                     Err(e) if e.kind() == io::ErrorKind::NotFound => UNIX_EPOCH,
@@ -183,14 +176,11 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
 
         let now = SystemTime::now();
         let timestamp = now.duration_since(UNIX_EPOCH)?.as_secs();
-        let live_hash =
-            if !only_cached && saved_hash.is_none_or(|(_, time)| check_expired(time, now)) {
-                bundle.get_digest()
-            } else {
-                Err(Error::msg(
-                    "You should never see this message. Please report a bug.",
-                ))
-            };
+        let live_hash = if !only_cached && saved_hash.is_none_or(|(_, time)| check_expired(time, now)) {
+            bundle.get_digest()
+        } else {
+            Err(Error::msg("You should never see this message. Please report a bug."))
+        };
 
         // Check remote bundle digest
         let bundle_hash: DigestData = match (saved_hash, live_hash) {
@@ -198,36 +188,30 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
                 bail!("this bundle isn't cached, and network access is disabled");
             }
             (None, Err(e)) => {
-                bail!(
-                    "this bundle isn't cached, and we couldn't get it from the internet. Error: {e}"
-                );
+                bail!("this bundle isn't cached, and we couldn't get it from the internet. Error: {e}");
             }
             (Some((s, t)), Ok(l)) => {
                 if check_expired(t, now) {
                     // Update time we last checked for hash mismatch
-                    file_create_write(&check_file, |f| write!(f, "{timestamp}")).with_context(
-                        || format!("while updating bundle check time in {check_file:?} in cache"),
-                    )?;
+                    file_create_write(&check_file, |f| write!(f, "{timestamp}"))
+                        .with_context(|| format!("while updating bundle check time in {check_file:?} in cache"))?;
                 }
                 if s != l {
                     // Silently update hash in cache.
                     // We don't need to delete anything, since data is indexed by hash.
                     // TODO: show a warning
-                    file_create_write(&hash_file, |f| writeln!(f, "{}", l)).with_context(|| {
-                        format!("while updating bundle hash in {hash_file:?} in cache")
-                    })?;
+                    file_create_write(&hash_file, |f| writeln!(f, "{}", l))
+                        .with_context(|| format!("while updating bundle hash in {hash_file:?} in cache"))?;
                     l
                 } else {
                     l
                 }
             }
             (None, Ok(l)) => {
-                file_create_write(&hash_file, |f| writeln!(f, "{}", l)).with_context(|| {
-                    format!("while writing bundle hash to {hash_file:?} in cache")
-                })?;
-                file_create_write(&check_file, |f| write!(f, "{timestamp}")).with_context(
-                    || format!("while writing bundle check time to {check_file:?} in cache"),
-                )?;
+                file_create_write(&hash_file, |f| writeln!(f, "{}", l))
+                    .with_context(|| format!("while writing bundle hash to {hash_file:?} in cache"))?;
+                file_create_write(&check_file, |f| write!(f, "{timestamp}"))
+                    .with_context(|| format!("while writing bundle check time to {check_file:?} in cache"))?;
                 l
             }
             (Some((h, _)), Err(_)) => h, // Bundle is offline, but we're ok.
@@ -282,8 +266,7 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
     /// To ensure safety with multiple instances of tectonic,
     /// files are first downloaded to a known-unique location, then renamed.
     fn get_file_path_tmp(&self, info: &T::InfoType) -> PathBuf {
-        self.data_dir
-            .join(format!("{}-tmp-pid{}", info.path(), process::id()))
+        self.data_dir.join(format!("{}-tmp-pid{}", info.path(), process::id()))
     }
 
     fn ensure_index(&mut self) -> Result<()> {
@@ -291,9 +274,7 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
             return Ok(());
         }
 
-        let target = self
-            .cache_root
-            .join(format!("data/{}.index", self.bundle_hash));
+        let target = self.cache_root.join(format!("data/{}.index", self.bundle_hash));
 
         // We check for two things here:
         // - that the bundle index is initialized
@@ -309,8 +290,7 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
             }
 
             // Initialize bundle index using cached file
-            let mut file = File::open(&target)
-                .with_context(|| format!("while opening index {target:?} in cache"))?;
+            let mut file = File::open(&target).with_context(|| format!("while opening index {target:?} in cache"))?;
             self.bundle
                 .initialize_index(&mut file)
                 .with_context(|| format!("while inititalizing index using cached {target:?}"))?;
@@ -323,33 +303,21 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
 
             // We first download to a temporary file, rename to target
             // Makes sure that parallel runs of tectonic don't break the index
-            let tmp_target = self.cache_root.join(format!(
-                "data/{}.index-tmp-pid{}",
-                self.bundle_hash,
-                process::id()
-            ));
+            let tmp_target = self.cache_root.join(format!("data/{}.index-tmp-pid{}", self.bundle_hash, process::id()));
 
-            let mut reader = self
-                .bundle
-                .get_index_reader()
-                .context("while getting index reader")?;
-            let mut file = File::create(&tmp_target)
-                .with_context(|| format!("while creating index {tmp_target:?} in cache"))?;
-            io::copy(&mut reader, &mut file)
-                .with_context(|| format!("while writing index {tmp_target:?} in cache"))?;
+            let mut reader = self.bundle.get_index_reader().context("while getting index reader")?;
+            let mut file = File::create(&tmp_target).with_context(|| format!("while creating index {tmp_target:?} in cache"))?;
+            io::copy(&mut reader, &mut file).with_context(|| format!("while writing index {tmp_target:?} in cache"))?;
             drop(file);
 
-            fs::rename(&tmp_target, &target).with_context(|| {
-                format!("while renaming index {tmp_target:?} to {target:?} in cache")
-            })?;
+            fs::rename(&tmp_target, &target).with_context(|| format!("while renaming index {tmp_target:?} to {target:?} in cache"))?;
 
             if self.bundle.index().is_initialized() {
                 self.index_ready = true;
                 return Ok(());
             }
 
-            let mut file = File::open(&target)
-                .with_context(|| format!("while opening index from {target:?} in cache"))?;
+            let mut file = File::open(&target).with_context(|| format!("while opening index from {target:?} in cache"))?;
             self.bundle
                 .initialize_index(&mut file)
                 .with_context(|| format!("while initializing index {target:?} in cache"))?;
@@ -373,11 +341,7 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
 
     /// Fetch a file from the bundle backing this cache.
     /// Returns a path to the file that was created.
-    fn fetch_file(
-        &mut self,
-        info: &T::InfoType,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<PathBuf> {
+    fn fetch_file(&mut self, info: &T::InfoType, status: &mut dyn StatusBackend) -> OpenResult<PathBuf> {
         let target = self.get_file_path(info);
         // Already in the cache?
         if target.exists() {
@@ -415,11 +379,7 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
 }
 
 impl<'this, T: FileIndex<'this>> IoProvider for BundleCache<'this, T> {
-    fn input_open_name(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_name(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         // On the first lookup of a cold cache, warm the recorded working set
         // concurrently so the engine's subsequent serial requests hit cache.
         self.prefetch(status);
@@ -450,11 +410,7 @@ impl<'this, T: FileIndex<'this>> IoProvider for BundleCache<'this, T> {
         // Preserve search rules by recording the lookup, including warm hits.
         self.record_resolved_name(name);
 
-        OpenResult::Ok(InputHandle::new_read_only(
-            name,
-            BufReader::new(f),
-            InputOrigin::Other,
-        ))
+        OpenResult::Ok(InputHandle::new_read_only(name, BufReader::new(f), InputOrigin::Other))
     }
 }
 
@@ -475,14 +431,8 @@ mod tests {
     #[test]
     fn cache_check_timestamps_accept_signed_seconds_and_reject_invalid_text() {
         assert_eq!(parse_check_time(" 0\n").unwrap(), UNIX_EPOCH);
-        assert_eq!(
-            parse_check_time("-1").unwrap(),
-            UNIX_EPOCH - Duration::from_secs(1)
-        );
-        assert_eq!(
-            parse_check_time("1603835905").unwrap(),
-            UNIX_EPOCH + Duration::from_secs(1_603_835_905)
-        );
+        assert_eq!(parse_check_time("-1").unwrap(), UNIX_EPOCH - Duration::from_secs(1));
+        assert_eq!(parse_check_time("1603835905").unwrap(), UNIX_EPOCH + Duration::from_secs(1_603_835_905));
         assert!(parse_check_time("not a timestamp").is_err());
         assert!(parse_check_time("9223372036854775808").is_err());
     }

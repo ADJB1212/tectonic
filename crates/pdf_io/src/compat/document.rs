@@ -51,9 +51,7 @@ impl DocumentScope {
             ));
         }
         #[cfg(test)]
-        let test_lock = TEST_DOCUMENT_LOCK
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let test_lock = TEST_DOCUMENT_LOCK.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
         let mut document = Box::new(Document {
             objects: super::objects::State::default(),
             names: backend::dpx_pdfnames::Storage::default(),
@@ -68,12 +66,7 @@ impl DocumentScope {
             tfm: crate::tfm::DocumentState::default(),
         });
         if CURRENT_ENGINE_DOCUMENT
-            .compare_exchange(
-                core::ptr::null_mut(),
-                &mut *document,
-                Ordering::AcqRel,
-                Ordering::Acquire,
-            )
+            .compare_exchange(core::ptr::null_mut(), &mut *document, Ordering::AcqRel, Ordering::Acquire)
             .is_err()
         {
             return Err(PdfError::new(
@@ -131,10 +124,7 @@ pub(crate) unsafe fn current() -> *mut Document {
     // for allocation handoffs and callers outside an engine invocation.
     let document = CURRENT_ENGINE_DOCUMENT.load(Ordering::Relaxed);
     if document.is_null() {
-        crate::backend::runtime::raise_error(PdfError::new(
-            PdfErrorKind::InvalidState,
-            c"No active PDF document".to_owned(),
-        ));
+        crate::backend::runtime::raise_error(PdfError::new(PdfErrorKind::InvalidState, c"No active PDF document".to_owned()));
     }
     document
 }
@@ -144,15 +134,11 @@ pub(crate) fn with_diagnostics<T>(callback: impl FnOnce(&mut diagnostics::State)
     unsafe { callback(&mut (*current()).diagnostics) }
 }
 
-pub(crate) fn with_font_maps<T>(
-    callback: impl FnOnce(&RefCell<crate::fontmap::FontMaps>) -> T,
-) -> T {
+pub(crate) fn with_font_maps<T>(callback: impl FnOnce(&RefCell<crate::fontmap::FontMaps>) -> T) -> T {
     unsafe { callback(&(*current()).font_maps) }
 }
 
-pub(crate) fn with_page_scanner<T>(
-    callback: impl FnOnce(&RefCell<crate::preflight::PageScanner>) -> T,
-) -> T {
+pub(crate) fn with_page_scanner<T>(callback: impl FnOnce(&RefCell<crate::preflight::PageScanner>) -> T) -> T {
     unsafe { callback(&(*current()).page_scanner) }
 }
 
@@ -162,8 +148,7 @@ pub(crate) fn with_tfm<T>(callback: impl FnOnce(&crate::tfm::DocumentState) -> T
 
 #[unsafe(no_mangle)]
 extern "C" fn tt_pdf_document_begin() -> *mut c_void {
-    crate::backend::runtime::result_boundary(|| DocumentScope::new().map(Box::new))
-        .map_or(core::ptr::null_mut(), |scope| Box::into_raw(scope).cast())
+    crate::backend::runtime::result_boundary(|| DocumentScope::new().map(Box::new)).map_or(core::ptr::null_mut(), |scope| Box::into_raw(scope).cast())
 }
 
 #[unsafe(no_mangle)]

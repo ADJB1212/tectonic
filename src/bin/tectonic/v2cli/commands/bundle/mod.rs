@@ -17,11 +17,7 @@ mod create;
 mod pack;
 mod select;
 
-fn get_a_bundle(
-    _config: PersistentConfig,
-    only_cached: bool,
-    status: &mut dyn StatusBackend,
-) -> Result<Box<dyn Bundle>> {
+fn get_a_bundle(_config: PersistentConfig, only_cached: bool, status: &mut dyn StatusBackend) -> Result<Box<dyn Bundle>> {
     use tectonic_docmodel::workspace::NoWorkspaceFoundError;
 
     match Workspace::open_from_environment() {
@@ -36,10 +32,7 @@ fn get_a_bundle(
             if e.downcast_ref::<NoWorkspaceFoundError>().is_none() {
                 Err(e)
             } else {
-                tt_note!(
-                    status,
-                    "not in a document workspace; using the built-in default bundle"
-                );
+                tt_note!(status, "not in a document workspace; using the built-in default bundle");
                 Ok(Box::new(tectonic_bundles::get_fallback_bundle(
                     tectonic_engine_xetex::FORMAT_SERIAL,
                     only_cached,
@@ -106,9 +99,7 @@ impl BundleCatCommand {
 
     fn execute(self, config: PersistentConfig, status: &mut dyn StatusBackend) -> Result<i32> {
         let mut bundle = get_a_bundle(config, self.only_cached, status)?;
-        let mut ih = bundle
-            .input_open_name(&self.filename, status)
-            .must_exist()?;
+        let mut ih = bundle.input_open_name(&self.filename, status).must_exist()?;
         std::io::copy(&mut ih, &mut std::io::stdout())?;
         Ok(0)
     }

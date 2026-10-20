@@ -13,10 +13,7 @@
 
 use super::xetex_constants::LEVEL_ONE;
 use super::xetex_io::UFILE;
-use super::xetex_xetexd::{
-    UTF16_code, UnicodeScalar, b16x4, b32x2, input_state_t, list_state_record, memory_word,
-    str_number,
-};
+use super::xetex_xetexd::{UTF16_code, UnicodeScalar, b16x4, b32x2, input_state_t, list_state_record, memory_word, str_number};
 
 use super::xetex_texmfmp::maketexstring;
 use std::ffi::{c_char, c_int, c_void};
@@ -205,8 +202,7 @@ pub static mut last_leftmost_char: i32 = 0;
 #[unsafe(export_name = "last_rightmost_char")]
 pub static mut last_rightmost_char: i32 = 0;
 #[unsafe(export_name = "hlist_stack")]
-pub static mut hlist_stack: [i32; (MAX_HLIST_STACK + 1) as usize] =
-    [0; (MAX_HLIST_STACK + 1) as usize];
+pub static mut hlist_stack: [i32; (MAX_HLIST_STACK + 1) as usize] = [0; (MAX_HLIST_STACK + 1) as usize];
 #[unsafe(export_name = "hlist_stack_level")]
 pub static mut hlist_stack_level: i16 = 0;
 #[unsafe(export_name = "first_p")]
@@ -233,9 +229,7 @@ pub static mut cur_list: list_state_record = list_state_record {
     eTeX_aux: 0,
     prev_graf: 0,
     mode_line: 0,
-    aux: memory_word {
-        b32: b32x2 { s0: 0, s1: 0 },
-    },
+    aux: memory_word { b32: b32x2 { s0: 0, s1: 0 } },
 };
 #[unsafe(export_name = "shown_mode")]
 pub static mut shown_mode: i16 = 0;
@@ -258,8 +252,7 @@ pub static mut no_new_control_sequence: bool = false;
 #[unsafe(export_name = "cs_count")]
 pub static mut cs_count: i32 = 0;
 #[unsafe(export_name = "prim")]
-pub static mut prim: [b32x2; (PRIM_SIZE + 1) as usize] =
-    [b32x2 { s0: 0, s1: 0 }; (PRIM_SIZE + 1) as usize];
+pub static mut prim: [b32x2; (PRIM_SIZE + 1) as usize] = [b32x2 { s0: 0, s1: 0 }; (PRIM_SIZE + 1) as usize];
 #[unsafe(export_name = "prim_used")]
 pub static mut prim_used: i32 = 0;
 #[unsafe(export_name = "save_stack")]
@@ -469,12 +462,7 @@ pub static mut exten_base: *mut i32 = std::ptr::null_mut();
 #[unsafe(export_name = "param_base")]
 pub static mut param_base: *mut i32 = std::ptr::null_mut();
 #[unsafe(export_name = "null_character")]
-pub static mut null_character: b16x4 = b16x4 {
-    s0: 0,
-    s1: 0,
-    s2: 0,
-    s3: 0,
-};
+pub static mut null_character: b16x4 = b16x4 { s0: 0, s1: 0, s2: 0, s3: 0 };
 #[unsafe(export_name = "total_pages")]
 pub static mut total_pages: i32 = 0;
 #[unsafe(export_name = "max_v")]
@@ -522,12 +510,7 @@ pub static mut cur_f: internal_font_number = 0;
 #[unsafe(export_name = "cur_c")]
 pub static mut cur_c: i32 = 0;
 #[unsafe(export_name = "cur_i")]
-pub static mut cur_i: b16x4 = b16x4 {
-    s0: 0,
-    s1: 0,
-    s2: 0,
-    s3: 0,
-};
+pub static mut cur_i: b16x4 = b16x4 { s0: 0, s1: 0, s2: 0, s3: 0 };
 #[unsafe(export_name = "cur_align")]
 pub static mut cur_align: i32 = 0;
 #[unsafe(export_name = "cur_span")]
@@ -589,14 +572,11 @@ pub static mut trie_tro: *mut trie_pointer = std::ptr::null_mut();
 #[unsafe(export_name = "trie_trc")]
 pub static mut trie_trc: *mut u16 = std::ptr::null_mut();
 #[unsafe(export_name = "hyf_distance")]
-pub static mut hyf_distance: [small_number; (TRIE_OP_SIZE + 1) as usize] =
-    [0; (TRIE_OP_SIZE + 1) as usize];
+pub static mut hyf_distance: [small_number; (TRIE_OP_SIZE + 1) as usize] = [0; (TRIE_OP_SIZE + 1) as usize];
 #[unsafe(export_name = "hyf_num")]
-pub static mut hyf_num: [small_number; (TRIE_OP_SIZE + 1) as usize] =
-    [0; (TRIE_OP_SIZE + 1) as usize];
+pub static mut hyf_num: [small_number; (TRIE_OP_SIZE + 1) as usize] = [0; (TRIE_OP_SIZE + 1) as usize];
 #[unsafe(export_name = "hyf_next")]
-pub static mut hyf_next: [trie_opcode; (TRIE_OP_SIZE + 1) as usize] =
-    [0; (TRIE_OP_SIZE + 1) as usize];
+pub static mut hyf_next: [trie_opcode; (TRIE_OP_SIZE + 1) as usize] = [0; (TRIE_OP_SIZE + 1) as usize];
 #[unsafe(export_name = "op_start")]
 pub static mut op_start: [i32; 256] = [0; 256];
 #[unsafe(export_name = "hyph_word")]
@@ -614,8 +594,7 @@ pub static mut trie_used: [trie_opcode; 256] = [0; 256];
 #[unsafe(export_name = "trie_op_lang")]
 pub static mut trie_op_lang: [u8; (TRIE_OP_SIZE + 1) as usize] = [0; (TRIE_OP_SIZE + 1) as usize];
 #[unsafe(export_name = "trie_op_val")]
-pub static mut trie_op_val: [trie_opcode; (TRIE_OP_SIZE + 1) as usize] =
-    [0; (TRIE_OP_SIZE + 1) as usize];
+pub static mut trie_op_val: [trie_opcode; (TRIE_OP_SIZE + 1) as usize] = [0; (TRIE_OP_SIZE + 1) as usize];
 #[unsafe(export_name = "trie_op_ptr")]
 pub static mut trie_op_ptr: i32 = 0;
 #[unsafe(export_name = "max_op_used")]
@@ -645,19 +624,9 @@ pub static mut best_height_plus_depth: scaled_t = 0;
 #[unsafe(export_name = "main_f")]
 pub static mut main_f: internal_font_number = 0;
 #[unsafe(export_name = "main_i")]
-pub static mut main_i: b16x4 = b16x4 {
-    s0: 0,
-    s1: 0,
-    s2: 0,
-    s3: 0,
-};
+pub static mut main_i: b16x4 = b16x4 { s0: 0, s1: 0, s2: 0, s3: 0 };
 #[unsafe(export_name = "main_j")]
-pub static mut main_j: b16x4 = b16x4 {
-    s0: 0,
-    s1: 0,
-    s2: 0,
-    s3: 0,
-};
+pub static mut main_j: b16x4 = b16x4 { s0: 0, s1: 0, s2: 0, s3: 0 };
 #[unsafe(export_name = "main_k")]
 pub static mut main_k: font_index = 0;
 #[unsafe(export_name = "main_p")]
@@ -733,9 +702,7 @@ pub static mut sa_root: [i32; 8] = [0; 8];
 #[unsafe(export_name = "cur_ptr")]
 pub static mut cur_ptr: i32 = 0;
 #[unsafe(export_name = "sa_null")]
-pub static mut sa_null: memory_word = memory_word {
-    b32: b32x2 { s0: 0, s1: 0 },
-};
+pub static mut sa_null: memory_word = memory_word { b32: b32x2 { s0: 0, s1: 0 } };
 #[unsafe(export_name = "sa_chain")]
 pub static mut sa_chain: i32 = 0;
 #[unsafe(export_name = "sa_level")]
@@ -786,15 +753,13 @@ pub static mut insert_penalties: i32 = 0;
 pub static mut output_active: bool = false;
 
 #[unsafe(export_name = "_xeq_level_array")]
-pub static mut _xeq_level_array: [u16; (EQTB_SIZE - INT_BASE + 1) as usize] =
-    [0; (EQTB_SIZE - INT_BASE + 1) as usize];
+pub static mut _xeq_level_array: [u16; (EQTB_SIZE - INT_BASE + 1) as usize] = [0; (EQTB_SIZE - INT_BASE + 1) as usize];
 
 pub const NEG_TRIE_OP_SIZE: i32 = -35111;
 pub const MAX_TRIE_OP: i32 = 65535;
 
 #[unsafe(no_mangle)]
-static mut _trie_op_hash_array: [i32; (TRIE_OP_SIZE - NEG_TRIE_OP_SIZE + 1) as usize] =
-    [0; (TRIE_OP_SIZE - NEG_TRIE_OP_SIZE + 1) as usize];
+static mut _trie_op_hash_array: [i32; (TRIE_OP_SIZE - NEG_TRIE_OP_SIZE + 1) as usize] = [0; (TRIE_OP_SIZE - NEG_TRIE_OP_SIZE + 1) as usize];
 
 #[inline]
 pub unsafe fn TRIE_OP_HASH(i: i32) -> &'static mut i32 {
@@ -849,9 +814,7 @@ pub unsafe extern "C" fn sort_avail() {
 
         p = rover;
         while (*mem.add((p + 1) as usize)).b32.s1 != MAX_HALFWORD {
-            (*mem.add(((*mem.add((p + 1) as usize)).b32.s1 + 1) as usize))
-                .b32
-                .s0 = p;
+            (*mem.add(((*mem.add((p + 1) as usize)).b32.s1 + 1) as usize)).b32.s0 = p;
             p = (*mem.add((p + 1) as usize)).b32.s1;
         }
 
@@ -861,9 +824,7 @@ pub unsafe extern "C" fn sort_avail() {
 }
 
 pub unsafe fn primitive(ident: *const libc::c_char, c: u16, o: i32) {
-    use super::xetex_xetexd::{
-        buf_size, buffer, cur_val, eqtb, first, hash, pool_ptr, str_ptr, str_start,
-    };
+    use super::xetex_xetexd::{buf_size, buffer, cur_val, eqtb, first, hash, pool_ptr, str_ptr, str_start};
     unsafe extern "C" {
         fn maketexstring(value: *const libc::c_char) -> str_number;
     }
@@ -898,33 +859,21 @@ pub unsafe fn primitive(ident: *const libc::c_char, c: u16, o: i32) {
 }
 
 #[unsafe(export_name = "new_trie_op")]
-pub unsafe extern "C" fn new_trie_op(
-    d: small_number,
-    n: small_number,
-    v: trie_opcode,
-) -> trie_opcode {
+pub unsafe extern "C" fn new_trie_op(d: small_number, n: small_number, v: trie_opcode) -> trie_opcode {
     unsafe {
         let mut h: i32;
         let mut u: trie_opcode;
         let mut l: i32;
-        h = (n as i32 + 313 * d as i32 + 361 * v as i32 + 1009 * cur_lang as i32).abs()
-            % (TRIE_OP_SIZE - NEG_TRIE_OP_SIZE)
-            + NEG_TRIE_OP_SIZE;
+        h = (n as i32 + 313 * d as i32 + 361 * v as i32 + 1009 * cur_lang as i32).abs() % (TRIE_OP_SIZE - NEG_TRIE_OP_SIZE) + NEG_TRIE_OP_SIZE;
         loop {
             l = *TRIE_OP_HASH(h);
             if l == 0 {
                 if trie_op_ptr == TRIE_OP_SIZE {
-                    overflow(
-                        c"pattern memory ops".as_ptr(),
-                        (TRIE_OP_SIZE as usize) as i32,
-                    );
+                    overflow(c"pattern memory ops".as_ptr(), (TRIE_OP_SIZE as usize) as i32);
                 }
                 u = trie_used[cur_lang as usize];
                 if u as i32 == MAX_TRIE_OP {
-                    overflow(
-                        c"pattern memory ops per language".as_ptr(),
-                        ((MAX_TRIE_OP - MIN_TRIE_OP) as usize) as i32,
-                    );
+                    overflow(c"pattern memory ops per language".as_ptr(), ((MAX_TRIE_OP - MIN_TRIE_OP) as usize) as i32);
                 }
                 trie_op_ptr += 1;
                 u += 1;
@@ -940,11 +889,7 @@ pub unsafe extern "C" fn new_trie_op(
                 trie_op_val[trie_op_ptr as usize] = u;
                 return u;
             }
-            if hyf_distance[l as usize] == d
-                && hyf_num[l as usize] == n
-                && hyf_next[l as usize] == v
-                && trie_op_lang[l as usize] == cur_lang
-            {
+            if hyf_distance[l as usize] == d && hyf_num[l as usize] == n && hyf_next[l as usize] == v && trie_op_lang[l as usize] == cur_lang {
                 return trie_op_val[l as usize];
             }
             if h > -TRIE_OP_SIZE {
@@ -1113,8 +1058,7 @@ pub unsafe extern "C" fn trie_fix(mut p: trie_pointer) {
             c = *trie_c.add(p as usize);
             *trie_trl.add((z + (c as u32) as i32) as usize) = *trie_hash.add(q as usize);
             *trie_trc.add((z + (c as u32) as i32) as usize) = c;
-            *trie_tro.add((z + (c as u32) as i32) as usize) =
-                (*trie_o.add(p as usize) as u32) as i32;
+            *trie_tro.add((z + (c as u32) as i32) as usize) = (*trie_o.add(p as usize) as u32) as i32;
             if q > 0 {
                 trie_fix(q);
             }

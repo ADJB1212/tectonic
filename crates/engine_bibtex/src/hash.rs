@@ -14,11 +14,7 @@ use std::{
     marker::PhantomData,
 };
 
-pub(crate) const HASH_SIZE: usize = if pool::MAX_STRINGS > 5000 {
-    pool::MAX_STRINGS
-} else {
-    5000
-};
+pub(crate) const HASH_SIZE: usize = if pool::MAX_STRINGS > 5000 { pool::MAX_STRINGS } else { 5000 };
 pub(crate) const HASH_PRIME: usize = compute_hash_prime();
 
 /// Calculate a prime number for use in hashing that's at least 17/20 of `HASH_SIZE`
@@ -469,9 +465,7 @@ pub(crate) struct HashData {
 
 impl HashData {
     pub fn new() -> HashData {
-        HashData {
-            data: IndexSet::new(),
-        }
+        HashData { data: IndexSet::new() }
     }
 
     pub fn undefined() -> HashPointer<BstFn> {
@@ -494,29 +488,16 @@ impl HashData {
     pub fn lookup_str<T: Ilk>(&self, pool: &StringPool, str: &[u8]) -> Option<HashPointer<T>> {
         let hash_val = self.data.hasher().hash_one(str);
         self.data
-            .get_index_of(&FindNode {
-                hash_val,
-                str,
-                pool,
-            })
+            .get_index_of(&FindNode { hash_val, str, pool })
             .filter(|node| self.data[*node].extra.contains(T::ilk()))
             .map(|node| HashPointer(node, PhantomData))
     }
 
     /// Lookup a string, inserting it if it isn't found. Note that this returns `Ok` whether the
     /// string is found or not, only returning `Err` if a called function fails.
-    pub fn lookup_str_insert<T: Ilk>(
-        &mut self,
-        pool: &mut StringPool,
-        str: &[u8],
-        extra: T::Extra,
-    ) -> LookupRes<T> {
+    pub fn lookup_str_insert<T: Ilk>(&mut self, pool: &mut StringPool, str: &[u8], extra: T::Extra) -> LookupRes<T> {
         let hash_val = self.data.hasher().hash_one(str);
-        match self.data.get_index_of(&FindNode {
-            hash_val,
-            str,
-            pool,
-        }) {
+        match self.data.get_index_of(&FindNode { hash_val, str, pool }) {
             Some(idx) => {
                 let node = self.data.get_index_mut2(idx).unwrap();
                 if node.extra.contains(T::ilk()) {
@@ -536,11 +517,7 @@ impl HashData {
                 let text = pool.add_string(str);
                 let mut slot = ExtraSlot::new();
                 T::insert(&mut slot, extra);
-                let (idx, _) = self.data.insert_full(Node {
-                    hash_val,
-                    text,
-                    extra: slot,
-                });
+                let (idx, _) = self.data.insert_full(Node { hash_val, text, extra: slot });
                 LookupRes {
                     exists: false,
                     loc: HashPointer(idx, PhantomData),
@@ -570,23 +547,14 @@ mod tests {
         let mut pool = StringPool::new();
         let res = hash.lookup_str_insert::<Text>(&mut pool, b"a cool string", ());
         assert!(!res.exists);
-        assert_eq!(
-            pool.try_get_str(hash.get(res.loc).text()),
-            Some(b"a cool string" as &[_])
-        );
+        assert_eq!(pool.try_get_str(hash.get(res.loc).text()), Some(b"a cool string" as &[_]));
 
         let res2 = hash.lookup_str_insert::<Text>(&mut pool, b"a cool string", ());
         assert!(res2.exists);
-        assert_eq!(
-            pool.try_get_str(hash.get(res2.loc).text()),
-            Some(b"a cool string" as &[_])
-        );
+        assert_eq!(pool.try_get_str(hash.get(res2.loc).text()), Some(b"a cool string" as &[_]));
 
         let res3 = hash.lookup_str::<Text>(&pool, b"a cool string").unwrap();
-        assert_eq!(
-            pool.try_get_str(hash.get(res3).text()),
-            Some(b"a cool string" as &[_])
-        );
+        assert_eq!(pool.try_get_str(hash.get(res3).text()), Some(b"a cool string" as &[_]));
 
         assert!(hash.lookup_str::<Text>(&pool, b"a bad string").is_none());
     }

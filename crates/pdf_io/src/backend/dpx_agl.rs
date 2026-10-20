@@ -19,80 +19,33 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 use crate::unicode::is_valid as UC_is_valid;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
     fn isdigit(_: ::core::ffi::c_int) -> ::core::ffi::c_int;
     fn isupper(_: ::core::ffi::c_int) -> ::core::ffi::c_int;
-    fn strtol(
-        __str: *const ::core::ffi::c_char,
-        __endptr: *mut *mut ::core::ffi::c_char,
-        __base: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_long;
-    fn strchr(__s: *const ::core::ffi::c_char, __c: ::core::ffi::c_int)
-    -> *mut ::core::ffi::c_char;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-    fn strcpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
-    fn strncmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn strncpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_char;
+    fn strtol(__str: *const ::core::ffi::c_char, __endptr: *mut *mut ::core::ffi::c_char, __base: ::core::ffi::c_int) -> ::core::ffi::c_long;
+    fn strchr(__s: *const ::core::ffi::c_char, __c: ::core::ffi::c_int) -> *mut ::core::ffi::c_char;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    fn strcpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+    fn strncmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char, __n: size_t) -> ::core::ffi::c_int;
+    fn strncpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char, __n: size_t) -> *mut ::core::ffi::c_char;
     fn ttstub_input_close(handle: rust_input_handle_t) -> ::core::ffi::c_int;
     static mut dpx_conf: _dpx_conf;
     #[link_name = "__pdf_impl_tt_mfgets"]
-    fn tt_mfgets(
-        buffer: *mut ::core::ffi::c_char,
-        length: ::core::ffi::c_int,
-        file: rust_input_handle_t,
-    ) -> *mut ::core::ffi::c_char;
+    fn tt_mfgets(buffer: *mut ::core::ffi::c_char, length: ::core::ffi::c_int, file: rust_input_handle_t) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_dpx_tt_open"]
-    fn dpx_tt_open(
-        filename: *const ::core::ffi::c_char,
-        suffix: *const ::core::ffi::c_char,
-        format: ttbc_file_format,
-    ) -> rust_input_handle_t;
+    fn dpx_tt_open(filename: *const ::core::ffi::c_char, suffix: *const ::core::ffi::c_char, format: ttbc_file_format) -> rust_input_handle_t;
     #[link_name = "__pdf_impl_ht_init_table"]
     fn ht_init_table(ht: *mut ht_table, hval_free_fn: hval_free_func);
     #[link_name = "__pdf_impl_ht_clear_table"]
     fn ht_clear_table(ht: *mut ht_table);
     #[link_name = "__pdf_impl_ht_lookup_table"]
-    fn ht_lookup_table(
-        ht: *mut ht_table,
-        key: *const ::core::ffi::c_void,
-        keylen: ::core::ffi::c_int,
-    ) -> *mut ::core::ffi::c_void;
+    fn ht_lookup_table(ht: *mut ht_table, key: *const ::core::ffi::c_void, keylen: ::core::ffi::c_int) -> *mut ::core::ffi::c_void;
     #[link_name = "__pdf_impl_ht_append_table"]
-    fn ht_append_table(
-        ht: *mut ht_table,
-        key: *const ::core::ffi::c_void,
-        keylen: ::core::ffi::c_int,
-        value: *mut ::core::ffi::c_void,
-    );
+    fn ht_append_table(ht: *mut ht_table, key: *const ::core::ffi::c_void, keylen: ::core::ffi::c_int, value: *mut ::core::ffi::c_void);
     fn dpx_message(fmt: *const ::core::ffi::c_char, ...);
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_new"]
@@ -100,16 +53,9 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_skip_white"]
     fn skip_white(start: *mut *const ::core::ffi::c_char, end: *const ::core::ffi::c_char);
     #[link_name = "__pdf_impl_parse_ident"]
-    fn parse_ident(
-        start: *mut *const ::core::ffi::c_char,
-        end: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_ident(start: *mut *const ::core::ffi::c_char, end: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_UC_UTF16BE_encode_char"]
-    fn UC_UTF16BE_encode_char(
-        ucv: int32_t,
-        dstpp: *mut *mut ::core::ffi::c_uchar,
-        endptr: *mut ::core::ffi::c_uchar,
-    ) -> size_t;
+    fn UC_UTF16BE_encode_char(ucv: int32_t, dstpp: *mut *mut ::core::ffi::c_uchar, endptr: *mut ::core::ffi::c_uchar) -> size_t;
 }
 pub type __darwin_size_t = usize;
 pub type __darwin_ssize_t = isize;
@@ -198,20 +144,14 @@ pub struct C2RustUnnamed_0 {
 pub const __DARWIN_NULL: *mut ::core::ffi::c_void = ::core::ptr::null_mut::<::core::ffi::c_void>();
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
     return false_0 != 0;
 }
 #[inline]
-unsafe extern "C-unwind" fn strstartswith(
-    mut s: *const ::core::ffi::c_char,
-    mut prefix: *const ::core::ffi::c_char,
-) -> *const ::core::ffi::c_char {
+unsafe extern "C-unwind" fn strstartswith(mut s: *const ::core::ffi::c_char, mut prefix: *const ::core::ffi::c_char) -> *const ::core::ffi::c_char {
     let mut length: size_t = 0;
     length = strlen(prefix);
     if strncmp(s, prefix, length) == 0 as ::core::ffi::c_int {
@@ -219,18 +159,13 @@ unsafe extern "C-unwind" fn strstartswith(
     }
     return ::core::ptr::null::<::core::ffi::c_char>();
 }
-pub const AGL_DEFAULT_LISTFILE: [::core::ffi::c_char; 14] =
-    crate::backend::c_char_array(*b"glyphlist.txt\0");
-pub const AGL_PREDEF_LISTFILE: [::core::ffi::c_char; 17] =
-    crate::backend::c_char_array(*b"pdfglyphlist.txt\0");
-pub const AGL_EXTRA_LISTFILE: [::core::ffi::c_char; 17] =
-    crate::backend::c_char_array(*b"texglyphlist.txt\0");
+pub const AGL_DEFAULT_LISTFILE: [::core::ffi::c_char; 14] = crate::backend::c_char_array(*b"glyphlist.txt\0");
+pub const AGL_PREDEF_LISTFILE: [::core::ffi::c_char; 17] = crate::backend::c_char_array(*b"pdfglyphlist.txt\0");
+pub const AGL_EXTRA_LISTFILE: [::core::ffi::c_char; 17] = crate::backend::c_char_array(*b"texglyphlist.txt\0");
 pub const AGL_MAX_UNICODES: ::core::ffi::c_int = 16 as ::core::ffi::c_int;
 unsafe extern "C-unwind" fn agl_new_name() -> *mut agl_name {
     let mut agln: *mut agl_name = ::core::ptr::null_mut::<agl_name>();
-    agln = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<agl_name>() as usize) as uint32_t)
-        as *mut agl_name;
+    agln = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<agl_name>() as usize) as uint32_t) as *mut agl_name;
     (*agln).name = ::core::ptr::null_mut::<::core::ffi::c_char>();
     (*agln).suffix = ::core::ptr::null_mut::<::core::ffi::c_char>();
     (*agln).n_components = 0 as ::core::ffi::c_int;
@@ -251,15 +186,12 @@ unsafe extern "C-unwind" fn agl_release_name(mut agln: *mut agl_name) {
 }
 #[unsafe(export_name = "__pdf_impl_agl_chop_suffix")]
 pub unsafe extern "C-unwind" fn agl_chop_suffix(
-    mut glyphname: *const ::core::ffi::c_char,
-    mut suffix: *mut *mut ::core::ffi::c_char,
+    mut glyphname: *const ::core::ffi::c_char, mut suffix: *mut *mut ::core::ffi::c_char,
 ) -> *mut ::core::ffi::c_char {
     let mut name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut p: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut len: ::core::ffi::c_int = 0;
-    if !(!glyphname.is_null() && !suffix.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long
-        != 0
-    {
+    if !(!glyphname.is_null() && !suffix.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"glyphname && suffix\0" as *const u8 as *const ::core::ffi::c_char
@@ -271,32 +203,29 @@ pub unsafe extern "C-unwind" fn agl_chop_suffix(
         len = strlen(glyphname).wrapping_sub(strlen(p)) as ::core::ffi::c_int;
         if len < 1 as ::core::ffi::c_int {
             name = ::core::ptr::null_mut::<::core::ffi::c_char>();
-            *suffix = new((strlen(glyphname) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t) as *mut ::core::ffi::c_char;
+            *suffix = new((strlen(glyphname) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+                as *mut ::core::ffi::c_char;
             strcpy(*suffix, glyphname.offset(1 as ::core::ffi::c_int as isize));
         } else {
             p = p.offset(1);
-            name = new(((len + 1 as ::core::ffi::c_int) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t) as *mut ::core::ffi::c_char;
+            name = new(
+                ((len + 1 as ::core::ffi::c_int) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
+                    as uint32_t,
+            ) as *mut ::core::ffi::c_char;
             strncpy(name, glyphname, len as size_t);
             *name.offset(len as isize) = '\0' as i32 as ::core::ffi::c_char;
             if *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '\0' as i32 {
                 *suffix = ::core::ptr::null_mut::<::core::ffi::c_char>();
             } else {
                 *suffix = new((strlen(p).wrapping_add(1 as size_t) as uint32_t as usize)
-                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                    as uint32_t) as *mut ::core::ffi::c_char;
+                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+                    as *mut ::core::ffi::c_char;
                 strcpy(*suffix, p);
             }
         }
     } else {
-        name = new(
-            (strlen(glyphname).wrapping_add(1 as size_t) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t,
-        ) as *mut ::core::ffi::c_char;
+        name = new((strlen(glyphname).wrapping_add(1 as size_t) as uint32_t as usize)
+            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
         strcpy(name, glyphname);
         *suffix = ::core::ptr::null_mut::<::core::ffi::c_char>();
     }
@@ -325,19 +254,13 @@ const modifiers: [*const ::core::ffi::c_char; 21] = [
     b"questiondown\0" as *const u8 as *const ::core::ffi::c_char,
     ::core::ptr::null::<::core::ffi::c_char>(),
 ];
-unsafe extern "C-unwind" fn skip_capital(
-    mut p: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn skip_capital(mut p: *mut *const ::core::ffi::c_char, mut endptr: *const ::core::ffi::c_char) -> ::core::ffi::c_int {
     let mut slen: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut len: ::core::ffi::c_int = 0;
     len = endptr.offset_from(*p) as ::core::ffi::c_long as ::core::ffi::c_int;
     if len >= 2 as ::core::ffi::c_int
-        && (**p as ::core::ffi::c_int == 'A' as i32
-            && *(*p).offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == 'E' as i32
-            || **p as ::core::ffi::c_int == 'O' as i32
-                && *(*p).offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                    == 'E' as i32)
+        && (**p as ::core::ffi::c_int == 'A' as i32 && *(*p).offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == 'E' as i32
+            || **p as ::core::ffi::c_int == 'O' as i32 && *(*p).offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == 'E' as i32)
     {
         *p = (*p).offset(2 as ::core::ffi::c_int as isize);
         slen = 2 as ::core::ffi::c_int;
@@ -357,19 +280,13 @@ unsafe extern "C-unwind" fn skip_capital(
     {
         *p = (*p).offset(5 as ::core::ffi::c_int as isize);
         slen = 5 as ::core::ffi::c_int;
-    } else if len >= 1 as ::core::ffi::c_int
-        && **p as ::core::ffi::c_int >= 'A' as i32
-        && **p as ::core::ffi::c_int <= 'Z' as i32
-    {
+    } else if len >= 1 as ::core::ffi::c_int && **p as ::core::ffi::c_int >= 'A' as i32 && **p as ::core::ffi::c_int <= 'Z' as i32 {
         *p = (*p).offset(1 as ::core::ffi::c_int as isize);
         slen = 1 as ::core::ffi::c_int;
     }
     return slen;
 }
-unsafe extern "C-unwind" fn skip_modifier(
-    mut p: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
-) -> size_t {
+unsafe extern "C-unwind" fn skip_modifier(mut p: *mut *const ::core::ffi::c_char, mut endptr: *const ::core::ffi::c_char) -> size_t {
     let mut slen: size_t = 0 as size_t;
     let mut len: size_t = 0;
     let mut i: ::core::ffi::c_uint = 0;
@@ -377,11 +294,7 @@ unsafe extern "C-unwind" fn skip_modifier(
     i = 0 as ::core::ffi::c_uint;
     while !modifiers[i as usize].is_null() {
         if len >= strlen(modifiers[i as usize])
-            && memcmp(
-                *p as *const ::core::ffi::c_void,
-                modifiers[i as usize] as *const ::core::ffi::c_void,
-                len,
-            ) == 0
+            && memcmp(*p as *const ::core::ffi::c_void, modifiers[i as usize] as *const ::core::ffi::c_void, len) == 0
         {
             slen = strlen(modifiers[i as usize]);
             *p = (*p).offset(slen as isize);
@@ -404,16 +317,13 @@ unsafe extern "C-unwind" fn is_smallcap(mut glyphname: *const ::core::ffi::c_cha
     len = strlen(glyphname);
     if len < 6 as size_t
         || strcmp(
-            p.offset(len as isize)
-                .offset(-(5 as ::core::ffi::c_int as isize)),
+            p.offset(len as isize).offset(-(5 as ::core::ffi::c_int as isize)),
             b"small\0" as *const u8 as *const ::core::ffi::c_char,
         ) != 0
     {
         return false_0 != 0;
     }
-    endptr = p
-        .offset(len as isize)
-        .offset(-(5 as ::core::ffi::c_int as isize));
+    endptr = p.offset(len as isize).offset(-(5 as ::core::ffi::c_int as isize));
     len = len.wrapping_sub(5 as size_t);
     slen = skip_modifier(&raw mut p, endptr);
     if slen == len {
@@ -746,9 +656,7 @@ const var_list: [C2RustUnnamed_0; 14] = [
     },
 ];
 #[unsafe(export_name = "__pdf_impl_agl_suffix_to_otltag")]
-pub unsafe extern "C-unwind" fn agl_suffix_to_otltag(
-    mut suffix: *const ::core::ffi::c_char,
-) -> *const ::core::ffi::c_char {
+pub unsafe extern "C-unwind" fn agl_suffix_to_otltag(mut suffix: *const ::core::ffi::c_char) -> *const ::core::ffi::c_char {
     let mut i: ::core::ffi::c_int = 0;
     let mut j: ::core::ffi::c_int = 0;
     i = 0 as ::core::ffi::c_int;
@@ -763,9 +671,7 @@ pub unsafe extern "C-unwind" fn agl_suffix_to_otltag(
         if streq_ptr(suffix, var_list[i as usize].key) {
             return var_list[i as usize].otl_tag;
         }
-        if !var_list[i as usize].otl_tag.is_null()
-            && streq_ptr(suffix, var_list[i as usize].otl_tag) as ::core::ffi::c_int != 0
-        {
+        if !var_list[i as usize].otl_tag.is_null() && streq_ptr(suffix, var_list[i as usize].otl_tag) as ::core::ffi::c_int != 0 {
             return var_list[i as usize].otl_tag;
         }
         i += 1;
@@ -783,9 +689,7 @@ unsafe extern "C-unwind" fn agl_guess_name(mut glyphname: *const ::core::ffi::c_
     while !var_list[i as usize].key.is_null() {
         if len > strlen(var_list[i as usize].key)
             && streq_ptr(
-                glyphname
-                    .offset(len as isize)
-                    .offset(-(strlen(var_list[i as usize].key) as isize)),
+                glyphname.offset(len as isize).offset(-(strlen(var_list[i as usize].key) as isize)),
                 var_list[i as usize].key,
             ) as ::core::ffi::c_int
                 != 0
@@ -796,9 +700,7 @@ unsafe extern "C-unwind" fn agl_guess_name(mut glyphname: *const ::core::ffi::c_
     }
     return -(1 as ::core::ffi::c_int) as ssize_t;
 }
-unsafe extern "C-unwind" fn agl_normalized_name(
-    mut glyphname: *mut ::core::ffi::c_char,
-) -> *mut agl_name {
+unsafe extern "C-unwind" fn agl_normalized_name(mut glyphname: *mut ::core::ffi::c_char) -> *mut agl_name {
     let mut agln: *mut agl_name = ::core::ptr::null_mut::<agl_name>();
     let mut suffix: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut i: ::core::ffi::c_int = 0;
@@ -811,17 +713,14 @@ unsafe extern "C-unwind" fn agl_normalized_name(
     if !suffix.is_null() {
         n = strlen(glyphname).wrapping_sub(strlen(suffix)) as ::core::ffi::c_int;
         if *suffix.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '\0' as i32 {
-            (*agln).suffix = new((strlen(suffix) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t) as *mut ::core::ffi::c_char;
-            strcpy(
-                (*agln).suffix,
-                suffix.offset(1 as ::core::ffi::c_int as isize),
-            );
+            (*agln).suffix =
+                new((strlen(suffix) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+                    as *mut ::core::ffi::c_char;
+            strcpy((*agln).suffix, suffix.offset(1 as ::core::ffi::c_int as isize));
         }
-        (*agln).name = new(((n + 1 as ::core::ffi::c_int) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_char;
+        (*agln).name = new(
+            ((n + 1 as ::core::ffi::c_int) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t,
+        ) as *mut ::core::ffi::c_char;
         memcpy(
             (*agln).name as *mut ::core::ffi::c_void,
             glyphname as *const ::core::ffi::c_void,
@@ -830,23 +729,16 @@ unsafe extern "C-unwind" fn agl_normalized_name(
         *(*agln).name.offset(n as isize) = '\0' as i32 as ::core::ffi::c_char;
     } else if is_smallcap(glyphname) {
         n = strlen(glyphname).wrapping_sub(5 as size_t) as ::core::ffi::c_int;
-        (*agln).suffix = new((3 as ::core::ffi::c_int as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_char;
-        strcpy(
-            (*agln).suffix,
-            b"sc\0" as *const u8 as *const ::core::ffi::c_char,
-        );
-        (*agln).name = new(((n + 1 as ::core::ffi::c_int) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_char;
+        (*agln).suffix =
+            new((3 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+                as *mut ::core::ffi::c_char;
+        strcpy((*agln).suffix, b"sc\0" as *const u8 as *const ::core::ffi::c_char);
+        (*agln).name = new(
+            ((n + 1 as ::core::ffi::c_int) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t,
+        ) as *mut ::core::ffi::c_char;
         i = 0 as ::core::ffi::c_int;
         while i < n {
-            *(*agln).name.offset(i as isize) = (if isupper(*glyphname.offset(i as isize)
-                as ::core::ffi::c_uchar
-                as ::core::ffi::c_int)
-                != 0
-            {
+            *(*agln).name.offset(i as isize) = (if isupper(*glyphname.offset(i as isize) as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0 {
                 *glyphname.offset(i as isize) as ::core::ffi::c_int + 32 as ::core::ffi::c_int
             } else {
                 *glyphname.offset(i as isize) as ::core::ffi::c_int
@@ -860,32 +752,23 @@ unsafe extern "C-unwind" fn agl_normalized_name(
         if var_idx < 0 as ssize_t || var_list[var_idx as usize].key.is_null() {
             n = strlen(glyphname) as ::core::ffi::c_int;
         } else {
-            n = strlen(glyphname).wrapping_sub(strlen(var_list[var_idx as usize].key))
-                as ::core::ffi::c_int;
+            n = strlen(glyphname).wrapping_sub(strlen(var_list[var_idx as usize].key)) as ::core::ffi::c_int;
             if !var_list[var_idx as usize].suffixes[0 as ::core::ffi::c_int as usize].is_null() {
-                (*agln).suffix = new((strlen(
-                    var_list[var_idx as usize].suffixes[0 as ::core::ffi::c_int as usize],
-                )
-                .wrapping_add(1 as size_t) as uint32_t
-                    as usize)
-                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                    as uint32_t) as *mut ::core::ffi::c_char;
-                strcpy(
-                    (*agln).suffix,
-                    var_list[var_idx as usize].suffixes[0 as ::core::ffi::c_int as usize],
-                );
+                (*agln).suffix = new(
+                    (strlen(var_list[var_idx as usize].suffixes[0 as ::core::ffi::c_int as usize]).wrapping_add(1 as size_t) as uint32_t as usize)
+                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t,
+                ) as *mut ::core::ffi::c_char;
+                strcpy((*agln).suffix, var_list[var_idx as usize].suffixes[0 as ::core::ffi::c_int as usize]);
             } else {
-                (*agln).suffix = new((strlen(var_list[var_idx as usize].key)
-                    .wrapping_add(1 as size_t) as uint32_t
-                    as usize)
-                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                    as uint32_t) as *mut ::core::ffi::c_char;
+                (*agln).suffix = new((strlen(var_list[var_idx as usize].key).wrapping_add(1 as size_t) as uint32_t as usize)
+                    .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+                    as *mut ::core::ffi::c_char;
                 strcpy((*agln).suffix, var_list[var_idx as usize].key);
             }
         }
-        (*agln).name = new(((n + 1 as ::core::ffi::c_int) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_char;
+        (*agln).name = new(
+            ((n + 1 as ::core::ffi::c_int) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t,
+        ) as *mut ::core::ffi::c_char;
         memcpy(
             (*agln).name as *mut ::core::ffi::c_void,
             glyphname as *const ::core::ffi::c_void,
@@ -908,17 +791,13 @@ pub unsafe extern "C-unwind" fn agl_init_map() {
         Some(hval_free as unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void) -> ()),
     );
     agl_load_listfile(AGL_EXTRA_LISTFILE.as_ptr(), 0 as ::core::ffi::c_int);
-    if agl_load_listfile(AGL_PREDEF_LISTFILE.as_ptr(), 1 as ::core::ffi::c_int)
-        < 0 as ::core::ffi::c_int
-    {
+    if agl_load_listfile(AGL_PREDEF_LISTFILE.as_ptr(), 1 as ::core::ffi::c_int) < 0 as ::core::ffi::c_int {
         pdf_warning!(
             b"Failed to load AGL file \"%s\"...\0" as *const u8 as *const ::core::ffi::c_char,
             AGL_PREDEF_LISTFILE.as_ptr(),
         );
     }
-    if agl_load_listfile(AGL_DEFAULT_LISTFILE.as_ptr(), 0 as ::core::ffi::c_int)
-        < 0 as ::core::ffi::c_int
-    {
+    if agl_load_listfile(AGL_DEFAULT_LISTFILE.as_ptr(), 0 as ::core::ffi::c_int) < 0 as ::core::ffi::c_int {
         pdf_warning!(
             b"Failed to load AGL file \"%s\"...\0" as *const u8 as *const ::core::ffi::c_char,
             AGL_DEFAULT_LISTFILE.as_ptr(),
@@ -931,10 +810,7 @@ pub unsafe extern "C-unwind" fn agl_close_map() {
     ht_clear_table(&raw mut (*__pdf_state).aglmap);
 }
 pub const WBUF_SIZE: ::core::ffi::c_int = 1024 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn agl_load_listfile(
-    mut filename: *const ::core::ffi::c_char,
-    mut is_predef: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn agl_load_listfile(mut filename: *const ::core::ffi::c_char, mut is_predef: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut count: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
@@ -945,19 +821,12 @@ unsafe extern "C-unwind" fn agl_load_listfile(
     if filename.is_null() {
         return -(1 as ::core::ffi::c_int);
     }
-    handle = dpx_tt_open(
-        filename,
-        b".txt\0" as *const u8 as *const ::core::ffi::c_char,
-        TTBC_FILE_FORMAT_FONT_MAP,
-    );
+    handle = dpx_tt_open(filename, b".txt\0" as *const u8 as *const ::core::ffi::c_char, TTBC_FILE_FORMAT_FONT_MAP);
     if handle == 0 {
         return -(1 as ::core::ffi::c_int);
     }
     if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
-        pdf_message!(
-            b"<AGL:%s\0" as *const u8 as *const ::core::ffi::c_char,
-            filename
-        );
+        pdf_message!(b"<AGL:%s\0" as *const u8 as *const ::core::ffi::c_char, filename);
     }
     loop {
         p = tt_mfgets(&raw mut wbuf as *mut ::core::ffi::c_char, WBUF_SIZE, handle);
@@ -972,10 +841,7 @@ unsafe extern "C-unwind" fn agl_load_listfile(
         let mut unicodes: [int32_t; 16] = [0; 16];
         endptr = p.offset(strlen(p) as isize);
         skip_white(&raw mut p, endptr);
-        if p.is_null()
-            || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '#' as i32
-            || p >= endptr
-        {
+        if p.is_null() || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '#' as i32 || p >= endptr {
             continue;
         }
         nextptr = strchr(p, ';' as i32);
@@ -984,9 +850,7 @@ unsafe extern "C-unwind" fn agl_load_listfile(
         }
         name = parse_ident(&raw mut p, nextptr);
         skip_white(&raw mut p, endptr);
-        if name.is_null()
-            || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != ';' as i32
-        {
+        if name.is_null() || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != ';' as i32 {
             pdf_warning!(
                 b"Invalid AGL entry: %s\0" as *const u8 as *const ::core::ffi::c_char,
                 &raw mut wbuf as *mut ::core::ffi::c_char,
@@ -998,31 +862,24 @@ unsafe extern "C-unwind" fn agl_load_listfile(
             n_unicodes = 0 as ::core::ffi::c_int;
             while p < endptr
                 && (*p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int >= '0' as i32
-                    && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        <= '9' as i32
-                    || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                        >= 'A' as i32
-                        && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                            <= 'F' as i32)
+                    && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int <= '9' as i32
+                    || *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int >= 'A' as i32
+                        && *p.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int <= 'F' as i32)
             {
                 if n_unicodes >= AGL_MAX_UNICODES {
-                    pdf_warning!(
-                        b"Too many Unicode values\0" as *const u8 as *const ::core::ffi::c_char,
-                    );
+                    pdf_warning!(b"Too many Unicode values\0" as *const u8 as *const ::core::ffi::c_char,);
                     break;
                 } else {
                     let fresh4 = n_unicodes;
                     n_unicodes = n_unicodes + 1;
-                    unicodes[fresh4 as usize] =
-                        strtol(p, &raw mut nextptr, 16 as ::core::ffi::c_int) as int32_t;
+                    unicodes[fresh4 as usize] = strtol(p, &raw mut nextptr, 16 as ::core::ffi::c_int) as int32_t;
                     p = nextptr;
                     skip_white(&raw mut p, endptr);
                 }
             }
             if n_unicodes == 0 as ::core::ffi::c_int {
                 pdf_warning!(
-                    b"AGL entry ignored (no mapping): %s\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"AGL entry ignored (no mapping): %s\0" as *const u8 as *const ::core::ffi::c_char,
                     &raw mut wbuf as *mut ::core::ffi::c_char,
                 );
                 free(name as *mut ::core::ffi::c_void);
@@ -1062,24 +919,14 @@ unsafe extern "C-unwind" fn agl_load_listfile(
                             (*agln).suffix,
                         );
                     } else {
-                        pdf_message!(
-                            b"agl: %s [%s] -->\0" as *const u8 as *const ::core::ffi::c_char,
-                            name,
-                            (*agln).name,
-                        );
+                        pdf_message!(b"agl: %s [%s] -->\0" as *const u8 as *const ::core::ffi::c_char, name, (*agln).name,);
                     }
                     i = 0 as ::core::ffi::c_int;
                     while i < (*agln).n_components {
                         if (*agln).unicodes[i as usize] > 0xffff as int32_t {
-                            pdf_message!(
-                                b" U+%06X\0" as *const u8 as *const ::core::ffi::c_char,
-                                (*agln).unicodes[i as usize],
-                            );
+                            pdf_message!(b" U+%06X\0" as *const u8 as *const ::core::ffi::c_char, (*agln).unicodes[i as usize],);
                         } else {
-                            pdf_message!(
-                                b" U+%04X\0" as *const u8 as *const ::core::ffi::c_char,
-                                (*agln).unicodes[i as usize],
-                            );
+                            pdf_message!(b" U+%04X\0" as *const u8 as *const ::core::ffi::c_char, (*agln).unicodes[i as usize],);
                         }
                         i += 1;
                     }
@@ -1097,9 +944,7 @@ unsafe extern "C-unwind" fn agl_load_listfile(
     return count;
 }
 #[unsafe(export_name = "__pdf_impl_agl_lookup_list")]
-pub unsafe extern "C-unwind" fn agl_lookup_list(
-    mut glyphname: *const ::core::ffi::c_char,
-) -> *mut agl_name {
+pub unsafe extern "C-unwind" fn agl_lookup_list(mut glyphname: *const ::core::ffi::c_char) -> *mut agl_name {
     let __pdf_state = unsafe { document_state() };
     let mut agln: *mut agl_name = ::core::ptr::null_mut::<agl_name>();
     if glyphname.is_null() {
@@ -1113,9 +958,7 @@ pub unsafe extern "C-unwind" fn agl_lookup_list(
     return agln;
 }
 #[unsafe(export_name = "__pdf_impl_agl_name_is_unicode")]
-pub unsafe extern "C-unwind" fn agl_name_is_unicode(
-    mut glyphname: *const ::core::ffi::c_char,
-) -> bool {
+pub unsafe extern "C-unwind" fn agl_name_is_unicode(mut glyphname: *const ::core::ffi::c_char) -> bool {
     let mut c: ::core::ffi::c_char = 0;
     let mut suffix: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut i: size_t = 0;
@@ -1131,11 +974,7 @@ pub unsafe extern "C-unwind" fn agl_name_is_unicode(
     };
     if len >= 7 as size_t
         && len.wrapping_sub(3 as size_t).wrapping_rem(4 as size_t) == 0 as size_t
-        && !strstartswith(
-            glyphname,
-            b"uni\0" as *const u8 as *const ::core::ffi::c_char,
-        )
-        .is_null()
+        && !strstartswith(glyphname, b"uni\0" as *const u8 as *const ::core::ffi::c_char).is_null()
     {
         c = *glyphname.offset(3 as ::core::ffi::c_int as isize);
         if isdigit(c as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0
@@ -1145,10 +984,7 @@ pub unsafe extern "C-unwind" fn agl_name_is_unicode(
         } else {
             return false_0 != 0;
         }
-    } else if len <= 7 as size_t
-        && len >= 5 as size_t
-        && *glyphname.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == 'u' as i32
-    {
+    } else if len <= 7 as size_t && len >= 5 as size_t && *glyphname.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == 'u' as i32 {
         i = 1 as size_t;
         while i < len.wrapping_sub(1 as size_t) {
             c = *glyphname.offset(i as isize);
@@ -1164,21 +1000,14 @@ pub unsafe extern "C-unwind" fn agl_name_is_unicode(
     return false_0 != 0;
 }
 #[unsafe(export_name = "__pdf_impl_agl_name_convert_unicode")]
-pub unsafe extern "C-unwind" fn agl_name_convert_unicode(
-    mut glyphname: *const ::core::ffi::c_char,
-) -> int32_t {
+pub unsafe extern "C-unwind" fn agl_name_convert_unicode(mut glyphname: *const ::core::ffi::c_char) -> int32_t {
     let mut ucv: int32_t = -(1 as int32_t);
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     if !agl_name_is_unicode(glyphname) {
         return -(1 as int32_t);
     }
-    if strlen(glyphname) > 7 as size_t
-        && *glyphname.offset(7 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '.' as i32
-    {
-        pdf_warning!(
-            b"Mapping to multiple Unicode characters not supported.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+    if strlen(glyphname) > 7 as size_t && *glyphname.offset(7 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '.' as i32 {
+        pdf_warning!(b"Mapping to multiple Unicode characters not supported.\0" as *const u8 as *const ::core::ffi::c_char,);
         return -(1 as int32_t);
     }
     if *glyphname.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == 'n' as i32 {
@@ -1192,8 +1021,7 @@ pub unsafe extern "C-unwind" fn agl_name_convert_unicode(
             && ((*p as ::core::ffi::c_int) < 'A' as i32 || *p as ::core::ffi::c_int > 'F' as i32)
         {
             pdf_warning!(
-                b"Invalid char %c in Unicode glyph name %s.\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Invalid char %c in Unicode glyph name %s.\0" as *const u8 as *const ::core::ffi::c_char,
                 *p as ::core::ffi::c_int,
                 glyphname,
             );
@@ -1210,24 +1038,15 @@ pub unsafe extern "C-unwind" fn agl_name_convert_unicode(
     }
     if !UC_is_valid(ucv) {
         if ucv < 0x10000 as int32_t {
-            pdf_warning!(
-                b"Invalid Unicode code value U+%04X.\0" as *const u8 as *const ::core::ffi::c_char,
-                ucv,
-            );
+            pdf_warning!(b"Invalid Unicode code value U+%04X.\0" as *const u8 as *const ::core::ffi::c_char, ucv,);
         } else {
-            pdf_warning!(
-                b"Invalid Unicode code value U+%06X.\0" as *const u8 as *const ::core::ffi::c_char,
-                ucv,
-            );
+            pdf_warning!(b"Invalid Unicode code value U+%06X.\0" as *const u8 as *const ::core::ffi::c_char, ucv,);
         }
         ucv = -(1 as ::core::ffi::c_int) as int32_t;
     }
     return ucv;
 }
-unsafe extern "C-unwind" fn xtol(
-    mut start: *const ::core::ffi::c_char,
-    mut len: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn xtol(mut start: *const ::core::ffi::c_char, mut len: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut v: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     loop {
         let fresh0 = len;
@@ -1238,9 +1057,7 @@ unsafe extern "C-unwind" fn xtol(
         v <<= 4 as ::core::ffi::c_int;
         if isdigit(*start as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0 {
             v += *start as ::core::ffi::c_int - '0' as i32;
-        } else if *start as ::core::ffi::c_int >= 'A' as i32
-            && *start as ::core::ffi::c_int <= 'F' as i32
-        {
+        } else if *start as ::core::ffi::c_int >= 'A' as i32 && *start as ::core::ffi::c_int <= 'F' as i32 {
             v += *start as ::core::ffi::c_int - 'A' as i32 + 10 as ::core::ffi::c_int;
         } else {
             return -(1 as ::core::ffi::c_int);
@@ -1250,9 +1067,7 @@ unsafe extern "C-unwind" fn xtol(
     return v;
 }
 unsafe extern "C-unwind" fn put_unicode_glyph(
-    mut name: *const ::core::ffi::c_char,
-    mut dstpp: *mut *mut ::core::ffi::c_uchar,
-    mut limptr: *mut ::core::ffi::c_uchar,
+    mut name: *const ::core::ffi::c_char, mut dstpp: *mut *mut ::core::ffi::c_uchar, mut limptr: *mut ::core::ffi::c_uchar,
 ) -> int32_t {
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut len: int32_t = 0 as int32_t;
@@ -1262,14 +1077,12 @@ unsafe extern "C-unwind" fn put_unicode_glyph(
     if *p.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != 'n' as i32 {
         p = p.offset(1 as ::core::ffi::c_int as isize);
         ucv = xtol(p, strlen(p) as ::core::ffi::c_int) as int32_t;
-        len = (len as size_t).wrapping_add(UC_UTF16BE_encode_char(ucv, dstpp, limptr)) as int32_t
-            as int32_t;
+        len = (len as size_t).wrapping_add(UC_UTF16BE_encode_char(ucv, dstpp, limptr)) as int32_t as int32_t;
     } else {
         p = p.offset(3 as ::core::ffi::c_int as isize);
         while *p as ::core::ffi::c_int != '\0' as i32 {
             ucv = xtol(p, 4 as ::core::ffi::c_int) as int32_t;
-            len = (len as size_t).wrapping_add(UC_UTF16BE_encode_char(ucv, dstpp, limptr))
-                as int32_t as int32_t;
+            len = (len as size_t).wrapping_add(UC_UTF16BE_encode_char(ucv, dstpp, limptr)) as int32_t as int32_t;
             p = p.offset(4 as ::core::ffi::c_int as isize);
         }
     }
@@ -1277,17 +1090,14 @@ unsafe extern "C-unwind" fn put_unicode_glyph(
 }
 #[unsafe(export_name = "__pdf_impl_agl_sput_UTF16BE")]
 pub unsafe extern "C-unwind" fn agl_sput_UTF16BE(
-    mut glyphstr: *const ::core::ffi::c_char,
-    mut dstpp: *mut *mut ::core::ffi::c_uchar,
-    mut limptr: *mut ::core::ffi::c_uchar,
+    mut glyphstr: *const ::core::ffi::c_char, mut dstpp: *mut *mut ::core::ffi::c_uchar, mut limptr: *mut ::core::ffi::c_uchar,
     mut fail_count: *mut ::core::ffi::c_int,
 ) -> int32_t {
     let mut len: int32_t = 0 as int32_t;
     let mut count: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut endptr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
-    if !(!glyphstr.is_null() && !dstpp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0
-    {
+    if !(!glyphstr.is_null() && !dstpp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"glyphstr && dstpp\0" as *const u8 as *const ::core::ffi::c_char
@@ -1309,8 +1119,7 @@ pub unsafe extern "C-unwind" fn agl_sput_UTF16BE(
         delim = strchr(p, '_' as i32);
         if delim == p {
             pdf_warning!(
-                b"Invalid glyph name component in \"%s\".\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Invalid glyph name component in \"%s\".\0" as *const u8 as *const ::core::ffi::c_char,
                 glyphstr,
             );
             count += 1;
@@ -1322,14 +1131,9 @@ pub unsafe extern "C-unwind" fn agl_sput_UTF16BE(
             delim = endptr;
         }
         sub_len = delim.offset_from(p) as ::core::ffi::c_long as int32_t;
-        name = new(((sub_len + 1 as int32_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_char;
-        memcpy(
-            name as *mut ::core::ffi::c_void,
-            p as *const ::core::ffi::c_void,
-            sub_len as size_t,
-        );
+        name = new(((sub_len + 1 as int32_t) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+            as *mut ::core::ffi::c_char;
+        memcpy(name as *mut ::core::ffi::c_void, p as *const ::core::ffi::c_void, sub_len as size_t);
         *name.offset(sub_len as isize) = '\0' as i32 as ::core::ffi::c_char;
         if agl_name_is_unicode(name) {
             sub_len = put_unicode_glyph(name, dstpp, limptr);
@@ -1342,29 +1146,16 @@ pub unsafe extern "C-unwind" fn agl_sput_UTF16BE(
             agln1 = agl_lookup_list(name);
             if agln1.is_null()
                 || (*agln1).n_components == 1 as ::core::ffi::c_int
-                    && ((*agln1).unicodes[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_long
-                        >= 0xe000 as ::core::ffi::c_long
-                        && (*agln1).unicodes[0 as ::core::ffi::c_int as usize]
-                            as ::core::ffi::c_long
-                            <= 0xf8ff as ::core::ffi::c_long
-                        || (*agln1).unicodes[0 as ::core::ffi::c_int as usize]
-                            as ::core::ffi::c_long
-                            >= 0xf0000 as ::core::ffi::c_long
-                            && (*agln1).unicodes[0 as ::core::ffi::c_int as usize]
-                                as ::core::ffi::c_long
-                                <= 0xffffd as ::core::ffi::c_long
-                        || (*agln1).unicodes[0 as ::core::ffi::c_int as usize]
-                            as ::core::ffi::c_long
-                            >= 0x100000 as ::core::ffi::c_long
-                            && (*agln1).unicodes[0 as ::core::ffi::c_int as usize]
-                                as ::core::ffi::c_long
-                                <= 0x10fffd as ::core::ffi::c_long)
+                    && ((*agln1).unicodes[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_long >= 0xe000 as ::core::ffi::c_long
+                        && (*agln1).unicodes[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_long <= 0xf8ff as ::core::ffi::c_long
+                        || (*agln1).unicodes[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_long >= 0xf0000 as ::core::ffi::c_long
+                            && (*agln1).unicodes[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_long <= 0xffffd as ::core::ffi::c_long
+                        || (*agln1).unicodes[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_long >= 0x100000 as ::core::ffi::c_long
+                            && (*agln1).unicodes[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_long <= 0x10fffd as ::core::ffi::c_long)
             {
                 agln0 = agl_normalized_name(name);
                 if !agln0.is_null() {
-                    if dpx_conf.verbose_level > 1 as ::core::ffi::c_int
-                        && !(*agln0).suffix.is_null()
-                    {
+                    if dpx_conf.verbose_level > 1 as ::core::ffi::c_int && !(*agln0).suffix.is_null() {
                         pdf_warning!(
                             b"agl: fix %s --> %s.%s\0" as *const u8 as *const ::core::ffi::c_char,
                             name,
@@ -1379,18 +1170,13 @@ pub unsafe extern "C-unwind" fn agl_sput_UTF16BE(
             if !agln1.is_null() {
                 i = 0 as ::core::ffi::c_int;
                 while i < (*agln1).n_components {
-                    len = (len as size_t).wrapping_add(UC_UTF16BE_encode_char(
-                        (*agln1).unicodes[i as usize],
-                        dstpp,
-                        limptr,
-                    )) as int32_t as int32_t;
+                    len = (len as size_t).wrapping_add(UC_UTF16BE_encode_char((*agln1).unicodes[i as usize], dstpp, limptr)) as int32_t as int32_t;
                     i += 1;
                 }
             } else {
                 if dpx_conf.verbose_level != 0 {
                     pdf_warning!(
-                        b"No Unicode mapping for glyph name \"%s\" found.\0" as *const u8
-                            as *const ::core::ffi::c_char,
+                        b"No Unicode mapping for glyph name \"%s\" found.\0" as *const u8 as *const ::core::ffi::c_char,
                         name,
                     );
                 }
@@ -1407,9 +1193,7 @@ pub unsafe extern "C-unwind" fn agl_sput_UTF16BE(
 }
 #[unsafe(export_name = "__pdf_impl_agl_get_unicodes")]
 pub unsafe extern "C-unwind" fn agl_get_unicodes(
-    mut glyphstr: *const ::core::ffi::c_char,
-    mut unicodes: *mut int32_t,
-    mut max_unicodes: ::core::ffi::c_int,
+    mut glyphstr: *const ::core::ffi::c_char, mut unicodes: *mut int32_t, mut max_unicodes: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut count: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
@@ -1429,8 +1213,7 @@ pub unsafe extern "C-unwind" fn agl_get_unicodes(
         delim = strchr(p, '_' as i32);
         if delim == p {
             pdf_warning!(
-                b"Invalid glyph name component in \"%s\".\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Invalid glyph name component in \"%s\".\0" as *const u8 as *const ::core::ffi::c_char,
                 glyphstr,
             );
             return -(1 as ::core::ffi::c_int);
@@ -1438,14 +1221,9 @@ pub unsafe extern "C-unwind" fn agl_get_unicodes(
             delim = endptr;
         }
         sub_len = delim.offset_from(p) as ::core::ffi::c_long as int32_t;
-        name = new(((sub_len + 1 as int32_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_char;
-        memcpy(
-            name as *mut ::core::ffi::c_void,
-            p as *const ::core::ffi::c_void,
-            sub_len as size_t,
-        );
+        name = new(((sub_len + 1 as int32_t) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+            as *mut ::core::ffi::c_char;
+        memcpy(name as *mut ::core::ffi::c_void, p as *const ::core::ffi::c_void, sub_len as size_t);
         *name.offset(sub_len as isize) = '\0' as i32 as ::core::ffi::c_char;
         if agl_name_is_unicode(name) {
             p = name;
@@ -1457,8 +1235,7 @@ pub unsafe extern "C-unwind" fn agl_get_unicodes(
                 p = p.offset(1);
                 let fresh1 = count;
                 count = count + 1;
-                *unicodes.offset(fresh1 as isize) =
-                    xtol(p, strlen(p) as ::core::ffi::c_int) as int32_t;
+                *unicodes.offset(fresh1 as isize) = xtol(p, strlen(p) as ::core::ffi::c_int) as int32_t;
             } else {
                 p = p.offset(3 as ::core::ffi::c_int as isize);
                 while *p as ::core::ffi::c_int != '\0' as i32 {
@@ -1476,29 +1253,16 @@ pub unsafe extern "C-unwind" fn agl_get_unicodes(
             agln1 = agl_lookup_list(name);
             if agln1.is_null()
                 || (*agln1).n_components == 1 as ::core::ffi::c_int
-                    && ((*agln1).unicodes[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_long
-                        >= 0xe000 as ::core::ffi::c_long
-                        && (*agln1).unicodes[0 as ::core::ffi::c_int as usize]
-                            as ::core::ffi::c_long
-                            <= 0xf8ff as ::core::ffi::c_long
-                        || (*agln1).unicodes[0 as ::core::ffi::c_int as usize]
-                            as ::core::ffi::c_long
-                            >= 0xf0000 as ::core::ffi::c_long
-                            && (*agln1).unicodes[0 as ::core::ffi::c_int as usize]
-                                as ::core::ffi::c_long
-                                <= 0xffffd as ::core::ffi::c_long
-                        || (*agln1).unicodes[0 as ::core::ffi::c_int as usize]
-                            as ::core::ffi::c_long
-                            >= 0x100000 as ::core::ffi::c_long
-                            && (*agln1).unicodes[0 as ::core::ffi::c_int as usize]
-                                as ::core::ffi::c_long
-                                <= 0x10fffd as ::core::ffi::c_long)
+                    && ((*agln1).unicodes[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_long >= 0xe000 as ::core::ffi::c_long
+                        && (*agln1).unicodes[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_long <= 0xf8ff as ::core::ffi::c_long
+                        || (*agln1).unicodes[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_long >= 0xf0000 as ::core::ffi::c_long
+                            && (*agln1).unicodes[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_long <= 0xffffd as ::core::ffi::c_long
+                        || (*agln1).unicodes[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_long >= 0x100000 as ::core::ffi::c_long
+                            && (*agln1).unicodes[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_long <= 0x10fffd as ::core::ffi::c_long)
             {
                 agln0 = agl_normalized_name(name);
                 if !agln0.is_null() {
-                    if dpx_conf.verbose_level > 1 as ::core::ffi::c_int
-                        && !(*agln0).suffix.is_null()
-                    {
+                    if dpx_conf.verbose_level > 1 as ::core::ffi::c_int && !(*agln0).suffix.is_null() {
                         pdf_warning!(
                             b"agl: fix %s --> %s.%s\0" as *const u8 as *const ::core::ffi::c_char,
                             name,
@@ -1525,8 +1289,7 @@ pub unsafe extern "C-unwind" fn agl_get_unicodes(
             } else {
                 if dpx_conf.verbose_level > 1 as ::core::ffi::c_int {
                     pdf_warning!(
-                        b"No Unicode mapping for glyph name \"%s\" found.\0" as *const u8
-                            as *const ::core::ffi::c_char,
+                        b"No Unicode mapping for glyph name \"%s\" found.\0" as *const u8 as *const ::core::ffi::c_char,
                         name,
                     );
                 }
@@ -1542,23 +1305,13 @@ pub unsafe extern "C-unwind" fn agl_get_unicodes(
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn memcpy(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
+    fn memcpy(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __n: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_agl_chop_suffix(
-    mut glyphname: *const ::core::ffi::c_char,
-    mut suffix: *mut *mut ::core::ffi::c_char,
-    _result: *mut *mut ::core::ffi::c_char,
+    mut glyphname: *const ::core::ffi::c_char, mut suffix: *mut *mut ::core::ffi::c_char, _result: *mut *mut ::core::ffi::c_char,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { agl_chop_suffix(glyphname, suffix) }) {
         Ok(value) => {
@@ -1571,10 +1324,7 @@ pub unsafe extern "C" fn __pdf_entry_agl_chop_suffix(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_agl_suffix_to_otltag(
-    mut suffix: *const ::core::ffi::c_char,
-    _result: *mut *const ::core::ffi::c_char,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_agl_suffix_to_otltag(mut suffix: *const ::core::ffi::c_char, _result: *mut *const ::core::ffi::c_char) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { agl_suffix_to_otltag(suffix) }) {
         Ok(value) => {
             unsafe {
@@ -1606,10 +1356,7 @@ pub unsafe extern "C" fn __pdf_entry_agl_close_map() -> i32 {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_agl_lookup_list(
-    mut glyphname: *const ::core::ffi::c_char,
-    _result: *mut *mut agl_name,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_agl_lookup_list(mut glyphname: *const ::core::ffi::c_char, _result: *mut *mut agl_name) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { agl_lookup_list(glyphname) }) {
         Ok(value) => {
             unsafe {
@@ -1621,10 +1368,7 @@ pub unsafe extern "C" fn __pdf_entry_agl_lookup_list(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_agl_name_is_unicode(
-    mut glyphname: *const ::core::ffi::c_char,
-    _result: *mut bool,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_agl_name_is_unicode(mut glyphname: *const ::core::ffi::c_char, _result: *mut bool) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { agl_name_is_unicode(glyphname) }) {
         Ok(value) => {
             unsafe {
@@ -1636,10 +1380,7 @@ pub unsafe extern "C" fn __pdf_entry_agl_name_is_unicode(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_agl_name_convert_unicode(
-    mut glyphname: *const ::core::ffi::c_char,
-    _result: *mut int32_t,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_agl_name_convert_unicode(mut glyphname: *const ::core::ffi::c_char, _result: *mut int32_t) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { agl_name_convert_unicode(glyphname) }) {
         Ok(value) => {
             unsafe {
@@ -1652,15 +1393,10 @@ pub unsafe extern "C" fn __pdf_entry_agl_name_convert_unicode(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_agl_sput_UTF16BE(
-    mut glyphstr: *const ::core::ffi::c_char,
-    mut dstpp: *mut *mut ::core::ffi::c_uchar,
-    mut limptr: *mut ::core::ffi::c_uchar,
-    mut fail_count: *mut ::core::ffi::c_int,
-    _result: *mut int32_t,
+    mut glyphstr: *const ::core::ffi::c_char, mut dstpp: *mut *mut ::core::ffi::c_uchar, mut limptr: *mut ::core::ffi::c_uchar,
+    mut fail_count: *mut ::core::ffi::c_int, _result: *mut int32_t,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        agl_sput_UTF16BE(glyphstr, dstpp, limptr, fail_count)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { agl_sput_UTF16BE(glyphstr, dstpp, limptr, fail_count) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -1672,14 +1408,9 @@ pub unsafe extern "C" fn __pdf_entry_agl_sput_UTF16BE(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_agl_get_unicodes(
-    mut glyphstr: *const ::core::ffi::c_char,
-    mut unicodes: *mut int32_t,
-    mut max_unicodes: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut glyphstr: *const ::core::ffi::c_char, mut unicodes: *mut int32_t, mut max_unicodes: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        agl_get_unicodes(glyphstr, unicodes, max_unicodes)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { agl_get_unicodes(glyphstr, unicodes, max_unicodes) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -1710,10 +1441,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_agl
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_agl.pointer }
 }

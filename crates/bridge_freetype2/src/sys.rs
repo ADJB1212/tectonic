@@ -457,45 +457,19 @@ pub type FT_Pointer = *mut ();
 
 unsafe extern "C" {
     pub fn FT_Get_Char_Index(face: FT_Face, charcode: libc::c_ulong) -> libc::c_uint;
-    pub fn FT_Face_GetCharVariantIndex(
-        face: FT_Face,
-        charcode: libc::c_ulong,
-        variant_selector: libc::c_ulong,
-    ) -> libc::c_uint;
-    pub fn FT_Get_Advance(
-        face: FT_Face,
-        gindex: libc::c_uint,
-        load_flags: i32,
-        padvance: *mut FT_Fixed,
-    ) -> FT_Error;
+    pub fn FT_Face_GetCharVariantIndex(face: FT_Face, charcode: libc::c_ulong, variant_selector: libc::c_ulong) -> libc::c_uint;
+    pub fn FT_Get_Advance(face: FT_Face, gindex: libc::c_uint, load_flags: i32, padvance: *mut FT_Fixed) -> FT_Error;
     pub fn FT_Get_Kerning(
-        face: FT_Face,
-        left_glyph: libc::c_uint,
-        right_glyph: libc::c_uint,
-        kern_mode: FT_Kerning_Mode,
-        akerning: *mut FT_Vector,
+        face: FT_Face, left_glyph: libc::c_uint, right_glyph: libc::c_uint, kern_mode: FT_Kerning_Mode, akerning: *mut FT_Vector,
     ) -> FT_Error;
     pub fn FT_Load_Glyph(face: FT_Face, glyph_index: libc::c_uint, load_flags: i32) -> FT_Error;
-    pub fn FT_Get_Glyph_Name(
-        face: FT_Face,
-        glyph_index: libc::c_uint,
-        buffer: FT_Pointer,
-        buffer_max: libc::c_uint,
-    ) -> FT_Error;
+    pub fn FT_Get_Glyph_Name(face: FT_Face, glyph_index: libc::c_uint, buffer: FT_Pointer, buffer_max: libc::c_uint) -> FT_Error;
     pub fn FT_Load_Sfnt_Table(
-        face: FT_Face,
-        tag: libc::c_ulong,
-        offset: libc::c_long,
-        buffer: *mut libc::c_uchar,
-        length: *mut libc::c_ulong,
+        face: FT_Face, tag: libc::c_ulong, offset: libc::c_long, buffer: *mut libc::c_uchar, length: *mut libc::c_ulong,
     ) -> FT_Error;
     pub fn FT_Init_FreeType(alibrary: *mut FT_Library) -> FT_Error;
     pub fn FT_New_Memory_Face(
-        library: FT_Library,
-        file_base: *mut libc::c_uchar,
-        file_size: libc::c_long,
-        face_index: libc::c_long,
-        aface: *mut FT_Face,
+        library: FT_Library, file_base: *mut libc::c_uchar, file_size: libc::c_long, face_index: libc::c_long, aface: *mut FT_Face,
     ) -> FT_Error;
     pub fn FT_Attach_Stream(face: FT_Face, parameters: *mut FT_Open_Args) -> FT_Error;
     pub fn FT_Get_Sfnt_Table(face: FT_Face, tag: FT_Sfnt_Tag) -> *mut ();
@@ -504,18 +478,9 @@ unsafe extern "C" {
     pub fn FT_Glyph_Get_CBox(glyph: FT_Glyph, bbox_mode: FT_Glyph_BBox_Mode, acbox: *mut FT_BBox);
     pub fn FT_Done_Glyph(glyph: FT_Glyph);
     pub fn FT_Get_First_Char(face: FT_Face, agindex: *mut libc::c_uint) -> libc::c_ulong;
-    pub fn FT_Get_Next_Char(
-        face: FT_Face,
-        char_code: libc::c_ulong,
-        agindex: *mut libc::c_uint,
-    ) -> libc::c_ulong;
+    pub fn FT_Get_Next_Char(face: FT_Face, char_code: libc::c_ulong, agindex: *mut libc::c_uint) -> libc::c_ulong;
     pub fn FT_Get_Name_Index(face: FT_Face, glyph_name: *const FT_String) -> libc::c_uint;
-    pub fn FT_New_Face(
-        library: FT_Library,
-        filepathname: *const libc::c_char,
-        face_index: libc::c_long,
-        aface: *mut FT_Face,
-    ) -> FT_Error;
+    pub fn FT_New_Face(library: FT_Library, filepathname: *const libc::c_char, face_index: libc::c_long, aface: *mut FT_Face) -> FT_Error;
     pub fn FT_Get_Postscript_Name(face: FT_Face) -> *const libc::c_char;
     pub fn FT_Get_Sfnt_Name_Count(face: FT_Face) -> libc::c_uint;
     pub fn FT_Get_Sfnt_Name(face: FT_Face, idx: libc::c_uint, aname: *mut FT_SfntName) -> FT_Error;

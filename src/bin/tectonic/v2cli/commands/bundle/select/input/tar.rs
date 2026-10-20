@@ -58,11 +58,7 @@ impl BundleInput for TarBundleInput {
                     None
                 } else {
                     Some(Ok((
-                        path.strip_prefix(&root)
-                            .unwrap()
-                            .to_str()
-                            .unwrap()
-                            .to_string(),
+                        path.strip_prefix(&root).unwrap().to_str().unwrap().to_string(),
                         Box::new(x.unwrap()) as Box<dyn Read>,
                     )))
                 }
@@ -88,17 +84,12 @@ mod tests {
         header.set_size(contents.len() as u64);
         header.set_mode(0o644);
         header.set_cksum();
-        archive
-            .append_data(&mut header, "root/file.txt", &contents[..])
-            .unwrap();
+        archive.append_data(&mut header, "root/file.txt", &contents[..]).unwrap();
         archive.finish().unwrap();
         drop(archive);
 
         let mut input = TarBundleInput::new(&path, Some(PathBuf::from("root"))).unwrap();
-        assert_eq!(
-            input.hash(),
-            bytes_to_hex(&Sha256::digest(fs::read(&path).unwrap()))
-        );
+        assert_eq!(input.hash(), bytes_to_hex(&Sha256::digest(fs::read(&path).unwrap())));
         let mut entries = input.iter_files();
         let (name, mut reader) = entries.next().unwrap().unwrap();
         assert_eq!(name, "file.txt");

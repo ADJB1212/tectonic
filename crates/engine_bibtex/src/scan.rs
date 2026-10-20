@@ -8,11 +8,9 @@ use crate::{
     hash,
     hash::{BstFn, HashData},
     log::{
-        bib_err_print, bib_id_print, bib_unbalanced_braces_print, bib_warn_print,
-        braces_unbalanced_complaint, bst_err_print_and_look_for_blank_line, eat_bib_print,
-        eat_bst_print, hash_cite_confusion, macro_warn_print, print_a_pool_str, print_confusion,
-        print_recursion_illegal, skip_illegal_stuff_after_token_print, skip_token_print,
-        skip_token_unknown_function_print,
+        bib_err_print, bib_id_print, bib_unbalanced_braces_print, bib_warn_print, braces_unbalanced_complaint, bst_err_print_and_look_for_blank_line,
+        eat_bib_print, eat_bst_print, hash_cite_confusion, macro_warn_print, print_a_pool_str, print_confusion, print_recursion_illegal,
+        skip_illegal_stuff_after_token_print, skip_token_print, skip_token_unknown_function_print,
     },
     other::WizOp,
     peekable::input_ln,
@@ -59,8 +57,7 @@ impl<'a> Scan<'a> {
     }
 
     fn match_char(&self, char: ASCIICode) -> bool {
-        self.not_class
-            .is_some_and(|class| LexClass::of(char) != class)
+        self.not_class.is_some_and(|class| LexClass::of(char) != class)
             || self.class.is_some_and(|class| LexClass::of(char) == class)
             || self.chars.contains(&char)
     }
@@ -91,12 +88,7 @@ impl<'a> Scan<'a> {
     }
 }
 
-pub(crate) fn scan_identifier(
-    buffers: &mut GlobalBuffer,
-    char1: ASCIICode,
-    char2: ASCIICode,
-    char3: ASCIICode,
-) -> ScanRes {
+pub(crate) fn scan_identifier(buffers: &mut GlobalBuffer, char1: ASCIICode, char2: ASCIICode, char3: ASCIICode) -> ScanRes {
     let last = buffers.init(BufTy::Base);
     let start = buffers.offset(BufTy::Base, 2);
     buffers.set_offset(BufTy::Base, 1, start);
@@ -154,11 +146,7 @@ fn scan_integer(buffers: &mut GlobalBuffer, token_value: &mut i64) -> bool {
 pub(crate) fn eat_bst_white_space(ctx: &mut Bibtex<'_, '_>, buffers: &mut GlobalBuffer) -> bool {
     loop {
         let init = buffers.init(BufTy::Base);
-        if Scan::new()
-            .not_class(LexClass::Whitespace)
-            .scan_till(buffers, init)
-            && buffers.at_offset(BufTy::Base, 2) != b'%'
-        {
+        if Scan::new().not_class(LexClass::Whitespace).scan_till(buffers, init) && buffers.at_offset(BufTy::Base, 2) != b'%' {
             return true;
         }
 
@@ -172,30 +160,20 @@ pub(crate) fn eat_bst_white_space(ctx: &mut Bibtex<'_, '_>, buffers: &mut Global
 }
 
 fn handle_char(
-    ctx: &mut Bibtex<'_, '_>,
-    globals: &mut GlobalItems<'_>,
-    single_function: &mut Vec<WizOp>,
-    wiz_loc: HashPointer<BstFn>,
-    char: ASCIICode,
+    ctx: &mut Bibtex<'_, '_>, globals: &mut GlobalItems<'_>, single_function: &mut Vec<WizOp>, wiz_loc: HashPointer<BstFn>, char: ASCIICode,
 ) -> Result<(), BibtexError> {
     match char {
         b'#' => {
             let mut token_value = 0;
-            globals
-                .buffers
-                .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+            globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
             if !scan_integer(globals.buffers, &mut token_value) {
                 ctx.write_logs("Illegal integer in integer literal");
                 return skip_token_print(ctx, globals.buffers, globals.pool);
             }
 
-            let str = &globals.buffers.buffer(BufTy::Base)
-                [globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2)];
-            let res =
-                globals
-                    .hash
-                    .lookup_str_insert::<hash::Integer>(globals.pool, str, token_value);
+            let str = &globals.buffers.buffer(BufTy::Base)[globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2)];
+            let res = globals.hash.lookup_str_insert::<hash::Integer>(globals.pool, str, token_value);
 
             let char = globals.buffers.at_offset(BufTy::Base, 2);
 
@@ -210,9 +188,7 @@ fn handle_char(
             single_function.push(WizOp::Int(res.loc));
         }
         b'"' => {
-            globals
-                .buffers
-                .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+            globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
             let init = globals.buffers.init(BufTy::Base);
             if !Scan::new().chars(b"\"").scan_till(globals.buffers, init) {
@@ -220,15 +196,10 @@ fn handle_char(
                 return skip_token_print(ctx, globals.buffers, globals.pool);
             }
 
-            let str = &globals.buffers.buffer(BufTy::Base)
-                [globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2)];
-            let res = globals
-                .hash
-                .lookup_str_insert::<hash::Text>(globals.pool, str, ());
+            let str = &globals.buffers.buffer(BufTy::Base)[globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2)];
+            let res = globals.hash.lookup_str_insert::<hash::Text>(globals.pool, str, ());
 
-            globals
-                .buffers
-                .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+            globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
             let char = globals.buffers.at_offset(BufTy::Base, 2);
 
@@ -243,18 +214,12 @@ fn handle_char(
             single_function.push(WizOp::Text(res.loc));
         }
         b'\'' => {
-            globals
-                .buffers
-                .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+            globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
             let init = globals.buffers.init(BufTy::Base);
-            Scan::new()
-                .chars(b"}%")
-                .class(LexClass::Whitespace)
-                .scan_till(globals.buffers, init);
+            Scan::new().chars(b"}%").class(LexClass::Whitespace).scan_till(globals.buffers, init);
 
-            let range =
-                globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2);
+            let range = globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2);
             globals.buffers.buffer_mut(BufTy::Base)[range.clone()].make_ascii_lowercase();
 
             let str = &globals.buffers.buffer(BufTy::Base)[range];
@@ -273,17 +238,11 @@ fn handle_char(
             }
         }
         b'{' => {
-            globals
-                .buffers
-                .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+            globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
             let str = format!("'{}", ctx.impl_fn_num);
 
-            let res = globals.hash.lookup_str_insert::<BstFn>(
-                globals.pool,
-                str.as_bytes(),
-                BstFn::Wizard(0),
-            );
+            let res = globals.hash.lookup_str_insert::<BstFn>(globals.pool, str.as_bytes(), BstFn::Wizard(0));
 
             if res.exists {
                 ctx.write_logs("Already encountered implicit function");
@@ -298,13 +257,9 @@ fn handle_char(
         }
         _ => {
             let init = globals.buffers.init(BufTy::Base);
-            Scan::new()
-                .chars(b"}%")
-                .class(LexClass::Whitespace)
-                .scan_till(globals.buffers, init);
+            Scan::new().chars(b"}%").class(LexClass::Whitespace).scan_till(globals.buffers, init);
 
-            let range =
-                globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2);
+            let range = globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2);
 
             globals.buffers.buffer_mut(BufTy::Base)[range.clone()].make_ascii_lowercase();
 
@@ -328,10 +283,7 @@ fn handle_char(
 }
 
 pub(crate) fn scan_fn_def(
-    ctx: &mut Bibtex<'_, '_>,
-    globals: &mut GlobalItems<'_>,
-    fn_hash_loc: HashPointer<BstFn>,
-    wiz_loc: HashPointer<BstFn>,
+    ctx: &mut Bibtex<'_, '_>, globals: &mut GlobalItems<'_>, fn_hash_loc: HashPointer<BstFn>, wiz_loc: HashPointer<BstFn>,
 ) -> Result<(), BibtexError> {
     let mut single_function = Vec::new();
 
@@ -357,32 +309,22 @@ pub(crate) fn scan_fn_def(
 
     single_function.push(WizOp::EndOfDef);
 
-    globals
-        .hash
-        .set_extra(fn_hash_loc, BstFn::Wizard(globals.other.wiz_func_len()));
+    globals.hash.set_extra(fn_hash_loc, BstFn::Wizard(globals.other.wiz_func_len()));
 
     globals.other.extend_wiz_data(single_function);
 
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
     Ok(())
 }
 
 fn scan_balanced_braces(
-    ctx: &mut Bibtex<'_, '_>,
-    buffers: &mut GlobalBuffer,
-    pool: &StringPool,
-    bibs: &mut BibData,
-    store_field: bool,
-    bib_command: Option<BibCommand>,
+    ctx: &mut Bibtex<'_, '_>, buffers: &mut GlobalBuffer, pool: &StringPool, bibs: &mut BibData, store_field: bool, bib_command: Option<BibCommand>,
     right_str_delim: ASCIICode,
 ) -> Result<bool, BibtexError> {
     buffers.set_offset(BufTy::Base, 2, buffers.offset(BufTy::Base, 2) + 1);
 
-    if (LexClass::of(buffers.at_offset(BufTy::Base, 2)) == LexClass::Whitespace
-        || buffers.offset(BufTy::Base, 2) == buffers.init(BufTy::Base))
+    if (LexClass::of(buffers.at_offset(BufTy::Base, 2)) == LexClass::Whitespace || buffers.offset(BufTy::Base, 2) == buffers.init(BufTy::Base))
         && !compress_bib_white(ctx, buffers, pool, bibs, bib_command)?
     {
         return Ok(false);
@@ -430,16 +372,10 @@ fn scan_balanced_braces(
                         if buffers.offset(BufTy::Ex, 1) >= buffers.len() {
                             match c {
                                 b'}' | b'{' => {
-                                    ctx.write_log_file(&format!(
-                                        "Field filled up at '{}', reallocating.\n",
-                                        c as char
-                                    ));
+                                    ctx.write_log_file(&format!("Field filled up at '{}', reallocating.\n", c as char));
                                 }
                                 _ => {
-                                    ctx.write_log_file(&format!(
-                                        "Field filled up at {}, reallocating.\n",
-                                        buffers.offset(BufTy::Base, 2)
-                                    ));
+                                    ctx.write_log_file(&format!("Field filled up at {}, reallocating.\n", buffers.offset(BufTy::Base, 2)));
                                 }
                             }
 
@@ -464,15 +400,11 @@ fn scan_balanced_braces(
                     }
                 }
                 b'}' => {
-                    return bib_unbalanced_braces_print(ctx, buffers, pool, bibs, bib_command)
-                        .map(|_| false);
+                    return bib_unbalanced_braces_print(ctx, buffers, pool, bibs, bib_command).map(|_| false);
                 }
                 c => {
                     if buffers.offset(BufTy::Ex, 1) >= buffers.len() {
-                        ctx.write_log_file(&format!(
-                            "Field filled up at {}, reallocating.\n",
-                            buffers.offset(BufTy::Base, 2)
-                        ));
+                        ctx.write_log_file(&format!("Field filled up at {}, reallocating.\n", buffers.offset(BufTy::Base, 2)));
                         buffers.grow_all();
                     }
 
@@ -510,28 +442,19 @@ fn scan_balanced_braces(
                         buffers.set_offset(BufTy::Base, 2, buffers.offset(BufTy::Base, 2) + 1);
 
                         let init = buffers.init(BufTy::Base);
-                        if (c == b'{'
-                            || c == b'}'
-                            || !Scan::new().chars(b"{}").scan_till(buffers, init))
-                            && !eat_bib_white_space(ctx, buffers, bibs)
+                        if (c == b'{' || c == b'}' || !Scan::new().chars(b"{}").scan_till(buffers, init)) && !eat_bib_white_space(ctx, buffers, bibs)
                         {
-                            return eat_bib_print(ctx, buffers, pool, bibs, bib_command)
-                                .map(|_| false);
+                            return eat_bib_print(ctx, buffers, pool, bibs, bib_command).map(|_| false);
                         }
                     }
                 }
                 b'}' => {
-                    return bib_unbalanced_braces_print(ctx, buffers, pool, bibs, bib_command)
-                        .map(|_| false);
+                    return bib_unbalanced_braces_print(ctx, buffers, pool, bibs, bib_command).map(|_| false);
                 }
                 _ => {
                     buffers.set_offset(BufTy::Base, 2, buffers.offset(BufTy::Base, 2) + 1);
                     let init = buffers.init(BufTy::Base);
-                    if !Scan::new()
-                        .chars(&[right_str_delim, b'{', b'}'])
-                        .scan_till(buffers, init)
-                        && !eat_bib_white_space(ctx, buffers, bibs)
-                    {
+                    if !Scan::new().chars(&[right_str_delim, b'{', b'}']).scan_till(buffers, init) && !eat_bib_white_space(ctx, buffers, bibs) {
                         return eat_bib_print(ctx, buffers, pool, bibs, bib_command).map(|_| false);
                     }
                 }
@@ -544,54 +467,30 @@ fn scan_balanced_braces(
 }
 
 fn scan_a_field_token_and_eat_white(
-    ctx: &mut Bibtex<'_, '_>,
-    globals: &mut GlobalItems<'_>,
-    store_field: bool,
-    command: Option<BibCommand>,
-    cur_macro_loc: HashPointer<hash::Macro>,
+    ctx: &mut Bibtex<'_, '_>, globals: &mut GlobalItems<'_>, store_field: bool, command: Option<BibCommand>, cur_macro_loc: HashPointer<hash::Macro>,
     right_outer_delim: ASCIICode,
 ) -> Result<bool, BibtexError> {
     match globals.buffers.at_offset(BufTy::Base, 2) {
         b'{' => {
-            if !scan_balanced_braces(
-                ctx,
-                globals.buffers,
-                globals.pool,
-                globals.bibs,
-                store_field,
-                command,
-                b'}',
-            )? {
+            if !scan_balanced_braces(ctx, globals.buffers, globals.pool, globals.bibs, store_field, command, b'}')? {
                 return Ok(false);
             }
         }
         b'"' => {
-            if !scan_balanced_braces(
-                ctx,
-                globals.buffers,
-                globals.pool,
-                globals.bibs,
-                store_field,
-                command,
-                b'"',
-            )? {
+            if !scan_balanced_braces(ctx, globals.buffers, globals.pool, globals.bibs, store_field, command, b'"')? {
                 return Ok(false);
             }
         }
         b'0'..=b'9' => {
             let last = globals.buffers.init(BufTy::Base);
-            if !Scan::new()
-                .not_class(LexClass::Numeric)
-                .scan_till_nonempty(globals.buffers, last)
-            {
+            if !Scan::new().not_class(LexClass::Numeric).scan_till_nonempty(globals.buffers, last) {
                 ctx.write_logs("A digit disappeared");
                 print_confusion(ctx);
                 return Err(BibtexError::Fatal);
             }
 
             if store_field {
-                let range =
-                    globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2);
+                let range = globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2);
                 let len = range.end - range.start;
 
                 while len >= globals.buffers.len() {
@@ -603,27 +502,16 @@ fn scan_a_field_token_and_eat_white(
                     globals.buffers.grow_all();
                 }
 
-                globals.buffers.copy_within(
-                    BufTy::Base,
-                    BufTy::Ex,
-                    range.start,
-                    globals.buffers.offset(BufTy::Ex, 1),
-                    len,
-                );
+                globals
+                    .buffers
+                    .copy_within(BufTy::Base, BufTy::Ex, range.start, globals.buffers.offset(BufTy::Ex, 1), len);
 
-                globals.buffers.set_offset(
-                    BufTy::Ex,
-                    1,
-                    globals.buffers.offset(BufTy::Ex, 1) + len,
-                );
+                globals.buffers.set_offset(BufTy::Ex, 1, globals.buffers.offset(BufTy::Ex, 1) + len);
             }
         }
         _ => {
             let res = scan_identifier(globals.buffers, b',', right_outer_delim, b'#');
-            if !matches!(
-                res,
-                ScanRes::WhitespaceAdjacent | ScanRes::SpecifiedCharAdjacent
-            ) {
+            if !matches!(res, ScanRes::WhitespaceAdjacent | ScanRes::SpecifiedCharAdjacent) {
                 bib_id_print(ctx, globals.buffers, res)?;
                 ctx.write_logs("a field part");
                 bib_err_print(ctx, globals.buffers, globals.pool, globals.bibs, command)?;
@@ -631,8 +519,7 @@ fn scan_a_field_token_and_eat_white(
             }
 
             if store_field {
-                let range =
-                    globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2);
+                let range = globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2);
                 globals.buffers.buffer_mut(BufTy::Base)[range.clone()].make_ascii_lowercase();
                 let str = &globals.buffers.buffer(BufTy::Base)[range];
 
@@ -640,9 +527,7 @@ fn scan_a_field_token_and_eat_white(
 
                 let mut store_token = res;
                 // Second case should only be true if res is Some anyways
-                if command == Some(BibCommand::String)
-                    && res.is_some_and(|loc| loc == cur_macro_loc)
-                {
+                if command == Some(BibCommand::String) && res.is_some_and(|loc| loc == cur_macro_loc) {
                     store_token = None;
                     macro_warn_print(ctx, globals.buffers);
                     ctx.write_logs("used in its own definition\n");
@@ -660,25 +545,14 @@ fn scan_a_field_token_and_eat_white(
                     let &strnum = globals.hash.get(loc).extra();
                     let mut str = globals.pool.get_str(strnum);
 
-                    if globals.buffers.offset(BufTy::Ex, 1) == 0
-                        && !str.is_empty()
-                        && LexClass::of(str[0]) == LexClass::Whitespace
-                    {
+                    if globals.buffers.offset(BufTy::Ex, 1) == 0 && !str.is_empty() && LexClass::of(str[0]) == LexClass::Whitespace {
                         if globals.buffers.offset(BufTy::Ex, 1) >= globals.buffers.len() {
                             ctx.write_log_file("Field filled up at ' ', reallocating.\n");
                             globals.buffers.grow_all();
                         }
 
-                        globals.buffers.set_at(
-                            BufTy::Ex,
-                            globals.buffers.offset(BufTy::Ex, 1),
-                            b' ',
-                        );
-                        globals.buffers.set_offset(
-                            BufTy::Ex,
-                            1,
-                            globals.buffers.offset(BufTy::Ex, 1) + 1,
-                        );
+                        globals.buffers.set_at(BufTy::Ex, globals.buffers.offset(BufTy::Ex, 1), b' ');
+                        globals.buffers.set_offset(BufTy::Ex, 1, globals.buffers.offset(BufTy::Ex, 1) + 1);
 
                         while !str.is_empty() && LexClass::of(str[0]) == LexClass::Whitespace {
                             str = &str[1..];
@@ -698,27 +572,11 @@ fn scan_a_field_token_and_eat_white(
                         }
 
                         if LexClass::of(c) != LexClass::Whitespace {
-                            globals.buffers.set_at(
-                                BufTy::Ex,
-                                globals.buffers.offset(BufTy::Ex, 1),
-                                c,
-                            );
-                            globals.buffers.set_offset(
-                                BufTy::Ex,
-                                1,
-                                globals.buffers.offset(BufTy::Ex, 1) + 1,
-                            );
+                            globals.buffers.set_at(BufTy::Ex, globals.buffers.offset(BufTy::Ex, 1), c);
+                            globals.buffers.set_offset(BufTy::Ex, 1, globals.buffers.offset(BufTy::Ex, 1) + 1);
                         } else if c != b' ' {
-                            globals.buffers.set_at(
-                                BufTy::Ex,
-                                globals.buffers.offset(BufTy::Ex, 1),
-                                b' ',
-                            );
-                            globals.buffers.set_offset(
-                                BufTy::Ex,
-                                1,
-                                globals.buffers.offset(BufTy::Ex, 1) + 1,
-                            );
+                            globals.buffers.set_at(BufTy::Ex, globals.buffers.offset(BufTy::Ex, 1), b' ');
+                            globals.buffers.set_offset(BufTy::Ex, 1, globals.buffers.offset(BufTy::Ex, 1) + 1);
                         }
                     }
                 }
@@ -727,8 +585,7 @@ fn scan_a_field_token_and_eat_white(
     }
 
     if !eat_bib_white_space(ctx, globals.buffers, globals.bibs) {
-        return eat_bib_print(ctx, globals.buffers, globals.pool, globals.bibs, command)
-            .map(|_| false);
+        return eat_bib_print(ctx, globals.buffers, globals.pool, globals.bibs, command).map(|_| false);
     }
     Ok(true)
 }
@@ -736,43 +593,21 @@ fn scan_a_field_token_and_eat_white(
 // TODO: Refactor this to bundle up arguments into structs as relevant
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn scan_and_store_the_field_value_and_eat_white(
-    ctx: &mut Bibtex<'_, '_>,
-    globals: &mut GlobalItems<'_>,
-    store_field: bool,
-    command: Option<BibCommand>,
-    cite_out: Option<&mut HashPointer<hash::LcCite>>,
-    cur_macro_loc: HashPointer<hash::Macro>,
-    right_outer_delim: ASCIICode,
+    ctx: &mut Bibtex<'_, '_>, globals: &mut GlobalItems<'_>, store_field: bool, command: Option<BibCommand>,
+    cite_out: Option<&mut HashPointer<hash::LcCite>>, cur_macro_loc: HashPointer<hash::Macro>, right_outer_delim: ASCIICode,
     field_name_loc: HashPointer<BstFn>,
 ) -> Result<bool, BibtexError> {
     // Consume tokens/strings separated by #
     globals.buffers.set_offset(BufTy::Ex, 1, 0);
-    if !scan_a_field_token_and_eat_white(
-        ctx,
-        globals,
-        store_field,
-        command,
-        cur_macro_loc,
-        right_outer_delim,
-    )? {
+    if !scan_a_field_token_and_eat_white(ctx, globals, store_field, command, cur_macro_loc, right_outer_delim)? {
         return Ok(false);
     }
     while globals.buffers.at_offset(BufTy::Base, 2) == b'#' {
-        globals
-            .buffers
-            .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+        globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
         if !eat_bib_white_space(ctx, globals.buffers, globals.bibs) {
-            return eat_bib_print(ctx, globals.buffers, globals.pool, globals.bibs, command)
-                .map(|_| false);
+            return eat_bib_print(ctx, globals.buffers, globals.pool, globals.bibs, command).map(|_| false);
         }
-        if !scan_a_field_token_and_eat_white(
-            ctx,
-            globals,
-            store_field,
-            command,
-            cur_macro_loc,
-            right_outer_delim,
-        )? {
+        if !scan_a_field_token_and_eat_white(ctx, globals, store_field, command, cur_macro_loc, right_outer_delim)? {
             return Ok(false);
         }
     }
@@ -780,39 +615,26 @@ pub(crate) fn scan_and_store_the_field_value_and_eat_white(
     if store_field {
         if command.is_none()
             && globals.buffers.offset(BufTy::Ex, 1) > 0
-            && globals
-                .buffers
-                .at(BufTy::Ex, globals.buffers.offset(BufTy::Ex, 1) - 1)
-                == b' '
+            && globals.buffers.at(BufTy::Ex, globals.buffers.offset(BufTy::Ex, 1) - 1) == b' '
         {
-            globals
-                .buffers
-                .set_offset(BufTy::Ex, 1, globals.buffers.offset(BufTy::Ex, 1) - 1);
+            globals.buffers.set_offset(BufTy::Ex, 1, globals.buffers.offset(BufTy::Ex, 1) - 1);
         }
 
-        let ex_buf_xptr = if command.is_none()
-            && globals.buffers.at(BufTy::Ex, 0) == b' '
-            && globals.buffers.offset(BufTy::Ex, 1) > 0
-        {
+        let ex_buf_xptr = if command.is_none() && globals.buffers.at(BufTy::Ex, 0) == b' ' && globals.buffers.offset(BufTy::Ex, 1) > 0 {
             1
         } else {
             0
         };
 
-        let str =
-            &globals.buffers.buffer(BufTy::Ex)[ex_buf_xptr..globals.buffers.offset(BufTy::Ex, 1)];
-        let res = globals
-            .hash
-            .lookup_str_insert::<hash::Text>(globals.pool, str, ());
+        let str = &globals.buffers.buffer(BufTy::Ex)[ex_buf_xptr..globals.buffers.offset(BufTy::Ex, 1)];
+        let res = globals.hash.lookup_str_insert::<hash::Text>(globals.pool, str, ());
 
         if let Some(command) = command {
             match command {
                 // TODO: Should this be `unreachable!`? This way will cover errors, but also shouldn't misbehave
                 BibCommand::Comment => (),
                 BibCommand::Preamble => globals.bibs.add_preamble(globals.hash.get(res.loc).text()),
-                BibCommand::String => globals
-                    .hash
-                    .set_extra(cur_macro_loc, globals.hash.get(res.loc).text()),
+                BibCommand::String => globals.hash.set_extra(cur_macro_loc, globals.hash.get(res.loc).text()),
             }
         } else {
             let &BstFn::Field(field) = globals.hash.get(field_name_loc).extra() else {
@@ -829,36 +651,22 @@ pub(crate) fn scan_and_store_the_field_value_and_eat_white(
             /* missing */
             if !globals.other.field(field_ptr).is_invalid() {
                 ctx.write_logs("Warning--I'm ignoring ");
-                print_a_pool_str(
-                    ctx,
-                    globals.cites.get_cite(globals.cites.entry_ptr()),
-                    globals.pool,
-                )?;
+                print_a_pool_str(ctx, globals.cites.get_cite(globals.cites.entry_ptr()), globals.pool)?;
                 ctx.write_logs("'s extra \"");
                 print_a_pool_str(ctx, globals.hash.get(field_name_loc).text(), globals.pool)?;
                 ctx.write_logs("\" field\n");
                 bib_warn_print(ctx, globals.pool, globals.bibs)?;
             } else {
-                globals
-                    .other
-                    .set_field(field_ptr, globals.hash.get(res.loc).text());
+                globals.other.set_field(field_ptr, globals.hash.get(res.loc).text());
                 if field == globals.other.crossref_num() && !ctx.all_entries {
                     let end = globals.buffers.offset(BufTy::Ex, 1);
                     // Move Ex to Out, at the same position
-                    globals.buffers.copy_within(
-                        BufTy::Ex,
-                        BufTy::Out,
-                        ex_buf_xptr,
-                        ex_buf_xptr,
-                        end - ex_buf_xptr,
-                    );
+                    globals
+                        .buffers
+                        .copy_within(BufTy::Ex, BufTy::Out, ex_buf_xptr, ex_buf_xptr, end - ex_buf_xptr);
                     globals.buffers.buffer_mut(BufTy::Out)[ex_buf_xptr..end].make_ascii_lowercase();
                     let str = &globals.buffers.buffer(BufTy::Out)[ex_buf_xptr..end];
-                    let lc_res = globals.hash.lookup_str_insert::<hash::LcCite>(
-                        globals.pool,
-                        str,
-                        HashPointer::default(),
-                    );
+                    let lc_res = globals.hash.lookup_str_insert::<hash::LcCite>(globals.pool, str, HashPointer::default());
                     if let Some(cite_out) = cite_out {
                         *cite_out = lc_res.loc;
                     }
@@ -867,35 +675,20 @@ pub(crate) fn scan_and_store_the_field_value_and_eat_white(
                         let &cite = globals.hash.get(cite_loc).extra();
 
                         if cite >= globals.cites.old_num_cites() {
-                            globals
-                                .cites
-                                .set_info(cite, StrNumber::from_raw_dangerous(cite + 1));
+                            globals.cites.set_info(cite, StrNumber::from_raw_dangerous(cite + 1));
                         }
                     } else {
-                        let str = &globals.buffers.buffer(BufTy::Ex)
-                            [ex_buf_xptr..globals.buffers.offset(BufTy::Ex, 1)];
-                        let c_res =
-                            globals
-                                .hash
-                                .lookup_str_insert::<hash::Cite>(globals.pool, str, 0);
+                        let str = &globals.buffers.buffer(BufTy::Ex)[ex_buf_xptr..globals.buffers.offset(BufTy::Ex, 1)];
+                        let c_res = globals.hash.lookup_str_insert::<hash::Cite>(globals.pool, str, 0);
                         if c_res.exists {
                             hash_cite_confusion(ctx);
                             return Err(BibtexError::Fatal);
                         }
-                        let new_ptr = add_database_cite(
-                            globals.cites,
-                            globals.other,
-                            globals.hash,
-                            globals.cites.ptr(),
-                            c_res.loc,
-                            lc_res.loc,
-                        );
+                        let new_ptr = add_database_cite(globals.cites, globals.other, globals.hash, globals.cites.ptr(), c_res.loc, lc_res.loc);
 
                         let &cite = globals.hash.get(c_res.loc).extra();
                         globals.cites.set_ptr(new_ptr);
-                        globals
-                            .cites
-                            .set_info(cite, StrNumber::from_raw_dangerous(1));
+                        globals.cites.set_info(cite, StrNumber::from_raw_dangerous(1));
                     }
                 }
             }
@@ -906,11 +699,7 @@ pub(crate) fn scan_and_store_the_field_value_and_eat_white(
 }
 
 pub(crate) fn decr_brace_level(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &StringPool,
-    cites: &CiteInfo,
-    pop_lit_var: StrNumber,
-    brace_level: &mut i32,
+    ctx: &mut ExecCtx<'_, '_, '_>, pool: &StringPool, cites: &CiteInfo, pop_lit_var: StrNumber, brace_level: &mut i32,
 ) -> Result<(), BibtexError> {
     if *brace_level == 0 {
         braces_unbalanced_complaint(ctx, pool, cites, pop_lit_var)?;
@@ -922,11 +711,7 @@ pub(crate) fn decr_brace_level(
 }
 
 pub(crate) fn check_brace_level(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &StringPool,
-    cites: &CiteInfo,
-    pop_lit_var: StrNumber,
-    brace_level: i32,
+    ctx: &mut ExecCtx<'_, '_, '_>, pool: &StringPool, cites: &CiteInfo, pop_lit_var: StrNumber, brace_level: i32,
 ) -> Result<(), BibtexError> {
     if brace_level > 0 {
         braces_unbalanced_complaint(ctx, pool, cites, pop_lit_var)?;
@@ -935,12 +720,7 @@ pub(crate) fn check_brace_level(
 }
 
 pub(crate) fn name_scan_for_and(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    pool: &StringPool,
-    buffers: &mut GlobalBuffer,
-    cites: &CiteInfo,
-    pop_lit_var: StrNumber,
-    brace_level: &mut i32,
+    ctx: &mut ExecCtx<'_, '_, '_>, pool: &StringPool, buffers: &mut GlobalBuffer, cites: &CiteInfo, pop_lit_var: StrNumber, brace_level: &mut i32,
 ) -> Result<(), BibtexError> {
     let mut preceding_white = false;
     let mut and_found = false;
@@ -952,11 +732,8 @@ pub(crate) fn name_scan_for_and(
                 if preceding_white
                     && buffers.offset(BufTy::Ex, 1) <= buffers.init(BufTy::Ex).saturating_sub(3)
                     && buffers.at_offset(BufTy::Ex, 1).eq_ignore_ascii_case(&b'n')
-                    && buffers
-                        .at(BufTy::Ex, buffers.offset(BufTy::Ex, 1) + 1)
-                        .eq_ignore_ascii_case(&b'd')
-                    && LexClass::of(buffers.at(BufTy::Ex, buffers.offset(BufTy::Ex, 1) + 2))
-                        == LexClass::Whitespace
+                    && buffers.at(BufTy::Ex, buffers.offset(BufTy::Ex, 1) + 1).eq_ignore_ascii_case(&b'd')
+                    && LexClass::of(buffers.at(BufTy::Ex, buffers.offset(BufTy::Ex, 1) + 2)) == LexClass::Whitespace
                 {
                     buffers.set_offset(BufTy::Ex, 1, buffers.offset(BufTy::Ex, 1) + 2);
                     and_found = true;
@@ -982,8 +759,7 @@ pub(crate) fn name_scan_for_and(
                 preceding_white = false;
             }
             _ => {
-                preceding_white =
-                    LexClass::of(buffers.at_offset(BufTy::Ex, 1)) == LexClass::Whitespace;
+                preceding_white = LexClass::of(buffers.at_offset(BufTy::Ex, 1)) == LexClass::Whitespace;
                 buffers.set_offset(BufTy::Ex, 1, buffers.offset(BufTy::Ex, 1) + 1);
             }
         }
@@ -993,11 +769,7 @@ pub(crate) fn name_scan_for_and(
 }
 
 pub(crate) fn von_token_found(
-    buffers: &GlobalBuffer,
-    hash: &HashData,
-    pool: &StringPool,
-    name_bf_ptr: &mut BufPointer,
-    name_bf_xptr: BufPointer,
+    buffers: &GlobalBuffer, hash: &HashData, pool: &StringPool, name_bf_ptr: &mut BufPointer, name_bf_xptr: BufPointer,
 ) -> bool {
     while *name_bf_ptr < name_bf_xptr {
         let char = buffers.at(BufTy::Sv, *name_bf_ptr);
@@ -1010,22 +782,14 @@ pub(crate) fn von_token_found(
                 if *name_bf_ptr + 2 < name_bf_xptr && buffers.at(BufTy::Sv, *name_bf_ptr) == b'\\' {
                     *name_bf_ptr += 1;
                     let name_bf_yptr = *name_bf_ptr;
-                    while *name_bf_ptr < name_bf_xptr
-                        && LexClass::of(buffers.at(BufTy::Sv, *name_bf_ptr)) == LexClass::Alpha
-                    {
+                    while *name_bf_ptr < name_bf_xptr && LexClass::of(buffers.at(BufTy::Sv, *name_bf_ptr)) == LexClass::Alpha {
                         *name_bf_ptr += 1;
                     }
                     let str = &buffers.buffer(BufTy::Sv)[name_bf_yptr..*name_bf_ptr];
-                    let seq = hash
-                        .lookup_str::<ControlSeq>(pool, str)
-                        .map(|loc| *hash.get(loc).extra());
+                    let seq = hash.lookup_str::<ControlSeq>(pool, str).map(|loc| *hash.get(loc).extra());
                     if let Some(seq) = seq {
                         return match seq {
-                            ControlSeq::UpperOE
-                            | ControlSeq::UpperAE
-                            | ControlSeq::UpperAA
-                            | ControlSeq::UpperO
-                            | ControlSeq::UpperL => false,
+                            ControlSeq::UpperOE | ControlSeq::UpperAE | ControlSeq::UpperAA | ControlSeq::UpperO | ControlSeq::UpperL => false,
                             ControlSeq::LowerI
                             | ControlSeq::LowerJ
                             | ControlSeq::LowerOE
@@ -1071,14 +835,8 @@ pub(crate) fn von_token_found(
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn von_name_ends_and_last_name_starts_stuff(
-    buffers: &GlobalBuffer,
-    hash: &HashData,
-    pool: &StringPool,
-    last_end: BufPointer,
-    von_start: BufPointer,
-    von_end: &mut BufPointer,
-    name_bf_ptr: &mut BufPointer,
-    name_bf_xptr: &mut BufPointer,
+    buffers: &GlobalBuffer, hash: &HashData, pool: &StringPool, last_end: BufPointer, von_start: BufPointer, von_end: &mut BufPointer,
+    name_bf_ptr: &mut BufPointer, name_bf_xptr: &mut BufPointer,
 ) {
     *von_end = last_end - 1;
     while *von_end > von_start {
@@ -1091,12 +849,7 @@ pub(crate) fn von_name_ends_and_last_name_starts_stuff(
     }
 }
 
-pub(crate) fn enough_text_chars(
-    buffers: &GlobalBuffer,
-    enough_chars: BufPointer,
-    buf_start: BufPointer,
-    brace_level: &mut i32,
-) -> bool {
+pub(crate) fn enough_text_chars(buffers: &GlobalBuffer, enough_chars: BufPointer, buf_start: BufPointer, brace_level: &mut i32) -> bool {
     let mut num_text_chars = 0;
     let mut buf_cur = buf_start;
 
@@ -1104,10 +857,7 @@ pub(crate) fn enough_text_chars(
         buf_cur += 1;
         if buffers.at(BufTy::Ex, buf_cur - 1) == b'{' {
             *brace_level += 1;
-            if *brace_level == 1
-                && buf_cur < buffers.offset(BufTy::Ex, 1)
-                && buffers.at(BufTy::Ex, buf_cur) == b'\\'
-            {
+            if *brace_level == 1 && buf_cur < buffers.offset(BufTy::Ex, 1) && buffers.at(BufTy::Ex, buf_cur) == b'\\' {
                 buf_cur += 1;
                 while buf_cur < buffers.offset(BufTy::Ex, 1) && *brace_level > 0 {
                     match buffers.at(BufTy::Ex, buf_cur) {

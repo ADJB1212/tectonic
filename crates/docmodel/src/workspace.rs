@@ -119,9 +119,7 @@ pub struct WorkspaceCreator {
 impl WorkspaceCreator {
     /// Initialize a `WorkspaceCreator` variable.
     pub fn new<P: Into<PathBuf>>(root_dir: P) -> Self {
-        WorkspaceCreator {
-            root_dir: root_dir.into(),
-        }
+        WorkspaceCreator { root_dir: root_dir.into() }
     }
 
     /// Consume this object and attempt to create the new workspace.

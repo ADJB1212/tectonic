@@ -17,32 +17,13 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
-    fn ttstub_input_seek(
-        handle: rust_input_handle_t,
-        offset: ssize_t,
-        whence: ::core::ffi::c_int,
-    ) -> size_t;
-    fn ttstub_input_read(
-        handle: rust_input_handle_t,
-        data: *mut ::core::ffi::c_char,
-        len: size_t,
-    ) -> ssize_t;
+    fn ttstub_input_seek(handle: rust_input_handle_t, offset: ssize_t, whence: ::core::ffi::c_int) -> size_t;
+    fn ttstub_input_read(handle: rust_input_handle_t, data: *mut ::core::ffi::c_char, len: size_t) -> ssize_t;
     #[link_name = "__pdf_impl_tt_get_unsigned_pair"]
     fn tt_get_unsigned_pair(handle: rust_input_handle_t) -> ::core::ffi::c_ushort;
     #[link_name = "__pdf_impl_tt_get_unsigned_quad"]
@@ -54,19 +35,11 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_new_name"]
     fn pdf_new_name(name: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_new_stream"]
     fn pdf_new_stream(flags: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_stream"]
-    fn pdf_add_stream(
-        stream: *mut pdf_obj,
-        stream_data_ptr: *const ::core::ffi::c_void,
-        stream_data_len: ::core::ffi::c_int,
-    );
+    fn pdf_add_stream(stream: *mut pdf_obj, stream_data_ptr: *const ::core::ffi::c_void, stream_data_len: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_stream_dict"]
     fn pdf_stream_dict(stream: *mut pdf_obj) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_new"]
@@ -123,19 +96,13 @@ unsafe extern "C-unwind" fn mfree(mut ptr: *mut ::core::ffi::c_void) -> *mut ::c
     free(ptr);
     return NULL;
 }
-pub const STREAM_COMPRESS: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
-pub const SFNT_TABLE_REQUIRED: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
-pub const SFNT_TYPE_TRUETYPE: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
-pub const SFNT_TYPE_OPENTYPE: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
-pub const SFNT_TYPE_POSTSCRIPT: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
+pub const STREAM_COMPRESS: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const SFNT_TABLE_REQUIRED: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const SFNT_TYPE_TRUETYPE: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const SFNT_TYPE_OPENTYPE: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
+pub const SFNT_TYPE_POSTSCRIPT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
 pub const SFNT_TYPE_TTC: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 4 as ::core::ffi::c_int;
-pub const SFNT_TYPE_DFONT: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 8 as ::core::ffi::c_int;
+pub const SFNT_TYPE_DFONT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 8 as ::core::ffi::c_int;
 pub const SFNT_TRUETYPE: ::core::ffi::c_ulong = 0x10000 as ::core::ffi::c_ulong;
 pub const SFNT_MAC_TRUE: ::core::ffi::c_ulong = 0x74727565 as ::core::ffi::c_ulong;
 pub const SFNT_OPENTYPE: ::core::ffi::c_ulong = 0x10000 as ::core::ffi::c_ulong;
@@ -150,14 +117,10 @@ pub unsafe extern "C-unwind" fn sfnt_open(mut handle: rust_input_handle_t) -> *m
     } else {
     };
     crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-    sfont = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<sfnt>() as usize) as uint32_t)
-        as *mut sfnt;
+    sfont = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<sfnt>() as usize) as uint32_t) as *mut sfnt;
     (*sfont).handle = handle;
     type_0 = tt_get_unsigned_quad((*sfont).handle);
-    if type_0 as ::core::ffi::c_ulong == SFNT_TRUETYPE
-        || type_0 as ::core::ffi::c_ulong == SFNT_MAC_TRUE
-    {
+    if type_0 as ::core::ffi::c_ulong == SFNT_TRUETYPE || type_0 as ::core::ffi::c_ulong == SFNT_MAC_TRUE {
         (*sfont).type_0 = SFNT_TYPE_TRUETYPE;
     } else if type_0 as ::core::ffi::c_ulong == SFNT_OPENTYPE {
         (*sfont).type_0 = SFNT_TYPE_OPENTYPE;
@@ -172,10 +135,7 @@ pub unsafe extern "C-unwind" fn sfnt_open(mut handle: rust_input_handle_t) -> *m
     return sfont;
 }
 #[unsafe(export_name = "__pdf_impl_dfont_open")]
-pub unsafe extern "C-unwind" fn dfont_open(
-    mut handle: rust_input_handle_t,
-    mut index: ::core::ffi::c_int,
-) -> *mut sfnt {
+pub unsafe extern "C-unwind" fn dfont_open(mut handle: rust_input_handle_t, mut index: ::core::ffi::c_int) -> *mut sfnt {
     let mut sfont: *mut sfnt = ::core::ptr::null_mut::<sfnt>();
     let mut rdata_pos: SFNT_ULONG = 0;
     let mut map_pos: SFNT_ULONG = 0;
@@ -191,17 +151,11 @@ pub unsafe extern "C-unwind" fn dfont_open(
     } else {
     };
     crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-    sfont = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<sfnt>() as usize) as uint32_t)
-        as *mut sfnt;
+    sfont = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<sfnt>() as usize) as uint32_t) as *mut sfnt;
     (*sfont).handle = handle;
     rdata_pos = tt_get_unsigned_quad((*sfont).handle);
     map_pos = tt_get_unsigned_quad((*sfont).handle);
-    crate::backend::runtime::input_seek(
-        (*sfont).handle,
-        map_pos.wrapping_add(0x18 as SFNT_ULONG) as ssize_t,
-        SEEK_SET,
-    );
+    crate::backend::runtime::input_seek((*sfont).handle, map_pos.wrapping_add(0x18 as SFNT_ULONG) as ssize_t, SEEK_SET);
     tags_pos = map_pos.wrapping_add(tt_get_unsigned_pair((*sfont).handle) as SFNT_ULONG);
     crate::backend::runtime::input_seek((*sfont).handle, tags_pos as ssize_t, SEEK_SET);
     tags_num = tt_get_unsigned_pair((*sfont).handle);
@@ -267,11 +221,7 @@ pub unsafe extern "C-unwind" fn sfnt_close(mut sfont: *mut sfnt) {
     }
 }
 #[unsafe(export_name = "__pdf_impl_put_big_endian")]
-pub unsafe extern "C-unwind" fn put_big_endian(
-    mut s: *mut ::core::ffi::c_void,
-    mut q: SFNT_LONG,
-    mut n: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn put_big_endian(mut s: *mut ::core::ffi::c_void, mut q: SFNT_LONG, mut n: ::core::ffi::c_int) -> ::core::ffi::c_int {
     if n <= 0 {
         return n;
     }
@@ -302,10 +252,7 @@ extern "C-unwind" fn log2floor(mut n: ::core::ffi::c_uint) -> ::core::ffi::c_uin
     }
     return val;
 }
-unsafe extern "C-unwind" fn sfnt_calc_checksum(
-    mut data: *mut ::core::ffi::c_void,
-    mut length: SFNT_ULONG,
-) -> SFNT_ULONG {
+unsafe extern "C-unwind" fn sfnt_calc_checksum(mut data: *mut ::core::ffi::c_void, mut length: SFNT_ULONG) -> SFNT_ULONG {
     // SFNT table storage remains owned by the translated document state.
     let bytes = if length == 0 {
         &[]
@@ -314,10 +261,7 @@ unsafe extern "C-unwind" fn sfnt_calc_checksum(
     };
     crate::sfnt::checksum(bytes)
 }
-unsafe extern "C-unwind" fn find_table_index(
-    mut td: *mut sfnt_table_directory,
-    mut tag: *const ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn find_table_index(mut td: *mut sfnt_table_directory, mut tag: *const ::core::ffi::c_char) -> ::core::ffi::c_int {
     let mut idx: ::core::ffi::c_int = 0;
     if td.is_null() {
         return -(1 as ::core::ffi::c_int);
@@ -325,8 +269,7 @@ unsafe extern "C-unwind" fn find_table_index(
     idx = 0 as ::core::ffi::c_int;
     while idx < (*td).num_tables as ::core::ffi::c_int {
         if memcmp(
-            &raw mut (*(*td).tables.offset(idx as isize)).tag as *mut ::core::ffi::c_char
-                as *const ::core::ffi::c_void,
+            &raw mut (*(*td).tables.offset(idx as isize)).tag as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
             tag as *const ::core::ffi::c_void,
             4 as size_t,
         ) == 0
@@ -339,10 +282,7 @@ unsafe extern "C-unwind" fn find_table_index(
 }
 #[unsafe(export_name = "__pdf_impl_sfnt_set_table")]
 pub unsafe extern "C-unwind" fn sfnt_set_table(
-    mut sfont: *mut sfnt,
-    mut tag: *const ::core::ffi::c_char,
-    mut data: *mut ::core::ffi::c_void,
-    mut length: SFNT_ULONG,
+    mut sfont: *mut sfnt, mut tag: *const ::core::ffi::c_char, mut data: *mut ::core::ffi::c_void, mut length: SFNT_ULONG,
 ) {
     let mut td: *mut sfnt_table_directory = ::core::ptr::null_mut::<sfnt_table_directory>();
     let mut idx: ::core::ffi::c_int = 0;
@@ -357,13 +297,10 @@ pub unsafe extern "C-unwind" fn sfnt_set_table(
         (*td).num_tables = (*td).num_tables.wrapping_add(1);
         (*td).tables = renew(
             (*td).tables as *mut ::core::ffi::c_void,
-            ((*td).num_tables as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<sfnt_table>() as usize)
-                as uint32_t,
+            ((*td).num_tables as uint32_t as usize).wrapping_mul(::core::mem::size_of::<sfnt_table>() as usize) as uint32_t,
         ) as *mut sfnt_table;
         memcpy(
-            &raw mut (*(*td).tables.offset(idx as isize)).tag as *mut ::core::ffi::c_char
-                as *mut ::core::ffi::c_void,
+            &raw mut (*(*td).tables.offset(idx as isize)).tag as *mut ::core::ffi::c_char as *mut ::core::ffi::c_void,
             tag as *const ::core::ffi::c_void,
             4 as size_t,
         );
@@ -375,10 +312,7 @@ pub unsafe extern "C-unwind" fn sfnt_set_table(
     *fresh1 = data as *mut ::core::ffi::c_char;
 }
 #[unsafe(export_name = "__pdf_impl_sfnt_find_table_len")]
-pub unsafe extern "C-unwind" fn sfnt_find_table_len(
-    mut sfont: *mut sfnt,
-    mut tag: *const ::core::ffi::c_char,
-) -> SFNT_ULONG {
+pub unsafe extern "C-unwind" fn sfnt_find_table_len(mut sfont: *mut sfnt, mut tag: *const ::core::ffi::c_char) -> SFNT_ULONG {
     let mut length: SFNT_ULONG = 0;
     let mut td: *mut sfnt_table_directory = ::core::ptr::null_mut::<sfnt_table_directory>();
     let mut idx: ::core::ffi::c_int = 0;
@@ -396,10 +330,7 @@ pub unsafe extern "C-unwind" fn sfnt_find_table_len(
     return length;
 }
 #[unsafe(export_name = "__pdf_impl_sfnt_find_table_pos")]
-pub unsafe extern "C-unwind" fn sfnt_find_table_pos(
-    mut sfont: *mut sfnt,
-    mut tag: *const ::core::ffi::c_char,
-) -> SFNT_ULONG {
+pub unsafe extern "C-unwind" fn sfnt_find_table_pos(mut sfont: *mut sfnt, mut tag: *const ::core::ffi::c_char) -> SFNT_ULONG {
     let mut offset: SFNT_ULONG = 0;
     let mut td: *mut sfnt_table_directory = ::core::ptr::null_mut::<sfnt_table_directory>();
     let mut idx: ::core::ffi::c_int = 0;
@@ -417,10 +348,7 @@ pub unsafe extern "C-unwind" fn sfnt_find_table_pos(
     return offset;
 }
 #[unsafe(export_name = "__pdf_impl_sfnt_locate_table")]
-pub unsafe extern "C-unwind" fn sfnt_locate_table(
-    mut sfont: *mut sfnt,
-    mut tag: *const ::core::ffi::c_char,
-) -> SFNT_ULONG {
+pub unsafe extern "C-unwind" fn sfnt_locate_table(mut sfont: *mut sfnt, mut tag: *const ::core::ffi::c_char) -> SFNT_ULONG {
     let mut offset: SFNT_ULONG = 0;
     if !(!sfont.is_null() && !tag.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!("assertion failed: sfont && tag");
@@ -434,10 +362,7 @@ pub unsafe extern "C-unwind" fn sfnt_locate_table(
     return offset;
 }
 #[unsafe(export_name = "__pdf_impl_sfnt_read_table_directory")]
-pub unsafe extern "C-unwind" fn sfnt_read_table_directory(
-    mut sfont: *mut sfnt,
-    mut offset: SFNT_ULONG,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn sfnt_read_table_directory(mut sfont: *mut sfnt, mut offset: SFNT_ULONG) -> ::core::ffi::c_int {
     let mut td: *mut sfnt_table_directory = ::core::ptr::null_mut::<sfnt_table_directory>();
     let mut i: ::core::ffi::c_uint = 0;
     if sfont.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -448,9 +373,8 @@ pub unsafe extern "C-unwind" fn sfnt_read_table_directory(
         release_directory((*sfont).directory);
         (*sfont).directory = core::ptr::null_mut();
     }
-    td = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<sfnt_table_directory>() as usize)
-        as uint32_t) as *mut sfnt_table_directory;
+    td = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<sfnt_table_directory>() as usize) as uint32_t)
+        as *mut sfnt_table_directory;
     core::ptr::write_bytes(td, 0, 1);
     (*sfont).directory = td;
     if ((*sfont).handle == 0) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
@@ -458,31 +382,21 @@ pub unsafe extern "C-unwind" fn sfnt_read_table_directory(
     } else {
     };
     crate::backend::runtime::input_seek((*sfont).handle, offset as ssize_t, SEEK_SET);
-    let mut input = crate::compat::input::DirectoryInput {
-        handle: (*sfont).handle,
-    };
-    let header = crate::backend::runtime::legacy_result(crate::sfnt::DirectoryHeader::read(
-        &mut input,
-        u64::from(offset),
-    ));
+    let mut input = crate::compat::input::DirectoryInput { handle: (*sfont).handle };
+    let header = crate::backend::runtime::legacy_result(crate::sfnt::DirectoryHeader::read(&mut input, u64::from(offset)));
     (*td).version = header.version;
     (*td).num_tables = header.num_tables;
     (*td).search_range = header.search_range;
     (*td).entry_selector = header.entry_selector;
     (*td).range_shift = header.range_shift;
-    (*td).flags = new(((*td).num_tables as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
-    (*td).tables = new(((*td).num_tables as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<sfnt_table>() as usize)
-        as uint32_t) as *mut sfnt_table;
+    (*td).flags = new(((*td).num_tables as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+        as *mut ::core::ffi::c_char;
+    (*td).tables =
+        new(((*td).num_tables as uint32_t as usize).wrapping_mul(::core::mem::size_of::<sfnt_table>() as usize) as uint32_t) as *mut sfnt_table;
     core::ptr::write_bytes((*td).tables, 0, usize::from((*td).num_tables));
     i = 0 as ::core::ffi::c_uint;
     while i < (*td).num_tables as ::core::ffi::c_uint {
-        let record = crate::backend::runtime::legacy_result(crate::sfnt::TableRecord::read(
-            &mut input,
-            u64::from(offset) + 12 + u64::from(i) * 16,
-        ));
+        let record = crate::backend::runtime::legacy_result(crate::sfnt::TableRecord::read(&mut input, u64::from(offset) + 12 + u64::from(i) * 16));
         (*(*td).tables.offset(i as isize)).tag = record.tag.map(|byte| byte as ::core::ffi::c_char);
         (*(*td).tables.offset(i as isize)).check_sum = record.checksum;
         (*(*td).tables.offset(i as isize)).offset = record.offset.wrapping_add((*sfont).offset);
@@ -497,16 +411,11 @@ pub unsafe extern "C-unwind" fn sfnt_read_table_directory(
 }
 #[unsafe(export_name = "__pdf_impl_sfnt_require_table")]
 pub unsafe extern "C-unwind" fn sfnt_require_table(
-    mut sfont: *mut sfnt,
-    mut tag: *const ::core::ffi::c_char,
-    mut must_exist: ::core::ffi::c_int,
+    mut sfont: *mut sfnt, mut tag: *const ::core::ffi::c_char, mut must_exist: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut td: *mut sfnt_table_directory = ::core::ptr::null_mut::<sfnt_table_directory>();
     let mut idx: ::core::ffi::c_int = 0;
-    if !(!sfont.is_null() && !(*sfont).directory.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!sfont.is_null() && !(*sfont).directory.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!("assertion failed: sfont && sfont->directory");
     } else {
     };
@@ -542,33 +451,17 @@ pub unsafe extern "C-unwind" fn sfnt_create_FontFile_stream(mut sfont: *mut sfnt
     let mut i: ::core::ffi::c_int = 0;
     let mut sr: ::core::ffi::c_int = 0;
     let mut p: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    if !(!sfont.is_null() && !(*sfont).directory.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!sfont.is_null() && !(*sfont).directory.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!("assertion failed: sfont && sfont->directory");
     } else {
     };
     stream = pdf_new_stream(STREAM_COMPRESS);
     td = (*sfont).directory;
     p = &raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar as *mut ::core::ffi::c_char;
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*td).version as SFNT_LONG,
-        4 as ::core::ffi::c_int,
-    ) as isize);
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        (*td).num_kept_tables as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
-    sr = max2floor((*td).num_kept_tables as ::core::ffi::c_uint)
-        .wrapping_mul(16 as ::core::ffi::c_uint) as ::core::ffi::c_int;
-    p = p.offset(put_big_endian(
-        p as *mut ::core::ffi::c_void,
-        sr as SFNT_LONG,
-        2 as ::core::ffi::c_int,
-    ) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*td).version as SFNT_LONG, 4 as ::core::ffi::c_int) as isize);
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, (*td).num_kept_tables as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
+    sr = max2floor((*td).num_kept_tables as ::core::ffi::c_uint).wrapping_mul(16 as ::core::ffi::c_uint) as ::core::ffi::c_int;
+    p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, sr as SFNT_LONG, 2 as ::core::ffi::c_int) as isize);
     p = p.offset(put_big_endian(
         p as *mut ::core::ffi::c_void,
         log2floor((*td).num_kept_tables as ::core::ffi::c_uint) as SFNT_LONG,
@@ -584,20 +477,17 @@ pub unsafe extern "C-unwind" fn sfnt_create_FontFile_stream(mut sfont: *mut sfnt
         &raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
         12 as ::core::ffi::c_int,
     );
-    offset = 12 as ::core::ffi::c_int
-        + 16 as ::core::ffi::c_int * (*td).num_kept_tables as ::core::ffi::c_int;
+    offset = 12 as ::core::ffi::c_int + 16 as ::core::ffi::c_int * (*td).num_kept_tables as ::core::ffi::c_int;
     i = 0 as ::core::ffi::c_int;
     while i < (*td).num_tables as ::core::ffi::c_int {
         if *(*td).flags.offset(i as isize) as ::core::ffi::c_int & SFNT_TABLE_REQUIRED != 0 {
             if offset % 4 as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
                 offset += 4 as ::core::ffi::c_int - offset % 4 as ::core::ffi::c_int;
             }
-            p = &raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar
-                as *mut ::core::ffi::c_char;
+            p = &raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar as *mut ::core::ffi::c_char;
             memcpy(
                 p as *mut ::core::ffi::c_void,
-                &raw mut (*(*td).tables.offset(i as isize)).tag as *mut ::core::ffi::c_char
-                    as *const ::core::ffi::c_void,
+                &raw mut (*(*td).tables.offset(i as isize)).tag as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
                 4 as size_t,
             );
             p = p.offset(4 as ::core::ffi::c_int as isize);
@@ -606,11 +496,7 @@ pub unsafe extern "C-unwind" fn sfnt_create_FontFile_stream(mut sfont: *mut sfnt
                 (*(*td).tables.offset(i as isize)).check_sum as SFNT_LONG,
                 4 as ::core::ffi::c_int,
             ) as isize);
-            p = p.offset(put_big_endian(
-                p as *mut ::core::ffi::c_void,
-                offset as SFNT_LONG,
-                4 as ::core::ffi::c_int,
-            ) as isize);
+            p = p.offset(put_big_endian(p as *mut ::core::ffi::c_void, offset as SFNT_LONG, 4 as ::core::ffi::c_int) as isize);
             p = p.offset(put_big_endian(
                 p as *mut ::core::ffi::c_void,
                 (*(*td).tables.offset(i as isize)).length as SFNT_LONG,
@@ -618,48 +504,33 @@ pub unsafe extern "C-unwind" fn sfnt_create_FontFile_stream(mut sfont: *mut sfnt
             ) as isize);
             pdf_add_stream(
                 stream,
-                &raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar
-                    as *const ::core::ffi::c_void,
+                &raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
                 16 as ::core::ffi::c_int,
             );
-            offset = (offset as SFNT_ULONG).wrapping_add((*(*td).tables.offset(i as isize)).length)
-                as ::core::ffi::c_int as ::core::ffi::c_int;
+            offset = (offset as SFNT_ULONG).wrapping_add((*(*td).tables.offset(i as isize)).length) as ::core::ffi::c_int as ::core::ffi::c_int;
         }
         i += 1;
     }
-    offset = 12 as ::core::ffi::c_int
-        + 16 as ::core::ffi::c_int * (*td).num_kept_tables as ::core::ffi::c_int;
+    offset = 12 as ::core::ffi::c_int + 16 as ::core::ffi::c_int * (*td).num_kept_tables as ::core::ffi::c_int;
     i = 0 as ::core::ffi::c_int;
     while i < (*td).num_tables as ::core::ffi::c_int {
         if *(*td).flags.offset(i as isize) as ::core::ffi::c_int & SFNT_TABLE_REQUIRED != 0 {
             if offset % 4 as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
                 length = 4 as ::core::ffi::c_int - offset % 4 as ::core::ffi::c_int;
-                pdf_add_stream(
-                    stream,
-                    PADBYTES.as_ptr() as *const ::core::ffi::c_void,
-                    length,
-                );
+                pdf_add_stream(stream, PADBYTES.as_ptr() as *const ::core::ffi::c_void, length);
                 offset += length;
             }
             if (*(*td).tables.offset(i as isize)).data.is_null() {
                 if (*sfont).handle == 0 {
                     pdf_release_obj(stream);
-                    pdf_abort!(
-                        b"Font file not opened or already closed...\0" as *const u8
-                            as *const ::core::ffi::c_char,
-                    );
+                    pdf_abort!(b"Font file not opened or already closed...\0" as *const u8 as *const ::core::ffi::c_char,);
                 }
                 length = (*(*td).tables.offset(i as isize)).length as ::core::ffi::c_int;
-                crate::backend::runtime::input_seek(
-                    (*sfont).handle,
-                    (*(*td).tables.offset(i as isize)).offset as ssize_t,
-                    SEEK_SET,
-                );
+                crate::backend::runtime::input_seek((*sfont).handle, (*(*td).tables.offset(i as isize)).offset as ssize_t, SEEK_SET);
                 while length > 0 as ::core::ffi::c_int {
                     nb_read = ttstub_input_read(
                         (*sfont).handle,
-                        &raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar
-                            as *mut ::core::ffi::c_char,
+                        &raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar as *mut ::core::ffi::c_char,
                         (if length < 1024 as ::core::ffi::c_int {
                             length
                         } else {
@@ -668,14 +539,11 @@ pub unsafe extern "C-unwind" fn sfnt_create_FontFile_stream(mut sfont: *mut sfnt
                     ) as ::core::ffi::c_int;
                     if nb_read < 0 as ::core::ffi::c_int {
                         pdf_release_obj(stream);
-                        pdf_abort!(
-                            b"Reading file failed...\0" as *const u8 as *const ::core::ffi::c_char,
-                        );
+                        pdf_abort!(b"Reading file failed...\0" as *const u8 as *const ::core::ffi::c_char,);
                     } else if nb_read > 0 as ::core::ffi::c_int {
                         pdf_add_stream(
                             stream,
-                            &raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar
-                                as *const ::core::ffi::c_void,
+                            &raw mut (*__pdf_state).wbuf as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
                             nb_read,
                         );
                     }
@@ -688,11 +556,9 @@ pub unsafe extern "C-unwind" fn sfnt_create_FontFile_stream(mut sfont: *mut sfnt
                     (*(*td).tables.offset(i as isize)).length as ::core::ffi::c_int,
                 );
                 let ref mut fresh3 = (*(*td).tables.offset(i as isize)).data;
-                *fresh3 = mfree((*(*td).tables.offset(i as isize)).data as *mut ::core::ffi::c_void)
-                    as *mut ::core::ffi::c_char;
+                *fresh3 = mfree((*(*td).tables.offset(i as isize)).data as *mut ::core::ffi::c_void) as *mut ::core::ffi::c_char;
             }
-            offset = (offset as SFNT_ULONG).wrapping_add((*(*td).tables.offset(i as isize)).length)
-                as ::core::ffi::c_int as ::core::ffi::c_int;
+            offset = (offset as SFNT_ULONG).wrapping_add((*(*td).tables.offset(i as isize)).length) as ::core::ffi::c_int as ::core::ffi::c_int;
         }
         i += 1;
     }
@@ -705,26 +571,15 @@ pub unsafe extern "C-unwind" fn sfnt_create_FontFile_stream(mut sfont: *mut sfnt
     return stream;
 }
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn memcpy(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
+    fn memcpy(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __n: size_t) -> *mut ::core::ffi::c_void;
 }
 #[repr(C)]
 pub struct pdf_obj {
     _private: [u8; 0],
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_sfnt_open(
-    mut handle: rust_input_handle_t,
-    _result: *mut *mut sfnt,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_sfnt_open(mut handle: rust_input_handle_t, _result: *mut *mut sfnt) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { sfnt_open(handle) }) {
         Ok(value) => {
             unsafe {
@@ -736,11 +591,7 @@ pub unsafe extern "C" fn __pdf_entry_sfnt_open(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_dfont_open(
-    mut handle: rust_input_handle_t,
-    mut index: ::core::ffi::c_int,
-    _result: *mut *mut sfnt,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_dfont_open(mut handle: rust_input_handle_t, mut index: ::core::ffi::c_int, _result: *mut *mut sfnt) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { dfont_open(handle, index) }) {
         Ok(value) => {
             unsafe {
@@ -763,10 +614,7 @@ pub unsafe extern "C" fn __pdf_entry_sfnt_close(mut sfont: *mut sfnt) -> i32 {
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_put_big_endian(
-    mut s: *mut ::core::ffi::c_void,
-    mut q: SFNT_LONG,
-    mut n: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut s: *mut ::core::ffi::c_void, mut q: SFNT_LONG, mut n: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { put_big_endian(s, q, n) }) {
         Ok(value) => {
@@ -780,13 +628,9 @@ pub unsafe extern "C" fn __pdf_entry_put_big_endian(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_sfnt_set_table(
-    mut sfont: *mut sfnt,
-    mut tag: *const ::core::ffi::c_char,
-    mut data: *mut ::core::ffi::c_void,
-    mut length: SFNT_ULONG,
+    mut sfont: *mut sfnt, mut tag: *const ::core::ffi::c_char, mut data: *mut ::core::ffi::c_void, mut length: SFNT_ULONG,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { sfnt_set_table(sfont, tag, data, length) })
-    {
+    match crate::backend::runtime::boundary(|| unsafe { sfnt_set_table(sfont, tag, data, length) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -795,11 +639,7 @@ pub unsafe extern "C" fn __pdf_entry_sfnt_set_table(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_sfnt_find_table_len(
-    mut sfont: *mut sfnt,
-    mut tag: *const ::core::ffi::c_char,
-    _result: *mut SFNT_ULONG,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_sfnt_find_table_len(mut sfont: *mut sfnt, mut tag: *const ::core::ffi::c_char, _result: *mut SFNT_ULONG) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { sfnt_find_table_len(sfont, tag) }) {
         Ok(value) => {
             unsafe {
@@ -811,11 +651,7 @@ pub unsafe extern "C" fn __pdf_entry_sfnt_find_table_len(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_sfnt_find_table_pos(
-    mut sfont: *mut sfnt,
-    mut tag: *const ::core::ffi::c_char,
-    _result: *mut SFNT_ULONG,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_sfnt_find_table_pos(mut sfont: *mut sfnt, mut tag: *const ::core::ffi::c_char, _result: *mut SFNT_ULONG) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { sfnt_find_table_pos(sfont, tag) }) {
         Ok(value) => {
             unsafe {
@@ -827,11 +663,7 @@ pub unsafe extern "C" fn __pdf_entry_sfnt_find_table_pos(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_sfnt_locate_table(
-    mut sfont: *mut sfnt,
-    mut tag: *const ::core::ffi::c_char,
-    _result: *mut SFNT_ULONG,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_sfnt_locate_table(mut sfont: *mut sfnt, mut tag: *const ::core::ffi::c_char, _result: *mut SFNT_ULONG) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { sfnt_locate_table(sfont, tag) }) {
         Ok(value) => {
             unsafe {
@@ -844,12 +676,9 @@ pub unsafe extern "C" fn __pdf_entry_sfnt_locate_table(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_sfnt_read_table_directory(
-    mut sfont: *mut sfnt,
-    mut offset: SFNT_ULONG,
-    _result: *mut ::core::ffi::c_int,
+    mut sfont: *mut sfnt, mut offset: SFNT_ULONG, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { sfnt_read_table_directory(sfont, offset) })
-    {
+    match crate::backend::runtime::boundary(|| unsafe { sfnt_read_table_directory(sfont, offset) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -861,14 +690,9 @@ pub unsafe extern "C" fn __pdf_entry_sfnt_read_table_directory(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_sfnt_require_table(
-    mut sfont: *mut sfnt,
-    mut tag: *const ::core::ffi::c_char,
-    mut must_exist: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut sfont: *mut sfnt, mut tag: *const ::core::ffi::c_char, mut must_exist: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        sfnt_require_table(sfont, tag, must_exist)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { sfnt_require_table(sfont, tag, must_exist) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -879,10 +703,7 @@ pub unsafe extern "C" fn __pdf_entry_sfnt_require_table(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_sfnt_create_FontFile_stream(
-    mut sfont: *mut sfnt,
-    _result: *mut *mut pdf_obj,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_sfnt_create_FontFile_stream(mut sfont: *mut sfnt, _result: *mut *mut pdf_obj) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { sfnt_create_FontFile_stream(sfont) }) {
         Ok(value) => {
             unsafe {
@@ -906,10 +727,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_sfnt
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_sfnt.pointer }
 }

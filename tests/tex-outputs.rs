@@ -53,12 +53,7 @@ impl TestCase {
     }
 
     fn with_fs(mut self, path: &Path) -> Self {
-        self.extra_io.push(Box::new(FilesystemIo::new(
-            path,
-            false,
-            false,
-            HashSet::new(),
-        )));
+        self.extra_io.push(Box::new(FilesystemIo::new(path, false, false, HashSet::new())));
         self
     }
 
@@ -85,8 +80,7 @@ impl TestCase {
 
         // IoProvider for the format file; with magic to generate the format
         // on-the-fly if needed.
-        let mut fmt =
-            SingleInputFileIo::new(&ensure_plain_format().expect("couldn't write format file"));
+        let mut fmt = SingleInputFileIo::new(&ensure_plain_format().expect("couldn't write format file"));
 
         // Set up some useful paths, and the IoProvider for the primary input file.
         p.push("tex-outputs");
@@ -113,8 +107,7 @@ impl TestCase {
 
         // Run the engine(s)!
         let res = {
-            let mut io_list: Vec<&mut dyn IoProvider> =
-                vec![&mut mem, &mut tex, &mut fmt, &mut assets];
+            let mut io_list: Vec<&mut dyn IoProvider> = vec![&mut mem, &mut tex, &mut fmt, &mut assets];
             for io in &mut self.extra_io {
                 io_list.push(&mut **io);
             }
@@ -130,14 +123,11 @@ impl TestCase {
             if self.check_pdf && tex_res.definitely_same(&self.expected_result) {
                 let mut engine = XdvipdfmxEngine::default();
 
-                engine
-                    .enable_compression(false)
-                    .enable_deterministic_tags(true)
-                    .build_date(
-                        time::SystemTime::UNIX_EPOCH
-                            .checked_add(time::Duration::from_secs(1_456_304_492))
-                            .unwrap(),
-                    );
+                engine.enable_compression(false).enable_deterministic_tags(true).build_date(
+                    time::SystemTime::UNIX_EPOCH
+                        .checked_add(time::Duration::from_secs(1_456_304_492))
+                        .unwrap(),
+                );
 
                 if let Some(ref ps) = self.unstables.paper_size {
                     engine.paper_spec(ps.clone());
@@ -153,23 +143,16 @@ impl TestCase {
 
         let files = mem.files.borrow();
 
-        let mut expect = Expected::new()
-            .res(self.expected_result, res)
-            .file(expected_log.collection(&files));
+        let mut expect = Expected::new().res(self.expected_result, res).file(expected_log.collection(&files));
 
         if expect_xdv {
-            expect =
-                expect.file(ExpectedFile::read_with_extension(&mut p, "xdv").collection(&files));
+            expect = expect.file(ExpectedFile::read_with_extension(&mut p, "xdv").collection(&files));
         }
         if self.check_synctex {
-            expect = expect.file(
-                ExpectedFile::read_with_extension_rooted_gz(&mut p, "synctex.gz")
-                    .collection(&files),
-            );
+            expect = expect.file(ExpectedFile::read_with_extension_rooted_gz(&mut p, "synctex.gz").collection(&files));
         }
         if self.check_pdf {
-            expect =
-                expect.file(ExpectedFile::read_with_extension(&mut p, "pdf").collection(&files));
+            expect = expect.file(ExpectedFile::read_with_extension(&mut p, "pdf").collection(&files));
         }
 
         expect.finish();
@@ -184,10 +167,7 @@ fn a4paper() {
         paper_size: Some(String::from("a4")),
         ..Default::default()
     };
-    TestCase::new("a4paper")
-        .with_unstables(unstables)
-        .check_pdf(true)
-        .go()
+    TestCase::new("a4paper").with_unstables(unstables).check_pdf(true).go()
 }
 
 #[test]
@@ -216,18 +196,14 @@ fn file_encoding() {
 #[cfg(not(any(feature = "external-harfbuzz", target_arch = "x86")))]
 #[test]
 fn utf8_chars() {
-    TestCase::new("utf8_chars")
-        .expect(Ok(TexOutcome::Warnings))
-        .go();
+    TestCase::new("utf8_chars").expect(Ok(TexOutcome::Warnings)).go();
 }
 
 /// An issue triggered by a bug in how the I/O subsystem reported file offsets
 /// after an ungetc() call.
 #[test]
 fn issue393_ungetc() {
-    TestCase::new("issue393_ungetc")
-        .expect(Ok(TexOutcome::Warnings))
-        .go()
+    TestCase::new("issue393_ungetc").expect(Ok(TexOutcome::Warnings)).go()
 }
 
 #[test]
@@ -247,9 +223,7 @@ fn negative_roman_numeral() {
 
 #[test]
 fn otf_basic() {
-    TestCase::new("otf_basic")
-        .expect(Ok(TexOutcome::Warnings))
-        .go()
+    TestCase::new("otf_basic").expect(Ok(TexOutcome::Warnings)).go()
 }
 
 #[test]
@@ -264,9 +238,7 @@ fn native_layout() {
 
 #[test]
 fn otf_ot_shaper() {
-    TestCase::new("otf_ot_shaper")
-        .expect(Ok(TexOutcome::Warnings))
-        .go()
+    TestCase::new("otf_ot_shaper").expect(Ok(TexOutcome::Warnings)).go()
 }
 
 #[test]
@@ -307,10 +279,7 @@ fn shell_escape() {
         shell_escape: true,
         ..Default::default()
     };
-    TestCase::new("shell_escape")
-        .with_unstables(unstables)
-        .check_pdf(true)
-        .go()
+    TestCase::new("shell_escape").with_unstables(unstables).check_pdf(true).go()
 }
 
 #[test]
@@ -319,10 +288,7 @@ fn no_shell_escape() {
         shell_escape: false,
         ..Default::default()
     };
-    TestCase::new("no_shell_escape")
-        .with_unstables(unstables)
-        .check_pdf(true)
-        .go()
+    TestCase::new("no_shell_escape").with_unstables(unstables).check_pdf(true).go()
 }
 
 #[test]
@@ -337,9 +303,7 @@ fn pdfoutput() {
 
 #[test]
 fn pipe_input() {
-    TestCase::new("pipe_input")
-        .expect_msg("failed to open input file \"|pipeproblems\"")
-        .go()
+    TestCase::new("pipe_input").expect_msg("failed to open input file \"|pipeproblems\"").go()
 }
 
 #[test]
@@ -359,9 +323,7 @@ fn synctex() {
 
 #[test]
 fn unicode_file_name() {
-    TestCase::new("hallöchen 🐨 welt 🌍.tex")
-        .expect(Ok(TexOutcome::Warnings))
-        .go()
+    TestCase::new("hallöchen 🐨 welt 🌍.tex").expect(Ok(TexOutcome::Warnings)).go()
 }
 
 #[test]
@@ -408,8 +370,5 @@ fn pdf_fstream() {
     // Need to do this here since we call test_path unusually early.
     util::set_test_root();
 
-    TestCase::new("pdf_fstream")
-        .with_fs(&test_path(&["tex-outputs"]))
-        .check_pdf(true)
-        .go()
+    TestCase::new("pdf_fstream").with_fs(&test_path(&["tex-outputs"])).check_pdf(true).go()
 }

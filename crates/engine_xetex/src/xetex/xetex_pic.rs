@@ -8,9 +8,7 @@
     unused_imports
 )]
 
-use super::xetex_xetexd::{
-    cur_list, help_ptr, mem, memory_word, name_of_file, rust_input_handle_t,
-};
+use super::xetex_xetexd::{cur_list, help_ptr, mem, memory_word, name_of_file, rust_input_handle_t};
 
 use libc::{c_char, c_int, c_uint, c_void, size_t};
 use std::f64::consts::PI;
@@ -81,42 +79,19 @@ unsafe extern "C" {
     fn pdf_close(pf: *mut c_void);
     fn pdf_doc_get_page_count(pf: *mut c_void) -> c_int;
     fn pdf_doc_get_page(
-        pf: *mut c_void,
-        page_no: c_int,
-        options: c_int,
-        bbox: *mut pdf_rect,
-        matrix: *mut pdf_tmatrix,
-        page_obj: *mut *mut c_void,
+        pf: *mut c_void, page_no: c_int, options: c_int, bbox: *mut pdf_rect, matrix: *mut pdf_tmatrix, page_obj: *mut *mut c_void,
     ) -> *mut c_void;
     fn pdf_release_obj(obj: *mut c_void);
     fn pdf_dev_transform(p: *mut pdf_coord, m: *const pdf_tmatrix);
 
     fn check_for_jpeg(handle: rust_input_handle_t) -> c_int;
-    fn jpeg_get_bbox(
-        handle: rust_input_handle_t,
-        width: *mut c_uint,
-        height: *mut c_uint,
-        xdensity: *mut f64,
-        ydensity: *mut f64,
-    ) -> c_int;
+    fn jpeg_get_bbox(handle: rust_input_handle_t, width: *mut c_uint, height: *mut c_uint, xdensity: *mut f64, ydensity: *mut f64) -> c_int;
 
     fn check_for_bmp(handle: rust_input_handle_t) -> c_int;
-    fn bmp_get_bbox(
-        handle: rust_input_handle_t,
-        width: *mut c_uint,
-        height: *mut c_uint,
-        xdensity: *mut f64,
-        ydensity: *mut f64,
-    ) -> c_int;
+    fn bmp_get_bbox(handle: rust_input_handle_t, width: *mut c_uint, height: *mut c_uint, xdensity: *mut f64, ydensity: *mut f64) -> c_int;
 
     fn check_for_png(handle: rust_input_handle_t) -> c_int;
-    fn png_get_bbox(
-        handle: rust_input_handle_t,
-        width: *mut c_uint,
-        height: *mut c_uint,
-        xdensity: *mut f64,
-        ydensity: *mut f64,
-    ) -> c_int;
+    fn png_get_bbox(handle: rust_input_handle_t, width: *mut c_uint, height: *mut c_uint, xdensity: *mut f64, ydensity: *mut f64) -> c_int;
 }
 
 #[inline]
@@ -134,8 +109,7 @@ pub unsafe extern "C" fn count_pdf_file_pages() -> c_int {
     unsafe {
         tt_checkpoint_disallow();
 
-        let handle =
-            super::bridge::ttstub_input_open(name_of_file, super::bridge::TTBC_FILE_FORMAT_PICT, 0);
+        let handle = super::bridge::ttstub_input_open(name_of_file, super::bridge::TTBC_FILE_FORMAT_PICT, 0);
         if handle == super::bridge::INVALID_HANDLE {
             return 0;
         }
@@ -153,13 +127,7 @@ pub unsafe extern "C" fn count_pdf_file_pages() -> c_int {
     }
 }
 
-unsafe fn pdf_get_rect(
-    filename: *mut c_char,
-    handle: rust_input_handle_t,
-    mut page_num: c_int,
-    pdf_box: c_int,
-    box_rect: *mut real_rect,
-) -> c_int {
+unsafe fn pdf_get_rect(filename: *mut c_char, handle: rust_input_handle_t, mut page_num: c_int, pdf_box: c_int, box_rect: *mut real_rect) -> c_int {
     unsafe {
         let pf = pdf_open(filename, handle);
         if pf.is_null() {
@@ -188,14 +156,7 @@ unsafe fn pdf_get_rect(
 
         let mut bbox = pdf_rect::default();
         let mut matrix = pdf_tmatrix::default();
-        let page = pdf_doc_get_page(
-            pf,
-            page_num,
-            dpx_options,
-            &mut bbox,
-            &mut matrix,
-            ptr::null_mut(),
-        );
+        let page = pdf_doc_get_page(pf, page_num, dpx_options, &mut bbox, &mut matrix, ptr::null_mut());
         pdf_close(pf);
 
         if page.is_null() {
@@ -204,28 +165,16 @@ unsafe fn pdf_get_rect(
 
         pdf_release_obj(page);
 
-        let mut p1 = pdf_coord {
-            x: bbox.llx,
-            y: bbox.lly,
-        };
+        let mut p1 = pdf_coord { x: bbox.llx, y: bbox.lly };
         pdf_dev_transform(&mut p1, &matrix);
 
-        let mut p2 = pdf_coord {
-            x: bbox.urx,
-            y: bbox.lly,
-        };
+        let mut p2 = pdf_coord { x: bbox.urx, y: bbox.lly };
         pdf_dev_transform(&mut p2, &matrix);
 
-        let mut p3 = pdf_coord {
-            x: bbox.urx,
-            y: bbox.ury,
-        };
+        let mut p3 = pdf_coord { x: bbox.urx, y: bbox.ury };
         pdf_dev_transform(&mut p3, &matrix);
 
-        let mut p4 = pdf_coord {
-            x: bbox.llx,
-            y: bbox.ury,
-        };
+        let mut p4 = pdf_coord { x: bbox.llx, y: bbox.ury };
         pdf_dev_transform(&mut p4, &matrix);
 
         bbox.llx = min4(p1.x, p2.x, p3.x, p4.x);
@@ -243,11 +192,7 @@ unsafe fn pdf_get_rect(
     }
 }
 
-unsafe fn get_image_size_in_inches(
-    handle: rust_input_handle_t,
-    width: *mut f64,
-    height: *mut f64,
-) -> c_int {
+unsafe fn get_image_size_in_inches(handle: rust_input_handle_t, width: *mut f64, height: *mut f64) -> c_int {
     unsafe {
         let mut err = 1;
         let mut width_pix: c_uint = 0;
@@ -256,29 +201,11 @@ unsafe fn get_image_size_in_inches(
         let mut ydensity: f64 = 0.0;
 
         if check_for_jpeg(handle) != 0 {
-            err = jpeg_get_bbox(
-                handle,
-                &mut width_pix,
-                &mut height_pix,
-                &mut xdensity,
-                &mut ydensity,
-            );
+            err = jpeg_get_bbox(handle, &mut width_pix, &mut height_pix, &mut xdensity, &mut ydensity);
         } else if check_for_bmp(handle) != 0 {
-            err = bmp_get_bbox(
-                handle,
-                &mut width_pix,
-                &mut height_pix,
-                &mut xdensity,
-                &mut ydensity,
-            );
+            err = bmp_get_bbox(handle, &mut width_pix, &mut height_pix, &mut xdensity, &mut ydensity);
         } else if check_for_png(handle) != 0 {
-            err = png_get_bbox(
-                handle,
-                &mut width_pix,
-                &mut height_pix,
-                &mut xdensity,
-                &mut ydensity,
-            );
+            err = png_get_bbox(handle, &mut width_pix, &mut height_pix, &mut xdensity, &mut ydensity);
         }
 
         if err != 0 {
@@ -293,15 +220,9 @@ unsafe fn get_image_size_in_inches(
     }
 }
 
-unsafe fn find_pic_file(
-    path: *mut *mut c_char,
-    bounds: *mut real_rect,
-    pdfBoxType: c_int,
-    page: c_int,
-) -> c_int {
+unsafe fn find_pic_file(path: *mut *mut c_char, bounds: *mut real_rect, pdfBoxType: c_int, page: c_int) -> c_int {
     unsafe {
-        let handle =
-            super::bridge::ttstub_input_open(name_of_file, super::bridge::TTBC_FILE_FORMAT_PICT, 0);
+        let handle = super::bridge::ttstub_input_open(name_of_file, super::bridge::TTBC_FILE_FORMAT_PICT, 0);
         (*bounds).x = 0.0;
         (*bounds).y = 0.0;
         (*bounds).wd = 0.0;
@@ -452,11 +373,7 @@ pub unsafe extern "C" fn load_picture(is_pdf: bool) {
             if scan_keyword(b"scaled\0".as_ptr() as *const c_char) {
                 scan_int();
                 if x_size_req == 0.0 && y_size_req == 0.0 {
-                    make_scale(
-                        &mut t2,
-                        (cur_val as f64) / 1000.0,
-                        (cur_val as f64) / 1000.0,
-                    );
+                    make_scale(&mut t2, (cur_val as f64) / 1000.0, (cur_val as f64) / 1000.0);
                     for c in &mut corners {
                         transform_point(c, &t2);
                     }
@@ -489,8 +406,7 @@ pub unsafe extern "C" fn load_picture(is_pdf: bool) {
                     print_cstr(b"pt) will be ignored\0".as_ptr() as *const c_char);
                     capture_to_diagnostic(ptr::null_mut());
                     help_ptr = 2;
-                    help_line[1] = b"I can't scale images to zero or negative sizes,\0".as_ptr()
-                        as *const c_char;
+                    help_line[1] = b"I can't scale images to zero or negative sizes,\0".as_ptr() as *const c_char;
                     help_line[0] = b"so I'm ignoring this.\0".as_ptr() as *const c_char;
                     error();
                 } else {
@@ -505,8 +421,7 @@ pub unsafe extern "C" fn load_picture(is_pdf: bool) {
                     print_cstr(b"pt) will be ignored\0".as_ptr() as *const c_char);
                     capture_to_diagnostic(ptr::null_mut());
                     help_ptr = 2;
-                    help_line[1] = b"I can't scale images to zero or negative sizes,\0".as_ptr()
-                        as *const c_char;
+                    help_line[1] = b"I can't scale images to zero or negative sizes,\0".as_ptr() as *const c_char;
                     help_line[0] = b"so I'm ignoring this.\0".as_ptr() as *const c_char;
                     error();
                 } else {
@@ -536,23 +451,11 @@ pub unsafe extern "C" fn load_picture(is_pdf: bool) {
                         }
                     }
                     if x_size_req == 0.0 {
-                        make_scale(
-                            &mut t2,
-                            y_size_req / (ymax - ymin),
-                            y_size_req / (ymax - ymin),
-                        );
+                        make_scale(&mut t2, y_size_req / (ymax - ymin), y_size_req / (ymax - ymin));
                     } else if y_size_req == 0.0 {
-                        make_scale(
-                            &mut t2,
-                            x_size_req / (xmax - xmin),
-                            x_size_req / (xmax - xmin),
-                        );
+                        make_scale(&mut t2, x_size_req / (xmax - xmin), x_size_req / (xmax - xmin));
                     } else {
-                        make_scale(
-                            &mut t2,
-                            x_size_req / (xmax - xmin),
-                            y_size_req / (ymax - ymin),
-                        );
+                        make_scale(&mut t2, x_size_req / (xmax - xmin), y_size_req / (ymax - ymin));
                     }
                     for c in &mut corners {
                         transform_point(c, &t2);
@@ -621,23 +524,11 @@ pub unsafe extern "C" fn load_picture(is_pdf: bool) {
                 }
             }
             if x_size_req == 0.0 {
-                make_scale(
-                    &mut t2,
-                    y_size_req / (ymax - ymin),
-                    y_size_req / (ymax - ymin),
-                );
+                make_scale(&mut t2, y_size_req / (ymax - ymin), y_size_req / (ymax - ymin));
             } else if y_size_req == 0.0 {
-                make_scale(
-                    &mut t2,
-                    x_size_req / (xmax - xmin),
-                    x_size_req / (xmax - xmin),
-                );
+                make_scale(&mut t2, x_size_req / (xmax - xmin), x_size_req / (xmax - xmin));
             } else {
-                make_scale(
-                    &mut t2,
-                    x_size_req / (xmax - xmin),
-                    y_size_req / (ymax - ymin),
-                );
+                make_scale(&mut t2, x_size_req / (xmax - xmin), y_size_req / (ymax - ymin));
             }
             for c in &mut corners {
                 transform_point(c, &t2);
@@ -668,11 +559,7 @@ pub unsafe extern "C" fn load_picture(is_pdf: bool) {
             }
         }
 
-        make_translation(
-            &mut t2,
-            -(xmin as i32 as f64) * 72.0 / 72.27,
-            -(ymin as i32 as f64) * 72.0 / 72.27,
-        );
+        make_translation(&mut t2, -(xmin as i32 as f64) * 72.0 / 72.27, -(ymin as i32 as f64) * 72.0 / 72.27);
         transform_concat(&mut t, &t2);
 
         if result == 0 {
@@ -680,8 +567,7 @@ pub unsafe extern "C" fn load_picture(is_pdf: bool) {
             let mem_word_size = std::mem::size_of::<memory_word>();
             new_whatsit(
                 (PIC_NODE) as i16,
-                ((PIC_NODE_SIZE as usize + (path_len + mem_word_size - 1) / mem_word_size) as i32)
-                    as i16,
+                ((PIC_NODE_SIZE as usize + (path_len + mem_word_size - 1) / mem_word_size) as i32) as i16,
             );
 
             let tail = cur_list.tail as usize;
@@ -711,13 +597,11 @@ pub unsafe extern "C" fn load_picture(is_pdf: bool) {
             capture_to_diagnostic(ptr::null_mut());
             if result == -43 {
                 help_ptr = 2;
-                help_line[1] =
-                    b"The requested image couldn't be read because\0".as_ptr() as *const c_char;
+                help_line[1] = b"The requested image couldn't be read because\0".as_ptr() as *const c_char;
                 help_line[0] = b"the file was not found.\0".as_ptr() as *const c_char;
             } else {
                 help_ptr = 2;
-                help_line[1] =
-                    b"The requested image couldn't be read because\0".as_ptr() as *const c_char;
+                help_line[1] = b"The requested image couldn't be read because\0".as_ptr() as *const c_char;
                 help_line[0] = b"it was not a recognized image format.\0".as_ptr() as *const c_char;
             }
             error();

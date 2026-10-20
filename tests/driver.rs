@@ -9,8 +9,8 @@
 //! enable the reproducibility options used in the `tex-outputs` test rig.
 
 use tectonic::{
-    config::PersistentConfig, driver::ProcessingSessionBuilder, status::ChatterLevel,
-    status::termcolor::TermcolorStatusBackend, test_util::TestBundle,
+    config::PersistentConfig, driver::ProcessingSessionBuilder, status::ChatterLevel, status::termcolor::TermcolorStatusBackend,
+    test_util::TestBundle,
 };
 
 mod util;
@@ -43,16 +43,9 @@ fn buffered_input_preserves_unicode_normalization_and_line_endings() {
                 .output_format(tectonic::driver::OutputFormat::Xdv)
                 .keep_logs(true)
                 .bundle(Box::<TestBundle>::default());
-            builder
-                .create(&mut status)
-                .unwrap()
-                .run(&mut status)
-                .unwrap();
+            builder.create(&mut status).unwrap().run(&mut status).unwrap();
             let log = std::fs::read_to_string(directory.path().join("buffered.log")).unwrap();
-            assert!(
-                log.contains(&format!("INPUT:[{expected}]")),
-                "{normalization}: {log}"
-            );
+            assert!(log.contains(&format!("INPUT:[{expected}]")), "{normalization}: {log}");
             assert!(log.contains("END-OF-INPUT"), "{log}");
         }
     }
@@ -84,11 +77,7 @@ fn control_sequence_lookup_preserves_bmp_supplementary_and_redefined_names() {
         .output_format(tectonic::driver::OutputFormat::Xdv)
         .keep_logs(true)
         .bundle(Box::<TestBundle>::default());
-    builder
-        .create(&mut status)
-        .unwrap()
-        .run(&mut status)
-        .unwrap();
+    builder.create(&mut status).unwrap().run(&mut status).unwrap();
     let log = std::fs::read_to_string(directory.path().join("lookup.log")).unwrap();
     assert!(log.contains("LOOKUP:[BMP/ASTRAL/first]"), "{log}");
     assert!(log.contains("REDEFINED:[second]"), "{log}");
@@ -115,11 +104,7 @@ fn cleanup_reports_unclosed_groups_and_conditionals_without_leaking_state() {
             .output_format(tectonic::driver::OutputFormat::Xdv)
             .keep_logs(true)
             .bundle(Box::<TestBundle>::default());
-        builder
-            .create(&mut status)
-            .unwrap()
-            .run(&mut status)
-            .unwrap();
+        builder.create(&mut status).unwrap().run(&mut status).unwrap();
 
         let log = std::fs::read_to_string(directory.path().join("cleanup.log")).unwrap();
         assert_eq!(log.contains("inside a group at level 1"), unclosed, "{log}");
@@ -138,10 +123,7 @@ fn the_letter_a() {
 
     let bundle = TestBundle::default();
 
-    let tempdir = tempfile::Builder::new()
-        .prefix("tectonic_driver_test")
-        .tempdir()
-        .unwrap();
+    let tempdir = tempfile::Builder::new().prefix("tectonic_driver_test").tempdir().unwrap();
 
     let mut pbuilder = ProcessingSessionBuilder::default();
     pbuilder
@@ -152,13 +134,9 @@ fn the_letter_a() {
         .output_dir(tempdir.path())
         .bundle(Box::new(bundle));
 
-    let mut session = pbuilder
-        .create(&mut status)
-        .expect("couldn't create processing session");
+    let mut session = pbuilder.create(&mut status).expect("couldn't create processing session");
 
-    session
-        .run(&mut status)
-        .expect("failed to execute processing session");
+    session.run(&mut status).expect("failed to execute processing session");
 }
 
 #[test]
@@ -198,11 +176,7 @@ fn html_templates_preserve_content_and_update_variables_between_outputs() {
         .output_dir(tempdir.path())
         .output_format(tectonic::driver::OutputFormat::Html)
         .bundle(Box::<TestBundle>::default());
-    builder
-        .create(&mut status)
-        .unwrap()
-        .run(&mut status)
-        .unwrap();
+    builder.create(&mut status).unwrap().run(&mut status).unwrap();
 
     assert_eq!(
         std::fs::read_to_string(tempdir.path().join("nested/chapter.html")).unwrap(),

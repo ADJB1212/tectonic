@@ -8,11 +8,9 @@ use crate::{
     hash,
     hash::{BstFn, HashData},
     log::{
-        already_seen_function_print, bad_cross_reference_print,
-        bst_err_print_and_look_for_blank_line, bst_id_print, bst_left_brace_print,
-        bst_right_brace_print, bst_warn_print, cite_key_disappeared_confusion, eat_bst_print,
-        hash_cite_confusion, log_pr_bib_name, nonexistent_cross_reference_error, print_a_token,
-        print_bib_name, print_confusion, print_fn_class, print_missing_entry,
+        already_seen_function_print, bad_cross_reference_print, bst_err_print_and_look_for_blank_line, bst_id_print, bst_left_brace_print,
+        bst_right_brace_print, bst_warn_print, cite_key_disappeared_confusion, eat_bst_print, hash_cite_confusion, log_pr_bib_name,
+        nonexistent_cross_reference_error, print_a_token, print_bib_name, print_confusion, print_fn_class, print_missing_entry,
     },
     pool::{StrNumber, StringPool},
     scan::{Scan, ScanRes, eat_bst_white_space, scan_fn_def, scan_identifier},
@@ -77,10 +75,7 @@ pub(crate) enum BstCommand {
     Strings,
 }
 
-fn bst_entry_command(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    globals: &mut GlobalItems<'_>,
-) -> Result<(), BibtexError> {
+fn bst_entry_command(ctx: &mut ExecCtx<'_, '_, '_>, globals: &mut GlobalItems<'_>) -> Result<(), BibtexError> {
     if ctx.entry_seen {
         ctx.write_logs("Illegal, another entry command");
         bst_err_print_and_look_for_blank_line(ctx, globals.buffers, globals.pool)?;
@@ -90,9 +85,7 @@ fn bst_entry_command(
 
     eat_bst_white!(ctx, globals, "entry");
     bst_brace!('{', ctx, globals, "entry");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     eat_bst_white!(ctx, globals, "entry");
 
     while globals.buffers.at_offset(BufTy::Base, 2) != b'}' {
@@ -101,11 +94,9 @@ fn bst_entry_command(
         let bst_fn = &mut globals.buffers.buffer_mut(BufTy::Base)[range];
         bst_fn.make_ascii_lowercase();
 
-        let res = globals.hash.lookup_str_insert(
-            globals.pool,
-            bst_fn,
-            BstFn::Field(globals.other.num_fields()),
-        );
+        let res = globals
+            .hash
+            .lookup_str_insert(globals.pool, bst_fn, BstFn::Field(globals.other.num_fields()));
         if res.exists {
             already_seen_function_print(ctx, globals.buffers, globals.pool, globals.hash, res.loc)?;
             return Ok(());
@@ -116,9 +107,7 @@ fn bst_entry_command(
         eat_bst_white!(ctx, globals, "entry");
     }
 
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     eat_bst_white!(ctx, globals, "entry");
 
     if globals.other.num_fields() == globals.other.pre_defined_fields() {
@@ -127,9 +116,7 @@ fn bst_entry_command(
     }
 
     bst_brace!('{', ctx, globals, "entry");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     eat_bst_white!(ctx, globals, "entry");
 
     while globals.buffers.at_offset(BufTy::Base, 2) != b'}' {
@@ -139,31 +126,23 @@ fn bst_entry_command(
         let bst_fn = &mut globals.buffers.buffer_mut(BufTy::Base)[range];
         bst_fn.make_ascii_lowercase();
 
-        let res = globals.hash.lookup_str_insert(
-            globals.pool,
-            bst_fn,
-            BstFn::IntEntry(globals.entries.num_ent_ints()),
-        );
+        let res = globals
+            .hash
+            .lookup_str_insert(globals.pool, bst_fn, BstFn::IntEntry(globals.entries.num_ent_ints()));
         if res.exists {
             already_seen_function_print(ctx, globals.buffers, globals.pool, globals.hash, res.loc)?;
             return Ok(());
         }
 
-        globals
-            .entries
-            .set_num_ent_ints(globals.entries.num_ent_ints() + 1);
+        globals.entries.set_num_ent_ints(globals.entries.num_ent_ints() + 1);
 
         eat_bst_white!(ctx, globals, "entry");
     }
 
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     eat_bst_white!(ctx, globals, "entry");
     bst_brace!('{', ctx, globals, "entry");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     eat_bst_white!(ctx, globals, "entry");
 
     while globals.buffers.at_offset(BufTy::Base, 2) != b'}' {
@@ -173,33 +152,24 @@ fn bst_entry_command(
         let bst_fn = &mut globals.buffers.buffer_mut(BufTy::Base)[range];
         bst_fn.make_ascii_lowercase();
 
-        let res = globals.hash.lookup_str_insert(
-            globals.pool,
-            bst_fn,
-            BstFn::StrEntry(globals.entries.num_ent_strs()),
-        );
+        let res = globals
+            .hash
+            .lookup_str_insert(globals.pool, bst_fn, BstFn::StrEntry(globals.entries.num_ent_strs()));
         if res.exists {
             already_seen_function_print(ctx, globals.buffers, globals.pool, globals.hash, res.loc)?;
             return Ok(());
         }
 
-        globals
-            .entries
-            .set_num_ent_strs(globals.entries.num_ent_strs() + 1);
+        globals.entries.set_num_ent_strs(globals.entries.num_ent_strs() + 1);
 
         eat_bst_white!(ctx, globals, "entry");
     }
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
     Ok(())
 }
 
-fn bst_execute_command(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    globals: &mut GlobalItems<'_>,
-) -> Result<(), BibtexError> {
+fn bst_execute_command(ctx: &mut ExecCtx<'_, '_, '_>, globals: &mut GlobalItems<'_>) -> Result<(), BibtexError> {
     if !ctx.read_seen {
         ctx.write_logs("Illegal, execute command before read command");
         bst_err_print_and_look_for_blank_line(ctx, globals.buffers, globals.pool)?;
@@ -207,9 +177,7 @@ fn bst_execute_command(
     }
     eat_bst_white!(ctx, globals, "execute");
     bst_brace!('{', ctx, globals, "execute");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     eat_bst_white!(ctx, globals, "execute");
     bst_ident!(ctx, globals, "execute", b'}', b'#', b'#');
 
@@ -219,9 +187,7 @@ fn bst_execute_command(
 
     eat_bst_white!(ctx, globals, "execute");
     bst_brace!('}', ctx, globals, "execute");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
     // TODO: Associated method on ExecCtx
     ctx.lit_stack.clear();
@@ -235,15 +201,10 @@ fn bst_execute_command(
     Ok(())
 }
 
-fn bst_function_command(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    globals: &mut GlobalItems<'_>,
-) -> Result<(), BibtexError> {
+fn bst_function_command(ctx: &mut ExecCtx<'_, '_, '_>, globals: &mut GlobalItems<'_>) -> Result<(), BibtexError> {
     eat_bst_white!(ctx, globals, "function");
     bst_brace!('{', ctx, globals, "function");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     eat_bst_white!(ctx, globals, "function");
     bst_ident!(ctx, globals, "function", b'}', b'#', b'#');
 
@@ -251,9 +212,7 @@ fn bst_function_command(
     let bst_fn = &mut globals.buffers.buffer_mut(BufTy::Base)[range];
     bst_fn.make_ascii_lowercase();
 
-    let res = globals
-        .hash
-        .lookup_str_insert(globals.pool, bst_fn, BstFn::Wizard(0));
+    let res = globals.hash.lookup_str_insert(globals.pool, bst_fn, BstFn::Wizard(0));
     if res.exists {
         already_seen_function_print(ctx, globals.buffers, globals.pool, globals.hash, res.loc)?;
         return Ok(());
@@ -265,27 +224,18 @@ fn bst_function_command(
 
     eat_bst_white!(ctx, globals, "function");
     bst_brace!('}', ctx, globals, "function");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     eat_bst_white!(ctx, globals, "function");
     bst_brace!('{', ctx, globals, "function");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     scan_fn_def(ctx, globals, res.loc, res.loc)?;
     Ok(())
 }
 
-fn bst_integers_command(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    globals: &mut GlobalItems<'_>,
-) -> Result<(), BibtexError> {
+fn bst_integers_command(ctx: &mut ExecCtx<'_, '_, '_>, globals: &mut GlobalItems<'_>) -> Result<(), BibtexError> {
     eat_bst_white!(ctx, globals, "integers");
     bst_brace!('{', ctx, globals, "integers");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     eat_bst_white!(ctx, globals, "integers");
 
     while globals.buffers.at_offset(BufTy::Base, 2) != b'}' {
@@ -295,9 +245,7 @@ fn bst_integers_command(
         let bst_fn = &mut globals.buffers.buffer_mut(BufTy::Base)[range];
         bst_fn.make_ascii_lowercase();
 
-        let res = globals
-            .hash
-            .lookup_str_insert(globals.pool, bst_fn, BstFn::IntGlbl(0));
+        let res = globals.hash.lookup_str_insert(globals.pool, bst_fn, BstFn::IntGlbl(0));
         if res.exists {
             already_seen_function_print(ctx, globals.buffers, globals.pool, globals.hash, res.loc)?;
             return Ok(());
@@ -306,17 +254,12 @@ fn bst_integers_command(
         eat_bst_white!(ctx, globals, "integers");
     }
 
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
     Ok(())
 }
 
-fn bst_iterate_command(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    globals: &mut GlobalItems<'_>,
-) -> Result<(), BibtexError> {
+fn bst_iterate_command(ctx: &mut ExecCtx<'_, '_, '_>, globals: &mut GlobalItems<'_>) -> Result<(), BibtexError> {
     if !ctx.read_seen {
         ctx.write_logs("Illegal, iterate command before read command");
         bst_err_print_and_look_for_blank_line(ctx, globals.buffers, globals.pool)?;
@@ -325,9 +268,7 @@ fn bst_iterate_command(
 
     eat_bst_white!(ctx, globals, "iterate");
     bst_brace!('{', ctx, globals, "iterate");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     eat_bst_white!(ctx, globals, "iterate");
     bst_ident!(ctx, globals, "iterate", b'}', b'#', b'#');
 
@@ -336,9 +277,7 @@ fn bst_iterate_command(
     };
     eat_bst_white!(ctx, globals, "iterate");
     bst_brace!('}', ctx, globals, "iterate");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
     ctx.lit_stack.clear();
     ctx.checkpoint = globals.pool.checkpoint();
@@ -347,9 +286,7 @@ fn bst_iterate_command(
 
     let mut sort_cite_ptr = 0;
     while sort_cite_ptr < globals.cites.num_cites() {
-        globals
-            .cites
-            .set_ptr(globals.cites.info(sort_cite_ptr).to_raw_dangerous());
+        globals.cites.set_ptr(globals.cites.info(sort_cite_ptr).to_raw_dangerous());
         execute_fn(ctx, globals, fn_loc)?;
         check_command_execution(ctx, globals.pool, globals.hash, globals.cites)?;
         sort_cite_ptr += 1;
@@ -358,10 +295,7 @@ fn bst_iterate_command(
     Ok(())
 }
 
-fn bst_macro_command(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    globals: &mut GlobalItems<'_>,
-) -> Result<(), BibtexError> {
+fn bst_macro_command(ctx: &mut ExecCtx<'_, '_, '_>, globals: &mut GlobalItems<'_>) -> Result<(), BibtexError> {
     if ctx.read_seen {
         ctx.write_logs("Illegal, macro command after read command");
         bst_err_print_and_look_for_blank_line(ctx, globals.buffers, globals.pool)?;
@@ -370,9 +304,7 @@ fn bst_macro_command(
 
     eat_bst_white!(ctx, globals, "macro");
     bst_brace!('{', ctx, globals, "macro");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     eat_bst_white!(ctx, globals, "macro");
     bst_ident!(ctx, globals, "macro", b'}', b'#', b'#');
 
@@ -380,10 +312,7 @@ fn bst_macro_command(
     let bst_fn = &mut globals.buffers.buffer_mut(BufTy::Base)[range];
     bst_fn.make_ascii_lowercase();
 
-    let res =
-        globals
-            .hash
-            .lookup_str_insert::<hash::Macro>(globals.pool, bst_fn, StrNumber::invalid());
+    let res = globals.hash.lookup_str_insert::<hash::Macro>(globals.pool, bst_fn, StrNumber::invalid());
     if res.exists {
         print_a_token(ctx, globals.buffers);
         ctx.write_logs(" is already defined as a macro");
@@ -391,29 +320,21 @@ fn bst_macro_command(
         return Ok(());
     }
     // This is always unused if the macro is successfully defined, but appears to be a fallback for invalid macros.
-    globals
-        .hash
-        .set_extra(res.loc, globals.hash.get(res.loc).text());
+    globals.hash.set_extra(res.loc, globals.hash.get(res.loc).text());
 
     eat_bst_white!(ctx, globals, "macro");
     bst_brace!('}', ctx, globals, "macro");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     eat_bst_white!(ctx, globals, "macro");
     bst_brace!('{', ctx, globals, "macro");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     eat_bst_white!(ctx, globals, "macro");
     if globals.buffers.at_offset(BufTy::Base, 2) != b'"' {
         ctx.write_logs("A macro definition must be \"-delimited");
         bst_err_print_and_look_for_blank_line(ctx, globals.buffers, globals.pool)?;
         return Ok(());
     }
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     let init = globals.buffers.init(BufTy::Base);
     if !Scan::new().chars(b"\"").scan_till(globals.buffers, init) {
         ctx.write_logs("There's no `\"' to end macro definition");
@@ -423,29 +344,18 @@ fn bst_macro_command(
 
     let range = globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2);
     let text = &mut globals.buffers.buffer_mut(BufTy::Base)[range];
-    let res2 = globals
-        .hash
-        .lookup_str_insert::<hash::Text>(globals.pool, text, ());
+    let res2 = globals.hash.lookup_str_insert::<hash::Text>(globals.pool, text, ());
 
-    globals
-        .hash
-        .set_extra(res.loc, globals.hash.get(res2.loc).text());
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.hash.set_extra(res.loc, globals.hash.get(res2.loc).text());
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     eat_bst_white!(ctx, globals, "macro");
     bst_brace!('}', ctx, globals, "macro");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
     Ok(())
 }
 
-fn bst_read_command(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    globals: &mut GlobalItems<'_>,
-) -> Result<(), BibtexError> {
+fn bst_read_command(ctx: &mut ExecCtx<'_, '_, '_>, globals: &mut GlobalItems<'_>) -> Result<(), BibtexError> {
     if ctx.read_seen {
         ctx.write_logs("Illegal, another read command");
         bst_err_print_and_look_for_blank_line(ctx, globals.buffers, globals.pool)?;
@@ -462,17 +372,11 @@ fn bst_read_command(
     let start = globals.buffers.offset(BufTy::Base, 2);
     let to = globals.buffers.init(BufTy::Base);
     let sv_range = start..to;
-    globals.buffers.copy_within(
-        BufTy::Base,
-        BufTy::Sv,
-        sv_range.start,
-        sv_range.start,
-        sv_range.end,
-    );
-
     globals
-        .other
-        .check_field_overflow(globals.other.num_fields() * globals.cites.num_cites());
+        .buffers
+        .copy_within(BufTy::Base, BufTy::Sv, sv_range.start, sv_range.start, sv_range.end);
+
+    globals.other.check_field_overflow(globals.other.num_fields() * globals.cites.num_cites());
 
     for idx in 0..globals.other.max_fields() {
         globals.other.set_field(idx, StrNumber::invalid());
@@ -506,19 +410,12 @@ fn bst_read_command(
             log_pr_bib_name(ctx, globals.pool, file.name)?;
         }
 
-        globals
-            .buffers
-            .set_offset(BufTy::Base, 2, globals.buffers.init(BufTy::Base));
+        globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.init(BufTy::Base));
 
         let mut cur_macro_loc = HashPointer::default();
         let mut field_name_loc = HashPointer::default();
         while !globals.bibs.top_file_mut().file.eof(ctx.engine) {
-            get_bib_command_or_entry_and_process(
-                ctx,
-                globals,
-                &mut cur_macro_loc,
-                &mut field_name_loc,
-            )?;
+            get_bib_command_or_entry_and_process(ctx, globals, &mut cur_macro_loc, &mut field_name_loc)?;
         }
         globals.bibs.pop_file().file.close(ctx)?;
     }
@@ -530,9 +427,7 @@ fn bst_read_command(
         0 => 0,
         val => val - 1,
     };
-    if cites * globals.other.num_fields() + globals.other.crossref_num()
-        >= globals.other.max_fields()
-    {
+    if cites * globals.other.num_fields() + globals.other.crossref_num() >= globals.other.max_fields() {
         ctx.write_logs("field_info index is out of range");
         print_confusion(ctx);
         return Err(BibtexError::Fatal);
@@ -541,27 +436,18 @@ fn bst_read_command(
     for cite_ptr in 0..globals.cites.num_cites() {
         let field_ptr = cite_ptr * globals.other.num_fields() + globals.other.crossref_num();
         if !globals.other.field(field_ptr).is_invalid() {
-            let find = find_cite_locs_for_this_cite_key(
-                globals.pool,
-                globals.hash,
-                globals.other.field(field_ptr),
-            );
+            let find = find_cite_locs_for_this_cite_key(globals.pool, globals.hash, globals.other.field(field_ptr));
 
             if let Some(lc_loc) = find.lc_cite {
                 let &cite_loc = globals.hash.get(lc_loc).extra();
-                globals
-                    .other
-                    .set_field(field_ptr, globals.hash.get(cite_loc).text());
+                globals.other.set_field(field_ptr, globals.hash.get(cite_loc).text());
 
                 let field_start = cite_ptr * globals.other.num_fields();
                 let &cite = globals.hash.get(cite_loc).extra();
-                let mut parent =
-                    cite * globals.other.num_fields() + globals.other.pre_defined_fields();
+                let mut parent = cite * globals.other.num_fields() + globals.other.pre_defined_fields();
 
                 #[allow(clippy::explicit_counter_loop)]
-                for idx in (field_start + globals.other.pre_defined_fields())
-                    ..(field_start + globals.other.num_fields())
-                {
+                for idx in (field_start + globals.other.pre_defined_fields())..(field_start + globals.other.num_fields()) {
                     if globals.other.field(idx).is_invalid() {
                         globals.other.set_field(idx, globals.other.field(parent));
                     }
@@ -574,11 +460,7 @@ fn bst_read_command(
     for cite_ptr in 0..globals.cites.num_cites() {
         let field_ptr = cite_ptr * globals.other.num_fields() + globals.other.crossref_num();
         if !globals.other.field(field_ptr).is_invalid() {
-            let find = find_cite_locs_for_this_cite_key(
-                globals.pool,
-                globals.hash,
-                globals.other.field(field_ptr),
-            );
+            let find = find_cite_locs_for_this_cite_key(globals.pool, globals.hash, globals.other.field(field_ptr));
 
             if let Some(lc_loc) = find.lc_cite {
                 let &cite_loc = globals.hash.get(lc_loc).extra();
@@ -590,34 +472,19 @@ fn bst_read_command(
                 let &cite = globals.hash.get(cite_loc).extra();
                 let cite_parent_ptr = cite;
                 if globals.cites.get_type(cite_parent_ptr).is_null() {
-                    nonexistent_cross_reference_error(
-                        ctx,
-                        globals.pool,
-                        globals.cites,
-                        globals.other,
-                        cite_ptr,
-                        field_ptr,
-                    )?;
+                    nonexistent_cross_reference_error(ctx, globals.pool, globals.cites, globals.other, cite_ptr, field_ptr)?;
                     globals.other.set_field(field_ptr, StrNumber::invalid());
                 } else {
-                    let field_parent_ptr =
-                        cite_parent_ptr * globals.other.num_fields() + globals.other.crossref_num();
+                    let field_parent_ptr = cite_parent_ptr * globals.other.num_fields() + globals.other.crossref_num();
                     if !globals.other.field(field_parent_ptr).is_invalid() {
                         ctx.write_logs("Warning--you've nested cross references");
-                        bad_cross_reference_print(
-                            ctx,
-                            globals.pool,
-                            globals.cites,
-                            cite_ptr,
-                            globals.cites.get_cite(cite_parent_ptr),
-                        )?;
+                        bad_cross_reference_print(ctx, globals.pool, globals.cites, cite_ptr, globals.cites.get_cite(cite_parent_ptr))?;
                         ctx.write_logs("\", which also refers to something\n");
                         ctx.mark_warning();
                     }
                     if !ctx.all_entries
                         && cite_parent_ptr >= globals.cites.old_num_cites()
-                        && globals.cites.info(cite_parent_ptr).to_raw_dangerous()
-                            < ctx.config.min_crossrefs as usize
+                        && globals.cites.info(cite_parent_ptr).to_raw_dangerous() < ctx.config.min_crossrefs as usize
                     {
                         globals.other.set_field(field_ptr, StrNumber::invalid());
                     }
@@ -627,14 +494,7 @@ fn bst_read_command(
                     hash_cite_confusion(ctx);
                     return Err(BibtexError::Fatal);
                 }
-                nonexistent_cross_reference_error(
-                    ctx,
-                    globals.pool,
-                    globals.cites,
-                    globals.other,
-                    cite_ptr,
-                    field_ptr,
-                )?;
+                nonexistent_cross_reference_error(ctx, globals.pool, globals.cites, globals.other, cite_ptr, field_ptr)?;
                 globals.other.set_field(field_ptr, StrNumber::invalid());
             }
         }
@@ -654,18 +514,10 @@ fn bst_read_command(
                     return Err(BibtexError::Fatal);
                 }
 
-                globals
-                    .cites
-                    .set_cite(ctx.cite_xptr, globals.cites.get_cite(cite_ptr));
-                globals
-                    .cites
-                    .set_type(ctx.cite_xptr, globals.cites.get_type(cite_ptr));
+                globals.cites.set_cite(ctx.cite_xptr, globals.cites.get_cite(cite_ptr));
+                globals.cites.set_type(ctx.cite_xptr, globals.cites.get_type(cite_ptr));
 
-                let find = find_cite_locs_for_this_cite_key(
-                    globals.pool,
-                    globals.hash,
-                    globals.cites.get_cite(cite_ptr),
-                );
+                let find = find_cite_locs_for_this_cite_key(globals.pool, globals.hash, globals.cites.get_cite(cite_ptr));
 
                 let lc_loc = match find.lc_cite {
                     Some(lc_loc) => lc_loc,
@@ -688,9 +540,7 @@ fn bst_read_command(
                 let tmp = cite_ptr * globals.other.num_fields();
 
                 for idx in start..end {
-                    globals
-                        .other
-                        .set_field(idx, globals.other.field(tmp + idx - start));
+                    globals.other.set_field(idx, globals.other.field(tmp + idx - start));
                 }
             }
             ctx.cite_xptr += 1;
@@ -710,29 +560,20 @@ fn bst_read_command(
     globals.entries.init_entries(globals.cites);
 
     for idx in 0..globals.cites.num_cites() {
-        globals
-            .cites
-            .set_info(idx, StrNumber::from_raw_dangerous(idx));
+        globals.cites.set_info(idx, StrNumber::from_raw_dangerous(idx));
     }
     globals.cites.set_ptr(globals.cites.num_cites());
 
-    globals.buffers.copy_within(
-        BufTy::Sv,
-        BufTy::Base,
-        sv_range.start,
-        sv_range.start,
-        sv_range.end,
-    );
+    globals
+        .buffers
+        .copy_within(BufTy::Sv, BufTy::Base, sv_range.start, sv_range.start, sv_range.end);
     globals.buffers.set_offset(BufTy::Base, 2, sv_range.start);
     globals.buffers.set_init(BufTy::Base, sv_range.end);
 
     Ok(())
 }
 
-fn bst_reverse_command(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    globals: &mut GlobalItems<'_>,
-) -> Result<(), BibtexError> {
+fn bst_reverse_command(ctx: &mut ExecCtx<'_, '_, '_>, globals: &mut GlobalItems<'_>) -> Result<(), BibtexError> {
     if !ctx.read_seen {
         ctx.write_logs("Illegal, reverse command before read command");
         bst_err_print_and_look_for_blank_line(ctx, globals.buffers, globals.pool)?;
@@ -741,9 +582,7 @@ fn bst_reverse_command(
 
     eat_bst_white!(ctx, globals, "reverse");
     bst_brace!('{', ctx, globals, "reverse");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     eat_bst_white!(ctx, globals, "reverse");
     bst_ident!(ctx, globals, "reverse", b'}', b'#', b'#');
 
@@ -753,9 +592,7 @@ fn bst_reverse_command(
 
     eat_bst_white!(ctx, globals, "reverse");
     bst_brace!('}', ctx, globals, "reverse");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
     ctx.lit_stack.clear();
     ctx.checkpoint = globals.pool.checkpoint();
@@ -763,9 +600,7 @@ fn bst_reverse_command(
     ctx.mess_with_entries = true;
 
     for idx in (0..globals.cites.num_cites()).rev() {
-        globals
-            .cites
-            .set_ptr(globals.cites.info(idx).to_raw_dangerous());
+        globals.cites.set_ptr(globals.cites.info(idx).to_raw_dangerous());
         execute_fn(ctx, globals, fn_loc)?;
         check_command_execution(ctx, globals.pool, globals.hash, globals.cites)?;
     }
@@ -773,10 +608,7 @@ fn bst_reverse_command(
     Ok(())
 }
 
-fn bst_sort_command(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    globals: &mut GlobalItems<'_>,
-) -> Result<(), BibtexError> {
+fn bst_sort_command(ctx: &mut ExecCtx<'_, '_, '_>, globals: &mut GlobalItems<'_>) -> Result<(), BibtexError> {
     if !ctx.read_seen {
         ctx.write_logs("Illegal, sort command before read command");
         bst_err_print_and_look_for_blank_line(ctx, globals.buffers, globals.pool)?;
@@ -784,23 +616,16 @@ fn bst_sort_command(
     }
 
     if globals.cites.num_cites() > 1 {
-        globals
-            .cites
-            .sort_info(globals.entries, 0..=globals.cites.num_cites() - 1);
+        globals.cites.sort_info(globals.entries, 0..=globals.cites.num_cites() - 1);
     }
 
     Ok(())
 }
 
-fn bst_strings_command(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    globals: &mut GlobalItems<'_>,
-) -> Result<(), BibtexError> {
+fn bst_strings_command(ctx: &mut ExecCtx<'_, '_, '_>, globals: &mut GlobalItems<'_>) -> Result<(), BibtexError> {
     eat_bst_white!(ctx, globals, "strings");
     bst_brace!('{', ctx, globals, "strings");
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
     eat_bst_white!(ctx, globals, "strings");
 
     while globals.buffers.at_offset(BufTy::Base, 2) != b'}' {
@@ -810,11 +635,9 @@ fn bst_strings_command(
         let bst_fn = &mut globals.buffers.buffer_mut(BufTy::Base)[range];
         bst_fn.make_ascii_lowercase();
 
-        let res = globals.hash.lookup_str_insert(
-            globals.pool,
-            bst_fn,
-            BstFn::StrGlbl(globals.globals.num_glb_strs()),
-        );
+        let res = globals
+            .hash
+            .lookup_str_insert(globals.pool, bst_fn, BstFn::StrGlbl(globals.globals.num_glb_strs()));
 
         if res.exists {
             already_seen_function_print(ctx, globals.buffers, globals.pool, globals.hash, res.loc)?;
@@ -825,25 +648,18 @@ fn bst_strings_command(
             globals.globals.grow();
         }
 
-        globals
-            .globals
-            .set_num_glb_strs(globals.globals.num_glb_strs() + 1);
+        globals.globals.set_num_glb_strs(globals.globals.num_glb_strs() + 1);
 
         eat_bst_white!(ctx, globals, "strings");
     }
 
-    globals
-        .buffers
-        .set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
+    globals.buffers.set_offset(BufTy::Base, 2, globals.buffers.offset(BufTy::Base, 2) + 1);
 
     Ok(())
 }
 
 fn bad_argument_token(
-    ctx: &mut Bibtex<'_, '_>,
-    buffers: &mut GlobalBuffer,
-    pool: &StringPool,
-    hash: &HashData,
+    ctx: &mut Bibtex<'_, '_>, buffers: &mut GlobalBuffer, pool: &StringPool, hash: &HashData,
 ) -> Result<Option<HashPointer<BstFn>>, BibtexError> {
     let range = buffers.offset(BufTy::Base, 1)..buffers.offset(BufTy::Base, 2);
     let bst_fn = &mut buffers.buffer_mut(BufTy::Base)[range];
@@ -872,15 +688,9 @@ fn bad_argument_token(
     }
 }
 
-pub(crate) fn get_bst_command_and_process(
-    ctx: &mut ExecCtx<'_, '_, '_>,
-    globals: &mut GlobalItems<'_>,
-) -> Result<(), BibtexError> {
+pub(crate) fn get_bst_command_and_process(ctx: &mut ExecCtx<'_, '_, '_>, globals: &mut GlobalItems<'_>) -> Result<(), BibtexError> {
     let init = globals.buffers.init(BufTy::Base);
-    if !Scan::new()
-        .not_class(LexClass::Alpha)
-        .scan_till_nonempty(globals.buffers, init)
-    {
+    if !Scan::new().not_class(LexClass::Alpha).scan_till_nonempty(globals.buffers, init) {
         ctx.write_logs(&format!(
             "\"{}\" can't start a style-file command",
             globals.buffers.at_offset(BufTy::Base, 2) as char,

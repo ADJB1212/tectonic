@@ -46,12 +46,7 @@ struct FontInfo {
 }
 
 impl FontInfo {
-    fn new(
-        font_ref: PlatformFontRef,
-        ps_name: CString,
-        family_name: CString,
-        style_name: CString,
-    ) -> FontInfo {
+    fn new(font_ref: PlatformFontRef, ps_name: CString, family_name: CString, style_name: CString) -> FontInfo {
         let mut out = FontInfo {
             full_name: None,
             ps_name,
@@ -114,11 +109,7 @@ fn base_get_op_size_rec_and_style_flags(font: &mut FontInfo) {
     let size_rec = FontManager::get_op_size(&xfont);
     if let Some(size_rec) = size_rec {
         font.op_size_info.design_size = size_rec.design_size;
-        if size_rec.sub_family_id != 0
-            || size_rec.name_code != 0
-            || size_rec.min_size != 0.0
-            || size_rec.max_size != 0.0
-        {
+        if size_rec.sub_family_id != 0 || size_rec.name_code != 0 || size_rec.min_size != 0.0 || size_rec.max_size != 0.0 {
             font.op_size_info.sub_family_id = size_rec.sub_family_id;
             font.op_size_info.name_code = size_rec.name_code;
             font.op_size_info.min_size = size_rec.min_size;
@@ -150,9 +141,7 @@ fn base_get_op_size_rec_and_style_flags(font: &mut FontInfo) {
 
     let post_table = ft_face.get_sfnt_table::<ft::tables::Postscript>();
     if let Some(table) = post_table {
-        font.slant = (1000.0
-            * (f64::tan(fix_to_d((-table.italic_angle) as Fixed) * std::f64::consts::PI / 180.0)))
-            as _;
+        font.slant = (1000.0 * (f64::tan(fix_to_d((-table.italic_angle) as Fixed) * std::f64::consts::PI / 180.0))) as _;
     }
 }
 
@@ -168,12 +157,7 @@ struct FontMaps {
 }
 
 impl FontMaps {
-    fn add_to_maps(
-        &mut self,
-        backend: &dyn FontManagerBackend,
-        pfont: PlatformFontRef,
-        names: &NameCollection,
-    ) {
+    fn add_to_maps(&mut self, backend: &dyn FontManagerBackend, pfont: PlatformFontRef, names: &NameCollection) {
         if self.platform_ref_to_font.contains_key(&pfont) {
             // this font has already been cached
             return;
@@ -350,12 +334,7 @@ impl FontManager {
     }
 
     /// Get the font for a given name, variant, and point size
-    pub fn find_font(
-        &mut self,
-        name: &CStr,
-        variant: Option<&mut [u8]>,
-        mut pt_size: f64,
-    ) -> Option<PlatformFontRef> {
+    pub fn find_font(&mut self, name: &CStr, variant: Option<&mut [u8]>, mut pt_size: f64) -> Option<PlatformFontRef> {
         let mut font = None;
         let mut dsize = 10.0;
         self.loaded_font_design_size = 655360;
@@ -372,10 +351,7 @@ impl FontManager {
             }
 
             let bytes = name.to_bytes();
-            let split = bytes
-                .iter()
-                .position(|c| *c == b'-')
-                .map(|index| (&bytes[..index], &bytes[index + 1..]));
+            let split = bytes.iter().position(|c| *c == b'-').map(|index| (&bytes[..index], &bytes[index + 1..]));
 
             // if there's a hyphen, split there and try Family-Style
             if let Some((family, style)) = split {
@@ -559,10 +535,7 @@ impl FontManager {
                     let mut new_best = None;
                     for &style_pos in parent.styles.values() {
                         let style = &self.maps.fonts[style_pos];
-                        if style.is_bold == font.is_bold
-                            && new_best.is_none()
-                            && style.is_italic != font.is_italic
-                        {
+                        if style.is_bold == font.is_bold && new_best.is_none() && style.is_italic != font.is_italic {
                             new_best = Some(style_pos);
                             break;
                         }
@@ -582,10 +555,7 @@ impl FontManager {
                                 // weight info was available, so try to match that
                                 if new_best.is_none()
                                     || Self::weight_and_width_diff(style, font)
-                                        < Self::weight_and_width_diff(
-                                            &self.maps.fonts[new_best.unwrap()],
-                                            font,
-                                        )
+                                        < Self::weight_and_width_diff(&self.maps.fonts[new_best.unwrap()], font)
                                 {
                                     new_best = Some(style_pos);
                                 }
@@ -615,8 +585,7 @@ impl FontManager {
                     best_match = self
                         .best_match_from_family(
                             parent,
-                            (font.weight + (parent.max_weight - (parent.min_weight)) / 2 + 1)
-                                as libc::c_int,
+                            (font.weight + (parent.max_weight - (parent.min_weight)) / 2 + 1) as libc::c_int,
                             font.width as libc::c_int,
                             font.slant as libc::c_int,
                         )
@@ -627,13 +596,8 @@ impl FontManager {
                             let style = &self.maps.fonts[style_pos];
                             if style.is_italic == font.is_italic
                                 && (new_best.is_none()
-                                    || Self::weight_and_width_diff(
-                                        style,
-                                        &self.maps.fonts[best_match],
-                                    ) < Self::weight_and_width_diff(
-                                        &self.maps.fonts[new_best.unwrap()],
-                                        &self.maps.fonts[best_match],
-                                    ))
+                                    || Self::weight_and_width_diff(style, &self.maps.fonts[best_match])
+                                        < Self::weight_and_width_diff(&self.maps.fonts[new_best.unwrap()], &self.maps.fonts[best_match]))
                             {
                                 new_best = Some(style_pos);
                             }
@@ -663,10 +627,7 @@ impl FontManager {
         let font = &self.maps.fonts[font_pos];
         let parent = &self.maps.families[parent_pos];
         if font.op_size_info.sub_family_id != 0 && pt_size > 0.0 {
-            let mut best_mismatch = f64::max(
-                font.op_size_info.min_size - pt_size,
-                pt_size - font.op_size_info.max_size,
-            );
+            let mut best_mismatch = f64::max(font.op_size_info.min_size - pt_size, pt_size - font.op_size_info.max_size);
             if best_mismatch > 0.0 {
                 let mut best_match = font_pos;
                 for &style_pos in parent.styles.values() {
@@ -674,10 +635,7 @@ impl FontManager {
                     if style.op_size_info.sub_family_id != font.op_size_info.sub_family_id {
                         continue;
                     }
-                    let mismatch = f64::max(
-                        style.op_size_info.min_size - pt_size,
-                        pt_size - style.op_size_info.max_size,
-                    );
+                    let mismatch = f64::max(style.op_size_info.min_size - pt_size, pt_size - style.op_size_info.max_size);
                     if mismatch < best_mismatch {
                         best_match = style_pos;
                         best_mismatch = mismatch;
@@ -731,29 +689,17 @@ impl FontManager {
         (u16::abs_diff(a.weight, b.weight) + wid_diff) as libc::c_int
     }
 
-    fn style_diff(
-        a: &FontInfo,
-        wt: libc::c_int,
-        wd: libc::c_int,
-        slant: libc::c_int,
-    ) -> libc::c_int {
+    fn style_diff(a: &FontInfo, wt: libc::c_int, wd: libc::c_int, slant: libc::c_int) -> libc::c_int {
         let mut wid_diff = u16::abs_diff(a.width, wd as u16);
         if wid_diff < 10 {
             wid_diff *= 200;
         }
 
-        (u32::abs_diff(a.slant.unsigned_abs() as u32, slant.unsigned_abs()) * 2
-            + u32::abs_diff(a.weight as u32, wt.unsigned_abs())
-            + wid_diff as u32) as libc::c_int
+        (u32::abs_diff(a.slant.unsigned_abs() as u32, slant.unsigned_abs()) * 2 + u32::abs_diff(a.weight as u32, wt.unsigned_abs()) + wid_diff as u32)
+            as libc::c_int
     }
 
-    fn best_match_from_family(
-        &self,
-        family: &FamilyInfo,
-        wt: libc::c_int,
-        wd: libc::c_int,
-        slant: libc::c_int,
-    ) -> Option<usize> {
+    fn best_match_from_family(&self, family: &FamilyInfo, wt: libc::c_int, wd: libc::c_int, slant: libc::c_int) -> Option<usize> {
         let mut best_match = None;
         for &font_pos in family.styles.values() {
             let font = &self.maps.fonts[font_pos];
@@ -761,8 +707,7 @@ impl FontManager {
                 None => Some(font_pos),
                 Some(best_pos) => {
                     let best = &self.maps.fonts[best_pos];
-                    if Self::style_diff(font, wt, wd, slant) < Self::style_diff(best, wt, wd, slant)
-                    {
+                    if Self::style_diff(font, wt, wd, slant) < Self::style_diff(best, wt, wd, slant) {
                         Some(font_pos)
                     } else {
                         Some(best_pos)
@@ -788,23 +733,18 @@ impl FontManager {
     fn get_op_size(font: &Font) -> Option<OpSizeRec> {
         let hb_font = font.try_hb_font()?;
 
-        hb_font
-            .face()
-            .ot_layout()
-            .size_params()
-            .map(|params| OpSizeRec {
-                sub_family_id: params.subfamily_id,
-                name_code: params.subfamily_name_id,
-                design_size: params.design_size as f64 * 72.27 / 72.0 / 10.0,
-                min_size: params.start as f64 * 72.27 / 72.0 / 10.0,
+        hb_font.face().ot_layout().size_params().map(|params| OpSizeRec {
+            sub_family_id: params.subfamily_id,
+            name_code: params.subfamily_name_id,
+            design_size: params.design_size as f64 * 72.27 / 72.0 / 10.0,
+            min_size: params.start as f64 * 72.27 / 72.0 / 10.0,
 
-                max_size: params.end as f64 * 72.27 / 72.0 / 10.0,
-            })
+            max_size: params.end as f64 * 72.27 / 72.0 / 10.0,
+        })
     }
 
     fn search_for_host_platform_fonts(&mut self, name: &CStr) {
-        self.backend
-            .search_for_host_platform_fonts(&mut self.maps, name)
+        self.backend.search_for_host_platform_fonts(&mut self.maps, name)
     }
 
     /// Get the platform-specific font file location
@@ -842,11 +782,7 @@ mod tests {
     #[test]
     fn prepending_name_preserves_other_names_and_list_allocation() {
         let mut names = Vec::with_capacity(8);
-        names.extend([
-            c"First".to_owned(),
-            c"Other".to_owned(),
-            c"First".to_owned(),
-        ]);
+        names.extend([c"First".to_owned(), c"Other".to_owned(), c"First".to_owned()]);
         let allocation = names.as_ptr();
 
         FontManager::prepend_to_list(&mut names, c"First");

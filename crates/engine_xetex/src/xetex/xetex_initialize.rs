@@ -295,17 +295,14 @@ pub(super) unsafe fn initialize_more_initex_variables() {
         (*eqtb.add((CAT_CODE_BASE) as usize)).b32.s1 = IGNORE;
 
         for k in (b'0' as i32)..=(b'9' as i32) {
-            (*eqtb.add((MATH_CODE_BASE + k) as usize)).b32.s1 =
-                k + ((VAR_FAM_CLASS as u32 & 0x07) << 21) as i32;
+            (*eqtb.add((MATH_CODE_BASE + k) as usize)).b32.s1 = k + ((VAR_FAM_CLASS as u32 & 0x07) << 21) as i32;
         }
 
         for k in (b'A' as i32)..=(b'Z' as i32) {
             (*eqtb.add((CAT_CODE_BASE + k) as usize)).b32.s1 = LETTER;
             (*eqtb.add((CAT_CODE_BASE + k + 32) as usize)).b32.s1 = LETTER;
-            (*eqtb.add((MATH_CODE_BASE + k) as usize)).b32.s1 =
-                k + (1 << 24) + ((VAR_FAM_CLASS as u32 & 0x07) << 21) as i32;
-            (*eqtb.add((MATH_CODE_BASE + k + 32) as usize)).b32.s1 =
-                k + 32 + (1 << 24) + ((VAR_FAM_CLASS as u32 & 0x07) << 21) as i32;
+            (*eqtb.add((MATH_CODE_BASE + k) as usize)).b32.s1 = k + (1 << 24) + ((VAR_FAM_CLASS as u32 & 0x07) << 21) as i32;
+            (*eqtb.add((MATH_CODE_BASE + k + 32) as usize)).b32.s1 = k + 32 + (1 << 24) + ((VAR_FAM_CLASS as u32 & 0x07) << 21) as i32;
             (*eqtb.add((LC_CODE_BASE + k) as usize)).b32.s1 = k + 32;
             (*eqtb.add((LC_CODE_BASE + k + 32) as usize)).b32.s1 = k + 32;
             (*eqtb.add((UC_CODE_BASE + k) as usize)).b32.s1 = k;
@@ -319,18 +316,10 @@ pub(super) unsafe fn initialize_more_initex_variables() {
 
         (*eqtb.add((INT_BASE + INT_PAR__mag) as usize)).b32.s1 = 1000;
         (*eqtb.add((INT_BASE + INT_PAR__tolerance) as usize)).b32.s1 = 10000;
-        (*eqtb.add((INT_BASE + INT_PAR__hang_after) as usize))
-            .b32
-            .s1 = 1;
-        (*eqtb.add((INT_BASE + INT_PAR__max_dead_cycles) as usize))
-            .b32
-            .s1 = 25;
-        (*eqtb.add((INT_BASE + INT_PAR__escape_char) as usize))
-            .b32
-            .s1 = b'\\' as i32;
-        (*eqtb.add((INT_BASE + INT_PAR__end_line_char) as usize))
-            .b32
-            .s1 = CARRIAGE_RETURN;
+        (*eqtb.add((INT_BASE + INT_PAR__hang_after) as usize)).b32.s1 = 1;
+        (*eqtb.add((INT_BASE + INT_PAR__max_dead_cycles) as usize)).b32.s1 = 25;
+        (*eqtb.add((INT_BASE + INT_PAR__escape_char) as usize)).b32.s1 = b'\\' as i32;
+        (*eqtb.add((INT_BASE + INT_PAR__end_line_char) as usize)).b32.s1 = CARRIAGE_RETURN;
 
         for k in 0..=NUMBER_USVS - 1 {
             (*eqtb.add((DEL_CODE_BASE + k) as usize)).b32.s1 = -1;
@@ -347,11 +336,7 @@ pub(super) unsafe fn initialize_more_initex_variables() {
         hash_high = 0;
         cs_count = 0;
 
-        std::ptr::write_bytes(
-            (&raw mut _trie_op_hash_array).cast::<i32>(),
-            0,
-            (2 * TRIE_OP_SIZE + 1) as usize,
-        );
+        std::ptr::write_bytes((&raw mut _trie_op_hash_array).cast::<i32>(), 0, (2 * TRIE_OP_SIZE + 1) as usize);
 
         for k in 0..=BIGGEST_LANG {
             trie_used[(k) as usize] = MIN_TRIE_OP as u16;
@@ -370,8 +355,6 @@ pub(super) unsafe fn initialize_more_initex_variables() {
             sa_root[(i) as usize] = TEX_NULL;
         }
 
-        (*eqtb.add((INT_BASE + INT_PAR__xetex_hyphenatable_length) as usize))
-            .b32
-            .s1 = 63;
+        (*eqtb.add((INT_BASE + INT_PAR__xetex_hyphenatable_length) as usize)).b32.s1 = 63;
     }
 }

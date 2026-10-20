@@ -4,10 +4,7 @@
 use super::xetex_cleanup::final_cleanup;
 use super::xetex_constants::*;
 use super::xetex_core::*;
-use super::xetex_format::{
-    XETEX_FORMAT_PRIMITIVE_INITIALIZERS, xf_prim_init_none_i32, xf_prim_init_par_i32,
-    xf_prim_init_write_i32,
-};
+use super::xetex_format::{XETEX_FORMAT_PRIMITIVE_INITIALIZERS, xf_prim_init_none_i32, xf_prim_init_par_i32, xf_prim_init_write_i32};
 use super::xetex_initialize::{initialize_more_initex_variables, initialize_more_variables};
 use super::xetex_xetexd::*;
 use libc::{c_char, c_void, time_t};
@@ -126,11 +123,7 @@ unsafe fn initialize_primitives() {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn tt_run_engine(
-    dump_name: *const c_char,
-    input_file_name: *const c_char,
-    build_date: time_t,
-) -> tt_history_t {
+pub unsafe extern "C" fn tt_run_engine(dump_name: *const c_char, input_file_name: *const c_char, build_date: time_t) -> tt_history_t {
     unsafe {
         super::xetex_stringpool::reset_string_index();
         super::xetex_xetex0::reset_control_sequence_cache();

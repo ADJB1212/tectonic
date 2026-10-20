@@ -14,10 +14,7 @@ use std::{
 use tectonic_errors::Result;
 use tectonic_status_base::StatusBackend;
 
-use super::{
-    InputFeatures, InputHandle, InputOrigin, IoProvider, OpenResult, OutputHandle,
-    normalize_tex_path,
-};
+use super::{InputFeatures, InputHandle, InputOrigin, IoProvider, OpenResult, OutputHandle, normalize_tex_path};
 
 /// Information about a file created or used inside the memory-backed I/O
 /// provider.
@@ -63,11 +60,7 @@ fn now_as_unix_time() -> i64 {
 }
 
 impl MemoryIoItem {
-    pub fn new(
-        files: &Rc<RefCell<MemoryFileCollection>>,
-        name: &str,
-        truncate: bool,
-    ) -> MemoryIoItem {
+    pub fn new(files: &Rc<RefCell<MemoryFileCollection>>, name: &str, truncate: bool) -> MemoryIoItem {
         let (cur_data, cur_mtime) = match files.borrow_mut().remove(name) {
             Some(info) => {
                 if truncate {
@@ -128,11 +121,7 @@ impl InputFeatures for MemoryIoItem {
 
 impl Drop for MemoryIoItem {
     fn drop(&mut self) {
-        let unix_mtime = if self.was_modified {
-            Some(now_as_unix_time())
-        } else {
-            self.unix_mtime
-        };
+        let unix_mtime = if self.was_modified { Some(now_as_unix_time()) } else { self.unix_mtime };
 
         let mut mfiles = self.files.borrow_mut();
         mfiles.insert(
@@ -214,11 +203,7 @@ impl IoProvider for MemoryIo {
         ))
     }
 
-    fn input_open_name(
-        &mut self,
-        name: &str,
-        _status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_name(&mut self, name: &str, _status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         if name.is_empty() {
             return OpenResult::NotAvailable;
         }

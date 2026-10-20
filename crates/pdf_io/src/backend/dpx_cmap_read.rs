@@ -19,46 +19,17 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-    fn strncmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn strstr(
-        __big: *const ::core::ffi::c_char,
-        __little: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    fn strncmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char, __n: size_t) -> ::core::ffi::c_int;
+    fn strstr(__big: *const ::core::ffi::c_char, __little: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
     fn ttstub_input_get_size(handle: rust_input_handle_t) -> size_t;
-    fn ttstub_input_seek(
-        handle: rust_input_handle_t,
-        offset: ssize_t,
-        whence: ::core::ffi::c_int,
-    ) -> size_t;
-    fn ttstub_input_read(
-        handle: rust_input_handle_t,
-        data: *mut ::core::ffi::c_char,
-        len: size_t,
-    ) -> ssize_t;
+    fn ttstub_input_seek(handle: rust_input_handle_t, offset: ssize_t, whence: ::core::ffi::c_int) -> size_t;
+    fn ttstub_input_read(handle: rust_input_handle_t, data: *mut ::core::ffi::c_char, len: size_t) -> ssize_t;
     #[link_name = "__pdf_impl_CMap_is_valid"]
     fn CMap_is_valid(cmap: *mut CMap) -> bool;
     #[link_name = "__pdf_impl_CMap_set_name"]
@@ -73,57 +44,28 @@ unsafe extern "C-unwind" {
     fn CMap_set_CIDSysInfo(cmap: *mut CMap, csi: *const CIDSysInfo);
     #[link_name = "__pdf_impl_CMap_add_bfchar"]
     fn CMap_add_bfchar(
-        cmap: *mut CMap,
-        src: *const ::core::ffi::c_uchar,
-        srcdim: size_t,
-        dest: *const ::core::ffi::c_uchar,
-        destdim: size_t,
+        cmap: *mut CMap, src: *const ::core::ffi::c_uchar, srcdim: size_t, dest: *const ::core::ffi::c_uchar, destdim: size_t,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_CMap_add_cidchar"]
-    fn CMap_add_cidchar(
-        cmap: *mut CMap,
-        src: *const ::core::ffi::c_uchar,
-        srcdim: size_t,
-        dest: CID,
-    ) -> ::core::ffi::c_int;
+    fn CMap_add_cidchar(cmap: *mut CMap, src: *const ::core::ffi::c_uchar, srcdim: size_t, dest: CID) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_CMap_add_bfrange"]
     fn CMap_add_bfrange(
-        cmap: *mut CMap,
-        srclo: *const ::core::ffi::c_uchar,
-        srchi: *const ::core::ffi::c_uchar,
-        srcdim: size_t,
-        dest: *const ::core::ffi::c_uchar,
+        cmap: *mut CMap, srclo: *const ::core::ffi::c_uchar, srchi: *const ::core::ffi::c_uchar, srcdim: size_t, dest: *const ::core::ffi::c_uchar,
         destdim: size_t,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_CMap_add_cidrange"]
     fn CMap_add_cidrange(
-        cmap: *mut CMap,
-        srclo: *const ::core::ffi::c_uchar,
-        hi: *const ::core::ffi::c_uchar,
-        srcdim: size_t,
-        base: CID,
+        cmap: *mut CMap, srclo: *const ::core::ffi::c_uchar, hi: *const ::core::ffi::c_uchar, srcdim: size_t, base: CID,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_CMap_add_notdefchar"]
-    fn CMap_add_notdefchar(
-        cmap: *mut CMap,
-        src: *const ::core::ffi::c_uchar,
-        srcdim: size_t,
-        dst: CID,
-    ) -> ::core::ffi::c_int;
+    fn CMap_add_notdefchar(cmap: *mut CMap, src: *const ::core::ffi::c_uchar, srcdim: size_t, dst: CID) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_CMap_add_notdefrange"]
     fn CMap_add_notdefrange(
-        cmap: *mut CMap,
-        srclo: *const ::core::ffi::c_uchar,
-        srchi: *const ::core::ffi::c_uchar,
-        srcdim: size_t,
-        dst: CID,
+        cmap: *mut CMap, srclo: *const ::core::ffi::c_uchar, srchi: *const ::core::ffi::c_uchar, srcdim: size_t, dst: CID,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_CMap_add_codespacerange"]
     fn CMap_add_codespacerange(
-        cmap: *mut CMap,
-        codelo: *const ::core::ffi::c_uchar,
-        codehi: *const ::core::ffi::c_uchar,
-        dim: size_t,
+        cmap: *mut CMap, codelo: *const ::core::ffi::c_uchar, codehi: *const ::core::ffi::c_uchar, dim: size_t,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_CMap_cache_get"]
     fn CMap_cache_get(id: ::core::ffi::c_int) -> *mut CMap;
@@ -135,10 +77,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_renew"]
     fn renew(p: *mut ::core::ffi::c_void, size: uint32_t) -> *mut ::core::ffi::c_void;
     #[link_name = "__pdf_impl_pst_get_token"]
-    fn pst_get_token(
-        inbuf: *mut *mut ::core::ffi::c_uchar,
-        inbufend: *mut ::core::ffi::c_uchar,
-    ) -> *mut pst_obj;
+    fn pst_get_token(inbuf: *mut *mut ::core::ffi::c_uchar, inbufend: *mut ::core::ffi::c_uchar) -> *mut pst_obj;
     #[link_name = "__pdf_impl_pst_release_obj"]
     fn pst_release_obj(obj: *mut pst_obj);
     #[link_name = "__pdf_impl_pst_type_of"]
@@ -234,10 +173,7 @@ pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 pub const SEEK_SET: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const INVALID_HANDLE: uintptr_t = 0 as ::core::ffi::c_int as uintptr_t;
 #[inline]
-unsafe extern "C-unwind" fn strstartswith(
-    mut s: *const ::core::ffi::c_char,
-    mut prefix: *const ::core::ffi::c_char,
-) -> *const ::core::ffi::c_char {
+unsafe extern "C-unwind" fn strstartswith(mut s: *const ::core::ffi::c_char, mut prefix: *const ::core::ffi::c_char) -> *const ::core::ffi::c_char {
     let mut length: size_t = 0;
     length = strlen(prefix);
     if strncmp(s, prefix, length) == 0 as ::core::ffi::c_int {
@@ -251,20 +187,14 @@ pub const PST_TYPE_INTEGER: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
 pub const PST_TYPE_STRING: ::core::ffi::c_int = 5 as ::core::ffi::c_int;
 pub const PST_TYPE_NAME: ::core::ffi::c_int = 6 as ::core::ffi::c_int;
 pub const PST_TYPE_MARK: ::core::ffi::c_int = 7 as ::core::ffi::c_int;
-pub const CMAP_PARSE_DEBUG_STR: [::core::ffi::c_char; 12] =
-    crate::backend::c_char_array(*b"CMap_parse:\0");
-unsafe extern "C-unwind" fn ifreader_create(
-    mut handle: rust_input_handle_t,
-    mut size: size_t,
-    mut bufsize: size_t,
-) -> *mut ifreader {
+pub const CMAP_PARSE_DEBUG_STR: [::core::ffi::c_char; 12] = crate::backend::c_char_array(*b"CMap_parse:\0");
+unsafe extern "C-unwind" fn ifreader_create(mut handle: rust_input_handle_t, mut size: size_t, mut bufsize: size_t) -> *mut ifreader {
     let mut reader: *mut ifreader = ::core::ptr::null_mut::<ifreader>();
-    reader = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<ifreader>() as usize) as uint32_t)
-        as *mut ifreader;
-    (*reader).buf = new((bufsize.wrapping_add(1 as size_t) as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_uchar;
+    reader =
+        new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<ifreader>() as usize) as uint32_t) as *mut ifreader;
+    (*reader).buf = new(
+        (bufsize.wrapping_add(1 as size_t) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize) as uint32_t,
+    ) as *mut ::core::ffi::c_uchar;
     (*reader).max = bufsize;
     (*reader).handle = handle;
     (*reader).unread = size;
@@ -275,10 +205,7 @@ unsafe extern "C-unwind" fn ifreader_create(
 }
 unsafe extern "C-unwind" fn ifreader_destroy(mut reader: *mut ifreader) {
     if reader.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"reader\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"reader\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     free((*reader).buf as *mut ::core::ffi::c_void);
@@ -288,19 +215,14 @@ unsafe extern "C-unwind" fn ifreader_read(mut reader: *mut ifreader, mut size: s
     let mut bytesread: size_t = 0 as size_t;
     let mut bytesrem: size_t = 0 as size_t;
     if reader.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"reader\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"reader\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     bytesrem = ((*reader).endptr as size_t).wrapping_sub((*reader).cursor as size_t);
     if size > (*reader).max {
         (*reader).buf = renew(
             (*reader).buf as *mut ::core::ffi::c_void,
-            (size.wrapping_add(1 as size_t) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-                as uint32_t,
+            (size.wrapping_add(1 as size_t) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize) as uint32_t,
         ) as *mut ::core::ffi::c_uchar;
         (*reader).max = size;
     }
@@ -317,13 +239,7 @@ unsafe extern "C-unwind" fn ifreader_read(mut reader: *mut ifreader, mut size: s
         );
         (*reader).cursor = (*reader).buf;
         (*reader).endptr = (*reader).buf.offset(bytesrem as isize);
-        if ttstub_input_read(
-            (*reader).handle,
-            (*reader).endptr as *mut ::core::ffi::c_char,
-            bytesread,
-        ) as size_t
-            != bytesread
-        {
+        if ttstub_input_read((*reader).handle, (*reader).endptr as *mut ::core::ffi::c_char, bytesread) as size_t != bytesread {
             pdf_abort!(b"Reading file failed.\0" as *const u8 as *const ::core::ffi::c_char,);
         }
         (*reader).endptr = (*reader).endptr.offset(bytesread as isize);
@@ -333,10 +249,7 @@ unsafe extern "C-unwind" fn ifreader_read(mut reader: *mut ifreader, mut size: s
     return bytesread.wrapping_add(bytesrem);
 }
 pub const TOKEN_LEN_MAX: ::core::ffi::c_int = 127 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn check_next_token(
-    mut input: *mut ifreader,
-    mut key: *const ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn check_next_token(mut input: *mut ifreader, mut key: *const ::core::ffi::c_char) -> ::core::ffi::c_int {
     let mut cmp: ::core::ffi::c_int = 0;
     let mut token: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     let mut str: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -358,10 +271,7 @@ unsafe extern "C-unwind" fn check_next_token(
     return cmp;
 }
 unsafe extern "C-unwind" fn get_coderange(
-    mut input: *mut ifreader,
-    mut codeLo: *mut ::core::ffi::c_uchar,
-    mut codeHi: *mut ::core::ffi::c_uchar,
-    mut dim: *mut ::core::ffi::c_int,
+    mut input: *mut ifreader, mut codeLo: *mut ::core::ffi::c_uchar, mut codeHi: *mut ::core::ffi::c_uchar, mut dim: *mut ::core::ffi::c_int,
     mut maxlen: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut tok1: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
@@ -389,26 +299,14 @@ unsafe extern "C-unwind" fn get_coderange(
         pst_release_obj(tok2);
         return -(1 as ::core::ffi::c_int);
     }
-    memcpy(
-        codeLo as *mut ::core::ffi::c_void,
-        pst_data_ptr(tok1),
-        dim1 as size_t,
-    );
-    memcpy(
-        codeHi as *mut ::core::ffi::c_void,
-        pst_data_ptr(tok2),
-        dim2 as size_t,
-    );
+    memcpy(codeLo as *mut ::core::ffi::c_void, pst_data_ptr(tok1), dim1 as size_t);
+    memcpy(codeHi as *mut ::core::ffi::c_void, pst_data_ptr(tok2), dim2 as size_t);
     pst_release_obj(tok1);
     pst_release_obj(tok2);
     *dim = dim1;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn do_codespacerange(
-    mut cmap: *mut CMap,
-    mut input: *mut ifreader,
-    mut count: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn do_codespacerange(mut cmap: *mut CMap, mut input: *mut ifreader, mut count: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut codeLo: [::core::ffi::c_uchar; 127] = [0; 127];
     let mut codeHi: [::core::ffi::c_uchar; 127] = [0; 127];
     let mut dim: ::core::ffi::c_int = 0;
@@ -435,17 +333,10 @@ unsafe extern "C-unwind" fn do_codespacerange(
             dim as size_t,
         );
     }
-    return check_next_token(
-        input,
-        b"endcodespacerange\0" as *const u8 as *const ::core::ffi::c_char,
-    );
+    return check_next_token(input, b"endcodespacerange\0" as *const u8 as *const ::core::ffi::c_char);
 }
 unsafe extern "C-unwind" fn handle_codearray(
-    mut cmap: *mut CMap,
-    mut input: *mut ifreader,
-    mut codeLo: *mut ::core::ffi::c_uchar,
-    mut dim: ::core::ffi::c_int,
-    mut count: ::core::ffi::c_int,
+    mut cmap: *mut CMap, mut input: *mut ifreader, mut codeLo: *mut ::core::ffi::c_uchar, mut dim: ::core::ffi::c_int, mut count: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut tok: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     if dim < 1 as ::core::ffi::c_int {
@@ -475,8 +366,7 @@ unsafe extern "C-unwind" fn handle_codearray(
             );
         } else {
             pdf_abort!(
-                b"%s: Mapping to charName not supported.\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"%s: Mapping to charName not supported.\0" as *const u8 as *const ::core::ffi::c_char,
                 CMAP_PARSE_DEBUG_STR.as_ptr(),
             );
         }
@@ -486,11 +376,7 @@ unsafe extern "C-unwind" fn handle_codearray(
     }
     return check_next_token(input, b"]\0" as *const u8 as *const ::core::ffi::c_char);
 }
-unsafe extern "C-unwind" fn do_notdefrange(
-    mut cmap: *mut CMap,
-    mut input: *mut ifreader,
-    mut count: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn do_notdefrange(mut cmap: *mut CMap, mut input: *mut ifreader, mut count: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut tok: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     let mut codeLo: [::core::ffi::c_uchar; 127] = [0; 127];
     let mut codeHi: [::core::ffi::c_uchar; 127] = [0; 127];
@@ -502,8 +388,7 @@ unsafe extern "C-unwind" fn do_notdefrange(
         if !(fresh7 > 0 as ::core::ffi::c_int) {
             break;
         }
-        if ifreader_read(input, (TOKEN_LEN_MAX * 3 as ::core::ffi::c_int) as size_t) == 0 as size_t
-        {
+        if ifreader_read(input, (TOKEN_LEN_MAX * 3 as ::core::ffi::c_int) as size_t) == 0 as size_t {
             return -(1 as ::core::ffi::c_int);
         }
         if get_coderange(
@@ -533,23 +418,15 @@ unsafe extern "C-unwind" fn do_notdefrange(
             }
         } else {
             pdf_warning!(
-                b"%s: Invalid CMap mapping record. (ignored)\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"%s: Invalid CMap mapping record. (ignored)\0" as *const u8 as *const ::core::ffi::c_char,
                 CMAP_PARSE_DEBUG_STR.as_ptr(),
             );
         }
         pst_release_obj(tok);
     }
-    return check_next_token(
-        input,
-        b"endnotdefrange\0" as *const u8 as *const ::core::ffi::c_char,
-    );
+    return check_next_token(input, b"endnotdefrange\0" as *const u8 as *const ::core::ffi::c_char);
 }
-unsafe extern "C-unwind" fn do_bfrange(
-    mut cmap: *mut CMap,
-    mut input: *mut ifreader,
-    mut count: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn do_bfrange(mut cmap: *mut CMap, mut input: *mut ifreader, mut count: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut tok: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     let mut codeLo: [::core::ffi::c_uchar; 127] = [0; 127];
     let mut codeHi: [::core::ffi::c_uchar; 127] = [0; 127];
@@ -560,8 +437,7 @@ unsafe extern "C-unwind" fn do_bfrange(
         if !(fresh3 > 0 as ::core::ffi::c_int) {
             break;
         }
-        if ifreader_read(input, (TOKEN_LEN_MAX * 3 as ::core::ffi::c_int) as size_t) == 0 as size_t
-        {
+        if ifreader_read(input, (TOKEN_LEN_MAX * 3 as ::core::ffi::c_int) as size_t) == 0 as size_t {
             return -(1 as ::core::ffi::c_int);
         }
         if get_coderange(
@@ -603,23 +479,15 @@ unsafe extern "C-unwind" fn do_bfrange(
             }
         } else {
             pdf_warning!(
-                b"%s: Invalid CMap mapping record. (ignored)\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"%s: Invalid CMap mapping record. (ignored)\0" as *const u8 as *const ::core::ffi::c_char,
                 CMAP_PARSE_DEBUG_STR.as_ptr(),
             );
         }
         pst_release_obj(tok);
     }
-    return check_next_token(
-        input,
-        b"endbfrange\0" as *const u8 as *const ::core::ffi::c_char,
-    );
+    return check_next_token(input, b"endbfrange\0" as *const u8 as *const ::core::ffi::c_char);
 }
-unsafe extern "C-unwind" fn do_cidrange(
-    mut cmap: *mut CMap,
-    mut input: *mut ifreader,
-    mut count: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn do_cidrange(mut cmap: *mut CMap, mut input: *mut ifreader, mut count: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut tok: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     let mut codeLo: [::core::ffi::c_uchar; 127] = [0; 127];
     let mut codeHi: [::core::ffi::c_uchar; 127] = [0; 127];
@@ -631,8 +499,7 @@ unsafe extern "C-unwind" fn do_cidrange(
         if !(fresh1 > 0 as ::core::ffi::c_int) {
             break;
         }
-        if ifreader_read(input, (TOKEN_LEN_MAX * 3 as ::core::ffi::c_int) as size_t) == 0 as size_t
-        {
+        if ifreader_read(input, (TOKEN_LEN_MAX * 3 as ::core::ffi::c_int) as size_t) == 0 as size_t {
             return -(1 as ::core::ffi::c_int);
         }
         if get_coderange(
@@ -662,23 +529,15 @@ unsafe extern "C-unwind" fn do_cidrange(
             }
         } else {
             pdf_warning!(
-                b"%s: Invalid CMap mapping record. (ignored)\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"%s: Invalid CMap mapping record. (ignored)\0" as *const u8 as *const ::core::ffi::c_char,
                 CMAP_PARSE_DEBUG_STR.as_ptr(),
             );
         }
         pst_release_obj(tok);
     }
-    return check_next_token(
-        input,
-        b"endcidrange\0" as *const u8 as *const ::core::ffi::c_char,
-    );
+    return check_next_token(input, b"endcidrange\0" as *const u8 as *const ::core::ffi::c_char);
 }
-unsafe extern "C-unwind" fn do_notdefchar(
-    mut cmap: *mut CMap,
-    mut input: *mut ifreader,
-    mut count: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn do_notdefchar(mut cmap: *mut CMap, mut input: *mut ifreader, mut count: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut tok1: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     let mut tok2: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     let mut dstCID: ::core::ffi::c_int = 0;
@@ -688,8 +547,7 @@ unsafe extern "C-unwind" fn do_notdefchar(
         if !(fresh6 > 0 as ::core::ffi::c_int) {
             break;
         }
-        if ifreader_read(input, (TOKEN_LEN_MAX * 2 as ::core::ffi::c_int) as size_t) == 0 as size_t
-        {
+        if ifreader_read(input, (TOKEN_LEN_MAX * 2 as ::core::ffi::c_int) as size_t) == 0 as size_t {
             return -(1 as ::core::ffi::c_int);
         }
         tok1 = pst_get_token(&raw mut (*input).cursor, (*input).endptr);
@@ -713,24 +571,16 @@ unsafe extern "C-unwind" fn do_notdefchar(
             }
         } else {
             pdf_warning!(
-                b"%s: Invalid CMap mapping record. (ignored)\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"%s: Invalid CMap mapping record. (ignored)\0" as *const u8 as *const ::core::ffi::c_char,
                 CMAP_PARSE_DEBUG_STR.as_ptr(),
             );
         }
         pst_release_obj(tok1);
         pst_release_obj(tok2);
     }
-    return check_next_token(
-        input,
-        b"endnotdefchar\0" as *const u8 as *const ::core::ffi::c_char,
-    );
+    return check_next_token(input, b"endnotdefchar\0" as *const u8 as *const ::core::ffi::c_char);
 }
-unsafe extern "C-unwind" fn do_bfchar(
-    mut cmap: *mut CMap,
-    mut input: *mut ifreader,
-    mut count: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn do_bfchar(mut cmap: *mut CMap, mut input: *mut ifreader, mut count: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut tok1: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     let mut tok2: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     loop {
@@ -739,8 +589,7 @@ unsafe extern "C-unwind" fn do_bfchar(
         if !(fresh2 > 0 as ::core::ffi::c_int) {
             break;
         }
-        if ifreader_read(input, (TOKEN_LEN_MAX * 2 as ::core::ffi::c_int) as size_t) == 0 as size_t
-        {
+        if ifreader_read(input, (TOKEN_LEN_MAX * 2 as ::core::ffi::c_int) as size_t) == 0 as size_t {
             return -(1 as ::core::ffi::c_int);
         }
         tok1 = pst_get_token(&raw mut (*input).cursor, (*input).endptr);
@@ -762,30 +611,21 @@ unsafe extern "C-unwind" fn do_bfchar(
             );
         } else if pst_type_of(tok2) == PST_TYPE_NAME {
             pdf_abort!(
-                b"%s: Mapping to charName not supported.\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"%s: Mapping to charName not supported.\0" as *const u8 as *const ::core::ffi::c_char,
                 CMAP_PARSE_DEBUG_STR.as_ptr(),
             );
         } else {
             pdf_warning!(
-                b"%s: Invalid CMap mapping record. (ignored)\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"%s: Invalid CMap mapping record. (ignored)\0" as *const u8 as *const ::core::ffi::c_char,
                 CMAP_PARSE_DEBUG_STR.as_ptr(),
             );
         }
         pst_release_obj(tok1);
         pst_release_obj(tok2);
     }
-    return check_next_token(
-        input,
-        b"endbfchar\0" as *const u8 as *const ::core::ffi::c_char,
-    );
+    return check_next_token(input, b"endbfchar\0" as *const u8 as *const ::core::ffi::c_char);
 }
-unsafe extern "C-unwind" fn do_cidchar(
-    mut cmap: *mut CMap,
-    mut input: *mut ifreader,
-    mut count: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn do_cidchar(mut cmap: *mut CMap, mut input: *mut ifreader, mut count: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut tok1: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     let mut tok2: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     let mut dstCID: ::core::ffi::c_int = 0;
@@ -795,8 +635,7 @@ unsafe extern "C-unwind" fn do_cidchar(
         if !(fresh0 > 0 as ::core::ffi::c_int) {
             break;
         }
-        if ifreader_read(input, (TOKEN_LEN_MAX * 2 as ::core::ffi::c_int) as size_t) == 0 as size_t
-        {
+        if ifreader_read(input, (TOKEN_LEN_MAX * 2 as ::core::ffi::c_int) as size_t) == 0 as size_t {
             return -(1 as ::core::ffi::c_int);
         }
         tok1 = pst_get_token(&raw mut (*input).cursor, (*input).endptr);
@@ -820,23 +659,16 @@ unsafe extern "C-unwind" fn do_cidchar(
             }
         } else {
             pdf_warning!(
-                b"%s: Invalid CMap mapping record. (ignored)\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"%s: Invalid CMap mapping record. (ignored)\0" as *const u8 as *const ::core::ffi::c_char,
                 CMAP_PARSE_DEBUG_STR.as_ptr(),
             );
         }
         pst_release_obj(tok1);
         pst_release_obj(tok2);
     }
-    return check_next_token(
-        input,
-        b"endcidchar\0" as *const u8 as *const ::core::ffi::c_char,
-    );
+    return check_next_token(input, b"endcidchar\0" as *const u8 as *const ::core::ffi::c_char);
 }
-unsafe extern "C-unwind" fn do_cidsysteminfo(
-    mut cmap: *mut CMap,
-    mut input: *mut ifreader,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn do_cidsysteminfo(mut cmap: *mut CMap, mut input: *mut ifreader) -> ::core::ffi::c_int {
     let mut tok1: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     let mut tok2: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     let mut csi: CIDSysInfo = CIDSysInfo {
@@ -857,8 +689,7 @@ unsafe extern "C-unwind" fn do_cidsysteminfo(
             pst_release_obj(tok1);
             break;
         } else if pst_type_of(tok1) < 0 as ::core::ffi::c_int
-            && pst_length_of(tok1) as size_t
-                == strlen(b"begin\0" as *const u8 as *const ::core::ffi::c_char)
+            && pst_length_of(tok1) as size_t == strlen(b"begin\0" as *const u8 as *const ::core::ffi::c_char)
             && memcmp(
                 pst_data_ptr(tok1),
                 b"begin\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
@@ -879,8 +710,7 @@ unsafe extern "C-unwind" fn do_cidsysteminfo(
         !tok1.is_null()
     } {
         if pst_type_of(tok1) < 0 as ::core::ffi::c_int
-            && pst_length_of(tok1) as size_t
-                == strlen(b">>\0" as *const u8 as *const ::core::ffi::c_char)
+            && pst_length_of(tok1) as size_t == strlen(b">>\0" as *const u8 as *const ::core::ffi::c_char)
             && memcmp(
                 pst_data_ptr(tok1),
                 b">>\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
@@ -891,8 +721,7 @@ unsafe extern "C-unwind" fn do_cidsysteminfo(
             pst_release_obj(tok1);
             break;
         } else if pst_type_of(tok1) < 0 as ::core::ffi::c_int
-            && pst_length_of(tok1) as size_t
-                == strlen(b"end\0" as *const u8 as *const ::core::ffi::c_char)
+            && pst_length_of(tok1) as size_t == strlen(b"end\0" as *const u8 as *const ::core::ffi::c_char)
             && memcmp(
                 pst_data_ptr(tok1),
                 b"end\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
@@ -904,12 +733,10 @@ unsafe extern "C-unwind" fn do_cidsysteminfo(
             break;
         } else {
             if pst_type_of(tok1) == PST_TYPE_NAME
-                && pst_length_of(tok1) as size_t
-                    == strlen(b"Registry\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok1) as size_t == strlen(b"Registry\0" as *const u8 as *const ::core::ffi::c_char)
                 && memcmp(
                     pst_data_ptr(tok1),
-                    b"Registry\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
+                    b"Registry\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                     strlen(b"Registry\0" as *const u8 as *const ::core::ffi::c_char),
                 ) == 0
                 && {
@@ -919,22 +746,17 @@ unsafe extern "C-unwind" fn do_cidsysteminfo(
             {
                 if !(pst_type_of(tok2) == PST_TYPE_STRING) {
                     error = -(1 as ::core::ffi::c_int);
-                } else if simpledict == 0
-                    && check_next_token(input, b"def\0" as *const u8 as *const ::core::ffi::c_char)
-                        != 0
-                {
+                } else if simpledict == 0 && check_next_token(input, b"def\0" as *const u8 as *const ::core::ffi::c_char) != 0 {
                     error = -(1 as ::core::ffi::c_int);
                 }
                 if error == 0 {
                     csi.registry = pst_getSV(tok2) as *mut ::core::ffi::c_char;
                 }
             } else if pst_type_of(tok1) == PST_TYPE_NAME
-                && pst_length_of(tok1) as size_t
-                    == strlen(b"Ordering\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok1) as size_t == strlen(b"Ordering\0" as *const u8 as *const ::core::ffi::c_char)
                 && memcmp(
                     pst_data_ptr(tok1),
-                    b"Ordering\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
+                    b"Ordering\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                     strlen(b"Ordering\0" as *const u8 as *const ::core::ffi::c_char),
                 ) == 0
                 && {
@@ -944,22 +766,17 @@ unsafe extern "C-unwind" fn do_cidsysteminfo(
             {
                 if !(pst_type_of(tok2) == PST_TYPE_STRING) {
                     error = -(1 as ::core::ffi::c_int);
-                } else if simpledict == 0
-                    && check_next_token(input, b"def\0" as *const u8 as *const ::core::ffi::c_char)
-                        != 0
-                {
+                } else if simpledict == 0 && check_next_token(input, b"def\0" as *const u8 as *const ::core::ffi::c_char) != 0 {
                     error = -(1 as ::core::ffi::c_int);
                 }
                 if error == 0 {
                     csi.ordering = pst_getSV(tok2) as *mut ::core::ffi::c_char;
                 }
             } else if pst_type_of(tok1) == PST_TYPE_NAME
-                && pst_length_of(tok1) as size_t
-                    == strlen(b"Supplement\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok1) as size_t == strlen(b"Supplement\0" as *const u8 as *const ::core::ffi::c_char)
                 && memcmp(
                     pst_data_ptr(tok1),
-                    b"Supplement\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
+                    b"Supplement\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                     strlen(b"Supplement\0" as *const u8 as *const ::core::ffi::c_char),
                 ) == 0
                 && {
@@ -969,10 +786,7 @@ unsafe extern "C-unwind" fn do_cidsysteminfo(
             {
                 if !(pst_type_of(tok2) == PST_TYPE_INTEGER) {
                     error = -(1 as ::core::ffi::c_int);
-                } else if simpledict == 0
-                    && check_next_token(input, b"def\0" as *const u8 as *const ::core::ffi::c_char)
-                        != 0
-                {
+                } else if simpledict == 0 && check_next_token(input, b"def\0" as *const u8 as *const ::core::ffi::c_char) != 0 {
                     error = -(1 as ::core::ffi::c_int);
                 }
                 if error == 0 {
@@ -989,16 +803,10 @@ unsafe extern "C-unwind" fn do_cidsysteminfo(
             tok1 = tok2;
         }
     }
-    if error == 0
-        && check_next_token(input, b"def\0" as *const u8 as *const ::core::ffi::c_char) != 0
-    {
+    if error == 0 && check_next_token(input, b"def\0" as *const u8 as *const ::core::ffi::c_char) != 0 {
         error = -(1 as ::core::ffi::c_int);
     }
-    if error == 0
-        && !csi.registry.is_null()
-        && !csi.ordering.is_null()
-        && csi.supplement >= 0 as ::core::ffi::c_int
-    {
+    if error == 0 && !csi.registry.is_null() && !csi.ordering.is_null() && csi.supplement >= 0 as ::core::ffi::c_int {
         CMap_set_CIDSysInfo(cmap, &raw mut csi);
     }
     free(csi.registry as *mut ::core::ffi::c_void);
@@ -1008,21 +816,14 @@ unsafe extern "C-unwind" fn do_cidsysteminfo(
 pub const INPUT_BUF_SIZE: ::core::ffi::c_int = 4096 as ::core::ffi::c_int;
 pub const CMAP_SIG_MAX: ::core::ffi::c_int = 64 as ::core::ffi::c_int;
 #[unsafe(export_name = "__pdf_impl_CMap_parse_check_sig")]
-pub unsafe extern "C-unwind" fn CMap_parse_check_sig(
-    mut handle: rust_input_handle_t,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn CMap_parse_check_sig(mut handle: rust_input_handle_t) -> ::core::ffi::c_int {
     let mut result: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut sig: [::core::ffi::c_char; 65] = [0; 65];
     if handle == INVALID_HANDLE {
         return -(1 as ::core::ffi::c_int);
     }
     crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
-    if ttstub_input_read(
-        handle,
-        &raw mut sig as *mut ::core::ffi::c_char,
-        CMAP_SIG_MAX as size_t,
-    ) != CMAP_SIG_MAX as ssize_t
-    {
+    if ttstub_input_read(handle, &raw mut sig as *mut ::core::ffi::c_char, CMAP_SIG_MAX as size_t) != CMAP_SIG_MAX as ssize_t {
         result = -(1 as ::core::ffi::c_int);
     } else {
         sig[CMAP_SIG_MAX as usize] = 0 as ::core::ffi::c_char;
@@ -1046,10 +847,7 @@ pub unsafe extern "C-unwind" fn CMap_parse_check_sig(
     return result;
 }
 #[unsafe(export_name = "__pdf_impl_CMap_parse")]
-pub unsafe extern "C-unwind" fn CMap_parse(
-    mut cmap: *mut CMap,
-    mut handle: rust_input_handle_t,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn CMap_parse(mut cmap: *mut CMap, mut handle: rust_input_handle_t) -> ::core::ffi::c_int {
     let mut tok1: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     let mut tok2: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     let mut input: *mut ifreader = ::core::ptr::null_mut::<ifreader>();
@@ -1076,48 +874,41 @@ pub unsafe extern "C-unwind" fn CMap_parse(
             break;
         }
         if pst_type_of(tok1) == PST_TYPE_NAME
-            && pst_length_of(tok1) as size_t
-                == strlen(b"CMapName\0" as *const u8 as *const ::core::ffi::c_char)
+            && pst_length_of(tok1) as size_t == strlen(b"CMapName\0" as *const u8 as *const ::core::ffi::c_char)
             && memcmp(
                 pst_data_ptr(tok1),
-                b"CMapName\0" as *const u8 as *const ::core::ffi::c_char
-                    as *const ::core::ffi::c_void,
+                b"CMapName\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                 strlen(b"CMapName\0" as *const u8 as *const ::core::ffi::c_char),
             ) == 0
         {
             tok2 = pst_get_token(&raw mut (*input).cursor, (*input).endptr);
             if tok2.is_null()
                 || !(pst_type_of(tok2) == PST_TYPE_NAME || pst_type_of(tok2) == PST_TYPE_STRING)
-                || check_next_token(input, b"def\0" as *const u8 as *const ::core::ffi::c_char)
-                    < 0 as ::core::ffi::c_int
+                || check_next_token(input, b"def\0" as *const u8 as *const ::core::ffi::c_char) < 0 as ::core::ffi::c_int
             {
                 status = -(1 as ::core::ffi::c_int);
             } else {
                 CMap_set_name(cmap, pst_data_ptr(tok2) as *const ::core::ffi::c_char);
             }
         } else if pst_type_of(tok1) == PST_TYPE_NAME
-            && pst_length_of(tok1) as size_t
-                == strlen(b"CMapType\0" as *const u8 as *const ::core::ffi::c_char)
+            && pst_length_of(tok1) as size_t == strlen(b"CMapType\0" as *const u8 as *const ::core::ffi::c_char)
             && memcmp(
                 pst_data_ptr(tok1),
-                b"CMapType\0" as *const u8 as *const ::core::ffi::c_char
-                    as *const ::core::ffi::c_void,
+                b"CMapType\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                 strlen(b"CMapType\0" as *const u8 as *const ::core::ffi::c_char),
             ) == 0
         {
             tok2 = pst_get_token(&raw mut (*input).cursor, (*input).endptr);
             if tok2.is_null()
                 || !(pst_type_of(tok2) == PST_TYPE_INTEGER)
-                || check_next_token(input, b"def\0" as *const u8 as *const ::core::ffi::c_char)
-                    < 0 as ::core::ffi::c_int
+                || check_next_token(input, b"def\0" as *const u8 as *const ::core::ffi::c_char) < 0 as ::core::ffi::c_int
             {
                 status = -(1 as ::core::ffi::c_int);
             } else {
                 CMap_set_type(cmap, pst_getIV(tok2));
             }
         } else if pst_type_of(tok1) == PST_TYPE_NAME
-            && pst_length_of(tok1) as size_t
-                == strlen(b"WMode\0" as *const u8 as *const ::core::ffi::c_char)
+            && pst_length_of(tok1) as size_t == strlen(b"WMode\0" as *const u8 as *const ::core::ffi::c_char)
             && memcmp(
                 pst_data_ptr(tok1),
                 b"WMode\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
@@ -1127,49 +918,40 @@ pub unsafe extern "C-unwind" fn CMap_parse(
             tok2 = pst_get_token(&raw mut (*input).cursor, (*input).endptr);
             if tok2.is_null()
                 || !(pst_type_of(tok2) == PST_TYPE_INTEGER)
-                || check_next_token(input, b"def\0" as *const u8 as *const ::core::ffi::c_char)
-                    < 0 as ::core::ffi::c_int
+                || check_next_token(input, b"def\0" as *const u8 as *const ::core::ffi::c_char) < 0 as ::core::ffi::c_int
             {
                 status = -(1 as ::core::ffi::c_int);
             } else {
                 CMap_set_wmode(cmap, pst_getIV(tok2));
             }
         } else if pst_type_of(tok1) == PST_TYPE_NAME
-            && pst_length_of(tok1) as size_t
-                == strlen(b"CIDSystemInfo\0" as *const u8 as *const ::core::ffi::c_char)
+            && pst_length_of(tok1) as size_t == strlen(b"CIDSystemInfo\0" as *const u8 as *const ::core::ffi::c_char)
             && memcmp(
                 pst_data_ptr(tok1),
-                b"CIDSystemInfo\0" as *const u8 as *const ::core::ffi::c_char
-                    as *const ::core::ffi::c_void,
+                b"CIDSystemInfo\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                 strlen(b"CIDSystemInfo\0" as *const u8 as *const ::core::ffi::c_char),
             ) == 0
         {
             status = do_cidsysteminfo(cmap, input);
         } else if !(pst_type_of(tok1) == PST_TYPE_NAME
-            && pst_length_of(tok1) as size_t
-                == strlen(b"Version\0" as *const u8 as *const ::core::ffi::c_char)
+            && pst_length_of(tok1) as size_t == strlen(b"Version\0" as *const u8 as *const ::core::ffi::c_char)
             && memcmp(
                 pst_data_ptr(tok1),
-                b"Version\0" as *const u8 as *const ::core::ffi::c_char
-                    as *const ::core::ffi::c_void,
+                b"Version\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                 strlen(b"Version\0" as *const u8 as *const ::core::ffi::c_char),
             ) == 0
             || pst_type_of(tok1) == PST_TYPE_NAME
-                && pst_length_of(tok1) as size_t
-                    == strlen(b"UIDOffset\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok1) as size_t == strlen(b"UIDOffset\0" as *const u8 as *const ::core::ffi::c_char)
                 && memcmp(
                     pst_data_ptr(tok1),
-                    b"UIDOffset\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
+                    b"UIDOffset\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                     strlen(b"UIDOffset\0" as *const u8 as *const ::core::ffi::c_char),
                 ) == 0
             || pst_type_of(tok1) == PST_TYPE_NAME
-                && pst_length_of(tok1) as size_t
-                    == strlen(b"XUID\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok1) as size_t == strlen(b"XUID\0" as *const u8 as *const ::core::ffi::c_char)
                 && memcmp(
                     pst_data_ptr(tok1),
-                    b"XUID\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
+                    b"XUID\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                     strlen(b"XUID\0" as *const u8 as *const ::core::ffi::c_char),
                 ) == 0)
         {
@@ -1177,12 +959,10 @@ pub unsafe extern "C-unwind" fn CMap_parse(
                 tok2 = pst_get_token(&raw mut (*input).cursor, (*input).endptr);
                 if !tok2.is_null()
                     && (pst_type_of(tok2) < 0 as ::core::ffi::c_int
-                        && pst_length_of(tok2) as size_t
-                            == strlen(b"usecmap\0" as *const u8 as *const ::core::ffi::c_char)
+                        && pst_length_of(tok2) as size_t == strlen(b"usecmap\0" as *const u8 as *const ::core::ffi::c_char)
                         && memcmp(
                             pst_data_ptr(tok2),
-                            b"usecmap\0" as *const u8 as *const ::core::ffi::c_char
-                                as *const ::core::ffi::c_void,
+                            b"usecmap\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                             strlen(b"usecmap\0" as *const u8 as *const ::core::ffi::c_char),
                         ) == 0)
                 {
@@ -1197,78 +977,64 @@ pub unsafe extern "C-unwind" fn CMap_parse(
                     }
                 }
             } else if pst_type_of(tok1) < 0 as ::core::ffi::c_int
-                && pst_length_of(tok1) as size_t
-                    == strlen(b"begincodespacerange\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok1) as size_t == strlen(b"begincodespacerange\0" as *const u8 as *const ::core::ffi::c_char)
                 && memcmp(
                     pst_data_ptr(tok1),
-                    b"begincodespacerange\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
+                    b"begincodespacerange\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                     strlen(b"begincodespacerange\0" as *const u8 as *const ::core::ffi::c_char),
                 ) == 0
             {
                 status = do_codespacerange(cmap, input, tmpint);
             } else if pst_type_of(tok1) < 0 as ::core::ffi::c_int
-                && pst_length_of(tok1) as size_t
-                    == strlen(b"beginnotdefrange\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok1) as size_t == strlen(b"beginnotdefrange\0" as *const u8 as *const ::core::ffi::c_char)
                 && memcmp(
                     pst_data_ptr(tok1),
-                    b"beginnotdefrange\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
+                    b"beginnotdefrange\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                     strlen(b"beginnotdefrange\0" as *const u8 as *const ::core::ffi::c_char),
                 ) == 0
             {
                 status = do_notdefrange(cmap, input, tmpint);
             } else if pst_type_of(tok1) < 0 as ::core::ffi::c_int
-                && pst_length_of(tok1) as size_t
-                    == strlen(b"beginnotdefchar\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok1) as size_t == strlen(b"beginnotdefchar\0" as *const u8 as *const ::core::ffi::c_char)
                 && memcmp(
                     pst_data_ptr(tok1),
-                    b"beginnotdefchar\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
+                    b"beginnotdefchar\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                     strlen(b"beginnotdefchar\0" as *const u8 as *const ::core::ffi::c_char),
                 ) == 0
             {
                 status = do_notdefchar(cmap, input, tmpint);
             } else if pst_type_of(tok1) < 0 as ::core::ffi::c_int
-                && pst_length_of(tok1) as size_t
-                    == strlen(b"beginbfrange\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok1) as size_t == strlen(b"beginbfrange\0" as *const u8 as *const ::core::ffi::c_char)
                 && memcmp(
                     pst_data_ptr(tok1),
-                    b"beginbfrange\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
+                    b"beginbfrange\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                     strlen(b"beginbfrange\0" as *const u8 as *const ::core::ffi::c_char),
                 ) == 0
             {
                 status = do_bfrange(cmap, input, tmpint);
             } else if pst_type_of(tok1) < 0 as ::core::ffi::c_int
-                && pst_length_of(tok1) as size_t
-                    == strlen(b"beginbfchar\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok1) as size_t == strlen(b"beginbfchar\0" as *const u8 as *const ::core::ffi::c_char)
                 && memcmp(
                     pst_data_ptr(tok1),
-                    b"beginbfchar\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
+                    b"beginbfchar\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                     strlen(b"beginbfchar\0" as *const u8 as *const ::core::ffi::c_char),
                 ) == 0
             {
                 status = do_bfchar(cmap, input, tmpint);
             } else if pst_type_of(tok1) < 0 as ::core::ffi::c_int
-                && pst_length_of(tok1) as size_t
-                    == strlen(b"begincidrange\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok1) as size_t == strlen(b"begincidrange\0" as *const u8 as *const ::core::ffi::c_char)
                 && memcmp(
                     pst_data_ptr(tok1),
-                    b"begincidrange\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
+                    b"begincidrange\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                     strlen(b"begincidrange\0" as *const u8 as *const ::core::ffi::c_char),
                 ) == 0
             {
                 status = do_cidrange(cmap, input, tmpint);
             } else if pst_type_of(tok1) < 0 as ::core::ffi::c_int
-                && pst_length_of(tok1) as size_t
-                    == strlen(b"begincidchar\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok1) as size_t == strlen(b"begincidchar\0" as *const u8 as *const ::core::ffi::c_char)
                 && memcmp(
                     pst_data_ptr(tok1),
-                    b"begincidchar\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
+                    b"begincidchar\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                     strlen(b"begincidchar\0" as *const u8 as *const ::core::ffi::c_char),
                 ) == 0
             {
@@ -1292,21 +1058,9 @@ pub unsafe extern "C-unwind" fn CMap_parse(
     };
 }
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn memcpy(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_void;
-    fn memmove(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
+    fn memcpy(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __n: size_t) -> *mut ::core::ffi::c_void;
+    fn memmove(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __len: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -1314,10 +1068,7 @@ pub struct pst_obj {
     _private: [u8; 0],
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_CMap_parse_check_sig(
-    mut handle: rust_input_handle_t,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_CMap_parse_check_sig(mut handle: rust_input_handle_t, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { CMap_parse_check_sig(handle) }) {
         Ok(value) => {
             unsafe {
@@ -1329,11 +1080,7 @@ pub unsafe extern "C" fn __pdf_entry_CMap_parse_check_sig(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_CMap_parse(
-    mut cmap: *mut CMap,
-    mut handle: rust_input_handle_t,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_CMap_parse(mut cmap: *mut CMap, mut handle: rust_input_handle_t, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { CMap_parse(cmap, handle) }) {
         Ok(value) => {
             unsafe {

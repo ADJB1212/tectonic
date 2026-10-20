@@ -86,8 +86,7 @@ impl TectonicCommand for BuildCommand {
             SecurityStance::MaybeAllowInsecures
         };
 
-        let mut setup_options =
-            DocumentSetupOptions::new_with_security(SecuritySettings::new(stance));
+        let mut setup_options = DocumentSetupOptions::new_with_security(SecuritySettings::new(stance));
         setup_options.only_cached(self.only_cached);
 
         for output_name in doc.output_names() {
@@ -99,14 +98,8 @@ impl TectonicCommand for BuildCommand {
 
             let mut builder = doc.setup_session(output_name, &setup_options, status)?;
             if self.incremental {
-                let default = doc
-                    .output_main_file(output_name)
-                    .parent()
-                    .unwrap()
-                    .join(".tectonic-incremental");
-                builder.incremental_cache_path(
-                    self.incremental_cache_dir.as_ref().unwrap_or(&default),
-                );
+                let default = doc.output_main_file(output_name).parent().unwrap().join(".tectonic-incremental");
+                builder.incremental_cache_path(self.incremental_cache_dir.as_ref().unwrap_or(&default));
             }
             builder.pdf_build_options(tectonic::PdfBuildOptions {
                 workers: self.pdf_workers,

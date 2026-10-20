@@ -19,40 +19,18 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::backend::dpx_pdfdev::pdf_sprint_number;
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
     fn floor(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
-    fn strcpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn strcpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
-    fn ttstub_input_read(
-        handle: rust_input_handle_t,
-        data: *mut ::core::ffi::c_char,
-        len: size_t,
-    ) -> ssize_t;
+    fn ttstub_input_read(handle: rust_input_handle_t, data: *mut ::core::ffi::c_char, len: size_t) -> ssize_t;
     fn ttstub_input_getc(handle: rust_input_handle_t) -> ::core::ffi::c_int;
     fn ttstub_input_close(handle: rust_input_handle_t) -> ::core::ffi::c_int;
-    fn sprintf(
-        _: *mut ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
+    fn sprintf(_: *mut ::core::ffi::c_char, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_release_obj"]
     fn pdf_release_obj(object: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_ref_obj"]
@@ -68,19 +46,11 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_new_dict"]
     fn pdf_new_dict() -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_new_stream"]
     fn pdf_new_stream(flags: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_stream"]
-    fn pdf_add_stream(
-        stream: *mut pdf_obj,
-        stream_data_ptr: *const ::core::ffi::c_void,
-        stream_data_len: ::core::ffi::c_int,
-    );
+    fn pdf_add_stream(stream: *mut pdf_obj, stream_data_ptr: *const ::core::ffi::c_void, stream_data_len: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_font_get_resource"]
     fn pdf_font_get_resource(font: *mut pdf_font) -> *mut pdf_obj;
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
@@ -103,11 +73,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_tt_get_unsigned_num"]
     fn tt_get_unsigned_num(handle: rust_input_handle_t, num: ::core::ffi::c_uchar) -> uint32_t;
     #[link_name = "__pdf_impl_tt_get_positive_quad"]
-    fn tt_get_positive_quad(
-        handle: rust_input_handle_t,
-        type_0: *const ::core::ffi::c_char,
-        name: *const ::core::ffi::c_char,
-    ) -> uint32_t;
+    fn tt_get_positive_quad(handle: rust_input_handle_t, type_0: *const ::core::ffi::c_char, name: *const ::core::ffi::c_char) -> uint32_t;
     static mut work_buffer: [::core::ffi::c_char; 0];
     #[link_name = "__pdf_impl_pdf_encoding_used_by_type3"]
     fn pdf_encoding_used_by_type3(enc_id: ::core::ffi::c_int);
@@ -116,10 +82,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_encoding_get_encoding"]
     fn pdf_encoding_get_encoding(enc_id: ::core::ffi::c_int) -> *mut *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_tfm_open"]
-    fn tfm_open(
-        tex_name: *const ::core::ffi::c_char,
-        must_exist: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn tfm_open(tex_name: *const ::core::ffi::c_char, must_exist: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_tfm_get_design_size"]
     fn tfm_get_design_size(font_id: ::core::ffi::c_int) -> ::core::ffi::c_double;
 }
@@ -200,25 +163,19 @@ pub struct pk_header_ {
 pub const __DARWIN_NULL: *mut ::core::ffi::c_void = ::core::ptr::null_mut::<::core::ffi::c_void>();
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 pub const INVALID_HANDLE: uintptr_t = 0 as ::core::ffi::c_int as uintptr_t;
-pub const STREAM_COMPRESS: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const STREAM_COMPRESS: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const PKFONT_DPI_DEFAULT: ::core::ffi::c_uint = 600 as ::core::ffi::c_uint;
 
 #[unsafe(export_name = "__pdf_impl_PKFont_set_dpi")]
 pub unsafe extern "C-unwind" fn PKFont_set_dpi(mut dpi: ::core::ffi::c_int) {
     let __pdf_state = unsafe { document_state() };
     if dpi <= 0 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"Invalid DPI: %d\n\0" as *const u8 as *const ::core::ffi::c_char,
-            dpi,
-        );
+        pdf_abort!(b"Invalid DPI: %d\n\0" as *const u8 as *const ::core::ffi::c_char, dpi,);
     }
     (*__pdf_state).base_dpi = dpi as ::core::ffi::c_uint;
 }
 unsafe extern "C-unwind" fn truedpi(
-    mut ident: *const ::core::ffi::c_char,
-    mut point_size: ::core::ffi::c_double,
-    mut bdpi: ::core::ffi::c_uint,
+    mut ident: *const ::core::ffi::c_char, mut point_size: ::core::ffi::c_double, mut bdpi: ::core::ffi::c_uint,
 ) -> ::core::ffi::c_uint {
     let __pdf_state = unsafe { document_state() };
     let mut dpi: ::core::ffi::c_uint = bdpi;
@@ -230,25 +187,15 @@ unsafe extern "C-unwind" fn truedpi(
     }
     design_size = tfm_get_design_size(tfm_id);
     if design_size <= 0.0f64 {
-        pdf_warning!(
-            b"DESGIN_SIZE <= 0.0? (TFM=\"%s\")\0" as *const u8 as *const ::core::ffi::c_char,
-            ident,
-        );
+        pdf_warning!(b"DESGIN_SIZE <= 0.0? (TFM=\"%s\")\0" as *const u8 as *const ::core::ffi::c_char, ident,);
     } else {
-        dpi = (floor(
-            (*__pdf_state).base_dpi as ::core::ffi::c_double * point_size / design_size / 1.0f64
-                + 0.5f64,
-        ) * 1.0f64) as ::core::ffi::c_uint;
+        dpi = (floor((*__pdf_state).base_dpi as ::core::ffi::c_double * point_size / design_size / 1.0f64 + 0.5f64) * 1.0f64) as ::core::ffi::c_uint;
     }
     return dpi;
 }
-unsafe extern "C-unwind" fn dpx_open_pk_font_at(
-    mut ident: *const ::core::ffi::c_char,
-    mut dpi: ::core::ffi::c_uint,
-) -> rust_input_handle_t {
+unsafe extern "C-unwind" fn dpx_open_pk_font_at(mut ident: *const ::core::ffi::c_char, mut dpi: ::core::ffi::c_uint) -> rust_input_handle_t {
     pdf_warning!(
-        b"Tectonic unable to generate PK font \"%s\" (dpi %u) on-the-fly\0" as *const u8
-            as *const ::core::ffi::c_char,
+        b"Tectonic unable to generate PK font \"%s\" (dpi %u) on-the-fly\0" as *const u8 as *const ::core::ffi::c_char,
         ident,
         dpi,
     );
@@ -256,12 +203,8 @@ unsafe extern "C-unwind" fn dpx_open_pk_font_at(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_font_open_pkfont")]
 pub unsafe extern "C-unwind" fn pdf_font_open_pkfont(
-    mut font: *mut pdf_font,
-    mut ident: *const ::core::ffi::c_char,
-    mut index: ::core::ffi::c_int,
-    mut encoding_id: ::core::ffi::c_int,
-    mut embedding: ::core::ffi::c_int,
-    mut point_size: ::core::ffi::c_double,
+    mut font: *mut pdf_font, mut ident: *const ::core::ffi::c_char, mut index: ::core::ffi::c_int, mut encoding_id: ::core::ffi::c_int,
+    mut embedding: ::core::ffi::c_int, mut point_size: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut dpi: ::core::ffi::c_uint = 0;
@@ -271,15 +214,13 @@ pub unsafe extern "C-unwind" fn pdf_font_open_pkfont(
     }
     if embedding == 0 {
         pdf_warning!(
-            b"Ignoring no-embed option for PK font: %s\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Ignoring no-embed option for PK font: %s\0" as *const u8 as *const ::core::ffi::c_char,
             ident,
         );
     }
     if index != 0 as ::core::ffi::c_int {
         pdf_warning!(
-            b"Ignoring font index option for PK font: %s\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Ignoring font index option for PK font: %s\0" as *const u8 as *const ::core::ffi::c_char,
             ident,
         );
     }
@@ -289,36 +230,21 @@ pub unsafe extern "C-unwind" fn pdf_font_open_pkfont(
         return -(1 as ::core::ffi::c_int);
     }
     crate::backend::runtime::input_close(handle);
-    (*font).fontname = new(
-        (strlen(ident).wrapping_add(1 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t,
-    ) as *mut ::core::ffi::c_char;
+    (*font).fontname = new((strlen(ident).wrapping_add(1 as size_t) as uint32_t as usize)
+        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
     strcpy((*font).fontname, ident);
     if encoding_id >= 0 as ::core::ffi::c_int {
         pdf_encoding_used_by_type3(encoding_id);
         pdf_warning!(
-            b"PK font is found for font \"%s\" but non built-in encoding \"%s\" is specified.\0"
-                as *const u8 as *const ::core::ffi::c_char,
+            b"PK font is found for font \"%s\" but non built-in encoding \"%s\" is specified.\0" as *const u8 as *const ::core::ffi::c_char,
             ident,
             pdf_encoding_get_name(encoding_id),
         );
-        pdf_warning!(
-            b">> Assuming this is for glyph name assignment.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b">> Assuming this is for glyph name assignment.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     return 0 as ::core::ffi::c_int;
 }
-unsafe fn decode_pk(
-    stream: *mut pdf_obj,
-    width: u32,
-    height: u32,
-    dynamic: i32,
-    color: i32,
-    data: *mut u8,
-    length: u32,
-) -> i32 {
+unsafe fn decode_pk(stream: *mut pdf_obj, width: u32, height: u32, dynamic: i32, color: i32, data: *mut u8, length: u32) -> i32 {
     if length > 0 && data.is_null() {
         pdf_warning!("Insufficient bitmap pk data.");
         return -1;
@@ -353,25 +279,13 @@ unsafe fn decode_pk(
 }
 
 unsafe extern "C-unwind" fn pk_decode_packed(
-    stream: *mut pdf_obj,
-    width: u32,
-    height: u32,
-    dynamic: i32,
-    color: i32,
-    data: *mut u8,
-    length: u32,
+    stream: *mut pdf_obj, width: u32, height: u32, dynamic: i32, color: i32, data: *mut u8, length: u32,
 ) -> i32 {
     unsafe { decode_pk(stream, width, height, dynamic, color, data, length) }
 }
 
 unsafe extern "C-unwind" fn pk_decode_bitmap(
-    stream: *mut pdf_obj,
-    width: u32,
-    height: u32,
-    dynamic: i32,
-    color: i32,
-    data: *mut u8,
-    length: u32,
+    stream: *mut pdf_obj, width: u32, height: u32, dynamic: i32, color: i32, data: *mut u8, length: u32,
 ) -> i32 {
     unsafe { decode_pk(stream, width, height, dynamic, color, data, length) }
 }
@@ -380,17 +294,10 @@ unsafe extern "C-unwind" fn do_preamble(mut handle: rust_input_handle_t) {
         tt_skip_bytes(tt_get_unsigned_byte(handle) as ::core::ffi::c_uint, handle);
         tt_skip_bytes(16 as ::core::ffi::c_uint, handle);
     } else {
-        pdf_abort!(
-            b"embed_pk_font: PK ID byte is incorrect.  Are you sure this is a PK file?\0"
-                as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"embed_pk_font: PK ID byte is incorrect.  Are you sure this is a PK file?\0" as *const u8 as *const ::core::ffi::c_char,);
     };
 }
-unsafe extern "C-unwind" fn read_pk_char_header(
-    h: *mut pk_header_,
-    opcode: core::ffi::c_uchar,
-    handle: rust_input_handle_t,
-) -> i32 {
+unsafe extern "C-unwind" fn read_pk_char_header(h: *mut pk_header_, opcode: core::ffi::c_uchar, handle: rust_input_handle_t) -> i32 {
     let mut input = crate::compat::input::ProbeInput { handle };
     let parsed = match crate::pk::header(&mut input, opcode) {
         Ok(header) => header,
@@ -400,10 +307,7 @@ unsafe extern "C-unwind" fn read_pk_char_header(
         }
     };
     if !(0..=255).contains(&parsed.code) {
-        pdf_warning!(
-            "Unable to handle long characters in PK files: code=0x{:04x}",
-            parsed.code
-        );
+        pdf_warning!("Unable to handle long characters in PK files: code=0x{:04x}", parsed.code);
         return -1;
     }
     unsafe {
@@ -422,10 +326,7 @@ unsafe extern "C-unwind" fn read_pk_char_header(
     0
 }
 unsafe extern "C-unwind" fn create_pk_CharProc_stream(
-    mut pkh: *mut pk_header_,
-    mut chrwid: ::core::ffi::c_double,
-    mut pkt_ptr: *mut ::core::ffi::c_uchar,
-    mut pkt_len: uint32_t,
+    mut pkh: *mut pk_header_, mut chrwid: ::core::ffi::c_double, mut pkt_ptr: *mut ::core::ffi::c_uchar, mut pkt_len: uint32_t,
 ) -> *mut pdf_obj {
     let mut stream: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut llx: int32_t = 0;
@@ -433,10 +334,7 @@ unsafe extern "C-unwind" fn create_pk_CharProc_stream(
     let mut urx: int32_t = 0;
     let mut ury: int32_t = 0;
     let mut len: ::core::ffi::c_int = 0;
-    llx = (*pkh)
-        .bm_hoff
-        .checked_neg()
-        .unwrap_or_else(|| pdf_abort!("Invalid PK glyph bounds."));
+    llx = (*pkh).bm_hoff.checked_neg().unwrap_or_else(|| pdf_abort!("Invalid PK glyph bounds."));
     lly = ((*pkh).bm_voff as uint32_t).wrapping_sub((*pkh).bm_ht) as int32_t;
     urx = (*pkh).bm_wd.wrapping_sub((*pkh).bm_hoff as uint32_t) as int32_t;
     ury = (*pkh).bm_voff;
@@ -481,25 +379,9 @@ unsafe extern "C-unwind" fn create_pk_CharProc_stream(
             len,
         );
         let result = if (*pkh).dyn_f == 14 as ::core::ffi::c_int {
-            pk_decode_bitmap(
-                stream,
-                (*pkh).bm_wd,
-                (*pkh).bm_ht,
-                (*pkh).dyn_f,
-                (*pkh).run_color,
-                pkt_ptr,
-                pkt_len,
-            )
+            pk_decode_bitmap(stream, (*pkh).bm_wd, (*pkh).bm_ht, (*pkh).dyn_f, (*pkh).run_color, pkt_ptr, pkt_len)
         } else {
-            pk_decode_packed(
-                stream,
-                (*pkh).bm_wd,
-                (*pkh).bm_ht,
-                (*pkh).dyn_f,
-                (*pkh).run_color,
-                pkt_ptr,
-                pkt_len,
-            )
+            pk_decode_packed(stream, (*pkh).bm_wd, (*pkh).bm_ht, (*pkh).dyn_f, (*pkh).run_color, pkt_ptr, pkt_len)
         };
         if result < 0 {
             pdf_release_obj(stream);
@@ -526,9 +408,7 @@ pub const PK_POST: ::core::ffi::c_int = 245 as ::core::ffi::c_int;
 pub const PK_NO_OP: ::core::ffi::c_int = 246;
 pub const PK_PRE: ::core::ffi::c_int = 247;
 #[unsafe(export_name = "__pdf_impl_pdf_font_load_pkfont")]
-pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
-    mut font: *mut pdf_font,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(mut font: *mut pdf_font) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut fontdict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut usedchars: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -555,8 +435,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
     };
     let mut charavail: [::core::ffi::c_char; 256] = [0; 256];
     let mut encoding_id: ::core::ffi::c_int = 0;
-    let mut enc_vec: *mut *mut ::core::ffi::c_char =
-        ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
+    let mut enc_vec: *mut *mut ::core::ffi::c_char = ::core::ptr::null_mut::<*mut ::core::ffi::c_char>();
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     if (*font).reference.is_null() {
         return 0 as ::core::ffi::c_int;
@@ -570,10 +449,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
     } else {
         enc_vec = pdf_encoding_get_encoding(encoding_id);
     }
-    if !(!ident.is_null() && !usedchars.is_null() && point_size > 0.0f64) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!ident.is_null() && !usedchars.is_null() && point_size > 0.0f64) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"ident && usedchars && point_size > 0.0\0" as *const u8 as *const ::core::ffi::c_char
@@ -584,8 +460,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
     handle = dpx_open_pk_font_at(ident, dpi);
     if handle == 0 {
         pdf_abort!(
-            b"Could not find/open PK font file: %s (at %udpi)\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Could not find/open PK font file: %s (at %udpi)\0" as *const u8 as *const ::core::ffi::c_char,
             ident,
             dpi,
         );
@@ -622,14 +497,10 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
             };
             error = read_pk_char_header(&raw mut pkh, opcode as ::core::ffi::c_uchar, handle);
             if error != 0 {
-                pdf_abort!(
-                    b"Error in reading PK character header.\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+                pdf_abort!(b"Error in reading PK character header.\0" as *const u8 as *const ::core::ffi::c_char,);
             } else if charavail[(pkh.chrcode & 0xff as int32_t) as usize] != 0 {
                 pdf_warning!(
-                    b"More than two bitmap image for single glyph?: font=\"%s\" code=0x%02x\0"
-                        as *const u8 as *const ::core::ffi::c_char,
+                    b"More than two bitmap image for single glyph?: font=\"%s\" code=0x%02x\0" as *const u8 as *const ::core::ffi::c_char,
                     ident,
                     pkh.chrcode,
                 );
@@ -637,18 +508,14 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
             if *usedchars.offset((pkh.chrcode & 0xff as int32_t) as isize) == 0 {
                 tt_skip_bytes(pkh.pkt_len as ::core::ffi::c_uint, handle);
             } else {
-                let mut charname: *mut ::core::ffi::c_char =
-                    ::core::ptr::null_mut::<::core::ffi::c_char>();
+                let mut charname: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
                 let mut charproc: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-                let mut pkt_ptr: *mut ::core::ffi::c_uchar =
-                    ::core::ptr::null_mut::<::core::ffi::c_uchar>();
+                let mut pkt_ptr: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
                 let mut bytesread: size_t = 0;
                 let mut charwidth: ::core::ffi::c_double = 0.;
                 charwidth = floor(
                     1000.0f64 * pkh.wd as ::core::ffi::c_double
-                        / (((1 as ::core::ffi::c_int) << 20 as ::core::ffi::c_int)
-                            as ::core::ffi::c_double
-                            * pix2charu)
+                        / (((1 as ::core::ffi::c_int) << 20 as ::core::ffi::c_int) as ::core::ffi::c_double * pix2charu)
                         / 0.1f64
                         + 0.5f64,
                 ) * 0.1f64;
@@ -658,16 +525,12 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
                 } else {
                     -pkh.bm_hoff as ::core::ffi::c_double
                 };
-                bbox.lly = if bbox.lly
-                    < pkh.bm_voff as ::core::ffi::c_double - pkh.bm_ht as ::core::ffi::c_double
-                {
+                bbox.lly = if bbox.lly < pkh.bm_voff as ::core::ffi::c_double - pkh.bm_ht as ::core::ffi::c_double {
                     bbox.lly
                 } else {
                     pkh.bm_voff as ::core::ffi::c_double - pkh.bm_ht as ::core::ffi::c_double
                 };
-                bbox.urx = if bbox.urx
-                    > pkh.bm_wd as ::core::ffi::c_double - pkh.bm_hoff as ::core::ffi::c_double
-                {
+                bbox.urx = if bbox.urx > pkh.bm_wd as ::core::ffi::c_double - pkh.bm_hoff as ::core::ffi::c_double {
                     bbox.urx
                 } else {
                     pkh.bm_wd as ::core::ffi::c_double - pkh.bm_hoff as ::core::ffi::c_double
@@ -679,12 +542,8 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
                 };
                 use std::io::{Read, Seek, SeekFrom};
                 let mut input = crate::compat::input::ProbeInput { handle };
-                let position = input
-                    .stream_position()
-                    .unwrap_or_else(|_| pdf_abort!("Invalid PK packet offset."));
-                let end = input
-                    .seek(SeekFrom::End(0))
-                    .unwrap_or_else(|_| pdf_abort!("Invalid PK packet offset."));
+                let position = input.stream_position().unwrap_or_else(|_| pdf_abort!("Invalid PK packet offset."));
+                let end = input.seek(SeekFrom::End(0)).unwrap_or_else(|_| pdf_abort!("Invalid PK packet offset."));
                 input
                     .seek(SeekFrom::Start(position))
                     .unwrap_or_else(|_| pdf_abort!("Invalid PK packet offset."));
@@ -692,27 +551,16 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
                     pdf_abort!("File ended prematurely\n");
                 }
                 let mut packet = vec![0; pkh.pkt_len as usize];
-                input
-                    .read_exact(&mut packet)
-                    .unwrap_or_else(|_| pdf_abort!("File ended prematurely\n"));
-                charproc = create_pk_CharProc_stream(
-                    &raw mut pkh,
-                    charwidth,
-                    packet.as_mut_ptr(),
-                    packet.len() as u32,
-                );
+                input.read_exact(&mut packet).unwrap_or_else(|_| pdf_abort!("File ended prematurely\n"));
+                charproc = create_pk_CharProc_stream(&raw mut pkh, charwidth, packet.as_mut_ptr(), packet.len() as u32);
                 if charproc.is_null() {
-                    pdf_abort!(
-                        b"Unpacking PK character data failed.\0" as *const u8
-                            as *const ::core::ffi::c_char,
-                    );
+                    pdf_abort!(b"Unpacking PK character data failed.\0" as *const u8 as *const ::core::ffi::c_char,);
                 }
                 if encoding_id >= 0 as ::core::ffi::c_int && !enc_vec.is_null() {
                     charname = *enc_vec.offset((pkh.chrcode & 0xff as int32_t) as isize);
                     if charname.is_null() {
                         pdf_warning!(
-                            b"\".notdef\" glyph used in font (code=0x%02x): %s\0" as *const u8
-                                as *const ::core::ffi::c_char,
+                            b"\".notdef\" glyph used in font (code=0x%02x): %s\0" as *const u8 as *const ::core::ffi::c_char,
                             pkh.chrcode,
                             ident,
                         );
@@ -738,15 +586,9 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
         } else {
             match opcode {
                 PK_XXX1 | PK_XXX2 | PK_XXX3 | PK_XXX4 => {
-                    let mut len: int32_t =
-                        tt_get_unsigned_num(handle, (opcode - PK_XXX1) as ::core::ffi::c_uchar)
-                            as int32_t;
+                    let mut len: int32_t = tt_get_unsigned_num(handle, (opcode - PK_XXX1) as ::core::ffi::c_uchar) as int32_t;
                     if len < 0 as int32_t {
-                        pdf_warning!(
-                            b"PK: Special with %d bytes???\0" as *const u8
-                                as *const ::core::ffi::c_char,
-                            len,
-                        );
+                        pdf_warning!(b"PK: Special with %d bytes???\0" as *const u8 as *const ::core::ffi::c_char, len,);
                     } else {
                         tt_skip_bytes(len as ::core::ffi::c_uint, handle);
                     }
@@ -764,12 +606,9 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
     crate::backend::runtime::input_close(handle);
     code = 0 as ::core::ffi::c_int;
     while code < 256 as ::core::ffi::c_int {
-        if *usedchars.offset(code as isize) as ::core::ffi::c_int != 0
-            && charavail[code as usize] == 0
-        {
+        if *usedchars.offset(code as isize) as ::core::ffi::c_int != 0 && charavail[code as usize] == 0 {
             pdf_warning!(
-                b"Missing glyph code=0x%02x in PK font \"%s\".\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Missing glyph code=0x%02x in PK font \"%s\".\0" as *const u8 as *const ::core::ffi::c_char,
                 code,
                 ident,
             );
@@ -785,32 +624,17 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
     pdf_release_obj(charprocs);
     procset = pdf_new_dict();
     tmp_array = pdf_new_array();
-    pdf_add_array(
-        tmp_array,
-        pdf_new_name(b"PDF\0" as *const u8 as *const ::core::ffi::c_char),
-    );
-    pdf_add_array(
-        tmp_array,
-        pdf_new_name(b"ImageB\0" as *const u8 as *const ::core::ffi::c_char),
-    );
-    pdf_add_dict(
-        procset,
-        pdf_new_name(b"ProcSet\0" as *const u8 as *const ::core::ffi::c_char),
-        tmp_array,
-    );
-    pdf_add_dict(
-        fontdict,
-        pdf_new_name(b"Resources\0" as *const u8 as *const ::core::ffi::c_char),
-        procset,
-    );
+    pdf_add_array(tmp_array, pdf_new_name(b"PDF\0" as *const u8 as *const ::core::ffi::c_char));
+    pdf_add_array(tmp_array, pdf_new_name(b"ImageB\0" as *const u8 as *const ::core::ffi::c_char));
+    pdf_add_dict(procset, pdf_new_name(b"ProcSet\0" as *const u8 as *const ::core::ffi::c_char), tmp_array);
+    pdf_add_dict(fontdict, pdf_new_name(b"Resources\0" as *const u8 as *const ::core::ffi::c_char), procset);
     tmp_array = pdf_new_array();
     prev = -(2 as ::core::ffi::c_int);
     firstchar = 255 as ::core::ffi::c_int;
     lastchar = 0 as ::core::ffi::c_int;
     code = 0 as ::core::ffi::c_int;
     while code < 256 as ::core::ffi::c_int {
-        let mut charname_0: *mut ::core::ffi::c_char =
-            ::core::ptr::null_mut::<::core::ffi::c_char>();
+        let mut charname_0: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
         if *usedchars.offset(code as isize) != 0 {
             if code < firstchar {
                 firstchar = code;
@@ -847,8 +671,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
     if firstchar > lastchar {
         pdf_release_obj(tmp_array);
         pdf_abort!(
-            b"Unexpected error: firstchar > lastchar (%d %d)\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Unexpected error: firstchar > lastchar (%d %d)\0" as *const u8 as *const ::core::ffi::c_char,
             firstchar,
             lastchar,
         );
@@ -890,10 +713,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
         if *usedchars.offset(code as isize) != 0 {
             pdf_add_array(tmp_array, pdf_new_number(widths[code as usize]));
         } else {
-            pdf_add_array(
-                tmp_array,
-                pdf_new_number(0 as ::core::ffi::c_int as ::core::ffi::c_double),
-            );
+            pdf_add_array(tmp_array, pdf_new_number(0 as ::core::ffi::c_int as ::core::ffi::c_double));
         }
         code += 1;
     }
@@ -928,11 +748,7 @@ pub unsafe extern "C-unwind" fn pdf_font_load_pkfont(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C" {
-    fn memset(
-        __b: *mut ::core::ffi::c_void,
-        __c: ::core::ffi::c_int,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memset(__b: *mut ::core::ffi::c_void, __c: ::core::ffi::c_int, __len: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -951,17 +767,10 @@ pub unsafe extern "C" fn __pdf_entry_PKFont_set_dpi(mut dpi: ::core::ffi::c_int)
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_font_open_pkfont(
-    mut font: *mut pdf_font,
-    mut ident: *const ::core::ffi::c_char,
-    mut index: ::core::ffi::c_int,
-    mut encoding_id: ::core::ffi::c_int,
-    mut embedding: ::core::ffi::c_int,
-    mut point_size: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
+    mut font: *mut pdf_font, mut ident: *const ::core::ffi::c_char, mut index: ::core::ffi::c_int, mut encoding_id: ::core::ffi::c_int,
+    mut embedding: ::core::ffi::c_int, mut point_size: ::core::ffi::c_double, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_font_open_pkfont(font, ident, index, encoding_id, embedding, point_size)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_font_open_pkfont(font, ident, index, encoding_id, embedding, point_size) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -972,10 +781,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_font_open_pkfont(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_font_load_pkfont(
-    mut font: *mut pdf_font,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_font_load_pkfont(mut font: *mut pdf_font, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_font_load_pkfont(font) }) {
         Ok(value) => {
             unsafe {
@@ -1001,10 +807,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_pkfont
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_pkfont.pointer }
 }

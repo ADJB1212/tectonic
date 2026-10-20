@@ -12,9 +12,7 @@ const TEST_BUNDLE_PREFIX: &str = "https://custom.example.com";
 /// Runs the test project and gets the output
 fn run_test_program(format_version: u32, env_vars: &[(&str, &str)]) -> String {
     let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
-    let test_dir = PathBuf::from(&manifest_dir)
-        .join("tests")
-        .join("bundle_env_overrides_test");
+    let test_dir = PathBuf::from(&manifest_dir).join("tests").join("bundle_env_overrides_test");
     let target_platform = env::var("TARGET").unwrap();
 
     let mut cmd = Command::new("cargo");
@@ -41,14 +39,8 @@ fn run_test_program(format_version: u32, env_vars: &[(&str, &str)]) -> String {
 
 #[test]
 fn test_bundle_locked() {
-    let url_locked = run_test_program(
-        PRE_FORMAT_VERSION,
-        &[("TECTONIC_BUNDLE_LOCKED", TEST_BUNDLE_LOCKED)],
-    );
-    let url_locked_versioned = run_test_program(
-        TEST_FORMAT_VERSION,
-        &[("TECTONIC_BUNDLE_LOCKED", TEST_BUNDLE_LOCKED)],
-    );
+    let url_locked = run_test_program(PRE_FORMAT_VERSION, &[("TECTONIC_BUNDLE_LOCKED", TEST_BUNDLE_LOCKED)]);
+    let url_locked_versioned = run_test_program(TEST_FORMAT_VERSION, &[("TECTONIC_BUNDLE_LOCKED", TEST_BUNDLE_LOCKED)]);
 
     assert_eq!(url_locked, TEST_BUNDLE_LOCKED);
     assert_eq!(url_locked_versioned, TEST_BUNDLE_LOCKED);
@@ -66,16 +58,10 @@ fn test_bundle_prefix() {
     );
     let url_prefixed_versioned = run_test_program(
         TEST_FORMAT_VERSION,
-        &[
-            ("TECTONIC_BUNDLE_PREFIX", TEST_BUNDLE_PREFIX),
-            ("TECTONIC_BUNDLE_LOCKED", ""),
-        ],
+        &[("TECTONIC_BUNDLE_PREFIX", TEST_BUNDLE_PREFIX), ("TECTONIC_BUNDLE_LOCKED", "")],
     );
 
-    assert_eq!(
-        url_prefixed,
-        format!("{TEST_BUNDLE_PREFIX}/default_bundle.tar")
-    );
+    assert_eq!(url_prefixed, format!("{TEST_BUNDLE_PREFIX}/default_bundle.tar"));
     assert_eq!(
         url_prefixed_versioned,
         format!("{TEST_BUNDLE_PREFIX}/default_bundle_v{TEST_FORMAT_VERSION}.tar")

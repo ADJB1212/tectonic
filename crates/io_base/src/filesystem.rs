@@ -13,10 +13,7 @@ use std::{
 use tectonic_errors::Result;
 use tectonic_status_base::{StatusBackend, tt_warning};
 
-use super::{
-    InputFeatures, InputHandle, InputOrigin, IoProvider, OpenResult, OutputHandle, TectonicIoError,
-    try_open_file,
-};
+use super::{InputFeatures, InputHandle, InputOrigin, IoProvider, OpenResult, OutputHandle, TectonicIoError, try_open_file};
 
 /// FilesystemPrimaryInputIo is an I/O provider that provides the TeX "primary input"
 /// file off of the filesystem. This can *pretty much* be achieved with
@@ -51,10 +48,7 @@ impl IoProvider for FilesystemPrimaryInputIo {
         }
     }
 
-    fn input_open_primary_with_abspath(
-        &mut self,
-        _status: &mut dyn StatusBackend,
-    ) -> OpenResult<(InputHandle, Option<PathBuf>)> {
+    fn input_open_primary_with_abspath(&mut self, _status: &mut dyn StatusBackend) -> OpenResult<(InputHandle, Option<PathBuf>)> {
         let f = match try_open_file(&self.path) {
             OpenResult::Ok(f) => f,
             OpenResult::NotAvailable => return OpenResult::NotAvailable,
@@ -88,12 +82,7 @@ pub struct FilesystemIo {
 
 impl FilesystemIo {
     /// Create a new filesystem I/O provider rooted at the specified path.
-    pub fn new(
-        root: &Path,
-        writes_allowed: bool,
-        absolute_allowed: bool,
-        hidden_input_paths: HashSet<PathBuf>,
-    ) -> FilesystemIo {
+    pub fn new(root: &Path, writes_allowed: bool, absolute_allowed: bool, hidden_input_paths: HashSet<PathBuf>) -> FilesystemIo {
         FilesystemIo {
             root: PathBuf::from(root),
             writes_allowed,
@@ -145,11 +134,7 @@ impl IoProvider for FilesystemIo {
         OpenResult::NotAvailable
     }
 
-    fn input_open_name(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_name(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         match self.input_open_name_with_abspath(name, status) {
             OpenResult::Ok((h, _path)) => OpenResult::Ok(h),
             OpenResult::Err(e) => OpenResult::Err(e),
@@ -158,11 +143,7 @@ impl IoProvider for FilesystemIo {
     }
 
     #[allow(clippy::if_same_then_else)]
-    fn input_open_name_with_abspath(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<(InputHandle, Option<PathBuf>)> {
+    fn input_open_name_with_abspath(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<(InputHandle, Option<PathBuf>)> {
         let path = match self.construct_path(name) {
             Ok(p) => p,
             Err(e) => return OpenResult::Err(e),

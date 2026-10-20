@@ -58,18 +58,11 @@ impl FromStr for UnstableArg {
         // For structopt/clap, if you pass a value to a flag which doesn't accept one, it's
         // silently ignored.
 
-        let require_value = |value_name| {
-            value.ok_or_else(|| {
-                format!("'-Z {arg}=<{value_name}>' requires a value but none was supplied",).into()
-            })
-        };
+        let require_value = |value_name| value.ok_or_else(|| format!("'-Z {arg}=<{value_name}>' requires a value but none was supplied",).into());
 
         let require_no_value = |unwanted_value: Option<&str>, builtin_value: UnstableArg| {
             if let Some(value) = unwanted_value {
-                Err(format!(
-                    "'-Z {arg}={value}', was supplied but '-Z {arg}' does not take a value."
-                )
-                .into())
+                Err(format!("'-Z {arg}={value}', was supplied but '-Z {arg}' does not take a value.").into())
             } else {
                 Ok(builtin_value)
             }
@@ -81,9 +74,7 @@ impl FromStr for UnstableArg {
             "continue-on-errors" => Ok(UnstableArg::ContinueOnErrors),
 
             "min-crossrefs" => require_value("num")
-                .and_then(|s| {
-                    FromStr::from_str(s).map_err(|e| format!("-Z min-crossrefs: {e}").into())
-                })
+                .and_then(|s| FromStr::from_str(s).map_err(|e| format!("-Z min-crossrefs: {e}").into()))
                 .map(UnstableArg::MinCrossrefs),
 
             "paper-size" => require_value("spec").map(|s| UnstableArg::PaperSize(s.to_string())),
@@ -92,9 +83,7 @@ impl FromStr for UnstableArg {
 
             "shell-escape" => require_no_value(value, UnstableArg::ShellEscapeEnabled),
 
-            "shell-escape-cwd" => {
-                require_value("path").map(|s| UnstableArg::ShellEscapeCwd(s.to_string()))
-            }
+            "shell-escape-cwd" => require_value("path").map(|s| UnstableArg::ShellEscapeCwd(s.to_string())),
 
             "deterministic-mode" => require_no_value(value, UnstableArg::DeterministicModeEnabled),
 

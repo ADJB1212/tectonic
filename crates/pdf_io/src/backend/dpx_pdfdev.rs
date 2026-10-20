@@ -19,52 +19,26 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::backend::dpx_pdfdraw::pdf_dev_transform;
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
     fn modf(_: ::core::ffi::c_double, _: *mut ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn floor(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn round(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn abs(_: ::core::ffi::c_int) -> ::core::ffi::c_int;
     fn labs(_: ::core::ffi::c_long) -> ::core::ffi::c_long;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-    fn strcpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    fn strcpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
-    fn sprintf(
-        _: *mut ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
+    fn sprintf(_: *mut ::core::ffi::c_char, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_release_obj"]
     fn pdf_release_obj(object: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_link_obj"]
     fn pdf_link_obj(object: *mut pdf_obj) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdfobj_escape_str"]
-    fn pdfobj_escape_str(
-        buffer: *mut ::core::ffi::c_char,
-        size: size_t,
-        s: *const ::core::ffi::c_uchar,
-        len: size_t,
-    ) -> size_t;
+    fn pdfobj_escape_str(buffer: *mut ::core::ffi::c_char, size: size_t, s: *const ::core::ffi::c_uchar, len: size_t) -> size_t;
     #[link_name = "__pdf_impl_pdf_color_clear_stack"]
     fn pdf_color_clear_stack();
     #[link_name = "__pdf_impl_pdf_color_get_current"]
@@ -72,16 +46,9 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_lookup_fontmap_record"]
     fn pdf_lookup_fontmap_record(kp: *const ::core::ffi::c_char) -> *mut fontmap_rec;
     #[link_name = "__pdf_impl_pdf_font_findresource"]
-    fn pdf_font_findresource(
-        tex_name: *const ::core::ffi::c_char,
-        font_scale: ::core::ffi::c_double,
-    ) -> ::core::ffi::c_int;
+    fn pdf_font_findresource(tex_name: *const ::core::ffi::c_char, font_scale: ::core::ffi::c_double) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_font_load_font"]
-    fn pdf_font_load_font(
-        tex_name: *const ::core::ffi::c_char,
-        font_scale: ::core::ffi::c_double,
-        mrec: *const fontmap_rec,
-    ) -> ::core::ffi::c_int;
+    fn pdf_font_load_font(tex_name: *const ::core::ffi::c_char, font_scale: ::core::ffi::c_double, mrec: *const fontmap_rec) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_get_font_subtype"]
     fn pdf_get_font_subtype(font_id: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_get_font_reference"]
@@ -93,18 +60,12 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_get_font_wmode"]
     fn pdf_get_font_wmode(font_id: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_font_resource_name"]
-    fn pdf_font_resource_name(
-        font_id: ::core::ffi::c_int,
-        buf: *mut ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
+    fn pdf_font_resource_name(font_id: ::core::ffi::c_int, buf: *mut ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_CMap_get_profile"]
     fn CMap_get_profile(cmap: *mut CMap, type_0: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_CMap_decode"]
     fn CMap_decode(
-        cmap: *mut CMap,
-        inbuf: *mut *const ::core::ffi::c_uchar,
-        inbytesleft: *mut size_t,
-        outbuf: *mut *mut ::core::ffi::c_uchar,
+        cmap: *mut CMap, inbuf: *mut *const ::core::ffi::c_uchar, inbytesleft: *mut size_t, outbuf: *mut *mut ::core::ffi::c_uchar,
         outbytesleft: *mut size_t,
     ) -> size_t;
     #[link_name = "__pdf_impl_CMap_cache_get"]
@@ -119,22 +80,14 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_doc_add_page_content"]
     fn pdf_doc_add_page_content(buffer: *const ::core::ffi::c_char, length: ::core::ffi::c_uint);
     #[link_name = "__pdf_impl_pdf_doc_add_page_resource"]
-    fn pdf_doc_add_page_resource(
-        category: *const ::core::ffi::c_char,
-        resource_name: *const ::core::ffi::c_char,
-        resources: *mut pdf_obj,
-    );
+    fn pdf_doc_add_page_resource(category: *const ::core::ffi::c_char, resource_name: *const ::core::ffi::c_char, resources: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_dev_init_gstates"]
     fn pdf_dev_init_gstates();
     #[link_name = "__pdf_impl_pdf_dev_clear_gstates"]
     fn pdf_dev_clear_gstates();
     #[link_name = "__pdf_impl_pdf_dev_rectclip"]
-    fn pdf_dev_rectclip(
-        x: ::core::ffi::c_double,
-        y: ::core::ffi::c_double,
-        w: ::core::ffi::c_double,
-        h: ::core::ffi::c_double,
-    ) -> ::core::ffi::c_int;
+    fn pdf_dev_rectclip(x: ::core::ffi::c_double, y: ::core::ffi::c_double, w: ::core::ffi::c_double, h: ::core::ffi::c_double)
+    -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_concat"]
     fn pdf_dev_concat(M: *const pdf_tmatrix) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_dev_gsave"]
@@ -146,11 +99,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_dev_grestore_to"]
     fn pdf_dev_grestore_to(depth: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_dev_set_color"]
-    fn pdf_dev_set_color(
-        color: *const pdf_color,
-        mask: ::core::ffi::c_char,
-        force: ::core::ffi::c_int,
-    );
+    fn pdf_dev_set_color(color: *const pdf_color, mask: ::core::ffi::c_char, force: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_dev_reset_xgstate"]
     fn pdf_dev_reset_xgstate(force: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_ximage_get_resname"]
@@ -158,12 +107,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_ximage_get_reference"]
     fn pdf_ximage_get_reference(xobj_id: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_ximage_scale_image"]
-    fn pdf_ximage_scale_image(
-        id: ::core::ffi::c_int,
-        M: *mut pdf_tmatrix,
-        r: *mut pdf_rect,
-        p: *mut transform_info,
-    ) -> ::core::ffi::c_int;
+    fn pdf_ximage_scale_image(id: ::core::ffi::c_int, M: *mut pdf_tmatrix, r: *mut pdf_rect, p: *mut transform_info) -> ::core::ffi::c_int;
 
 }
 pub type __darwin_size_t = usize;
@@ -372,10 +316,7 @@ pub const __DARWIN_NULL: *mut ::core::ffi::c_void = ::core::ptr::null_mut::<::co
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
@@ -384,8 +325,7 @@ unsafe extern "C-unwind" fn streq_ptr(
 pub const INFO_DO_CLIP: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 3 as ::core::ffi::c_int;
 pub const PDF_DEV_PARAM_AUTOROTATE: ::core::ffi::c_int = 1;
 pub const PDF_DEV_PARAM_COLORMODE: ::core::ffi::c_int = 2;
-pub const FONTMAP_OPT_NOEMBED: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
+pub const FONTMAP_OPT_NOEMBED: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
 pub const FONTMAP_STYLE_BOLD: ::core::ffi::c_int = 1;
 pub const FONTMAP_STYLE_ITALIC: ::core::ffi::c_int = 2;
 pub const FONTMAP_STYLE_BOLDITALIC: ::core::ffi::c_int = 3;
@@ -410,19 +350,12 @@ unsafe extern "C-unwind" fn current_device() -> *mut pdf_dev {
     let __pdf_state = unsafe { document_state() };
     return &raw mut (*__pdf_state).pdev;
 }
-unsafe extern "C-unwind" fn dev_out(
-    mut p: *mut pdf_dev,
-    mut str: *const ::core::ffi::c_char,
-    mut len: size_t,
-) {
+unsafe extern "C-unwind" fn dev_out(mut p: *mut pdf_dev, mut str: *const ::core::ffi::c_char, mut len: size_t) {
     pdf_doc_add_page_content(str, len as ::core::ffi::c_uint);
 }
 unsafe extern "C-unwind" fn pdf_dev_unit_dviunit(mut p: *mut pdf_dev) -> ::core::ffi::c_double {
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     return 1.0f64 / (*p).unit.dvi2pts;
@@ -430,10 +363,7 @@ unsafe extern "C-unwind" fn pdf_dev_unit_dviunit(mut p: *mut pdf_dev) -> ::core:
 pub const DEV_PRECISION_MAX: ::core::ffi::c_int = 8;
 use crate::numbers::{INVERSE_POWERS_OF_TEN as ten_pow_inv, POWERS_OF_TEN as ten_pow};
 
-unsafe extern "C-unwind" fn p_itoa(
-    value: ::core::ffi::c_int,
-    buf: *mut ::core::ffi::c_char,
-) -> ::core::ffi::c_uint {
+unsafe extern "C-unwind" fn p_itoa(value: ::core::ffi::c_int, buf: *mut ::core::ffi::c_char) -> ::core::ffi::c_uint {
     let mut bytes = [0; 11];
     let length = crate::numbers::format_integer(value, &mut bytes).unwrap();
     // Legacy callers provide space for the number and a trailing NUL.
@@ -444,15 +374,10 @@ unsafe extern "C-unwind" fn p_itoa(
     length as ::core::ffi::c_uint
 }
 
-unsafe extern "C-unwind" fn p_dtoa(
-    value: f64,
-    prec: ::core::ffi::c_int,
-    buf: *mut ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn p_dtoa(value: f64, prec: ::core::ffi::c_int, buf: *mut ::core::ffi::c_char) -> ::core::ffi::c_int {
     let mut bytes = [0; crate::numbers::DECIMAL_BUFFER_SIZE];
-    let length = crate::numbers::format_decimal(value, prec, &mut bytes).unwrap_or_else(|_| {
-        crate::backend::runtime::raise(c"Invalid PDF numeric precision".to_owned())
-    });
+    let length = crate::numbers::format_decimal(value, prec, &mut bytes)
+        .unwrap_or_else(|_| crate::backend::runtime::raise(c"Invalid PDF numeric precision".to_owned()));
     // Only borrow the bytes actually written; legacy callers supply no capacity.
     unsafe {
         core::ptr::copy_nonoverlapping(bytes.as_ptr(), buf.cast(), length);
@@ -461,43 +386,29 @@ unsafe extern "C-unwind" fn p_dtoa(
     length as ::core::ffi::c_int
 }
 unsafe extern "C-unwind" fn dev_sprint_bp(
-    mut p: *mut pdf_dev,
-    mut buf: *mut ::core::ffi::c_char,
-    mut value: spt_t,
-    mut error: *mut spt_t,
+    mut p: *mut pdf_dev, mut buf: *mut ::core::ffi::c_char, mut value: spt_t, mut error: *mut spt_t,
 ) -> ::core::ffi::c_int {
     let mut value_in_bp: ::core::ffi::c_double = 0.;
     let mut error_in_bp: ::core::ffi::c_double = 0.;
     let mut prec: ::core::ffi::c_int = 0;
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     prec = (*p).unit.precision;
     value_in_bp = value as ::core::ffi::c_double * (*p).unit.dvi2pts;
     if !error.is_null() {
-        error_in_bp = value_in_bp
-            - floor(value_in_bp / ten_pow_inv[prec as usize] + 0.5f64) * ten_pow_inv[prec as usize];
+        error_in_bp = value_in_bp - floor(value_in_bp / ten_pow_inv[prec as usize] + 0.5f64) * ten_pow_inv[prec as usize];
         *error = round(error_in_bp / (*p).unit.dvi2pts) as spt_t;
     }
     return p_dtoa(value_in_bp, prec, buf);
 }
-unsafe extern "C-unwind" fn pdf_dev_sprint_matrix(
-    mut p: *mut pdf_dev,
-    mut buf: *mut ::core::ffi::c_char,
-    mut M: *const pdf_tmatrix,
-) -> size_t {
+unsafe extern "C-unwind" fn pdf_dev_sprint_matrix(mut p: *mut pdf_dev, mut buf: *mut ::core::ffi::c_char, mut M: *const pdf_tmatrix) -> size_t {
     let mut len: size_t = 0;
     let mut prec0: ::core::ffi::c_int = 0;
     let mut prec2: ::core::ffi::c_int = 0;
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     prec2 = if ((*p).unit.precision + 2 as ::core::ffi::c_int) < 8 as ::core::ffi::c_int {
@@ -534,49 +445,32 @@ unsafe extern "C-unwind" fn pdf_dev_sprint_matrix(
     *buf.offset(len as isize) = '\0' as i32 as ::core::ffi::c_char;
     return len;
 }
-unsafe extern "C-unwind" fn pdf_dev_sprint_rect(
-    mut p: *mut pdf_dev,
-    mut buf: *mut ::core::ffi::c_char,
-    mut rect: *const pdf_rect,
-) -> size_t {
+unsafe extern "C-unwind" fn pdf_dev_sprint_rect(mut p: *mut pdf_dev, mut buf: *mut ::core::ffi::c_char, mut rect: *const pdf_rect) -> size_t {
     let mut len: size_t = 0;
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     len = p_dtoa((*rect).llx, (*p).unit.precision, buf) as size_t;
     let fresh10 = len;
     len = len.wrapping_add(1);
     *buf.offset(fresh10 as isize) = ' ' as i32 as ::core::ffi::c_char;
-    len = len
-        .wrapping_add(p_dtoa((*rect).lly, (*p).unit.precision, buf.offset(len as isize)) as size_t);
+    len = len.wrapping_add(p_dtoa((*rect).lly, (*p).unit.precision, buf.offset(len as isize)) as size_t);
     let fresh11 = len;
     len = len.wrapping_add(1);
     *buf.offset(fresh11 as isize) = ' ' as i32 as ::core::ffi::c_char;
-    len = len
-        .wrapping_add(p_dtoa((*rect).urx, (*p).unit.precision, buf.offset(len as isize)) as size_t);
+    len = len.wrapping_add(p_dtoa((*rect).urx, (*p).unit.precision, buf.offset(len as isize)) as size_t);
     let fresh12 = len;
     len = len.wrapping_add(1);
     *buf.offset(fresh12 as isize) = ' ' as i32 as ::core::ffi::c_char;
-    len = len
-        .wrapping_add(p_dtoa((*rect).ury, (*p).unit.precision, buf.offset(len as isize)) as size_t);
+    len = len.wrapping_add(p_dtoa((*rect).ury, (*p).unit.precision, buf.offset(len as isize)) as size_t);
     *buf.offset(len as isize) = '\0' as i32 as ::core::ffi::c_char;
     return len;
 }
-unsafe extern "C-unwind" fn pdf_dev_sprint_coord(
-    mut p: *mut pdf_dev,
-    mut buf: *mut ::core::ffi::c_char,
-    mut c: *const pdf_coord,
-) -> size_t {
+unsafe extern "C-unwind" fn pdf_dev_sprint_coord(mut p: *mut pdf_dev, mut buf: *mut ::core::ffi::c_char, mut c: *const pdf_coord) -> size_t {
     let mut len: size_t = 0;
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     len = p_dtoa((*c).x, (*p).unit.precision, buf) as size_t;
@@ -588,16 +482,11 @@ unsafe extern "C-unwind" fn pdf_dev_sprint_coord(
     return len;
 }
 unsafe extern "C-unwind" fn pdf_dev_sprint_length(
-    mut p: *mut pdf_dev,
-    mut buf: *mut ::core::ffi::c_char,
-    mut value: ::core::ffi::c_double,
+    mut p: *mut pdf_dev, mut buf: *mut ::core::ffi::c_char, mut value: ::core::ffi::c_double,
 ) -> size_t {
     let mut len: size_t = 0;
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     len = p_dtoa(value, (*p).unit.precision, buf) as size_t;
@@ -605,16 +494,11 @@ unsafe extern "C-unwind" fn pdf_dev_sprint_length(
     return len;
 }
 unsafe extern "C-unwind" fn pdf_dev_sprint_number(
-    mut p: *mut pdf_dev,
-    mut buf: *mut ::core::ffi::c_char,
-    mut value: ::core::ffi::c_double,
+    mut p: *mut pdf_dev, mut buf: *mut ::core::ffi::c_char, mut value: ::core::ffi::c_double,
 ) -> size_t {
     let mut len: size_t = 0;
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     len = p_dtoa(value, DEV_PRECISION_MAX, buf) as size_t;
@@ -622,11 +506,7 @@ unsafe extern "C-unwind" fn pdf_dev_sprint_number(
     return len;
 }
 unsafe extern "C-unwind" fn dev_set_text_matrix(
-    mut p: *mut pdf_dev,
-    mut xpos: spt_t,
-    mut ypos: spt_t,
-    mut slant: ::core::ffi::c_double,
-    mut extend: ::core::ffi::c_double,
+    mut p: *mut pdf_dev, mut xpos: spt_t, mut ypos: spt_t, mut slant: ::core::ffi::c_double, mut extend: ::core::ffi::c_double,
     mut rotate: ::core::ffi::c_int,
 ) {
     let mut tm: pdf_tmatrix = pdf_tmatrix {
@@ -639,10 +519,7 @@ unsafe extern "C-unwind" fn dev_set_text_matrix(
     };
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     match rotate {
@@ -703,11 +580,7 @@ unsafe extern "C-unwind" fn dev_set_text_matrix(
     let fresh37 = len;
     len = len + 1;
     (*p).format_buffer[fresh37 as usize] = 'm' as i32 as ::core::ffi::c_char;
-    dev_out(
-        p,
-        &raw mut (*p).format_buffer as *mut ::core::ffi::c_char,
-        len as size_t,
-    );
+    dev_out(p, &raw mut (*p).format_buffer as *mut ::core::ffi::c_char, len as size_t);
     (*p).text_state.ref_x = xpos;
     (*p).text_state.ref_y = ypos;
     (*p).text_state.matrix.slant = slant;
@@ -716,22 +589,14 @@ unsafe extern "C-unwind" fn dev_set_text_matrix(
 }
 unsafe extern "C-unwind" fn reset_text_state(mut p: *mut pdf_dev) {
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
-    dev_out(
-        p,
-        b" BT\0" as *const u8 as *const ::core::ffi::c_char,
-        3 as size_t,
-    );
+    dev_out(p, b" BT\0" as *const u8 as *const ::core::ffi::c_char, 3 as size_t);
     if (*p).text_state.force_reset != 0
         || (*p).text_state.matrix.slant != 0.0f64
         || (*p).text_state.matrix.extend != 1.0f64
-        || (*p).text_state.matrix.rotate != TEXT_WMODE_HH
-            && (*p).text_state.matrix.rotate != TEXT_WMODE_VV
+        || (*p).text_state.matrix.rotate != TEXT_WMODE_HH && (*p).text_state.matrix.rotate != TEXT_WMODE_VV
     {
         dev_set_text_matrix(
             p,
@@ -749,10 +614,7 @@ unsafe extern "C-unwind" fn reset_text_state(mut p: *mut pdf_dev) {
 }
 unsafe extern "C-unwind" fn pdf_dev_text_mode(mut p: *mut pdf_dev) {
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     match (*p).motion_state {
@@ -814,18 +676,10 @@ unsafe extern "C-unwind" fn pdf_dev_graphics_mode(mut p: *mut pdf_dev) {
     match current_block_15 {
         14418776834865182077 => {
             if (*p).text_state.bold_param != 0.0f64 {
-                dev_out(
-                    p,
-                    b" 0 Tr\0" as *const u8 as *const ::core::ffi::c_char,
-                    5 as size_t,
-                );
+                dev_out(p, b" 0 Tr\0" as *const u8 as *const ::core::ffi::c_char, 5 as size_t);
                 (*p).text_state.bold_param = 0.0f64;
             }
-            dev_out(
-                p,
-                b" ET\0" as *const u8 as *const ::core::ffi::c_char,
-                3 as size_t,
-            );
+            dev_out(p, b" ET\0" as *const u8 as *const ::core::ffi::c_char, 3 as size_t);
             (*p).text_state.force_reset = 0 as ::core::ffi::c_int;
             (*p).text_state.font_id = -(1 as ::core::ffi::c_int);
         }
@@ -834,11 +688,7 @@ unsafe extern "C-unwind" fn pdf_dev_graphics_mode(mut p: *mut pdf_dev) {
     (*p).motion_state = GRAPHICS_MODE;
 }
 unsafe extern "C-unwind" fn start_string(
-    mut p: *mut pdf_dev,
-    mut xpos: spt_t,
-    mut ypos: spt_t,
-    mut slant: ::core::ffi::c_double,
-    mut extend: ::core::ffi::c_double,
+    mut p: *mut pdf_dev, mut xpos: spt_t, mut ypos: spt_t, mut slant: ::core::ffi::c_double, mut extend: ::core::ffi::c_double,
     mut rotate: ::core::ffi::c_int,
 ) {
     let mut delx: spt_t = 0;
@@ -849,10 +699,7 @@ unsafe extern "C-unwind" fn start_string(
     let mut desired_dely: spt_t = 0;
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     delx = xpos - (*p).text_state.ref_x;
@@ -860,9 +707,7 @@ unsafe extern "C-unwind" fn start_string(
     match rotate {
         TEXT_WMODE_VH => {
             desired_delx = dely;
-            desired_dely = (-(delx as ::core::ffi::c_double
-                - dely as ::core::ffi::c_double * slant)
-                / extend) as spt_t;
+            desired_dely = (-(delx as ::core::ffi::c_double - dely as ::core::ffi::c_double * slant) / extend) as spt_t;
             let fresh22 = len;
             len = len + 1;
             (*p).format_buffer[fresh22 as usize] = ' ' as i32 as ::core::ffi::c_char;
@@ -884,9 +729,7 @@ unsafe extern "C-unwind" fn start_string(
             error_delx = -error_delx;
         }
         TEXT_WMODE_HV => {
-            desired_delx = (-(dely as ::core::ffi::c_double
-                + delx as ::core::ffi::c_double * slant)
-                / extend) as spt_t;
+            desired_delx = (-(dely as ::core::ffi::c_double + delx as ::core::ffi::c_double * slant) / extend) as spt_t;
             desired_dely = delx;
             let fresh24 = len;
             len = len + 1;
@@ -909,8 +752,7 @@ unsafe extern "C-unwind" fn start_string(
             error_dely = -error_dely;
         }
         TEXT_WMODE_HH => {
-            desired_delx = ((delx as ::core::ffi::c_double - dely as ::core::ffi::c_double * slant)
-                / extend) as spt_t;
+            desired_delx = ((delx as ::core::ffi::c_double - dely as ::core::ffi::c_double * slant) / extend) as spt_t;
             desired_dely = dely;
             let fresh26 = len;
             len = len + 1;
@@ -933,8 +775,7 @@ unsafe extern "C-unwind" fn start_string(
         }
         TEXT_WMODE_VV => {
             desired_delx = delx;
-            desired_dely = ((dely as ::core::ffi::c_double + delx as ::core::ffi::c_double * slant)
-                / extend) as spt_t;
+            desired_dely = ((dely as ::core::ffi::c_double + delx as ::core::ffi::c_double * slant) / extend) as spt_t;
             let fresh28 = len;
             len = len + 1;
             (*p).format_buffer[fresh28 as usize] = ' ' as i32 as ::core::ffi::c_char;
@@ -955,9 +796,7 @@ unsafe extern "C-unwind" fn start_string(
             );
         }
         TEXT_WMODE_HD => {
-            desired_delx = -((-(dely as ::core::ffi::c_double
-                + delx as ::core::ffi::c_double * slant)
-                / extend) as spt_t);
+            desired_delx = -((-(dely as ::core::ffi::c_double + delx as ::core::ffi::c_double * slant) / extend) as spt_t);
             desired_dely = -delx;
             let fresh30 = len;
             len = len + 1;
@@ -982,9 +821,7 @@ unsafe extern "C-unwind" fn start_string(
         }
         TEXT_WMODE_VD => {
             desired_delx = -delx;
-            desired_dely = -(((dely as ::core::ffi::c_double
-                + delx as ::core::ffi::c_double * slant)
-                / extend) as spt_t);
+            desired_dely = -(((dely as ::core::ffi::c_double + delx as ::core::ffi::c_double * slant) / extend) as spt_t);
             let fresh32 = len;
             len = len + 1;
             (*p).format_buffer[fresh32 as usize] = ' ' as i32 as ::core::ffi::c_char;
@@ -1008,11 +845,7 @@ unsafe extern "C-unwind" fn start_string(
         }
         _ => {}
     }
-    dev_out(
-        p,
-        &raw mut (*p).format_buffer as *mut ::core::ffi::c_char,
-        len as size_t,
-    );
+    dev_out(p, &raw mut (*p).format_buffer as *mut ::core::ffi::c_char, len as size_t);
     dev_out(
         p,
         if (*p).text_state.is_mb != 0 {
@@ -1027,18 +860,11 @@ unsafe extern "C-unwind" fn start_string(
     (*p).text_state.offset = 0 as ::core::ffi::c_int as spt_t;
 }
 unsafe extern "C-unwind" fn pdf_dev_string_mode(
-    mut p: *mut pdf_dev,
-    mut xpos: spt_t,
-    mut ypos: spt_t,
-    mut slant: ::core::ffi::c_double,
-    mut extend: ::core::ffi::c_double,
+    mut p: *mut pdf_dev, mut xpos: spt_t, mut ypos: spt_t, mut slant: ::core::ffi::c_double, mut extend: ::core::ffi::c_double,
     mut rotate: ::core::ffi::c_int,
 ) {
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     let mut current_block_8: u64;
@@ -1076,10 +902,7 @@ unsafe extern "C-unwind" fn pdf_dev_string_mode(
     }
     (*p).motion_state = STRING_MODE;
 }
-unsafe extern "C-unwind" fn pdf_dev_set_font(
-    mut p: *mut pdf_dev,
-    mut font_id: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn pdf_dev_set_font(mut p: *mut pdf_dev, mut font_id: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut font: *mut dev_font = ::core::ptr::null_mut::<dev_font>();
     let mut text_rotate: ::core::ffi::c_int = 0;
     let mut font_scale: ::core::ffi::c_double = 0.;
@@ -1087,19 +910,13 @@ unsafe extern "C-unwind" fn pdf_dev_set_font(
     let mut vert_dir: ::core::ffi::c_int = 0;
     let mut vert_font: ::core::ffi::c_int = 0;
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     pdf_dev_text_mode(p);
     font = (*p).fonts.offset(font_id as isize) as *mut dev_font;
     if font.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"font\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"font\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     (*p).text_state.is_mb = if (*font).format == PDF_FONTTYPE_COMPOSITE {
@@ -1120,9 +937,7 @@ unsafe extern "C-unwind" fn pdf_dev_set_font(
     text_rotate = vert_font << 2 as ::core::ffi::c_int | vert_dir;
     if (*font).slant != (*p).text_state.matrix.slant
         || (*font).extend != (*p).text_state.matrix.extend
-        || (if abs(text_rotate - (*p).text_state.matrix.rotate) % 5 as ::core::ffi::c_int
-            == 0 as ::core::ffi::c_int
-        {
+        || (if abs(text_rotate - (*p).text_state.matrix.rotate) % 5 as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
             0 as ::core::ffi::c_int
         } else {
             1 as ::core::ffi::c_int
@@ -1172,11 +987,7 @@ unsafe extern "C-unwind" fn pdf_dev_set_font(
     let fresh41 = len;
     len = len + 1;
     (*p).format_buffer[fresh41 as usize] = 'f' as i32 as ::core::ffi::c_char;
-    dev_out(
-        p,
-        &raw mut (*p).format_buffer as *mut ::core::ffi::c_char,
-        len as size_t,
-    );
+    dev_out(p, &raw mut (*p).format_buffer as *mut ::core::ffi::c_char, len as size_t);
     if (*font).bold > 0.0f64 || (*font).bold != (*p).text_state.bold_param {
         if (*font).bold <= 0.0f64 {
             len = sprintf(
@@ -1190,11 +1001,7 @@ unsafe extern "C-unwind" fn pdf_dev_set_font(
                 (*font).bold,
             );
         }
-        dev_out(
-            p,
-            &raw mut (*p).format_buffer as *mut ::core::ffi::c_char,
-            len as size_t,
-        );
+        dev_out(p, &raw mut (*p).format_buffer as *mut ::core::ffi::c_char, len as size_t);
     }
     (*p).text_state.bold_param = (*font).bold;
     (*p).text_state.font_id = font_id;
@@ -1202,9 +1009,7 @@ unsafe extern "C-unwind" fn pdf_dev_set_font(
 }
 
 unsafe extern "C-unwind" fn handle_multibyte_string(
-    mut font: *mut dev_font,
-    mut str_ptr: *mut *const ::core::ffi::c_uchar,
-    mut str_len: *mut size_t,
+    mut font: *mut dev_font, mut str_ptr: *mut *const ::core::ffi::c_uchar, mut str_len: *mut size_t,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut p: *const ::core::ffi::c_uchar = ::core::ptr::null::<::core::ffi::c_uchar>();
@@ -1222,17 +1027,10 @@ unsafe extern "C-unwind" fn handle_multibyte_string(
         outbuf = &raw mut (*__pdf_state).sbuf0 as *mut ::core::ffi::c_uchar;
         inbytesleft = length;
         outbytesleft = FORMAT_BUF_SIZE as size_t;
-        CMap_decode(
-            cmap,
-            &raw mut inbuf,
-            &raw mut inbytesleft,
-            &raw mut outbuf,
-            &raw mut outbytesleft,
-        );
+        CMap_decode(cmap, &raw mut inbuf, &raw mut inbytesleft, &raw mut outbuf, &raw mut outbytesleft);
         if inbytesleft != 0 as size_t {
             pdf_warning!(
-                b"CMap conversion failed. (%zu bytes remains)\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"CMap conversion failed. (%zu bytes remains)\0" as *const u8 as *const ::core::ffi::c_char,
                 inbytesleft,
             );
             return -(1 as ::core::ffi::c_int);
@@ -1245,14 +1043,8 @@ unsafe extern "C-unwind" fn handle_multibyte_string(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn dev_set_string(
-    mut p: *mut pdf_dev,
-    mut xpos: spt_t,
-    mut ypos: spt_t,
-    mut instr_ptr: *const ::core::ffi::c_void,
-    mut instr_len: size_t,
-    mut width: spt_t,
-    mut font_id: ::core::ffi::c_int,
-    mut resolved: ::core::ffi::c_int,
+    mut p: *mut pdf_dev, mut xpos: spt_t, mut ypos: spt_t, mut instr_ptr: *const ::core::ffi::c_void, mut instr_len: size_t, mut width: spt_t,
+    mut font_id: ::core::ffi::c_int, mut resolved: ::core::ffi::c_int,
 ) {
     let mut font: *mut dev_font = ::core::ptr::null_mut::<dev_font>();
     let mut str_ptr: *const ::core::ffi::c_uchar = ::core::ptr::null::<::core::ffi::c_uchar>();
@@ -1284,27 +1076,18 @@ unsafe extern "C-unwind" fn dev_set_string(
     str_ptr = instr_ptr as *const ::core::ffi::c_uchar;
     length = instr_len;
     if resolved == 0 && (*font).format == PDF_FONTTYPE_COMPOSITE {
-        if handle_multibyte_string(font, &raw mut str_ptr, &raw mut length)
-            < 0 as ::core::ffi::c_int
-        {
-            pdf_abort!(
-                b"Error in converting input string...\0" as *const u8 as *const ::core::ffi::c_char,
-            );
+        if handle_multibyte_string(font, &raw mut str_ptr, &raw mut length) < 0 as ::core::ffi::c_int {
+            pdf_abort!(b"Error in converting input string...\0" as *const u8 as *const ::core::ffi::c_char,);
         }
         if !(*font).used_chars.is_null() {
             i = 0 as size_t;
             while i < length {
-                let mut cid: ::core::ffi::c_ushort =
-                    ((*str_ptr.offset(i as isize) as ::core::ffi::c_int) << 8 as ::core::ffi::c_int
-                        | *str_ptr.offset(i.wrapping_add(1 as size_t) as isize)
-                            as ::core::ffi::c_int) as ::core::ffi::c_ushort;
-                let ref mut fresh16 = *(*font)
-                    .used_chars
-                    .offset((cid as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize);
+                let mut cid: ::core::ffi::c_ushort = ((*str_ptr.offset(i as isize) as ::core::ffi::c_int) << 8 as ::core::ffi::c_int
+                    | *str_ptr.offset(i.wrapping_add(1 as size_t) as isize) as ::core::ffi::c_int)
+                    as ::core::ffi::c_ushort;
+                let ref mut fresh16 = *(*font).used_chars.offset((cid as ::core::ffi::c_int / 8 as ::core::ffi::c_int) as isize);
                 *fresh16 = (*fresh16 as ::core::ffi::c_int
-                    | (1 as ::core::ffi::c_int)
-                        << 7 as ::core::ffi::c_int
-                            - cid as ::core::ffi::c_int % 8 as ::core::ffi::c_int)
+                    | (1 as ::core::ffi::c_int) << 7 as ::core::ffi::c_int - cid as ::core::ffi::c_int % 8 as ::core::ffi::c_int)
                     as ::core::ffi::c_char;
                 i = i.wrapping_add(2 as size_t);
             }
@@ -1313,9 +1096,7 @@ unsafe extern "C-unwind" fn dev_set_string(
         if !(*font).used_chars.is_null() {
             i = 0 as size_t;
             while i < length {
-                *(*font)
-                    .used_chars
-                    .offset(*str_ptr.offset(i as isize) as isize) = 1 as ::core::ffi::c_char;
+                *(*font).used_chars.offset(*str_ptr.offset(i as isize) as isize) = 1 as ::core::ffi::c_char;
                 i = i.wrapping_add(1);
             }
         }
@@ -1338,30 +1119,22 @@ unsafe extern "C-unwind" fn dev_set_string(
                     i = 0 as size_t;
                     while i < length {
                         let ref mut fresh17 = *(*font).used_chars.offset(
-                            (((*str_ptr.offset(i as isize) as ::core::ffi::c_int)
-                                << 8 as ::core::ffi::c_int
-                                | *str_ptr.offset(i.wrapping_add(1 as size_t) as isize)
-                                    as ::core::ffi::c_int)
+                            (((*str_ptr.offset(i as isize) as ::core::ffi::c_int) << 8 as ::core::ffi::c_int
+                                | *str_ptr.offset(i.wrapping_add(1 as size_t) as isize) as ::core::ffi::c_int)
                                 / 8 as ::core::ffi::c_int) as isize,
                         );
                         *fresh17 = (*fresh17 as ::core::ffi::c_int
                             | (1 as ::core::ffi::c_int)
                                 << 7 as ::core::ffi::c_int
-                                    - ((*str_ptr.offset(i as isize) as ::core::ffi::c_int)
-                                        << 8 as ::core::ffi::c_int
-                                        | *str_ptr.offset(i.wrapping_add(1 as size_t) as isize)
-                                            as ::core::ffi::c_int)
-                                        % 8 as ::core::ffi::c_int)
-                            as ::core::ffi::c_char;
+                                    - ((*str_ptr.offset(i as isize) as ::core::ffi::c_int) << 8 as ::core::ffi::c_int
+                                        | *str_ptr.offset(i.wrapping_add(1 as size_t) as isize) as ::core::ffi::c_int)
+                                        % 8 as ::core::ffi::c_int) as ::core::ffi::c_char;
                         i = i.wrapping_add(2 as size_t);
                     }
                 } else {
                     i = 0 as size_t;
                     while i < length {
-                        *(*font)
-                            .used_chars
-                            .offset(*str_ptr.offset(i as isize) as isize) =
-                            1 as ::core::ffi::c_char;
+                        *(*font).used_chars.offset(*str_ptr.offset(i as isize) as isize) = 1 as ::core::ffi::c_char;
                         i = i.wrapping_add(1);
                     }
                 }
@@ -1409,37 +1182,20 @@ unsafe extern "C-unwind" fn dev_set_string(
     }
     if (*p).text_state.force_reset != 0
         || labs(delv as ::core::ffi::c_long) > (*p).unit.min_bp_val as ::core::ffi::c_long
-        || labs(delh as ::core::ffi::c_long)
-            > (3.0f64 * (*font).extend * (*font).sptsize as ::core::ffi::c_double) as spt_t
-                as ::core::ffi::c_long
+        || labs(delh as ::core::ffi::c_long) > (3.0f64 * (*font).extend * (*font).sptsize as ::core::ffi::c_double) as spt_t as ::core::ffi::c_long
     {
         pdf_dev_text_mode(p);
         kern = 0 as ::core::ffi::c_int as spt_t;
     } else {
-        kern = (1000.0f64 / (*font).extend * delh as ::core::ffi::c_double
-            / (*font).sptsize as ::core::ffi::c_double) as spt_t;
+        kern = (1000.0f64 / (*font).extend * delh as ::core::ffi::c_double / (*font).sptsize as ::core::ffi::c_double) as spt_t;
     }
     if (*p).motion_state != STRING_MODE {
-        pdf_dev_string_mode(
-            p,
-            xpos,
-            ypos,
-            (*font).slant,
-            (*font).extend,
-            (*p).text_state.matrix.rotate,
-        );
+        pdf_dev_string_mode(p, xpos, ypos, (*font).slant, (*font).extend, (*p).text_state.matrix.rotate);
     } else if kern != 0 as ::core::ffi::c_int {
-        (*p).text_state.offset -= (kern as ::core::ffi::c_double
-            * (*font).extend
-            * ((*font).sptsize as ::core::ffi::c_double / 1000.0f64))
-            as spt_t;
+        (*p).text_state.offset -= (kern as ::core::ffi::c_double * (*font).extend * ((*font).sptsize as ::core::ffi::c_double / 1000.0f64)) as spt_t;
         let fresh18 = len;
         len = len.wrapping_add(1);
-        (*p).format_buffer[fresh18 as usize] = (if (*p).text_state.is_mb != 0 {
-            '>' as i32
-        } else {
-            ')' as i32
-        }) as ::core::ffi::c_char;
+        (*p).format_buffer[fresh18 as usize] = (if (*p).text_state.is_mb != 0 { '>' as i32 } else { ')' as i32 }) as ::core::ffi::c_char;
         if (*font).wmode != 0 {
             len = len.wrapping_add(p_itoa(
                 -(kern as ::core::ffi::c_int),
@@ -1453,16 +1209,8 @@ unsafe extern "C-unwind" fn dev_set_string(
         }
         let fresh19 = len;
         len = len.wrapping_add(1);
-        (*p).format_buffer[fresh19 as usize] = (if (*p).text_state.is_mb != 0 {
-            '<' as i32
-        } else {
-            '(' as i32
-        }) as ::core::ffi::c_char;
-        dev_out(
-            p,
-            &raw mut (*p).format_buffer as *mut ::core::ffi::c_char,
-            len,
-        );
+        (*p).format_buffer[fresh19 as usize] = (if (*p).text_state.is_mb != 0 { '<' as i32 } else { '(' as i32 }) as ::core::ffi::c_char;
+        dev_out(p, &raw mut (*p).format_buffer as *mut ::core::ffi::c_char, len);
         len = 0 as size_t;
     }
     if (*p).text_state.is_mb != 0 {
@@ -1473,8 +1221,7 @@ unsafe extern "C-unwind" fn dev_set_string(
         while i < length {
             let mut first: ::core::ffi::c_int = 0;
             let mut second: ::core::ffi::c_int = 0;
-            first = *str_ptr.offset(i as isize) as ::core::ffi::c_int >> 4 as ::core::ffi::c_int
-                & 0xf as ::core::ffi::c_int;
+            first = *str_ptr.offset(i as isize) as ::core::ffi::c_int >> 4 as ::core::ffi::c_int & 0xf as ::core::ffi::c_int;
             second = *str_ptr.offset(i as isize) as ::core::ffi::c_int & 0xf as ::core::ffi::c_int;
             let fresh20 = len;
             len = len.wrapping_add(1);
@@ -1500,38 +1247,18 @@ unsafe extern "C-unwind" fn dev_set_string(
             length,
         ));
     }
-    dev_out(
-        p,
-        &raw mut (*p).format_buffer as *mut ::core::ffi::c_char,
-        len,
-    );
+    dev_out(p, &raw mut (*p).format_buffer as *mut ::core::ffi::c_char, len);
     (*p).text_state.offset += width;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_set_string")]
 pub unsafe extern "C-unwind" fn pdf_dev_set_string(
-    mut xpos: spt_t,
-    mut ypos: spt_t,
-    mut input: *const ::core::ffi::c_void,
-    mut length: size_t,
-    mut width: spt_t,
-    mut font_id: ::core::ffi::c_int,
+    mut xpos: spt_t, mut ypos: spt_t, mut input: *const ::core::ffi::c_void, mut length: size_t, mut width: spt_t, mut font_id: ::core::ffi::c_int,
 ) {
-    dev_set_string(
-        current_device(),
-        xpos,
-        ypos,
-        input,
-        length,
-        width,
-        font_id,
-        0 as ::core::ffi::c_int,
-    );
+    dev_set_string(current_device(), xpos, ypos, input, length, width, font_id, 0 as ::core::ffi::c_int);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_init_device")]
 pub unsafe extern "C-unwind" fn pdf_init_device(
-    mut dvi2pts: ::core::ffi::c_double,
-    mut precision: ::core::ffi::c_int,
-    mut black_and_white: ::core::ffi::c_int,
+    mut dvi2pts: ::core::ffi::c_double, mut precision: ::core::ffi::c_int, mut black_and_white: ::core::ffi::c_int,
 ) {
     let mut p: *mut pdf_dev = current_device();
     (*p).motion_state = GRAPHICS_MODE;
@@ -1552,8 +1279,7 @@ pub unsafe extern "C-unwind" fn pdf_init_device(
     (*p).text_state.is_mb = 0 as ::core::ffi::c_int;
     if precision < 0 as ::core::ffi::c_int || precision > DEV_PRECISION_MAX {
         pdf_warning!(
-            b"Number of decimal digits out of range [0-%d].\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Number of decimal digits out of range [0-%d].\0" as *const u8 as *const ::core::ffi::c_char,
             DEV_PRECISION_MAX,
         );
     }
@@ -1566,12 +1292,9 @@ pub unsafe extern "C-unwind" fn pdf_init_device(
     }
     (*p).unit.dvi2pts = dvi2pts;
     (*p).unit.min_bp_val = (floor(
-        1.0f64
-            / (ten_pow[(*p).unit.precision as usize] as ::core::ffi::c_double * dvi2pts)
-            / 1 as ::core::ffi::c_int as ::core::ffi::c_double
+        1.0f64 / (ten_pow[(*p).unit.precision as usize] as ::core::ffi::c_double * dvi2pts) / 1 as ::core::ffi::c_int as ::core::ffi::c_double
             + 0.5f64,
-    ) * 1 as ::core::ffi::c_int as ::core::ffi::c_double)
-        as ::core::ffi::c_int;
+    ) * 1 as ::core::ffi::c_int as ::core::ffi::c_double) as ::core::ffi::c_int;
     if (*p).unit.min_bp_val < 0 as ::core::ffi::c_int {
         (*p).unit.min_bp_val = -(*p).unit.min_bp_val;
     }
@@ -1663,19 +1386,13 @@ pub unsafe extern "C-unwind" fn pdf_dev_eop() {
     pdf_dev_graphics_mode(p);
     depth = pdf_dev_current_depth();
     if depth != 1 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Unbalenced q/Q nesting...: %d\0" as *const u8 as *const ::core::ffi::c_char,
-            depth,
-        );
+        pdf_warning!(b"Unbalenced q/Q nesting...: %d\0" as *const u8 as *const ::core::ffi::c_char, depth,);
         pdf_dev_grestore_to(0 as ::core::ffi::c_int);
     } else {
         pdf_dev_grestore();
     };
 }
-unsafe extern "C-unwind" fn print_fontmap(
-    mut font_name: *const ::core::ffi::c_char,
-    mut mrec: *mut fontmap_rec,
-) {
+unsafe extern "C-unwind" fn print_fontmap(mut font_name: *const ::core::ffi::c_char, mut mrec: *mut fontmap_rec) {
     if mrec.is_null() {
         return;
     }
@@ -1686,49 +1403,28 @@ unsafe extern "C-unwind" fn print_fontmap(
         (*mrec).font_name,
     );
     if !(*mrec).enc_name.is_null() {
-        pdf_message!(
-            b"(%s)\0" as *const u8 as *const ::core::ffi::c_char,
-            (*mrec).enc_name,
-        );
+        pdf_message!(b"(%s)\0" as *const u8 as *const ::core::ffi::c_char, (*mrec).enc_name,);
     }
     if (*mrec).opt.extend != 1.0f64 {
-        pdf_message!(
-            b"[extend:%g]\0" as *const u8 as *const ::core::ffi::c_char,
-            (*mrec).opt.extend,
-        );
+        pdf_message!(b"[extend:%g]\0" as *const u8 as *const ::core::ffi::c_char, (*mrec).opt.extend,);
     }
     if (*mrec).opt.slant != 0.0f64 {
-        pdf_message!(
-            b"[slant:%g]\0" as *const u8 as *const ::core::ffi::c_char,
-            (*mrec).opt.slant,
-        );
+        pdf_message!(b"[slant:%g]\0" as *const u8 as *const ::core::ffi::c_char, (*mrec).opt.slant,);
     }
     if (*mrec).opt.bold != 0.0f64 {
-        pdf_message!(
-            b"[bold:%g]\0" as *const u8 as *const ::core::ffi::c_char,
-            (*mrec).opt.bold,
-        );
+        pdf_message!(b"[bold:%g]\0" as *const u8 as *const ::core::ffi::c_char, (*mrec).opt.bold,);
     }
     if (*mrec).opt.flags & FONTMAP_OPT_NOEMBED != 0 {
         pdf_message!(b"[noemb]\0" as *const u8 as *const ::core::ffi::c_char);
     }
     if (*mrec).opt.mapc >= 0 as ::core::ffi::c_int {
-        pdf_message!(
-            b"[map:<%02x>]\0" as *const u8 as *const ::core::ffi::c_char,
-            (*mrec).opt.mapc,
-        );
+        pdf_message!(b"[map:<%02x>]\0" as *const u8 as *const ::core::ffi::c_char, (*mrec).opt.mapc,);
     }
     if !(*mrec).opt.charcoll.is_null() {
-        pdf_message!(
-            b"[csi:%s]\0" as *const u8 as *const ::core::ffi::c_char,
-            (*mrec).opt.charcoll,
-        );
+        pdf_message!(b"[csi:%s]\0" as *const u8 as *const ::core::ffi::c_char, (*mrec).opt.charcoll,);
     }
     if (*mrec).opt.index != 0 {
-        pdf_message!(
-            b"[index:%d]\0" as *const u8 as *const ::core::ffi::c_char,
-            (*mrec).opt.index,
-        );
+        pdf_message!(b"[index:%d]\0" as *const u8 as *const ::core::ffi::c_char, (*mrec).opt.index,);
     }
     match (*mrec).opt.style {
         FONTMAP_STYLE_BOLD => {
@@ -1745,10 +1441,7 @@ unsafe extern "C-unwind" fn print_fontmap(
     pdf_message!(b"\n\0" as *const u8 as *const ::core::ffi::c_char);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_locate_font")]
-pub unsafe extern "C-unwind" fn pdf_dev_locate_font(
-    mut font_name: *const ::core::ffi::c_char,
-    mut ptsize: spt_t,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_dev_locate_font(mut font_name: *const ::core::ffi::c_char, mut ptsize: spt_t) -> ::core::ffi::c_int {
     let mut p: *mut pdf_dev = current_device();
     let mut i: ::core::ffi::c_int = 0;
     let mut mrec: *mut fontmap_rec = ::core::ptr::null_mut::<fontmap_rec>();
@@ -1757,15 +1450,11 @@ pub unsafe extern "C-unwind" fn pdf_dev_locate_font(
         return -(1 as ::core::ffi::c_int);
     }
     if ptsize == 0 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"pdf_dev_locate_font() called with the zero ptsize.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"pdf_dev_locate_font() called with the zero ptsize.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     i = 0 as ::core::ffi::c_int;
     while i < (*p).num_dev_fonts {
-        if streq_ptr(font_name, (*(*p).fonts.offset(i as isize)).tex_name) as ::core::ffi::c_int
-            != 0
+        if streq_ptr(font_name, (*(*p).fonts.offset(i as isize)).tex_name) as ::core::ffi::c_int != 0
             && ptsize == (*(*p).fonts.offset(i as isize)).sptsize
         {
             return i;
@@ -1776,8 +1465,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_locate_font(
         (*p).max_dev_fonts += 16 as ::core::ffi::c_int;
         (*p).fonts = renew(
             (*p).fonts as *mut ::core::ffi::c_void,
-            ((*p).max_dev_fonts as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<dev_font>() as usize) as uint32_t,
+            ((*p).max_dev_fonts as uint32_t as usize).wrapping_mul(::core::mem::size_of::<dev_font>() as usize) as uint32_t,
         ) as *mut dev_font;
     }
     font = (*p).fonts.offset((*p).num_dev_fonts as isize) as *mut dev_font;
@@ -1785,30 +1473,17 @@ pub unsafe extern "C-unwind" fn pdf_dev_locate_font(
     if dpx_conf.verbose_level > 1 as ::core::ffi::c_int {
         print_fontmap(font_name, mrec);
     }
-    (*font).font_id = pdf_font_findresource(
-        font_name,
-        ptsize as ::core::ffi::c_double * (*p).unit.dvi2pts,
-    );
+    (*font).font_id = pdf_font_findresource(font_name, ptsize as ::core::ffi::c_double * (*p).unit.dvi2pts);
     if (*font).font_id < 0 as ::core::ffi::c_int {
-        (*font).font_id = pdf_font_load_font(
-            font_name,
-            ptsize as ::core::ffi::c_double * (*p).unit.dvi2pts,
-            mrec,
-        );
+        (*font).font_id = pdf_font_load_font(font_name, ptsize as ::core::ffi::c_double * (*p).unit.dvi2pts, mrec);
         if (*font).font_id < 0 as ::core::ffi::c_int {
             return -(1 as ::core::ffi::c_int);
         }
     }
-    pdf_font_resource_name(
-        (*font).font_id,
-        &raw mut (*font).short_name as *mut ::core::ffi::c_char,
-    );
+    pdf_font_resource_name((*font).font_id, &raw mut (*font).short_name as *mut ::core::ffi::c_char);
     (*font).used_on_this_page = 0 as ::core::ffi::c_int;
-    (*font).tex_name = new(
-        (strlen(font_name).wrapping_add(1 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-            as uint32_t,
-    ) as *mut ::core::ffi::c_char;
+    (*font).tex_name = new((strlen(font_name).wrapping_add(1 as size_t) as uint32_t as usize)
+        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t) as *mut ::core::ffi::c_char;
     strcpy((*font).tex_name, font_name);
     (*font).sptsize = ptsize;
     match pdf_get_font_subtype((*font).font_id) {
@@ -1839,13 +1514,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_locate_font(
     return fresh64;
 }
 unsafe extern "C-unwind" fn dev_sprint_line(
-    mut p: *mut pdf_dev,
-    mut buf: *mut ::core::ffi::c_char,
-    mut width: spt_t,
-    mut p0_x: spt_t,
-    mut p0_y: spt_t,
-    mut p1_x: spt_t,
-    mut p1_y: spt_t,
+    mut p: *mut pdf_dev, mut buf: *mut ::core::ffi::c_char, mut width: spt_t, mut p0_x: spt_t, mut p0_y: spt_t, mut p1_x: spt_t, mut p1_y: spt_t,
 ) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut w: ::core::ffi::c_double = 0.;
@@ -1868,21 +1537,11 @@ unsafe extern "C-unwind" fn dev_sprint_line(
     let fresh54 = len;
     len = len + 1;
     *buf.offset(fresh54 as isize) = ' ' as i32 as ::core::ffi::c_char;
-    len += dev_sprint_bp(
-        p,
-        buf.offset(len as isize),
-        p0_x,
-        ::core::ptr::null_mut::<spt_t>(),
-    );
+    len += dev_sprint_bp(p, buf.offset(len as isize), p0_x, ::core::ptr::null_mut::<spt_t>());
     let fresh55 = len;
     len = len + 1;
     *buf.offset(fresh55 as isize) = ' ' as i32 as ::core::ffi::c_char;
-    len += dev_sprint_bp(
-        p,
-        buf.offset(len as isize),
-        p0_y,
-        ::core::ptr::null_mut::<spt_t>(),
-    );
+    len += dev_sprint_bp(p, buf.offset(len as isize), p0_y, ::core::ptr::null_mut::<spt_t>());
     let fresh56 = len;
     len = len + 1;
     *buf.offset(fresh56 as isize) = ' ' as i32 as ::core::ffi::c_char;
@@ -1892,21 +1551,11 @@ unsafe extern "C-unwind" fn dev_sprint_line(
     let fresh58 = len;
     len = len + 1;
     *buf.offset(fresh58 as isize) = ' ' as i32 as ::core::ffi::c_char;
-    len += dev_sprint_bp(
-        p,
-        buf.offset(len as isize),
-        p1_x,
-        ::core::ptr::null_mut::<spt_t>(),
-    );
+    len += dev_sprint_bp(p, buf.offset(len as isize), p1_x, ::core::ptr::null_mut::<spt_t>());
     let fresh59 = len;
     len = len + 1;
     *buf.offset(fresh59 as isize) = ' ' as i32 as ::core::ffi::c_char;
-    len += dev_sprint_bp(
-        p,
-        buf.offset(len as isize),
-        p1_y,
-        ::core::ptr::null_mut::<spt_t>(),
-    );
+    len += dev_sprint_bp(p, buf.offset(len as isize), p1_y, ::core::ptr::null_mut::<spt_t>());
     let fresh60 = len;
     len = len + 1;
     *buf.offset(fresh60 as isize) = ' ' as i32 as ::core::ffi::c_char;
@@ -1922,13 +1571,7 @@ unsafe extern "C-unwind" fn dev_sprint_line(
     return len;
 }
 pub const PDF_LINE_THICKNESS_MAX: ::core::ffi::c_double = 5.0f64;
-unsafe extern "C-unwind" fn dev_set_rule(
-    mut p: *mut pdf_dev,
-    mut xpos: spt_t,
-    mut ypos: spt_t,
-    mut width: spt_t,
-    mut height: spt_t,
-) {
+unsafe extern "C-unwind" fn dev_set_rule(mut p: *mut pdf_dev, mut xpos: spt_t, mut ypos: spt_t, mut width: spt_t, mut height: spt_t) {
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut width_in_bp: ::core::ffi::c_double = 0.;
     pdf_dev_graphics_mode(p);
@@ -1941,8 +1584,7 @@ unsafe extern "C-unwind" fn dev_set_rule(
     let fresh44 = len;
     len = len + 1;
     (*p).format_buffer[fresh44 as usize] = ' ' as i32 as ::core::ffi::c_char;
-    width_in_bp =
-        (if width < height { width } else { height }) as ::core::ffi::c_double * (*p).unit.dvi2pts;
+    width_in_bp = (if width < height { width } else { height }) as ::core::ffi::c_double * (*p).unit.dvi2pts;
     if width_in_bp < 0.0f64 || width_in_bp > PDF_LINE_THICKNESS_MAX {
         let mut rect: pdf_rect = pdf_rect {
             llx: 0.,
@@ -1981,10 +1623,7 @@ unsafe extern "C-unwind" fn dev_set_rule(
                 height,
                 width_in_bp,
             );
-            pdf_warning!(
-                b"Please consider using \"-d\" option.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"Please consider using \"-d\" option.\0" as *const u8 as *const ::core::ffi::c_char,);
         }
         len += dev_sprint_line(
             p,
@@ -2002,10 +1641,7 @@ unsafe extern "C-unwind" fn dev_set_rule(
                 width,
                 width_in_bp,
             );
-            pdf_warning!(
-                b"Please consider using \"-d\" option.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"Please consider using \"-d\" option.\0" as *const u8 as *const ::core::ffi::c_char,);
         }
         len += dev_sprint_line(
             p,
@@ -2023,28 +1659,14 @@ unsafe extern "C-unwind" fn dev_set_rule(
     let fresh51 = len;
     len = len + 1;
     (*p).format_buffer[fresh51 as usize] = 'Q' as i32 as ::core::ffi::c_char;
-    dev_out(
-        p,
-        &raw mut (*p).format_buffer as *mut ::core::ffi::c_char,
-        len as size_t,
-    );
+    dev_out(p, &raw mut (*p).format_buffer as *mut ::core::ffi::c_char, len as size_t);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_set_rule")]
-pub unsafe extern "C-unwind" fn pdf_dev_set_rule(
-    mut xpos: spt_t,
-    mut ypos: spt_t,
-    mut width: spt_t,
-    mut height: spt_t,
-) {
+pub unsafe extern "C-unwind" fn pdf_dev_set_rule(mut xpos: spt_t, mut ypos: spt_t, mut width: spt_t, mut height: spt_t) {
     let mut p: *mut pdf_dev = current_device();
     if (*p).recording_page != 0 {
-        let mut thickness: ::core::ffi::c_double = (if width < height { width } else { height })
-            as ::core::ffi::c_double
-            * (*p).unit.dvi2pts;
-        if thickness >= 0.0f64
-            && thickness <= PDF_LINE_THICKNESS_MAX
-            && (if width < height { width } else { height }) < (*p).unit.min_bp_val
-        {
+        let mut thickness: ::core::ffi::c_double = (if width < height { width } else { height }) as ::core::ffi::c_double * (*p).unit.dvi2pts;
+        if thickness >= 0.0f64 && thickness <= PDF_LINE_THICKNESS_MAX && (if width < height { width } else { height }) < (*p).unit.min_bp_val {
             pdf_warning!(
                 b"Too thin line: %s=%d (%g bp)\0" as *const u8 as *const ::core::ffi::c_char,
                 if width > height {
@@ -2055,10 +1677,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_set_rule(
                 if width < height { width } else { height },
                 thickness,
             );
-            pdf_warning!(
-                b"Please consider using \"-d\" option.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"Please consider using \"-d\" option.\0" as *const u8 as *const ::core::ffi::c_char,);
         }
         crate::pipeline::page_command(
             TT_PDF_RULE as ::core::ffi::c_int,
@@ -2076,12 +1695,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_set_rule(
     dev_set_rule(p, xpos, ypos, width, height);
 }
 pub(crate) unsafe fn pdf_dev_set_rect(
-    mut rect: *mut pdf_rect,
-    mut x_user: spt_t,
-    mut y_user: spt_t,
-    mut width: spt_t,
-    mut height: spt_t,
-    mut depth: spt_t,
+    mut rect: *mut pdf_rect, mut x_user: spt_t, mut y_user: spt_t, mut width: spt_t, mut height: spt_t, mut depth: spt_t,
 ) {
     let mut p: *mut pdf_dev = current_device();
     let mut dev_x: ::core::ffi::c_double = 0.;
@@ -2162,9 +1776,7 @@ unsafe extern "C-unwind" fn dev_set_dirmode(mut p: *mut pdf_dev, mut text_dir: :
     }
     text_rotate = vert_font << 2 as ::core::ffi::c_int | vert_dir;
     if !font.is_null()
-        && (if abs(text_rotate - (*p).text_state.matrix.rotate) % 5 as ::core::ffi::c_int
-            == 0 as ::core::ffi::c_int
-        {
+        && (if abs(text_rotate - (*p).text_state.matrix.rotate) % 5 as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
             0 as ::core::ffi::c_int
         } else {
             1 as ::core::ffi::c_int
@@ -2177,9 +1789,7 @@ unsafe extern "C-unwind" fn dev_set_dirmode(mut p: *mut pdf_dev, mut text_dir: :
 }
 pub(crate) unsafe fn pdf_dev_set_dirmode(mut text_dir: ::core::ffi::c_int) {
     let __pdf_state = unsafe { document_state() };
-    if (*__pdf_state).pdev.recording_page != 0
-        && text_dir != (*__pdf_state).pdev.text_state.dir_mode
-    {
+    if (*__pdf_state).pdev.recording_page != 0 && text_dir != (*__pdf_state).pdev.text_state.dir_mode {
         crate::pipeline::page_command(
             TT_PDF_DIRECTION as ::core::ffi::c_int,
             text_dir as int32_t,
@@ -2190,19 +1800,13 @@ pub(crate) unsafe fn pdf_dev_set_dirmode(mut text_dir: ::core::ffi::c_int) {
     }
     dev_set_dirmode(current_device(), text_dir);
 }
-unsafe extern "C-unwind" fn dev_set_param_autorotate(
-    mut p: *mut pdf_dev,
-    mut auto_rotate: ::core::ffi::c_int,
-) {
+unsafe extern "C-unwind" fn dev_set_param_autorotate(mut p: *mut pdf_dev, mut auto_rotate: ::core::ffi::c_int) {
     let mut font: *mut dev_font = ::core::ptr::null_mut::<dev_font>();
     let mut text_rotate: ::core::ffi::c_int = 0;
     let mut vert_font: ::core::ffi::c_int = 0;
     let mut vert_dir: ::core::ffi::c_int = 0;
     if p.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"p\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"p\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     font = if (*p).text_state.font_id < 0 as ::core::ffi::c_int {
@@ -2221,9 +1825,7 @@ unsafe extern "C-unwind" fn dev_set_param_autorotate(
         vert_dir = vert_font;
     }
     text_rotate = vert_font << 2 as ::core::ffi::c_int | vert_dir;
-    if if abs(text_rotate - (*p).text_state.matrix.rotate) % 5 as ::core::ffi::c_int
-        == 0 as ::core::ffi::c_int
-    {
+    if if abs(text_rotate - (*p).text_state.matrix.rotate) % 5 as ::core::ffi::c_int == 0 as ::core::ffi::c_int {
         0 as ::core::ffi::c_int
     } else {
         1 as ::core::ffi::c_int
@@ -2245,18 +1847,12 @@ pub(crate) unsafe fn pdf_dev_get_param(mut param_type: ::core::ffi::c_int) -> ::
             value = (*p).param.colormode;
         }
         _ => {
-            pdf_abort!(
-                b"Unknown device parameter: %d\0" as *const u8 as *const ::core::ffi::c_char,
-                param_type,
-            );
+            pdf_abort!(b"Unknown device parameter: %d\0" as *const u8 as *const ::core::ffi::c_char, param_type,);
         }
     }
     return value;
 }
-pub(crate) unsafe fn pdf_dev_set_param(
-    mut param_type: ::core::ffi::c_int,
-    mut value: ::core::ffi::c_int,
-) {
+pub(crate) unsafe fn pdf_dev_set_param(mut param_type: ::core::ffi::c_int, mut value: ::core::ffi::c_int) {
     let mut p: *mut pdf_dev = current_device();
     match param_type {
         PDF_DEV_PARAM_AUTOROTATE => {
@@ -2266,19 +1862,13 @@ pub(crate) unsafe fn pdf_dev_set_param(
             (*p).param.colormode = value;
         }
         _ => {
-            pdf_abort!(
-                b"Unknown device parameter: %d\0" as *const u8 as *const ::core::ffi::c_char,
-                param_type,
-            );
+            pdf_abort!(b"Unknown device parameter: %d\0" as *const u8 as *const ::core::ffi::c_char, param_type,);
         }
     };
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_put_image")]
 pub unsafe extern "C-unwind" fn pdf_dev_put_image(
-    mut id: ::core::ffi::c_int,
-    mut ti: *mut transform_info,
-    mut ref_x: ::core::ffi::c_double,
-    mut ref_y: ::core::ffi::c_double,
+    mut id: ::core::ffi::c_int, mut ti: *mut transform_info, mut ref_x: ::core::ffi::c_double, mut ref_y: ::core::ffi::c_double,
     mut rect: *mut pdf_rect,
 ) -> ::core::ffi::c_int {
     let mut p: *mut pdf_dev = current_device();
@@ -2347,15 +1937,10 @@ pub unsafe extern "C-unwind" fn pdf_dev_put_image(
     res_name = pdf_ximage_get_resname(id);
     let mut buf: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     buf = new(
-        (strlen(res_name).wrapping_add(6 as size_t) as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
+        (strlen(res_name).wrapping_add(6 as size_t) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
             as uint32_t,
     ) as *mut ::core::ffi::c_char;
-    len = sprintf(
-        buf,
-        b" /%s Do\0" as *const u8 as *const ::core::ffi::c_char,
-        res_name,
-    );
+    len = sprintf(buf, b" /%s Do\0" as *const u8 as *const ::core::ffi::c_char, res_name);
     dev_out(p, buf, len as size_t);
     free(buf as *mut ::core::ffi::c_void);
     if !rect.is_null() {
@@ -2403,10 +1988,7 @@ pub(crate) unsafe fn transform_info_clear(mut info: *mut transform_info) {
     (*info).flags = 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_begin_actualtext")]
-pub unsafe extern "C-unwind" fn pdf_dev_begin_actualtext(
-    mut unicodes: *mut uint16_t,
-    mut count: ::core::ffi::c_int,
-) {
+pub unsafe extern "C-unwind" fn pdf_dev_begin_actualtext(mut unicodes: *mut uint16_t, mut count: ::core::ffi::c_int) {
     let mut p: *mut pdf_dev = current_device();
     let mut len: ::core::ffi::c_int = 0;
     let mut i: ::core::ffi::c_int = 0;
@@ -2424,17 +2006,9 @@ pub unsafe extern "C-unwind" fn pdf_dev_begin_actualtext(
         }
     }
     pdf_dev_graphics_mode(p);
-    dev_out(
-        p,
-        b"\n/Span << /ActualText (\0" as *const u8 as *const ::core::ffi::c_char,
-        23 as size_t,
-    );
+    dev_out(p, b"\n/Span << /ActualText (\0" as *const u8 as *const ::core::ffi::c_char, 23 as size_t);
     if pdf_doc_enc == 0 {
-        dev_out(
-            p,
-            b"\xFE\xFF\0" as *const u8 as *const ::core::ffi::c_char,
-            2 as size_t,
-        );
+        dev_out(p, b"\xFE\xFF\0" as *const u8 as *const ::core::ffi::c_char, 2 as size_t);
     }
     loop {
         let fresh65 = count;
@@ -2451,10 +2025,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_begin_actualtext(
         len = 0 as ::core::ffi::c_int;
         while i < 2 as ::core::ffi::c_int {
             let mut c: ::core::ffi::c_uchar = s[i as usize];
-            if c as ::core::ffi::c_int == '(' as i32
-                || c as ::core::ffi::c_int == ')' as i32
-                || c as ::core::ffi::c_int == '\\' as i32
-            {
+            if c as ::core::ffi::c_int == '(' as i32 || c as ::core::ffi::c_int == ')' as i32 || c as ::core::ffi::c_int == '\\' as i32 {
                 len += sprintf(
                     (&raw mut buf as *mut ::core::ffi::c_char).offset(len as isize),
                     b"\\%c\0" as *const u8 as *const ::core::ffi::c_char,
@@ -2478,21 +2049,13 @@ pub unsafe extern "C-unwind" fn pdf_dev_begin_actualtext(
         dev_out(p, &raw mut buf as *mut ::core::ffi::c_char, len as size_t);
         unicodes = unicodes.offset(1);
     }
-    dev_out(
-        p,
-        b") >> BDC\0" as *const u8 as *const ::core::ffi::c_char,
-        8 as size_t,
-    );
+    dev_out(p, b") >> BDC\0" as *const u8 as *const ::core::ffi::c_char, 8 as size_t);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_end_actualtext")]
 pub unsafe extern "C-unwind" fn pdf_dev_end_actualtext() {
     let mut p: *mut pdf_dev = current_device();
     pdf_dev_graphics_mode(p);
-    dev_out(
-        p,
-        b" EMC\0" as *const u8 as *const ::core::ffi::c_char,
-        4 as size_t,
-    );
+    dev_out(p, b" EMC\0" as *const u8 as *const ::core::ffi::c_char, 4 as size_t);
 }
 #[unsafe(export_name = "__pdf_impl_graphics_mode")]
 pub unsafe extern "C-unwind" fn graphics_mode() {
@@ -2503,45 +2066,28 @@ pub(crate) unsafe fn dev_unit_dviunit() -> ::core::ffi::c_double {
     let mut p: *mut pdf_dev = current_device();
     return pdf_dev_unit_dviunit(p);
 }
-pub(crate) unsafe fn pdf_sprint_matrix(
-    mut buf: *mut ::core::ffi::c_char,
-    mut M: *const pdf_tmatrix,
-) -> ::core::ffi::c_int {
+pub(crate) unsafe fn pdf_sprint_matrix(mut buf: *mut ::core::ffi::c_char, mut M: *const pdf_tmatrix) -> ::core::ffi::c_int {
     let mut p: *mut pdf_dev = current_device();
     return pdf_dev_sprint_matrix(p, buf, M) as ::core::ffi::c_int;
 }
-pub(crate) unsafe fn pdf_sprint_rect(
-    mut buf: *mut ::core::ffi::c_char,
-    mut rect: *const pdf_rect,
-) -> ::core::ffi::c_int {
+pub(crate) unsafe fn pdf_sprint_rect(mut buf: *mut ::core::ffi::c_char, mut rect: *const pdf_rect) -> ::core::ffi::c_int {
     let mut p: *mut pdf_dev = current_device();
     return pdf_dev_sprint_rect(p, buf, rect) as ::core::ffi::c_int;
 }
-pub(crate) unsafe fn pdf_sprint_coord(
-    mut buf: *mut ::core::ffi::c_char,
-    mut c: *const pdf_coord,
-) -> ::core::ffi::c_int {
+pub(crate) unsafe fn pdf_sprint_coord(mut buf: *mut ::core::ffi::c_char, mut c: *const pdf_coord) -> ::core::ffi::c_int {
     let mut p: *mut pdf_dev = current_device();
     return pdf_dev_sprint_coord(p, buf, c) as ::core::ffi::c_int;
 }
-pub(crate) unsafe fn pdf_sprint_length(
-    mut buf: *mut ::core::ffi::c_char,
-    mut value: ::core::ffi::c_double,
-) -> ::core::ffi::c_int {
+pub(crate) unsafe fn pdf_sprint_length(mut buf: *mut ::core::ffi::c_char, mut value: ::core::ffi::c_double) -> ::core::ffi::c_int {
     let mut p: *mut pdf_dev = current_device();
     return pdf_dev_sprint_length(p, buf, value) as ::core::ffi::c_int;
 }
-pub(crate) unsafe fn pdf_sprint_number(
-    mut buf: *mut ::core::ffi::c_char,
-    mut value: ::core::ffi::c_double,
-) -> ::core::ffi::c_int {
+pub(crate) unsafe fn pdf_sprint_number(mut buf: *mut ::core::ffi::c_char, mut value: ::core::ffi::c_double) -> ::core::ffi::c_int {
     let mut p: *mut pdf_dev = current_device();
     return pdf_dev_sprint_number(p, buf, value) as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_get_font_wmode")]
-pub unsafe extern "C-unwind" fn pdf_dev_get_font_wmode(
-    mut font_id: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_dev_get_font_wmode(mut font_id: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut p: *mut pdf_dev = current_device();
     let mut font: *mut dev_font = ::core::ptr::null_mut::<dev_font>();
     font = (*p).fonts.offset(font_id as isize) as *mut dev_font;
@@ -2551,9 +2097,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_get_font_wmode(
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_font_minbytes")]
-pub unsafe extern "C-unwind" fn pdf_dev_font_minbytes(
-    mut font_id: ::core::ffi::c_int,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_dev_font_minbytes(mut font_id: ::core::ffi::c_int) -> ::core::ffi::c_int {
     let mut p: *mut pdf_dev = current_device();
     let mut font: *mut dev_font = ::core::ptr::null_mut::<dev_font>();
     let mut minbytes: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
@@ -2575,12 +2119,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_reset_global_state() {
 #[unsafe(export_name = "__pdf_impl_pdf_dev_begin_page_plan")]
 pub unsafe extern "C-unwind" fn pdf_dev_begin_page_plan() {
     let mut p: *mut pdf_dev = current_device();
-    (*p).recording_page = crate::pipeline::page_begin(
-        (*p).unit.dvi2pts,
-        (*p).unit.precision,
-        (*p).param.autorotate,
-        (*p).text_state.dir_mode,
-    );
+    (*p).recording_page = crate::pipeline::page_begin((*p).unit.dvi2pts, (*p).unit.precision, (*p).param.autorotate, (*p).text_state.dir_mode);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_dev_end_page_plan")]
 pub unsafe extern "C-unwind" fn pdf_dev_end_page_plan() {
@@ -2589,11 +2128,7 @@ pub unsafe extern "C-unwind" fn pdf_dev_end_page_plan() {
 }
 pub const INT_MAX: ::core::ffi::c_int = 2147483647 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memcpy(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memcpy(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __n: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -2602,16 +2137,9 @@ pub struct pdf_obj {
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_set_string(
-    mut xpos: spt_t,
-    mut ypos: spt_t,
-    mut input: *const ::core::ffi::c_void,
-    mut length: size_t,
-    mut width: spt_t,
-    mut font_id: ::core::ffi::c_int,
+    mut xpos: spt_t, mut ypos: spt_t, mut input: *const ::core::ffi::c_void, mut length: size_t, mut width: spt_t, mut font_id: ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_dev_set_string(xpos, ypos, input, length, width, font_id)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_dev_set_string(xpos, ypos, input, length, width, font_id) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -2621,13 +2149,9 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_set_string(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_init_device(
-    mut dvi2pts: ::core::ffi::c_double,
-    mut precision: ::core::ffi::c_int,
-    mut black_and_white: ::core::ffi::c_int,
+    mut dvi2pts: ::core::ffi::c_double, mut precision: ::core::ffi::c_int, mut black_and_white: ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_init_device(dvi2pts, precision, black_and_white)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_init_device(dvi2pts, precision, black_and_white) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -2687,9 +2211,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_eop() -> i32 {
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_locate_font(
-    mut font_name: *const ::core::ffi::c_char,
-    mut ptsize: spt_t,
-    _result: *mut ::core::ffi::c_int,
+    mut font_name: *const ::core::ffi::c_char, mut ptsize: spt_t, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_locate_font(font_name, ptsize) }) {
         Ok(value) => {
@@ -2702,15 +2224,8 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_locate_font(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_set_rule(
-    mut xpos: spt_t,
-    mut ypos: spt_t,
-    mut width: spt_t,
-    mut height: spt_t,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_dev_set_rule(xpos, ypos, width, height)
-    }) {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_set_rule(mut xpos: spt_t, mut ypos: spt_t, mut width: spt_t, mut height: spt_t) -> i32 {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_dev_set_rule(xpos, ypos, width, height) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -2721,16 +2236,10 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_set_rule(
 
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_dev_put_image(
-    mut id: ::core::ffi::c_int,
-    mut ti: *mut transform_info,
-    mut ref_x: ::core::ffi::c_double,
-    mut ref_y: ::core::ffi::c_double,
-    mut rect: *mut pdf_rect,
-    _result: *mut ::core::ffi::c_int,
+    mut id: ::core::ffi::c_int, mut ti: *mut transform_info, mut ref_x: ::core::ffi::c_double, mut ref_y: ::core::ffi::c_double,
+    mut rect: *mut pdf_rect, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_dev_put_image(id, ti, ref_x, ref_y, rect)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_dev_put_image(id, ti, ref_x, ref_y, rect) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -2742,12 +2251,8 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_put_image(
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_begin_actualtext(
-    mut unicodes: *mut uint16_t,
-    mut count: ::core::ffi::c_int,
-) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { pdf_dev_begin_actualtext(unicodes, count) })
-    {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_begin_actualtext(mut unicodes: *mut uint16_t, mut count: ::core::ffi::c_int) -> i32 {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_dev_begin_actualtext(unicodes, count) }) {
         Ok(value) => {
             let _ = value;
             0
@@ -2777,10 +2282,7 @@ pub unsafe extern "C" fn __pdf_entry_graphics_mode() -> i32 {
 }
 
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_get_font_wmode(
-    mut font_id: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_get_font_wmode(mut font_id: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_get_font_wmode(font_id) }) {
         Ok(value) => {
             unsafe {
@@ -2792,10 +2294,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_dev_get_font_wmode(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_dev_font_minbytes(
-    mut font_id: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_dev_font_minbytes(mut font_id: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_dev_font_minbytes(font_id) }) {
         Ok(value) => {
             unsafe {
@@ -2848,10 +2347,7 @@ impl DocumentState {
             Self {
                 pdev: pdf_dev {
                     motion_state: 0,
-                    param: dev_param {
-                        autorotate: 0,
-                        colormode: 0,
-                    },
+                    param: dev_param { autorotate: 0, colormode: 0 },
                     unit: dev_unit {
                         dvi2pts: 0.,
                         min_bp_val: 0,
@@ -2888,10 +2384,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_pdfdev
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_pdfdev.pointer }
 }

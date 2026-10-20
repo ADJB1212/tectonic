@@ -19,70 +19,33 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::backend::dpx_pdfdev::transform_info_clear;
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
     fn isalpha(_: ::core::ffi::c_int) -> ::core::ffi::c_int;
-    fn strncmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn strncpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_char;
+    fn strncmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char, __n: size_t) -> ::core::ffi::c_int;
+    fn strncpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char, __n: size_t) -> *mut ::core::ffi::c_char;
     fn xmalloc(size: size_t) -> *mut ::core::ffi::c_void;
-    fn xrealloc(
-        old_address: *mut ::core::ffi::c_void,
-        new_size: size_t,
-    ) -> *mut ::core::ffi::c_void;
-    fn ttstub_input_open(
-        path: *const ::core::ffi::c_char,
-        format: ttbc_file_format,
-        is_gz: ::core::ffi::c_int,
-    ) -> rust_input_handle_t;
+    fn xrealloc(old_address: *mut ::core::ffi::c_void, new_size: size_t) -> *mut ::core::ffi::c_void;
+    fn ttstub_input_open(path: *const ::core::ffi::c_char, format: ttbc_file_format, is_gz: ::core::ffi::c_int) -> rust_input_handle_t;
     fn ttstub_input_close(handle: rust_input_handle_t) -> ::core::ffi::c_int;
     fn spc_warn(spe: *mut spc_env, fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_spc_put_image"]
     fn spc_put_image(
-        spe: *mut spc_env,
-        res_id: ::core::ffi::c_int,
-        ti: *mut transform_info,
-        xpos: ::core::ffi::c_double,
-        ypos: ::core::ffi::c_double,
+        spe: *mut spc_env, res_id: ::core::ffi::c_int, ti: *mut transform_info, xpos: ::core::ffi::c_double, ypos: ::core::ffi::c_double,
     );
     #[link_name = "__pdf_impl_spc_get_current_point"]
     fn spc_get_current_point(spe: *mut spc_env, cp: *mut pdf_coord);
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_pdf_ximage_load_image"]
-    fn pdf_ximage_load_image(
-        ident: *const ::core::ffi::c_char,
-        filename: *const ::core::ffi::c_char,
-        options: load_options,
-    ) -> ::core::ffi::c_int;
+    fn pdf_ximage_load_image(ident: *const ::core::ffi::c_char, filename: *const ::core::ffi::c_char, options: load_options) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_new"]
     fn new(size: uint32_t) -> *mut ::core::ffi::c_void;
     #[link_name = "__pdf_impl_mps_exec_inline"]
     fn mps_exec_inline(
-        buffer: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-        x_user: ::core::ffi::c_double,
-        y_user: ::core::ffi::c_double,
+        buffer: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char, x_user: ::core::ffi::c_double, y_user: ::core::ffi::c_double,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_mps_stack_depth"]
     fn mps_stack_depth() -> ::core::ffi::c_int;
@@ -101,12 +64,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_skip_white"]
     fn skip_white(start: *mut *const ::core::ffi::c_char, end: *const ::core::ffi::c_char);
     #[link_name = "__pdf_impl_spc_util_read_dimtrns"]
-    fn spc_util_read_dimtrns(
-        spe: *mut spc_env,
-        dimtrns: *mut transform_info,
-        args: *mut spc_arg,
-        syntax: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn spc_util_read_dimtrns(spe: *mut spc_env, dimtrns: *mut transform_info, args: *mut spc_arg, syntax: ::core::ffi::c_int) -> ::core::ffi::c_int;
 }
 pub type __darwin_size_t = usize;
 pub type size_t = __darwin_size_t;
@@ -164,8 +122,7 @@ pub struct spc_arg {
     pub base: *const ::core::ffi::c_char,
     pub command: *const ::core::ffi::c_char,
 }
-pub type spc_handler_fn_ptr =
-    Option<unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int>;
+pub type spc_handler_fn_ptr = Option<unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int>;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct spc_handler {
@@ -194,10 +151,7 @@ unsafe extern "C-unwind" fn mfree(mut ptr: *mut ::core::ffi::c_void) -> *mut ::c
     return NULL;
 }
 #[inline]
-unsafe extern "C-unwind" fn strstartswith(
-    mut s: *const ::core::ffi::c_char,
-    mut prefix: *const ::core::ffi::c_char,
-) -> *const ::core::ffi::c_char {
+unsafe extern "C-unwind" fn strstartswith(mut s: *const ::core::ffi::c_char, mut prefix: *const ::core::ffi::c_char) -> *const ::core::ffi::c_char {
     let mut length: size_t = 0;
     length = strlen(prefix);
     if strncmp(s, prefix, length) == 0 as ::core::ffi::c_int {
@@ -206,42 +160,29 @@ unsafe extern "C-unwind" fn strstartswith(
     return ::core::ptr::null::<::core::ffi::c_char>();
 }
 
-unsafe extern "C-unwind" fn spc_handler_ps_header(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_ps_header(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut pro: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut ps_header: rust_input_handle_t = 0;
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     if (*args).curptr.offset(1 as ::core::ffi::c_int as isize) >= (*args).endptr
-        || *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-            != '=' as i32
+        || *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '=' as i32
     {
-        pdf_warning!(
-            b"No filename specified for PSfile special.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"No filename specified for PSfile special.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     (*args).curptr = (*args).curptr.offset(1);
-    pro = crate::backend::runtime::allocate(
-        ((*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long
-            + 1 as ::core::ffi::c_long) as size_t,
-    ) as *mut ::core::ffi::c_char;
+    pro = crate::backend::runtime::allocate(((*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long + 1 as ::core::ffi::c_long) as size_t)
+        as *mut ::core::ffi::c_char;
     strncpy(
         pro,
         (*args).curptr,
         (*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as size_t,
     );
-    *pro.offset((*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as isize) =
-        0 as ::core::ffi::c_char;
+    *pro.offset((*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as isize) = 0 as ::core::ffi::c_char;
     ps_header = ttstub_input_open(pro, TTBC_FILE_FORMAT_TEX_PS_HEADER, 0 as ::core::ffi::c_int);
     if ps_header == 0 {
-        pdf_warning!(
-            b"PS header %s not found.\0" as *const u8 as *const ::core::ffi::c_char,
-            pro
-        );
+        pdf_warning!(b"PS header %s not found.\0" as *const u8 as *const ::core::ffi::c_char, pro);
         free(pro as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
     }
@@ -261,8 +202,7 @@ unsafe extern "C-unwind" fn spc_handler_ps_header(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn parse_filename(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
+    mut pp: *mut *const ::core::ffi::c_char, mut endptr: *const ::core::ffi::c_char,
 ) -> *mut ::core::ffi::c_char {
     let mut r: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut q: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
@@ -293,22 +233,14 @@ unsafe extern "C-unwind" fn parse_filename(
     if q.is_null() || n == 0 as ::core::ffi::c_int {
         return ::core::ptr::null_mut::<::core::ffi::c_char>();
     }
-    r = new(((n + 1 as ::core::ffi::c_int) as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-        as uint32_t) as *mut ::core::ffi::c_char;
-    memcpy(
-        r as *mut ::core::ffi::c_void,
-        q as *const ::core::ffi::c_void,
-        n as size_t,
-    );
+    r = new(((n + 1 as ::core::ffi::c_int) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+        as *mut ::core::ffi::c_char;
+    memcpy(r as *mut ::core::ffi::c_void, q as *const ::core::ffi::c_void, n as size_t);
     *r.offset(n as isize) = '\0' as i32 as ::core::ffi::c_char;
     *pp = p;
     return r;
 }
-unsafe extern "C-unwind" fn spc_handler_ps_file(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_ps_file(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut form_id: ::core::ffi::c_int = 0;
     let mut filename: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut ti: transform_info = transform_info {
@@ -345,41 +277,25 @@ unsafe extern "C-unwind" fn spc_handler_ps_file(
     };
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     if (*args).curptr.offset(1 as ::core::ffi::c_int as isize) >= (*args).endptr
-        || *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-            != '=' as i32
+        || *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '=' as i32
     {
-        pdf_warning!(
-            b"No filename specified for PSfile special.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"No filename specified for PSfile special.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     (*args).curptr = (*args).curptr.offset(1);
     filename = parse_filename(&raw mut (*args).curptr, (*args).endptr);
     if filename.is_null() {
-        pdf_warning!(
-            b"No filename specified for PSfile special.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"No filename specified for PSfile special.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     transform_info_clear(&raw mut ti);
-    if spc_util_read_dimtrns(spe, &raw mut ti, args, 1 as ::core::ffi::c_int)
-        < 0 as ::core::ffi::c_int
-    {
+    if spc_util_read_dimtrns(spe, &raw mut ti, args, 1 as ::core::ffi::c_int) < 0 as ::core::ffi::c_int {
         free(filename as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
     }
-    form_id = pdf_ximage_load_image(
-        ::core::ptr::null::<::core::ffi::c_char>(),
-        filename,
-        options,
-    );
+    form_id = pdf_ximage_load_image(::core::ptr::null::<::core::ffi::c_char>(), filename, options);
     if form_id < 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Failed to read image file: %s\0" as *const u8 as *const ::core::ffi::c_char,
-            filename
-        );
+        pdf_warning!(b"Failed to read image file: %s\0" as *const u8 as *const ::core::ffi::c_char, filename);
         free(filename as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
     }
@@ -387,10 +303,7 @@ unsafe extern "C-unwind" fn spc_handler_ps_file(
     spc_put_image(spe, form_id, &raw mut ti, (*spe).x_user, (*spe).y_user);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_ps_plotfile(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_ps_plotfile(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut form_id: ::core::ffi::c_int = 0;
     let mut filename: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -426,28 +339,16 @@ unsafe extern "C-unwind" fn spc_handler_ps_plotfile(
         );
     } else {
     };
-    pdf_warning!(
-        b"\"ps: plotfile\" found (not properly implemented)\0" as *const u8
-            as *const ::core::ffi::c_char
-    );
+    pdf_warning!(b"\"ps: plotfile\" found (not properly implemented)\0" as *const u8 as *const ::core::ffi::c_char);
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     filename = parse_filename(&raw mut (*args).curptr, (*args).endptr);
     if filename.is_null() {
-        pdf_warning!(
-            b"Expecting filename but not found...\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Expecting filename but not found...\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
-    form_id = pdf_ximage_load_image(
-        ::core::ptr::null::<::core::ffi::c_char>(),
-        filename,
-        options,
-    );
+    form_id = pdf_ximage_load_image(::core::ptr::null::<::core::ffi::c_char>(), filename, options);
     if form_id < 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Could not open PS file: %s\0" as *const u8 as *const ::core::ffi::c_char,
-            filename
-        );
+        pdf_warning!(b"Could not open PS file: %s\0" as *const u8 as *const ::core::ffi::c_char, filename);
         error = -(1 as ::core::ffi::c_int);
     } else {
         transform_info_clear(&raw mut p);
@@ -463,10 +364,7 @@ unsafe extern "C-unwind" fn spc_handler_ps_plotfile(
     free(filename as *mut ::core::ffi::c_void);
     return error;
 }
-unsafe extern "C-unwind" fn spc_handler_ps_literal(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_ps_literal(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut st_depth: ::core::ffi::c_int = 0;
@@ -479,11 +377,7 @@ unsafe extern "C-unwind" fn spc_handler_ps_literal(
         .curptr
         .offset(strlen(b":[begin]\0" as *const u8 as *const ::core::ffi::c_char) as isize)
         <= (*args).endptr
-        && !strstartswith(
-            (*args).curptr,
-            b":[begin]\0" as *const u8 as *const ::core::ffi::c_char,
-        )
-        .is_null()
+        && !strstartswith((*args).curptr, b":[begin]\0" as *const u8 as *const ::core::ffi::c_char).is_null()
     {
         (*__pdf_state).block_pending += 1;
         (*__pdf_state).position_set = 1 as ::core::ffi::c_int;
@@ -498,16 +392,10 @@ unsafe extern "C-unwind" fn spc_handler_ps_literal(
         .curptr
         .offset(strlen(b":[end]\0" as *const u8 as *const ::core::ffi::c_char) as isize)
         <= (*args).endptr
-        && !strstartswith(
-            (*args).curptr,
-            b":[end]\0" as *const u8 as *const ::core::ffi::c_char,
-        )
-        .is_null()
+        && !strstartswith((*args).curptr, b":[end]\0" as *const u8 as *const ::core::ffi::c_char).is_null()
     {
         if (*__pdf_state).block_pending <= 0 as ::core::ffi::c_int {
-            pdf_warning!(
-                b"No corresponding ::[begin] found.\0" as *const u8 as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"No corresponding ::[begin] found.\0" as *const u8 as *const ::core::ffi::c_char);
             return -(1 as ::core::ffi::c_int);
         }
         (*__pdf_state).block_pending -= 1;
@@ -517,10 +405,7 @@ unsafe extern "C-unwind" fn spc_handler_ps_literal(
         (*args).curptr = (*args)
             .curptr
             .offset(strlen(b":[end]\0" as *const u8 as *const ::core::ffi::c_char) as isize);
-    } else if (*args).curptr < (*args).endptr
-        && *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-            == ':' as i32
-    {
+    } else if (*args).curptr < (*args).endptr && *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == ':' as i32 {
         x_user = if (*__pdf_state).position_set != 0 {
             (*__pdf_state).pending_x
         } else {
@@ -545,54 +430,29 @@ unsafe extern "C-unwind" fn spc_handler_ps_literal(
         gs_depth = pdf_dev_current_depth();
         error = mps_exec_inline(&raw mut (*args).curptr, (*args).endptr, x_user, y_user);
         if error != 0 {
-            pdf_warning!(
-                b"Interpreting PS code failed!!! Output might be broken!!!\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Interpreting PS code failed!!! Output might be broken!!!\0" as *const u8 as *const ::core::ffi::c_char);
             pdf_dev_grestore_to(gs_depth);
         } else if st_depth != mps_stack_depth() {
+            pdf_warning!(b"Stack not empty after execution of inline PostScript code.\0" as *const u8 as *const ::core::ffi::c_char);
             pdf_warning!(
-                b"Stack not empty after execution of inline PostScript code.\0" as *const u8
-                    as *const ::core::ffi::c_char
+                b">> Your macro package makes some assumption on internal behaviour of DVI drivers.\0" as *const u8 as *const ::core::ffi::c_char
             );
-            pdf_warning!(
-                b">> Your macro package makes some assumption on internal behaviour of DVI drivers.\0"
-                as * const u8 as * const ::core::ffi::c_char
-            );
-            pdf_warning!(
-                b">> It may not compatible with dvipdfmx.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b">> It may not compatible with dvipdfmx.\0" as *const u8 as *const ::core::ffi::c_char);
         }
     }
     return error;
 }
-unsafe extern "C-unwind" fn spc_handler_ps_trickscmd(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
-    pdf_warning!(
-        b"PSTricks commands are disallowed in Tectonic\0" as *const u8
-            as *const ::core::ffi::c_char,
-    );
+unsafe extern "C-unwind" fn spc_handler_ps_trickscmd(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
+    pdf_warning!(b"PSTricks commands are disallowed in Tectonic\0" as *const u8 as *const ::core::ffi::c_char,);
     (*args).curptr = (*args).endptr;
     return -(1 as ::core::ffi::c_int);
 }
-unsafe extern "C-unwind" fn spc_handler_ps_tricksobj(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
-    pdf_warning!(
-        b"PSTricks commands are disallowed in Tectonic\0" as *const u8
-            as *const ::core::ffi::c_char,
-    );
+unsafe extern "C-unwind" fn spc_handler_ps_tricksobj(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
+    pdf_warning!(b"PSTricks commands are disallowed in Tectonic\0" as *const u8 as *const ::core::ffi::c_char,);
     (*args).curptr = (*args).endptr;
     return -(1 as ::core::ffi::c_int);
 }
-unsafe extern "C-unwind" fn spc_handler_ps_default(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_ps_default(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = 0;
     let mut st_depth: ::core::ffi::c_int = 0;
     let mut gs_depth: ::core::ffi::c_int = 0;
@@ -621,32 +481,18 @@ unsafe extern "C-unwind" fn spc_handler_ps_default(
     M.e = (*spe).x_user;
     M.f = (*spe).y_user;
     pdf_dev_concat(&raw mut M);
-    error = mps_exec_inline(
-        &raw mut (*args).curptr,
-        (*args).endptr,
-        (*spe).x_user,
-        (*spe).y_user,
-    );
+    error = mps_exec_inline(&raw mut (*args).curptr, (*args).endptr, (*spe).x_user, (*spe).y_user);
     M.e = -(*spe).x_user;
     M.f = -(*spe).y_user;
     pdf_dev_concat(&raw mut M);
     if error != 0 {
-        pdf_warning!(
-            b"Interpreting PS code failed!!! Output might be broken!!!\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Interpreting PS code failed!!! Output might be broken!!!\0" as *const u8 as *const ::core::ffi::c_char);
     } else if st_depth != mps_stack_depth() {
+        pdf_warning!(b"Stack not empty after execution of inline PostScript code.\0" as *const u8 as *const ::core::ffi::c_char);
         pdf_warning!(
-            b"Stack not empty after execution of inline PostScript code.\0" as *const u8
-                as *const ::core::ffi::c_char
+            b">> Your macro package makes some assumption on internal behaviour of DVI drivers.\0" as *const u8 as *const ::core::ffi::c_char
         );
-        pdf_warning!(
-            b">> Your macro package makes some assumption on internal behaviour of DVI drivers.\0"
-                as *const u8 as *const ::core::ffi::c_char
-        );
-        pdf_warning!(
-            b">> It may not compatible with dvipdfmx.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b">> It may not compatible with dvipdfmx.\0" as *const u8 as *const ::core::ffi::c_char);
     }
     pdf_dev_grestore_to(gs_depth);
     pdf_dev_grestore();
@@ -655,73 +501,43 @@ unsafe extern "C-unwind" fn spc_handler_ps_default(
 const DVIPS_HANDLERS: [spc_handler; 10] = [
     spc_handler {
         key: b"header\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_ps_header
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_ps_header as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"PSfile\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_ps_file
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_ps_file as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"psfile\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_ps_file
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_ps_file as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"ps: plotfile \0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_ps_plotfile
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_ps_plotfile as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"PS: plotfile \0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_ps_plotfile
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_ps_plotfile as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"PS:\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_ps_literal
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_ps_literal as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"ps:\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_ps_literal
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_ps_literal as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"PST:\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_ps_trickscmd
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_ps_trickscmd as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"pst:\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_ps_tricksobj
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_ps_tricksobj as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"\" \0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_ps_default
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_ps_default as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
 ];
 #[unsafe(export_name = "__pdf_impl_spc_dvips_at_begin_document")]
@@ -734,15 +550,9 @@ pub unsafe extern "C-unwind" fn spc_dvips_at_end_document() -> ::core::ffi::c_in
     if !(*__pdf_state).ps_headers.is_null() {
         while (*__pdf_state).num_ps_headers > 0 as ::core::ffi::c_int {
             (*__pdf_state).num_ps_headers -= 1;
-            free(
-                *(*__pdf_state)
-                    .ps_headers
-                    .offset((*__pdf_state).num_ps_headers as isize)
-                    as *mut ::core::ffi::c_void,
-            );
+            free(*(*__pdf_state).ps_headers.offset((*__pdf_state).num_ps_headers as isize) as *mut ::core::ffi::c_void);
         }
-        (*__pdf_state).ps_headers = mfree((*__pdf_state).ps_headers as *mut ::core::ffi::c_void)
-            as *mut *mut ::core::ffi::c_char;
+        (*__pdf_state).ps_headers = mfree((*__pdf_state).ps_headers as *mut ::core::ffi::c_void) as *mut *mut ::core::ffi::c_char;
     }
     return 0 as ::core::ffi::c_int;
 }
@@ -756,10 +566,7 @@ pub unsafe extern "C-unwind" fn spc_dvips_at_end_page() -> ::core::ffi::c_int {
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_spc_dvips_check_special")]
-pub unsafe extern "C-unwind" fn spc_dvips_check_special(
-    mut buf: *const ::core::ffi::c_char,
-    mut len: ::core::ffi::c_int,
-) -> bool {
+pub unsafe extern "C-unwind" fn spc_dvips_check_special(mut buf: *const ::core::ffi::c_char, mut len: ::core::ffi::c_int) -> bool {
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut endptr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut i: size_t = 0;
@@ -771,10 +578,7 @@ pub unsafe extern "C-unwind" fn spc_dvips_check_special(
     }
     len = endptr.offset_from(p) as ::core::ffi::c_long as ::core::ffi::c_int;
     i = 0 as size_t;
-    while i
-        < (::core::mem::size_of::<[spc_handler; 10]>() as usize)
-            .wrapping_div(::core::mem::size_of::<spc_handler>() as usize)
-    {
+    while i < (::core::mem::size_of::<[spc_handler; 10]>() as usize).wrapping_div(::core::mem::size_of::<spc_handler>() as usize) {
         if len as size_t >= strlen(DVIPS_HANDLERS[i as usize].key)
             && memcmp(
                 p as *const ::core::ffi::c_void,
@@ -790,17 +594,12 @@ pub unsafe extern "C-unwind" fn spc_dvips_check_special(
 }
 #[unsafe(export_name = "__pdf_impl_spc_dvips_setup_handler")]
 pub unsafe extern "C-unwind" fn spc_dvips_setup_handler(
-    mut handle: *mut spc_handler,
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
+    mut handle: *mut spc_handler, mut spe: *mut spc_env, mut args: *mut spc_arg,
 ) -> ::core::ffi::c_int {
     let mut key: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut keylen: ::core::ffi::c_int = 0;
     let mut i: size_t = 0;
-    if !(!handle.is_null() && !spe.is_null() && !args.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!handle.is_null() && !spe.is_null() && !args.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"handle && spe && args\0" as *const u8 as *const ::core::ffi::c_char
@@ -810,37 +609,25 @@ pub unsafe extern "C-unwind" fn spc_dvips_setup_handler(
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     key = (*args).curptr;
     while (*args).curptr < (*args).endptr
-        && isalpha(
-            *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_uchar
-                as ::core::ffi::c_int,
-        ) != 0
+        && isalpha(*(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_uchar as ::core::ffi::c_int) != 0
     {
         (*args).curptr = (*args).curptr.offset(1);
     }
-    if (*args).curptr < (*args).endptr
-        && *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-            == ':' as i32
-    {
+    if (*args).curptr < (*args).endptr && *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == ':' as i32 {
         (*args).curptr = (*args).curptr.offset(1);
         if (*args)
             .curptr
             .offset(strlen(b" plotfile \0" as *const u8 as *const ::core::ffi::c_char) as isize)
             <= (*args).endptr
-            && !strstartswith(
-                (*args).curptr,
-                b" plotfile \0" as *const u8 as *const ::core::ffi::c_char,
-            )
-            .is_null()
+            && !strstartswith((*args).curptr, b" plotfile \0" as *const u8 as *const ::core::ffi::c_char).is_null()
         {
-            (*args).curptr = (*args).curptr.offset(strlen(
-                b" plotfile \0" as *const u8 as *const ::core::ffi::c_char,
-            ) as isize);
+            (*args).curptr = (*args)
+                .curptr
+                .offset(strlen(b" plotfile \0" as *const u8 as *const ::core::ffi::c_char) as isize);
         }
     } else if (*args).curptr.offset(1 as ::core::ffi::c_int as isize) < (*args).endptr
-        && *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-            == '"' as i32
-        && *(*args).curptr.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-            == ' ' as i32
+        && *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '"' as i32
+        && *(*args).curptr.offset(1 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == ' ' as i32
     {
         (*args).curptr = (*args).curptr.offset(2 as ::core::ffi::c_int as isize);
     }
@@ -850,13 +637,8 @@ pub unsafe extern "C-unwind" fn spc_dvips_setup_handler(
         return -(1 as ::core::ffi::c_int);
     }
     i = 0 as size_t;
-    while i
-        < (::core::mem::size_of::<[spc_handler; 10]>() as usize)
-            .wrapping_div(::core::mem::size_of::<spc_handler>() as usize)
-    {
-        if keylen as size_t == strlen(DVIPS_HANDLERS[i as usize].key)
-            && strncmp(key, DVIPS_HANDLERS[i as usize].key, keylen as size_t) == 0
-        {
+    while i < (::core::mem::size_of::<[spc_handler; 10]>() as usize).wrapping_div(::core::mem::size_of::<spc_handler>() as usize) {
+        if keylen as size_t == strlen(DVIPS_HANDLERS[i as usize].key) && strncmp(key, DVIPS_HANDLERS[i as usize].key, keylen as size_t) == 0 {
             skip_white(&raw mut (*args).curptr, (*args).endptr);
             (*args).command = DVIPS_HANDLERS[i as usize].key;
             (*handle).key = b"ps:\0" as *const u8 as *const ::core::ffi::c_char;
@@ -870,16 +652,8 @@ pub unsafe extern "C-unwind" fn spc_dvips_setup_handler(
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn memcpy(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
+    fn memcpy(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __n: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -887,9 +661,7 @@ pub struct pdf_obj {
     _private: [u8; 0],
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_spc_dvips_at_begin_document(
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_spc_dvips_at_begin_document(_result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| spc_dvips_at_begin_document()) {
         Ok(value) => {
             unsafe {
@@ -901,9 +673,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_dvips_at_begin_document(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_spc_dvips_at_end_document(
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_spc_dvips_at_end_document(_result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_dvips_at_end_document() }) {
         Ok(value) => {
             unsafe {
@@ -915,9 +685,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_dvips_at_end_document(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_spc_dvips_at_begin_page(
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_spc_dvips_at_begin_page(_result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| spc_dvips_at_begin_page()) {
         Ok(value) => {
             unsafe {
@@ -929,9 +697,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_dvips_at_begin_page(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_spc_dvips_at_end_page(
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_spc_dvips_at_end_page(_result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_dvips_at_end_page() }) {
         Ok(value) => {
             unsafe {
@@ -944,9 +710,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_dvips_at_end_page(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_dvips_check_special(
-    mut buf: *const ::core::ffi::c_char,
-    mut len: ::core::ffi::c_int,
-    _result: *mut bool,
+    mut buf: *const ::core::ffi::c_char, mut len: ::core::ffi::c_int, _result: *mut bool,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_dvips_check_special(buf, len) }) {
         Ok(value) => {
@@ -960,14 +724,9 @@ pub unsafe extern "C" fn __pdf_entry_spc_dvips_check_special(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_dvips_setup_handler(
-    mut handle: *mut spc_handler,
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-    _result: *mut ::core::ffi::c_int,
+    mut handle: *mut spc_handler, mut spe: *mut spc_env, mut args: *mut spc_arg, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        spc_dvips_setup_handler(handle, spe, args)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { spc_dvips_setup_handler(handle, spe, args) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -1002,10 +761,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_spc_dvips
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_spc_dvips.pointer }
 }

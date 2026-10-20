@@ -19,40 +19,16 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-    fn strcpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
-    fn strncmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    fn strcpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+    fn strncmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char, __n: size_t) -> ::core::ffi::c_int;
     fn xstrdup(s: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
-    fn ttstub_input_seek(
-        handle: rust_input_handle_t,
-        offset: ssize_t,
-        whence: ::core::ffi::c_int,
-    ) -> size_t;
-    fn ttstub_input_read(
-        handle: rust_input_handle_t,
-        data: *mut ::core::ffi::c_char,
-        len: size_t,
-    ) -> ssize_t;
+    fn ttstub_input_seek(handle: rust_input_handle_t, offset: ssize_t, whence: ::core::ffi::c_int) -> size_t;
+    fn ttstub_input_read(handle: rust_input_handle_t, data: *mut ::core::ffi::c_char, len: size_t) -> ssize_t;
     fn ttstub_input_getc(handle: rust_input_handle_t) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_cff_close"]
     fn cff_close(cff: *mut cff_font);
@@ -63,38 +39,22 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_cff_get_sid"]
     fn cff_get_sid(cff: *mut cff_font, str: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_cff_add_string"]
-    fn cff_add_string(
-        cff: *mut cff_font,
-        str: *const ::core::ffi::c_char,
-        unique: ::core::ffi::c_int,
-    ) -> s_SID;
+    fn cff_add_string(cff: *mut cff_font, str: *const ::core::ffi::c_char, unique: ::core::ffi::c_int) -> s_SID;
     #[link_name = "__pdf_impl_cff_update_string"]
     fn cff_update_string(cff: *mut cff_font);
     #[link_name = "__pdf_impl_cff_new_dict"]
     fn cff_new_dict() -> *mut cff_dict;
     #[link_name = "__pdf_impl_cff_dict_set"]
-    fn cff_dict_set(
-        dict: *mut cff_dict,
-        key: *const ::core::ffi::c_char,
-        idx: ::core::ffi::c_int,
-        value: ::core::ffi::c_double,
-    );
+    fn cff_dict_set(dict: *mut cff_dict, key: *const ::core::ffi::c_char, idx: ::core::ffi::c_int, value: ::core::ffi::c_double);
     #[link_name = "__pdf_impl_cff_dict_add"]
-    fn cff_dict_add(
-        dict: *mut cff_dict,
-        key: *const ::core::ffi::c_char,
-        count: ::core::ffi::c_int,
-    );
+    fn cff_dict_add(dict: *mut cff_dict, key: *const ::core::ffi::c_char, count: ::core::ffi::c_int);
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_new"]
     fn new(size: uint32_t) -> *mut ::core::ffi::c_void;
     #[link_name = "__pdf_impl_renew"]
     fn renew(p: *mut ::core::ffi::c_void, size: uint32_t) -> *mut ::core::ffi::c_void;
     #[link_name = "__pdf_impl_pst_get_token"]
-    fn pst_get_token(
-        inbuf: *mut *mut ::core::ffi::c_uchar,
-        inbufend: *mut ::core::ffi::c_uchar,
-    ) -> *mut pst_obj;
+    fn pst_get_token(inbuf: *mut *mut ::core::ffi::c_uchar, inbufend: *mut ::core::ffi::c_uchar) -> *mut pst_obj;
     #[link_name = "__pdf_impl_pst_release_obj"]
     fn pst_release_obj(obj: *mut pst_obj);
     #[link_name = "__pdf_impl_pst_type_of"]
@@ -258,20 +218,14 @@ unsafe extern "C-unwind" fn mfree(mut ptr: *mut ::core::ffi::c_void) -> *mut ::c
     return NULL;
 }
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
     return false_0 != 0;
 }
 #[inline]
-unsafe extern "C-unwind" fn strstartswith(
-    mut s: *const ::core::ffi::c_char,
-    mut prefix: *const ::core::ffi::c_char,
-) -> *const ::core::ffi::c_char {
+unsafe extern "C-unwind" fn strstartswith(mut s: *const ::core::ffi::c_char, mut prefix: *const ::core::ffi::c_char) -> *const ::core::ffi::c_char {
     let mut length: size_t = 0;
     length = strlen(prefix);
     if strncmp(s, prefix, length) == 0 as ::core::ffi::c_int {
@@ -291,13 +245,7 @@ pub const PST_TYPE_NAME: ::core::ffi::c_int = 6 as ::core::ffi::c_int;
 pub const PST_TYPE_MARK: ::core::ffi::c_int = 7 as ::core::ffi::c_int;
 pub const T1_EEKEY: ::core::ffi::c_uint = 55665 as ::core::ffi::c_uint;
 pub const T1_CHARKEY: ::core::ffi::c_uint = 4330 as ::core::ffi::c_uint;
-unsafe extern "C-unwind" fn t1_decrypt(
-    key: u16,
-    dst: *mut u8,
-    src: *const u8,
-    skip: i32,
-    len: i32,
-) {
+unsafe extern "C-unwind" fn t1_decrypt(key: u16, dst: *mut u8, src: *const u8, skip: i32, len: i32) {
     if skip < 0 || len < skip {
         pdf_abort!("Invalid Type 1 encrypted string length.");
     }
@@ -305,11 +253,7 @@ unsafe extern "C-unwind" fn t1_decrypt(
         return;
     }
     let result = if core::ptr::eq(dst.cast_const(), src) {
-        crate::type1::decrypt_in_place(
-            unsafe { core::slice::from_raw_parts_mut(dst, len as usize) },
-            key,
-            skip as usize,
-        )
+        crate::type1::decrypt_in_place(unsafe { core::slice::from_raw_parts_mut(dst, len as usize) }, key, skip as usize)
     } else {
         let input = unsafe { core::slice::from_raw_parts(src, len as usize) };
         let output = unsafe { core::slice::from_raw_parts_mut(dst, (len - skip) as usize) };
@@ -317,10 +261,7 @@ unsafe extern "C-unwind" fn t1_decrypt(
     };
     result.unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
 }
-unsafe extern "C-unwind" fn get_next_key(
-    mut start: *mut *mut ::core::ffi::c_uchar,
-    mut end: *mut ::core::ffi::c_uchar,
-) -> *mut ::core::ffi::c_char {
+unsafe extern "C-unwind" fn get_next_key(mut start: *mut *mut ::core::ffi::c_uchar, mut end: *mut ::core::ffi::c_uchar) -> *mut ::core::ffi::c_char {
     let mut key: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut tok: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     while *start < end && {
@@ -342,9 +283,7 @@ unsafe extern "C-unwind" fn get_next_key(
     return key;
 }
 unsafe extern "C-unwind" fn seek_operator(
-    mut start: *mut *mut ::core::ffi::c_uchar,
-    mut end: *mut ::core::ffi::c_uchar,
-    mut op: *const ::core::ffi::c_char,
+    mut start: *mut *mut ::core::ffi::c_uchar, mut end: *mut ::core::ffi::c_uchar, mut op: *const ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
     let mut tok: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     while *start < end && {
@@ -373,9 +312,7 @@ unsafe extern "C-unwind" fn seek_operator(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn parse_svalue(
-    mut start: *mut *mut ::core::ffi::c_uchar,
-    mut end: *mut ::core::ffi::c_uchar,
-    mut value: *mut *mut ::core::ffi::c_char,
+    mut start: *mut *mut ::core::ffi::c_uchar, mut end: *mut ::core::ffi::c_uchar, mut value: *mut *mut ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
     let mut tok: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     tok = pst_get_token(start, end);
@@ -397,9 +334,7 @@ unsafe extern "C-unwind" fn parse_svalue(
     return 1 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn parse_bvalue(
-    mut start: *mut *mut ::core::ffi::c_uchar,
-    mut end: *mut ::core::ffi::c_uchar,
-    mut value: *mut ::core::ffi::c_double,
+    mut start: *mut *mut ::core::ffi::c_uchar, mut end: *mut ::core::ffi::c_uchar, mut value: *mut ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let mut tok: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     tok = pst_get_token(start, end);
@@ -421,10 +356,7 @@ unsafe extern "C-unwind" fn parse_bvalue(
     return 1 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn parse_nvalue(
-    mut start: *mut *mut ::core::ffi::c_uchar,
-    mut end: *mut ::core::ffi::c_uchar,
-    mut value: *mut ::core::ffi::c_double,
-    mut max: ::core::ffi::c_int,
+    mut start: *mut *mut ::core::ffi::c_uchar, mut end: *mut ::core::ffi::c_uchar, mut value: *mut ::core::ffi::c_double, mut max: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut argn: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut tok: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
@@ -432,9 +364,7 @@ unsafe extern "C-unwind" fn parse_nvalue(
     if tok.is_null() {
         return -(1 as ::core::ffi::c_int);
     }
-    if (pst_type_of(tok) == PST_TYPE_INTEGER || pst_type_of(tok) == PST_TYPE_REAL)
-        && max > 0 as ::core::ffi::c_int
-    {
+    if (pst_type_of(tok) == PST_TYPE_INTEGER || pst_type_of(tok) == PST_TYPE_REAL) && max > 0 as ::core::ffi::c_int {
         *value.offset(0 as ::core::ffi::c_int as isize) = pst_getRV(tok);
         argn = 1 as ::core::ffi::c_int;
     } else if pst_type_of(tok) == PST_TYPE_MARK {
@@ -463,8 +393,7 @@ unsafe extern "C-unwind" fn parse_nvalue(
         }
         if !(!tok.is_null()
             && pst_type_of(tok) < 0 as ::core::ffi::c_int
-            && pst_length_of(tok) as size_t
-                == strlen(b"]\0" as *const u8 as *const ::core::ffi::c_char)
+            && pst_length_of(tok) as size_t == strlen(b"]\0" as *const u8 as *const ::core::ffi::c_char)
             && !strstartswith(
                 pst_data_ptr(tok) as *const ::core::ffi::c_char,
                 b"]\0" as *const u8 as *const ::core::ffi::c_char,
@@ -472,8 +401,7 @@ unsafe extern "C-unwind" fn parse_nvalue(
             .is_null())
             && !(!tok.is_null()
                 && pst_type_of(tok) < 0 as ::core::ffi::c_int
-                && pst_length_of(tok) as size_t
-                    == strlen(b"}\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok) as size_t == strlen(b"}\0" as *const u8 as *const ::core::ffi::c_char)
                 && !strstartswith(
                     pst_data_ptr(tok) as *const ::core::ffi::c_char,
                     b"}\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1006,9 +934,7 @@ const ISOLatin1Encoding: [*const ::core::ffi::c_char; 256] = [
     b"ydieresis\0" as *const u8 as *const ::core::ffi::c_char,
 ];
 unsafe extern "C-unwind" fn try_put_or_putinterval(
-    mut enc_vec: *mut *mut ::core::ffi::c_char,
-    mut start: *mut *mut ::core::ffi::c_uchar,
-    mut end: *mut ::core::ffi::c_uchar,
+    mut enc_vec: *mut *mut ::core::ffi::c_char, mut start: *mut *mut ::core::ffi::c_uchar, mut end: *mut ::core::ffi::c_uchar,
 ) -> ::core::ffi::c_int {
     let mut tok: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     let mut i: ::core::ffi::c_int = 0;
@@ -1039,8 +965,7 @@ unsafe extern "C-unwind" fn try_put_or_putinterval(
         return -(1 as ::core::ffi::c_int);
     } else if !tok.is_null()
         && pst_type_of(tok) < 0 as ::core::ffi::c_int
-        && pst_length_of(tok) as size_t
-            == strlen(b"exch\0" as *const u8 as *const ::core::ffi::c_char)
+        && pst_length_of(tok) as size_t == strlen(b"exch\0" as *const u8 as *const ::core::ffi::c_char)
         && !strstartswith(
             pst_data_ptr(tok) as *const ::core::ffi::c_char,
             b"exch\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1073,8 +998,7 @@ unsafe extern "C-unwind" fn try_put_or_putinterval(
         tok = pst_get_token(start, end);
         if !(!tok.is_null()
             && pst_type_of(tok) < 0 as ::core::ffi::c_int
-            && pst_length_of(tok) as size_t
-                == strlen(b"get\0" as *const u8 as *const ::core::ffi::c_char)
+            && pst_length_of(tok) as size_t == strlen(b"get\0" as *const u8 as *const ::core::ffi::c_char)
             && !strstartswith(
                 pst_data_ptr(tok) as *const ::core::ffi::c_char,
                 b"get\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1094,8 +1018,7 @@ unsafe extern "C-unwind" fn try_put_or_putinterval(
         tok = pst_get_token(start, end);
         if !(!tok.is_null()
             && pst_type_of(tok) < 0 as ::core::ffi::c_int
-            && pst_length_of(tok) as size_t
-                == strlen(b"put\0" as *const u8 as *const ::core::ffi::c_char)
+            && pst_length_of(tok) as size_t == strlen(b"put\0" as *const u8 as *const ::core::ffi::c_char)
             && !strstartswith(
                 pst_data_ptr(tok) as *const ::core::ffi::c_char,
                 b"put\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1129,8 +1052,7 @@ unsafe extern "C-unwind" fn try_put_or_putinterval(
         tok = pst_get_token(start, end);
         if !(!tok.is_null()
             && pst_type_of(tok) < 0 as ::core::ffi::c_int
-            && pst_length_of(tok) as size_t
-                == strlen(b"getinterval\0" as *const u8 as *const ::core::ffi::c_char)
+            && pst_length_of(tok) as size_t == strlen(b"getinterval\0" as *const u8 as *const ::core::ffi::c_char)
             && !strstartswith(
                 pst_data_ptr(tok) as *const ::core::ffi::c_char,
                 b"getinterval\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1169,8 +1091,7 @@ unsafe extern "C-unwind" fn try_put_or_putinterval(
         tok = pst_get_token(start, end);
         if !(!tok.is_null()
             && pst_type_of(tok) < 0 as ::core::ffi::c_int
-            && pst_length_of(tok) as size_t
-                == strlen(b"exch\0" as *const u8 as *const ::core::ffi::c_char)
+            && pst_length_of(tok) as size_t == strlen(b"exch\0" as *const u8 as *const ::core::ffi::c_char)
             && !strstartswith(
                 pst_data_ptr(tok) as *const ::core::ffi::c_char,
                 b"exch\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1190,8 +1111,7 @@ unsafe extern "C-unwind" fn try_put_or_putinterval(
         tok = pst_get_token(start, end);
         if !(!tok.is_null()
             && pst_type_of(tok) < 0 as ::core::ffi::c_int
-            && pst_length_of(tok) as size_t
-                == strlen(b"putinterval\0" as *const u8 as *const ::core::ffi::c_char)
+            && pst_length_of(tok) as size_t == strlen(b"putinterval\0" as *const u8 as *const ::core::ffi::c_char)
             && !strstartswith(
                 pst_data_ptr(tok) as *const ::core::ffi::c_char,
                 b"putinterval\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1212,8 +1132,7 @@ unsafe extern "C-unwind" fn try_put_or_putinterval(
         while i < num2 {
             if !(*enc_vec.offset((num1 + i) as isize)).is_null() {
                 let ref mut fresh21 = *enc_vec.offset((num3 + i) as isize);
-                *fresh21 = mfree(*enc_vec.offset((num3 + i) as isize) as *mut ::core::ffi::c_void)
-                    as *mut ::core::ffi::c_char;
+                *fresh21 = mfree(*enc_vec.offset((num3 + i) as isize) as *mut ::core::ffi::c_void) as *mut ::core::ffi::c_char;
                 let ref mut fresh22 = *enc_vec.offset((num3 + i) as isize);
                 *fresh22 = crate::backend::runtime::duplicate(*enc_vec.offset((num1 + i) as isize));
             }
@@ -1229,17 +1148,14 @@ unsafe extern "C-unwind" fn try_put_or_putinterval(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn parse_encoding(
-    mut enc_vec: *mut *mut ::core::ffi::c_char,
-    mut start: *mut *mut ::core::ffi::c_uchar,
-    mut end: *mut ::core::ffi::c_uchar,
+    mut enc_vec: *mut *mut ::core::ffi::c_char, mut start: *mut *mut ::core::ffi::c_uchar, mut end: *mut ::core::ffi::c_uchar,
 ) -> ::core::ffi::c_int {
     let mut tok: *mut pst_obj = ::core::ptr::null_mut::<pst_obj>();
     let mut code: ::core::ffi::c_int = 0;
     tok = pst_get_token(start, end);
     if !tok.is_null()
         && pst_type_of(tok) < 0 as ::core::ffi::c_int
-        && pst_length_of(tok) as size_t
-            == strlen(b"StandardEncoding\0" as *const u8 as *const ::core::ffi::c_char)
+        && pst_length_of(tok) as size_t == strlen(b"StandardEncoding\0" as *const u8 as *const ::core::ffi::c_char)
         && !strstartswith(
             pst_data_ptr(tok) as *const ::core::ffi::c_char,
             b"StandardEncoding\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1254,21 +1170,13 @@ unsafe extern "C-unwind" fn parse_encoding(
             code = 0 as ::core::ffi::c_int;
             while code < 256 as ::core::ffi::c_int {
                 if !StandardEncoding[code as usize].is_null()
-                    && strcmp(
-                        StandardEncoding[code as usize],
-                        b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
-                    ) != 0 as ::core::ffi::c_int
+                    && strcmp(StandardEncoding[code as usize], b".notdef\0" as *const u8 as *const ::core::ffi::c_char) != 0 as ::core::ffi::c_int
                 {
                     let ref mut fresh14 = *enc_vec.offset(code as isize);
-                    *fresh14 = new((strlen(StandardEncoding[code as usize])
-                        .wrapping_add(1 as size_t) as uint32_t
-                        as usize)
-                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                        as uint32_t) as *mut ::core::ffi::c_char;
-                    strcpy(
-                        *enc_vec.offset(code as isize),
-                        StandardEncoding[code as usize],
-                    );
+                    *fresh14 = new((strlen(StandardEncoding[code as usize]).wrapping_add(1 as size_t) as uint32_t as usize)
+                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+                        as *mut ::core::ffi::c_char;
+                    strcpy(*enc_vec.offset(code as isize), StandardEncoding[code as usize]);
                 } else {
                     let ref mut fresh15 = *enc_vec.offset(code as isize);
                     *fresh15 = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -1278,8 +1186,7 @@ unsafe extern "C-unwind" fn parse_encoding(
         }
     } else if !tok.is_null()
         && pst_type_of(tok) < 0 as ::core::ffi::c_int
-        && pst_length_of(tok) as size_t
-            == strlen(b"ISOLatin1Encoding\0" as *const u8 as *const ::core::ffi::c_char)
+        && pst_length_of(tok) as size_t == strlen(b"ISOLatin1Encoding\0" as *const u8 as *const ::core::ffi::c_char)
         && !strstartswith(
             pst_data_ptr(tok) as *const ::core::ffi::c_char,
             b"ISOLatin1Encoding\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1294,21 +1201,13 @@ unsafe extern "C-unwind" fn parse_encoding(
             code = 0 as ::core::ffi::c_int;
             while code < 256 as ::core::ffi::c_int {
                 if !ISOLatin1Encoding[code as usize].is_null()
-                    && strcmp(
-                        ISOLatin1Encoding[code as usize],
-                        b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
-                    ) != 0 as ::core::ffi::c_int
+                    && strcmp(ISOLatin1Encoding[code as usize], b".notdef\0" as *const u8 as *const ::core::ffi::c_char) != 0 as ::core::ffi::c_int
                 {
                     let ref mut fresh16 = *enc_vec.offset(code as isize);
-                    *fresh16 = new((strlen(ISOLatin1Encoding[code as usize])
-                        .wrapping_add(1 as size_t) as uint32_t
-                        as usize)
-                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                        as uint32_t) as *mut ::core::ffi::c_char;
-                    strcpy(
-                        *enc_vec.offset(code as isize),
-                        ISOLatin1Encoding[code as usize],
-                    );
+                    *fresh16 = new((strlen(ISOLatin1Encoding[code as usize]).wrapping_add(1 as size_t) as uint32_t as usize)
+                        .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+                        as *mut ::core::ffi::c_char;
+                    strcpy(*enc_vec.offset(code as isize), ISOLatin1Encoding[code as usize]);
                 } else {
                     let ref mut fresh17 = *enc_vec.offset(code as isize);
                     *fresh17 = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -1318,8 +1217,7 @@ unsafe extern "C-unwind" fn parse_encoding(
         }
     } else if !tok.is_null()
         && pst_type_of(tok) < 0 as ::core::ffi::c_int
-        && pst_length_of(tok) as size_t
-            == strlen(b"ExpertEncoding\0" as *const u8 as *const ::core::ffi::c_char)
+        && pst_length_of(tok) as size_t == strlen(b"ExpertEncoding\0" as *const u8 as *const ::core::ffi::c_char)
         && !strstartswith(
             pst_data_ptr(tok) as *const ::core::ffi::c_char,
             b"ExpertEncoding\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1331,9 +1229,7 @@ unsafe extern "C-unwind" fn parse_encoding(
             tok = ::core::ptr::null_mut::<pst_obj>();
         }
         if !enc_vec.is_null() {
-            pdf_warning!(
-                b"ExpertEncoding not supported.\0" as *const u8 as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"ExpertEncoding not supported.\0" as *const u8 as *const ::core::ffi::c_char,);
             if !tok.is_null() {
                 pst_release_obj(tok);
                 tok = ::core::ptr::null_mut::<pst_obj>();
@@ -1345,19 +1241,14 @@ unsafe extern "C-unwind" fn parse_encoding(
             pst_release_obj(tok);
             tok = ::core::ptr::null_mut::<pst_obj>();
         }
-        seek_operator(
-            start,
-            end,
-            b"array\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        seek_operator(start, end, b"array\0" as *const u8 as *const ::core::ffi::c_char);
         while *start < end && {
             tok = pst_get_token(start, end);
             !tok.is_null()
         } {
             if !tok.is_null()
                 && pst_type_of(tok) < 0 as ::core::ffi::c_int
-                && pst_length_of(tok) as size_t
-                    == strlen(b"def\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok) as size_t == strlen(b"def\0" as *const u8 as *const ::core::ffi::c_char)
                 && !strstartswith(
                     pst_data_ptr(tok) as *const ::core::ffi::c_char,
                     b"def\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1365,8 +1256,7 @@ unsafe extern "C-unwind" fn parse_encoding(
                 .is_null()
                 || !tok.is_null()
                     && pst_type_of(tok) < 0 as ::core::ffi::c_int
-                    && pst_length_of(tok) as size_t
-                        == strlen(b"readonly\0" as *const u8 as *const ::core::ffi::c_char)
+                    && pst_length_of(tok) as size_t == strlen(b"readonly\0" as *const u8 as *const ::core::ffi::c_char)
                     && !strstartswith(
                         pst_data_ptr(tok) as *const ::core::ffi::c_char,
                         b"readonly\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1380,8 +1270,7 @@ unsafe extern "C-unwind" fn parse_encoding(
                 break;
             } else if !(!tok.is_null()
                 && pst_type_of(tok) < 0 as ::core::ffi::c_int
-                && pst_length_of(tok) as size_t
-                    == strlen(b"dup\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok) as size_t == strlen(b"dup\0" as *const u8 as *const ::core::ffi::c_char)
                 && !strstartswith(
                     pst_data_ptr(tok) as *const ::core::ffi::c_char,
                     b"dup\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1400,8 +1289,7 @@ unsafe extern "C-unwind" fn parse_encoding(
                 tok = pst_get_token(start, end);
                 if !tok.is_null()
                     && pst_type_of(tok) < 0 as ::core::ffi::c_int
-                    && pst_length_of(tok) as size_t
-                        == strlen(b"dup\0" as *const u8 as *const ::core::ffi::c_char)
+                    && pst_length_of(tok) as size_t == strlen(b"dup\0" as *const u8 as *const ::core::ffi::c_char)
                     && !strstartswith(
                         pst_data_ptr(tok) as *const ::core::ffi::c_char,
                         b"dup\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1456,8 +1344,7 @@ unsafe extern "C-unwind" fn parse_encoding(
                         tok = pst_get_token(start, end);
                         if !(!tok.is_null()
                             && pst_type_of(tok) < 0 as ::core::ffi::c_int
-                            && pst_length_of(tok) as size_t
-                                == strlen(b"put\0" as *const u8 as *const ::core::ffi::c_char)
+                            && pst_length_of(tok) as size_t == strlen(b"put\0" as *const u8 as *const ::core::ffi::c_char)
                             && !strstartswith(
                                 pst_data_ptr(tok) as *const ::core::ffi::c_char,
                                 b"put\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1465,9 +1352,7 @@ unsafe extern "C-unwind" fn parse_encoding(
                             .is_null())
                         {
                             let ref mut fresh19 = *enc_vec.offset(code as isize);
-                            *fresh19 =
-                                mfree(*enc_vec.offset(code as isize) as *mut ::core::ffi::c_void)
-                                    as *mut ::core::ffi::c_char;
+                            *fresh19 = mfree(*enc_vec.offset(code as isize) as *mut ::core::ffi::c_void) as *mut ::core::ffi::c_char;
                             if !tok.is_null() {
                                 pst_release_obj(tok);
                                 tok = ::core::ptr::null_mut::<pst_obj>();
@@ -1485,10 +1370,7 @@ unsafe extern "C-unwind" fn parse_encoding(
 }
 pub const CFF_GLYPH_MAX: ::core::ffi::c_int = CFF_SID_MAX;
 unsafe extern "C-unwind" fn parse_subrs(
-    mut font: *mut cff_font,
-    mut start: *mut *mut ::core::ffi::c_uchar,
-    mut end: *mut ::core::ffi::c_uchar,
-    mut lenIV: ::core::ffi::c_int,
+    mut font: *mut cff_font, mut start: *mut *mut ::core::ffi::c_uchar, mut end: *mut ::core::ffi::c_uchar, mut lenIV: ::core::ffi::c_int,
     mut mode: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut subrs: *mut cff_index = ::core::ptr::null_mut::<cff_index>();
@@ -1501,10 +1383,7 @@ unsafe extern "C-unwind" fn parse_subrs(
     let mut lengths: *mut ::core::ffi::c_int = ::core::ptr::null_mut::<::core::ffi::c_int>();
     let mut data: *mut card8 = ::core::ptr::null_mut::<card8>();
     tok = pst_get_token(start, end);
-    if !(pst_type_of(tok) == PST_TYPE_INTEGER)
-        || pst_getIV(tok) < 0
-        || pst_getIV(tok) > u16::MAX as i32
-    {
+    if !(pst_type_of(tok) == PST_TYPE_INTEGER) || pst_getIV(tok) < 0 || pst_getIV(tok) > u16::MAX as i32 {
         pdf_warning!(b"Parsing Subrs failed.\0" as *const u8 as *const ::core::ffi::c_char,);
         if !tok.is_null() {
             pst_release_obj(tok);
@@ -1525,8 +1404,7 @@ unsafe extern "C-unwind" fn parse_subrs(
     tok = pst_get_token(start, end);
     if !(!tok.is_null()
         && pst_type_of(tok) < 0 as ::core::ffi::c_int
-        && pst_length_of(tok) as size_t
-            == strlen(b"array\0" as *const u8 as *const ::core::ffi::c_char)
+        && pst_length_of(tok) as size_t == strlen(b"array\0" as *const u8 as *const ::core::ffi::c_char)
         && !strstartswith(
             pst_data_ptr(tok) as *const ::core::ffi::c_char,
             b"array\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1545,15 +1423,11 @@ unsafe extern "C-unwind" fn parse_subrs(
     }
     if mode != 1 as ::core::ffi::c_int {
         max_size = CS_STR_LEN_MAX;
-        data = new((max_size as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<card8>() as usize) as uint32_t)
-            as *mut card8;
-        offsets = new((count as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_int>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_int;
-        lengths = new((count as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_int>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_int;
+        data = new((max_size as uint32_t as usize).wrapping_mul(::core::mem::size_of::<card8>() as usize) as uint32_t) as *mut card8;
+        offsets = new((count as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_int>() as usize) as uint32_t)
+            as *mut ::core::ffi::c_int;
+        lengths = new((count as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_int>() as usize) as uint32_t)
+            as *mut ::core::ffi::c_int;
         memset(
             offsets as *mut ::core::ffi::c_void,
             0 as ::core::ffi::c_int,
@@ -1583,8 +1457,7 @@ unsafe extern "C-unwind" fn parse_subrs(
             return -(1 as ::core::ffi::c_int);
         } else if !tok.is_null()
             && pst_type_of(tok) < 0 as ::core::ffi::c_int
-            && pst_length_of(tok) as size_t
-                == strlen(b"ND\0" as *const u8 as *const ::core::ffi::c_char)
+            && pst_length_of(tok) as size_t == strlen(b"ND\0" as *const u8 as *const ::core::ffi::c_char)
             && !strstartswith(
                 pst_data_ptr(tok) as *const ::core::ffi::c_char,
                 b"ND\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1592,8 +1465,7 @@ unsafe extern "C-unwind" fn parse_subrs(
             .is_null()
             || !tok.is_null()
                 && pst_type_of(tok) < 0 as ::core::ffi::c_int
-                && pst_length_of(tok) as size_t
-                    == strlen(b"|-\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok) as size_t == strlen(b"|-\0" as *const u8 as *const ::core::ffi::c_char)
                 && !strstartswith(
                     pst_data_ptr(tok) as *const ::core::ffi::c_char,
                     b"|-\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1601,8 +1473,7 @@ unsafe extern "C-unwind" fn parse_subrs(
                 .is_null()
             || !tok.is_null()
                 && pst_type_of(tok) < 0 as ::core::ffi::c_int
-                && pst_length_of(tok) as size_t
-                    == strlen(b"def\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok) as size_t == strlen(b"def\0" as *const u8 as *const ::core::ffi::c_char)
                 && !strstartswith(
                     pst_data_ptr(tok) as *const ::core::ffi::c_char,
                     b"def\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1616,8 +1487,7 @@ unsafe extern "C-unwind" fn parse_subrs(
             break;
         } else if !(!tok.is_null()
             && pst_type_of(tok) < 0 as ::core::ffi::c_int
-            && pst_length_of(tok) as size_t
-                == strlen(b"dup\0" as *const u8 as *const ::core::ffi::c_char)
+            && pst_length_of(tok) as size_t == strlen(b"dup\0" as *const u8 as *const ::core::ffi::c_char)
             && !strstartswith(
                 pst_data_ptr(tok) as *const ::core::ffi::c_char,
                 b"dup\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1634,10 +1504,7 @@ unsafe extern "C-unwind" fn parse_subrs(
                 tok = ::core::ptr::null_mut::<pst_obj>();
             }
             tok = pst_get_token(start, end);
-            if !(pst_type_of(tok) == PST_TYPE_INTEGER)
-                || pst_getIV(tok) < 0 as ::core::ffi::c_int
-                || pst_getIV(tok) >= count
-            {
+            if !(pst_type_of(tok) == PST_TYPE_INTEGER) || pst_getIV(tok) < 0 as ::core::ffi::c_int || pst_getIV(tok) >= count {
                 if !tok.is_null() {
                     pst_release_obj(tok);
                     tok = ::core::ptr::null_mut::<pst_obj>();
@@ -1653,10 +1520,7 @@ unsafe extern "C-unwind" fn parse_subrs(
                 tok = ::core::ptr::null_mut::<pst_obj>();
             }
             tok = pst_get_token(start, end);
-            if !(pst_type_of(tok) == PST_TYPE_INTEGER)
-                || pst_getIV(tok) < 0 as ::core::ffi::c_int
-                || pst_getIV(tok) > CS_STR_LEN_MAX
-            {
+            if !(pst_type_of(tok) == PST_TYPE_INTEGER) || pst_getIV(tok) < 0 as ::core::ffi::c_int || pst_getIV(tok) > CS_STR_LEN_MAX {
                 if !tok.is_null() {
                     pst_release_obj(tok);
                     tok = ::core::ptr::null_mut::<pst_obj>();
@@ -1674,8 +1538,7 @@ unsafe extern "C-unwind" fn parse_subrs(
             tok = pst_get_token(start, end);
             if !(!tok.is_null()
                 && pst_type_of(tok) < 0 as ::core::ffi::c_int
-                && pst_length_of(tok) as size_t
-                    == strlen(b"RD\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok) as size_t == strlen(b"RD\0" as *const u8 as *const ::core::ffi::c_char)
                 && !strstartswith(
                     pst_data_ptr(tok) as *const ::core::ffi::c_char,
                     b"RD\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1683,18 +1546,13 @@ unsafe extern "C-unwind" fn parse_subrs(
                 .is_null())
                 && !(!tok.is_null()
                     && pst_type_of(tok) < 0 as ::core::ffi::c_int
-                    && pst_length_of(tok) as size_t
-                        == strlen(b"-|\0" as *const u8 as *const ::core::ffi::c_char)
+                    && pst_length_of(tok) as size_t == strlen(b"-|\0" as *const u8 as *const ::core::ffi::c_char)
                     && !strstartswith(
                         pst_data_ptr(tok) as *const ::core::ffi::c_char,
                         b"-|\0" as *const u8 as *const ::core::ffi::c_char,
                     )
                     .is_null())
-                && seek_operator(
-                    start,
-                    end,
-                    b"readstring\0" as *const u8 as *const ::core::ffi::c_char,
-                ) < 0 as ::core::ffi::c_int
+                && seek_operator(start, end, b"readstring\0" as *const u8 as *const ::core::ffi::c_char) < 0 as ::core::ffi::c_int
             {
                 if !tok.is_null() {
                     pst_release_obj(tok);
@@ -1721,19 +1579,11 @@ unsafe extern "C-unwind" fn parse_subrs(
                     max_size += CS_STR_LEN_MAX;
                     data = renew(
                         data as *mut ::core::ffi::c_void,
-                        (max_size as uint32_t as usize)
-                            .wrapping_mul(::core::mem::size_of::<card8>() as usize)
-                            as uint32_t,
+                        (max_size as uint32_t as usize).wrapping_mul(::core::mem::size_of::<card8>() as usize) as uint32_t,
                     ) as *mut card8;
                 }
                 if lenIV >= 0 as ::core::ffi::c_int {
-                    t1_decrypt(
-                        T1_CHARKEY as ::core::ffi::c_ushort,
-                        data.offset(offset as isize),
-                        *start,
-                        lenIV,
-                        len,
-                    );
+                    t1_decrypt(T1_CHARKEY as ::core::ffi::c_ushort, data.offset(offset as isize), *start, lenIV, len);
                     *offsets.offset(idx as isize) = offset;
                     let ref mut fresh10 = *lengths.offset(idx as isize);
                     *fresh10 = len - lenIV;
@@ -1758,32 +1608,24 @@ unsafe extern "C-unwind" fn parse_subrs(
             let ref mut fresh11 = *(*font).subrs.offset(0 as ::core::ffi::c_int as isize);
             *fresh11 = cff_new_index(count as card16);
             subrs = *fresh11;
-            (*subrs).data = new((offset as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<card8>() as usize)
-                as uint32_t) as *mut card8;
+            (*subrs).data = new((offset as uint32_t as usize).wrapping_mul(::core::mem::size_of::<card8>() as usize) as uint32_t) as *mut card8;
             offset = 0 as ::core::ffi::c_int;
             i = 0 as ::core::ffi::c_int;
             while i < count {
-                *(*subrs).offset.offset(i as isize) =
-                    (offset + 1 as ::core::ffi::c_int) as l_offset;
+                *(*subrs).offset.offset(i as isize) = (offset + 1 as ::core::ffi::c_int) as l_offset;
                 if *lengths.offset(i as isize) > 0 as ::core::ffi::c_int {
                     memcpy(
                         (*subrs).data.offset(offset as isize) as *mut ::core::ffi::c_void,
-                        data.offset(*offsets.offset(i as isize) as isize)
-                            as *const ::core::ffi::c_void,
+                        data.offset(*offsets.offset(i as isize) as isize) as *const ::core::ffi::c_void,
                         *lengths.offset(i as isize) as size_t,
                     );
                     offset += *lengths.offset(i as isize);
                 }
                 i += 1;
             }
-            *(*subrs).offset.offset(count as isize) =
-                (offset + 1 as ::core::ffi::c_int) as l_offset;
+            *(*subrs).offset.offset(count as isize) = (offset + 1 as ::core::ffi::c_int) as l_offset;
         } else {
-            pdf_warning!(
-                b"Already found /Subrs; ignores the other /Subrs dicts.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"Already found /Subrs; ignores the other /Subrs dicts.\0" as *const u8 as *const ::core::ffi::c_char,);
         }
         free(data as *mut ::core::ffi::c_void);
         free(offsets as *mut ::core::ffi::c_void);
@@ -1792,10 +1634,7 @@ unsafe extern "C-unwind" fn parse_subrs(
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn parse_charstrings(
-    mut font: *mut cff_font,
-    mut start: *mut *mut ::core::ffi::c_uchar,
-    mut end: *mut ::core::ffi::c_uchar,
-    mut lenIV: ::core::ffi::c_int,
+    mut font: *mut cff_font, mut start: *mut *mut ::core::ffi::c_uchar, mut end: *mut ::core::ffi::c_uchar, mut lenIV: ::core::ffi::c_int,
     mut mode: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut charstrings: *mut cff_index = ::core::ptr::null_mut::<cff_index>();
@@ -1807,14 +1646,10 @@ unsafe extern "C-unwind" fn parse_charstrings(
     let mut max_size: ::core::ffi::c_int = 0;
     let mut offset: ::core::ffi::c_int = 0;
     tok = pst_get_token(start, end);
-    if !(pst_type_of(tok) == PST_TYPE_INTEGER)
-        || pst_getIV(tok) < 0 as ::core::ffi::c_int
-        || pst_getIV(tok) > CFF_GLYPH_MAX
-    {
+    if !(pst_type_of(tok) == PST_TYPE_INTEGER) || pst_getIV(tok) < 0 as ::core::ffi::c_int || pst_getIV(tok) > CFF_GLYPH_MAX {
         let mut s: *mut ::core::ffi::c_uchar = pst_getSV(tok);
         pdf_warning!(
-            b"Ignores non dict \"/CharStrings %s ...\"\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Ignores non dict \"/CharStrings %s ...\"\0" as *const u8 as *const ::core::ffi::c_char,
             s,
         );
         free(s as *mut ::core::ffi::c_void);
@@ -1832,41 +1667,32 @@ unsafe extern "C-unwind" fn parse_charstrings(
     if mode != 1 as ::core::ffi::c_int {
         charstrings = cff_new_index(count as card16);
         max_size = CS_STR_LEN_MAX;
-        (*charstrings).data = new((max_size as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<card8>() as usize)
-            as uint32_t) as *mut card8;
+        (*charstrings).data = new((max_size as uint32_t as usize).wrapping_mul(::core::mem::size_of::<card8>() as usize) as uint32_t) as *mut card8;
     } else {
         charstrings = ::core::ptr::null_mut::<cff_index>();
         max_size = 0 as ::core::ffi::c_int;
     }
     (*font).cstrings = charstrings;
-    (*font).charsets = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<cff_charsets>() as usize)
-        as uint32_t) as *mut cff_charsets;
+    (*font).charsets = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<cff_charsets>() as usize) as uint32_t)
+        as *mut cff_charsets;
     charset = (*font).charsets;
     (*charset).format = 0 as card8;
     (*charset).num_entries = (count - 1 as ::core::ffi::c_int) as card16;
-    (*charset).data.glyphs = new(((count - 1 as ::core::ffi::c_int) as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<s_SID>() as usize)
-        as uint32_t) as *mut s_SID;
+    (*charset).data.glyphs =
+        new(((count - 1 as ::core::ffi::c_int) as uint32_t as usize).wrapping_mul(::core::mem::size_of::<s_SID>() as usize) as uint32_t)
+            as *mut s_SID;
     memset(
         (*charset).data.glyphs as *mut ::core::ffi::c_void,
         0 as ::core::ffi::c_int,
-        (::core::mem::size_of::<s_SID>() as size_t)
-            .wrapping_mul((count - 1 as ::core::ffi::c_int) as size_t),
+        (::core::mem::size_of::<s_SID>() as size_t).wrapping_mul((count - 1 as ::core::ffi::c_int) as size_t),
     );
     offset = 0 as ::core::ffi::c_int;
     have_notdef = 0 as ::core::ffi::c_int;
     (*font).is_notdef_notzero = 0 as ::core::ffi::c_int;
-    seek_operator(
-        start,
-        end,
-        b"begin\0" as *const u8 as *const ::core::ffi::c_char,
-    );
+    seek_operator(start, end, b"begin\0" as *const u8 as *const ::core::ffi::c_char);
     i = 0 as ::core::ffi::c_int;
     while i < count {
-        let mut glyph_name: *mut ::core::ffi::c_char =
-            ::core::ptr::null_mut::<::core::ffi::c_char>();
+        let mut glyph_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
         let mut len: ::core::ffi::c_int = 0;
         let mut gid: ::core::ffi::c_int = 0;
         let mut j: ::core::ffi::c_int = 0;
@@ -1874,10 +1700,7 @@ unsafe extern "C-unwind" fn parse_charstrings(
         glyph_name = pst_getSV(tok) as *mut ::core::ffi::c_char;
         if i == 0 as ::core::ffi::c_int
             && !glyph_name.is_null()
-            && strcmp(
-                glyph_name,
-                b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
-            ) != 0 as ::core::ffi::c_int
+            && strcmp(glyph_name, b".notdef\0" as *const u8 as *const ::core::ffi::c_char) != 0 as ::core::ffi::c_int
         {
             (*font).is_notdef_notzero = 1 as ::core::ffi::c_int;
         }
@@ -1888,10 +1711,7 @@ unsafe extern "C-unwind" fn parse_charstrings(
             }
             if glyph_name.is_null() {
                 return -(1 as ::core::ffi::c_int);
-            } else if streq_ptr(
-                glyph_name,
-                b".notdef\0" as *const u8 as *const ::core::ffi::c_char,
-            ) {
+            } else if streq_ptr(glyph_name, b".notdef\0" as *const u8 as *const ::core::ffi::c_char) {
                 gid = 0 as ::core::ffi::c_int;
                 have_notdef = 1 as ::core::ffi::c_int;
             } else if have_notdef != 0 {
@@ -1903,18 +1723,11 @@ unsafe extern "C-unwind" fn parse_charstrings(
                 gid = i + 1 as ::core::ffi::c_int;
             }
             if gid > 0 as ::core::ffi::c_int {
-                *(*charset)
-                    .data
-                    .glyphs
-                    .offset((gid - 1 as ::core::ffi::c_int) as isize) =
-                    cff_add_string(font, glyph_name, 0 as ::core::ffi::c_int);
+                *(*charset).data.glyphs.offset((gid - 1 as ::core::ffi::c_int) as isize) = cff_add_string(font, glyph_name, 0 as ::core::ffi::c_int);
             }
             free(glyph_name as *mut ::core::ffi::c_void);
             tok = pst_get_token(start, end);
-            if !(pst_type_of(tok) == PST_TYPE_INTEGER)
-                || pst_getIV(tok) < 0 as ::core::ffi::c_int
-                || pst_getIV(tok) > CS_STR_LEN_MAX
-            {
+            if !(pst_type_of(tok) == PST_TYPE_INTEGER) || pst_getIV(tok) < 0 as ::core::ffi::c_int || pst_getIV(tok) > CS_STR_LEN_MAX {
                 if !tok.is_null() {
                     pst_release_obj(tok);
                     tok = ::core::ptr::null_mut::<pst_obj>();
@@ -1932,8 +1745,7 @@ unsafe extern "C-unwind" fn parse_charstrings(
             tok = pst_get_token(start, end);
             if !(!tok.is_null()
                 && pst_type_of(tok) < 0 as ::core::ffi::c_int
-                && pst_length_of(tok) as size_t
-                    == strlen(b"RD\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok) as size_t == strlen(b"RD\0" as *const u8 as *const ::core::ffi::c_char)
                 && !strstartswith(
                     pst_data_ptr(tok) as *const ::core::ffi::c_char,
                     b"RD\0" as *const u8 as *const ::core::ffi::c_char,
@@ -1941,18 +1753,13 @@ unsafe extern "C-unwind" fn parse_charstrings(
                 .is_null())
                 && !(!tok.is_null()
                     && pst_type_of(tok) < 0 as ::core::ffi::c_int
-                    && pst_length_of(tok) as size_t
-                        == strlen(b"-|\0" as *const u8 as *const ::core::ffi::c_char)
+                    && pst_length_of(tok) as size_t == strlen(b"-|\0" as *const u8 as *const ::core::ffi::c_char)
                     && !strstartswith(
                         pst_data_ptr(tok) as *const ::core::ffi::c_char,
                         b"-|\0" as *const u8 as *const ::core::ffi::c_char,
                     )
                     .is_null())
-                && seek_operator(
-                    start,
-                    end,
-                    b"readstring\0" as *const u8 as *const ::core::ffi::c_char,
-                ) < 0 as ::core::ffi::c_int
+                && seek_operator(start, end, b"readstring\0" as *const u8 as *const ::core::ffi::c_char) < 0 as ::core::ffi::c_int
             {
                 if !tok.is_null() {
                     pst_release_obj(tok);
@@ -1964,11 +1771,7 @@ unsafe extern "C-unwind" fn parse_charstrings(
                 pst_release_obj(tok);
                 tok = ::core::ptr::null_mut::<pst_obj>();
             }
-            if (*start)
-                .offset(len as isize)
-                .offset(1 as ::core::ffi::c_int as isize)
-                >= end
-            {
+            if (*start).offset(len as isize).offset(1 as ::core::ffi::c_int as isize) >= end {
                 return -(1 as ::core::ffi::c_int);
             }
             if mode != 1 as ::core::ffi::c_int {
@@ -1980,19 +1783,13 @@ unsafe extern "C-unwind" fn parse_charstrings(
                     };
                     (*charstrings).data = renew(
                         (*charstrings).data as *mut ::core::ffi::c_void,
-                        (max_size as uint32_t as usize)
-                            .wrapping_mul(::core::mem::size_of::<card8>() as usize)
-                            as uint32_t,
+                        (max_size as uint32_t as usize).wrapping_mul(::core::mem::size_of::<card8>() as usize) as uint32_t,
                     ) as *mut card8;
                 }
                 if gid == 0 as ::core::ffi::c_int {
                     if lenIV >= 0 as ::core::ffi::c_int {
                         memmove(
-                            (*charstrings)
-                                .data
-                                .offset(len as isize)
-                                .offset(-(lenIV as isize))
-                                as *mut ::core::ffi::c_void,
+                            (*charstrings).data.offset(len as isize).offset(-(lenIV as isize)) as *mut ::core::ffi::c_void,
                             (*charstrings).data as *const ::core::ffi::c_void,
                             offset as size_t,
                         );
@@ -2020,13 +1817,8 @@ unsafe extern "C-unwind" fn parse_charstrings(
             *start = (*start).offset(1 as ::core::ffi::c_int as isize);
             if mode != 1 as ::core::ffi::c_int {
                 if lenIV >= 0 as ::core::ffi::c_int {
-                    let mut offs: ::core::ffi::c_int = if gid != 0 {
-                        offset
-                    } else {
-                        0 as ::core::ffi::c_int
-                    };
-                    *(*charstrings).offset.offset(gid as isize) =
-                        (offs + 1 as ::core::ffi::c_int) as l_offset;
+                    let mut offs: ::core::ffi::c_int = if gid != 0 { offset } else { 0 as ::core::ffi::c_int };
+                    *(*charstrings).offset.offset(gid as isize) = (offs + 1 as ::core::ffi::c_int) as l_offset;
                     t1_decrypt(
                         T1_CHARKEY as ::core::ffi::c_ushort,
                         (*charstrings).data.offset(offs as isize),
@@ -2039,18 +1831,14 @@ unsafe extern "C-unwind" fn parse_charstrings(
                     if gid == 0 as ::core::ffi::c_int {
                         *(*charstrings).offset.offset(gid as isize) = 1 as l_offset;
                         memcpy(
-                            (*charstrings).data.offset(0 as ::core::ffi::c_int as isize)
-                                as *mut card8
-                                as *mut ::core::ffi::c_void,
+                            (*charstrings).data.offset(0 as ::core::ffi::c_int as isize) as *mut card8 as *mut ::core::ffi::c_void,
                             *start as *const ::core::ffi::c_void,
                             len as size_t,
                         );
                     } else {
-                        *(*charstrings).offset.offset(gid as isize) =
-                            (offset + 1 as ::core::ffi::c_int) as l_offset;
+                        *(*charstrings).offset.offset(gid as isize) = (offset + 1 as ::core::ffi::c_int) as l_offset;
                         memcpy(
-                            (*charstrings).data.offset(offset as isize) as *mut card8
-                                as *mut ::core::ffi::c_void,
+                            (*charstrings).data.offset(offset as isize) as *mut card8 as *mut ::core::ffi::c_void,
                             *start as *const ::core::ffi::c_void,
                             len as size_t,
                         );
@@ -2062,8 +1850,7 @@ unsafe extern "C-unwind" fn parse_charstrings(
             tok = pst_get_token(start, end);
             if !(!tok.is_null()
                 && pst_type_of(tok) < 0 as ::core::ffi::c_int
-                && pst_length_of(tok) as size_t
-                    == strlen(b"ND\0" as *const u8 as *const ::core::ffi::c_char)
+                && pst_length_of(tok) as size_t == strlen(b"ND\0" as *const u8 as *const ::core::ffi::c_char)
                 && !strstartswith(
                     pst_data_ptr(tok) as *const ::core::ffi::c_char,
                     b"ND\0" as *const u8 as *const ::core::ffi::c_char,
@@ -2071,8 +1858,7 @@ unsafe extern "C-unwind" fn parse_charstrings(
                 .is_null())
                 && !(!tok.is_null()
                     && pst_type_of(tok) < 0 as ::core::ffi::c_int
-                    && pst_length_of(tok) as size_t
-                        == strlen(b"|-\0" as *const u8 as *const ::core::ffi::c_char)
+                    && pst_length_of(tok) as size_t == strlen(b"|-\0" as *const u8 as *const ::core::ffi::c_char)
                     && !strstartswith(
                         pst_data_ptr(tok) as *const ::core::ffi::c_char,
                         b"|-\0" as *const u8 as *const ::core::ffi::c_char,
@@ -2091,11 +1877,7 @@ unsafe extern "C-unwind" fn parse_charstrings(
             }
             i += 1;
         } else if pst_type_of(tok) < 0 as ::core::ffi::c_int
-            && streq_ptr(
-                glyph_name,
-                b"end\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
+            && streq_ptr(glyph_name, b"end\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
         {
             if !tok.is_null() {
                 pst_release_obj(tok);
@@ -2111,18 +1893,14 @@ unsafe extern "C-unwind" fn parse_charstrings(
         }
     }
     if mode != 1 as ::core::ffi::c_int {
-        *(*charstrings).offset.offset(count as isize) =
-            (offset + 1 as ::core::ffi::c_int) as l_offset;
+        *(*charstrings).offset.offset(count as isize) = (offset + 1 as ::core::ffi::c_int) as l_offset;
     }
     (*font).num_glyphs = count as card16;
     return 0 as ::core::ffi::c_int;
 }
 pub const MAX_ARGS: ::core::ffi::c_int = 127 as ::core::ffi::c_int;
 unsafe extern "C-unwind" fn parse_part2(
-    mut font: *mut cff_font,
-    mut start: *mut *mut ::core::ffi::c_uchar,
-    mut end: *mut ::core::ffi::c_uchar,
-    mut mode: ::core::ffi::c_int,
+    mut font: *mut cff_font, mut start: *mut *mut ::core::ffi::c_uchar, mut end: *mut ::core::ffi::c_uchar, mut mode: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut key: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut argv: [::core::ffi::c_double; 127] = [0.; 127];
@@ -2137,25 +1915,16 @@ unsafe extern "C-unwind" fn parse_part2(
                 free(key as *mut ::core::ffi::c_void);
                 return -(1 as ::core::ffi::c_int);
             }
-        } else if streq_ptr(
-            key,
-            b"CharStrings\0" as *const u8 as *const ::core::ffi::c_char,
-        ) {
+        } else if streq_ptr(key, b"CharStrings\0" as *const u8 as *const ::core::ffi::c_char) {
             if parse_charstrings(font, start, end, lenIV, mode) < 0 as ::core::ffi::c_int {
                 free(key as *mut ::core::ffi::c_void);
                 return -(1 as ::core::ffi::c_int);
             }
         } else if streq_ptr(key, b"lenIV\0" as *const u8 as *const ::core::ffi::c_char) {
-            argn = parse_nvalue(
-                start,
-                end,
-                &raw mut argv as *mut ::core::ffi::c_double,
-                1 as ::core::ffi::c_int,
-            );
+            argn = parse_nvalue(start, end, &raw mut argv as *mut ::core::ffi::c_double, 1 as ::core::ffi::c_int);
             if argn != 1 as ::core::ffi::c_int {
                 pdf_warning!(
-                    b"%d values expected but only %d read.\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"%d values expected but only %d read.\0" as *const u8 as *const ::core::ffi::c_char,
                     1 as ::core::ffi::c_int,
                     argn,
                 );
@@ -2163,58 +1932,24 @@ unsafe extern "C-unwind" fn parse_part2(
                 return -(1 as ::core::ffi::c_int);
             }
             lenIV = argv[0 as ::core::ffi::c_int as usize] as ::core::ffi::c_int;
-        } else if streq_ptr(
-            key,
-            b"BlueValues\0" as *const u8 as *const ::core::ffi::c_char,
-        ) as ::core::ffi::c_int
-            != 0
-            || streq_ptr(
-                key,
-                b"OtherBlues\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
-            || streq_ptr(
-                key,
-                b"FamilyBlues\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
-            || streq_ptr(
-                key,
-                b"FamilyOtherBlues\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
-            || streq_ptr(
-                key,
-                b"StemSnapH\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
-            || streq_ptr(
-                key,
-                b"StemSnapV\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
+        } else if streq_ptr(key, b"BlueValues\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"OtherBlues\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"FamilyBlues\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"FamilyOtherBlues\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"StemSnapH\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"StemSnapV\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
         {
-            argn = parse_nvalue(
-                start,
-                end,
-                &raw mut argv as *mut ::core::ffi::c_double,
-                MAX_ARGS,
-            );
+            argn = parse_nvalue(start, end, &raw mut argv as *mut ::core::ffi::c_double, MAX_ARGS);
             if argn < 0 as ::core::ffi::c_int {
                 pdf_warning!(
-                    b"%d values expected but only %d read.\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"%d values expected but only %d read.\0" as *const u8 as *const ::core::ffi::c_char,
                     0 as ::core::ffi::c_int,
                     argn,
                 );
                 free(key as *mut ::core::ffi::c_void);
                 return -(1 as ::core::ffi::c_int);
             }
-            cff_dict_add(
-                *(*font).private.offset(0 as ::core::ffi::c_int as isize),
-                key,
-                argn,
-            );
+            cff_dict_add(*(*font).private.offset(0 as ::core::ffi::c_int as isize), key, argn);
             loop {
                 let fresh0 = argn;
                 argn = argn - 1;
@@ -2232,94 +1967,48 @@ unsafe extern "C-unwind" fn parse_part2(
                     },
                 );
             }
-        } else if streq_ptr(key, b"StdHW\0" as *const u8 as *const ::core::ffi::c_char)
-            as ::core::ffi::c_int
-            != 0
-            || streq_ptr(key, b"StdVW\0" as *const u8 as *const ::core::ffi::c_char)
-                as ::core::ffi::c_int
-                != 0
-            || streq_ptr(
-                key,
-                b"BlueScale\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
-            || streq_ptr(
-                key,
-                b"BlueShift\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
-            || streq_ptr(
-                key,
-                b"BlueFuzz\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
-            || streq_ptr(
-                key,
-                b"LanguageGroup\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
-            || streq_ptr(
-                key,
-                b"ExpansionFactor\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
+        } else if streq_ptr(key, b"StdHW\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"StdVW\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"BlueScale\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"BlueShift\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"BlueFuzz\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"LanguageGroup\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"ExpansionFactor\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
         {
-            argn = parse_nvalue(
-                start,
-                end,
-                &raw mut argv as *mut ::core::ffi::c_double,
-                1 as ::core::ffi::c_int,
-            );
+            argn = parse_nvalue(start, end, &raw mut argv as *mut ::core::ffi::c_double, 1 as ::core::ffi::c_int);
             if argn != 1 as ::core::ffi::c_int {
                 pdf_warning!(
-                    b"%d values expected but only %d read.\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"%d values expected but only %d read.\0" as *const u8 as *const ::core::ffi::c_char,
                     1 as ::core::ffi::c_int,
                     argn,
                 );
                 free(key as *mut ::core::ffi::c_void);
                 return -(1 as ::core::ffi::c_int);
             }
-            cff_dict_add(
-                *(*font).private.offset(0 as ::core::ffi::c_int as isize),
-                key,
-                1 as ::core::ffi::c_int,
-            );
+            cff_dict_add(*(*font).private.offset(0 as ::core::ffi::c_int as isize), key, 1 as ::core::ffi::c_int);
             cff_dict_set(
                 *(*font).private.offset(0 as ::core::ffi::c_int as isize),
                 key,
                 0 as ::core::ffi::c_int,
                 argv[0 as ::core::ffi::c_int as usize],
             );
-        } else if streq_ptr(
-            key,
-            b"ForceBold\0" as *const u8 as *const ::core::ffi::c_char,
-        ) {
+        } else if streq_ptr(key, b"ForceBold\0" as *const u8 as *const ::core::ffi::c_char) {
             argn = parse_bvalue(
                 start,
                 end,
-                (&raw mut argv as *mut ::core::ffi::c_double)
-                    .offset(0 as ::core::ffi::c_int as isize)
-                    as *mut ::core::ffi::c_double,
+                (&raw mut argv as *mut ::core::ffi::c_double).offset(0 as ::core::ffi::c_int as isize) as *mut ::core::ffi::c_double,
             );
             if argn != 1 as ::core::ffi::c_int {
                 pdf_warning!(
-                    b"%d values expected but only %d read.\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"%d values expected but only %d read.\0" as *const u8 as *const ::core::ffi::c_char,
                     1 as ::core::ffi::c_int,
                     argn,
                 );
                 free(key as *mut ::core::ffi::c_void);
                 return -(1 as ::core::ffi::c_int);
             }
-            if argv[0 as ::core::ffi::c_int as usize]
-                != 0 as ::core::ffi::c_int as ::core::ffi::c_double
-            {
-                cff_dict_add(
-                    *(*font).private.offset(0 as ::core::ffi::c_int as isize),
-                    key,
-                    1 as ::core::ffi::c_int,
-                );
+            if argv[0 as ::core::ffi::c_int as usize] != 0 as ::core::ffi::c_int as ::core::ffi::c_double {
+                cff_dict_add(*(*font).private.offset(0 as ::core::ffi::c_int as isize), key, 1 as ::core::ffi::c_int);
                 cff_dict_set(
                     *(*font).private.offset(0 as ::core::ffi::c_int as isize),
                     key,
@@ -2334,44 +2023,30 @@ unsafe extern "C-unwind" fn parse_part2(
 }
 pub const TYPE1_NAME_LEN_MAX: ::core::ffi::c_int = 127 as ::core::ffi::c_int;
 unsafe extern "C-unwind" fn parse_part1(
-    mut font: *mut cff_font,
-    mut enc_vec: *mut *mut ::core::ffi::c_char,
-    mut start: *mut *mut ::core::ffi::c_uchar,
+    mut font: *mut cff_font, mut enc_vec: *mut *mut ::core::ffi::c_char, mut start: *mut *mut ::core::ffi::c_uchar,
     mut end: *mut ::core::ffi::c_uchar,
 ) -> ::core::ffi::c_int {
     let mut key: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut strval: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut argv: [::core::ffi::c_double; 127] = [0.; 127];
     let mut argn: ::core::ffi::c_int = 0;
-    if seek_operator(
-        start,
-        end,
-        b"begin\0" as *const u8 as *const ::core::ffi::c_char,
-    ) < 0 as ::core::ffi::c_int
-    {
+    if seek_operator(start, end, b"begin\0" as *const u8 as *const ::core::ffi::c_char) < 0 as ::core::ffi::c_int {
         return -(1 as ::core::ffi::c_int);
     }
     while *start < end && {
         key = get_next_key(start, end);
         !key.is_null()
     } {
-        if streq_ptr(
-            key,
-            b"Encoding\0" as *const u8 as *const ::core::ffi::c_char,
-        ) {
+        if streq_ptr(key, b"Encoding\0" as *const u8 as *const ::core::ffi::c_char) {
             if parse_encoding(enc_vec, start, end) < 0 as ::core::ffi::c_int {
                 free(key as *mut ::core::ffi::c_void);
                 return -(1 as ::core::ffi::c_int);
             }
-        } else if streq_ptr(
-            key,
-            b"FontName\0" as *const u8 as *const ::core::ffi::c_char,
-        ) {
+        } else if streq_ptr(key, b"FontName\0" as *const u8 as *const ::core::ffi::c_char) {
             argn = parse_svalue(start, end, &raw mut strval);
             if argn != 1 as ::core::ffi::c_int {
                 pdf_warning!(
-                    b"%d values expected but only %d read.\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"%d values expected but only %d read.\0" as *const u8 as *const ::core::ffi::c_char,
                     1 as ::core::ffi::c_int,
                     argn,
                 );
@@ -2380,8 +2055,7 @@ unsafe extern "C-unwind" fn parse_part1(
             }
             if strlen(strval) > TYPE1_NAME_LEN_MAX as size_t {
                 pdf_warning!(
-                    b"FontName too long: %s (%zu bytes)\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"FontName too long: %s (%zu bytes)\0" as *const u8 as *const ::core::ffi::c_char,
                     strval,
                     strlen(strval),
                 );
@@ -2389,20 +2063,11 @@ unsafe extern "C-unwind" fn parse_part1(
             }
             cff_set_name(font, strval);
             free(strval as *mut ::core::ffi::c_void);
-        } else if streq_ptr(
-            key,
-            b"FontType\0" as *const u8 as *const ::core::ffi::c_char,
-        ) {
-            argn = parse_nvalue(
-                start,
-                end,
-                &raw mut argv as *mut ::core::ffi::c_double,
-                1 as ::core::ffi::c_int,
-            );
+        } else if streq_ptr(key, b"FontType\0" as *const u8 as *const ::core::ffi::c_char) {
+            argn = parse_nvalue(start, end, &raw mut argv as *mut ::core::ffi::c_double, 1 as ::core::ffi::c_int);
             if argn != 1 as ::core::ffi::c_int {
                 pdf_warning!(
-                    b"%d values expected but only %d read.\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"%d values expected but only %d read.\0" as *const u8 as *const ::core::ffi::c_char,
                     1 as ::core::ffi::c_int,
                     argn,
                 );
@@ -2417,32 +2082,14 @@ unsafe extern "C-unwind" fn parse_part1(
                 free(key as *mut ::core::ffi::c_void);
                 return -(1 as ::core::ffi::c_int);
             }
-        } else if streq_ptr(
-            key,
-            b"ItalicAngle\0" as *const u8 as *const ::core::ffi::c_char,
-        ) as ::core::ffi::c_int
-            != 0
-            || streq_ptr(
-                key,
-                b"StrokeWidth\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
-            || streq_ptr(
-                key,
-                b"PaintType\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
+        } else if streq_ptr(key, b"ItalicAngle\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"StrokeWidth\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"PaintType\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
         {
-            argn = parse_nvalue(
-                start,
-                end,
-                &raw mut argv as *mut ::core::ffi::c_double,
-                1 as ::core::ffi::c_int,
-            );
+            argn = parse_nvalue(start, end, &raw mut argv as *mut ::core::ffi::c_double, 1 as ::core::ffi::c_int);
             if argn != 1 as ::core::ffi::c_int {
                 pdf_warning!(
-                    b"%d values expected but only %d read.\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"%d values expected but only %d read.\0" as *const u8 as *const ::core::ffi::c_char,
                     1 as ::core::ffi::c_int,
                     argn,
                 );
@@ -2451,34 +2098,15 @@ unsafe extern "C-unwind" fn parse_part1(
             }
             if argv[0 as ::core::ffi::c_int as usize] != 0.0f64 {
                 cff_dict_add((*font).topdict, key, 1 as ::core::ffi::c_int);
-                cff_dict_set(
-                    (*font).topdict,
-                    key,
-                    0 as ::core::ffi::c_int,
-                    argv[0 as ::core::ffi::c_int as usize],
-                );
+                cff_dict_set((*font).topdict, key, 0 as ::core::ffi::c_int, argv[0 as ::core::ffi::c_int as usize]);
             }
-        } else if streq_ptr(
-            key,
-            b"UnderLinePosition\0" as *const u8 as *const ::core::ffi::c_char,
-        ) as ::core::ffi::c_int
-            != 0
-            || streq_ptr(
-                key,
-                b"UnderLineThickness\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
+        } else if streq_ptr(key, b"UnderLinePosition\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"UnderLineThickness\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
         {
-            argn = parse_nvalue(
-                start,
-                end,
-                &raw mut argv as *mut ::core::ffi::c_double,
-                1 as ::core::ffi::c_int,
-            );
+            argn = parse_nvalue(start, end, &raw mut argv as *mut ::core::ffi::c_double, 1 as ::core::ffi::c_int);
             if argn != 1 as ::core::ffi::c_int {
                 pdf_warning!(
-                    b"%d values expected but only %d read.\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"%d values expected but only %d read.\0" as *const u8 as *const ::core::ffi::c_char,
                     1 as ::core::ffi::c_int,
                     argn,
                 );
@@ -2486,26 +2114,12 @@ unsafe extern "C-unwind" fn parse_part1(
                 return -(1 as ::core::ffi::c_int);
             }
             cff_dict_add((*font).topdict, key, 1 as ::core::ffi::c_int);
-            cff_dict_set(
-                (*font).topdict,
-                key,
-                0 as ::core::ffi::c_int,
-                argv[0 as ::core::ffi::c_int as usize],
-            );
-        } else if streq_ptr(
-            key,
-            b"FontBBox\0" as *const u8 as *const ::core::ffi::c_char,
-        ) {
-            argn = parse_nvalue(
-                start,
-                end,
-                &raw mut argv as *mut ::core::ffi::c_double,
-                4 as ::core::ffi::c_int,
-            );
+            cff_dict_set((*font).topdict, key, 0 as ::core::ffi::c_int, argv[0 as ::core::ffi::c_int as usize]);
+        } else if streq_ptr(key, b"FontBBox\0" as *const u8 as *const ::core::ffi::c_char) {
+            argn = parse_nvalue(start, end, &raw mut argv as *mut ::core::ffi::c_double, 4 as ::core::ffi::c_int);
             if argn != 4 as ::core::ffi::c_int {
                 pdf_warning!(
-                    b"%d values expected but only %d read.\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"%d values expected but only %d read.\0" as *const u8 as *const ::core::ffi::c_char,
                     4 as ::core::ffi::c_int,
                     argn,
                 );
@@ -2521,20 +2135,11 @@ unsafe extern "C-unwind" fn parse_part1(
                 }
                 cff_dict_set((*font).topdict, key, argn, argv[argn as usize]);
             }
-        } else if streq_ptr(
-            key,
-            b"FontMatrix\0" as *const u8 as *const ::core::ffi::c_char,
-        ) {
-            argn = parse_nvalue(
-                start,
-                end,
-                &raw mut argv as *mut ::core::ffi::c_double,
-                6 as ::core::ffi::c_int,
-            );
+        } else if streq_ptr(key, b"FontMatrix\0" as *const u8 as *const ::core::ffi::c_char) {
+            argn = parse_nvalue(start, end, &raw mut argv as *mut ::core::ffi::c_double, 6 as ::core::ffi::c_int);
             if argn != 6 as ::core::ffi::c_int {
                 pdf_warning!(
-                    b"%d values expected but only %d read.\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"%d values expected but only %d read.\0" as *const u8 as *const ::core::ffi::c_char,
                     6 as ::core::ffi::c_int,
                     argn,
                 );
@@ -2558,36 +2163,17 @@ unsafe extern "C-unwind" fn parse_part1(
                     cff_dict_set((*font).topdict, key, argn, argv[argn as usize]);
                 }
             }
-        } else if streq_ptr(key, b"version\0" as *const u8 as *const ::core::ffi::c_char)
-            as ::core::ffi::c_int
-            != 0
-            || streq_ptr(key, b"Notice\0" as *const u8 as *const ::core::ffi::c_char)
-                as ::core::ffi::c_int
-                != 0
-            || streq_ptr(
-                key,
-                b"FullName\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
-            || streq_ptr(
-                key,
-                b"FamilyName\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
-            || streq_ptr(key, b"Weight\0" as *const u8 as *const ::core::ffi::c_char)
-                as ::core::ffi::c_int
-                != 0
-            || streq_ptr(
-                key,
-                b"Copyright\0" as *const u8 as *const ::core::ffi::c_char,
-            ) as ::core::ffi::c_int
-                != 0
+        } else if streq_ptr(key, b"version\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"Notice\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"FullName\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"FamilyName\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"Weight\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
+            || streq_ptr(key, b"Copyright\0" as *const u8 as *const ::core::ffi::c_char) as ::core::ffi::c_int != 0
         {
             argn = parse_svalue(start, end, &raw mut strval);
             if argn != 1 as ::core::ffi::c_int {
                 pdf_warning!(
-                    b"%d values expected but only %d read.\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"%d values expected but only %d read.\0" as *const u8 as *const ::core::ffi::c_char,
                     1 as ::core::ffi::c_int,
                     argn,
                 );
@@ -2600,28 +2186,17 @@ unsafe extern "C-unwind" fn parse_part1(
             if sid as ::core::ffi::c_int == CFF_STRING_NOTDEF {
                 sid = cff_add_string(font, strval, 0 as ::core::ffi::c_int);
             }
-            cff_dict_set(
-                (*font).topdict,
-                key,
-                0 as ::core::ffi::c_int,
-                sid as ::core::ffi::c_double,
-            );
+            cff_dict_set((*font).topdict, key, 0 as ::core::ffi::c_int, sid as ::core::ffi::c_double);
             free(strval as *mut ::core::ffi::c_void);
-        } else if streq_ptr(
-            key,
-            b"IsFixedPitch\0" as *const u8 as *const ::core::ffi::c_char,
-        ) {
+        } else if streq_ptr(key, b"IsFixedPitch\0" as *const u8 as *const ::core::ffi::c_char) {
             argn = parse_bvalue(
                 start,
                 end,
-                (&raw mut argv as *mut ::core::ffi::c_double)
-                    .offset(0 as ::core::ffi::c_int as isize)
-                    as *mut ::core::ffi::c_double,
+                (&raw mut argv as *mut ::core::ffi::c_double).offset(0 as ::core::ffi::c_int as isize) as *mut ::core::ffi::c_double,
             );
             if argn != 1 as ::core::ffi::c_int {
                 pdf_warning!(
-                    b"%d values expected but only %d read.\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"%d values expected but only %d read.\0" as *const u8 as *const ::core::ffi::c_char,
                     1 as ::core::ffi::c_int,
                     argn,
                 );
@@ -2629,11 +2204,7 @@ unsafe extern "C-unwind" fn parse_part1(
                 return -(1 as ::core::ffi::c_int);
             }
             if argv[0 as ::core::ffi::c_int as usize] != 0.0f64 {
-                cff_dict_add(
-                    *(*font).private.offset(0 as ::core::ffi::c_int as isize),
-                    key,
-                    1 as ::core::ffi::c_int,
-                );
+                cff_dict_add(*(*font).private.offset(0 as ::core::ffi::c_int as isize), key, 1 as ::core::ffi::c_int);
                 cff_dict_set(
                     *(*font).private.offset(0 as ::core::ffi::c_int as isize),
                     key,
@@ -2681,14 +2252,12 @@ pub unsafe extern "C-unwind" fn is_pfb(mut handle: rust_input_handle_t) -> bool 
     }
     if memcmp(
         &raw mut sig as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-        b"%!PS-AdobeFont\0" as *const u8 as *const ::core::ffi::c_char
-            as *const ::core::ffi::c_void,
+        b"%!PS-AdobeFont\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
         14 as size_t,
     ) == 0
         || memcmp(
             &raw mut sig as *mut ::core::ffi::c_char as *const ::core::ffi::c_void,
-            b"%!FontType1\0" as *const u8 as *const ::core::ffi::c_char
-                as *const ::core::ffi::c_void,
+            b"%!FontType1\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
             11 as size_t,
         ) == 0
     {
@@ -2712,14 +2281,9 @@ pub unsafe extern "C-unwind" fn is_pfb(mut handle: rust_input_handle_t) -> bool 
 }
 pub const PFB_SEG_TYPE_ASCII: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const PFB_SEG_TYPE_BINARY: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn get_pfb_segment(
-    handle: rust_input_handle_t,
-    expected: i32,
-    length: *mut i32,
-) -> *mut u8 {
+unsafe extern "C-unwind" fn get_pfb_segment(handle: rust_input_handle_t, expected: i32, length: *mut i32) -> *mut u8 {
     let mut input = crate::compat::input::ProbeInput { handle };
-    let bytes = crate::type1::segment(&mut input, expected as u8)
-        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+    let bytes = crate::type1::segment(&mut input, expected as u8).unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
     unsafe {
         let output = new((bytes.len() + 1) as u32).cast::<u8>();
         core::ptr::copy_nonoverlapping(bytes.as_ptr(), output, bytes.len());
@@ -2731,19 +2295,14 @@ unsafe extern "C-unwind" fn get_pfb_segment(
     }
 }
 #[unsafe(export_name = "__pdf_impl_t1_get_standard_glyph")]
-pub unsafe extern "C-unwind" fn t1_get_standard_glyph(
-    mut code: ::core::ffi::c_int,
-) -> *const ::core::ffi::c_char {
+pub unsafe extern "C-unwind" fn t1_get_standard_glyph(mut code: ::core::ffi::c_int) -> *const ::core::ffi::c_char {
     if StandardEncoding[code as usize].is_null() {
         return ::core::ptr::null::<::core::ffi::c_char>();
     }
     return StandardEncoding[code as usize];
 }
 #[unsafe(export_name = "__pdf_impl_t1_get_fontname")]
-pub unsafe extern "C-unwind" fn t1_get_fontname(
-    mut handle: rust_input_handle_t,
-    mut fontname: *mut ::core::ffi::c_char,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn t1_get_fontname(mut handle: rust_input_handle_t, mut fontname: *mut ::core::ffi::c_char) -> ::core::ffi::c_int {
     let mut buffer: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
     let mut start: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
     let mut end: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
@@ -2753,18 +2312,11 @@ pub unsafe extern "C-unwind" fn t1_get_fontname(
     crate::backend::runtime::input_seek(handle, 0 as ssize_t, SEEK_SET);
     buffer = get_pfb_segment(handle, PFB_SEG_TYPE_ASCII, &raw mut length);
     if buffer.is_null() || length == 0 as ::core::ffi::c_int {
-        pdf_abort!(
-            b"Reading PFB (ASCII part) file failed.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_abort!(b"Reading PFB (ASCII part) file failed.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     start = buffer;
     end = buffer.offset(length as isize);
-    if seek_operator(
-        &raw mut start,
-        end,
-        b"begin\0" as *const u8 as *const ::core::ffi::c_char,
-    ) < 0 as ::core::ffi::c_int
-    {
+    if seek_operator(&raw mut start, end, b"begin\0" as *const u8 as *const ::core::ffi::c_char) < 0 as ::core::ffi::c_int {
         free(buffer as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
     }
@@ -2772,22 +2324,16 @@ pub unsafe extern "C-unwind" fn t1_get_fontname(
         key = get_next_key(&raw mut start, end);
         !key.is_null()
     } {
-        if streq_ptr(
-            key,
-            b"FontName\0" as *const u8 as *const ::core::ffi::c_char,
-        ) {
-            let mut strval: *mut ::core::ffi::c_char =
-                ::core::ptr::null_mut::<::core::ffi::c_char>();
+        if streq_ptr(key, b"FontName\0" as *const u8 as *const ::core::ffi::c_char) {
+            let mut strval: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
             if parse_svalue(&raw mut start, end, &raw mut strval) == 1 as ::core::ffi::c_int {
                 if strlen(strval) > TYPE1_NAME_LEN_MAX as size_t {
                     pdf_warning!(
-                        b"FontName \"%s\" too long. (%zu bytes)\0" as *const u8
-                            as *const ::core::ffi::c_char,
+                        b"FontName \"%s\" too long. (%zu bytes)\0" as *const u8 as *const ::core::ffi::c_char,
                         strval,
                         strlen(strval),
                     );
-                    *strval.offset(TYPE1_NAME_LEN_MAX as isize) =
-                        '\0' as i32 as ::core::ffi::c_char;
+                    *strval.offset(TYPE1_NAME_LEN_MAX as isize) = '\0' as i32 as ::core::ffi::c_char;
                 }
                 strcpy(fontname, strval);
                 free(strval as *mut ::core::ffi::c_void);
@@ -2818,14 +2364,12 @@ unsafe extern "C-unwind" fn init_cff_font(mut cff: *mut cff_font) {
     (*cff).fdselect = ::core::ptr::null_mut::<cff_fdselect>();
     (*cff).cstrings = ::core::ptr::null_mut::<cff_index>();
     (*cff).fdarray = ::core::ptr::null_mut::<*mut cff_dict>();
-    (*cff).private = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<*mut cff_dict>() as usize)
-        as uint32_t) as *mut *mut cff_dict;
+    (*cff).private = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<*mut cff_dict>() as usize) as uint32_t)
+        as *mut *mut cff_dict;
     let ref mut fresh23 = *(*cff).private.offset(0 as ::core::ffi::c_int as isize);
     *fresh23 = cff_new_dict();
-    (*cff).subrs = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<*mut cff_index>() as usize)
-        as uint32_t) as *mut *mut cff_index;
+    (*cff).subrs = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<*mut cff_index>() as usize) as uint32_t)
+        as *mut *mut cff_index;
     let ref mut fresh24 = *(*cff).subrs.offset(0 as ::core::ffi::c_int as isize);
     *fresh24 = ::core::ptr::null_mut::<cff_index>();
     (*cff).offset = 0 as l_offset;
@@ -2835,15 +2379,11 @@ unsafe extern "C-unwind" fn init_cff_font(mut cff: *mut cff_font) {
     (*cff)._string = cff_new_index(0 as card16);
 }
 #[unsafe(export_name = "__pdf_impl_t1_load_font")]
-pub unsafe extern "C-unwind" fn t1_load_font(
-    enc_vec: *mut *mut core::ffi::c_char,
-    mode: i32,
-    handle: rust_input_handle_t,
-) -> *mut cff_font {
+pub unsafe extern "C-unwind" fn t1_load_font(enc_vec: *mut *mut core::ffi::c_char, mode: i32, handle: rust_input_handle_t) -> *mut cff_font {
     crate::backend::runtime::input_seek(handle, 0, SEEK_SET);
     let mut input = crate::compat::input::ProbeInput { handle };
-    let mut ascii = crate::type1::segment(&mut input, PFB_SEG_TYPE_ASCII as u8)
-        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+    let mut ascii =
+        crate::type1::segment(&mut input, PFB_SEG_TYPE_ASCII as u8).unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
     let ascii_length = ascii.len();
     // The remaining PostScript token adapter requires a NUL outside its input.
     ascii.push(0);
@@ -2860,16 +2400,15 @@ pub unsafe extern "C-unwind" fn t1_load_font(
         pdf_abort!("Reading PFB (ASCII part) file failed.");
     }
     drop(ascii);
-    let mut binary = crate::type1::segment(&mut input, PFB_SEG_TYPE_BINARY as u8)
-        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+    let mut binary =
+        crate::type1::segment(&mut input, PFB_SEG_TYPE_BINARY as u8).unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
     if binary.len() < 4 {
         unsafe {
             cff_close(cff);
         }
         pdf_abort!("Reading PFB (BINARY part) file failed.");
     }
-    crate::type1::decrypt_in_place(&mut binary, T1_EEKEY as u16, 0)
-        .unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
+    crate::type1::decrypt_in_place(&mut binary, T1_EEKEY as u16, 0).unwrap_or_else(|error| pdf_abort!("{}", error.message.to_string_lossy()));
     let binary_length = binary.len();
     binary.push(0);
     let end = unsafe { binary.as_mut_ptr().add(binary_length) };
@@ -2888,26 +2427,10 @@ pub unsafe extern "C-unwind" fn t1_load_font(
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn memcpy(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_void;
-    fn memmove(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
-    fn memset(
-        __b: *mut ::core::ffi::c_void,
-        __c: ::core::ffi::c_int,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
+    fn memcpy(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __n: size_t) -> *mut ::core::ffi::c_void;
+    fn memmove(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __len: size_t) -> *mut ::core::ffi::c_void;
+    fn memset(__b: *mut ::core::ffi::c_void, __c: ::core::ffi::c_int, __len: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -2915,10 +2438,7 @@ pub struct pst_obj {
     _private: [u8; 0],
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_is_pfb(
-    mut handle: rust_input_handle_t,
-    _result: *mut bool,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_is_pfb(mut handle: rust_input_handle_t, _result: *mut bool) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { is_pfb(handle) }) {
         Ok(value) => {
             unsafe {
@@ -2930,10 +2450,7 @@ pub unsafe extern "C" fn __pdf_entry_is_pfb(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_t1_get_standard_glyph(
-    mut code: ::core::ffi::c_int,
-    _result: *mut *const ::core::ffi::c_char,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_t1_get_standard_glyph(mut code: ::core::ffi::c_int, _result: *mut *const ::core::ffi::c_char) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { t1_get_standard_glyph(code) }) {
         Ok(value) => {
             unsafe {
@@ -2946,9 +2463,7 @@ pub unsafe extern "C" fn __pdf_entry_t1_get_standard_glyph(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_t1_get_fontname(
-    mut handle: rust_input_handle_t,
-    mut fontname: *mut ::core::ffi::c_char,
-    _result: *mut ::core::ffi::c_int,
+    mut handle: rust_input_handle_t, mut fontname: *mut ::core::ffi::c_char, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { t1_get_fontname(handle, fontname) }) {
         Ok(value) => {
@@ -2962,10 +2477,7 @@ pub unsafe extern "C" fn __pdf_entry_t1_get_fontname(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_t1_load_font(
-    mut enc_vec: *mut *mut ::core::ffi::c_char,
-    mut mode: ::core::ffi::c_int,
-    mut handle: rust_input_handle_t,
-    _result: *mut *mut cff_font,
+    mut enc_vec: *mut *mut ::core::ffi::c_char, mut mode: ::core::ffi::c_int, mut handle: rust_input_handle_t, _result: *mut *mut cff_font,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { t1_load_font(enc_vec, mode, handle) }) {
         Ok(value) => {

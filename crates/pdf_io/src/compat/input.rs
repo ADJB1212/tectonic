@@ -8,9 +8,7 @@ use std::{
     io::{self, Read, Seek, SeekFrom},
     marker::PhantomData,
 };
-use tectonic_bridge_core::{
-    CoreBridgeState, ttbc_input_read, ttbc_input_read_partial, ttbc_input_seek,
-};
+use tectonic_bridge_core::{CoreBridgeState, ttbc_input_read, ttbc_input_read_partial, ttbc_input_seek};
 
 pub(crate) struct ProbeInput {
     pub(crate) handle: usize,
@@ -26,12 +24,7 @@ impl Read for DirectoryInput {
             return Ok(0);
         }
         let length = CoreBridgeState::with_global_state(|state| unsafe {
-            ttbc_input_read_partial(
-                state,
-                runtime::input_id(self.handle),
-                buffer.as_mut_ptr(),
-                buffer.len(),
-            )
+            ttbc_input_read_partial(state, runtime::input_id(self.handle), buffer.as_mut_ptr(), buffer.len())
         });
         usize::try_from(length).map_err(|_| io::Error::other("PDF input read failed"))
     }
@@ -41,12 +34,7 @@ impl Read for ProbeInput {
     fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
         // The bridge intentionally retains exact-read diagnostics for legacy probes.
         let length = CoreBridgeState::with_global_state(|state| unsafe {
-            ttbc_input_read(
-                state,
-                runtime::input_id(self.handle),
-                buffer.as_mut_ptr(),
-                buffer.len(),
-            )
+            ttbc_input_read(state, runtime::input_id(self.handle), buffer.as_mut_ptr(), buffer.len())
         });
         usize::try_from(length).map_err(|_| io::Error::other("PDF input read failed"))
     }
@@ -60,15 +48,8 @@ impl Seek for ProbeInput {
             SeekFrom::End(offset) => (offset as isize, libc::SEEK_END),
         };
         let mut error = 0;
-        let position = CoreBridgeState::with_global_state(|state| unsafe {
-            ttbc_input_seek(
-                state,
-                runtime::input_id(self.handle),
-                offset,
-                whence,
-                &mut error,
-            )
-        });
+        let position =
+            CoreBridgeState::with_global_state(|state| unsafe { ttbc_input_seek(state, runtime::input_id(self.handle), offset, whence, &mut error) });
         if error != 0 {
             return Err(io::Error::other("Invalid PDF input seek"));
         }
@@ -110,10 +91,7 @@ impl Seek for BorrowedFile<'_> {
 
     fn seek(&mut self, position: SeekFrom) -> io::Result<u64> {
         let (offset, whence) = match position {
-            SeekFrom::Start(offset) => (
-                i64::try_from(offset).map_err(io::Error::other)?,
-                libc::SEEK_SET,
-            ),
+            SeekFrom::Start(offset) => (i64::try_from(offset).map_err(io::Error::other)?, libc::SEEK_SET),
             SeekFrom::Current(offset) => (offset, libc::SEEK_CUR),
             SeekFrom::End(offset) => (offset, libc::SEEK_END),
         };

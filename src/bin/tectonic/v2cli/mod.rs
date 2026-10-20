@@ -27,12 +27,7 @@ mod commands;
 
 /// The main options for the "V2" command-line interface.
 #[derive(Debug, Parser)]
-#[command(
-    name = "tectonic -X",
-    version,
-    about = "Process (La)TeX documents",
-    no_binary_name(true)
-)]
+#[command(name = "tectonic -X", version, about = "Process (La)TeX documents", no_binary_name(true))]
 struct V2CliOptions {
     /// How much chatter to print when running
     #[arg(long = "chatter", short, default_value = "default")]
@@ -114,10 +109,7 @@ pub fn v2_main(effective_args: &[OsString]) {
 
     // For now ...
 
-    tt_note!(
-        status,
-        "\"version 2\" Tectonic command-line interface activated"
-    );
+    tt_note!(status, "\"version 2\" Tectonic command-line interface activated");
 
     // Now that we've got colorized output, pass off to the inner function.
 
@@ -218,9 +210,7 @@ fn is_executable<P: AsRef<Path>>(path: P) -> bool {
 
 #[cfg(windows)]
 fn is_executable<P: AsRef<Path>>(path: P) -> bool {
-    fs::metadata(path)
-        .map(|metadata| metadata.is_file())
-        .unwrap_or(false)
+    fs::metadata(path).map(|metadata| metadata.is_file()).unwrap_or(false)
 }
 
 fn search_directories() -> Vec<PathBuf> {
@@ -242,12 +232,7 @@ fn do_external(all_args: &[String]) -> Result<i32> {
         .map(|dir| dir.join(&command_exe))
         .find(|file| is_executable(file));
 
-    let command = path.ok_or_else(|| {
-        anyhow!(
-            "no internal or external subcommand `{0}` is available (install `tectonic-{0}`?)",
-            cmd
-        )
-    })?;
+    let command = path.ok_or_else(|| anyhow!("no internal or external subcommand `{0}` is available (install `tectonic-{0}`?)", cmd))?;
 
     exec_or_spawn(process::Command::new(command).args(args))
 }

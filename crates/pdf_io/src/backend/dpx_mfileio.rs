@@ -19,20 +19,11 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 unsafe extern "C-unwind" {
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
     fn ttstub_input_getc(handle: rust_input_handle_t) -> ::core::ffi::c_int;
-    fn ttstub_input_ungetc(
-        handle: rust_input_handle_t,
-        ch: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn ttstub_input_ungetc(handle: rust_input_handle_t, ch: ::core::ffi::c_int) -> ::core::ffi::c_int;
     fn fgetc(_: *mut FILE) -> ::core::ffi::c_int;
     fn fseek(_: *mut FILE, _: ::core::ffi::c_long, _: ::core::ffi::c_int) -> ::core::ffi::c_int;
     fn ftell(_: *mut FILE) -> ::core::ffi::c_long;
@@ -63,23 +54,9 @@ pub struct __sFILE {
     pub _lbfsize: ::core::ffi::c_int,
     pub _cookie: *mut ::core::ffi::c_void,
     pub _close: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void) -> ::core::ffi::c_int>,
-    pub _read: Option<
-        unsafe extern "C-unwind" fn(
-            *mut ::core::ffi::c_void,
-            *mut ::core::ffi::c_char,
-            ::core::ffi::c_int,
-        ) -> ::core::ffi::c_int,
-    >,
-    pub _seek: Option<
-        unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, fpos_t, ::core::ffi::c_int) -> fpos_t,
-    >,
-    pub _write: Option<
-        unsafe extern "C-unwind" fn(
-            *mut ::core::ffi::c_void,
-            *const ::core::ffi::c_char,
-            ::core::ffi::c_int,
-        ) -> ::core::ffi::c_int,
-    >,
+    pub _read: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, *mut ::core::ffi::c_char, ::core::ffi::c_int) -> ::core::ffi::c_int>,
+    pub _seek: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, fpos_t, ::core::ffi::c_int) -> fpos_t>,
+    pub _write: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, *const ::core::ffi::c_char, ::core::ffi::c_int) -> ::core::ffi::c_int>,
     pub _ub: __sbuf,
     pub _extra: *mut __sFILEX,
     pub _ur: ::core::ffi::c_int,
@@ -106,20 +83,13 @@ pub unsafe extern "C-unwind" fn file_size(file: *mut FILE) -> int32_t {
 }
 #[unsafe(export_name = "__pdf_impl_mfgets")]
 pub unsafe extern "C-unwind" fn mfgets(
-    mut buffer: *mut ::core::ffi::c_char,
-    mut length: ::core::ffi::c_int,
-    mut file: *mut FILE,
+    mut buffer: *mut ::core::ffi::c_char, mut length: ::core::ffi::c_int, mut file: *mut FILE,
 ) -> *mut ::core::ffi::c_char {
     if length <= 0 {
         return core::ptr::null_mut();
     }
     // The C API requires length writable bytes, including the terminator.
-    let output = unsafe {
-        core::slice::from_raw_parts_mut(
-            buffer.cast::<core::mem::MaybeUninit<u8>>(),
-            length as usize,
-        )
-    };
+    let output = unsafe { core::slice::from_raw_parts_mut(buffer.cast::<core::mem::MaybeUninit<u8>>(), length as usize) };
     crate::line::read_line(
         output,
         || {
@@ -136,20 +106,13 @@ pub unsafe extern "C-unwind" fn mfgets(
 pub static mut work_buffer: [::core::ffi::c_char; 1024] = [0; 1024];
 #[unsafe(export_name = "__pdf_impl_tt_mfgets")]
 pub unsafe extern "C-unwind" fn tt_mfgets(
-    mut buffer: *mut ::core::ffi::c_char,
-    mut length: ::core::ffi::c_int,
-    mut file: rust_input_handle_t,
+    mut buffer: *mut ::core::ffi::c_char, mut length: ::core::ffi::c_int, mut file: rust_input_handle_t,
 ) -> *mut ::core::ffi::c_char {
     if length <= 0 {
         return core::ptr::null_mut();
     }
     // The C API requires length writable bytes, including the terminator.
-    let output = unsafe {
-        core::slice::from_raw_parts_mut(
-            buffer.cast::<core::mem::MaybeUninit<u8>>(),
-            length as usize,
-        )
-    };
+    let output = unsafe { core::slice::from_raw_parts_mut(buffer.cast::<core::mem::MaybeUninit<u8>>(), length as usize) };
     crate::line::read_line(
         output,
         || {
@@ -196,10 +159,7 @@ pub unsafe extern "C" fn __pdf_entry_file_size(mut file: *mut FILE, _result: *mu
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_mfgets(
-    mut buffer: *mut ::core::ffi::c_char,
-    mut length: ::core::ffi::c_int,
-    mut file: *mut FILE,
-    _result: *mut *mut ::core::ffi::c_char,
+    mut buffer: *mut ::core::ffi::c_char, mut length: ::core::ffi::c_int, mut file: *mut FILE, _result: *mut *mut ::core::ffi::c_char,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { mfgets(buffer, length, file) }) {
         Ok(value) => {
@@ -213,10 +173,7 @@ pub unsafe extern "C" fn __pdf_entry_mfgets(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_tt_mfgets(
-    mut buffer: *mut ::core::ffi::c_char,
-    mut length: ::core::ffi::c_int,
-    mut file: rust_input_handle_t,
-    _result: *mut *mut ::core::ffi::c_char,
+    mut buffer: *mut ::core::ffi::c_char, mut length: ::core::ffi::c_int, mut file: rust_input_handle_t, _result: *mut *mut ::core::ffi::c_char,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { tt_mfgets(buffer, length, file) }) {
         Ok(value) => {

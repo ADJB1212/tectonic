@@ -39,42 +39,19 @@ unsafe extern "C" {
     pub fn gr_face_find_fref(pFace: *const gr_face, featId: u32) -> *const gr_feature_ref;
     pub fn gr_fref_n_values(pfeatureref: *const gr_feature_ref) -> u16;
     pub fn gr_fref_value(pfeatureref: *const gr_feature_ref, settingno: u16) -> i16;
-    pub fn gr_face_featureval_for_lang(pFace: *const gr_face, langname: u32)
-    -> *mut gr_feature_val;
-    pub fn gr_fref_feature_value(
-        pfeatureref: *const gr_feature_ref,
-        feats: *const gr_feature_val,
-    ) -> u16;
-    pub fn gr_fref_label(
-        pfeatureref: *const gr_feature_ref,
-        langId: *mut u16,
-        utf: gr_encform,
-        length: *mut u32,
-    ) -> *mut libc::c_void;
+    pub fn gr_face_featureval_for_lang(pFace: *const gr_face, langname: u32) -> *mut gr_feature_val;
+    pub fn gr_fref_feature_value(pfeatureref: *const gr_feature_ref, feats: *const gr_feature_val) -> u16;
+    pub fn gr_fref_label(pfeatureref: *const gr_feature_ref, langId: *mut u16, utf: gr_encform, length: *mut u32) -> *mut libc::c_void;
     pub fn gr_fref_value_label(
-        pfeatureref: *const gr_feature_ref,
-        setting: u16,
-        lang_id: *mut u16,
-        utf: gr_encform,
-        length: *mut u32,
+        pfeatureref: *const gr_feature_ref, setting: u16, lang_id: *mut u16, utf: gr_encform, length: *mut u32,
     ) -> *mut libc::c_void;
     pub fn gr_label_destroy(label: *mut libc::c_void);
     pub fn gr_make_font(ppm: f32, face: *const gr_face) -> *mut gr_font;
     pub fn gr_seg_destroy(p: *mut gr_segment);
-    pub fn gr_fref_set_feature_value(
-        pfeatureref: *const gr_feature_ref,
-        val: u16,
-        pDest: *mut gr_feature_val,
-    ) -> libc::c_int;
+    pub fn gr_fref_set_feature_value(pfeatureref: *const gr_feature_ref, val: u16, pDest: *mut gr_feature_val) -> libc::c_int;
     pub fn gr_make_seg(
-        font: *const gr_font,
-        face: *const gr_face,
-        script: u32,
-        pFeats: *const gr_feature_val,
-        enc: gr_encform,
-        pStart: *const libc::c_void,
-        nChars: libc::size_t,
-        dir: libc::c_int,
+        font: *const gr_font, face: *const gr_face, script: u32, pFeats: *const gr_feature_val, enc: gr_encform, pStart: *const libc::c_void,
+        nChars: libc::size_t, dir: libc::c_int,
     ) -> *mut gr_segment;
     pub fn gr_seg_first_slot(pSeg: *mut gr_segment) -> *const gr_slot;
     pub fn gr_seg_last_slot(pSeg: *mut gr_segment) -> *const gr_slot;

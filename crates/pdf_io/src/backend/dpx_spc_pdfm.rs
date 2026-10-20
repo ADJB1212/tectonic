@@ -19,47 +19,18 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::backend::dpx_pdfdev::{pdf_sprint_matrix, transform_info_clear};
 use crate::backend::dpx_pdfdraw::pdf_dev_transform;
 use crate::compat::allocation::free;
 use crate::unicode::is_valid as UC_is_valid;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-    fn strncmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn strstr(
-        __big: *const ::core::ffi::c_char,
-        __little: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
-    fn ttstub_input_open(
-        path: *const ::core::ffi::c_char,
-        format: ttbc_file_format,
-        is_gz: ::core::ffi::c_int,
-    ) -> rust_input_handle_t;
-    fn ttstub_input_read_partial(
-        handle: rust_input_handle_t,
-        data: *mut ::core::ffi::c_char,
-        len: size_t,
-    ) -> ssize_t;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    fn strncmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char, __n: size_t) -> ::core::ffi::c_int;
+    fn strstr(__big: *const ::core::ffi::c_char, __little: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+    fn ttstub_input_open(path: *const ::core::ffi::c_char, format: ttbc_file_format, is_gz: ::core::ffi::c_int) -> rust_input_handle_t;
+    fn ttstub_input_read_partial(handle: rust_input_handle_t, data: *mut ::core::ffi::c_char, len: size_t) -> ssize_t;
     fn ttstub_input_close(handle: rust_input_handle_t) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_release_obj"]
     fn pdf_release_obj(object: *mut pdf_obj);
@@ -96,31 +67,16 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_lookup_dict"]
     fn pdf_lookup_dict(dict: *mut pdf_obj, key: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_foreach_dict"]
     fn pdf_foreach_dict(
-        dict: *mut pdf_obj,
-        proc_0: Option<
-            unsafe extern "C-unwind" fn(
-                *mut pdf_obj,
-                *mut pdf_obj,
-                *mut ::core::ffi::c_void,
-            ) -> ::core::ffi::c_int,
-        >,
+        dict: *mut pdf_obj, proc_0: Option<unsafe extern "C-unwind" fn(*mut pdf_obj, *mut pdf_obj, *mut ::core::ffi::c_void) -> ::core::ffi::c_int>,
         pdata: *mut ::core::ffi::c_void,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_new_stream"]
     fn pdf_new_stream(flags: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_stream"]
-    fn pdf_add_stream(
-        stream: *mut pdf_obj,
-        stream_data_ptr: *const ::core::ffi::c_void,
-        stream_data_len: ::core::ffi::c_int,
-    );
+    fn pdf_add_stream(stream: *mut pdf_obj, stream_data_ptr: *const ::core::ffi::c_void, stream_data_len: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_stream_dict"]
     fn pdf_stream_dict(stream: *mut pdf_obj) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_compare_reference"]
@@ -153,12 +109,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_spc_suspend_annot"]
     fn spc_suspend_annot(spe: *mut spc_env) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_spc_begin_form"]
-    fn spc_begin_form(
-        spe: *mut spc_env,
-        ident: *const ::core::ffi::c_char,
-        cp: pdf_coord,
-        cropbox: *mut pdf_rect,
-    ) -> ::core::ffi::c_int;
+    fn spc_begin_form(spe: *mut spc_env, ident: *const ::core::ffi::c_char, cp: pdf_coord, cropbox: *mut pdf_rect) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_spc_end_form"]
     fn spc_end_form(spe: *mut spc_env, attr: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_spc_is_tracking_boxes"]
@@ -171,20 +122,12 @@ unsafe extern "C-unwind" {
     fn spc_clear_objects(spe: *mut spc_env);
     #[link_name = "__pdf_impl_spc_put_image"]
     fn spc_put_image(
-        spe: *mut spc_env,
-        res_id: ::core::ffi::c_int,
-        ti: *mut transform_info,
-        xpos: ::core::ffi::c_double,
-        ypos: ::core::ffi::c_double,
+        spe: *mut spc_env, res_id: ::core::ffi::c_int, ti: *mut transform_info, xpos: ::core::ffi::c_double, ypos: ::core::ffi::c_double,
     );
     #[link_name = "__pdf_impl_spc_get_current_point"]
     fn spc_get_current_point(spe: *mut spc_env, cp: *mut pdf_coord);
     #[link_name = "__pdf_impl_spc_get_coord"]
-    fn spc_get_coord(
-        spe: *mut spc_env,
-        x: *mut ::core::ffi::c_double,
-        y: *mut ::core::ffi::c_double,
-    );
+    fn spc_get_coord(spe: *mut spc_env, x: *mut ::core::ffi::c_double, y: *mut ::core::ffi::c_double);
     #[link_name = "__pdf_impl_spc_push_coord"]
     fn spc_push_coord(spe: *mut spc_env, x: ::core::ffi::c_double, y: ::core::ffi::c_double);
     #[link_name = "__pdf_impl_spc_pop_coord"]
@@ -192,53 +135,28 @@ unsafe extern "C-unwind" {
     static mut dpx_conf: _dpx_conf;
     static mut work_buffer: [::core::ffi::c_char; 0];
     #[link_name = "__pdf_impl_min4"]
-    fn min4(
-        v1: ::core::ffi::c_double,
-        v2: ::core::ffi::c_double,
-        v3: ::core::ffi::c_double,
-        v4: ::core::ffi::c_double,
-    ) -> ::core::ffi::c_double;
+    fn min4(v1: ::core::ffi::c_double, v2: ::core::ffi::c_double, v3: ::core::ffi::c_double, v4: ::core::ffi::c_double) -> ::core::ffi::c_double;
     #[link_name = "__pdf_impl_max4"]
-    fn max4(
-        v1: ::core::ffi::c_double,
-        v2: ::core::ffi::c_double,
-        v3: ::core::ffi::c_double,
-        v4: ::core::ffi::c_double,
-    ) -> ::core::ffi::c_double;
+    fn max4(v1: ::core::ffi::c_double, v2: ::core::ffi::c_double, v3: ::core::ffi::c_double, v4: ::core::ffi::c_double) -> ::core::ffi::c_double;
     #[link_name = "__pdf_impl_parse_c_ident"]
-    fn parse_c_ident(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_c_ident(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_pdf_init_fontmap_record"]
     fn pdf_init_fontmap_record(mrec: *mut fontmap_rec);
     #[link_name = "__pdf_impl_pdf_clear_fontmap_record"]
     fn pdf_clear_fontmap_record(mrec: *mut fontmap_rec);
     #[link_name = "__pdf_impl_pdf_load_fontmap_file"]
-    fn pdf_load_fontmap_file(
-        filename: *const ::core::ffi::c_char,
-        mode: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn pdf_load_fontmap_file(filename: *const ::core::ffi::c_char, mode: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_read_fontmap_line"]
     fn pdf_read_fontmap_line(
-        mrec: *mut fontmap_rec,
-        mline: *const ::core::ffi::c_char,
-        mline_strlen: ::core::ffi::c_int,
-        format: ::core::ffi::c_int,
+        mrec: *mut fontmap_rec, mline: *const ::core::ffi::c_char, mline_strlen: ::core::ffi::c_int, format: ::core::ffi::c_int,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_append_fontmap_record"]
-    fn pdf_append_fontmap_record(
-        kp: *const ::core::ffi::c_char,
-        mrec: *const fontmap_rec,
-    ) -> ::core::ffi::c_int;
+    fn pdf_append_fontmap_record(kp: *const ::core::ffi::c_char, mrec: *const fontmap_rec) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_remove_fontmap_record"]
     fn pdf_remove_fontmap_record(kp: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_insert_fontmap_record"]
-    fn pdf_insert_fontmap_record(
-        kp: *const ::core::ffi::c_char,
-        mrec: *const fontmap_rec,
-    ) -> *mut fontmap_rec;
+    fn pdf_insert_fontmap_record(kp: *const ::core::ffi::c_char, mrec: *const fontmap_rec) -> *mut fontmap_rec;
     #[link_name = "__pdf_impl_is_pdfm_mapline"]
     fn is_pdfm_mapline(mline: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_new"]
@@ -251,10 +169,7 @@ unsafe extern "C-unwind" {
     fn pdf_doc_current_page_resources() -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_doc_add_names"]
     fn pdf_doc_add_names(
-        category: *const ::core::ffi::c_char,
-        key: *const ::core::ffi::c_void,
-        keylen: ::core::ffi::c_int,
-        value: *mut pdf_obj,
+        category: *const ::core::ffi::c_char, key: *const ::core::ffi::c_void, keylen: ::core::ffi::c_int, value: *mut pdf_obj,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_doc_set_bop_content"]
     fn pdf_doc_set_bop_content(str: *const ::core::ffi::c_char, length: ::core::ffi::c_uint);
@@ -263,19 +178,12 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_doc_add_page_content"]
     fn pdf_doc_add_page_content(buffer: *const ::core::ffi::c_char, length: ::core::ffi::c_uint);
     #[link_name = "__pdf_impl_pdf_doc_add_page_resource"]
-    fn pdf_doc_add_page_resource(
-        category: *const ::core::ffi::c_char,
-        resource_name: *const ::core::ffi::c_char,
-        resources: *mut pdf_obj,
-    );
+    fn pdf_doc_add_page_resource(category: *const ::core::ffi::c_char, resource_name: *const ::core::ffi::c_char, resources: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_doc_begin_article"]
     fn pdf_doc_begin_article(article_id: *const ::core::ffi::c_char, info: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_doc_add_bead"]
     fn pdf_doc_add_bead(
-        article_id: *const ::core::ffi::c_char,
-        bead_id: *const ::core::ffi::c_char,
-        page_no: ::core::ffi::c_int,
-        rect: *const pdf_rect,
+        article_id: *const ::core::ffi::c_char, bead_id: *const ::core::ffi::c_char, page_no: ::core::ffi::c_int, rect: *const pdf_rect,
     );
     #[link_name = "__pdf_impl_pdf_doc_bookmarks_up"]
     fn pdf_doc_bookmarks_up() -> ::core::ffi::c_int;
@@ -286,12 +194,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_doc_bookmarks_depth"]
     fn pdf_doc_bookmarks_depth() -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_doc_add_annot"]
-    fn pdf_doc_add_annot(
-        page_no: ::core::ffi::c_uint,
-        rect: *const pdf_rect,
-        annot_dict: *mut pdf_obj,
-        new_annot: ::core::ffi::c_int,
-    );
+    fn pdf_doc_add_annot(page_no: ::core::ffi::c_uint, rect: *const pdf_rect, annot_dict: *mut pdf_obj, new_annot: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_doc_expand_box"]
     fn pdf_doc_expand_box(rect: *const pdf_rect);
     #[link_name = "__pdf_impl_pdf_doc_set_bgcolor"]
@@ -311,121 +214,60 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_skip_white"]
     fn skip_white(start: *mut *const ::core::ffi::c_char, end: *const ::core::ffi::c_char);
     #[link_name = "__pdf_impl_parse_ident"]
-    fn parse_ident(
-        start: *mut *const ::core::ffi::c_char,
-        end: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_ident(start: *mut *const ::core::ffi::c_char, end: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_parse_val_ident"]
-    fn parse_val_ident(
-        start: *mut *const ::core::ffi::c_char,
-        end: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_val_ident(start: *mut *const ::core::ffi::c_char, end: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_parse_opt_ident"]
-    fn parse_opt_ident(
-        start: *mut *const ::core::ffi::c_char,
-        end: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_opt_ident(start: *mut *const ::core::ffi::c_char, end: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     #[link_name = "__pdf_impl_parse_pdf_object"]
-    fn parse_pdf_object(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-        pf: *mut pdf_file,
-    ) -> *mut pdf_obj;
+    fn parse_pdf_object(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char, pf: *mut pdf_file) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_parse_pdf_object_extended"]
     fn parse_pdf_object_extended(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-        pf: *mut pdf_file,
+        pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char, pf: *mut pdf_file,
         unknown_handler: Option<
-            unsafe extern "C-unwind" fn(
-                *mut *const ::core::ffi::c_char,
-                *const ::core::ffi::c_char,
-                *mut ::core::ffi::c_void,
-            ) -> *mut pdf_obj,
+            unsafe extern "C-unwind" fn(*mut *const ::core::ffi::c_char, *const ::core::ffi::c_char, *mut ::core::ffi::c_void) -> *mut pdf_obj,
         >,
         user_data: *mut ::core::ffi::c_void,
     ) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_parse_pdf_tainted_dict"]
     fn parse_pdf_tainted_dict(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
+        pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char,
         unknown_handler: Option<
-            unsafe extern "C-unwind" fn(
-                *mut *const ::core::ffi::c_char,
-                *const ::core::ffi::c_char,
-                *mut ::core::ffi::c_void,
-            ) -> *mut pdf_obj,
+            unsafe extern "C-unwind" fn(*mut *const ::core::ffi::c_char, *const ::core::ffi::c_char, *mut ::core::ffi::c_void) -> *mut pdf_obj,
         >,
         user_data: *mut ::core::ffi::c_void,
     ) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_ximage_findresource"]
     fn pdf_ximage_findresource(ident: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_ximage_load_image"]
-    fn pdf_ximage_load_image(
-        ident: *const ::core::ffi::c_char,
-        filename: *const ::core::ffi::c_char,
-        options: load_options,
-    ) -> ::core::ffi::c_int;
+    fn pdf_ximage_load_image(ident: *const ::core::ffi::c_char, filename: *const ::core::ffi::c_char, options: load_options) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_ximage_reserve"]
     fn pdf_ximage_reserve(ident: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_ximage_get_subtype"]
     fn pdf_ximage_get_subtype(xobj_id: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_ximage_set_attr"]
     fn pdf_ximage_set_attr(
-        xobj_id: ::core::ffi::c_int,
-        width: ::core::ffi::c_int,
-        height: ::core::ffi::c_int,
-        xdensity: ::core::ffi::c_double,
-        ydensity: ::core::ffi::c_double,
-        llx: ::core::ffi::c_double,
-        lly: ::core::ffi::c_double,
-        urx: ::core::ffi::c_double,
+        xobj_id: ::core::ffi::c_int, width: ::core::ffi::c_int, height: ::core::ffi::c_int, xdensity: ::core::ffi::c_double,
+        ydensity: ::core::ffi::c_double, llx: ::core::ffi::c_double, lly: ::core::ffi::c_double, urx: ::core::ffi::c_double,
         ury: ::core::ffi::c_double,
     );
     #[link_name = "__pdf_impl_spc_util_read_dimtrns"]
-    fn spc_util_read_dimtrns(
-        spe: *mut spc_env,
-        dimtrns: *mut transform_info,
-        args: *mut spc_arg,
-        syntax: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn spc_util_read_dimtrns(spe: *mut spc_env, dimtrns: *mut transform_info, args: *mut spc_arg, syntax: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_spc_util_read_blahblah"]
     fn spc_util_read_blahblah(
-        spe: *mut spc_env,
-        dimtrns: *mut transform_info,
-        page_no: *mut ::core::ffi::c_int,
-        bbox_type: *mut pdf_page_boundary,
-        args: *mut spc_arg,
+        spe: *mut spc_env, dimtrns: *mut transform_info, page_no: *mut ::core::ffi::c_int, bbox_type: *mut pdf_page_boundary, args: *mut spc_arg,
     ) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_spc_util_read_pdfcolor"]
-    fn spc_util_read_pdfcolor(
-        spe: *mut spc_env,
-        colorspec: *mut pdf_color,
-        args: *mut spc_arg,
-        defaultcolor: *mut pdf_color,
-    ) -> ::core::ffi::c_int;
+    fn spc_util_read_pdfcolor(spe: *mut spc_env, colorspec: *mut pdf_color, args: *mut spc_arg, defaultcolor: *mut pdf_color) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_UC_UTF8_is_valid_string"]
-    fn UC_UTF8_is_valid_string(
-        p: *const ::core::ffi::c_uchar,
-        endptr: *const ::core::ffi::c_uchar,
-    ) -> bool;
+    fn UC_UTF8_is_valid_string(p: *const ::core::ffi::c_uchar, endptr: *const ::core::ffi::c_uchar) -> bool;
     #[link_name = "__pdf_impl_UC_UTF16BE_encode_char"]
-    fn UC_UTF16BE_encode_char(
-        ucv: int32_t,
-        dstpp: *mut *mut ::core::ffi::c_uchar,
-        endptr: *mut ::core::ffi::c_uchar,
-    ) -> size_t;
+    fn UC_UTF16BE_encode_char(ucv: int32_t, dstpp: *mut *mut ::core::ffi::c_uchar, endptr: *mut ::core::ffi::c_uchar) -> size_t;
     #[link_name = "__pdf_impl_UC_UTF8_decode_char"]
-    fn UC_UTF8_decode_char(
-        pp: *mut *const ::core::ffi::c_uchar,
-        endptr: *const ::core::ffi::c_uchar,
-    ) -> int32_t;
+    fn UC_UTF8_decode_char(pp: *mut *const ::core::ffi::c_uchar, endptr: *const ::core::ffi::c_uchar) -> int32_t;
     #[link_name = "__pdf_impl_CMap_decode"]
     fn CMap_decode(
-        cmap: *mut CMap,
-        inbuf: *mut *const ::core::ffi::c_uchar,
-        inbytesleft: *mut size_t,
-        outbuf: *mut *mut ::core::ffi::c_uchar,
+        cmap: *mut CMap, inbuf: *mut *const ::core::ffi::c_uchar, inbytesleft: *mut size_t, outbuf: *mut *mut ::core::ffi::c_uchar,
         outbytesleft: *mut size_t,
     ) -> size_t;
     #[link_name = "__pdf_impl_CMap_cache_get"]
@@ -502,8 +344,7 @@ pub struct spc_arg {
     pub base: *const ::core::ffi::c_char,
     pub command: *const ::core::ffi::c_char,
 }
-pub type spc_handler_fn_ptr =
-    Option<unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int>;
+pub type spc_handler_fn_ptr = Option<unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int>;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct spc_handler {
@@ -652,20 +493,14 @@ pub const __DARWIN_NULL: *mut ::core::ffi::c_void = ::core::ptr::null_mut::<::co
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 pub const INVALID_HANDLE: uintptr_t = 0 as ::core::ffi::c_int as uintptr_t;
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
     return false_0 != 0;
 }
 #[inline]
-unsafe extern "C-unwind" fn strstartswith(
-    mut s: *const ::core::ffi::c_char,
-    mut prefix: *const ::core::ffi::c_char,
-) -> *const ::core::ffi::c_char {
+unsafe extern "C-unwind" fn strstartswith(mut s: *const ::core::ffi::c_char, mut prefix: *const ::core::ffi::c_char) -> *const ::core::ffi::c_char {
     let mut length: size_t = 0;
     length = strlen(prefix);
     if strncmp(s, prefix, length) == 0 as ::core::ffi::c_int {
@@ -680,13 +515,10 @@ pub const PDF_ARRAY: ::core::ffi::c_int = 5 as ::core::ffi::c_int;
 pub const PDF_DICT: ::core::ffi::c_int = 6 as ::core::ffi::c_int;
 pub const PDF_STREAM: ::core::ffi::c_int = 7;
 pub const PDF_INDIRECT: ::core::ffi::c_int = 9 as ::core::ffi::c_int;
-pub const STREAM_COMPRESS: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
-pub const INFO_HAS_USER_BBOX: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const STREAM_COMPRESS: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const INFO_HAS_USER_BBOX: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const INFO_HAS_WIDTH: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 1 as ::core::ffi::c_int;
-pub const INFO_HAS_HEIGHT: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
+pub const INFO_HAS_HEIGHT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
 pub const INFO_DO_HIDE: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 4 as ::core::ffi::c_int;
 pub const WORK_BUFFER_SIZE: ::core::ffi::c_int = 1024 as ::core::ffi::c_int;
 pub const FONTMAP_RMODE_REPLACE: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
@@ -695,9 +527,7 @@ pub const FONTMAP_RMODE_REMOVE: ::core::ffi::c_int = '-' as i32;
 pub const PDF_XOBJECT_TYPE_IMAGE: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 
 unsafe extern "C-unwind" fn parse_pdf_reference(
-    mut start: *mut *const ::core::ffi::c_char,
-    mut end: *const ::core::ffi::c_char,
-    mut user_data: *mut ::core::ffi::c_void,
+    mut start: *mut *const ::core::ffi::c_char, mut end: *const ::core::ffi::c_char, mut user_data: *mut ::core::ffi::c_void,
 ) -> *mut pdf_obj {
     let mut result: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -707,23 +537,18 @@ unsafe extern "C-unwind" fn parse_pdf_reference(
         result = spc_lookup_reference(name);
         if result.is_null() {
             pdf_warning!(
-                b"Could not find the named reference (@%s).\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Could not find the named reference (@%s).\0" as *const u8 as *const ::core::ffi::c_char,
                 name,
             );
         }
         free(name as *mut ::core::ffi::c_void);
     } else {
-        pdf_warning!(
-            b"Could not find a reference name.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Could not find a reference name.\0" as *const u8 as *const ::core::ffi::c_char,);
         result = ::core::ptr::null_mut::<pdf_obj>();
     }
     return result;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm__init(
-    mut dp: *mut ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm__init(mut dp: *mut ::core::ffi::c_void) -> ::core::ffi::c_int {
     let mut sd: *mut spc_pdf_ = dp as *mut spc_pdf_;
     const DEFAULT_TAINTKEYS: [*const ::core::ffi::c_char; 12] = [
         b"Title\0" as *const u8 as *const ::core::ffi::c_char,
@@ -745,23 +570,16 @@ unsafe extern "C-unwind" fn spc_handler_pdfm__init(
     (*sd).cd.taintkeys = pdf_new_array();
     i = 0 as ::core::ffi::c_int;
     while !DEFAULT_TAINTKEYS[i as usize].is_null() {
-        pdf_add_array(
-            (*sd).cd.taintkeys,
-            pdf_new_name(DEFAULT_TAINTKEYS[i as usize]),
-        );
+        pdf_add_array((*sd).cd.taintkeys, pdf_new_name(DEFAULT_TAINTKEYS[i as usize]));
         i += 1;
     }
     (*sd).pageresources = ::core::ptr::null_mut::<pdf_obj>();
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm__clean(
-    mut dp: *mut ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm__clean(mut dp: *mut ::core::ffi::c_void) -> ::core::ffi::c_int {
     let mut sd: *mut spc_pdf_ = dp as *mut spc_pdf_;
     if !(*sd).annot_dict.is_null() {
-        pdf_warning!(
-            b"Unbalanced bann and eann found.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Unbalanced bann and eann found.\0" as *const u8 as *const ::core::ffi::c_char,);
         pdf_release_obj((*sd).annot_dict);
     }
     (*sd).lowest_level = 255 as ::core::ffi::c_int;
@@ -786,44 +604,29 @@ pub unsafe extern "C-unwind" fn spc_pdfm_at_end_document() -> ::core::ffi::c_int
     let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     return spc_handler_pdfm__clean(sd as *mut ::core::ffi::c_void);
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_bop(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_bop(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     if (*args).curptr < (*args).endptr {
         pdf_doc_set_bop_content(
             (*args).curptr,
-            (*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as ::core::ffi::c_int
-                as ::core::ffi::c_uint,
+            (*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as ::core::ffi::c_int as ::core::ffi::c_uint,
         );
     }
     (*args).curptr = (*args).endptr;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_eop(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_eop(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     if (*args).curptr < (*args).endptr {
         pdf_doc_set_eop_content(
             (*args).curptr,
-            (*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as ::core::ffi::c_int
-                as ::core::ffi::c_uint,
+            (*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as ::core::ffi::c_int as ::core::ffi::c_uint,
         );
     }
     (*args).curptr = (*args).endptr;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn safeputresdent(
-    mut kp: *mut pdf_obj,
-    mut vp: *mut pdf_obj,
-    mut dp: *mut ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn safeputresdent(mut kp: *mut pdf_obj, mut vp: *mut pdf_obj, mut dp: *mut ::core::ffi::c_void) -> ::core::ffi::c_int {
     let mut key: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    if !(!kp.is_null() && !vp.is_null() && !dp.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!kp.is_null() && !vp.is_null() && !dp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"kp && vp && dp\0" as *const u8 as *const ::core::ffi::c_char
@@ -833,8 +636,7 @@ unsafe extern "C-unwind" fn safeputresdent(
     key = pdf_name_value(kp);
     if !pdf_lookup_dict(dp as *mut pdf_obj, key).is_null() {
         pdf_warning!(
-            b"Object \"%s\" already defined in dict! (ignored)\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Object \"%s\" already defined in dict! (ignored)\0" as *const u8 as *const ::core::ffi::c_char,
             key,
         );
     } else {
@@ -842,17 +644,10 @@ unsafe extern "C-unwind" fn safeputresdent(
     }
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn safeputresdict(
-    mut kp: *mut pdf_obj,
-    mut vp: *mut pdf_obj,
-    mut dp: *mut ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn safeputresdict(mut kp: *mut pdf_obj, mut vp: *mut pdf_obj, mut dp: *mut ::core::ffi::c_void) -> ::core::ffi::c_int {
     let mut key: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    if !(!kp.is_null() && !vp.is_null() && !dp.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!kp.is_null() && !vp.is_null() && !dp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"kp && vp && dp\0" as *const u8 as *const ::core::ffi::c_char
@@ -879,21 +674,14 @@ unsafe extern "C-unwind" fn safeputresdict(
                     pdf_foreach_dict(
                         dict,
                         Some(
-                            safeputresdent
-                                as unsafe extern "C-unwind" fn(
-                                    *mut pdf_obj,
-                                    *mut pdf_obj,
-                                    *mut ::core::ffi::c_void,
-                                )
-                                    -> ::core::ffi::c_int,
+                            safeputresdent as unsafe extern "C-unwind" fn(*mut pdf_obj, *mut pdf_obj, *mut ::core::ffi::c_void) -> ::core::ffi::c_int,
                         ),
                         dst as *mut ::core::ffi::c_void,
                     );
                     pdf_release_obj(dst);
                 } else {
                     pdf_warning!(
-                        b"Invalid type (not DICT) for page/form resource dict entry: key=\"%s\"\0"
-                            as *const u8 as *const ::core::ffi::c_char,
+                        b"Invalid type (not DICT) for page/form resource dict entry: key=\"%s\"\0" as *const u8 as *const ::core::ffi::c_char,
                         key,
                     );
                     pdf_release_obj(dst);
@@ -906,15 +694,7 @@ unsafe extern "C-unwind" fn safeputresdict(
         if !dict.is_null() {
             pdf_foreach_dict(
                 vp,
-                Some(
-                    safeputresdent
-                        as unsafe extern "C-unwind" fn(
-                            *mut pdf_obj,
-                            *mut pdf_obj,
-                            *mut ::core::ffi::c_void,
-                        )
-                            -> ::core::ffi::c_int,
-                ),
+                Some(safeputresdent as unsafe extern "C-unwind" fn(*mut pdf_obj, *mut pdf_obj, *mut ::core::ffi::c_void) -> ::core::ffi::c_int),
                 dict as *mut ::core::ffi::c_void,
             );
         } else {
@@ -922,48 +702,30 @@ unsafe extern "C-unwind" fn safeputresdict(
         }
     } else {
         pdf_warning!(
-            b"Invalid type (not DICT) for page/form resource dict entry: key=\"%s\"\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Invalid type (not DICT) for page/form resource dict entry: key=\"%s\"\0" as *const u8 as *const ::core::ffi::c_char,
             key,
         );
         return -(1 as ::core::ffi::c_int);
     }
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn putpageresources(
-    mut kp: *mut pdf_obj,
-    mut vp: *mut pdf_obj,
-    mut dp: *mut ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
-    let mut resource_name: *mut ::core::ffi::c_char =
-        ::core::ptr::null_mut::<::core::ffi::c_char>();
+unsafe extern "C-unwind" fn putpageresources(mut kp: *mut pdf_obj, mut vp: *mut pdf_obj, mut dp: *mut ::core::ffi::c_void) -> ::core::ffi::c_int {
+    let mut resource_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     if !(!kp.is_null() && !vp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"kp && vp\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"kp && vp\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     resource_name = pdf_name_value(kp);
-    pdf_doc_add_page_resource(
-        dp as *const ::core::ffi::c_char,
-        resource_name,
-        pdf_link_obj(vp),
-    );
+    pdf_doc_add_page_resource(dp as *const ::core::ffi::c_char, resource_name, pdf_link_obj(vp));
     return 0 as ::core::ffi::c_int;
 }
 unsafe extern "C-unwind" fn forallresourcecategory(
-    mut kp: *mut pdf_obj,
-    mut vp: *mut pdf_obj,
-    mut dp: *mut ::core::ffi::c_void,
+    mut kp: *mut pdf_obj, mut vp: *mut pdf_obj, mut dp: *mut ::core::ffi::c_void,
 ) -> ::core::ffi::c_int {
     let mut r: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut category: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     if !(!kp.is_null() && !vp.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"kp && vp\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"kp && vp\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     category = pdf_name_value(kp);
@@ -971,15 +733,7 @@ unsafe extern "C-unwind" fn forallresourcecategory(
         PDF_DICT => {
             r = pdf_foreach_dict(
                 vp,
-                Some(
-                    putpageresources
-                        as unsafe extern "C-unwind" fn(
-                            *mut pdf_obj,
-                            *mut pdf_obj,
-                            *mut ::core::ffi::c_void,
-                        )
-                            -> ::core::ffi::c_int,
-                ),
+                Some(putpageresources as unsafe extern "C-unwind" fn(*mut pdf_obj, *mut pdf_obj, *mut ::core::ffi::c_void) -> ::core::ffi::c_int),
                 category as *mut ::core::ffi::c_void,
             );
         }
@@ -988,15 +742,13 @@ unsafe extern "C-unwind" fn forallresourcecategory(
             obj = pdf_deref_obj(vp);
             if obj.is_null() {
                 pdf_warning!(
-                    b"Can't deref object for page resource: %s\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Can't deref object for page resource: %s\0" as *const u8 as *const ::core::ffi::c_char,
                     category,
                 );
                 r = -(1 as ::core::ffi::c_int);
             } else if pdf_obj_typeof(obj) != PDF_DICT {
                 pdf_warning!(
-                    b"Invalid object type for page resource: %s\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Invalid object type for page resource: %s\0" as *const u8 as *const ::core::ffi::c_char,
                     category,
                 );
                 r = -(1 as ::core::ffi::c_int);
@@ -1015,13 +767,7 @@ unsafe extern "C-unwind" fn forallresourcecategory(
                     pdf_foreach_dict(
                         dict,
                         Some(
-                            safeputresdent
-                                as unsafe extern "C-unwind" fn(
-                                    *mut pdf_obj,
-                                    *mut pdf_obj,
-                                    *mut ::core::ffi::c_void,
-                                )
-                                    -> ::core::ffi::c_int,
+                            safeputresdent as unsafe extern "C-unwind" fn(*mut pdf_obj, *mut pdf_obj, *mut ::core::ffi::c_void) -> ::core::ffi::c_int,
                         ),
                         obj as *mut ::core::ffi::c_void,
                     );
@@ -1032,8 +778,7 @@ unsafe extern "C-unwind" fn forallresourcecategory(
         }
         _ => {
             pdf_warning!(
-                b"Invalid object type for page resource specified for \"%s\"\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Invalid object type for page resource specified for \"%s\"\0" as *const u8 as *const ::core::ffi::c_char,
                 category,
             );
         }
@@ -1047,23 +792,13 @@ pub unsafe extern "C-unwind" fn spc_pdfm_at_end_page() -> ::core::ffi::c_int {
     if !(*sd).pageresources.is_null() {
         pdf_foreach_dict(
             (*sd).pageresources,
-            Some(
-                forallresourcecategory
-                    as unsafe extern "C-unwind" fn(
-                        *mut pdf_obj,
-                        *mut pdf_obj,
-                        *mut ::core::ffi::c_void,
-                    ) -> ::core::ffi::c_int,
-            ),
+            Some(forallresourcecategory as unsafe extern "C-unwind" fn(*mut pdf_obj, *mut pdf_obj, *mut ::core::ffi::c_void) -> ::core::ffi::c_int),
             NULL,
         );
     }
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_put(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_put(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let mut obj1: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut obj2: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut ident: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -1076,10 +811,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_put(
     }
     obj1 = spc_lookup_object(ident);
     if obj1.is_null() {
-        pdf_warning!(
-            b"Specified object not exist: %s\0" as *const u8 as *const ::core::ffi::c_char,
-            ident
-        );
+        pdf_warning!(b"Specified object not exist: %s\0" as *const u8 as *const ::core::ffi::c_char, ident);
         free(ident as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
     }
@@ -1090,18 +822,13 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_put(
         ::core::ptr::null_mut::<pdf_file>(),
         Some(
             parse_pdf_reference
-                as unsafe extern "C-unwind" fn(
-                    *mut *const ::core::ffi::c_char,
-                    *const ::core::ffi::c_char,
-                    *mut ::core::ffi::c_void,
-                ) -> *mut pdf_obj,
+                as unsafe extern "C-unwind" fn(*mut *const ::core::ffi::c_char, *const ::core::ffi::c_char, *mut ::core::ffi::c_void) -> *mut pdf_obj,
         ),
         spe as *mut ::core::ffi::c_void,
     );
     if obj2.is_null() {
         pdf_warning!(
-            b"Missing (an) object(s) to put into \"%s\"!\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Missing (an) object(s) to put into \"%s\"!\0" as *const u8 as *const ::core::ffi::c_char,
             ident
         );
         free(ident as *mut ::core::ffi::c_void);
@@ -1111,26 +838,14 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_put(
         PDF_DICT => {
             if pdf_obj_typeof(obj2) != PDF_DICT {
                 pdf_warning!(
-                    b"Inconsistent object type for \"put\" (expecting DICT): %s\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Inconsistent object type for \"put\" (expecting DICT): %s\0" as *const u8 as *const ::core::ffi::c_char,
                     ident
                 );
                 error = -(1 as ::core::ffi::c_int);
-            } else if streq_ptr(
-                ident,
-                b"resources\0" as *const u8 as *const ::core::ffi::c_char,
-            ) {
+            } else if streq_ptr(ident, b"resources\0" as *const u8 as *const ::core::ffi::c_char) {
                 error = pdf_foreach_dict(
                     obj2,
-                    Some(
-                        safeputresdict
-                            as unsafe extern "C-unwind" fn(
-                                *mut pdf_obj,
-                                *mut pdf_obj,
-                                *mut ::core::ffi::c_void,
-                            )
-                                -> ::core::ffi::c_int,
-                    ),
+                    Some(safeputresdict as unsafe extern "C-unwind" fn(*mut pdf_obj, *mut pdf_obj, *mut ::core::ffi::c_void) -> ::core::ffi::c_int),
                     obj1 as *mut ::core::ffi::c_void,
                 );
             } else {
@@ -1142,15 +857,13 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_put(
                 pdf_merge_dict(pdf_stream_dict(obj1), obj2);
             } else if pdf_obj_typeof(obj2) == PDF_STREAM {
                 pdf_warning!(
-                    b"\"put\" operation not supported for STREAM <- STREAM: %s\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"\"put\" operation not supported for STREAM <- STREAM: %s\0" as *const u8 as *const ::core::ffi::c_char,
                     ident
                 );
                 error = -(1 as ::core::ffi::c_int);
             } else {
                 pdf_warning!(
-                    b"Invalid type: expecting a DICT or STREAM: %s\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Invalid type: expecting a DICT or STREAM: %s\0" as *const u8 as *const ::core::ffi::c_char,
                     ident
                 );
                 error = -(1 as ::core::ffi::c_int);
@@ -1169,8 +882,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_put(
                                 *mut *const ::core::ffi::c_char,
                                 *const ::core::ffi::c_char,
                                 *mut ::core::ffi::c_void,
-                            )
-                                -> *mut pdf_obj,
+                            ) -> *mut pdf_obj,
                     ),
                     spe as *mut ::core::ffi::c_void,
                 );
@@ -1183,8 +895,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_put(
         }
         _ => {
             pdf_warning!(
-                b"Can't \"put\" object into non-DICT/STREAM/ARRAY type object: %s\0" as *const u8
-                    as *const ::core::ffi::c_char,
+                b"Can't \"put\" object into non-DICT/STREAM/ARRAY type object: %s\0" as *const u8 as *const ::core::ffi::c_char,
                 ident
             );
             error = -(1 as ::core::ffi::c_int);
@@ -1194,10 +905,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_put(
     free(ident as *mut ::core::ffi::c_void);
     return error;
 }
-unsafe extern "C-unwind" fn calculate_size_utf16(
-    mut p: *const ::core::ffi::c_uchar,
-    mut endptr: *const ::core::ffi::c_uchar,
-) -> size_t {
+unsafe extern "C-unwind" fn calculate_size_utf16(mut p: *const ::core::ffi::c_uchar, mut endptr: *const ::core::ffi::c_uchar) -> size_t {
     let mut len: size_t = 0 as size_t;
     while p < endptr {
         let mut c: ::core::ffi::c_uchar = *p;
@@ -1223,9 +931,7 @@ unsafe extern "C-unwind" fn calculate_size_utf16(
     }
     return len;
 }
-unsafe extern "C-unwind" fn reencode_string_from_utf8_to_utf16be(
-    mut instring: *mut pdf_obj,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn reencode_string_from_utf8_to_utf16be(mut instring: *mut pdf_obj) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut strptr: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
     let mut length: size_t = 0;
@@ -1233,16 +939,10 @@ unsafe extern "C-unwind" fn reencode_string_from_utf8_to_utf16be(
     let mut p: *const ::core::ffi::c_uchar = ::core::ptr::null::<::core::ffi::c_uchar>();
     let mut endptr: *const ::core::ffi::c_uchar = ::core::ptr::null::<::core::ffi::c_uchar>();
     if instring.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"instring\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"instring\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
-    if !(!instring.is_null() && pdf_obj_typeof(instring) == 3 as ::core::ffi::c_int)
-        as ::core::ffi::c_int as ::core::ffi::c_long
-        != 0
-    {
+    if !(!instring.is_null() && pdf_obj_typeof(instring) == 3 as ::core::ffi::c_int) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"PDF_OBJ_STRINGTYPE(instring)\0" as *const u8 as *const ::core::ffi::c_char
@@ -1272,9 +972,8 @@ unsafe extern "C-unwind" fn reencode_string_from_utf8_to_utf16be(
         let mut len: size_t = 0;
         p = strptr;
         len = calculate_size_utf16(p, endptr).wrapping_add(2 as size_t);
-        buf = new((len as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_uchar;
+        buf = new((len as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize) as uint32_t)
+            as *mut ::core::ffi::c_uchar;
         q = buf;
         limptr = buf.offset(len as isize);
         *q.offset(0 as ::core::ffi::c_int as isize) = 0xfe as ::core::ffi::c_uchar;
@@ -1294,51 +993,34 @@ unsafe extern "C-unwind" fn reencode_string_from_utf8_to_utf16be(
             }
         }
         if error == 0 {
-            pdf_set_string(
-                instring,
-                buf,
-                q.offset_from(buf) as ::core::ffi::c_long as size_t,
-            );
+            pdf_set_string(instring, buf, q.offset_from(buf) as ::core::ffi::c_long as size_t);
         }
         free(buf as *mut ::core::ffi::c_void);
     }
     return error;
 }
-unsafe extern "C-unwind" fn reencode_string(
-    mut cmap: *mut CMap,
-    mut instring: *mut pdf_obj,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn reencode_string(mut cmap: *mut CMap, mut instring: *mut pdf_obj) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     if instring.is_null() || !(!instring.is_null() && pdf_obj_typeof(instring) == PDF_STRING) {
         return -(1 as ::core::ffi::c_int);
     }
     if !cmap.is_null() {
         let mut obuf: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
-        let mut obufcur: *mut ::core::ffi::c_uchar =
-            ::core::ptr::null_mut::<::core::ffi::c_uchar>();
+        let mut obufcur: *mut ::core::ffi::c_uchar = ::core::ptr::null_mut::<::core::ffi::c_uchar>();
         let mut inbufcur: *const ::core::ffi::c_uchar = ::core::ptr::null::<::core::ffi::c_uchar>();
         let mut inbufleft: size_t = 0;
         let mut obufleft: size_t = 0;
         let mut obufsize: size_t = 0;
         inbufleft = pdf_string_length(instring) as size_t;
         inbufcur = pdf_string_value(instring) as *const ::core::ffi::c_uchar;
-        obufsize = inbufleft
-            .wrapping_mul(4 as size_t)
-            .wrapping_add(2 as size_t);
-        obuf = new((obufsize as uint32_t as usize)
-            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize)
-            as uint32_t) as *mut ::core::ffi::c_uchar;
+        obufsize = inbufleft.wrapping_mul(4 as size_t).wrapping_add(2 as size_t);
+        obuf = new((obufsize as uint32_t as usize).wrapping_mul(::core::mem::size_of::<::core::ffi::c_uchar>() as usize) as uint32_t)
+            as *mut ::core::ffi::c_uchar;
         *obuf.offset(0 as ::core::ffi::c_int as isize) = 0xfe as ::core::ffi::c_uchar;
         *obuf.offset(1 as ::core::ffi::c_int as isize) = 0xff as ::core::ffi::c_uchar;
         obufcur = obuf.offset(2 as ::core::ffi::c_int as isize);
         obufleft = obufsize.wrapping_sub(2 as size_t);
-        CMap_decode(
-            cmap,
-            &raw mut inbufcur,
-            &raw mut inbufleft,
-            &raw mut obufcur,
-            &raw mut obufleft,
-        );
+        CMap_decode(cmap, &raw mut inbufcur, &raw mut inbufleft, &raw mut obufcur, &raw mut obufleft);
         if inbufleft > 0 as size_t {
             error = -(1 as ::core::ffi::c_int);
         }
@@ -1349,35 +1031,25 @@ unsafe extern "C-unwind" fn reencode_string(
     }
     return error;
 }
-unsafe extern "C-unwind" fn need_reencode(
-    mut kp: *mut pdf_obj,
-    mut vp: *mut pdf_obj,
-    mut cd: *mut tounicode,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn need_reencode(mut kp: *mut pdf_obj, mut vp: *mut pdf_obj, mut cd: *mut tounicode) -> ::core::ffi::c_int {
     let mut r: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut i: ::core::ffi::c_uint = 0;
     let mut tk: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    if !(!cd.is_null() && !(*cd).taintkeys.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long
-        != 0
-    {
+    if !(!cd.is_null() && !(*cd).taintkeys.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"cd && cd->taintkeys\0" as *const u8 as *const ::core::ffi::c_char
         );
     } else {
     };
-    if !(pdf_obj_typeof(kp) == 4 as ::core::ffi::c_int) as ::core::ffi::c_int as ::core::ffi::c_long
-        != 0
-    {
+    if !(pdf_obj_typeof(kp) == 4 as ::core::ffi::c_int) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"pdf_obj_typeof(kp) == PDF_NAME\0" as *const u8 as *const ::core::ffi::c_char
         );
     } else {
     };
-    if !(pdf_obj_typeof(vp) == 3 as ::core::ffi::c_int) as ::core::ffi::c_int as ::core::ffi::c_long
-        != 0
-    {
+    if !(pdf_obj_typeof(vp) == 3 as ::core::ffi::c_int) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"pdf_obj_typeof(vp) == PDF_STRING\0" as *const u8 as *const ::core::ffi::c_char
@@ -1387,14 +1059,10 @@ unsafe extern "C-unwind" fn need_reencode(
     i = 0 as ::core::ffi::c_uint;
     while i < pdf_array_length((*cd).taintkeys) {
         tk = pdf_get_array((*cd).taintkeys, i as ::core::ffi::c_int);
-        if !(!tk.is_null() && pdf_obj_typeof(tk) == 4 as ::core::ffi::c_int) as ::core::ffi::c_int
-            as ::core::ffi::c_long
-            != 0
-        {
+        if !(!tk.is_null() && pdf_obj_typeof(tk) == 4 as ::core::ffi::c_int) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
             pdf_abort!(
                 c"assertion failed: %s".as_ptr(),
-                b"tk && pdf_obj_typeof(tk) == PDF_NAME\0" as *const u8
-                    as *const ::core::ffi::c_char
+                b"tk && pdf_obj_typeof(tk) == PDF_NAME\0" as *const u8 as *const ::core::ffi::c_char
             );
         } else {
         };
@@ -1409,8 +1077,7 @@ unsafe extern "C-unwind" fn need_reencode(
         if pdf_string_length(vp) >= 2 as ::core::ffi::c_uint
             && memcmp(
                 pdf_string_value(vp),
-                b"\xFE\xFF\0" as *const u8 as *const ::core::ffi::c_char
-                    as *const ::core::ffi::c_void,
+                b"\xFE\xFF\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                 2 as size_t,
             ) == 0
         {
@@ -1419,16 +1086,10 @@ unsafe extern "C-unwind" fn need_reencode(
     }
     return r;
 }
-unsafe extern "C-unwind" fn modify_strings(
-    mut kp: *mut pdf_obj,
-    mut vp: *mut pdf_obj,
-    mut dp: *mut ::core::ffi::c_void,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn modify_strings(mut kp: *mut pdf_obj, mut vp: *mut pdf_obj, mut dp: *mut ::core::ffi::c_void) -> ::core::ffi::c_int {
     let mut r: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut cd: *mut tounicode = dp as *mut tounicode;
-    if !(pdf_obj_typeof(kp) == 4 as ::core::ffi::c_int) as ::core::ffi::c_int as ::core::ffi::c_long
-        != 0
-    {
+    if !(pdf_obj_typeof(kp) == 4 as ::core::ffi::c_int) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"pdf_obj_typeof(kp) == PDF_NAME\0" as *const u8 as *const ::core::ffi::c_char
@@ -1437,16 +1098,12 @@ unsafe extern "C-unwind" fn modify_strings(
     };
     match pdf_obj_typeof(vp) {
         PDF_STRING => {
-            if !cd.is_null()
-                && (*cd).cmap_id >= 0 as ::core::ffi::c_int
-                && !(*cd).taintkeys.is_null()
-            {
+            if !cd.is_null() && (*cd).cmap_id >= 0 as ::core::ffi::c_int && !(*cd).taintkeys.is_null() {
                 let mut cmap: *mut CMap = CMap_cache_get((*cd).cmap_id);
                 if need_reencode(kp, vp, cd) != 0 {
                     r = reencode_string(cmap, vp);
                 }
-            } else if dpx_conf.compat_mode as ::core::ffi::c_uint
-                == dpx_mode_xdv_mode as ::core::ffi::c_int as ::core::ffi::c_uint
+            } else if dpx_conf.compat_mode as ::core::ffi::c_uint == dpx_mode_xdv_mode as ::core::ffi::c_int as ::core::ffi::c_uint
                 && !cd.is_null()
                 && !(*cd).taintkeys.is_null()
             {
@@ -1456,8 +1113,7 @@ unsafe extern "C-unwind" fn modify_strings(
             }
             if r < 0 as ::core::ffi::c_int {
                 pdf_warning!(
-                    b"Input string conversion (to UTF16BE) failed for %s...\0" as *const u8
-                        as *const ::core::ffi::c_char,
+                    b"Input string conversion (to UTF16BE) failed for %s...\0" as *const u8 as *const ::core::ffi::c_char,
                     pdf_name_value(kp),
                 );
             }
@@ -1478,30 +1134,14 @@ unsafe extern "C-unwind" fn modify_strings(
         PDF_DICT => {
             r = pdf_foreach_dict(
                 vp,
-                Some(
-                    modify_strings
-                        as unsafe extern "C-unwind" fn(
-                            *mut pdf_obj,
-                            *mut pdf_obj,
-                            *mut ::core::ffi::c_void,
-                        )
-                            -> ::core::ffi::c_int,
-                ),
+                Some(modify_strings as unsafe extern "C-unwind" fn(*mut pdf_obj, *mut pdf_obj, *mut ::core::ffi::c_void) -> ::core::ffi::c_int),
                 dp,
             );
         }
         PDF_STREAM => {
             r = pdf_foreach_dict(
                 pdf_stream_dict(vp),
-                Some(
-                    modify_strings
-                        as unsafe extern "C-unwind" fn(
-                            *mut pdf_obj,
-                            *mut pdf_obj,
-                            *mut ::core::ffi::c_void,
-                        )
-                            -> ::core::ffi::c_int,
-                ),
+                Some(modify_strings as unsafe extern "C-unwind" fn(*mut pdf_obj, *mut pdf_obj, *mut ::core::ffi::c_void) -> ::core::ffi::c_int),
                 dp,
             );
         }
@@ -1510,13 +1150,10 @@ unsafe extern "C-unwind" fn modify_strings(
     return r;
 }
 unsafe extern "C-unwind" fn parse_pdf_dict_with_tounicode(
-    mut pp: *mut *const ::core::ffi::c_char,
-    mut endptr: *const ::core::ffi::c_char,
-    mut cd: *mut tounicode,
+    mut pp: *mut *const ::core::ffi::c_char, mut endptr: *const ::core::ffi::c_char, mut cd: *mut tounicode,
 ) -> *mut pdf_obj {
     let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    if dpx_conf.compat_mode as ::core::ffi::c_uint
-        != dpx_mode_xdv_mode as ::core::ffi::c_int as ::core::ffi::c_uint
+    if dpx_conf.compat_mode as ::core::ffi::c_uint != dpx_mode_xdv_mode as ::core::ffi::c_int as ::core::ffi::c_uint
         && (*cd).cmap_id < 0 as ::core::ffi::c_int
     {
         dict = parse_pdf_object_extended(
@@ -1534,10 +1171,7 @@ unsafe extern "C-unwind" fn parse_pdf_dict_with_tounicode(
             NULL,
         );
         if !dict.is_null() && !(!dict.is_null() && pdf_obj_typeof(dict) == PDF_DICT) {
-            pdf_warning!(
-                b"Dictionary type object expected but non-dictionary type found.\0" as *const u8
-                    as *const ::core::ffi::c_char,
-            );
+            pdf_warning!(b"Dictionary type object expected but non-dictionary type found.\0" as *const u8 as *const ::core::ffi::c_char,);
             pdf_release_obj(dict);
             dict = ::core::ptr::null_mut::<pdf_obj>();
         }
@@ -1574,24 +1208,13 @@ unsafe extern "C-unwind" fn parse_pdf_dict_with_tounicode(
         }
         if !dict.is_null() {
             if !(!dict.is_null() && pdf_obj_typeof(dict) == PDF_DICT) {
-                pdf_warning!(
-                    b"Dictionary type object expected but non-dictionary type found.\0" as *const u8
-                        as *const ::core::ffi::c_char,
-                );
+                pdf_warning!(b"Dictionary type object expected but non-dictionary type found.\0" as *const u8 as *const ::core::ffi::c_char,);
                 pdf_release_obj(dict);
                 dict = ::core::ptr::null_mut::<pdf_obj>();
             } else {
                 pdf_foreach_dict(
                     dict,
-                    Some(
-                        modify_strings
-                            as unsafe extern "C-unwind" fn(
-                                *mut pdf_obj,
-                                *mut pdf_obj,
-                                *mut ::core::ffi::c_void,
-                            )
-                                -> ::core::ffi::c_int,
-                    ),
+                    Some(modify_strings as unsafe extern "C-unwind" fn(*mut pdf_obj, *mut pdf_obj, *mut ::core::ffi::c_void) -> ::core::ffi::c_int),
                     cd as *mut ::core::ffi::c_void,
                 );
             }
@@ -1599,11 +1222,7 @@ unsafe extern "C-unwind" fn parse_pdf_dict_with_tounicode(
     }
     return dict;
 }
-unsafe extern "C-unwind" fn set_rect_for_annot(
-    mut spe: *mut spc_env,
-    mut rect: *mut pdf_rect,
-    mut ti: transform_info,
-) {
+unsafe extern "C-unwind" fn set_rect_for_annot(mut spe: *mut spc_env, mut rect: *mut pdf_rect, mut ti: transform_info) {
     let mut cp: pdf_coord = pdf_coord { x: 0., y: 0. };
     let mut cp1: pdf_coord = pdf_coord { x: 0., y: 0. };
     let mut cp2: pdf_coord = pdf_coord { x: 0., y: 0. };
@@ -1638,10 +1257,7 @@ unsafe extern "C-unwind" fn set_rect_for_annot(
     (*rect).urx = max4(cp1.x, cp2.x, cp3.x, cp4.x);
     (*rect).ury = max4(cp1.y, cp2.y, cp3.y, cp4.y);
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_annot(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_annot(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut annot_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -1673,40 +1289,27 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_annot(
         flags: 0,
     };
     skip_white(&raw mut (*args).curptr, (*args).endptr);
-    if *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '@' as i32
-    {
+    if *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '@' as i32 {
         ident = parse_opt_ident(&raw mut (*args).curptr, (*args).endptr);
         skip_white(&raw mut (*args).curptr, (*args).endptr);
     }
     transform_info_clear(&raw mut ti);
-    if spc_util_read_dimtrns(spe, &raw mut ti, args, 0 as ::core::ffi::c_int)
-        < 0 as ::core::ffi::c_int
-    {
+    if spc_util_read_dimtrns(spe, &raw mut ti, args, 0 as ::core::ffi::c_int) < 0 as ::core::ffi::c_int {
         free(ident as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
     }
-    if ti.flags & INFO_HAS_USER_BBOX != 0
-        && (ti.flags & INFO_HAS_WIDTH != 0 || ti.flags & INFO_HAS_HEIGHT != 0)
-    {
-        pdf_warning!(
-            b"You can't specify both bbox and width/height.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+    if ti.flags & INFO_HAS_USER_BBOX != 0 && (ti.flags & INFO_HAS_WIDTH != 0 || ti.flags & INFO_HAS_HEIGHT != 0) {
+        pdf_warning!(b"You can't specify both bbox and width/height.\0" as *const u8 as *const ::core::ffi::c_char);
         free(ident as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
     }
-    annot_dict =
-        parse_pdf_dict_with_tounicode(&raw mut (*args).curptr, (*args).endptr, &raw mut (*sd).cd);
+    annot_dict = parse_pdf_dict_with_tounicode(&raw mut (*args).curptr, (*args).endptr, &raw mut (*sd).cd);
     if annot_dict.is_null() {
-        pdf_warning!(
-            b"Could not find dictionary object.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Could not find dictionary object.\0" as *const u8 as *const ::core::ffi::c_char);
         free(ident as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
     } else if !(!annot_dict.is_null() && pdf_obj_typeof(annot_dict) == PDF_DICT) {
-        pdf_warning!(
-            b"Invalid type: not dictionary object.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Invalid type: not dictionary object.\0" as *const u8 as *const ::core::ffi::c_char);
         free(ident as *mut ::core::ffi::c_void);
         pdf_release_obj(annot_dict);
         return -(1 as ::core::ffi::c_int);
@@ -1727,42 +1330,29 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_annot(
     pdf_release_obj(annot_dict);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_bann(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_bann(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut ident: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     if !(*sd).annot_dict.is_null() {
-        pdf_warning!(
-            b"Can't begin an annotation when one is pending.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Can't begin an annotation when one is pending.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     skip_white(&raw mut (*args).curptr, (*args).endptr);
-    if *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '@' as i32
-    {
+    if *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '@' as i32 {
         ident = parse_opt_ident(&raw mut (*args).curptr, (*args).endptr);
         skip_white(&raw mut (*args).curptr, (*args).endptr);
     }
-    (*sd).annot_dict =
-        parse_pdf_dict_with_tounicode(&raw mut (*args).curptr, (*args).endptr, &raw mut (*sd).cd);
+    (*sd).annot_dict = parse_pdf_dict_with_tounicode(&raw mut (*args).curptr, (*args).endptr, &raw mut (*sd).cd);
     if (*sd).annot_dict.is_null() {
-        pdf_warning!(
-            b"Ignoring annotation with invalid dictionary.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Ignoring annotation with invalid dictionary.\0" as *const u8 as *const ::core::ffi::c_char);
         if !ident.is_null() {
             free(ident as *mut ::core::ffi::c_void);
         }
         return -(1 as ::core::ffi::c_int);
     } else if !(!(*sd).annot_dict.is_null() && pdf_obj_typeof((*sd).annot_dict) == PDF_DICT) {
-        pdf_warning!(
-            b"Invalid type: not a dictionary object.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Invalid type: not a dictionary object.\0" as *const u8 as *const ::core::ffi::c_char);
         pdf_release_obj((*sd).annot_dict);
         (*sd).annot_dict = ::core::ptr::null_mut::<pdf_obj>();
         if !ident.is_null() {
@@ -1777,18 +1367,12 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_bann(
     }
     return error;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_eann(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_eann(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     if (*sd).annot_dict.is_null() {
-        pdf_warning!(
-            b"Tried to end an annotation without starting one!\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Tried to end an annotation without starting one!\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     error = spc_end_annot(spe);
@@ -1796,10 +1380,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_eann(
     (*sd).annot_dict = ::core::ptr::null_mut::<pdf_obj>();
     return error;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_xann(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_xann(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut rect: pdf_rect = pdf_rect {
         llx: 0.,
         lly: 0.,
@@ -1832,28 +1413,18 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_xann(
     }
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     transform_info_clear(&raw mut ti);
-    if spc_util_read_dimtrns(spe, &raw mut ti, args, 0 as ::core::ffi::c_int)
-        < 0 as ::core::ffi::c_int
-    {
+    if spc_util_read_dimtrns(spe, &raw mut ti, args, 0 as ::core::ffi::c_int) < 0 as ::core::ffi::c_int {
         return -(1 as ::core::ffi::c_int);
     }
-    if ti.flags & INFO_HAS_USER_BBOX != 0
-        && (ti.flags & INFO_HAS_WIDTH != 0 || ti.flags & INFO_HAS_HEIGHT != 0)
-    {
-        pdf_warning!(
-            b"You can't specify both bbox and width/height.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+    if ti.flags & INFO_HAS_USER_BBOX != 0 && (ti.flags & INFO_HAS_WIDTH != 0 || ti.flags & INFO_HAS_HEIGHT != 0) {
+        pdf_warning!(b"You can't specify both bbox and width/height.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     set_rect_for_annot(spe, &raw mut rect, ti);
     pdf_doc_expand_box(&raw mut rect);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_bcolor(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_bcolor(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut fc: pdf_color = pdf_color {
         res_id: 0,
@@ -1876,28 +1447,20 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_bcolor(
     skip_white(&raw mut (*ap).curptr, (*ap).endptr);
     pdf_color_get_current(&raw mut psc, &raw mut pfc);
     if (*ap).curptr < (*ap).endptr
-        && (*(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-            == 'f' as i32
-            || *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                == 's' as i32)
+        && (*(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == 'f' as i32
+            || *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == 's' as i32)
     {
         pdf_color_copycolor(&raw mut sc, psc);
         pdf_color_copycolor(&raw mut fc, pfc);
         while error == 0 && (*ap).curptr < (*ap).endptr {
-            if (*ap).curptr
-                <= (*ap)
-                    .endptr
-                    .offset(strlen(b"fill\0" as *const u8 as *const ::core::ffi::c_char) as isize)
+            if (*ap).curptr <= (*ap).endptr.offset(strlen(b"fill\0" as *const u8 as *const ::core::ffi::c_char) as isize)
                 && memcmp(
                     (*ap).curptr as *const ::core::ffi::c_void,
-                    b"fill\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
+                    b"fill\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                     strlen(b"fill\0" as *const u8 as *const ::core::ffi::c_char),
                 ) == 0
             {
-                (*ap).curptr = (*ap)
-                    .curptr
-                    .offset(strlen(b"fill\0" as *const u8 as *const ::core::ffi::c_char) as isize);
+                (*ap).curptr = (*ap).curptr.offset(strlen(b"fill\0" as *const u8 as *const ::core::ffi::c_char) as isize);
                 skip_white(&raw mut (*ap).curptr, (*ap).endptr);
                 error = spc_util_read_pdfcolor(spe, &raw mut fc, ap, pfc);
             } else if (*ap).curptr
@@ -1906,14 +1469,13 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_bcolor(
                     .offset(strlen(b"stroke\0" as *const u8 as *const ::core::ffi::c_char) as isize)
                 && memcmp(
                     (*ap).curptr as *const ::core::ffi::c_void,
-                    b"stroke\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
+                    b"stroke\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                     strlen(b"stroke\0" as *const u8 as *const ::core::ffi::c_char),
                 ) == 0
             {
-                (*ap).curptr = (*ap).curptr.offset(strlen(
-                    b"stroke\0" as *const u8 as *const ::core::ffi::c_char,
-                ) as isize);
+                (*ap).curptr = (*ap)
+                    .curptr
+                    .offset(strlen(b"stroke\0" as *const u8 as *const ::core::ffi::c_char) as isize);
                 skip_white(&raw mut (*ap).curptr, (*ap).endptr);
                 error = spc_util_read_pdfcolor(spe, &raw mut sc, ap, psc);
             }
@@ -1937,10 +1499,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_bcolor(
     }
     return error;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_scolor(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_scolor(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut fc: pdf_color = pdf_color {
         res_id: 0,
@@ -1963,28 +1522,20 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_scolor(
     skip_white(&raw mut (*ap).curptr, (*ap).endptr);
     pdf_color_get_current(&raw mut psc, &raw mut pfc);
     if (*ap).curptr < (*ap).endptr
-        && (*(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-            == 'f' as i32
-            || *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                == 's' as i32)
+        && (*(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == 'f' as i32
+            || *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == 's' as i32)
     {
         pdf_color_copycolor(&raw mut sc, psc);
         pdf_color_copycolor(&raw mut fc, pfc);
         while error == 0 && (*ap).curptr < (*ap).endptr {
-            if (*ap).curptr
-                <= (*ap)
-                    .endptr
-                    .offset(strlen(b"fill\0" as *const u8 as *const ::core::ffi::c_char) as isize)
+            if (*ap).curptr <= (*ap).endptr.offset(strlen(b"fill\0" as *const u8 as *const ::core::ffi::c_char) as isize)
                 && memcmp(
                     (*ap).curptr as *const ::core::ffi::c_void,
-                    b"fill\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
+                    b"fill\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                     strlen(b"fill\0" as *const u8 as *const ::core::ffi::c_char),
                 ) == 0
             {
-                (*ap).curptr = (*ap)
-                    .curptr
-                    .offset(strlen(b"fill\0" as *const u8 as *const ::core::ffi::c_char) as isize);
+                (*ap).curptr = (*ap).curptr.offset(strlen(b"fill\0" as *const u8 as *const ::core::ffi::c_char) as isize);
                 skip_white(&raw mut (*ap).curptr, (*ap).endptr);
                 error = spc_util_read_pdfcolor(spe, &raw mut fc, ap, pfc);
             } else if (*ap).curptr
@@ -1993,14 +1544,13 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_scolor(
                     .offset(strlen(b"stroke\0" as *const u8 as *const ::core::ffi::c_char) as isize)
                 && memcmp(
                     (*ap).curptr as *const ::core::ffi::c_void,
-                    b"stroke\0" as *const u8 as *const ::core::ffi::c_char
-                        as *const ::core::ffi::c_void,
+                    b"stroke\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
                     strlen(b"stroke\0" as *const u8 as *const ::core::ffi::c_char),
                 ) == 0
             {
-                (*ap).curptr = (*ap).curptr.offset(strlen(
-                    b"stroke\0" as *const u8 as *const ::core::ffi::c_char,
-                ) as isize);
+                (*ap).curptr = (*ap)
+                    .curptr
+                    .offset(strlen(b"stroke\0" as *const u8 as *const ::core::ffi::c_char) as isize);
                 skip_white(&raw mut (*ap).curptr, (*ap).endptr);
                 error = spc_util_read_pdfcolor(spe, &raw mut sc, ap, psc);
             }
@@ -2023,17 +1573,11 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_scolor(
     }
     return error;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_ecolor(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_ecolor(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     pdf_color_pop();
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_btrans(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_btrans(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut M: pdf_tmatrix = pdf_tmatrix {
         a: 0.,
         b: 0.,
@@ -2064,9 +1608,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_btrans(
         flags: 0,
     };
     transform_info_clear(&raw mut ti);
-    if spc_util_read_dimtrns(spe, &raw mut ti, args, 0 as ::core::ffi::c_int)
-        < 0 as ::core::ffi::c_int
-    {
+    if spc_util_read_dimtrns(spe, &raw mut ti, args, 0 as ::core::ffi::c_int) < 0 as ::core::ffi::c_int {
         return -(1 as ::core::ffi::c_int);
     }
     spc_get_current_point(spe, &raw mut cp);
@@ -2082,19 +1624,13 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_btrans(
     pdf_dev_concat(&raw mut M);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_etrans(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_etrans(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     pdf_dev_grestore();
     pdf_dev_reset_color(0 as ::core::ffi::c_int);
     pdf_dev_reset_xgstate(0 as ::core::ffi::c_int);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_outline(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_outline(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut item_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -2103,9 +1639,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_outline(
     let mut is_open: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut current_depth: ::core::ffi::c_int = 0;
     skip_white(&raw mut (*args).curptr, (*args).endptr);
-    if (*args).curptr.offset(3 as ::core::ffi::c_int as isize) < (*args).endptr
-        && *(*args).curptr as ::core::ffi::c_int == '[' as i32
-    {
+    if (*args).curptr.offset(3 as ::core::ffi::c_int as isize) < (*args).endptr && *(*args).curptr as ::core::ffi::c_int == '[' as i32 {
         (*args).curptr = (*args).curptr.offset(1);
         if *(*args).curptr as ::core::ffi::c_int == '-' as i32 {
             (*args).curptr = (*args).curptr.offset(1);
@@ -2115,35 +1649,21 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_outline(
         (*args).curptr = (*args).curptr.offset(1);
     }
     skip_white(&raw mut (*args).curptr, (*args).endptr);
-    tmp = parse_pdf_object(
-        &raw mut (*args).curptr,
-        (*args).endptr,
-        ::core::ptr::null_mut::<pdf_file>(),
-    );
+    tmp = parse_pdf_object(&raw mut (*args).curptr, (*args).endptr, ::core::ptr::null_mut::<pdf_file>());
     if tmp.is_null() {
-        pdf_warning!(
-            b"Missing number for outline item depth.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Missing number for outline item depth.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     } else if !(!tmp.is_null() && pdf_obj_typeof(tmp) == PDF_NUMBER) {
         pdf_release_obj(tmp);
-        pdf_warning!(
-            b"Expecting number for outline item depth.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Expecting number for outline item depth.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     item_dict = ::core::ptr::null_mut::<pdf_obj>();
     level = pdf_number_value(tmp) as ::core::ffi::c_int;
     pdf_release_obj(tmp);
-    (*sd).lowest_level = if (*sd).lowest_level < level {
-        (*sd).lowest_level
-    } else {
-        level
-    };
+    (*sd).lowest_level = if (*sd).lowest_level < level { (*sd).lowest_level } else { level };
     level += 1 as ::core::ffi::c_int - (*sd).lowest_level;
-    item_dict =
-        parse_pdf_dict_with_tounicode(&raw mut (*args).curptr, (*args).endptr, &raw mut (*sd).cd);
+    item_dict = parse_pdf_dict_with_tounicode(&raw mut (*args).curptr, (*args).endptr, &raw mut (*sd).cd);
     if item_dict.is_null() {
         pdf_warning!(b"Ignoring invalid dictionary.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
@@ -2171,10 +1691,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_outline(
     pdf_doc_bookmarks_add(item_dict, is_open);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_article(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_article(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut ident: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -2182,18 +1699,12 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_article(
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     ident = parse_opt_ident(&raw mut (*args).curptr, (*args).endptr);
     if ident.is_null() {
-        pdf_warning!(
-            b"Article name expected but not found.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Article name expected but not found.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
-    info_dict =
-        parse_pdf_dict_with_tounicode(&raw mut (*args).curptr, (*args).endptr, &raw mut (*sd).cd);
+    info_dict = parse_pdf_dict_with_tounicode(&raw mut (*args).curptr, (*args).endptr, &raw mut (*sd).cd);
     if info_dict.is_null() {
-        pdf_warning!(
-            b"Ignoring article with invalid info dictionary.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Ignoring article with invalid info dictionary.\0" as *const u8 as *const ::core::ffi::c_char);
         free(ident as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
     }
@@ -2202,10 +1713,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_article(
     free(ident as *mut ::core::ffi::c_void);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_bead(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_bead(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut article: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -2239,53 +1747,32 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_bead(
         flags: 0,
     };
     skip_white(&raw mut (*args).curptr, (*args).endptr);
-    if *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '@' as i32
-    {
-        pdf_warning!(
-            b"Article identifier expected but not found.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+    if *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '@' as i32 {
+        pdf_warning!(b"Article identifier expected but not found.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     article_name = parse_opt_ident(&raw mut (*args).curptr, (*args).endptr);
     if article_name.is_null() {
-        pdf_warning!(
-            b"Article reference expected but not found.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Article reference expected but not found.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     transform_info_clear(&raw mut ti);
-    if spc_util_read_dimtrns(spe, &raw mut ti, args, 0 as ::core::ffi::c_int)
-        < 0 as ::core::ffi::c_int
-    {
+    if spc_util_read_dimtrns(spe, &raw mut ti, args, 0 as ::core::ffi::c_int) < 0 as ::core::ffi::c_int {
         free(article_name as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
     }
-    if ti.flags & INFO_HAS_USER_BBOX != 0
-        && (ti.flags & INFO_HAS_WIDTH != 0 || ti.flags & INFO_HAS_HEIGHT != 0)
-    {
-        pdf_warning!(
-            b"You can't specify both bbox and width/height.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+    if ti.flags & INFO_HAS_USER_BBOX != 0 && (ti.flags & INFO_HAS_WIDTH != 0 || ti.flags & INFO_HAS_HEIGHT != 0) {
+        pdf_warning!(b"You can't specify both bbox and width/height.\0" as *const u8 as *const ::core::ffi::c_char);
         free(article_name as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
     }
     skip_white(&raw mut (*args).curptr, (*args).endptr);
-    if *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '<' as i32
-    {
+    if *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int != '<' as i32 {
         article_info = pdf_new_dict();
     } else {
-        article_info = parse_pdf_dict_with_tounicode(
-            &raw mut (*args).curptr,
-            (*args).endptr,
-            &raw mut (*sd).cd,
-        );
+        article_info = parse_pdf_dict_with_tounicode(&raw mut (*args).curptr, (*args).endptr, &raw mut (*sd).cd);
         if article_info.is_null() {
-            pdf_warning!(
-                b"Error in reading dictionary.\0" as *const u8 as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Error in reading dictionary.\0" as *const u8 as *const ::core::ffi::c_char);
             free(article_name as *mut ::core::ffi::c_void);
             return -(1 as ::core::ffi::c_int);
         }
@@ -2300,19 +1787,11 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_bead(
     }
     page_no = pdf_doc_current_page_number();
     set_rect_for_annot(spe, &raw mut rect, ti);
-    pdf_doc_add_bead(
-        article_name,
-        ::core::ptr::null::<::core::ffi::c_char>(),
-        page_no,
-        &raw mut rect,
-    );
+    pdf_doc_add_bead(article_name, ::core::ptr::null::<::core::ffi::c_char>(), page_no, &raw mut rect);
     free(article_name as *mut ::core::ffi::c_void);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_image(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_image(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut xobj_id: ::core::ffi::c_int = 0;
     let mut ident: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut fspec: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -2342,43 +1821,24 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_image(
         dict: ::core::ptr::null_mut::<pdf_obj>(),
     };
     skip_white(&raw mut (*args).curptr, (*args).endptr);
-    if *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '@' as i32
-    {
+    if *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '@' as i32 {
         ident = parse_opt_ident(&raw mut (*args).curptr, (*args).endptr);
         skip_white(&raw mut (*args).curptr, (*args).endptr);
     }
     transform_info_clear(&raw mut ti);
-    if spc_util_read_blahblah(
-        spe,
-        &raw mut ti,
-        &raw mut options.page_no,
-        &raw mut options.bbox_type,
-        args,
-    ) < 0 as ::core::ffi::c_int
-    {
-        pdf_warning!(
-            b"Reading option field in pdf:image failed.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+    if spc_util_read_blahblah(spe, &raw mut ti, &raw mut options.page_no, &raw mut options.bbox_type, args) < 0 as ::core::ffi::c_int {
+        pdf_warning!(b"Reading option field in pdf:image failed.\0" as *const u8 as *const ::core::ffi::c_char);
         free(ident as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
     }
     skip_white(&raw mut (*args).curptr, (*args).endptr);
-    fspec = parse_pdf_object(
-        &raw mut (*args).curptr,
-        (*args).endptr,
-        ::core::ptr::null_mut::<pdf_file>(),
-    );
+    fspec = parse_pdf_object(&raw mut (*args).curptr, (*args).endptr, ::core::ptr::null_mut::<pdf_file>());
     if fspec.is_null() {
-        pdf_warning!(
-            b"Missing filename string for pdf:image.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Missing filename string for pdf:image.\0" as *const u8 as *const ::core::ffi::c_char);
         free(ident as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
     } else if !(!fspec.is_null() && pdf_obj_typeof(fspec) == PDF_STRING) {
-        pdf_warning!(
-            b"Missing filename string for pdf:image.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Missing filename string for pdf:image.\0" as *const u8 as *const ::core::ffi::c_char);
         pdf_release_obj(fspec);
         free(ident as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
@@ -2400,15 +1860,9 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_image(
             spe as *mut ::core::ffi::c_void,
         );
     }
-    xobj_id = pdf_ximage_load_image(
-        ident,
-        pdf_string_value(fspec) as *const ::core::ffi::c_char,
-        options,
-    );
+    xobj_id = pdf_ximage_load_image(ident, pdf_string_value(fspec) as *const ::core::ffi::c_char, options);
     if xobj_id < 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Could not find image resource...\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Could not find image resource...\0" as *const u8 as *const ::core::ffi::c_char);
         pdf_release_obj(fspec);
         free(ident as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
@@ -2417,8 +1871,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_image(
         spc_put_image(spe, xobj_id, &raw mut ti, (*spe).x_user, (*spe).y_user);
     }
     if !ident.is_null() {
-        if dpx_conf.compat_mode as ::core::ffi::c_uint
-            == dpx_mode_compat_mode as ::core::ffi::c_int as ::core::ffi::c_uint
+        if dpx_conf.compat_mode as ::core::ffi::c_uint == dpx_mode_compat_mode as ::core::ffi::c_int as ::core::ffi::c_uint
             && pdf_ximage_get_subtype(xobj_id) == PDF_XOBJECT_TYPE_IMAGE
         {
             pdf_ximage_set_attr(
@@ -2438,29 +1891,16 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_image(
     pdf_release_obj(fspec);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_dest(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_dest(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut name: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut array: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     skip_white(&raw mut (*args).curptr, (*args).endptr);
-    name = parse_pdf_object(
-        &raw mut (*args).curptr,
-        (*args).endptr,
-        ::core::ptr::null_mut::<pdf_file>(),
-    );
+    name = parse_pdf_object(&raw mut (*args).curptr, (*args).endptr, ::core::ptr::null_mut::<pdf_file>());
     if name.is_null() {
-        pdf_warning!(
-            b"PDF string expected for destination name but not found.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"PDF string expected for destination name but not found.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     } else if !(!name.is_null() && pdf_obj_typeof(name) == PDF_STRING) {
-        pdf_warning!(
-            b"PDF string expected for destination name but invalid type.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"PDF string expected for destination name but invalid type.\0" as *const u8 as *const ::core::ffi::c_char);
         pdf_release_obj(name);
         return -(1 as ::core::ffi::c_int);
     }
@@ -2470,25 +1910,16 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_dest(
         ::core::ptr::null_mut::<pdf_file>(),
         Some(
             parse_pdf_reference
-                as unsafe extern "C-unwind" fn(
-                    *mut *const ::core::ffi::c_char,
-                    *const ::core::ffi::c_char,
-                    *mut ::core::ffi::c_void,
-                ) -> *mut pdf_obj,
+                as unsafe extern "C-unwind" fn(*mut *const ::core::ffi::c_char, *const ::core::ffi::c_char, *mut ::core::ffi::c_void) -> *mut pdf_obj,
         ),
         spe as *mut ::core::ffi::c_void,
     );
     if array.is_null() {
-        pdf_warning!(
-            b"No destination specified for pdf:dest.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"No destination specified for pdf:dest.\0" as *const u8 as *const ::core::ffi::c_char);
         pdf_release_obj(name);
         return -(1 as ::core::ffi::c_int);
     } else if !(!array.is_null() && pdf_obj_typeof(array) == PDF_ARRAY) {
-        pdf_warning!(
-            b"Destination not specified as an array object!\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Destination not specified as an array object!\0" as *const u8 as *const ::core::ffi::c_char);
         pdf_release_obj(name);
         pdf_release_obj(array);
         return -(1 as ::core::ffi::c_int);
@@ -2502,30 +1933,19 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_dest(
     pdf_release_obj(name);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_names(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_names(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut category: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut key: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut value: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut tmp: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut i: ::core::ffi::c_int = 0;
     let mut size: ::core::ffi::c_int = 0;
-    category = parse_pdf_object(
-        &raw mut (*args).curptr,
-        (*args).endptr,
-        ::core::ptr::null_mut::<pdf_file>(),
-    );
+    category = parse_pdf_object(&raw mut (*args).curptr, (*args).endptr, ::core::ptr::null_mut::<pdf_file>());
     if category.is_null() {
-        pdf_warning!(
-            b"PDF name expected but not found.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"PDF name expected but not found.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     } else if !(!category.is_null() && pdf_obj_typeof(category) == PDF_NAME) {
-        pdf_warning!(
-            b"PDF name expected but not found.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"PDF name expected but not found.\0" as *const u8 as *const ::core::ffi::c_char);
         pdf_release_obj(category);
         return -(1 as ::core::ffi::c_int);
     }
@@ -2535,27 +1955,18 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_names(
         ::core::ptr::null_mut::<pdf_file>(),
         Some(
             parse_pdf_reference
-                as unsafe extern "C-unwind" fn(
-                    *mut *const ::core::ffi::c_char,
-                    *const ::core::ffi::c_char,
-                    *mut ::core::ffi::c_void,
-                ) -> *mut pdf_obj,
+                as unsafe extern "C-unwind" fn(*mut *const ::core::ffi::c_char, *const ::core::ffi::c_char, *mut ::core::ffi::c_void) -> *mut pdf_obj,
         ),
         spe as *mut ::core::ffi::c_void,
     );
     if tmp.is_null() {
-        pdf_warning!(
-            b"PDF object expected but not found.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"PDF object expected but not found.\0" as *const u8 as *const ::core::ffi::c_char);
         pdf_release_obj(category);
         return -(1 as ::core::ffi::c_int);
     } else if !tmp.is_null() && pdf_obj_typeof(tmp) == PDF_ARRAY {
         size = pdf_array_length(tmp) as ::core::ffi::c_int;
         if size % 2 as ::core::ffi::c_int != 0 as ::core::ffi::c_int {
-            pdf_warning!(
-                b"Array size not multiple of 2 for pdf:names.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Array size not multiple of 2 for pdf:names.\0" as *const u8 as *const ::core::ffi::c_char);
             pdf_release_obj(category);
             pdf_release_obj(tmp);
             return -(1 as ::core::ffi::c_int);
@@ -2565,9 +1976,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_names(
             key = pdf_get_array(tmp, 2 as ::core::ffi::c_int * i);
             value = pdf_get_array(tmp, 2 as ::core::ffi::c_int * i + 1 as ::core::ffi::c_int);
             if !(!key.is_null() && pdf_obj_typeof(key) == PDF_STRING) {
-                pdf_warning!(
-                    b"Name tree key must be string.\0" as *const u8 as *const ::core::ffi::c_char
-                );
+                pdf_warning!(b"Name tree key must be string.\0" as *const u8 as *const ::core::ffi::c_char);
                 pdf_release_obj(category);
                 pdf_release_obj(tmp);
                 return -(1 as ::core::ffi::c_int);
@@ -2578,10 +1987,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_names(
                 pdf_link_obj(value),
             ) < 0 as ::core::ffi::c_int
             {
-                pdf_warning!(
-                    b"Failed to add Name tree entry...\0" as *const u8
-                        as *const ::core::ffi::c_char
-                );
+                pdf_warning!(b"Failed to add Name tree entry...\0" as *const u8 as *const ::core::ffi::c_char);
                 pdf_release_obj(category);
                 pdf_release_obj(tmp);
                 return -(1 as ::core::ffi::c_int);
@@ -2608,9 +2014,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_names(
         if value.is_null() {
             pdf_release_obj(category);
             pdf_release_obj(key);
-            pdf_warning!(
-                b"PDF object expected but not found.\0" as *const u8 as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"PDF object expected but not found.\0" as *const u8 as *const ::core::ffi::c_char);
             return -(1 as ::core::ffi::c_int);
         }
         if pdf_doc_add_names(
@@ -2620,9 +2024,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_names(
             value,
         ) < 0 as ::core::ffi::c_int
         {
-            pdf_warning!(
-                b"Failed to add Name tree entry...\0" as *const u8 as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Failed to add Name tree entry...\0" as *const u8 as *const ::core::ffi::c_char);
             pdf_release_obj(category);
             pdf_release_obj(key);
             return -(1 as ::core::ffi::c_int);
@@ -2631,29 +2033,20 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_names(
     } else {
         pdf_release_obj(tmp);
         pdf_release_obj(category);
-        pdf_warning!(
-            b"Invalid object type for pdf:names.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Invalid object type for pdf:names.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     pdf_release_obj(category);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_docinfo(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_docinfo(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut docinfo: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    dict =
-        parse_pdf_dict_with_tounicode(&raw mut (*args).curptr, (*args).endptr, &raw mut (*sd).cd);
+    dict = parse_pdf_dict_with_tounicode(&raw mut (*args).curptr, (*args).endptr, &raw mut (*sd).cd);
     if dict.is_null() {
-        pdf_warning!(
-            b"Dictionary object expected but not found.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Dictionary object expected but not found.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     docinfo = pdf_doc_get_dictionary(b"Info\0" as *const u8 as *const ::core::ffi::c_char);
@@ -2661,49 +2054,30 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_docinfo(
     pdf_release_obj(dict);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_docview(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_docview(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut catalog: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut pref_old: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut pref_add: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
-    dict =
-        parse_pdf_dict_with_tounicode(&raw mut (*args).curptr, (*args).endptr, &raw mut (*sd).cd);
+    dict = parse_pdf_dict_with_tounicode(&raw mut (*args).curptr, (*args).endptr, &raw mut (*sd).cd);
     if dict.is_null() {
-        pdf_warning!(
-            b"Dictionary object expected but not found.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Dictionary object expected but not found.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     catalog = pdf_doc_get_dictionary(b"Catalog\0" as *const u8 as *const ::core::ffi::c_char);
-    pref_old = pdf_lookup_dict(
-        catalog,
-        b"ViewerPreferences\0" as *const u8 as *const ::core::ffi::c_char,
-    );
-    pref_add = pdf_lookup_dict(
-        dict,
-        b"ViewerPreferences\0" as *const u8 as *const ::core::ffi::c_char,
-    );
+    pref_old = pdf_lookup_dict(catalog, b"ViewerPreferences\0" as *const u8 as *const ::core::ffi::c_char);
+    pref_add = pdf_lookup_dict(dict, b"ViewerPreferences\0" as *const u8 as *const ::core::ffi::c_char);
     if !pref_old.is_null() && !pref_add.is_null() {
         pdf_merge_dict(pref_old, pref_add);
-        pdf_remove_dict(
-            dict,
-            b"ViewerPreferences\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_remove_dict(dict, b"ViewerPreferences\0" as *const u8 as *const ::core::ffi::c_char);
     }
     pdf_merge_dict(catalog, dict);
     pdf_release_obj(dict);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_close(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_close(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut ident: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     ident = parse_opt_ident(&raw mut (*args).curptr, (*args).endptr);
@@ -2711,26 +2085,18 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_close(
         spc_flush_object(spe, ident);
         free(ident as *mut ::core::ffi::c_void);
     } else {
-        pdf_warning!(
-            b"pdf:close without an argument no longer supported!\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"pdf:close without an argument no longer supported!\0" as *const u8 as *const ::core::ffi::c_char);
         spc_clear_objects(spe);
     }
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_object(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_object(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut ident: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut object: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     ident = parse_opt_ident(&raw mut (*args).curptr, (*args).endptr);
     if ident.is_null() {
-        pdf_warning!(
-            b"Could not find a object identifier.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Could not find a object identifier.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     object = parse_pdf_object_extended(
@@ -2739,18 +2105,13 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_object(
         ::core::ptr::null_mut::<pdf_file>(),
         Some(
             parse_pdf_reference
-                as unsafe extern "C-unwind" fn(
-                    *mut *const ::core::ffi::c_char,
-                    *const ::core::ffi::c_char,
-                    *mut ::core::ffi::c_void,
-                ) -> *mut pdf_obj,
+                as unsafe extern "C-unwind" fn(*mut *const ::core::ffi::c_char, *const ::core::ffi::c_char, *mut ::core::ffi::c_void) -> *mut pdf_obj,
         ),
         spe as *mut ::core::ffi::c_void,
     );
     if object.is_null() {
         pdf_warning!(
-            b"Could not find an object definition for \"%s\".\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Could not find an object definition for \"%s\".\0" as *const u8 as *const ::core::ffi::c_char,
             ident
         );
         free(ident as *mut ::core::ffi::c_void);
@@ -2761,10 +2122,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_object(
     free(ident as *mut ::core::ffi::c_void);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_content(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_content(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     if (*args).curptr < (*args).endptr {
@@ -2786,77 +2144,49 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_content(
         M.f = cp.y;
         let fresh2 = len;
         len = len + 1;
-        *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh2 as isize) =
-            ' ' as i32 as ::core::ffi::c_char;
+        *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh2 as isize) = ' ' as i32 as ::core::ffi::c_char;
         let fresh3 = len;
         len = len + 1;
-        *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh3 as isize) =
-            'q' as i32 as ::core::ffi::c_char;
+        *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh3 as isize) = 'q' as i32 as ::core::ffi::c_char;
         let fresh4 = len;
         len = len + 1;
-        *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh4 as isize) =
-            ' ' as i32 as ::core::ffi::c_char;
-        len += pdf_sprint_matrix(
-            (&raw mut work_buffer as *mut ::core::ffi::c_char).offset(len as isize),
-            &raw mut M,
-        );
+        *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh4 as isize) = ' ' as i32 as ::core::ffi::c_char;
+        len += pdf_sprint_matrix((&raw mut work_buffer as *mut ::core::ffi::c_char).offset(len as isize), &raw mut M);
         let fresh5 = len;
         len = len + 1;
-        *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh5 as isize) =
-            ' ' as i32 as ::core::ffi::c_char;
+        *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh5 as isize) = ' ' as i32 as ::core::ffi::c_char;
         let fresh6 = len;
         len = len + 1;
-        *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh6 as isize) =
-            'c' as i32 as ::core::ffi::c_char;
+        *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh6 as isize) = 'c' as i32 as ::core::ffi::c_char;
         let fresh7 = len;
         len = len + 1;
-        *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh7 as isize) =
-            'm' as i32 as ::core::ffi::c_char;
+        *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh7 as isize) = 'm' as i32 as ::core::ffi::c_char;
         let fresh8 = len;
         len = len + 1;
-        *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh8 as isize) =
-            ' ' as i32 as ::core::ffi::c_char;
-        pdf_doc_add_page_content(
-            &raw mut work_buffer as *mut ::core::ffi::c_char,
-            len as ::core::ffi::c_uint,
-        );
-        len =
-            (*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as ::core::ffi::c_int;
+        *(&raw mut work_buffer as *mut ::core::ffi::c_char).offset(fresh8 as isize) = ' ' as i32 as ::core::ffi::c_char;
+        pdf_doc_add_page_content(&raw mut work_buffer as *mut ::core::ffi::c_char, len as ::core::ffi::c_uint);
+        len = (*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as ::core::ffi::c_int;
         pdf_doc_add_page_content((*args).curptr, len as ::core::ffi::c_uint);
-        pdf_doc_add_page_content(
-            b" Q\0" as *const u8 as *const ::core::ffi::c_char,
-            2 as ::core::ffi::c_uint,
-        );
+        pdf_doc_add_page_content(b" Q\0" as *const u8 as *const ::core::ffi::c_char, 2 as ::core::ffi::c_uint);
     }
     (*args).curptr = (*args).endptr;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_literal(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_literal(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut direct: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     while (*args).curptr < (*args).endptr {
         if (*args).curptr.offset(7 as ::core::ffi::c_int as isize) <= (*args).endptr
-            && !strstartswith(
-                (*args).curptr,
-                b"reverse\0" as *const u8 as *const ::core::ffi::c_char,
-            )
-            .is_null()
+            && !strstartswith((*args).curptr, b"reverse\0" as *const u8 as *const ::core::ffi::c_char).is_null()
         {
             (*args).curptr = (*args).curptr.offset(7 as ::core::ffi::c_int as isize);
             pdf_warning!(
-                b"The special \"pdf:literal reverse ...\" is no longer supported.\nIgnore the \"reverse\" option.\0"
-                as * const u8 as * const ::core::ffi::c_char,
+                b"The special \"pdf:literal reverse ...\" is no longer supported.\nIgnore the \"reverse\" option.\0" as *const u8
+                    as *const ::core::ffi::c_char,
             );
         } else {
             if !((*args).curptr.offset(6 as ::core::ffi::c_int as isize) <= (*args).endptr
-                && !strstartswith(
-                    (*args).curptr,
-                    b"direct\0" as *const u8 as *const ::core::ffi::c_char,
-                )
-                .is_null())
+                && !strstartswith((*args).curptr, b"direct\0" as *const u8 as *const ::core::ffi::c_char).is_null())
             {
                 break;
             }
@@ -2885,14 +2215,10 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_literal(
             M.f = cp.y;
             pdf_dev_concat(&raw mut M);
         }
-        pdf_doc_add_page_content(
-            b" \0" as *const u8 as *const ::core::ffi::c_char,
-            1 as ::core::ffi::c_uint,
-        );
+        pdf_doc_add_page_content(b" \0" as *const u8 as *const ::core::ffi::c_char, 1 as ::core::ffi::c_uint);
         pdf_doc_add_page_content(
             (*args).curptr,
-            (*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as ::core::ffi::c_int
-                as ::core::ffi::c_uint,
+            (*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as ::core::ffi::c_int as ::core::ffi::c_uint,
         );
         if direct == 0 {
             M.e = -cp.x;
@@ -2903,10 +2229,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_literal(
     (*args).curptr = (*args).endptr;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_bcontent(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_bcontent(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut M: pdf_tmatrix = pdf_tmatrix {
         a: 0.,
         b: 0.,
@@ -2929,48 +2252,33 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_bcontent(
     spc_push_coord(spe, (*spe).x_user, (*spe).y_user);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_econtent(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_econtent(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     spc_pop_coord(spe);
     pdf_dev_grestore();
     pdf_dev_reset_color(0 as ::core::ffi::c_int);
     pdf_dev_reset_xgstate(0 as ::core::ffi::c_int);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_code(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_code(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     if (*args).curptr < (*args).endptr {
-        pdf_doc_add_page_content(
-            b" \0" as *const u8 as *const ::core::ffi::c_char,
-            1 as ::core::ffi::c_uint,
-        );
+        pdf_doc_add_page_content(b" \0" as *const u8 as *const ::core::ffi::c_char, 1 as ::core::ffi::c_uint);
         pdf_doc_add_page_content(
             (*args).curptr,
-            (*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as ::core::ffi::c_int
-                as ::core::ffi::c_uint,
+            (*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as ::core::ffi::c_int as ::core::ffi::c_uint,
         );
         (*args).curptr = (*args).endptr;
     }
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_do_nothing(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_do_nothing(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     (*args).curptr = (*args).endptr;
     return 0 as ::core::ffi::c_int;
 }
 pub const STRING_STREAM: ::core::ffi::c_int = 0;
 pub const FILE_STREAM: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 unsafe extern "C-unwind" fn spc_handler_pdfm_stream_with_type(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-    mut type_0: ::core::ffi::c_int,
+    mut spe: *mut spc_env, mut args: *mut spc_arg, mut type_0: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut fstream: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut nb_read: ssize_t = 0;
@@ -2981,28 +2289,17 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_stream_with_type(
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     ident = parse_opt_ident(&raw mut (*args).curptr, (*args).endptr);
     if ident.is_null() {
-        pdf_warning!(
-            b"Missing objname for pdf:(f)stream.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Missing objname for pdf:(f)stream.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     skip_white(&raw mut (*args).curptr, (*args).endptr);
-    tmp = parse_pdf_object(
-        &raw mut (*args).curptr,
-        (*args).endptr,
-        ::core::ptr::null_mut::<pdf_file>(),
-    );
+    tmp = parse_pdf_object(&raw mut (*args).curptr, (*args).endptr, ::core::ptr::null_mut::<pdf_file>());
     if tmp.is_null() {
-        pdf_warning!(
-            b"Missing input string for pdf:(f)stream.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Missing input string for pdf:(f)stream.\0" as *const u8 as *const ::core::ffi::c_char);
         free(ident as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
     } else if !(!tmp.is_null() && pdf_obj_typeof(tmp) == PDF_STRING) {
-        pdf_warning!(
-            b"Invalid type of input string for pdf:(f)stream.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Invalid type of input string for pdf:(f)stream.\0" as *const u8 as *const ::core::ffi::c_char);
         pdf_release_obj(tmp);
         free(ident as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
@@ -3011,31 +2308,21 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_stream_with_type(
     match type_0 {
         FILE_STREAM => {
             if instring.is_null() {
-                pdf_warning!(
-                    b"Missing filename for pdf:fstream.\0" as *const u8
-                        as *const ::core::ffi::c_char
-                );
+                pdf_warning!(b"Missing filename for pdf:fstream.\0" as *const u8 as *const ::core::ffi::c_char);
                 pdf_release_obj(tmp);
                 free(ident as *mut ::core::ffi::c_void);
                 return -(1 as ::core::ffi::c_int);
             }
             handle = ttstub_input_open(instring, TTBC_FILE_FORMAT_PICT, 0 as ::core::ffi::c_int);
             if handle == INVALID_HANDLE {
-                pdf_warning!(
-                    b"Could not open file: %s\0" as *const u8 as *const ::core::ffi::c_char,
-                    instring
-                );
+                pdf_warning!(b"Could not open file: %s\0" as *const u8 as *const ::core::ffi::c_char, instring);
                 pdf_release_obj(tmp);
                 free(ident as *mut ::core::ffi::c_void);
                 return -(1 as ::core::ffi::c_int);
             }
             fstream = pdf_new_stream(STREAM_COMPRESS);
             loop {
-                nb_read = ttstub_input_read_partial(
-                    handle,
-                    &raw mut work_buffer as *mut ::core::ffi::c_char,
-                    WORK_BUFFER_SIZE as size_t,
-                );
+                nb_read = ttstub_input_read_partial(handle, &raw mut work_buffer as *mut ::core::ffi::c_char, WORK_BUFFER_SIZE as size_t);
                 if !(nb_read > 0 as ssize_t) {
                     break;
                 }
@@ -3049,11 +2336,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_stream_with_type(
         }
         STRING_STREAM => {
             fstream = pdf_new_stream(STREAM_COMPRESS);
-            pdf_add_stream(
-                fstream,
-                pdf_string_value(tmp),
-                pdf_string_length(tmp) as ::core::ffi::c_int,
-            );
+            pdf_add_stream(fstream, pdf_string_value(tmp), pdf_string_length(tmp) as ::core::ffi::c_int);
         }
         _ => {
             pdf_release_obj(tmp);
@@ -3063,8 +2346,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_stream_with_type(
     }
     pdf_release_obj(tmp);
     skip_white(&raw mut (*args).curptr, (*args).endptr);
-    if *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '<' as i32
-    {
+    if *(*args).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == '<' as i32 {
         let mut stream_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
         stream_dict = pdf_stream_dict(fstream);
         tmp = parse_pdf_object_extended(
@@ -3082,17 +2364,12 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_stream_with_type(
             spe as *mut ::core::ffi::c_void,
         );
         if tmp.is_null() {
-            pdf_warning!(
-                b"Parsing dictionary failed.\0" as *const u8 as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Parsing dictionary failed.\0" as *const u8 as *const ::core::ffi::c_char);
             pdf_release_obj(fstream);
             free(ident as *mut ::core::ffi::c_void);
             return -(1 as ::core::ffi::c_int);
         } else if !(!tmp.is_null() && pdf_obj_typeof(tmp) == PDF_DICT) {
-            pdf_warning!(
-                b"Expecting dictionary type object but non-dictionary type found.\0" as *const u8
-                    as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Expecting dictionary type object but non-dictionary type found.\0" as *const u8 as *const ::core::ffi::c_char);
             pdf_release_obj(fstream);
             pdf_release_obj(tmp);
             free(ident as *mut ::core::ffi::c_void);
@@ -3100,9 +2377,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_stream_with_type(
         }
         if !pdf_lookup_dict(tmp, b"Length\0" as *const u8 as *const ::core::ffi::c_char).is_null() {
             pdf_remove_dict(tmp, b"Length\0" as *const u8 as *const ::core::ffi::c_char);
-        } else if !pdf_lookup_dict(tmp, b"Filter\0" as *const u8 as *const ::core::ffi::c_char)
-            .is_null()
-        {
+        } else if !pdf_lookup_dict(tmp, b"Filter\0" as *const u8 as *const ::core::ffi::c_char).is_null() {
             pdf_remove_dict(tmp, b"Filter\0" as *const u8 as *const ::core::ffi::c_char);
         }
         pdf_merge_dict(stream_dict, tmp);
@@ -3112,22 +2387,13 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_stream_with_type(
     free(ident as *mut ::core::ffi::c_void);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_stream(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_stream(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     return spc_handler_pdfm_stream_with_type(spe, args, STRING_STREAM);
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_fstream(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_fstream(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     return spc_handler_pdfm_stream_with_type(spe, args, FILE_STREAM);
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_bform(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_bform(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = 0;
     let mut ident: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut cropbox: pdf_rect = pdf_rect {
@@ -3160,23 +2426,17 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_bform(
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     ident = parse_opt_ident(&raw mut (*args).curptr, (*args).endptr);
     if ident.is_null() {
-        pdf_warning!(
-            b"A form XObject must have name.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"A form XObject must have name.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     transform_info_clear(&raw mut ti);
-    if spc_util_read_dimtrns(spe, &raw mut ti, args, 0 as ::core::ffi::c_int)
-        < 0 as ::core::ffi::c_int
-    {
+    if spc_util_read_dimtrns(spe, &raw mut ti, args, 0 as ::core::ffi::c_int) < 0 as ::core::ffi::c_int {
         free(ident as *mut ::core::ffi::c_void);
         return -(1 as ::core::ffi::c_int);
     }
     if ti.flags & INFO_HAS_USER_BBOX != 0 {
         if ti.bbox.urx - ti.bbox.llx == 0.0f64 || ti.bbox.ury - ti.bbox.lly == 0.0f64 {
-            pdf_warning!(
-                b"Bounding box has a zero dimension.\0" as *const u8 as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Bounding box has a zero dimension.\0" as *const u8 as *const ::core::ffi::c_char);
             free(ident as *mut ::core::ffi::c_void);
             return -(1 as ::core::ffi::c_int);
         }
@@ -3186,9 +2446,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_bform(
         cropbox.ury = ti.bbox.ury;
     } else {
         if ti.width == 0.0f64 || ti.depth + ti.height == 0.0f64 {
-            pdf_warning!(
-                b"Bounding box has a zero dimension.\0" as *const u8 as *const ::core::ffi::c_char
-            );
+            pdf_warning!(b"Bounding box has a zero dimension.\0" as *const u8 as *const ::core::ffi::c_char);
             free(ident as *mut ::core::ffi::c_void);
             return -(1 as ::core::ffi::c_int);
         }
@@ -3205,10 +2463,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_bform(
     free(ident as *mut ::core::ffi::c_void);
     return error;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_eform(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_eform(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut error: ::core::ffi::c_int = 0;
     let mut attrib: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -3237,24 +2492,14 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_eform(
     if !(*sd).pageresources.is_null() {
         pdf_foreach_dict(
             (*sd).pageresources,
-            Some(
-                forallresourcecategory
-                    as unsafe extern "C-unwind" fn(
-                        *mut pdf_obj,
-                        *mut pdf_obj,
-                        *mut ::core::ffi::c_void,
-                    ) -> ::core::ffi::c_int,
-            ),
+            Some(forallresourcecategory as unsafe extern "C-unwind" fn(*mut pdf_obj, *mut pdf_obj, *mut ::core::ffi::c_void) -> ::core::ffi::c_int),
             NULL,
         );
     }
     error = spc_end_form(spe, attrib);
     return error;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_uxobj(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_uxobj(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut xobj_id: ::core::ffi::c_int = 0;
     let mut ident: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut ti: transform_info = transform_info {
@@ -3285,9 +2530,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_uxobj(
     }
     transform_info_clear(&raw mut ti);
     if (*args).curptr < (*args).endptr {
-        if spc_util_read_dimtrns(spe, &raw mut ti, args, 0 as ::core::ffi::c_int)
-            < 0 as ::core::ffi::c_int
-        {
+        if spc_util_read_dimtrns(spe, &raw mut ti, args, 0 as ::core::ffi::c_int) < 0 as ::core::ffi::c_int {
             free(ident as *mut ::core::ffi::c_void);
             return -(1 as ::core::ffi::c_int);
         }
@@ -3300,29 +2543,17 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_uxobj(
     free(ident as *mut ::core::ffi::c_void);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_link(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_link(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     return spc_resume_annot(spe);
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_nolink(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_nolink(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     return spc_suspend_annot(spe);
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_pagesize(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_pagesize(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     (*args).curptr = (*args).endptr;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_bgcolor(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_bgcolor(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = 0;
     let mut colorspec: pdf_color = pdf_color {
         res_id: 0,
@@ -3332,12 +2563,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_bgcolor(
         values: [0.; 32],
         pattern_id: 0,
     };
-    error = spc_util_read_pdfcolor(
-        spe,
-        &raw mut colorspec,
-        args,
-        ::core::ptr::null_mut::<pdf_color>(),
-    );
+    error = spc_util_read_pdfcolor(spe, &raw mut colorspec, args, ::core::ptr::null_mut::<pdf_color>());
     if error != 0 {
         pdf_warning!(b"No valid color specified?\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
@@ -3346,10 +2572,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_bgcolor(
     return error;
 }
 pub const THEBUFFLENGTH: ::core::ffi::c_int = 1024 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn spc_handler_pdfm_mapline(
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_mapline(mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let mut mrec: *mut fontmap_rec = ::core::ptr::null_mut::<fontmap_rec>();
     let mut map_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut opchr: ::core::ffi::c_char = 0;
@@ -3375,10 +2598,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_mapline(
                 pdf_remove_fontmap_record(map_name);
                 free(map_name as *mut ::core::ffi::c_void);
             } else {
-                pdf_warning!(
-                    b"Invalid fontmap line: Missing TFM name.\0" as *const u8
-                        as *const ::core::ffi::c_char
-                );
+                pdf_warning!(b"Invalid fontmap line: Missing TFM name.\0" as *const u8 as *const ::core::ffi::c_char);
                 error = -(1 as ::core::ffi::c_int);
             }
         }
@@ -3395,17 +2615,13 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_mapline(
                 count += 1;
             }
             if count == THEBUFFLENGTH - 1 as ::core::ffi::c_int {
-                pdf_warning!(
-                    b"Invalid fontmap line: Too long a line.\0" as *const u8
-                        as *const ::core::ffi::c_char
-                );
+                pdf_warning!(b"Invalid fontmap line: Too long a line.\0" as *const u8 as *const ::core::ffi::c_char);
                 *q = 0 as ::core::ffi::c_char;
                 return -(1 as ::core::ffi::c_int);
             }
             *q = '\0' as i32 as ::core::ffi::c_char;
-            mrec = new((1 as ::core::ffi::c_int as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<fontmap_rec>() as usize)
-                as uint32_t) as *mut fontmap_rec;
+            mrec = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<fontmap_rec>() as usize) as uint32_t)
+                as *mut fontmap_rec;
             pdf_init_fontmap_record(mrec);
             error = pdf_read_fontmap_line(
                 mrec,
@@ -3429,10 +2645,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_mapline(
     }
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_mapfile(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_mapfile(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut mapfile: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
     let mut mode: ::core::ffi::c_int = 0;
     let mut error: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
@@ -3463,10 +2676,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_mapfile(
     free(mapfile as *mut ::core::ffi::c_void);
     return error;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_tounicode(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_tounicode(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut cmap_name: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
@@ -3475,16 +2685,12 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_tounicode(
     (*sd).cd.unescape_backslash = 0 as ::core::ffi::c_int;
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     if (*args).curptr >= (*args).endptr {
-        pdf_warning!(
-            b"Missing CMap name for pdf:tounicode.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Missing CMap name for pdf:tounicode.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     cmap_name = parse_ident(&raw mut (*args).curptr, (*args).endptr);
     if cmap_name.is_null() {
-        pdf_warning!(
-            b"Missing ToUnicode mapping name...\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Missing ToUnicode mapping name...\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     (*sd).cd.cmap_id = CMap_cache_find(cmap_name);
@@ -3497,26 +2703,10 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_tounicode(
         return -(1 as ::core::ffi::c_int);
     }
     if (*sd).cd.cmap_id >= 0 as ::core::ffi::c_int {
-        if !strstr(
-            cmap_name,
-            b"RKSJ\0" as *const u8 as *const ::core::ffi::c_char,
-        )
-        .is_null()
-            || !strstr(
-                cmap_name,
-                b"B5\0" as *const u8 as *const ::core::ffi::c_char,
-            )
-            .is_null()
-            || !strstr(
-                cmap_name,
-                b"GBK\0" as *const u8 as *const ::core::ffi::c_char,
-            )
-            .is_null()
-            || !strstr(
-                cmap_name,
-                b"KSC\0" as *const u8 as *const ::core::ffi::c_char,
-            )
-            .is_null()
+        if !strstr(cmap_name, b"RKSJ\0" as *const u8 as *const ::core::ffi::c_char).is_null()
+            || !strstr(cmap_name, b"B5\0" as *const u8 as *const ::core::ffi::c_char).is_null()
+            || !strstr(cmap_name, b"GBK\0" as *const u8 as *const ::core::ffi::c_char).is_null()
+            || !strstr(cmap_name, b"KSC\0" as *const u8 as *const ::core::ffi::c_char).is_null()
         {
             (*sd).cd.unescape_backslash = 1 as ::core::ffi::c_int;
         }
@@ -3524,11 +2714,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_tounicode(
     free(cmap_name as *mut ::core::ffi::c_void);
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     if (*args).curptr < (*args).endptr {
-        taint_keys = parse_pdf_object(
-            &raw mut (*args).curptr,
-            (*args).endptr,
-            ::core::ptr::null_mut::<pdf_file>(),
-        );
+        taint_keys = parse_pdf_object(&raw mut (*args).curptr, (*args).endptr, ::core::ptr::null_mut::<pdf_file>());
         if !taint_keys.is_null() {
             if !taint_keys.is_null() && pdf_obj_typeof(taint_keys) == PDF_ARRAY {
                 let mut i: ::core::ffi::c_int = 0;
@@ -3539,28 +2725,19 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_tounicode(
                     if !key.is_null() && pdf_obj_typeof(key) == PDF_NAME {
                         pdf_add_array((*sd).cd.taintkeys, pdf_link_obj(key));
                     } else {
-                        pdf_warning!(
-                            b"Invalid argument specified in pdf:tounicode special.\0" as *const u8
-                                as *const ::core::ffi::c_char
-                        );
+                        pdf_warning!(b"Invalid argument specified in pdf:tounicode special.\0" as *const u8 as *const ::core::ffi::c_char);
                     }
                     i += 1;
                 }
             } else {
-                pdf_warning!(
-                    b"Invalid argument specified in pdf:unicode special.\0" as *const u8
-                        as *const ::core::ffi::c_char
-                );
+                pdf_warning!(b"Invalid argument specified in pdf:unicode special.\0" as *const u8 as *const ::core::ffi::c_char);
             }
             pdf_release_obj(taint_keys);
         }
     }
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_pageresources(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_pageresources(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut sd: *mut spc_pdf_ = &raw mut (*__pdf_state)._pdf_stat;
     let mut dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -3570,19 +2747,12 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_pageresources(
         ::core::ptr::null_mut::<pdf_file>(),
         Some(
             parse_pdf_reference
-                as unsafe extern "C-unwind" fn(
-                    *mut *const ::core::ffi::c_char,
-                    *const ::core::ffi::c_char,
-                    *mut ::core::ffi::c_void,
-                ) -> *mut pdf_obj,
+                as unsafe extern "C-unwind" fn(*mut *const ::core::ffi::c_char, *const ::core::ffi::c_char, *mut ::core::ffi::c_void) -> *mut pdf_obj,
         ),
         spe as *mut ::core::ffi::c_void,
     );
     if dict.is_null() {
-        pdf_warning!(
-            b"Dictionary object expected but not found.\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Dictionary object expected but not found.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
     if !(*sd).pageresources.is_null() {
@@ -3591,10 +2761,7 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_pageresources(
     (*sd).pageresources = dict;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_bxgstate(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_bxgstate(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut obj: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     obj = parse_pdf_object_extended(
@@ -3603,24 +2770,15 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_bxgstate(
         ::core::ptr::null_mut::<pdf_file>(),
         Some(
             parse_pdf_reference
-                as unsafe extern "C-unwind" fn(
-                    *mut *const ::core::ffi::c_char,
-                    *const ::core::ffi::c_char,
-                    *mut ::core::ffi::c_void,
-                ) -> *mut pdf_obj,
+                as unsafe extern "C-unwind" fn(*mut *const ::core::ffi::c_char, *const ::core::ffi::c_char, *mut ::core::ffi::c_void) -> *mut pdf_obj,
         ),
         spe as *mut ::core::ffi::c_void,
     );
     if obj.is_null() {
-        pdf_warning!(
-            b"Could not find an object definition.\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Could not find an object definition.\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     } else if !(!obj.is_null() && pdf_obj_typeof(obj) == PDF_DICT) {
-        pdf_warning!(
-            b"Parsed object for ExtGState not a dictionary object!\0" as *const u8
-                as *const ::core::ffi::c_char
-        );
+        pdf_warning!(b"Parsed object for ExtGState not a dictionary object!\0" as *const u8 as *const ::core::ffi::c_char);
         pdf_release_obj(obj);
         return -(1 as ::core::ffi::c_int);
     }
@@ -3628,28 +2786,18 @@ unsafe extern "C-unwind" fn spc_handler_pdfm_bxgstate(
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdfm_exgstate(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdfm_exgstate(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     pdf_dev_xgstate_pop();
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_pdft_compat_page(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_pdft_compat_page(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     if (*args).curptr < (*args).endptr {
-        pdf_doc_add_page_content(
-            b" \0" as *const u8 as *const ::core::ffi::c_char,
-            1 as ::core::ffi::c_uint,
-        );
+        pdf_doc_add_page_content(b" \0" as *const u8 as *const ::core::ffi::c_char, 1 as ::core::ffi::c_uint);
         pdf_doc_add_page_content(
             (*args).curptr,
-            (*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as ::core::ffi::c_int
-                as ::core::ffi::c_uint,
+            (*args).endptr.offset_from((*args).curptr) as ::core::ffi::c_long as ::core::ffi::c_int as ::core::ffi::c_uint,
         );
     }
     (*args).curptr = (*args).endptr;
@@ -3658,642 +2806,369 @@ unsafe extern "C-unwind" fn spc_handler_pdft_compat_page(
 const PDFM_HANDLERS: [spc_handler; 88] = [
     spc_handler {
         key: b"annotation\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_annot
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_annot as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"annotate\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_annot
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_annot as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"annot\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_annot
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_annot as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"ann\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_annot
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_annot as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"outline\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_outline
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_outline as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"out\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_outline
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_outline as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"article\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_article
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_article as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"art\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_article
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_article as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bead\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bead
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bead as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"thread\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bead
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bead as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"destination\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_dest
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_dest as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"dest\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_dest
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_dest as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"object\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_object
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_object as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"obj\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_object
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_object as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"docinfo\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_docinfo
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_docinfo as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"docview\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_docview
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_docview as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"content\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_content
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_content as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"put\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_put
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_put as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"close\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_close
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_close as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bop\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bop
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bop as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"eop\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_eop
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_eop as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"image\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_image
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_image as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"img\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_image
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_image as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"epdf\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_image
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_image as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"link\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_link
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_link as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"nolink\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_nolink
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_nolink as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"begincolor\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bcolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bcolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bcolor\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bcolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bcolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bc\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bcolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bcolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"setcolor\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_scolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_scolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"scolor\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_scolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_scolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"sc\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_scolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_scolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"endcolor\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_ecolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_ecolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"ecolor\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_ecolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_ecolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"ec\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_ecolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_ecolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"begingray\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bcolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bcolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bgray\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bcolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bcolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bg\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bcolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bcolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"endgray\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_ecolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_ecolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"egray\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_ecolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_ecolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"eg\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_ecolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_ecolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bgcolor\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bgcolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bgcolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bgc\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bgcolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bgcolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bbc\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bgcolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bgcolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bbg\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bgcolor
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bgcolor as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"pagesize\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_pagesize
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_pagesize as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bannot\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bann
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bann as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"beginann\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bann
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bann as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bann\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bann
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bann as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"eannot\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_eann
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_eann as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"endann\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_eann
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_eann as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"eann\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_eann
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_eann as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"btrans\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_btrans
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_btrans as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"begintransform\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_btrans
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_btrans as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"begintrans\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_btrans
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_btrans as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bt\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_btrans
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_btrans as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"etrans\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_etrans
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_etrans as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"endtransform\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_etrans
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_etrans as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"endtrans\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_etrans
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_etrans as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"et\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_etrans
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_etrans as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bform\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bform
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bform as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"beginxobj\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bform
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bform as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bxobj\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bform
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bform as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"eform\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_eform
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_eform as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"endxobj\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_eform
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_eform as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"exobj\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_eform
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_eform as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"usexobj\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_uxobj
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_uxobj as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"uxobj\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_uxobj
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_uxobj as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"tounicode\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_tounicode
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_tounicode as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"literal\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_literal
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_literal as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"stream\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_stream
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_stream as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"fstream\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_fstream
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_fstream as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"names\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_names
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_names as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"mapline\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_mapline
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_mapline as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"mapfile\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_mapfile
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_mapfile as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bcontent\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bcontent
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bcontent as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"econtent\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_econtent
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_econtent as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"code\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_code
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_code as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"minorversion\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_do_nothing
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_do_nothing as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"majorversion\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_do_nothing
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_do_nothing as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"encrypt\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_do_nothing
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_do_nothing as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"pageresources\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_pageresources
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_pageresources as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"trailerid\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_do_nothing
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_do_nothing as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"xannot\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_xann
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_xann as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"extendann\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_xann
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_xann as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"xann\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_xann
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_xann as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"bxgstate\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_bxgstate
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_bxgstate as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"exgstate\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdfm_exgstate
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdfm_exgstate as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
 ];
 const PDFT_COMPAT_HANDLERS: [spc_handler; 2] = [
     spc_handler {
         key: b"direct\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdft_compat_page
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdft_compat_page as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"page\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_pdft_compat_page
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_pdft_compat_page as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
 ];
 #[unsafe(export_name = "__pdf_impl_spc_pdfm_check_special")]
-pub unsafe extern "C-unwind" fn spc_pdfm_check_special(
-    mut buf: *const ::core::ffi::c_char,
-    mut len: ::core::ffi::c_int,
-) -> bool {
+pub unsafe extern "C-unwind" fn spc_pdfm_check_special(mut buf: *const ::core::ffi::c_char, mut len: ::core::ffi::c_int) -> bool {
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut endptr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     p = buf;
@@ -4311,18 +3186,11 @@ pub unsafe extern "C-unwind" fn spc_pdfm_check_special(
     return false_0 != 0;
 }
 #[unsafe(export_name = "__pdf_impl_spc_pdfm_setup_handler")]
-pub unsafe extern "C-unwind" fn spc_pdfm_setup_handler(
-    mut sph: *mut spc_handler,
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn spc_pdfm_setup_handler(mut sph: *mut spc_handler, mut spe: *mut spc_env, mut ap: *mut spc_arg) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut i: size_t = 0;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    if !(!sph.is_null() && !spe.is_null() && !ap.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!sph.is_null() && !spe.is_null() && !ap.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"sph && spe && ap\0" as *const u8 as *const ::core::ffi::c_char
@@ -4330,10 +3198,7 @@ pub unsafe extern "C-unwind" fn spc_pdfm_setup_handler(
     } else {
     };
     skip_white(&raw mut (*ap).curptr, (*ap).endptr);
-    if (*ap)
-        .curptr
-        .offset(strlen(b"pdf:\0" as *const u8 as *const ::core::ffi::c_char) as isize)
-        >= (*ap).endptr
+    if (*ap).curptr.offset(strlen(b"pdf:\0" as *const u8 as *const ::core::ffi::c_char) as isize) >= (*ap).endptr
         || memcmp(
             (*ap).curptr as *const ::core::ffi::c_void,
             b"pdf:\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
@@ -4343,27 +3208,20 @@ pub unsafe extern "C-unwind" fn spc_pdfm_setup_handler(
         pdf_warning!(b"Not pdf: special???\0" as *const u8 as *const ::core::ffi::c_char);
         return -(1 as ::core::ffi::c_int);
     }
-    (*ap).curptr = (*ap)
-        .curptr
-        .offset(strlen(b"pdf:\0" as *const u8 as *const ::core::ffi::c_char) as isize);
+    (*ap).curptr = (*ap).curptr.offset(strlen(b"pdf:\0" as *const u8 as *const ::core::ffi::c_char) as isize);
     skip_white(&raw mut (*ap).curptr, (*ap).endptr);
     q = parse_c_ident(&raw mut (*ap).curptr, (*ap).endptr);
     if !q.is_null() {
         let mut is_pdft_compat: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
         if (*ap).curptr < (*ap).endptr {
-            if *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int
-                == ':' as i32
-            {
+            if *(*ap).curptr.offset(0 as ::core::ffi::c_int as isize) as ::core::ffi::c_int == ':' as i32 {
                 is_pdft_compat = 1 as ::core::ffi::c_int;
                 (*ap).curptr = (*ap).curptr.offset(1);
             }
         }
         if is_pdft_compat != 0 {
             i = 0 as size_t;
-            while i
-                < (::core::mem::size_of::<[spc_handler; 2]>() as usize)
-                    .wrapping_div(::core::mem::size_of::<spc_handler>() as usize)
-            {
+            while i < (::core::mem::size_of::<[spc_handler; 2]>() as usize).wrapping_div(::core::mem::size_of::<spc_handler>() as usize) {
                 if strcmp(q, PDFT_COMPAT_HANDLERS[i as usize].key) == 0 {
                     (*ap).command = PDFT_COMPAT_HANDLERS[i as usize].key;
                     (*sph).key = b"pdf:\0" as *const u8 as *const ::core::ffi::c_char;
@@ -4377,10 +3235,7 @@ pub unsafe extern "C-unwind" fn spc_pdfm_setup_handler(
             }
         } else {
             i = 0 as size_t;
-            while i
-                < (::core::mem::size_of::<[spc_handler; 88]>() as usize)
-                    .wrapping_div(::core::mem::size_of::<spc_handler>() as usize)
-            {
+            while i < (::core::mem::size_of::<[spc_handler; 88]>() as usize).wrapping_div(::core::mem::size_of::<spc_handler>() as usize) {
                 if strcmp(q, PDFM_HANDLERS[i as usize].key) == 0 {
                     (*ap).command = PDFM_HANDLERS[i as usize].key;
                     (*sph).key = b"pdf:\0" as *const u8 as *const ::core::ffi::c_char;
@@ -4400,11 +3255,7 @@ pub unsafe extern "C-unwind" fn spc_pdfm_setup_handler(
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -4416,9 +3267,7 @@ pub struct pdf_file {
     _private: [u8; 0],
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_spc_pdfm_at_begin_document(
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_spc_pdfm_at_begin_document(_result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_pdfm_at_begin_document() }) {
         Ok(value) => {
             unsafe {
@@ -4430,9 +3279,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_pdfm_at_begin_document(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_spc_pdfm_at_end_document(
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_spc_pdfm_at_end_document(_result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_pdfm_at_end_document() }) {
         Ok(value) => {
             unsafe {
@@ -4457,9 +3304,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_pdfm_at_end_page(_result: *mut ::core::
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_pdfm_check_special(
-    mut buf: *const ::core::ffi::c_char,
-    mut len: ::core::ffi::c_int,
-    _result: *mut bool,
+    mut buf: *const ::core::ffi::c_char, mut len: ::core::ffi::c_int, _result: *mut bool,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_pdfm_check_special(buf, len) }) {
         Ok(value) => {
@@ -4473,10 +3318,7 @@ pub unsafe extern "C" fn __pdf_entry_spc_pdfm_check_special(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_pdfm_setup_handler(
-    mut sph: *mut spc_handler,
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-    _result: *mut ::core::ffi::c_int,
+    mut sph: *mut spc_handler, mut spe: *mut spc_env, mut ap: *mut spc_arg, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_pdfm_setup_handler(sph, spe, ap) }) {
         Ok(value) => {
@@ -4512,10 +3354,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_spc_pdfm
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_spc_pdfm.pointer }
 }

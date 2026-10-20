@@ -99,11 +99,7 @@ pub trait StatusBackend {
     /// contextual information provided. The default implementation delegates to
     /// `report()` with a generic lead-in message of "an error occurred".
     fn report_error(&mut self, err: &Error) {
-        self.report(
-            MessageKind::Error,
-            format_args!("an error occurred"),
-            Some(err),
-        )
+        self.report(MessageKind::Error, format_args!("an error occurred"), Some(err))
     }
 
     /// Issue a note-level status, idealy highlighting a particular phrase.
@@ -112,11 +108,7 @@ pub trait StatusBackend {
     /// style. It's a bit more high-level than intended for this trait, but we
     /// can provide a nice sensible default implementation, so whatever.
     fn note_highlighted(&mut self, before: &str, highlighted: &str, after: &str) {
-        self.report(
-            MessageKind::Note,
-            format_args!("{before}{highlighted}{after}"),
-            None,
-        )
+        self.report(MessageKind::Note, format_args!("{before}{highlighted}{after}"), None)
     }
 
     /// This is used to print TeX engine logs after it encountered errors. This

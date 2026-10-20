@@ -19,42 +19,16 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::backend::dpx_pdfdev::pdf_dev_get_param;
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
     fn floor(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
-    fn strcpy(
-        __dst: *mut ::core::ffi::c_char,
-        __src: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
-    fn sprintf(
-        _: *mut ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
-    fn snprintf(
-        __str: *mut ::core::ffi::c_char,
-        __size: size_t,
-        __format: *const ::core::ffi::c_char,
-        ...
-    ) -> ::core::ffi::c_int;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
+    fn strcpy(__dst: *mut ::core::ffi::c_char, __src: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
+    fn sprintf(_: *mut ::core::ffi::c_char, _: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
+    fn snprintf(__str: *mut ::core::ffi::c_char, __size: size_t, __format: *const ::core::ffi::c_char, ...) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_get_version"]
     fn pdf_get_version() -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_release_obj"]
@@ -72,19 +46,11 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_add_array"]
     fn pdf_add_array(array: *mut pdf_obj, object: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_new_stream"]
     fn pdf_new_stream(flags: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_stream"]
-    fn pdf_add_stream(
-        stream: *mut pdf_obj,
-        stream_data_ptr: *const ::core::ffi::c_void,
-        stream_data_len: ::core::ffi::c_int,
-    );
+    fn pdf_add_stream(stream: *mut pdf_obj, stream_data_ptr: *const ::core::ffi::c_void, stream_data_len: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_stream_dict"]
     fn pdf_stream_dict(stream: *mut pdf_obj) -> *mut pdf_obj;
     static mut dpx_conf: _dpx_conf;
@@ -99,11 +65,7 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_dev_reset_color"]
     fn pdf_dev_reset_color(force: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_doc_add_page_resource"]
-    fn pdf_doc_add_page_resource(
-        category: *const ::core::ffi::c_char,
-        resource_name: *const ::core::ffi::c_char,
-        resources: *mut pdf_obj,
-    );
+    fn pdf_doc_add_page_resource(category: *const ::core::ffi::c_char, resource_name: *const ::core::ffi::c_char, resources: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_get_resource_reference"]
     fn pdf_get_resource_reference(res_id: ::core::ffi::c_int) -> *mut pdf_obj;
 }
@@ -213,8 +175,7 @@ unsafe extern "C-unwind" fn mfree(mut ptr: *mut ::core::ffi::c_void) -> *mut ::c
     free(ptr);
     return NULL;
 }
-pub const STREAM_COMPRESS: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
+pub const STREAM_COMPRESS: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 0 as ::core::ffi::c_int;
 pub const PDF_COLORSPACE_TYPE_CMYK: ::core::ffi::c_int = -(4 as ::core::ffi::c_int);
 pub const PDF_COLORSPACE_TYPE_RGB: ::core::ffi::c_int = -(3 as ::core::ffi::c_int);
 pub const PDF_COLORSPACE_TYPE_SPOT: ::core::ffi::c_int = -(2 as ::core::ffi::c_int);
@@ -233,47 +194,29 @@ pub const PDF_DEV_PARAM_COLORMODE: ::core::ffi::c_int = 2 as ::core::ffi::c_int;
 #[unsafe(export_name = "__pdf_impl_pdf_color_type")]
 pub unsafe extern "C-unwind" fn pdf_color_type(mut color: *const pdf_color) -> ::core::ffi::c_int {
     if color.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"color\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"color\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     return (*color).type_0;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_color_rgbcolor")]
 pub unsafe extern "C-unwind" fn pdf_color_rgbcolor(
-    mut color: *mut pdf_color,
-    mut r: ::core::ffi::c_double,
-    mut g: ::core::ffi::c_double,
-    mut b: ::core::ffi::c_double,
+    mut color: *mut pdf_color, mut r: ::core::ffi::c_double, mut g: ::core::ffi::c_double, mut b: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     if color.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"color\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"color\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if r < 0.0f64 || r > 1.0f64 {
-        pdf_warning!(
-            b"Invalid color value specified: red=%g\0" as *const u8 as *const ::core::ffi::c_char,
-            r,
-        );
+        pdf_warning!(b"Invalid color value specified: red=%g\0" as *const u8 as *const ::core::ffi::c_char, r,);
         return -(1 as ::core::ffi::c_int);
     }
     if g < 0.0f64 || g > 1.0f64 {
-        pdf_warning!(
-            b"Invalid color value specified: green=%g\0" as *const u8 as *const ::core::ffi::c_char,
-            g,
-        );
+        pdf_warning!(b"Invalid color value specified: green=%g\0" as *const u8 as *const ::core::ffi::c_char, g,);
         return -(1 as ::core::ffi::c_int);
     }
     if b < 0.0f64 || b > 1.0f64 {
-        pdf_warning!(
-            b"Invalid color value specified: blue=%g\0" as *const u8 as *const ::core::ffi::c_char,
-            b,
-        );
+        pdf_warning!(b"Invalid color value specified: blue=%g\0" as *const u8 as *const ::core::ffi::c_char, b,);
         return -(1 as ::core::ffi::c_int);
     }
     (*color).values[0 as ::core::ffi::c_int as usize] = r;
@@ -287,47 +230,32 @@ pub unsafe extern "C-unwind" fn pdf_color_rgbcolor(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_color_cmykcolor")]
 pub unsafe extern "C-unwind" fn pdf_color_cmykcolor(
-    mut color: *mut pdf_color,
-    mut c: ::core::ffi::c_double,
-    mut m: ::core::ffi::c_double,
-    mut y: ::core::ffi::c_double,
-    mut k: ::core::ffi::c_double,
+    mut color: *mut pdf_color, mut c: ::core::ffi::c_double, mut m: ::core::ffi::c_double, mut y: ::core::ffi::c_double, mut k: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     if color.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"color\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"color\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if c < 0.0f64 || c > 1.0f64 {
-        pdf_warning!(
-            b"Invalid color value specified: cyan=%g\0" as *const u8 as *const ::core::ffi::c_char,
-            c,
-        );
+        pdf_warning!(b"Invalid color value specified: cyan=%g\0" as *const u8 as *const ::core::ffi::c_char, c,);
         return -(1 as ::core::ffi::c_int);
     }
     if m < 0.0f64 || m > 1.0f64 {
         pdf_warning!(
-            b"Invalid color value specified: magenta=%g\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Invalid color value specified: magenta=%g\0" as *const u8 as *const ::core::ffi::c_char,
             m,
         );
         return -(1 as ::core::ffi::c_int);
     }
     if y < 0.0f64 || y > 1.0f64 {
         pdf_warning!(
-            b"Invalid color value specified: yellow=%g\0" as *const u8
-                as *const ::core::ffi::c_char,
+            b"Invalid color value specified: yellow=%g\0" as *const u8 as *const ::core::ffi::c_char,
             y,
         );
         return -(1 as ::core::ffi::c_int);
     }
     if k < 0.0f64 || k > 1.0f64 {
-        pdf_warning!(
-            b"Invalid color value specified: black=%g\0" as *const u8 as *const ::core::ffi::c_char,
-            k,
-        );
+        pdf_warning!(b"Invalid color value specified: black=%g\0" as *const u8 as *const ::core::ffi::c_char, k,);
         return -(1 as ::core::ffi::c_int);
     }
     (*color).values[0 as ::core::ffi::c_int as usize] = c;
@@ -341,22 +269,13 @@ pub unsafe extern "C-unwind" fn pdf_color_cmykcolor(
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_color_graycolor")]
-pub unsafe extern "C-unwind" fn pdf_color_graycolor(
-    mut color: *mut pdf_color,
-    mut g: ::core::ffi::c_double,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_color_graycolor(mut color: *mut pdf_color, mut g: ::core::ffi::c_double) -> ::core::ffi::c_int {
     if color.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"color\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"color\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if g < 0.0f64 || g > 1.0f64 {
-        pdf_warning!(
-            b"Invalid color value specified: gray=%g\0" as *const u8 as *const ::core::ffi::c_char,
-            g,
-        );
+        pdf_warning!(b"Invalid color value specified: gray=%g\0" as *const u8 as *const ::core::ffi::c_char, g,);
         return -(1 as ::core::ffi::c_int);
     }
     (*color).values[0 as ::core::ffi::c_int as usize] = g;
@@ -368,22 +287,14 @@ pub unsafe extern "C-unwind" fn pdf_color_graycolor(
 }
 #[unsafe(export_name = "__pdf_impl_pdf_color_spotcolor")]
 pub unsafe extern "C-unwind" fn pdf_color_spotcolor(
-    mut color: *mut pdf_color,
-    mut name: *mut ::core::ffi::c_char,
-    mut c: ::core::ffi::c_double,
+    mut color: *mut pdf_color, mut name: *mut ::core::ffi::c_char, mut c: ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     if color.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"color\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"color\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     if c < 0.0f64 || c > 1.0f64 {
-        pdf_warning!(
-            b"Invalid color value specified: grade=%g\0" as *const u8 as *const ::core::ffi::c_char,
-            c,
-        );
+        pdf_warning!(b"Invalid color value specified: grade=%g\0" as *const u8 as *const ::core::ffi::c_char, c,);
         return -(1 as ::core::ffi::c_int);
     }
     (*color).values[0 as ::core::ffi::c_int as usize] = c;
@@ -395,10 +306,7 @@ pub unsafe extern "C-unwind" fn pdf_color_spotcolor(
     return 0 as ::core::ffi::c_int;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_color_copycolor")]
-pub unsafe extern "C-unwind" fn pdf_color_copycolor(
-    mut color1: *mut pdf_color,
-    mut color2: *const pdf_color,
-) {
+pub unsafe extern "C-unwind" fn pdf_color_copycolor(mut color1: *mut pdf_color, mut color2: *const pdf_color) {
     if !(!color1.is_null() && !color2.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
@@ -413,11 +321,7 @@ pub unsafe extern "C-unwind" fn pdf_color_copycolor(
     );
 }
 #[unsafe(export_name = "__pdf_impl_pdf_color_brighten_color")]
-pub unsafe extern "C-unwind" fn pdf_color_brighten_color(
-    mut dst: *mut pdf_color,
-    mut src: *const pdf_color,
-    mut f: ::core::ffi::c_double,
-) {
+pub unsafe extern "C-unwind" fn pdf_color_brighten_color(mut dst: *mut pdf_color, mut src: *const pdf_color, mut f: ::core::ffi::c_double) {
     if !(!dst.is_null() && !src.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
@@ -425,10 +329,7 @@ pub unsafe extern "C-unwind" fn pdf_color_brighten_color(
         );
     } else {
     };
-    if (*src).type_0 != PDF_COLORSPACE_TYPE_RGB
-        && (*src).type_0 != PDF_COLORSPACE_TYPE_CMYK
-        && (*src).type_0 != PDF_COLORSPACE_TYPE_GRAY
-    {
+    if (*src).type_0 != PDF_COLORSPACE_TYPE_RGB && (*src).type_0 != PDF_COLORSPACE_TYPE_CMYK && (*src).type_0 != PDF_COLORSPACE_TYPE_GRAY {
         pdf_color_copycolor(dst, src);
         return;
     }
@@ -440,11 +341,7 @@ pub unsafe extern "C-unwind" fn pdf_color_brighten_color(
         let mut n: ::core::ffi::c_int = 0;
         pdf_color_copycolor(dst, src);
         n = (*src).num_components;
-        f1 = if n == 4 as ::core::ffi::c_int {
-            0.0f64
-        } else {
-            f
-        };
+        f1 = if n == 4 as ::core::ffi::c_int { 0.0f64 } else { f };
         f0 = 1.0f64 - f;
         loop {
             let fresh0 = n;
@@ -461,10 +358,7 @@ pub unsafe extern "C-unwind" fn pdf_color_is_white(mut color: *const pdf_color) 
     let mut n: ::core::ffi::c_int = 0;
     let mut f: ::core::ffi::c_double = 0.;
     if color.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"color\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"color\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
     match (*color).type_0 {
@@ -491,28 +385,18 @@ pub unsafe extern "C-unwind" fn pdf_color_is_white(mut color: *const pdf_color) 
 }
 #[unsafe(export_name = "__pdf_impl_pdf_color_set_color")]
 pub unsafe extern "C-unwind" fn pdf_color_set_color(
-    mut color: *const pdf_color,
-    mut buffer: *mut ::core::ffi::c_char,
-    mut buffer_len: size_t,
-    mut mask: ::core::ffi::c_char,
+    mut color: *const pdf_color, mut buffer: *mut ::core::ffi::c_char, mut buffer_len: size_t, mut mask: ::core::ffi::c_char,
 ) -> ::core::ffi::c_int {
     let mut len: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut i: ::core::ffi::c_int = 0;
     let mut estimate: size_t = 0 as size_t;
     if (*color).num_components > 0 as ::core::ffi::c_int {
-        estimate = estimate.wrapping_add(
-            (5 as ::core::ffi::c_int * ((*color).num_components + 1 as ::core::ffi::c_int)
-                + 4 as ::core::ffi::c_int) as size_t,
-        );
+        estimate = estimate
+            .wrapping_add((5 as ::core::ffi::c_int * ((*color).num_components + 1 as ::core::ffi::c_int) + 4 as ::core::ffi::c_int) as size_t);
     }
-    estimate = estimate.wrapping_add(strlen(
-        b" /DeiceGray CS\0" as *const u8 as *const ::core::ffi::c_char,
-    ));
+    estimate = estimate.wrapping_add(strlen(b" /DeiceGray CS\0" as *const u8 as *const ::core::ffi::c_char));
     if estimate.wrapping_add(1 as size_t) > buffer_len {
-        pdf_warning!(
-            b"Not enough buffer space allocated for writing set_color op...\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Not enough buffer space allocated for writing set_color op...\0" as *const u8 as *const ::core::ffi::c_char,);
         return 0 as ::core::ffi::c_int;
     }
     match pdf_color_type(color) {
@@ -641,16 +525,12 @@ pub unsafe extern "C-unwind" fn pdf_color_set_color(
                 (*color).spot_color_name,
                 'C' as i32 | mask as ::core::ffi::c_int,
                 'S' as i32 | mask as ::core::ffi::c_int,
-                floor((*color).values[0 as ::core::ffi::c_int as usize] / 0.001f64 + 0.5f64)
-                    * 0.001f64,
+                floor((*color).values[0 as ::core::ffi::c_int as usize] / 0.001f64 + 0.5f64) * 0.001f64,
                 'S' as i32 | mask as ::core::ffi::c_int,
                 'C' as i32 | mask as ::core::ffi::c_int,
             );
         }
-        PDF_COLORSPACE_TYPE_CALGRAY
-        | PDF_COLORSPACE_TYPE_CALRGB
-        | PDF_COLORSPACE_TYPE_LAB
-        | PDF_COLORSPACE_TYPE_INDEXED => {
+        PDF_COLORSPACE_TYPE_CALGRAY | PDF_COLORSPACE_TYPE_CALRGB | PDF_COLORSPACE_TYPE_LAB | PDF_COLORSPACE_TYPE_INDEXED => {
             let mut res_name: [::core::ffi::c_char; 16] = [0; 16];
             snprintf(
                 &raw mut res_name as *mut ::core::ffi::c_char,
@@ -790,10 +670,7 @@ pub unsafe extern "C-unwind" fn pdf_color_set_color(
 }
 
 #[unsafe(export_name = "__pdf_impl_pdf_color_compare")]
-pub unsafe extern "C-unwind" fn pdf_color_compare(
-    mut color1: *const pdf_color,
-    mut color2: *const pdf_color,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn pdf_color_compare(mut color1: *const pdf_color, mut color2: *const pdf_color) -> ::core::ffi::c_int {
     let mut n: ::core::ffi::c_int = 0;
     if (*color1).type_0 != PDF_COLORSPACE_TYPE_GRAY
         && (*color1).type_0 != PDF_COLORSPACE_TYPE_RGB
@@ -829,10 +706,7 @@ pub const DEV_COLOR_STACK_MAX: ::core::ffi::c_int = 128 as ::core::ffi::c_int;
 pub unsafe extern "C-unwind" fn pdf_color_clear_stack() {
     let __pdf_state = unsafe { document_state() };
     if (*__pdf_state).color_stack.current > 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"You've mistakenly made a global color change within nested colors.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"You've mistakenly made a global color change within nested colors.\0" as *const u8 as *const ::core::ffi::c_char,);
     }
     loop {
         let fresh2 = (*__pdf_state).color_stack.current;
@@ -840,36 +714,22 @@ pub unsafe extern "C-unwind" fn pdf_color_clear_stack() {
         if !(fresh2 != 0) {
             break;
         }
-        free(
-            (*__pdf_state).color_stack.stroke[(*__pdf_state).color_stack.current as usize]
-                .spot_color_name as *mut ::core::ffi::c_void,
-        );
-        free(
-            (*__pdf_state).color_stack.fill[(*__pdf_state).color_stack.current as usize]
-                .spot_color_name as *mut ::core::ffi::c_void,
-        );
+        free((*__pdf_state).color_stack.stroke[(*__pdf_state).color_stack.current as usize].spot_color_name as *mut ::core::ffi::c_void);
+        free((*__pdf_state).color_stack.fill[(*__pdf_state).color_stack.current as usize].spot_color_name as *mut ::core::ffi::c_void);
     }
     (*__pdf_state).color_stack.current = 0 as ::core::ffi::c_int;
-    pdf_color_graycolor(
-        &raw mut (*__pdf_state).color_stack.stroke as *mut pdf_color,
-        0.0f64,
-    );
-    pdf_color_graycolor(
-        &raw mut (*__pdf_state).color_stack.fill as *mut pdf_color,
-        0.0f64,
-    );
+    pdf_color_graycolor(&raw mut (*__pdf_state).color_stack.stroke as *mut pdf_color, 0.0f64);
+    pdf_color_graycolor(&raw mut (*__pdf_state).color_stack.fill as *mut pdf_color, 0.0f64);
 }
 #[unsafe(export_name = "__pdf_impl_pdf_color_set")]
 pub unsafe extern "C-unwind" fn pdf_color_set(mut sc: *mut pdf_color, mut fc: *mut pdf_color) {
     let __pdf_state = unsafe { document_state() };
     pdf_color_copycolor(
-        (&raw mut (*__pdf_state).color_stack.stroke as *mut pdf_color)
-            .offset((*__pdf_state).color_stack.current as isize) as *mut pdf_color,
+        (&raw mut (*__pdf_state).color_stack.stroke as *mut pdf_color).offset((*__pdf_state).color_stack.current as isize) as *mut pdf_color,
         sc,
     );
     pdf_color_copycolor(
-        (&raw mut (*__pdf_state).color_stack.fill as *mut pdf_color)
-            .offset((*__pdf_state).color_stack.current as isize) as *mut pdf_color,
+        (&raw mut (*__pdf_state).color_stack.fill as *mut pdf_color).offset((*__pdf_state).color_stack.current as isize) as *mut pdf_color,
         fc,
     );
     pdf_dev_reset_color(1 as ::core::ffi::c_int);
@@ -878,9 +738,7 @@ pub unsafe extern "C-unwind" fn pdf_color_set(mut sc: *mut pdf_color, mut fc: *m
 pub unsafe extern "C-unwind" fn pdf_color_push(mut sc: *mut pdf_color, mut fc: *mut pdf_color) {
     let __pdf_state = unsafe { document_state() };
     if (*__pdf_state).color_stack.current >= DEV_COLOR_STACK_MAX - 1 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Color stack overflow. Just ignore.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Color stack overflow. Just ignore.\0" as *const u8 as *const ::core::ffi::c_char,);
     } else {
         (*__pdf_state).color_stack.current += 1;
         pdf_color_set(sc, fc);
@@ -890,24 +748,17 @@ pub unsafe extern "C-unwind" fn pdf_color_push(mut sc: *mut pdf_color, mut fc: *
 pub unsafe extern "C-unwind" fn pdf_color_pop() {
     let __pdf_state = unsafe { document_state() };
     if (*__pdf_state).color_stack.current <= 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"Color stack underflow. Just ignore.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Color stack underflow. Just ignore.\0" as *const u8 as *const ::core::ffi::c_char,);
     } else {
         (*__pdf_state).color_stack.current -= 1;
         pdf_dev_reset_color(1 as ::core::ffi::c_int);
     };
 }
 #[unsafe(export_name = "__pdf_impl_pdf_color_get_current")]
-pub unsafe extern "C-unwind" fn pdf_color_get_current(
-    mut sc: *mut *mut pdf_color,
-    mut fc: *mut *mut pdf_color,
-) {
+pub unsafe extern "C-unwind" fn pdf_color_get_current(mut sc: *mut *mut pdf_color, mut fc: *mut *mut pdf_color) {
     let __pdf_state = unsafe { document_state() };
-    *sc = (&raw mut (*__pdf_state).color_stack.stroke as *mut pdf_color)
-        .offset((*__pdf_state).color_stack.current as isize) as *mut pdf_color;
-    *fc = (&raw mut (*__pdf_state).color_stack.fill as *mut pdf_color)
-        .offset((*__pdf_state).color_stack.current as isize) as *mut pdf_color;
+    *sc = (&raw mut (*__pdf_state).color_stack.stroke as *mut pdf_color).offset((*__pdf_state).color_stack.current as isize) as *mut pdf_color;
+    *fc = (&raw mut (*__pdf_state).color_stack.fill as *mut pdf_color).offset((*__pdf_state).color_stack.current as isize) as *mut pdf_color;
 }
 const NULLBYTES16: [::core::ffi::c_uchar; 16] = [
     0 as ::core::ffi::c_int as ::core::ffi::c_uchar,
@@ -1013,16 +864,12 @@ pub const ICC_INTENT_SATURATION: ::core::ffi::c_int = 2;
 pub const ICC_INTENT_ABSOLUTE: ::core::ffi::c_int = 3;
 unsafe extern "C-unwind" fn init_iccbased_cdata(mut cdata: *mut iccbased_cdata) {
     if cdata.is_null() as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
-        pdf_abort!(
-            c"assertion failed: %s".as_ptr(),
-            b"cdata\0" as *const u8 as *const ::core::ffi::c_char
-        );
+        pdf_abort!(c"assertion failed: %s".as_ptr(), b"cdata\0" as *const u8 as *const ::core::ffi::c_char);
     } else {
     };
-    (*cdata).sig = (('i' as i32) << 24 as ::core::ffi::c_int
-        | ('c' as i32) << 16 as ::core::ffi::c_int
-        | ('c' as i32) << 8 as ::core::ffi::c_int
-        | 'b' as i32) as int32_t;
+    (*cdata).sig =
+        (('i' as i32) << 24 as ::core::ffi::c_int | ('c' as i32) << 16 as ::core::ffi::c_int | ('c' as i32) << 8 as ::core::ffi::c_int | 'b' as i32)
+            as int32_t;
     memset(
         &raw mut (*cdata).checksum as *mut ::core::ffi::c_uchar as *mut ::core::ffi::c_void,
         0 as ::core::ffi::c_int,
@@ -1048,9 +895,7 @@ unsafe extern "C-unwind" fn release_iccbased_cdata(mut cdata: *mut iccbased_cdat
     };
     free(cdata as *mut ::core::ffi::c_void);
 }
-unsafe extern "C-unwind" fn get_num_components_iccbased(
-    mut cdata: *const iccbased_cdata,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn get_num_components_iccbased(mut cdata: *const iccbased_cdata) -> ::core::ffi::c_int {
     let mut num_components: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     if !(!cdata.is_null()
         && (*cdata).sig
@@ -1084,9 +929,7 @@ unsafe extern "C-unwind" fn get_num_components_iccbased(
     return num_components;
 }
 unsafe extern "C-unwind" fn compare_iccbased(
-    mut ident1: *const ::core::ffi::c_char,
-    mut cdata1: *const iccbased_cdata,
-    mut ident2: *const ::core::ffi::c_char,
+    mut ident1: *const ::core::ffi::c_char, mut cdata1: *const iccbased_cdata, mut ident2: *const ::core::ffi::c_char,
     mut cdata2: *const iccbased_cdata,
 ) -> ::core::ffi::c_int {
     if !cdata1.is_null() && !cdata2.is_null() {
@@ -1100,8 +943,7 @@ unsafe extern "C-unwind" fn compare_iccbased(
         {
             pdf_abort!(
                 c"assertion failed: %s".as_ptr(),
-                b"check_sig(cdata1, 'i', 'c', 'c', 'b')\0" as *const u8
-                    as *const ::core::ffi::c_char
+                b"check_sig(cdata1, 'i', 'c', 'c', 'b')\0" as *const u8 as *const ::core::ffi::c_char
             );
         } else {
         };
@@ -1115,29 +957,24 @@ unsafe extern "C-unwind" fn compare_iccbased(
         {
             pdf_abort!(
                 c"assertion failed: %s".as_ptr(),
-                b"check_sig(cdata2, 'i', 'c', 'c', 'b')\0" as *const u8
-                    as *const ::core::ffi::c_char
+                b"check_sig(cdata2, 'i', 'c', 'c', 'b')\0" as *const u8 as *const ::core::ffi::c_char
             );
         } else {
         };
         if memcmp(
-            &raw const (*cdata1).checksum as *const ::core::ffi::c_uchar
-                as *const ::core::ffi::c_void,
+            &raw const (*cdata1).checksum as *const ::core::ffi::c_uchar as *const ::core::ffi::c_void,
             NULLBYTES16.as_ptr() as *const ::core::ffi::c_void,
             16 as size_t,
         ) != 0
             && memcmp(
-                &raw const (*cdata2).checksum as *const ::core::ffi::c_uchar
-                    as *const ::core::ffi::c_void,
+                &raw const (*cdata2).checksum as *const ::core::ffi::c_uchar as *const ::core::ffi::c_void,
                 NULLBYTES16.as_ptr() as *const ::core::ffi::c_void,
                 16 as size_t,
             ) != 0
         {
             return memcmp(
-                &raw const (*cdata1).checksum as *const ::core::ffi::c_uchar
-                    as *const ::core::ffi::c_void,
-                &raw const (*cdata2).checksum as *const ::core::ffi::c_uchar
-                    as *const ::core::ffi::c_void,
+                &raw const (*cdata1).checksum as *const ::core::ffi::c_uchar as *const ::core::ffi::c_void,
+                &raw const (*cdata2).checksum as *const ::core::ffi::c_uchar as *const ::core::ffi::c_void,
                 16 as size_t,
             );
         }
@@ -1151,11 +988,7 @@ unsafe extern "C-unwind" fn compare_iccbased(
     return -(1 as ::core::ffi::c_int);
 }
 #[unsafe(export_name = "__pdf_impl_iccp_check_colorspace")]
-pub unsafe extern "C-unwind" fn iccp_check_colorspace(
-    colortype: i32,
-    profile: *const ::core::ffi::c_void,
-    proflen: i32,
-) -> i32 {
+pub unsafe extern "C-unwind" fn iccp_check_colorspace(colortype: i32, profile: *const ::core::ffi::c_void, proflen: i32) -> i32 {
     if profile.is_null() || proflen < 128 {
         return -1;
     }
@@ -1170,10 +1003,7 @@ pub unsafe extern "C-unwind" fn iccp_check_colorspace(
     if colorspace == expected { 0 } else { -1 }
 }
 #[unsafe(export_name = "__pdf_impl_iccp_get_rendering_intent")]
-pub unsafe extern "C-unwind" fn iccp_get_rendering_intent(
-    profile: *const ::core::ffi::c_void,
-    proflen: i32,
-) -> *mut pdf_obj {
+pub unsafe extern "C-unwind" fn iccp_get_rendering_intent(profile: *const ::core::ffi::c_void, proflen: i32) -> *mut pdf_obj {
     if profile.is_null() || proflen < 128 {
         return core::ptr::null_mut();
     }
@@ -1199,11 +1029,7 @@ fn iccp_unpack_header(icch: &mut iccHeader, profile: &[u8]) -> i32 {
     let word = |offset| u32::from_be_bytes(profile[offset..offset + 4].try_into().unwrap());
     icch.size = word(0) as i32;
     if icch.size as usize != profile.len() {
-        pdf_warning!(
-            "ICC Profile size: {}(header) != {}",
-            icch.size,
-            profile.len()
-        );
+        pdf_warning!("ICC Profile size: {}(header) != {}", icch.size, profile.len());
         return -1;
     }
     icch.CMMType = word(4);
@@ -1215,9 +1041,7 @@ fn iccp_unpack_header(icch: &mut iccHeader, profile: &[u8]) -> i32 {
     icch.acsp = word(36);
     if icch.acsp != str2iccSig(*b"acsp") {
         pdf_warning!(
-            b"Invalid ICC profile: not \"acsp\" - %c%c%c%c \0"
-                .as_ptr()
-                .cast(),
+            b"Invalid ICC profile: not \"acsp\" - %c%c%c%c \0".as_ptr().cast(),
             profile[36] as i32,
             profile[37] as i32,
             profile[38] as i32,
@@ -1240,10 +1064,7 @@ fn iccp_unpack_header(icch: &mut iccHeader, profile: &[u8]) -> i32 {
     icch.ID.copy_from_slice(&profile[84..100]);
     for (offset, &byte) in profile[100..128].iter().enumerate() {
         if byte != 0 {
-            pdf_warning!(
-                "Reserved pad not zero: {byte:02x} (at offset {} in ICC profile header.)",
-                offset + 100,
-            );
+            pdf_warning!("Reserved pad not zero: {byte:02x} (at offset {} in ICC profile header.)", offset + 100,);
             return -1;
         }
     }
@@ -1352,9 +1173,7 @@ fn iccp_devClass_allowed(dev_class: iccSig) -> i32 {
 }
 #[unsafe(export_name = "__pdf_impl_iccp_load_profile")]
 pub unsafe extern "C-unwind" fn iccp_load_profile(
-    mut ident: *const ::core::ffi::c_char,
-    mut profile: *const ::core::ffi::c_void,
-    mut proflen: ::core::ffi::c_int,
+    mut ident: *const ::core::ffi::c_char, mut profile: *const ::core::ffi::c_void, mut proflen: ::core::ffi::c_int,
 ) -> ::core::ffi::c_int {
     let mut cspc_id: ::core::ffi::c_int = 0;
     let mut resource: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -1403,20 +1222,18 @@ pub unsafe extern "C-unwind" fn iccp_load_profile(
     ) == 0
     {
         pdf_warning!(
-            b"ICC profile format spec. version %d.%01d.%01d not supported in current PDF version setting.\0"
-            as * const u8 as * const ::core::ffi::c_char, icch.version >> 24 as
-            ::core::ffi::c_int & 0xff as int32_t, icch.version >> 20 as
-            ::core::ffi::c_int & 0xf as int32_t, icch.version >> 16 as ::core::ffi::c_int
-            & 0xf as int32_t,
+            b"ICC profile format spec. version %d.%01d.%01d not supported in current PDF version setting.\0" as *const u8
+                as *const ::core::ffi::c_char,
+            icch.version >> 24 as ::core::ffi::c_int & 0xff as int32_t,
+            icch.version >> 20 as ::core::ffi::c_int & 0xf as int32_t,
+            icch.version >> 16 as ::core::ffi::c_int & 0xf as int32_t,
         );
         pdf_warning!(b"ICC profile not embedded.\0" as *const u8 as *const ::core::ffi::c_char,);
         print_iccp_header(&icch, None);
         return -(1 as ::core::ffi::c_int);
     }
     if iccp_devClass_allowed(icch.devClass) == 0 {
-        pdf_warning!(
-            b"Unsupported ICC Profile Device Class:\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Unsupported ICC Profile Device Class:\0" as *const u8 as *const ::core::ffi::c_char,);
         print_iccp_header(&icch, None);
         return -(1 as ::core::ffi::c_int);
     }
@@ -1427,24 +1244,18 @@ pub unsafe extern "C-unwind" fn iccp_load_profile(
     } else if icch.colorSpace == str2iccSig(*b"CMYK") {
         colorspace = PDF_COLORSPACE_TYPE_CMYK;
     } else {
-        pdf_warning!(
-            b"Unsupported input color space.\0" as *const u8 as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Unsupported input color space.\0" as *const u8 as *const ::core::ffi::c_char,);
         print_iccp_header(&icch, None);
         return -(1 as ::core::ffi::c_int);
     }
     checksum = iccp_get_checksum(profile_bytes);
     if icch.ID != [0; 16] && icch.ID != checksum {
-        pdf_warning!(
-            b"Invalid ICC profile: Inconsistent checksum.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"Invalid ICC profile: Inconsistent checksum.\0" as *const u8 as *const ::core::ffi::c_char,);
         print_iccp_header(&icch, Some(&checksum));
         return -(1 as ::core::ffi::c_int);
     }
-    cdata = new((1 as ::core::ffi::c_int as uint32_t as usize)
-        .wrapping_mul(::core::mem::size_of::<iccbased_cdata>() as usize)
-        as uint32_t) as *mut iccbased_cdata;
+    cdata = new((1 as ::core::ffi::c_int as uint32_t as usize).wrapping_mul(::core::mem::size_of::<iccbased_cdata>() as usize) as uint32_t)
+        as *mut iccbased_cdata;
     init_iccbased_cdata(cdata);
     (*cdata).colorspace = colorspace;
     memcpy(
@@ -1452,17 +1263,10 @@ pub unsafe extern "C-unwind" fn iccp_load_profile(
         &raw mut checksum as *mut ::core::ffi::c_uchar as *const ::core::ffi::c_void,
         16 as size_t,
     );
-    cspc_id = pdf_colorspace_findresource(
-        ident,
-        PDF_COLORSPACE_TYPE_ICCBASED,
-        cdata as *const ::core::ffi::c_void,
-    );
+    cspc_id = pdf_colorspace_findresource(ident, PDF_COLORSPACE_TYPE_ICCBASED, cdata as *const ::core::ffi::c_void);
     if cspc_id >= 0 as ::core::ffi::c_int {
         if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
-            pdf_message!(
-                b"(ICCP:[id=%d])\0" as *const u8 as *const ::core::ffi::c_char,
-                cspc_id,
-            );
+            pdf_message!(b"(ICCP:[id=%d])\0" as *const u8 as *const ::core::ffi::c_char, cspc_id,);
         }
         release_iccbased_cdata(cdata);
         return cspc_id;
@@ -1472,10 +1276,7 @@ pub unsafe extern "C-unwind" fn iccp_load_profile(
     }
     resource = pdf_new_array();
     stream = pdf_new_stream(STREAM_COMPRESS);
-    pdf_add_array(
-        resource,
-        pdf_new_name(b"ICCBased\0" as *const u8 as *const ::core::ffi::c_char),
-    );
+    pdf_add_array(resource, pdf_new_name(b"ICCBased\0" as *const u8 as *const ::core::ffi::c_char));
     pdf_add_array(resource, pdf_ref_obj(stream));
     stream_dict = pdf_stream_dict(stream);
     pdf_add_dict(
@@ -1485,19 +1286,12 @@ pub unsafe extern "C-unwind" fn iccp_load_profile(
     );
     pdf_add_stream(stream, profile, proflen);
     pdf_release_obj(stream);
-    cspc_id = pdf_colorspace_defineresource(
-        ident,
-        PDF_COLORSPACE_TYPE_ICCBASED,
-        cdata as *mut ::core::ffi::c_void,
-        resource,
-    );
+    cspc_id = pdf_colorspace_defineresource(ident, PDF_COLORSPACE_TYPE_ICCBASED, cdata as *mut ::core::ffi::c_void, resource);
     return cspc_id;
 }
 
 unsafe extern "C-unwind" fn pdf_colorspace_findresource(
-    mut ident: *const ::core::ffi::c_char,
-    mut type_0: ::core::ffi::c_int,
-    mut cdata: *const ::core::ffi::c_void,
+    mut ident: *const ::core::ffi::c_char, mut type_0: ::core::ffi::c_int, mut cdata: *const ::core::ffi::c_void,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut colorspace: *mut pdf_colorspace = ::core::ptr::null_mut::<pdf_colorspace>();
@@ -1505,10 +1299,7 @@ unsafe extern "C-unwind" fn pdf_colorspace_findresource(
     let mut cmp: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     cspc_id = 0 as ::core::ffi::c_int;
     while cmp != 0 && (cspc_id as ::core::ffi::c_uint) < (*__pdf_state).cspc_cache.count {
-        colorspace = (*__pdf_state)
-            .cspc_cache
-            .colorspaces
-            .offset(cspc_id as isize) as *mut pdf_colorspace;
+        colorspace = (*__pdf_state).cspc_cache.colorspaces.offset(cspc_id as isize) as *mut pdf_colorspace;
         if !((*colorspace).subtype != type_0) {
             match (*colorspace).subtype {
                 PDF_COLORSPACE_TYPE_ICCBASED => {
@@ -1581,48 +1372,32 @@ unsafe extern "C-unwind" fn pdf_flush_colorspace(mut colorspace: *mut pdf_colors
     (*colorspace).reference = ::core::ptr::null_mut::<pdf_obj>();
 }
 unsafe extern "C-unwind" fn pdf_colorspace_defineresource(
-    mut ident: *const ::core::ffi::c_char,
-    mut subtype: ::core::ffi::c_int,
-    mut cdata: *mut ::core::ffi::c_void,
-    mut resource: *mut pdf_obj,
+    mut ident: *const ::core::ffi::c_char, mut subtype: ::core::ffi::c_int, mut cdata: *mut ::core::ffi::c_void, mut resource: *mut pdf_obj,
 ) -> ::core::ffi::c_int {
     let __pdf_state = unsafe { document_state() };
     let mut cspc_id: ::core::ffi::c_int = 0;
     let mut colorspace: *mut pdf_colorspace = ::core::ptr::null_mut::<pdf_colorspace>();
     if (*__pdf_state).cspc_cache.count >= (*__pdf_state).cspc_cache.capacity {
-        (*__pdf_state).cspc_cache.capacity = (*__pdf_state)
-            .cspc_cache
-            .capacity
-            .wrapping_add(16 as ::core::ffi::c_uint);
+        (*__pdf_state).cspc_cache.capacity = (*__pdf_state).cspc_cache.capacity.wrapping_add(16 as ::core::ffi::c_uint);
         (*__pdf_state).cspc_cache.colorspaces = renew(
             (*__pdf_state).cspc_cache.colorspaces as *mut ::core::ffi::c_void,
-            ((*__pdf_state).cspc_cache.capacity as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<pdf_colorspace>() as usize)
-                as uint32_t,
+            ((*__pdf_state).cspc_cache.capacity as uint32_t as usize).wrapping_mul(::core::mem::size_of::<pdf_colorspace>() as usize) as uint32_t,
         ) as *mut pdf_colorspace;
     }
     cspc_id = (*__pdf_state).cspc_cache.count as ::core::ffi::c_int;
-    colorspace = (*__pdf_state)
-        .cspc_cache
-        .colorspaces
-        .offset(cspc_id as isize) as *mut pdf_colorspace;
+    colorspace = (*__pdf_state).cspc_cache.colorspaces.offset(cspc_id as isize) as *mut pdf_colorspace;
     pdf_init_colorspace_struct(colorspace);
     if !ident.is_null() {
-        (*colorspace).ident = new(
-            (strlen(ident).wrapping_add(1 as size_t) as uint32_t as usize)
-                .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize)
-                as uint32_t,
-        ) as *mut ::core::ffi::c_char;
+        (*colorspace).ident = new((strlen(ident).wrapping_add(1 as size_t) as uint32_t as usize)
+            .wrapping_mul(::core::mem::size_of::<::core::ffi::c_char>() as usize) as uint32_t)
+            as *mut ::core::ffi::c_char;
         strcpy((*colorspace).ident, ident);
     }
     (*colorspace).subtype = subtype;
     (*colorspace).cdata = cdata;
     (*colorspace).resource = resource;
     if dpx_conf.verbose_level > 0 as ::core::ffi::c_int {
-        pdf_message!(
-            b"(ColorSpace:%s\0" as *const u8 as *const ::core::ffi::c_char,
-            ident,
-        );
+        pdf_message!(b"(ColorSpace:%s\0" as *const u8 as *const ::core::ffi::c_char, ident,);
         if dpx_conf.verbose_level > 1 as ::core::ffi::c_int {
             match subtype {
                 PDF_COLORSPACE_TYPE_ICCBASED => {
@@ -1643,15 +1418,10 @@ unsafe extern "C-unwind" fn pdf_colorspace_defineresource(
     return cspc_id;
 }
 #[unsafe(export_name = "__pdf_impl_pdf_get_colorspace_reference")]
-pub unsafe extern "C-unwind" fn pdf_get_colorspace_reference(
-    mut cspc_id: ::core::ffi::c_int,
-) -> *mut pdf_obj {
+pub unsafe extern "C-unwind" fn pdf_get_colorspace_reference(mut cspc_id: ::core::ffi::c_int) -> *mut pdf_obj {
     let __pdf_state = unsafe { document_state() };
     let mut colorspace: *mut pdf_colorspace = ::core::ptr::null_mut::<pdf_colorspace>();
-    colorspace = (*__pdf_state)
-        .cspc_cache
-        .colorspaces
-        .offset(cspc_id as isize) as *mut pdf_colorspace;
+    colorspace = (*__pdf_state).cspc_cache.colorspaces.offset(cspc_id as isize) as *mut pdf_colorspace;
     if (*colorspace).reference.is_null() {
         (*colorspace).reference = pdf_ref_obj((*colorspace).resource);
         pdf_release_obj((*colorspace).resource);
@@ -1673,36 +1443,21 @@ pub unsafe extern "C-unwind" fn pdf_close_colors() {
     i = 0 as ::core::ffi::c_uint;
     while i < (*__pdf_state).cspc_cache.count {
         let mut colorspace: *mut pdf_colorspace = ::core::ptr::null_mut::<pdf_colorspace>();
-        colorspace =
-            (*__pdf_state).cspc_cache.colorspaces.offset(i as isize) as *mut pdf_colorspace;
+        colorspace = (*__pdf_state).cspc_cache.colorspaces.offset(i as isize) as *mut pdf_colorspace;
         pdf_flush_colorspace(colorspace);
         pdf_clean_colorspace_struct(colorspace);
         i = i.wrapping_add(1);
     }
-    (*__pdf_state).cspc_cache.colorspaces =
-        mfree((*__pdf_state).cspc_cache.colorspaces as *mut ::core::ffi::c_void)
-            as *mut pdf_colorspace;
+    (*__pdf_state).cspc_cache.colorspaces = mfree((*__pdf_state).cspc_cache.colorspaces as *mut ::core::ffi::c_void) as *mut pdf_colorspace;
     (*__pdf_state).cspc_cache.capacity = 0 as ::core::ffi::c_uint;
     (*__pdf_state).cspc_cache.count = (*__pdf_state).cspc_cache.capacity;
 }
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
-    fn memcpy(
-        __dst: *mut ::core::ffi::c_void,
-        __src: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> *mut ::core::ffi::c_void;
-    fn memset(
-        __b: *mut ::core::ffi::c_void,
-        __c: ::core::ffi::c_int,
-        __len: size_t,
-    ) -> *mut ::core::ffi::c_void;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
+    fn memcpy(__dst: *mut ::core::ffi::c_void, __src: *const ::core::ffi::c_void, __n: size_t) -> *mut ::core::ffi::c_void;
+    fn memset(__b: *mut ::core::ffi::c_void, __c: ::core::ffi::c_int, __len: size_t) -> *mut ::core::ffi::c_void;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -1710,10 +1465,7 @@ pub struct pdf_obj {
     _private: [u8; 0],
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_color_type(
-    mut color: *const pdf_color,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_color_type(mut color: *const pdf_color, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_color_type(color) }) {
         Ok(value) => {
             unsafe {
@@ -1726,10 +1478,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_color_type(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_color_rgbcolor(
-    mut color: *mut pdf_color,
-    mut r: ::core::ffi::c_double,
-    mut g: ::core::ffi::c_double,
-    mut b: ::core::ffi::c_double,
+    mut color: *mut pdf_color, mut r: ::core::ffi::c_double, mut g: ::core::ffi::c_double, mut b: ::core::ffi::c_double,
     _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_color_rgbcolor(color, r, g, b) }) {
@@ -1744,12 +1493,8 @@ pub unsafe extern "C" fn __pdf_entry_pdf_color_rgbcolor(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_color_cmykcolor(
-    mut color: *mut pdf_color,
-    mut c: ::core::ffi::c_double,
-    mut m: ::core::ffi::c_double,
-    mut y: ::core::ffi::c_double,
-    mut k: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
+    mut color: *mut pdf_color, mut c: ::core::ffi::c_double, mut m: ::core::ffi::c_double, mut y: ::core::ffi::c_double,
+    mut k: ::core::ffi::c_double, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_color_cmykcolor(color, c, m, y, k) }) {
         Ok(value) => {
@@ -1763,9 +1508,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_color_cmykcolor(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_color_graycolor(
-    mut color: *mut pdf_color,
-    mut g: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
+    mut color: *mut pdf_color, mut g: ::core::ffi::c_double, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_color_graycolor(color, g) }) {
         Ok(value) => {
@@ -1779,10 +1522,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_color_graycolor(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_color_spotcolor(
-    mut color: *mut pdf_color,
-    mut name: *mut ::core::ffi::c_char,
-    mut c: ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
+    mut color: *mut pdf_color, mut name: *mut ::core::ffi::c_char, mut c: ::core::ffi::c_double, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_color_spotcolor(color, name, c) }) {
         Ok(value) => {
@@ -1795,10 +1535,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_color_spotcolor(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_color_copycolor(
-    mut color1: *mut pdf_color,
-    mut color2: *const pdf_color,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_color_copycolor(mut color1: *mut pdf_color, mut color2: *const pdf_color) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_color_copycolor(color1, color2) }) {
         Ok(value) => {
             let _ = value;
@@ -1809,9 +1546,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_color_copycolor(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_color_brighten_color(
-    mut dst: *mut pdf_color,
-    mut src: *const pdf_color,
-    mut f: ::core::ffi::c_double,
+    mut dst: *mut pdf_color, mut src: *const pdf_color, mut f: ::core::ffi::c_double,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_color_brighten_color(dst, src, f) }) {
         Ok(value) => {
@@ -1822,10 +1557,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_color_brighten_color(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_color_is_white(
-    mut color: *const pdf_color,
-    _result: *mut bool,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_color_is_white(mut color: *const pdf_color, _result: *mut bool) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_color_is_white(color) }) {
         Ok(value) => {
             unsafe {
@@ -1838,15 +1570,10 @@ pub unsafe extern "C" fn __pdf_entry_pdf_color_is_white(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_color_set_color(
-    mut color: *const pdf_color,
-    mut buffer: *mut ::core::ffi::c_char,
-    mut buffer_len: size_t,
-    mut mask: ::core::ffi::c_char,
+    mut color: *const pdf_color, mut buffer: *mut ::core::ffi::c_char, mut buffer_len: size_t, mut mask: ::core::ffi::c_char,
     _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        pdf_color_set_color(color, buffer, buffer_len, mask)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { pdf_color_set_color(color, buffer, buffer_len, mask) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -1858,9 +1585,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_color_set_color(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_pdf_color_compare(
-    mut color1: *const pdf_color,
-    mut color2: *const pdf_color,
-    _result: *mut ::core::ffi::c_int,
+    mut color1: *const pdf_color, mut color2: *const pdf_color, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_color_compare(color1, color2) }) {
         Ok(value) => {
@@ -1883,10 +1608,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_color_clear_stack() -> i32 {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_color_set(
-    mut sc: *mut pdf_color,
-    mut fc: *mut pdf_color,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_color_set(mut sc: *mut pdf_color, mut fc: *mut pdf_color) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_color_set(sc, fc) }) {
         Ok(value) => {
             let _ = value;
@@ -1896,10 +1618,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_color_set(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_color_push(
-    mut sc: *mut pdf_color,
-    mut fc: *mut pdf_color,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_color_push(mut sc: *mut pdf_color, mut fc: *mut pdf_color) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_color_push(sc, fc) }) {
         Ok(value) => {
             let _ = value;
@@ -1919,10 +1638,7 @@ pub unsafe extern "C" fn __pdf_entry_pdf_color_pop() -> i32 {
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_color_get_current(
-    mut sc: *mut *mut pdf_color,
-    mut fc: *mut *mut pdf_color,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_color_get_current(mut sc: *mut *mut pdf_color, mut fc: *mut *mut pdf_color) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_color_get_current(sc, fc) }) {
         Ok(value) => {
             let _ = value;
@@ -1933,14 +1649,9 @@ pub unsafe extern "C" fn __pdf_entry_pdf_color_get_current(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_iccp_check_colorspace(
-    mut colortype: ::core::ffi::c_int,
-    mut profile: *const ::core::ffi::c_void,
-    mut proflen: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut colortype: ::core::ffi::c_int, mut profile: *const ::core::ffi::c_void, mut proflen: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        iccp_check_colorspace(colortype, profile, proflen)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { iccp_check_colorspace(colortype, profile, proflen) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -1952,13 +1663,9 @@ pub unsafe extern "C" fn __pdf_entry_iccp_check_colorspace(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_iccp_get_rendering_intent(
-    mut profile: *const ::core::ffi::c_void,
-    mut proflen: ::core::ffi::c_int,
-    _result: *mut *mut pdf_obj,
+    mut profile: *const ::core::ffi::c_void, mut proflen: ::core::ffi::c_int, _result: *mut *mut pdf_obj,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        iccp_get_rendering_intent(profile, proflen)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { iccp_get_rendering_intent(profile, proflen) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -1970,14 +1677,9 @@ pub unsafe extern "C" fn __pdf_entry_iccp_get_rendering_intent(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_iccp_load_profile(
-    mut ident: *const ::core::ffi::c_char,
-    mut profile: *const ::core::ffi::c_void,
-    mut proflen: ::core::ffi::c_int,
-    _result: *mut ::core::ffi::c_int,
+    mut ident: *const ::core::ffi::c_char, mut profile: *const ::core::ffi::c_void, mut proflen: ::core::ffi::c_int, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        iccp_load_profile(ident, profile, proflen)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { iccp_load_profile(ident, profile, proflen) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);
@@ -1988,10 +1690,7 @@ pub unsafe extern "C" fn __pdf_entry_iccp_load_profile(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_pdf_get_colorspace_reference(
-    mut cspc_id: ::core::ffi::c_int,
-    _result: *mut *mut pdf_obj,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_pdf_get_colorspace_reference(mut cspc_id: ::core::ffi::c_int, _result: *mut *mut pdf_obj) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { pdf_get_colorspace_reference(cspc_id) }) {
         Ok(value) => {
             unsafe {
@@ -2040,8 +1739,8 @@ impl DocumentState {
                 num_components: 1 as ::core::ffi::c_int,
                 spot_color_name: ::core::ptr::null_mut::<::core::ffi::c_char>(),
                 values: [
-                    0.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                    0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                    0.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                    0.,
                 ],
                 pattern_id: -(1 as ::core::ffi::c_int),
             },
@@ -2051,8 +1750,8 @@ impl DocumentState {
                 num_components: 1 as ::core::ffi::c_int,
                 spot_color_name: ::core::ptr::null_mut::<::core::ffi::c_char>(),
                 values: [
-                    0.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
-                    0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                    0.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                    0.,
                 ],
                 pattern_id: -(1 as ::core::ffi::c_int),
             },
@@ -2062,8 +1761,8 @@ impl DocumentState {
                 num_components: 1 as ::core::ffi::c_int,
                 spot_color_name: ::core::ptr::null_mut::<::core::ffi::c_char>(),
                 values: [
-                    0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0., 0., 0., 0.,
-                    0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                    0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0.0f64, 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                    0., 0., 0., 0., 0., 0., 0., 0.,
                 ],
                 pattern_id: -(1 as ::core::ffi::c_int),
             },
@@ -2097,10 +1796,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_pdfcolor
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_pdfcolor.pointer }
 }

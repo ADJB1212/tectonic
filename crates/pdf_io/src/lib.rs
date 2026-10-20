@@ -6,9 +6,7 @@
 //! [Tectonic]: https://tectonic-typesetting.github.io/
 
 #[cfg(panic = "abort")]
-compile_error!(
-    "tectonic_pdf_io requires panic = \"unwind\" to recover PDF errors before returning to C"
-);
+compile_error!("tectonic_pdf_io requires panic = \"unwind\" to recover PDF errors before returning to C");
 
 #[macro_use]
 mod backend;

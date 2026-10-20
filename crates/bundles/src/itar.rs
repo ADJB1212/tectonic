@@ -15,9 +15,7 @@
 //! resource, the index file merely contains a byte offset and length that are
 //! then used to construct an HTTP Range request to obtain the file as needed.
 
-use crate::{
-    Bundle, CachableBundle, FileIndex, FileInfo, NET_RETRY_ATTEMPTS, NET_RETRY_SLEEP_MS, batch,
-};
+use crate::{Bundle, CachableBundle, FileIndex, FileInfo, NET_RETRY_ATTEMPTS, NET_RETRY_SLEEP_MS, batch};
 use flate2::read::GzDecoder;
 use std::{
     collections::HashMap,
@@ -35,11 +33,7 @@ use tectonic_status_base::{NoopStatusBackend, StatusBackend, tt_note, tt_warning
 ///
 /// This is the shared core used by both the one-at-a-time [`ItarBundle::open_fileinfo`]
 /// path and the concurrent [`ItarBundle::batch_open`] path.
-fn read_file_with_retries(
-    reader: &mut DefaultRangeReader,
-    info: &ItarFileInfo,
-    status: &mut dyn StatusBackend,
-) -> OpenResult<Vec<u8>> {
+fn read_file_with_retries(reader: &mut DefaultRangeReader, info: &ItarFileInfo, status: &mut dyn StatusBackend) -> OpenResult<Vec<u8>> {
     // Edge case for zero-sized reads (these cause errors on some web hosts).
     if info.length == 0 {
         return OpenResult::Ok(Vec::new());
@@ -74,10 +68,7 @@ fn read_file_with_retries(
         };
     }
 
-    OpenResult::Err(anyhow!(
-        "failed to download \"{}\"; please check your network connection.",
-        info.name
-    ))
+    OpenResult::Err(anyhow!("failed to download \"{}\"; please check your network connection.", info.name))
 }
 
 /// The internal file-information struct used by the [`ItarBundle`].
@@ -121,9 +112,7 @@ impl<'this> FileIndex<'this> for ItarFileIndex {
             let line = line?;
             let mut bits = line.split_whitespace();
 
-            if let (Some(name), Some(offset), Some(length)) =
-                (bits.next(), bits.next(), bits.next())
-            {
+            if let (Some(name), Some(offset), Some(length)) = (bits.next(), bits.next(), bits.next()) {
                 self.content.insert(
                     name.to_owned(),
                     ItarFileInfo {
@@ -200,11 +189,7 @@ impl ItarBundle {
 }
 
 impl IoProvider for ItarBundle {
-    fn input_open_name(
-        &mut self,
-        name: &str,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn input_open_name(&mut self, name: &str, status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         if let Err(e) = self.ensure_index() {
             return OpenResult::Err(e);
         };
@@ -226,8 +211,7 @@ impl Bundle for ItarBundle {
     }
 
     fn get_digest(&mut self) -> Result<tectonic_io_base::digest::DigestData> {
-        let digest_text = match self.input_open_name(digest::DIGEST_NAME, &mut NoopStatusBackend {})
-        {
+        let digest_text = match self.input_open_name(digest::DIGEST_NAME, &mut NoopStatusBackend {}) {
             OpenResult::Ok(h) => {
                 let mut text = String::new();
                 h.take(64).read_to_string(&mut text)?;
@@ -277,11 +261,7 @@ impl CachableBundle<'_, ItarFileIndex> for ItarBundle {
         Ok(Box::new(reader))
     }
 
-    fn open_fileinfo(
-        &mut self,
-        info: &ItarFileInfo,
-        status: &mut dyn StatusBackend,
-    ) -> OpenResult<InputHandle> {
+    fn open_fileinfo(&mut self, info: &ItarFileInfo, status: &mut dyn StatusBackend) -> OpenResult<InputHandle> {
         match self.ensure_index() {
             Ok(_) => {}
             Err(e) => return OpenResult::Err(e),
@@ -290,11 +270,7 @@ impl CachableBundle<'_, ItarFileIndex> for ItarBundle {
         tt_note!(status, "downloading {}", info.name);
 
         match read_file_with_retries(self.reader.as_mut().unwrap(), info, status) {
-            OpenResult::Ok(v) => OpenResult::Ok(InputHandle::new_read_only(
-                info.name.clone(),
-                Cursor::new(v),
-                InputOrigin::Other,
-            )),
+            OpenResult::Ok(v) => OpenResult::Ok(InputHandle::new_read_only(info.name.clone(), Cursor::new(v), InputOrigin::Other)),
             OpenResult::NotAvailable => OpenResult::NotAvailable,
             OpenResult::Err(e) => OpenResult::Err(e),
         }
@@ -309,11 +285,7 @@ impl CachableBundle<'_, ItarFileIndex> for ItarBundle {
     /// of worker threads, each with its own range reader (and thus its own
     /// pooled HTTP connection), which collapses N serial round-trips into
     /// roughly N/concurrency.
-    fn batch_open(
-        &mut self,
-        infos: &[ItarFileInfo],
-        status: &mut dyn StatusBackend,
-    ) -> Vec<OpenResult<Vec<u8>>> {
+    fn batch_open(&mut self, infos: &[ItarFileInfo], status: &mut dyn StatusBackend) -> Vec<OpenResult<Vec<u8>>> {
         if infos.is_empty() {
             return Vec::new();
         }
@@ -324,13 +296,7 @@ impl CachableBundle<'_, ItarFileIndex> for ItarBundle {
                 .collect();
         }
 
-        batch::open(
-            &self.url,
-            infos,
-            |info| info.length,
-            read_file_with_retries,
-            status,
-        )
+        batch::open(&self.url, infos, |info| info.length, read_file_with_retries, status)
     }
 }
 
@@ -341,10 +307,7 @@ mod tests {
     #[test]
     fn cached_index_still_connects_range_reader() {
         let mut bundle = ItarBundle::new("https://example.invalid/bundle.tar".into()).unwrap();
-        bundle
-            .index
-            .initialize(&mut Cursor::new(b"plain.tex 0 1\n"))
-            .unwrap();
+        bundle.index.initialize(&mut Cursor::new(b"plain.tex 0 1\n")).unwrap();
 
         assert!(bundle.reader.is_none());
         bundle.ensure_index().unwrap();

@@ -17,26 +17,12 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 use crate::backend::dpx_pdfdev::transform_info_clear;
 use crate::compat::allocation::free;
 unsafe extern "C-unwind" {
-    fn __assert_rtn(
-        _: *const ::core::ffi::c_char,
-        _: *const ::core::ffi::c_char,
-        _: ::core::ffi::c_int,
-        _: *const ::core::ffi::c_char,
-    ) -> !;
-    fn strcmp(
-        __s1: *const ::core::ffi::c_char,
-        __s2: *const ::core::ffi::c_char,
-    ) -> ::core::ffi::c_int;
+    fn __assert_rtn(_: *const ::core::ffi::c_char, _: *const ::core::ffi::c_char, _: ::core::ffi::c_int, _: *const ::core::ffi::c_char) -> !;
+    fn strcmp(__s1: *const ::core::ffi::c_char, __s2: *const ::core::ffi::c_char) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_release_obj"]
     fn pdf_release_obj(object: *mut pdf_obj);
     #[link_name = "__pdf_impl_pdf_boolean_value"]
@@ -45,31 +31,16 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_spc_set_linkmode"]
     fn spc_set_linkmode(spe: *mut spc_env, mode: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_spc_set_phantom"]
-    fn spc_set_phantom(
-        spe: *mut spc_env,
-        height: ::core::ffi::c_double,
-        depth: ::core::ffi::c_double,
-    );
+    fn spc_set_phantom(spe: *mut spc_env, height: ::core::ffi::c_double, depth: ::core::ffi::c_double);
     #[link_name = "__pdf_impl_parse_c_ident"]
-    fn parse_c_ident(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-    ) -> *mut ::core::ffi::c_char;
+    fn parse_c_ident(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char) -> *mut ::core::ffi::c_char;
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
     #[link_name = "__pdf_impl_skip_white"]
     fn skip_white(start: *mut *const ::core::ffi::c_char, end: *const ::core::ffi::c_char);
     #[link_name = "__pdf_impl_parse_pdf_boolean"]
-    fn parse_pdf_boolean(
-        pp: *mut *const ::core::ffi::c_char,
-        endptr: *const ::core::ffi::c_char,
-    ) -> *mut pdf_obj;
+    fn parse_pdf_boolean(pp: *mut *const ::core::ffi::c_char, endptr: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_spc_util_read_dimtrns"]
-    fn spc_util_read_dimtrns(
-        spe: *mut spc_env,
-        dimtrns: *mut transform_info,
-        args: *mut spc_arg,
-        syntax: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn spc_util_read_dimtrns(spe: *mut spc_env, dimtrns: *mut transform_info, args: *mut spc_arg, syntax: ::core::ffi::c_int) -> ::core::ffi::c_int;
 }
 pub type __darwin_size_t = usize;
 pub type size_t = __darwin_size_t;
@@ -99,8 +70,7 @@ pub struct spc_arg {
     pub base: *const ::core::ffi::c_char,
     pub command: *const ::core::ffi::c_char,
 }
-pub type spc_handler_fn_ptr =
-    Option<unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int>;
+pub type spc_handler_fn_ptr = Option<unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int>;
 #[derive(Copy, Clone)]
 #[repr(C)]
 pub struct spc_handler {
@@ -108,37 +78,24 @@ pub struct spc_handler {
     pub exec: spc_handler_fn_ptr,
 }
 #[inline]
-unsafe extern "C-unwind" fn streq_ptr(
-    mut s1: *const ::core::ffi::c_char,
-    mut s2: *const ::core::ffi::c_char,
-) -> bool {
+unsafe extern "C-unwind" fn streq_ptr(mut s1: *const ::core::ffi::c_char, mut s2: *const ::core::ffi::c_char) -> bool {
     if !s1.is_null() && !s2.is_null() {
         return strcmp(s1, s2) == 0 as ::core::ffi::c_int;
     }
     return false_0 != 0;
 }
-pub const INFO_HAS_HEIGHT: ::core::ffi::c_int =
-    (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
-unsafe extern "C-unwind" fn spc_handler_null(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+pub const INFO_HAS_HEIGHT: ::core::ffi::c_int = (1 as ::core::ffi::c_int) << 2 as ::core::ffi::c_int;
+unsafe extern "C-unwind" fn spc_handler_null(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     (*args).curptr = (*args).endptr;
     return 0 as ::core::ffi::c_int;
 }
-unsafe extern "C-unwind" fn spc_handler_dvipdfmx_catch_phantom(
-    mut spe: *mut spc_env,
-    mut args: *mut spc_arg,
-) -> ::core::ffi::c_int {
+unsafe extern "C-unwind" fn spc_handler_dvipdfmx_catch_phantom(mut spe: *mut spc_env, mut args: *mut spc_arg) -> ::core::ffi::c_int {
     let mut mode: ::core::ffi::c_int = 0;
     let mut error: ::core::ffi::c_int = 0;
     skip_white(&raw mut (*args).curptr, (*args).endptr);
     let mut b: *mut pdf_obj = parse_pdf_boolean(&raw mut (*args).curptr, (*args).endptr);
     if b.is_null() {
-        pdf_warning!(
-            b"A boolean value expected but not found...\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"A boolean value expected but not found...\0" as *const u8 as *const ::core::ffi::c_char,);
         return -(1 as ::core::ffi::c_int);
     }
     mode = pdf_boolean_value(b) as ::core::ffi::c_int;
@@ -181,31 +138,21 @@ unsafe extern "C-unwind" fn spc_handler_dvipdfmx_catch_phantom(
 const DVIPDFMX_HANDLERS: [spc_handler; 2] = [
     spc_handler {
         key: b"config\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_null
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_null as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
     spc_handler {
         key: b"catch_phantom\0" as *const u8 as *const ::core::ffi::c_char,
-        exec: Some(
-            spc_handler_dvipdfmx_catch_phantom
-                as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int,
-        ),
+        exec: Some(spc_handler_dvipdfmx_catch_phantom as unsafe extern "C-unwind" fn(*mut spc_env, *mut spc_arg) -> ::core::ffi::c_int),
     },
 ];
 #[unsafe(export_name = "__pdf_impl_spc_dvipdfmx_check_special")]
-pub unsafe extern "C-unwind" fn spc_dvipdfmx_check_special(
-    mut buf: *const ::core::ffi::c_char,
-    mut len: ::core::ffi::c_int,
-) -> bool {
+pub unsafe extern "C-unwind" fn spc_dvipdfmx_check_special(mut buf: *const ::core::ffi::c_char, mut len: ::core::ffi::c_int) -> bool {
     let mut p: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     let mut endptr: *const ::core::ffi::c_char = ::core::ptr::null::<::core::ffi::c_char>();
     p = buf;
     endptr = p.offset(len as isize);
     skip_white(&raw mut p, endptr);
-    if p.offset(strlen(b"dvipdfmx:\0" as *const u8 as *const ::core::ffi::c_char) as isize)
-        <= endptr
+    if p.offset(strlen(b"dvipdfmx:\0" as *const u8 as *const ::core::ffi::c_char) as isize) <= endptr
         && memcmp(
             p as *const ::core::ffi::c_void,
             b"dvipdfmx:\0" as *const u8 as *const ::core::ffi::c_char as *const ::core::ffi::c_void,
@@ -218,17 +165,12 @@ pub unsafe extern "C-unwind" fn spc_dvipdfmx_check_special(
 }
 #[unsafe(export_name = "__pdf_impl_spc_dvipdfmx_setup_handler")]
 pub unsafe extern "C-unwind" fn spc_dvipdfmx_setup_handler(
-    mut sph: *mut spc_handler,
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
+    mut sph: *mut spc_handler, mut spe: *mut spc_env, mut ap: *mut spc_arg,
 ) -> ::core::ffi::c_int {
     let mut error: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
     let mut i: size_t = 0;
     let mut q: *mut ::core::ffi::c_char = ::core::ptr::null_mut::<::core::ffi::c_char>();
-    if !(!sph.is_null() && !spe.is_null() && !ap.is_null()) as ::core::ffi::c_int
-        as ::core::ffi::c_long
-        != 0
-    {
+    if !(!sph.is_null() && !spe.is_null() && !ap.is_null()) as ::core::ffi::c_int as ::core::ffi::c_long != 0 {
         pdf_abort!(
             c"assertion failed: %s".as_ptr(),
             b"sph && spe && ap\0" as *const u8 as *const ::core::ffi::c_char
@@ -256,10 +198,7 @@ pub unsafe extern "C-unwind" fn spc_dvipdfmx_setup_handler(
     q = parse_c_ident(&raw mut (*ap).curptr, (*ap).endptr);
     if !q.is_null() {
         i = 0 as size_t;
-        while i
-            < (::core::mem::size_of::<[spc_handler; 2]>() as usize)
-                .wrapping_div(::core::mem::size_of::<spc_handler>() as usize)
-        {
+        while i < (::core::mem::size_of::<[spc_handler; 2]>() as usize).wrapping_div(::core::mem::size_of::<spc_handler>() as usize) {
             if streq_ptr(q, DVIPDFMX_HANDLERS[i as usize].key) {
                 (*ap).command = DVIPDFMX_HANDLERS[i as usize].key;
                 (*sph).key = b"dvipdfmx:\0" as *const u8 as *const ::core::ffi::c_char;
@@ -278,11 +217,7 @@ pub unsafe extern "C-unwind" fn spc_dvipdfmx_setup_handler(
 pub const true_0: ::core::ffi::c_int = 1 as ::core::ffi::c_int;
 pub const false_0: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
 unsafe extern "C" {
-    fn memcmp(
-        __s1: *const ::core::ffi::c_void,
-        __s2: *const ::core::ffi::c_void,
-        __n: size_t,
-    ) -> ::core::ffi::c_int;
+    fn memcmp(__s1: *const ::core::ffi::c_void, __s2: *const ::core::ffi::c_void, __n: size_t) -> ::core::ffi::c_int;
     fn strlen(__s: *const ::core::ffi::c_char) -> size_t;
 }
 #[repr(C)]
@@ -291,9 +226,7 @@ pub struct pdf_obj {
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_dvipdfmx_check_special(
-    mut buf: *const ::core::ffi::c_char,
-    mut len: ::core::ffi::c_int,
-    _result: *mut bool,
+    mut buf: *const ::core::ffi::c_char, mut len: ::core::ffi::c_int, _result: *mut bool,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { spc_dvipdfmx_check_special(buf, len) }) {
         Ok(value) => {
@@ -307,13 +240,9 @@ pub unsafe extern "C" fn __pdf_entry_spc_dvipdfmx_check_special(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_spc_dvipdfmx_setup_handler(
-    mut sph: *mut spc_handler,
-    mut spe: *mut spc_env,
-    mut ap: *mut spc_arg,
-    _result: *mut ::core::ffi::c_int,
+    mut sph: *mut spc_handler, mut spe: *mut spc_env, mut ap: *mut spc_arg, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe { spc_dvipdfmx_setup_handler(sph, spe, ap) })
-    {
+    match crate::backend::runtime::boundary(|| unsafe { spc_dvipdfmx_setup_handler(sph, spe, ap) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);

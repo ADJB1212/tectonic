@@ -17,13 +17,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 unsafe extern "C-unwind" {
     fn fabs(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn sqrt(_: ::core::ffi::c_double) -> ::core::ffi::c_double;
@@ -75,8 +69,7 @@ pub struct C2RustUnnamed_0 {
 pub const __DARWIN_NULL: *mut ::core::ffi::c_void = ::core::ptr::null_mut::<::core::ffi::c_void>();
 pub const NULL: *mut ::core::ffi::c_void = __DARWIN_NULL;
 pub const CS_SUBR_NEST_MAX: ::core::ffi::c_int = 10 as ::core::ffi::c_int;
-pub const CS_TYPE2_DEBUG_STR: [::core::ffi::c_char; 24] =
-    crate::backend::c_char_array(*b"Type2 Charstring Parser\0");
+pub const CS_TYPE2_DEBUG_STR: [::core::ffi::c_char; 24] = crate::backend::c_char_array(*b"Type2 Charstring Parser\0");
 pub const CS_BUFFER_ERROR: ::core::ffi::c_int = -(3 as ::core::ffi::c_int);
 pub const CS_STACK_ERROR: ::core::ffi::c_int = -(2 as ::core::ffi::c_int);
 pub const CS_PARSE_ERROR: ::core::ffi::c_int = -(1 as ::core::ffi::c_int);
@@ -148,8 +141,7 @@ unsafe fn subroutines<'a>(index: *mut cff_index) -> Option<crate::type2::Subrout
             .copied()
             .and_then(|v| v.checked_sub(1))
             .filter(|&v| v <= i32::MAX as u32)
-            .unwrap_or_else(|| pdf_abort!("Invalid CFF Index offset data"))
-            as usize;
+            .unwrap_or_else(|| pdf_abort!("Invalid CFF Index offset data")) as usize;
         if length > 0 && index.data.is_null() {
             pdf_abort!("Invalid CFF Index offset data");
         }
@@ -164,14 +156,7 @@ unsafe fn subroutines<'a>(index: *mut cff_index) -> Option<crate::type2::Subrout
 
 #[unsafe(export_name = "__pdf_impl_cs_copy_charstring")]
 pub unsafe extern "C-unwind" fn cs_copy_charstring(
-    dst: *mut card8,
-    dstlen: i32,
-    src: *mut card8,
-    srclen: i32,
-    gsubr: *mut cff_index,
-    subr: *mut cff_index,
-    default_width: f64,
-    nominal_width: f64,
+    dst: *mut card8, dstlen: i32, src: *mut card8, srclen: i32, gsubr: *mut cff_index, subr: *mut cff_index, default_width: f64, nominal_width: f64,
     ginfo: *mut cs_ginfo,
 ) -> i32 {
     if dstlen < 0 || srclen < 0 || (dstlen > 0 && dst.is_null()) || (srclen > 0 && src.is_null()) {
@@ -206,38 +191,19 @@ pub unsafe extern "C-unwind" fn cs_copy_charstring(
     if !ginfo.is_null() {
         unsafe {
             (*ginfo).flags = 0;
-            (*ginfo).wx = result
-                .width
-                .map_or(default_width, |width| nominal_width + width);
+            (*ginfo).wx = result.width.map_or(default_width, |width| nominal_width + width);
         }
     }
     result.length as i32
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_cs_copy_charstring(
-    mut dst: *mut card8,
-    mut dstlen: ::core::ffi::c_int,
-    mut src: *mut card8,
-    mut srclen: ::core::ffi::c_int,
-    mut gsubr: *mut cff_index,
-    mut subr: *mut cff_index,
-    mut default_width: ::core::ffi::c_double,
-    mut nominal_width: ::core::ffi::c_double,
-    mut ginfo: *mut cs_ginfo,
+    mut dst: *mut card8, mut dstlen: ::core::ffi::c_int, mut src: *mut card8, mut srclen: ::core::ffi::c_int, mut gsubr: *mut cff_index,
+    mut subr: *mut cff_index, mut default_width: ::core::ffi::c_double, mut nominal_width: ::core::ffi::c_double, mut ginfo: *mut cs_ginfo,
     _result: *mut ::core::ffi::c_int,
 ) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe {
-        cs_copy_charstring(
-            dst,
-            dstlen,
-            src,
-            srclen,
-            gsubr,
-            subr,
-            default_width,
-            nominal_width,
-            ginfo,
-        )
+        cs_copy_charstring(dst, dstlen, src, srclen, gsubr, subr, default_width, nominal_width, ginfo)
     }) {
         Ok(value) => {
             unsafe {
@@ -265,10 +231,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_cs_type2
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_cs_type2.pointer }
 }

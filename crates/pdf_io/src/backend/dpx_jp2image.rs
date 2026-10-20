@@ -19,22 +19,11 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA.
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 unsafe extern "C-unwind" {
     fn pow(_: ::core::ffi::c_double, _: ::core::ffi::c_double) -> ::core::ffi::c_double;
     fn _tt_abort(format: *const ::core::ffi::c_char, ...) -> !;
-    fn fread(
-        __ptr: *mut ::core::ffi::c_void,
-        __size: size_t,
-        __nitems: size_t,
-        __stream: *mut FILE,
-    ) -> ::core::ffi::c_ulong;
+    fn fread(__ptr: *mut ::core::ffi::c_void, __size: size_t, __nitems: size_t, __stream: *mut FILE) -> ::core::ffi::c_ulong;
     fn rewind(_: *mut FILE);
     #[link_name = "__pdf_impl_get_unsigned_byte"]
     fn get_unsigned_byte(_: *mut FILE) -> ::core::ffi::c_uchar;
@@ -56,34 +45,19 @@ unsafe extern "C-unwind" {
     #[link_name = "__pdf_impl_pdf_new_name"]
     fn pdf_new_name(name: *const ::core::ffi::c_char) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_dict"]
-    fn pdf_add_dict(
-        dict: *mut pdf_obj,
-        key: *mut pdf_obj,
-        value: *mut pdf_obj,
-    ) -> ::core::ffi::c_int;
+    fn pdf_add_dict(dict: *mut pdf_obj, key: *mut pdf_obj, value: *mut pdf_obj) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_new_stream"]
     fn pdf_new_stream(flags: ::core::ffi::c_int) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_add_stream"]
-    fn pdf_add_stream(
-        stream: *mut pdf_obj,
-        stream_data_ptr: *const ::core::ffi::c_void,
-        stream_data_len: ::core::ffi::c_int,
-    );
+    fn pdf_add_stream(stream: *mut pdf_obj, stream_data_ptr: *const ::core::ffi::c_void, stream_data_len: ::core::ffi::c_int);
     #[link_name = "__pdf_impl_pdf_stream_dict"]
     fn pdf_stream_dict(stream: *mut pdf_obj) -> *mut pdf_obj;
     #[link_name = "__pdf_impl_pdf_check_version"]
-    fn pdf_check_version(
-        major: ::core::ffi::c_int,
-        minor: ::core::ffi::c_int,
-    ) -> ::core::ffi::c_int;
+    fn pdf_check_version(major: ::core::ffi::c_int, minor: ::core::ffi::c_int) -> ::core::ffi::c_int;
     #[link_name = "__pdf_impl_pdf_ximage_init_image_info"]
     fn pdf_ximage_init_image_info(info: *mut ximage_info);
     #[link_name = "__pdf_impl_pdf_ximage_set_image"]
-    fn pdf_ximage_set_image(
-        ximage: *mut pdf_ximage,
-        info: *mut ::core::ffi::c_void,
-        resource: *mut pdf_obj,
-    );
+    fn pdf_ximage_set_image(ximage: *mut pdf_ximage, info: *mut ::core::ffi::c_void, resource: *mut pdf_obj);
     fn dpx_warning(fmt: *const ::core::ffi::c_char, ...);
 }
 pub type __int64_t = i64;
@@ -111,23 +85,9 @@ pub struct __sFILE {
     pub _lbfsize: ::core::ffi::c_int,
     pub _cookie: *mut ::core::ffi::c_void,
     pub _close: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void) -> ::core::ffi::c_int>,
-    pub _read: Option<
-        unsafe extern "C-unwind" fn(
-            *mut ::core::ffi::c_void,
-            *mut ::core::ffi::c_char,
-            ::core::ffi::c_int,
-        ) -> ::core::ffi::c_int,
-    >,
-    pub _seek: Option<
-        unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, fpos_t, ::core::ffi::c_int) -> fpos_t,
-    >,
-    pub _write: Option<
-        unsafe extern "C-unwind" fn(
-            *mut ::core::ffi::c_void,
-            *const ::core::ffi::c_char,
-            ::core::ffi::c_int,
-        ) -> ::core::ffi::c_int,
-    >,
+    pub _read: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, *mut ::core::ffi::c_char, ::core::ffi::c_int) -> ::core::ffi::c_int>,
+    pub _seek: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, fpos_t, ::core::ffi::c_int) -> fpos_t>,
+    pub _write: Option<unsafe extern "C-unwind" fn(*mut ::core::ffi::c_void, *const ::core::ffi::c_char, ::core::ffi::c_int) -> ::core::ffi::c_int>,
     pub _ub: __sbuf,
     pub _extra: *mut __sFILEX,
     pub _ur: ::core::ffi::c_int,
@@ -168,11 +128,7 @@ pub const JP2_BOX_RESC: ::core::ffi::c_uint = 1919251299 as ::core::ffi::c_uint;
 pub const JP2_BOX_RESD: ::core::ffi::c_uint = 1919251300 as ::core::ffi::c_uint;
 pub const JP2_BOX_JP2C: ::core::ffi::c_uint = 1785737827 as ::core::ffi::c_uint;
 pub const JPX_BOX_LBL_: ::core::ffi::c_uint = 1818389536 as ::core::ffi::c_uint;
-unsafe extern "C-unwind" fn scan_file(
-    info: *mut ximage_info,
-    smask: *mut core::ffi::c_int,
-    fp: *mut FILE,
-) -> core::ffi::c_int {
+unsafe extern "C-unwind" fn scan_file(info: *mut ximage_info, smask: *mut core::ffi::c_int, fp: *mut FILE) -> core::ffi::c_int {
     let mut input = unsafe { crate::compat::input::BorrowedFile::from_raw(fp.cast()) };
     match crate::jp2::scan(&mut input, |message| {
         pdf_warning!("{}", message);
@@ -202,10 +158,7 @@ pub unsafe extern "C-unwind" fn check_for_jp2(fp: *mut FILE) -> core::ffi::c_int
     i32::from(crate::jp2::probe(&mut input).unwrap_or(false))
 }
 #[unsafe(export_name = "__pdf_impl_jp2_include_image")]
-pub unsafe extern "C-unwind" fn jp2_include_image(
-    mut ximage: *mut pdf_ximage,
-    mut fp: *mut FILE,
-) -> ::core::ffi::c_int {
+pub unsafe extern "C-unwind" fn jp2_include_image(mut ximage: *mut pdf_ximage, mut fp: *mut FILE) -> ::core::ffi::c_int {
     let mut smask: ::core::ffi::c_int = 0 as ::core::ffi::c_int;
     let mut stream: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
     let mut stream_dict: *mut pdf_obj = ::core::ptr::null_mut::<pdf_obj>();
@@ -219,11 +172,9 @@ pub unsafe extern "C-unwind" fn jp2_include_image(
         xdensity: 0.,
         ydensity: 0.,
     };
-    if pdf_check_version(1 as ::core::ffi::c_int, 5 as ::core::ffi::c_int) < 0 as ::core::ffi::c_int
-    {
+    if pdf_check_version(1 as ::core::ffi::c_int, 5 as ::core::ffi::c_int) < 0 as ::core::ffi::c_int {
         pdf_warning!(
-            b"JPEG 2000 support requires PDF version >= 1.5  (Current setting %d.%d)\n\0"
-                as *const u8 as *const ::core::ffi::c_char,
+            b"JPEG 2000 support requires PDF version >= 1.5  (Current setting %d.%d)\n\0" as *const u8 as *const ::core::ffi::c_char,
             pdf_get_version_major(),
             pdf_get_version_minor(),
         );
@@ -234,10 +185,7 @@ pub unsafe extern "C-unwind" fn jp2_include_image(
     stream = stream_dict;
     rewind(fp);
     if scan_file(&raw mut info, &raw mut smask, fp) < 0 as ::core::ffi::c_int {
-        pdf_warning!(
-            b"JPEG2000: Reading JPEG 2000 file failed.\0" as *const u8
-                as *const ::core::ffi::c_char,
-        );
+        pdf_warning!(b"JPEG2000: Reading JPEG 2000 file failed.\0" as *const u8 as *const ::core::ffi::c_char,);
         return -(1 as ::core::ffi::c_int);
     }
     stream = pdf_new_stream(0 as ::core::ffi::c_int);
@@ -277,10 +225,7 @@ pub unsafe extern "C-unwind" fn jp2_include_image(
 }
 #[unsafe(export_name = "__pdf_impl_jp2_get_bbox")]
 pub unsafe extern "C-unwind" fn jp2_get_bbox(
-    mut fp: *mut FILE,
-    mut width: *mut ::core::ffi::c_int,
-    mut height: *mut ::core::ffi::c_int,
-    mut xdensity: *mut ::core::ffi::c_double,
+    mut fp: *mut FILE, mut width: *mut ::core::ffi::c_int, mut height: *mut ::core::ffi::c_int, mut xdensity: *mut ::core::ffi::c_double,
     mut ydensity: *mut ::core::ffi::c_double,
 ) -> ::core::ffi::c_int {
     let mut r: ::core::ffi::c_int = 0;
@@ -317,10 +262,7 @@ pub struct pdf_ximage_ {
     _private: [u8; 0],
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_check_for_jp2(
-    mut fp: *mut FILE,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_check_for_jp2(mut fp: *mut FILE, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { check_for_jp2(fp) }) {
         Ok(value) => {
             unsafe {
@@ -332,11 +274,7 @@ pub unsafe extern "C" fn __pdf_entry_check_for_jp2(
     }
 }
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn __pdf_entry_jp2_include_image(
-    mut ximage: *mut pdf_ximage,
-    mut fp: *mut FILE,
-    _result: *mut ::core::ffi::c_int,
-) -> i32 {
+pub unsafe extern "C" fn __pdf_entry_jp2_include_image(mut ximage: *mut pdf_ximage, mut fp: *mut FILE, _result: *mut ::core::ffi::c_int) -> i32 {
     match crate::backend::runtime::boundary(|| unsafe { jp2_include_image(ximage, fp) }) {
         Ok(value) => {
             unsafe {
@@ -349,16 +287,10 @@ pub unsafe extern "C" fn __pdf_entry_jp2_include_image(
 }
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn __pdf_entry_jp2_get_bbox(
-    mut fp: *mut FILE,
-    mut width: *mut ::core::ffi::c_int,
-    mut height: *mut ::core::ffi::c_int,
-    mut xdensity: *mut ::core::ffi::c_double,
-    mut ydensity: *mut ::core::ffi::c_double,
-    _result: *mut ::core::ffi::c_int,
+    mut fp: *mut FILE, mut width: *mut ::core::ffi::c_int, mut height: *mut ::core::ffi::c_int, mut xdensity: *mut ::core::ffi::c_double,
+    mut ydensity: *mut ::core::ffi::c_double, _result: *mut ::core::ffi::c_int,
 ) -> i32 {
-    match crate::backend::runtime::boundary(|| unsafe {
-        jp2_get_bbox(fp, width, height, xdensity, ydensity)
-    }) {
+    match crate::backend::runtime::boundary(|| unsafe { jp2_get_bbox(fp, width, height, xdensity, ydensity) }) {
         Ok(value) => {
             unsafe {
                 _result.write(value);

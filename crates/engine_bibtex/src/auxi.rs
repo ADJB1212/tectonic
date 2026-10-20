@@ -8,11 +8,9 @@ use crate::{
     hash,
     hash::{HashData, HashPointer},
     log::{
-        AuxTy, aux_end1_err_print, aux_end2_err_print, aux_err_illegal_another_print,
-        aux_err_no_right_brace_print, aux_err_print, aux_err_stuff_after_right_brace_print,
-        aux_err_white_space_in_argument_print, hash_cite_confusion, log_pr_aux_name,
-        log_pr_bst_name, print_a_pool_str, print_a_token, print_aux_name, print_bib_name,
-        print_confusion, print_overflow,
+        AuxTy, aux_end1_err_print, aux_end2_err_print, aux_err_illegal_another_print, aux_err_no_right_brace_print, aux_err_print,
+        aux_err_stuff_after_right_brace_print, aux_err_white_space_in_argument_print, hash_cite_confusion, log_pr_aux_name, log_pr_bst_name,
+        print_a_pool_str, print_a_token, print_aux_name, print_bib_name, print_confusion, print_overflow,
     },
     peekable::PeekableInput,
     pool::{StrNumber, StringPool},
@@ -63,12 +61,7 @@ impl AuxData {
 }
 
 fn aux_bib_data_command(
-    ctx: &mut Bibtex<'_, '_>,
-    buffers: &mut GlobalBuffer,
-    bibs: &mut BibData,
-    aux: &AuxData,
-    pool: &mut StringPool,
-    hash: &mut HashData,
+    ctx: &mut Bibtex<'_, '_>, buffers: &mut GlobalBuffer, bibs: &mut BibData, aux: &AuxData, pool: &mut StringPool, hash: &mut HashData,
 ) -> Result<(), BibtexError> {
     if ctx.bib_seen {
         aux_err_illegal_another_print(ctx, AuxTy::Data)?;
@@ -80,11 +73,7 @@ fn aux_bib_data_command(
     while buffers.at_offset(BufTy::Base, 2) != b'}' {
         buffers.set_offset(BufTy::Base, 2, buffers.offset(BufTy::Base, 2) + 1);
         let init = buffers.init(BufTy::Base);
-        if !Scan::new()
-            .chars(b"},")
-            .class(LexClass::Whitespace)
-            .scan_till(buffers, init)
-        {
+        if !Scan::new().chars(b"},").class(LexClass::Whitespace).scan_till(buffers, init) {
             aux_err_no_right_brace_print(ctx);
             aux_err_print(ctx, buffers, aux, pool)?;
             return Ok(());
@@ -96,16 +85,13 @@ fn aux_bib_data_command(
             return Ok(());
         }
 
-        if buffers.init(BufTy::Base) > buffers.offset(BufTy::Base, 2) + 1
-            && buffers.at_offset(BufTy::Base, 2) == b'}'
-        {
+        if buffers.init(BufTy::Base) > buffers.offset(BufTy::Base, 2) + 1 && buffers.at_offset(BufTy::Base, 2) == b'}' {
             aux_err_stuff_after_right_brace_print(ctx);
             aux_err_print(ctx, buffers, aux, pool)?;
             return Ok(());
         }
 
-        let file = &buffers.buffer(BufTy::Base)
-            [buffers.offset(BufTy::Base, 1)..buffers.offset(BufTy::Base, 2)];
+        let file = &buffers.buffer(BufTy::Base)[buffers.offset(BufTy::Base, 1)..buffers.offset(BufTy::Base, 2)];
         let res = hash.lookup_str_insert::<hash::BibFile>(pool, file, ());
         if res.exists {
             ctx.write_logs("This database file appears more than once: ");
@@ -138,11 +124,7 @@ fn aux_bib_data_command(
 }
 
 fn aux_bib_style_command(
-    ctx: &mut Bibtex<'_, '_>,
-    buffers: &mut GlobalBuffer,
-    aux: &AuxData,
-    pool: &mut StringPool,
-    hash: &mut HashData,
+    ctx: &mut Bibtex<'_, '_>, buffers: &mut GlobalBuffer, aux: &AuxData, pool: &mut StringPool, hash: &mut HashData,
 ) -> Result<(), BibtexError> {
     if ctx.bst_seen {
         aux_err_illegal_another_print(ctx, AuxTy::Style)?;
@@ -153,11 +135,7 @@ fn aux_bib_style_command(
 
     buffers.set_offset(BufTy::Base, 2, buffers.offset(BufTy::Base, 2) + 1);
     let init = buffers.init(BufTy::Base);
-    if !Scan::new()
-        .chars(b"}")
-        .class(LexClass::Whitespace)
-        .scan_till(buffers, init)
-    {
+    if !Scan::new().chars(b"}").class(LexClass::Whitespace).scan_till(buffers, init) {
         aux_err_no_right_brace_print(ctx);
         aux_err_print(ctx, buffers, aux, pool)?;
         return Ok(());
@@ -175,8 +153,7 @@ fn aux_bib_style_command(
         return Ok(());
     }
 
-    let file = &buffers.buffer(BufTy::Base)
-        [buffers.offset(BufTy::Base, 1)..buffers.offset(BufTy::Base, 2)];
+    let file = &buffers.buffer(BufTy::Base)[buffers.offset(BufTy::Base, 1)..buffers.offset(BufTy::Base, 2)];
     let res = hash.lookup_str_insert::<hash::BstFile>(pool, file, ());
     if res.exists {
         ctx.write_logs("Already encountered style file");
@@ -216,12 +193,7 @@ fn aux_bib_style_command(
 }
 
 fn aux_citation_command(
-    ctx: &mut Bibtex<'_, '_>,
-    buffers: &mut GlobalBuffer,
-    aux: &AuxData,
-    pool: &mut StringPool,
-    hash: &mut HashData,
-    cites: &mut CiteInfo,
+    ctx: &mut Bibtex<'_, '_>, buffers: &mut GlobalBuffer, aux: &AuxData, pool: &mut StringPool, hash: &mut HashData, cites: &mut CiteInfo,
 ) -> Result<(), BibtexError> {
     ctx.citation_seen = true;
 
@@ -229,11 +201,7 @@ fn aux_citation_command(
         buffers.set_offset(BufTy::Base, 2, buffers.offset(BufTy::Base, 2) + 1);
 
         let init = buffers.init(BufTy::Base);
-        if !Scan::new()
-            .chars(b"},")
-            .class(LexClass::Whitespace)
-            .scan_till(buffers, init)
-        {
+        if !Scan::new().chars(b"},").class(LexClass::Whitespace).scan_till(buffers, init) {
             aux_err_no_right_brace_print(ctx);
             aux_err_print(ctx, buffers, aux, pool)?;
             return Ok(());
@@ -243,17 +211,13 @@ fn aux_citation_command(
             aux_err_print(ctx, buffers, aux, pool)?;
             return Ok(());
         }
-        if buffers.init(BufTy::Base) > buffers.offset(BufTy::Base, 2) + 1
-            && buffers.at_offset(BufTy::Base, 2) == b'}'
-        {
+        if buffers.init(BufTy::Base) > buffers.offset(BufTy::Base, 2) + 1 && buffers.at_offset(BufTy::Base, 2) == b'}' {
             aux_err_stuff_after_right_brace_print(ctx);
             aux_err_print(ctx, buffers, aux, pool)?;
             return Ok(());
         }
 
-        if buffers.offset(BufTy::Base, 2) - buffers.offset(BufTy::Base, 1) == 1
-            && buffers.at_offset(BufTy::Base, 1) == b'*'
-        {
+        if buffers.offset(BufTy::Base, 2) - buffers.offset(BufTy::Base, 1) == 1 && buffers.at_offset(BufTy::Base, 1) == b'*' {
             if ctx.all_entries {
                 ctx.write_logs("Multiple inclusions of entire database\n");
                 aux_err_print(ctx, buffers, aux, pool)?;
@@ -266,13 +230,7 @@ fn aux_citation_command(
         }
 
         let idx = buffers.offset(BufTy::Base, 1);
-        buffers.copy_within(
-            BufTy::Base,
-            BufTy::Ex,
-            idx,
-            idx,
-            buffers.offset(BufTy::Base, 2) - idx,
-        );
+        buffers.copy_within(BufTy::Base, BufTy::Ex, idx, idx, buffers.offset(BufTy::Base, 2) - idx);
         let range = buffers.offset(BufTy::Base, 1)..buffers.offset(BufTy::Base, 2);
         let lc_cite = &mut buffers.buffer_mut(BufTy::Ex)[range];
         lc_cite.make_ascii_lowercase();
@@ -281,8 +239,7 @@ fn aux_citation_command(
         if lc_res.exists {
             let &cite_loc = hash.get(lc_res.loc).extra();
 
-            let cite = &buffers.buffer(BufTy::Base)
-                [buffers.offset(BufTy::Base, 1)..buffers.offset(BufTy::Base, 2)];
+            let cite = &buffers.buffer(BufTy::Base)[buffers.offset(BufTy::Base, 1)..buffers.offset(BufTy::Base, 2)];
             let uc_res = hash.lookup_str::<hash::Cite>(pool, cite);
             if uc_res.is_none() {
                 let &cite = hash.get(cite_loc).extra();
@@ -295,8 +252,7 @@ fn aux_citation_command(
                 return Ok(());
             }
         } else {
-            let cite = &buffers.buffer(BufTy::Base)
-                [buffers.offset(BufTy::Base, 1)..buffers.offset(BufTy::Base, 2)];
+            let cite = &buffers.buffer(BufTy::Base)[buffers.offset(BufTy::Base, 1)..buffers.offset(BufTy::Base, 2)];
             let uc_res = hash.lookup_str_insert::<hash::Cite>(pool, cite, 0);
             if uc_res.exists {
                 hash_cite_confusion(ctx);
@@ -318,20 +274,12 @@ fn aux_citation_command(
 }
 
 fn aux_input_command(
-    ctx: &mut Bibtex<'_, '_>,
-    buffers: &mut GlobalBuffer,
-    aux: &mut AuxData,
-    pool: &mut StringPool,
-    hash: &mut HashData,
+    ctx: &mut Bibtex<'_, '_>, buffers: &mut GlobalBuffer, aux: &mut AuxData, pool: &mut StringPool, hash: &mut HashData,
 ) -> Result<(), BibtexError> {
     buffers.set_offset(BufTy::Base, 2, buffers.offset(BufTy::Base, 2) + 1);
 
     let init = buffers.init(BufTy::Base);
-    if !Scan::new()
-        .chars(b"}")
-        .class(LexClass::Whitespace)
-        .scan_till(buffers, init)
-    {
+    if !Scan::new().chars(b"}").class(LexClass::Whitespace).scan_till(buffers, init) {
         aux_err_no_right_brace_print(ctx);
         aux_err_print(ctx, buffers, aux, pool)?;
         return Ok(());
@@ -356,11 +304,8 @@ fn aux_input_command(
     }
 
     let aux_ext = pool.get_str(ctx.s_aux_extension);
-    let aux_extension_ok = !((buffers.offset(BufTy::Base, 2) - buffers.offset(BufTy::Base, 1)
-        < aux_ext.len())
-        || aux_ext
-            != &buffers.buffer(BufTy::Base)
-                [buffers.offset(BufTy::Base, 2) - aux_ext.len()..buffers.offset(BufTy::Base, 2)]);
+    let aux_extension_ok = !((buffers.offset(BufTy::Base, 2) - buffers.offset(BufTy::Base, 1) < aux_ext.len())
+        || aux_ext != &buffers.buffer(BufTy::Base)[buffers.offset(BufTy::Base, 2) - aux_ext.len()..buffers.offset(BufTy::Base, 2)]);
 
     if !aux_extension_ok {
         print_a_token(ctx, buffers);
@@ -369,8 +314,7 @@ fn aux_input_command(
         return Ok(());
     }
 
-    let file = &buffers.buffer(BufTy::Base)
-        [buffers.offset(BufTy::Base, 1)..buffers.offset(BufTy::Base, 2)];
+    let file = &buffers.buffer(BufTy::Base)[buffers.offset(BufTy::Base, 1)..buffers.offset(BufTy::Base, 2)];
     let res = hash.lookup_str_insert::<hash::AuxFile>(pool, file, ());
     if res.exists {
         ctx.write_logs("Already encountered file ");
@@ -404,54 +348,24 @@ fn aux_input_command(
     Ok(())
 }
 
-pub(crate) fn get_aux_command_and_process(
-    ctx: &mut Bibtex<'_, '_>,
-    globals: &mut GlobalItems<'_>,
-) -> Result<(), BibtexError> {
+pub(crate) fn get_aux_command_and_process(ctx: &mut Bibtex<'_, '_>, globals: &mut GlobalItems<'_>) -> Result<(), BibtexError> {
     globals.buffers.set_offset(BufTy::Base, 2, 0);
     let init = globals.buffers.init(BufTy::Base);
     if !Scan::new().chars(b"{").scan_till(globals.buffers, init) {
         return Ok(());
     }
 
-    let line = &globals.buffers.buffer(BufTy::Base)
-        [globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2)];
+    let line = &globals.buffers.buffer(BufTy::Base)[globals.buffers.offset(BufTy::Base, 1)..globals.buffers.offset(BufTy::Base, 2)];
     let res = globals.hash.lookup_str::<AuxCommand>(globals.pool, line);
 
     if let Some(loc) = res {
         let &cmd = globals.hash.get(loc).extra();
 
         match cmd {
-            AuxCommand::Data => aux_bib_data_command(
-                ctx,
-                globals.buffers,
-                globals.bibs,
-                globals.aux,
-                globals.pool,
-                globals.hash,
-            ),
-            AuxCommand::Style => aux_bib_style_command(
-                ctx,
-                globals.buffers,
-                globals.aux,
-                globals.pool,
-                globals.hash,
-            ),
-            AuxCommand::Citation => aux_citation_command(
-                ctx,
-                globals.buffers,
-                globals.aux,
-                globals.pool,
-                globals.hash,
-                globals.cites,
-            ),
-            AuxCommand::Input => aux_input_command(
-                ctx,
-                globals.buffers,
-                globals.aux,
-                globals.pool,
-                globals.hash,
-            ),
+            AuxCommand::Data => aux_bib_data_command(ctx, globals.buffers, globals.bibs, globals.aux, globals.pool, globals.hash),
+            AuxCommand::Style => aux_bib_style_command(ctx, globals.buffers, globals.aux, globals.pool, globals.hash),
+            AuxCommand::Citation => aux_citation_command(ctx, globals.buffers, globals.aux, globals.pool, globals.hash, globals.cites),
+            AuxCommand::Input => aux_input_command(ctx, globals.buffers, globals.aux, globals.pool, globals.hash),
         }?
     }
     Ok(())
@@ -464,11 +378,7 @@ pub(crate) fn pop_the_aux_stack(ctx: &mut Bibtex<'_, '_>, aux: &mut AuxData) -> 
 }
 
 pub(crate) fn last_check_for_aux_errors(
-    ctx: &mut Bibtex<'_, '_>,
-    pool: &StringPool,
-    cites: &mut CiteInfo,
-    bibs: &BibData,
-    last_aux: StrNumber,
+    ctx: &mut Bibtex<'_, '_>, pool: &StringPool, cites: &mut CiteInfo, bibs: &BibData, last_aux: StrNumber,
 ) -> Result<(), BibtexError> {
     cites.set_num_cites(cites.ptr());
     if !ctx.citation_seen {

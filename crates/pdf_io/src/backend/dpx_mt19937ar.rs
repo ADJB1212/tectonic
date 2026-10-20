@@ -40,13 +40,7 @@
    http://www.math.sci.hiroshima-u.ac.jp/~m-mat/MT/emt.html
    email: m-mat @ math.sci.hiroshima-u.ac.jp (remove space)
 */
-#![allow(
-    warnings,
-    clippy::all,
-    unsafe_op_in_unsafe_fn,
-    static_mut_refs,
-    dangerous_implicit_autorefs
-)]
+#![allow(warnings, clippy::all, unsafe_op_in_unsafe_fn, static_mut_refs, dangerous_implicit_autorefs)]
 #[unsafe(export_name = "__pdf_impl_init_genrand")]
 pub unsafe extern "C-unwind" fn init_genrand(s: ::core::ffi::c_ulonglong) {
     unsafe { &mut *document_state() }.generator.reseed(s as u32);
@@ -92,10 +86,5 @@ impl DocumentState {
 
 #[inline]
 unsafe fn document_state() -> *mut DocumentState {
-    unsafe {
-        (*crate::compat::document::current())
-            .backend
-            .dpx_mt19937ar
-            .pointer
-    }
+    unsafe { (*crate::compat::document::current()).backend.dpx_mt19937ar.pointer }
 }

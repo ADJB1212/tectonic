@@ -32,10 +32,7 @@ pub(super) fn eq_utf16_utf32(text: &[u16], scalars: &[i32]) -> bool {
             offset += 4;
         }
     }
-    text[offset..]
-        .iter()
-        .zip(&scalars[offset..])
-        .all(|(&unit, &value)| unit as i32 == value)
+    text[offset..].iter().zip(&scalars[offset..]).all(|(&unit, &value)| unit as i32 == value)
 }
 
 #[cfg(test)]
@@ -46,9 +43,7 @@ mod tests {
     fn mixed_width_comparison_matches_scalar_for_offsets_tails_and_mismatches() {
         for length in 0..=65 {
             for offset in 0..8 {
-                let text: Vec<u16> = (0..length + offset)
-                    .map(|index| (index * 997) as u16)
-                    .collect();
+                let text: Vec<u16> = (0..length + offset).map(|index| (index * 997) as u16).collect();
                 let mut scalars: Vec<i32> = text.iter().map(|&unit| unit as i32).collect();
                 let text = &text[offset..];
                 assert!(eq_utf16_utf32(text, &scalars[offset..]));

@@ -6,9 +6,7 @@
 use tectonic_errors::prelude::*;
 use tectonic_status_base::tt_warning;
 
-use crate::{
-    Common, assets::Assets, fonts::FontEnsemble, specials::Special, templating::Templating,
-};
+use crate::{Common, assets::Assets, fonts::FontEnsemble, specials::Special, templating::Templating};
 
 #[derive(Debug)]
 pub(crate) struct FinalizingState {
@@ -35,11 +33,7 @@ impl FinalizingState {
         }
     }
 
-    pub(crate) fn handle_special(
-        &mut self,
-        special: Special<'_>,
-        common: &mut Common,
-    ) -> Result<()> {
+    pub(crate) fn handle_special(&mut self, special: Special<'_>, common: &mut Common) -> Result<()> {
         match special {
             Special::Emit => self.finish_file(common),
 
@@ -53,9 +47,7 @@ impl FinalizingState {
                 Ok(())
             }
 
-            Special::SetTemplateVariable(spec) => {
-                self.templating.handle_set_template_variable(spec, common)
-            }
+            Special::SetTemplateVariable(spec) => self.templating.handle_set_template_variable(spec, common),
 
             Special::ProvideFile(_) | Special::ProvideSpecial(_) => {
                 self.assets.try_handle_special(special, common);
