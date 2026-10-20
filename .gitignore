@@ -17,3 +17,4 @@
 *.ignore
 .cargo
 scripts/
+.pre-commit-config.yaml

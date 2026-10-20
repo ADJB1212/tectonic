@@ -11,7 +11,6 @@
 //! expresses output that is not paginated for print — this is what Tectonic
 //! uses to produce its HTML output.
 
-use byteorder::{BigEndian, ByteOrder};
 use std::{
     error,
     fmt::{Debug, Display, Error as FmtError, Formatter},
@@ -1033,8 +1032,10 @@ impl<T: XdvEvents> XdvParser<T> {
         self.glyphs.clear();
 
         for pos in positions.as_chunks::<8>().0 {
-            self.glyph_x.push(state.h + BigEndian::read_i32(pos));
-            self.glyph_y.push(state.v + BigEndian::read_i32(&pos[4..]));
+            self.glyph_x
+                .push(state.h + i32::from_be_bytes(pos[..4].try_into().unwrap()));
+            self.glyph_y
+                .push(state.v + i32::from_be_bytes(pos[4..].try_into().unwrap()));
         }
         self.glyphs.extend(
             glyphs
@@ -1253,7 +1254,7 @@ impl<'a, T: XdvEvents> Cursor<'a, T> {
             return Err(InternalError::NeedMoreData);
         }
 
-        let rv = BigEndian::read_u16(&self.buf[..2]);
+        let rv = u16::from_be_bytes(self.buf[..2].try_into().unwrap());
         self.buf = &self.buf[2..];
         self.offset += 2;
         Ok(rv)
@@ -1264,7 +1265,7 @@ impl<'a, T: XdvEvents> Cursor<'a, T> {
             return Err(InternalError::NeedMoreData);
         }
 
-        let rv = BigEndian::read_i16(&self.buf[..2]);
+        let rv = i16::from_be_bytes(self.buf[..2].try_into().unwrap());
         self.buf = &self.buf[2..];
         self.offset += 2;
         Ok(rv)
@@ -1275,7 +1276,7 @@ impl<'a, T: XdvEvents> Cursor<'a, T> {
             return Err(InternalError::NeedMoreData);
         }
 
-        let rv = BigEndian::read_u24(&self.buf[..3]);
+        let rv = u32::from_be_bytes([0, self.buf[0], self.buf[1], self.buf[2]]);
         self.buf = &self.buf[3..];
         self.offset += 3;
         Ok(rv)
@@ -1286,7 +1287,7 @@ impl<'a, T: XdvEvents> Cursor<'a, T> {
             return Err(InternalError::NeedMoreData);
         }
 
-        let rv = BigEndian::read_i24(&self.buf[..3]);
+        let rv = i32::from_be_bytes([self.buf[0], self.buf[1], self.buf[2], 0]) >> 8;
         self.buf = &self.buf[3..];
         self.offset += 3;
         Ok(rv)
@@ -1297,7 +1298,7 @@ impl<'a, T: XdvEvents> Cursor<'a, T> {
             return Err(InternalError::NeedMoreData);
         }
 
-        let rv = BigEndian::read_u32(&self.buf[..4]);
+        let rv = u32::from_be_bytes(self.buf[..4].try_into().unwrap());
         self.buf = &self.buf[4..];
         self.offset += 4;
         Ok(rv)
@@ -1326,7 +1327,7 @@ impl<'a, T: XdvEvents> Cursor<'a, T> {
             return Err(InternalError::NeedMoreData);
         }
 
-        let rv = BigEndian::read_i32(&self.buf[..4]);
+        let rv = i32::from_be_bytes(self.buf[..4].try_into().unwrap());
         self.buf = &self.buf[4..];
         self.offset += 4;
         Ok(rv)
@@ -1483,6 +1484,30 @@ mod tests {
             self.handle_glyph_run(font_num, glyphs, x, y)?;
             self.0.last_mut().unwrap().text = Some(text.to_owned());
             Ok(())
+        }
+    }
+
+    #[test]
+    fn cursor_decodes_24_bit_boundaries_and_reports_truncated_input() {
+        for (bytes, unsigned, signed) in [
+            ([0, 0, 0], 0, 0),
+            ([0x7F, 0xFF, 0xFF], 0x7F_FFFF, 0x7F_FFFF),
+            ([0x80, 0, 0], 0x80_0000, -0x80_0000),
+            ([0xFF, 0xFF, 0xFF], 0xFF_FFFF, -1),
+        ] {
+            let mut cursor = Cursor::<GlyphEvents>::new(&bytes, 0);
+            assert_eq!(cursor.get_u24().unwrap(), unsigned);
+            assert_eq!(cursor.global_offset(), 3);
+            let mut cursor = Cursor::<GlyphEvents>::new(&bytes, 0);
+            assert_eq!(cursor.get_i24().unwrap(), signed);
+            assert_eq!(cursor.global_offset(), 3);
+        }
+        for length in 0..3 {
+            let bytes = [0xFF; 3];
+            let mut cursor = Cursor::<GlyphEvents>::new(&bytes[..length], 0);
+            assert!(matches!(cursor.get_u24(), Err(InternalError::NeedMoreData)));
+            assert!(matches!(cursor.get_i24(), Err(InternalError::NeedMoreData)));
+            assert_eq!(cursor.global_offset(), 0);
         }
     }
 

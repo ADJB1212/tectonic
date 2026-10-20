@@ -26,7 +26,6 @@ use crate::{
     unstable_opts::UnstableOptions,
 };
 use anyhow::Context;
-use byte_unit::{Byte, UnitType};
 use quick_xml::{NsReader, events::Event};
 use std::{
     collections::{HashMap, HashSet},
@@ -50,6 +49,35 @@ use tectonic_io_base::{
     stdstreams::{BufferedPrimaryIo, GenuineStdoutIo},
 };
 use which::which;
+
+fn format_file_size(len: usize) -> String {
+    let units = ["B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB"];
+    let mut unit = 0;
+    let mut divisor = 1;
+    while unit + 1 < units.len() && len / divisor >= 1024 {
+        divisor *= 1024;
+        unit += 1;
+    }
+    format!("{} {}", len as f64 / divisor as f64, units[unit])
+}
+
+#[test]
+fn file_sizes_use_binary_units() {
+    for (len, expected) in [
+        (0, "0 B"),
+        (1, "1 B"),
+        (1023, "1023 B"),
+        (1024, "1 KiB"),
+        (10000, "9.765625 KiB"),
+        (1024 * 1024 - 1, "1023.9990234375 KiB"),
+        (1024 * 1024, "1 MiB"),
+        (1024 * 1024 * 1024, "1 GiB"),
+    ] {
+        assert_eq!(format_file_size(len), expected);
+    }
+    #[cfg(target_pointer_width = "64")]
+    assert_eq!(format_file_size(usize::MAX), "16 EiB");
+}
 
 /// Different patterns with which files may have been accessed by the
 /// underlying engines. Once a file is marked as ReadThenWritten or
@@ -1745,11 +1773,10 @@ impl ProcessingSession {
             }
 
             let real_path = root.join(name);
-            let byte_len = Byte::from_u128(file.data.len() as u128).unwrap();
             status.note_highlighted(
                 "Writing ",
                 &format!("`{}`", real_path.display()),
-                &format!(" ({})", byte_len.get_appropriate_unit(UnitType::Binary)),
+                &format!(" ({})", format_file_size(file.data.len())),
             );
 
             if let Some(parent) = real_path.parent() {

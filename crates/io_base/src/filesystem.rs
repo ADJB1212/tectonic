@@ -185,7 +185,7 @@ impl IoProvider for FilesystemIo {
             Err(e) => {
                 return if e.kind() == io::ErrorKind::NotFound {
                     OpenResult::NotAvailable
-                } else if let Some(libc::ENOTDIR) = e.raw_os_error() {
+                } else if e.kind() == io::ErrorKind::NotADirectory {
                     // xdvipdfmx has a code path that basically tries to open a
                     // font path assuming that it is a directory, which causes an
                     // ENOTDIR to happen (i.e., it tries the equivalent of

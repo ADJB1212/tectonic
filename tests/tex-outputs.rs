@@ -285,8 +285,13 @@ fn prim_filemoddate() {
     // file to something repeatable.
     util::set_test_root();
     let path = test_path(&["tex-outputs", "prim_filemoddate.tex"]);
-    let t = filetime::FileTime::from_unix_time(1_603_835_905, 0);
-    filetime::set_file_mtime(path, t).expect("failed to set input file mtime");
+    let t = time::UNIX_EPOCH + time::Duration::from_secs(1_603_835_905);
+    std::fs::File::options()
+        .write(true)
+        .open(path)
+        .expect("failed to open input file")
+        .set_modified(t)
+        .expect("failed to set input file mtime");
 
     TestCase::new("prim_filemoddate").go()
 }

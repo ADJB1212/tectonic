@@ -16,27 +16,24 @@
 //#![feature(trace_macros)]
 //trace_macros!(true);
 
-use lazy_static::lazy_static;
+use std::sync::LazyLock;
 
+/// Singleton initialized instance of the compilation target info
 #[cfg(not(test))]
-lazy_static! {
-    /// Singleton initialized instance of the compilation target info
-    pub static ref TARGET_CONFIG: TargetConfiguration = TargetConfiguration::default();
-}
+pub static TARGET_CONFIG: LazyLock<TargetConfiguration> =
+    LazyLock::new(TargetConfiguration::default);
 
 #[cfg(test)]
-lazy_static! {
-    pub static ref TARGET_CONFIG: TargetConfiguration = TargetConfiguration {
-        arch: "TESTARCH".into(),
-        feature: "TESTFEAT1,TESTFEAT2".into(),
-        os: "TESTOS".into(),
-        family: "TESTFAMILY".into(),
-        env: "TESTENV".into(),
-        endian: "LITTLE".into(),
-        pointer_width: "32".into(),
-        vendor: "TESTVENDOR".into(),
-    };
-}
+pub static TARGET_CONFIG: LazyLock<TargetConfiguration> = LazyLock::new(|| TargetConfiguration {
+    arch: "TESTARCH".into(),
+    feature: "TESTFEAT1,TESTFEAT2".into(),
+    os: "TESTOS".into(),
+    family: "TESTFAMILY".into(),
+    env: "TESTENV".into(),
+    endian: "LITTLE".into(),
+    pointer_width: "32".into(),
+    vendor: "TESTVENDOR".into(),
+});
 
 #[derive(Clone, Debug)]
 /// Information about the compilation target.

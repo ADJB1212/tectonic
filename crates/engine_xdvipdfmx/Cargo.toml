@@ -21,7 +21,7 @@ edition = "2024"
 links = "tectonic_engine_xdvipdfmx"
 
 [dependencies]
-libc = "^0.2"
+libc = { version = "0.2", default-features = false, features = ["std"] }
 tectonic_bridge_core = { path = "../bridge_core", version = "0.0.0-dev.0" }
 tectonic_errors = { path = "../errors", version = "0.0.0-dev.0" }
 tectonic_pdf_io = { path = "../pdf_io", version = "0.0.0-dev.0" }
@@ -29,7 +29,3 @@ tectonic_pdf_io = { path = "../pdf_io", version = "0.0.0-dev.0" }
 [build-dependencies]
 cc = { version = "^1.0.66", features = ["parallel"] }
 
-[package.metadata.internal_dep_versions]
-tectonic_bridge_core = "thiscommit:2021-01-17:fohCh1sh"
-tectonic_errors = "5c9ba661edf5ef669f24f9904f99cca369d999e7"
-tectonic_pdf_io = "thiscommit:2022-10-21:pkYKcMI"

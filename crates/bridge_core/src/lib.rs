@@ -43,7 +43,7 @@ use std::{
     path::PathBuf,
     result::Result as StdResult,
     slice,
-    sync::Mutex,
+    sync::{LazyLock, Mutex},
 };
 use tectonic_errors::prelude::*;
 use tectonic_io_base::{
@@ -203,9 +203,7 @@ unsafe extern "C" {
     fn _ttbc_get_core_state() -> *mut CoreBridgeState<'static>;
 }
 
-lazy_static::lazy_static! {
-    static ref ENGINE_LOCK: Mutex<u8> = Mutex::new(0u8);
-}
+static ENGINE_LOCK: LazyLock<Mutex<u8>> = LazyLock::new(|| Mutex::new(0u8));
 
 /// An error type indicating the the FFI code aborted.
 ///

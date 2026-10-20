@@ -5,11 +5,6 @@
 //!
 //! We don't expect these types and constants to ever change.
 
-use byteorder::ByteOrder;
-
-/// The `byteorder` endianness of Tectonic format files.
-pub use byteorder::BigEndian as FormatEndian;
-
 /// The number of Unicode Scalar Values.
 pub const NUMBER_USVS: usize = 0x11_0000;
 
@@ -39,7 +34,7 @@ pub const TEX_NULL: i32 = MIN_HALFWORD;
 #[inline(always)]
 pub fn memword_read_b16_s0(arr: &[u8], index: i32) -> i16 {
     let i = index as usize * SIZEOF_MEMORY_WORD;
-    FormatEndian::read_i16(&arr[i + 6..i + 8])
+    i16::from_be_bytes(arr[i + 6..i + 8].try_into().unwrap())
 }
 
 /// Read the value of the `b16.s1` field of the *index*'th  word in *arr*.
@@ -50,7 +45,7 @@ pub fn memword_read_b16_s0(arr: &[u8], index: i32) -> i16 {
 #[inline(always)]
 pub fn memword_read_b16_s1(arr: &[u8], index: i32) -> i16 {
     let i = index as usize * SIZEOF_MEMORY_WORD;
-    FormatEndian::read_i16(&arr[i + 4..i + 6])
+    i16::from_be_bytes(arr[i + 4..i + 6].try_into().unwrap())
 }
 
 /// Read the value of the `b32.s0` field of the *index*'th  word in *arr*.
@@ -61,7 +56,7 @@ pub fn memword_read_b16_s1(arr: &[u8], index: i32) -> i16 {
 #[inline(always)]
 pub fn memword_read_b32_s0(arr: &[u8], index: i32) -> i32 {
     let i = index as usize * SIZEOF_MEMORY_WORD;
-    FormatEndian::read_i32(&arr[i + 4..i + 8])
+    i32::from_be_bytes(arr[i + 4..i + 8].try_into().unwrap())
 }
 
 /// Read the *value* of the `b32.s1` field of the *index*'th  word in *arr*.
@@ -72,7 +67,7 @@ pub fn memword_read_b32_s0(arr: &[u8], index: i32) -> i32 {
 #[inline(always)]
 pub fn memword_read_b32_s1(arr: &[u8], index: i32) -> i32 {
     let i = index as usize * SIZEOF_MEMORY_WORD;
-    FormatEndian::read_i32(&arr[i..i + 4])
+    i32::from_be_bytes(arr[i..i + 4].try_into().unwrap())
 }
 
 /// Write *value* to the `b16.s0` field of the *index*'th  word in *arr*.
@@ -83,7 +78,7 @@ pub fn memword_read_b32_s1(arr: &[u8], index: i32) -> i32 {
 #[inline(always)]
 pub fn memword_write_b16_s0(arr: &mut [u8], index: i32, value: i16) {
     let i = index as usize * SIZEOF_MEMORY_WORD;
-    FormatEndian::write_i16(&mut arr[i + 6..i + 8], value);
+    arr[i + 6..i + 8].copy_from_slice(&value.to_be_bytes());
 }
 
 /// Write *value* to the `b16.s1` field of the *index*'th  word in *arr*.
@@ -94,7 +89,7 @@ pub fn memword_write_b16_s0(arr: &mut [u8], index: i32, value: i16) {
 #[inline(always)]
 pub fn memword_write_b16_s1(arr: &mut [u8], index: i32, value: i16) {
     let i = index as usize * SIZEOF_MEMORY_WORD;
-    FormatEndian::write_i16(&mut arr[i + 4..i + 6], value);
+    arr[i + 4..i + 6].copy_from_slice(&value.to_be_bytes());
 }
 
 /// Write *value* to the `b32.s0` field of the *index*'th  word in *arr*.
@@ -105,7 +100,7 @@ pub fn memword_write_b16_s1(arr: &mut [u8], index: i32, value: i16) {
 #[inline(always)]
 pub fn memword_write_b32_s0(arr: &mut [u8], index: i32, value: i32) {
     let i = index as usize * SIZEOF_MEMORY_WORD;
-    FormatEndian::write_i32(&mut arr[i + 4..i + 8], value);
+    arr[i + 4..i + 8].copy_from_slice(&value.to_be_bytes());
 }
 
 /// Write *value* to the `b32.s1` field of the *index*'th  word in *arr*.
@@ -116,5 +111,5 @@ pub fn memword_write_b32_s0(arr: &mut [u8], index: i32, value: i32) {
 #[inline(always)]
 pub fn memword_write_b32_s1(arr: &mut [u8], index: i32, value: i32) {
     let i = index as usize * SIZEOF_MEMORY_WORD;
-    FormatEndian::write_i32(&mut arr[i..i + 4], value);
+    arr[i..i + 4].copy_from_slice(&value.to_be_bytes());
 }

@@ -20,7 +20,6 @@
 //! intended that the choice of HTTP backend is a build-time one, not a runtime
 //! one.
 
-use cfg_if::cfg_if;
 use std::io::Read;
 use tectonic_errors::Result;
 
@@ -62,12 +61,14 @@ pub mod curl;
 #[cfg(feature = "reqwest")]
 pub mod reqwest;
 
-cfg_if! {
-    if #[cfg(feature = "reqwest")] {
+std::cfg_select! {
+    feature = "reqwest" => {
         pub use crate::reqwest::ReqwestBackend as DefaultBackend;
-    } else if #[cfg(feature = "curl")] {
+    }
+    feature = "curl" => {
         pub use crate::curl::CurlBackend as DefaultBackend;
-    } else {
+    }
+    _ => {
         pub use null::NullBackend as DefaultBackend;
     }
 }

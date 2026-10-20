@@ -10,7 +10,6 @@
 //! have to do this, but for math and potentially other situations this is
 //! sometimes necessary.
 
-use byteorder::{BigEndian, ByteOrder, WriteBytesExt};
 use percent_encoding::{CONTROLS, utf8_percent_encode};
 use pinot::{
     FontDataRef, TableProvider,
@@ -459,16 +458,16 @@ impl FontFileData {
 
                 let cs = opentype_checksum(&buffer[orig_len..]);
                 let ofs = 12 + self.fontdata_cmap_trec_idx * 16;
-                BigEndian::write_u32(&mut buffer[ofs + 4..ofs + 8], cs); // checksum
-                BigEndian::write_u32(&mut buffer[ofs + 8..ofs + 12], orig_len as u32); // offset
-                BigEndian::write_u32(&mut buffer[ofs + 12..ofs + 16], cmap_size as u32); // length
+                buffer[ofs + 4..ofs + 8].copy_from_slice(&cs.to_be_bytes()); // checksum
+                buffer[ofs + 8..ofs + 12].copy_from_slice(&(orig_len as u32).to_be_bytes()); // offset
+                buffer[ofs + 12..ofs + 16].copy_from_slice(&(cmap_size as u32).to_be_bytes()); // length
 
                 // step 3: update HEAD "checksum adjustment" field
 
                 let cs = opentype_checksum(&buffer[..]);
                 let chkadj = Wrapping(0xB1B0AFBA) - Wrapping(cs);
                 let ofs = self.fontdata_head_offset as usize + 8;
-                BigEndian::write_u32(&mut buffer[ofs..ofs + 4], chkadj.0);
+                buffer[ofs..ofs + 4].copy_from_slice(&chkadj.0.to_be_bytes());
 
                 // step 4: write new file
 
@@ -646,41 +645,41 @@ fn opentype_checksum(data: &[u8]) -> u32 {
     let (chunks, rem) = data.as_chunks::<4>();
     let cs: Wrapping<u32> = chunks
         .iter()
-        .map(|c| Wrapping(BigEndian::read_u32(c)))
+        .map(|c| Wrapping(u32::from_be_bytes(*c)))
         .sum();
 
     let mut padded = [0u8; 4];
     padded[..rem.len()].copy_from_slice(rem);
-    (cs + Wrapping(BigEndian::read_u32(&padded[..]))).0
+    (cs + Wrapping(u32::from_be_bytes(padded))).0
 }
 
 /// Append a dumb OpenType CMAP table to a buffer.
 ///
 /// The input *map* must be sorted by USV value.
 fn append_simple_cmap(buf: &mut Vec<u8>, map: &[(char, GlyphId)]) {
-    buf.write_u16::<BigEndian>(0).unwrap(); // version
-    buf.write_u16::<BigEndian>(1).unwrap(); // numTables
+    buf.extend_from_slice(&0u16.to_be_bytes()); // version
+    buf.extend_from_slice(&1u16.to_be_bytes()); // numTables
 
-    buf.write_u16::<BigEndian>(0).unwrap(); // EncodingRecord.platformId = Unicode
-    buf.write_u16::<BigEndian>(4).unwrap(); // EncodingRecord.encodingId = Unicode all planes
-    buf.write_u32::<BigEndian>(12).unwrap(); // EncodingRecord.subtableOffset
+    buf.extend_from_slice(&0u16.to_be_bytes()); // EncodingRecord.platformId = Unicode
+    buf.extend_from_slice(&4u16.to_be_bytes()); // EncodingRecord.encodingId = Unicode all planes
+    buf.extend_from_slice(&12u32.to_be_bytes()); // EncodingRecord.subtableOffset
 
-    buf.write_u16::<BigEndian>(12).unwrap(); // Format 12 subtable identifier
-    buf.write_u16::<BigEndian>(0).unwrap(); // reserved
+    buf.extend_from_slice(&12u16.to_be_bytes()); // Format 12 subtable identifier
+    buf.extend_from_slice(&0u16.to_be_bytes()); // reserved
 
     let subtable_len = 16 + 12 * map.len() as u32;
-    buf.write_u32::<BigEndian>(subtable_len).unwrap(); // subtable byte length
-    buf.write_u32::<BigEndian>(0).unwrap(); // subtable language
-    buf.write_u32::<BigEndian>(map.len() as u32).unwrap(); // subtable number of groups
+    buf.extend_from_slice(&subtable_len.to_be_bytes()); // subtable byte length
+    buf.extend_from_slice(&0u32.to_be_bytes()); // subtable language
+    buf.extend_from_slice(&(map.len() as u32).to_be_bytes()); // subtable number of groups
 
     // We could actually try to be smart here, but based on the expected usage
     // of our glyph variant scheme, I think it is unlikely that we'd realize
     // any significant efficiencies.
 
     for (usv, gid) in map {
-        buf.write_u32::<BigEndian>(*usv as u32).unwrap(); // start char
-        buf.write_u32::<BigEndian>(*usv as u32).unwrap(); // end char
-        buf.write_u32::<BigEndian>(*gid as u32).unwrap(); // glyph id
+        buf.extend_from_slice(&(*usv as u32).to_be_bytes()); // start char
+        buf.extend_from_slice(&(*usv as u32).to_be_bytes()); // end char
+        buf.extend_from_slice(&(*gid as u32).to_be_bytes()); // glyph id
     }
 }
 
@@ -699,13 +698,13 @@ mod cmap_tests {
 
     fn cmap(subtables: &[Vec<u8>]) -> Vec<u8> {
         let mut data = Vec::new();
-        data.write_u16::<BigEndian>(0).unwrap();
-        data.write_u16::<BigEndian>(subtables.len() as u16).unwrap();
+        data.extend_from_slice(&0u16.to_be_bytes());
+        data.extend_from_slice(&(subtables.len() as u16).to_be_bytes());
         let mut offset = 4 + 8 * subtables.len();
         for subtable in subtables {
-            data.write_u16::<BigEndian>(0).unwrap();
-            data.write_u16::<BigEndian>(4).unwrap();
-            data.write_u32::<BigEndian>(offset as u32).unwrap();
+            data.extend_from_slice(&0u16.to_be_bytes());
+            data.extend_from_slice(&4u16.to_be_bytes());
+            data.extend_from_slice(&(offset as u32).to_be_bytes());
             offset += subtable.len();
         }
         for subtable in subtables {
@@ -734,26 +733,26 @@ mod cmap_tests {
             0,
             0,
         ] {
-            data.write_u16::<BigEndian>(word).unwrap();
+            data.extend_from_slice(&word.to_be_bytes());
         }
         data
     }
 
     fn grouped_format(format: u16) -> Vec<u8> {
         let mut data = Vec::new();
-        data.write_u16::<BigEndian>(format).unwrap();
-        data.write_u16::<BigEndian>(0).unwrap();
-        data.write_u32::<BigEndian>(16 + 12 * 4).unwrap();
-        data.write_u32::<BigEndian>(0).unwrap();
-        data.write_u32::<BigEndian>(4).unwrap();
+        data.extend_from_slice(&format.to_be_bytes());
+        data.extend_from_slice(&0u16.to_be_bytes());
+        data.extend_from_slice(&(16u32 + 12 * 4).to_be_bytes());
+        data.extend_from_slice(&0u32.to_be_bytes());
+        data.extend_from_slice(&4u32.to_be_bytes());
         for group in [
-            [32, 32, 5],
+            [32u32, 32, 5],
             [65, 67, 6],
             [0xD800, 0xD801, 9],
             [0x1F600, 0x1F601, 10],
         ] {
             for value in group {
-                data.write_u32::<BigEndian>(value).unwrap();
+                data.extend_from_slice(&value.to_be_bytes());
             }
         }
         data

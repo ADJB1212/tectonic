@@ -1,7 +1,5 @@
 use anyhow::{Context, Result, bail};
-use digest_io::{HashReader, IoWrapper};
 use regex::RegexSet;
-use sha2::{Digest, Sha256};
 use std::{
     cmp::Ordering,
     collections::HashMap,
@@ -12,7 +10,7 @@ use std::{
     path::{Path, PathBuf},
     process::{Command, Stdio},
 };
-use tectonic_io_base::digest::bytes_to_hex;
+use tectonic_io_base::OutputHandle;
 use tracing::{debug, error, info, trace, warn};
 use walkdir::WalkDir;
 
@@ -208,12 +206,12 @@ impl FilePicker {
     }
 
     fn hash_file(path: &Path) -> Result<String> {
-        let mut hasher = IoWrapper(Sha256::new());
+        let mut hasher = OutputHandle::new("", io::sink());
         io::copy(
             &mut File::open(path).with_context(|| format!("while computing hash of {path:?}"))?,
             &mut hasher,
         )?;
-        Ok(bytes_to_hex(&hasher.0.finalize()))
+        Ok(hasher.into_name_digest().1.to_string())
     }
 
     /// Add a file to this picker's content directory
@@ -252,12 +250,11 @@ impl FilePicker {
         .context("failed to create content directory")?;
 
         // Copy to content dir.
-        let mut file = fs::File::create(&target_path)?;
-        let mut hashed_content = HashReader::<Sha256, _>::new(file_content);
-        io::copy(&mut hashed_content, &mut file).with_context(|| {
+        let mut file = OutputHandle::new("", fs::File::create(&target_path)?);
+        io::copy(file_content, &mut file).with_context(|| {
             format!("while writing file `{path_in_source:?}` from source `{source}`")
         })?;
-        drop(file);
+        let hash = file.into_name_digest().1;
 
         // Apply patch if one exists
         let patched = self
@@ -269,7 +266,7 @@ impl FilePicker {
         let hash = if patched {
             Self::hash_file(&target_path)?
         } else {
-            bytes_to_hex(&hashed_content.finalize())
+            hash.to_string()
         };
         self.add_to_filelist(rel, Some(hash));
 
@@ -516,9 +513,7 @@ impl FilePicker {
             let mut file = File::create(self.build_dir.join("content/SHA256SUM"))
                 .context("while writing SHA256SUM")?;
 
-            let mut hasher = IoWrapper(Sha256::new());
-            let _ = std::io::copy(&mut fs::File::open(&filelist_path)?, &mut hasher)?;
-            let hash = bytes_to_hex(&hasher.0.finalize());
+            let hash = Self::hash_file(&filelist_path)?;
 
             writeln!(file, "{hash}")?;
         }
@@ -578,6 +573,8 @@ impl FilePicker {
 mod tests {
     use super::super::spec::BundleConfig;
     use super::*;
+    use sha2::{Digest, Sha256};
+    use tectonic_io_base::digest::bytes_to_hex;
 
     fn picker(build_dir: &Path) -> FilePicker {
         let spec = BundleSpec {

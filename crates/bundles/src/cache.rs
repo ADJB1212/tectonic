@@ -8,7 +8,6 @@
 //! [`BundleCache`].
 
 use crate::{Bundle, CachableBundle, FileIndex, FileInfo};
-use chrono::{DateTime, Duration, Utc};
 use std::{
     collections::HashSet,
     fs::{self, File},
@@ -16,6 +15,7 @@ use std::{
     path::{Path, PathBuf},
     process,
     str::FromStr,
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tectonic_errors::{anyhow::Context, prelude::*};
 use tectonic_io_base::{
@@ -25,6 +25,22 @@ use tectonic_io_base::{
 use tectonic_status_base::StatusBackend;
 
 mod prefetch;
+
+fn parse_check_time(text: &str) -> Result<SystemTime> {
+    let timestamp = i64::from_str(text.trim())?;
+    let duration = Duration::from_secs(timestamp.unsigned_abs());
+    if timestamp < 0 {
+        UNIX_EPOCH.checked_sub(duration)
+    } else {
+        UNIX_EPOCH.checked_add(duration)
+    }
+    .with_context(|| format!("Invalid timestamp for check time {}", text.trim()))
+}
+
+fn check_expired(time: SystemTime, now: SystemTime) -> bool {
+    now.duration_since(time)
+        .is_ok_and(|age| age > Duration::from_secs(7 * 24 * 60 * 60))
+}
 
 /// A convenience method to provide a better error message when writing to a created file.
 fn file_create_write<P, F, E>(path: P, write_fn: F) -> Result<()>
@@ -154,14 +170,9 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
                         f.read_to_string(&mut last_check).with_context(|| {
                             format!("while reading last check time from {check_file:?} in cache")
                         })?;
-                        DateTime::from_timestamp_secs(i64::from_str(last_check.trim())?)
-                            .with_context(|| {
-                                format!("Invalid timestamp for check time {}", last_check.trim())
-                            })?
+                        parse_check_time(&last_check)?
                     }
-                    Err(e) if e.kind() == io::ErrorKind::NotFound => {
-                        DateTime::from_timestamp_secs(0).unwrap()
-                    }
+                    Err(e) if e.kind() == io::ErrorKind::NotFound => UNIX_EPOCH,
                     Err(e) => return Err(e.into()),
                 };
                 Some((digest, last_check))
@@ -170,9 +181,10 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
             Err(e) => return Err(e.into()),
         };
 
-        let now = Utc::now();
+        let now = SystemTime::now();
+        let timestamp = now.duration_since(UNIX_EPOCH)?.as_secs();
         let live_hash =
-            if !only_cached && saved_hash.is_none_or(|(_, time)| now - time > Duration::days(7)) {
+            if !only_cached && saved_hash.is_none_or(|(_, time)| check_expired(time, now)) {
                 bundle.get_digest()
             } else {
                 Err(Error::msg(
@@ -191,12 +203,11 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
                 );
             }
             (Some((s, t)), Ok(l)) => {
-                if now - t > Duration::days(7) {
+                if check_expired(t, now) {
                     // Update time we last checked for hash mismatch
-                    file_create_write(&check_file, |f| write!(f, "{}", now.timestamp()))
-                        .with_context(|| {
-                            format!("while updating bundle check time in {check_file:?} in cache")
-                        })?;
+                    file_create_write(&check_file, |f| write!(f, "{timestamp}")).with_context(
+                        || format!("while updating bundle check time in {check_file:?} in cache"),
+                    )?;
                 }
                 if s != l {
                     // Silently update hash in cache.
@@ -214,7 +225,7 @@ impl<'this, T: FileIndex<'this>> BundleCache<'this, T> {
                 file_create_write(&hash_file, |f| writeln!(f, "{}", l)).with_context(|| {
                     format!("while writing bundle hash to {hash_file:?} in cache")
                 })?;
-                file_create_write(&check_file, |f| write!(f, "{}", now.timestamp())).with_context(
+                file_create_write(&check_file, |f| write!(f, "{timestamp}")).with_context(
                     || format!("while writing bundle check time to {check_file:?} in cache"),
                 )?;
                 l
@@ -454,5 +465,36 @@ impl<'this, T: FileIndex<'this>> Bundle for BundleCache<'this, T> {
 
     fn all_files(&self) -> Vec<String> {
         self.bundle.all_files()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn cache_check_timestamps_accept_signed_seconds_and_reject_invalid_text() {
+        assert_eq!(parse_check_time(" 0\n").unwrap(), UNIX_EPOCH);
+        assert_eq!(
+            parse_check_time("-1").unwrap(),
+            UNIX_EPOCH - Duration::from_secs(1)
+        );
+        assert_eq!(
+            parse_check_time("1603835905").unwrap(),
+            UNIX_EPOCH + Duration::from_secs(1_603_835_905)
+        );
+        assert!(parse_check_time("not a timestamp").is_err());
+        assert!(parse_check_time("9223372036854775808").is_err());
+    }
+
+    #[test]
+    fn cache_checks_expire_after_seven_days_and_keep_future_timestamps() {
+        let now = UNIX_EPOCH + Duration::from_secs(1_603_835_905);
+        let week = Duration::from_secs(7 * 24 * 60 * 60);
+        assert!(!check_expired(now, now));
+        assert!(!check_expired(now - week, now));
+        assert!(check_expired(now - week - Duration::from_nanos(1), now));
+        assert!(!check_expired(now + week, now));
+        assert!(check_expired(parse_check_time("-1").unwrap(), now));
     }
 }

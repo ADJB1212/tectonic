@@ -11,13 +11,14 @@ use std::{
 };
 pub use tectonic_errors::Error;
 
-cfg_if::cfg_if! {
-    if #[cfg(feature = "toml")] {
+std::cfg_select! {
+    feature = "toml" => {
         /// Alias for [`toml::de::Error`]
         pub type ReadError = toml::de::Error;
         /// Alias for [`toml::ser::Error`]
         pub type WriteError = toml::ser::Error;
-    } else {
+    }
+    _ => {
         use std::error;
 
         /// Null error to replace lack of `toml` dependency

@@ -11,7 +11,6 @@
 use super::teckit_c_engine::*;
 use super::teckit_common::*;
 use super::teckit_format::*;
-use byteorder::{BigEndian, ByteOrder, LittleEndian};
 use unicode_normalization::UnicodeNormalization;
 use unicode_normalization::char::{canonical_combining_class, compose, decompose_canonical};
 
@@ -1370,10 +1369,11 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = BigEndian::read_u16(std::slice::from_raw_parts(
-                        self.data.add(self.dataPtr as usize),
-                        2,
-                    )) as UInt32;
+                    rval = u16::from_be_bytes(
+                        std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 2)
+                            .try_into()
+                            .unwrap(),
+                    ) as UInt32;
                     self.dataPtr += 2;
                     if rval >= kSurrogateHighStart && rval <= kSurrogateHighEnd {
                         self.dataPtr -= 2;
@@ -1386,10 +1386,11 @@ impl Converter {
                             }
                         }
                         self.dataPtr += 2;
-                        let low = BigEndian::read_u16(std::slice::from_raw_parts(
-                            self.data.add(self.dataPtr as usize),
-                            2,
-                        )) as UInt32;
+                        let low = u16::from_be_bytes(
+                            std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 2)
+                                .try_into()
+                                .unwrap(),
+                        ) as UInt32;
                         self.dataPtr += 2;
                         rval = ((rval - kSurrogateHighStart) << halfShift)
                             + (low - kSurrogateLowStart)
@@ -1405,10 +1406,11 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = LittleEndian::read_u16(std::slice::from_raw_parts(
-                        self.data.add(self.dataPtr as usize),
-                        2,
-                    )) as UInt32;
+                    rval = u16::from_le_bytes(
+                        std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 2)
+                            .try_into()
+                            .unwrap(),
+                    ) as UInt32;
                     self.dataPtr += 2;
                     if rval >= kSurrogateHighStart && rval <= kSurrogateHighEnd {
                         self.dataPtr -= 2;
@@ -1421,10 +1423,11 @@ impl Converter {
                             }
                         }
                         self.dataPtr += 2;
-                        let low = LittleEndian::read_u16(std::slice::from_raw_parts(
-                            self.data.add(self.dataPtr as usize),
-                            2,
-                        )) as UInt32;
+                        let low = u16::from_le_bytes(
+                            std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 2)
+                                .try_into()
+                                .unwrap(),
+                        ) as UInt32;
                         self.dataPtr += 2;
                         rval = ((rval - kSurrogateHighStart) << halfShift)
                             + (low - kSurrogateLowStart)
@@ -1440,10 +1443,11 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = BigEndian::read_u32(std::slice::from_raw_parts(
-                        self.data.add(self.dataPtr as usize),
-                        4,
-                    ));
+                    rval = u32::from_be_bytes(
+                        std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 4)
+                            .try_into()
+                            .unwrap(),
+                    );
                     self.dataPtr += 4;
                 }
                 kForm_UTF32LE => {
@@ -1455,10 +1459,11 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = LittleEndian::read_u32(std::slice::from_raw_parts(
-                        self.data.add(self.dataPtr as usize),
-                        4,
-                    ));
+                    rval = u32::from_le_bytes(
+                        std::slice::from_raw_parts(self.data.add(self.dataPtr as usize), 4)
+                            .try_into()
+                            .unwrap(),
+                    );
                     self.dataPtr += 4;
                 }
                 _ => {}
@@ -1533,7 +1538,7 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = BigEndian::read_u16(&word_bytes(self.dataPtr)) as UInt32;
+                    rval = u16::from_be_bytes(word_bytes(self.dataPtr)) as UInt32;
                     self.dataPtr += 2;
                     if rval >= kSurrogateHighStart && rval <= kSurrogateHighEnd {
                         self.dataPtr -= 2;
@@ -1546,7 +1551,7 @@ impl Converter {
                             }
                         }
                         self.dataPtr += 2;
-                        let low = BigEndian::read_u16(&word_bytes(self.dataPtr)) as UInt32;
+                        let low = u16::from_be_bytes(word_bytes(self.dataPtr)) as UInt32;
                         self.dataPtr += 2;
                         rval = ((rval - kSurrogateHighStart) << halfShift)
                             + (low - kSurrogateLowStart)
@@ -1562,7 +1567,7 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = LittleEndian::read_u16(&word_bytes(self.dataPtr)) as UInt32;
+                    rval = u16::from_le_bytes(word_bytes(self.dataPtr)) as UInt32;
                     self.dataPtr += 2;
                     if rval >= kSurrogateHighStart && rval <= kSurrogateHighEnd {
                         self.dataPtr -= 2;
@@ -1575,7 +1580,7 @@ impl Converter {
                             }
                         }
                         self.dataPtr += 2;
-                        let low = LittleEndian::read_u16(&word_bytes(self.dataPtr)) as UInt32;
+                        let low = u16::from_le_bytes(word_bytes(self.dataPtr)) as UInt32;
                         self.dataPtr += 2;
                         rval = ((rval - kSurrogateHighStart) << halfShift)
                             + (low - kSurrogateLowStart)
@@ -1591,7 +1596,7 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = BigEndian::read_u32(&dword_bytes(self.dataPtr));
+                    rval = u32::from_be_bytes(dword_bytes(self.dataPtr));
                     self.dataPtr += 4;
                 }
                 kForm_UTF32LE => {
@@ -1603,7 +1608,7 @@ impl Converter {
                             return kNeedMoreInput;
                         }
                     }
-                    rval = LittleEndian::read_u32(&dword_bytes(self.dataPtr));
+                    rval = u32::from_le_bytes(dword_bytes(self.dataPtr));
                     self.dataPtr += 4;
                 }
                 _ => {}
@@ -1760,13 +1765,8 @@ impl Converter {
                                     rval = kStatus_OutputBufferFull;
                                     break 'convert_loop;
                                 }
-                                BigEndian::write_u16(
-                                    std::slice::from_raw_parts_mut(
-                                        outBuffer.add(outPtr as usize),
-                                        2,
-                                    ),
-                                    c as u16,
-                                );
+                                std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 2)
+                                    .copy_from_slice(&(c as u16).to_be_bytes());
                                 outPtr += 2;
                             } else {
                                 if outPtr + 4 > outLength {
@@ -1781,8 +1781,8 @@ impl Converter {
                                     outBuffer.add(outPtr as usize),
                                     4,
                                 );
-                                BigEndian::write_u16(&mut output[..2], hi as u16);
-                                BigEndian::write_u16(&mut output[2..], lo as u16);
+                                output[..2].copy_from_slice(&(hi as u16).to_be_bytes());
+                                output[2..].copy_from_slice(&(lo as u16).to_be_bytes());
                                 outPtr += 4;
                             }
                         }
@@ -1793,13 +1793,8 @@ impl Converter {
                                     rval = kStatus_OutputBufferFull;
                                     break 'convert_loop;
                                 }
-                                LittleEndian::write_u16(
-                                    std::slice::from_raw_parts_mut(
-                                        outBuffer.add(outPtr as usize),
-                                        2,
-                                    ),
-                                    c as u16,
-                                );
+                                std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 2)
+                                    .copy_from_slice(&(c as u16).to_le_bytes());
                                 outPtr += 2;
                             } else {
                                 if outPtr + 4 > outLength {
@@ -1814,8 +1809,8 @@ impl Converter {
                                     outBuffer.add(outPtr as usize),
                                     4,
                                 );
-                                LittleEndian::write_u16(&mut output[..2], hi as u16);
-                                LittleEndian::write_u16(&mut output[2..], lo as u16);
+                                output[..2].copy_from_slice(&(hi as u16).to_le_bytes());
+                                output[2..].copy_from_slice(&(lo as u16).to_le_bytes());
                                 outPtr += 4;
                             }
                         }
@@ -1825,10 +1820,8 @@ impl Converter {
                                 rval = kStatus_OutputBufferFull;
                                 break 'convert_loop;
                             }
-                            BigEndian::write_u32(
-                                std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 4),
-                                c,
-                            );
+                            std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 4)
+                                .copy_from_slice(&c.to_be_bytes());
                             outPtr += 4;
                         }
                         kForm_UTF32LE => {
@@ -1837,10 +1830,8 @@ impl Converter {
                                 rval = kStatus_OutputBufferFull;
                                 break 'convert_loop;
                             }
-                            LittleEndian::write_u32(
-                                std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 4),
-                                c,
-                            );
+                            std::slice::from_raw_parts_mut(outBuffer.add(outPtr as usize), 4)
+                                .copy_from_slice(&c.to_le_bytes());
                             outPtr += 4;
                         }
                         _ => {}

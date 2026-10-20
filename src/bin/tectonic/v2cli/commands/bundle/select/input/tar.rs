@@ -1,13 +1,11 @@
 use anyhow::Result;
-use digest_io::IoWrapper;
-use sha2::{Digest, Sha256};
 use std::{
     fs::File,
     io::{Read, Seek},
     path::{Path, PathBuf},
 };
 use tar::Archive;
-use tectonic_io_base::digest::bytes_to_hex;
+use tectonic_io_base::OutputHandle;
 use tracing::info;
 
 use super::BundleInput;
@@ -26,9 +24,9 @@ impl TarBundleInput {
         info!("computing hash of {}", path.to_str().unwrap());
 
         let hash = {
-            let mut hasher = IoWrapper(Sha256::new());
+            let mut hasher = OutputHandle::new("", std::io::sink());
             let _ = std::io::copy(&mut file, &mut hasher)?;
-            bytes_to_hex(&hasher.0.finalize())
+            hasher.into_name_digest().1.to_string()
         };
 
         file.seek(std::io::SeekFrom::Start(0))?;
@@ -70,5 +68,44 @@ impl BundleInput for TarBundleInput {
                 }
             }
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sha2::{Digest, Sha256};
+    use std::fs;
+    use tectonic_io_base::digest::bytes_to_hex;
+
+    #[test]
+    fn archive_hash_matches_bytes_and_leaves_entries_readable() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("input.tar");
+        let contents = b"bundle file\n";
+        let mut archive = tar::Builder::new(File::create(&path).unwrap());
+        let mut header = tar::Header::new_gnu();
+        header.set_size(contents.len() as u64);
+        header.set_mode(0o644);
+        header.set_cksum();
+        archive
+            .append_data(&mut header, "root/file.txt", &contents[..])
+            .unwrap();
+        archive.finish().unwrap();
+        drop(archive);
+
+        let mut input = TarBundleInput::new(&path, Some(PathBuf::from("root"))).unwrap();
+        assert_eq!(
+            input.hash(),
+            bytes_to_hex(&Sha256::digest(fs::read(&path).unwrap()))
+        );
+        let mut entries = input.iter_files();
+        let (name, mut reader) = entries.next().unwrap().unwrap();
+        assert_eq!(name, "file.txt");
+        let mut actual = Vec::new();
+        reader.read_to_end(&mut actual).unwrap();
+        assert_eq!(actual, contents);
+        drop(reader);
+        assert!(entries.next().is_none());
     }
 }

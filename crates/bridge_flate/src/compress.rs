@@ -4,6 +4,7 @@
 use crate::FlateResult;
 use flate2::{Compress, Compression, FlushCompress, Status};
 use rayon::prelude::*;
+use simd_adler32::Adler32;
 use std::{
     cell::RefCell,
     marker::PhantomData,
@@ -139,12 +140,20 @@ impl Chunk<'_> {
             }
             return Err(FlateResult::BufError);
         }
-        // SAFETY: Every chunk fits in uInt and the input slice is valid.
-        let checksum = unsafe {
-            libz_sys::adler32(1, self.input.as_ptr(), self.input.len() as libz_sys::uInt)
-        };
-        Ok((compressor.total_out() as usize, checksum as u32))
+        let mut hasher = Adler32::new();
+        hasher.write(self.input);
+        Ok((compressor.total_out() as usize, hasher.finish()))
     }
+}
+
+fn adler32_combine(adler1: u32, adler2: u32, len2: usize) -> u32 {
+    const BASE: u64 = 65521;
+    let (a1, a2) = (u64::from(adler1), u64::from(adler2));
+    let rem = len2 as u64 % BASE;
+    let low1 = a1 & 0xffff;
+    let low = (low1 + (a2 & 0xffff) + BASE - 1) % BASE;
+    let high = (rem * low1 + (a1 >> 16) + (a2 >> 16) + BASE - rem) % BASE;
+    (low | high << 16) as u32
 }
 
 fn compress_parallel(
@@ -190,18 +199,11 @@ fn compress_chunks(
         chunks.iter_mut().for_each(compress);
     }
 
-    let mut checksum = 1;
+    let mut checksum = 1u32;
     let mut lengths = Vec::with_capacity(count);
     for chunk in chunks {
         let (written, partial_checksum) = chunk.result?;
-        // SAFETY: Combining checksums only uses integer values. Chunk sizes fit z_off_t.
-        checksum = unsafe {
-            libz_sys::adler32_combine(
-                checksum,
-                partial_checksum as _,
-                chunk.input.len() as libz_sys::z_off_t,
-            )
-        };
+        checksum = adler32_combine(checksum, partial_checksum, chunk.input.len());
         lengths.push((chunk.output.len(), written));
     }
 
@@ -212,7 +214,7 @@ fn compress_chunks(
         source += reserved;
         written += length;
     }
-    output[written..written + 4].copy_from_slice(&(checksum as u32).to_be_bytes());
+    output[written..written + 4].copy_from_slice(&checksum.to_be_bytes());
     Ok(written + 4)
 }
 

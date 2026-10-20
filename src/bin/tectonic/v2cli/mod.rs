@@ -22,7 +22,6 @@ use tectonic::{
 };
 use tectonic_errors::{Result, prelude::anyhow};
 use tectonic_status_base::plain::PlainStatusBackend;
-use tracing::level_filters::LevelFilter;
 
 mod commands;
 
@@ -78,13 +77,6 @@ pub fn v2_main(effective_args: &[OsString]) {
     // Parse args -- this will exit if there are problems.
 
     let args = V2CliOptions::parse_from(effective_args);
-
-    tracing_subscriber::fmt()
-        .with_max_level(LevelFilter::INFO)
-        .with_target(false)
-        .without_time()
-        .with_ansi(args.cli_color.should_enable())
-        .init();
 
     // Command-specific customizations before we do our centralized setup.
     // This is a semi-hack so that we can set up certain commands to ensure

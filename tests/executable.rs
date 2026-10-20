@@ -2,7 +2,6 @@
 
 //! Test suite for the top-level `tectonic` executable.
 
-use lazy_static::lazy_static;
 use std::io::ErrorKind;
 use std::{
     env,
@@ -10,7 +9,9 @@ use std::{
     io::{Read, Write},
     path::{Path, PathBuf},
     process::{Command, Output, Stdio},
-    str, thread,
+    str,
+    sync::LazyLock,
+    thread,
     time::Duration,
 };
 use tempfile::TempDir;
@@ -19,29 +20,27 @@ use tempfile::TempDir;
 mod util;
 use crate::util::{ensure_plain_format, tectonic_exe};
 
-lazy_static! {
-    static ref TEST_ROOT: PathBuf = {
-        util::set_test_root();
+static TEST_ROOT: LazyLock<PathBuf> = LazyLock::new(|| {
+    util::set_test_root();
 
-        let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-        root.push("tests");
-        root
-    };
+    let mut root = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    root.push("tests");
+    root
+});
 
-    static ref TARGET_RUNNER_WORDS: Vec<String> = {
-        // compile-time environment variable from build.rs:
-        let target = env!("TARGET").to_owned();
-        let mut target = target.replace('-', "_");
-        target.make_ascii_uppercase();
+static TARGET_RUNNER_WORDS: LazyLock<Vec<String>> = LazyLock::new(|| {
+    // compile-time environment variable from build.rs:
+    let target = env!("TARGET").to_owned();
+    let mut target = target.replace('-', "_");
+    target.make_ascii_uppercase();
 
-        // run-time environment variable check:
-        if let Ok(runtext) = env::var(format!("CARGO_TARGET_{target}_RUNNER")) {
-            runtext.split_whitespace().map(|x| x.to_owned()).collect()
-        } else {
-            vec![]
-        }
-    };
-}
+    // run-time environment variable check:
+    if let Ok(runtext) = env::var(format!("CARGO_TARGET_{target}_RUNNER")) {
+        runtext.split_whitespace().map(|x| x.to_owned()).collect()
+    } else {
+        vec![]
+    }
+});
 
 fn get_plain_format_arg() -> String {
     util::set_test_root();
