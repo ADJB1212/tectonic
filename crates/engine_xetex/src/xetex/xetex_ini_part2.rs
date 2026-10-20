@@ -31,11 +31,13 @@ use super::xetex_output::{
 use super::xetex_stringpool::{EMPTY_STRING, length, make_string};
 use super::xetex_xetex0::{
     back_error, back_input, eq_define, eq_word_define, find_font_dimen, find_sa_element,
-    flush_list, geq_define, geq_word_define, get_avail, get_node, get_token, get_x_token, gsa_def,
-    print_cmd_chr, read_toks, sa_def, scan_char_class, scan_char_class_not_ignored, scan_char_num,
-    scan_dimen, scan_fifteen_bit_int, scan_font_ident, scan_glue, scan_glyph_number, scan_int,
-    scan_keyword, scan_left_brace, scan_math_class_int, scan_math_fam_int, scan_optional_equals,
+    flush_list, geq_define, geq_word_define, get_avail, get_node, get_r_token, get_token,
+    get_x_token, gsa_def, make_name_string, max_hyphenatable_length, pack_job_name, print_cmd_chr,
+    read_toks, sa_def, scan_char_class, scan_char_class_not_ignored, scan_char_num, scan_dimen,
+    scan_fifteen_bit_int, scan_font_ident, scan_glue, scan_glyph_number, scan_int, scan_keyword,
+    scan_left_brace, scan_math_class_int, scan_math_fam_int, scan_optional_equals,
     scan_register_num, scan_toks, scan_usv_num, scan_xetex_math_char_int, show_cur_cmd_chr,
+    trap_zero_glue,
 };
 use super::xetex_xetexd::{
     _xeq_level_array, LR_problems, LR_ptr, TEX_format_default, UTF16_code, active_width,

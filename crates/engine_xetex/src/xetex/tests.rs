@@ -3,7 +3,7 @@ use super::teckit_common::*;
 
 #[test]
 fn native_text_growth_handles_large_requests_in_one_allocation() {
-    use super::xetex_xetex0_part4::native_text_capacity;
+    use super::xetex_xetex0::native_text_capacity;
     assert_eq!(native_text_capacity(0, 1), 128);
     assert_eq!(native_text_capacity(128, 128), 256);
     assert_eq!(native_text_capacity(128, 100_000), 100_001);
@@ -38,7 +38,7 @@ fn rust_hyphenation_minimum_clamps_boundaries() {
         (i32::MAX, 63),
     ] {
         unsafe {
-            assert_eq!(super::xetex_xetex0_part3::norm_min(value), expected);
+            assert_eq!(super::xetex_xetex0::norm_min(value), expected);
         }
     }
 }
@@ -304,7 +304,7 @@ fn engine_symbols_resolve_to_rust_implementations() {
     );
     assert_eq!(
         super::xetex_xetexd::main_control as *const (),
-        super::xetex_xetex0_part4::main_control as *const (),
+        super::xetex_xetex0::main_control as *const (),
     );
     assert_eq!(
         super::xetex_xetexd::get_next as *const (),
